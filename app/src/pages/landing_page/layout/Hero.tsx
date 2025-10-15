@@ -1,8 +1,18 @@
+import { useState } from "react"
 import hero from "../../../assets/hero.png"
 import styles from "../../../styles/layouts/Hero.module.css"
 import { Icon } from "@iconify/react"
 
 const Hero = () => {
+    const [active, setActive] = useState("freelancer");
+
+    const handleClick = () =>{
+        if(active === "freelancer")
+        setActive("jobs")
+    else{
+        setActive("freelancer")
+    }
+    }
   return (
     <div className={styles.Hero}>
         <img src={hero} alt="hero section image" className={styles.image}/>
@@ -14,8 +24,8 @@ const Hero = () => {
     </div>
     <div className={styles.container}>
         <ul className={styles.nav}>
-            <li className={styles.active}>Find freelancer</li>
-            <li>Browse jobs</li>
+            <li className={active === "freelancer" ? styles.active : ""} onClick={handleClick}>Find freelancer</li>
+            <li className={active === "jobs" ? styles.active : ""} onClick={handleClick}>Browse jobs</li>
         </ul>
 
         <div className={styles.searchContainer}>
