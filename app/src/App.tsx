@@ -10,7 +10,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPAge />} />
-        <Route path='/Auth' element={<Auth />} />
+        <Route path='/auth' element={<Auth />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
       </Routes>

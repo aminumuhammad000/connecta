@@ -1,5 +1,6 @@
 import styles from "../../../styles/layouts/Features.module.css"
 import { Icon } from "@iconify/react"
+import { Link } from "react-router-dom"
 
 const features = [
     {
@@ -53,7 +54,7 @@ const Features = () => {
                     <p className={styles.description}>{feature.description}</p>
                  </div>)}
       </div>
-      <button className={styles.cta}>Get started for free</button>
+      <button className={styles.cta}><Link to="/auth" id="link">Get started for free</Link></button>
     </div>
   )
 }

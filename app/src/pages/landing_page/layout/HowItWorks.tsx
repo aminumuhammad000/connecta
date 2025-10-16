@@ -1,19 +1,22 @@
 import styles from "../../../styles/layouts/HowItWorks.module.css"
 import image1 from "../../../assets/hero.png"
 import { Icon } from "@iconify/react"
+import connecta from "../../../assets/connecta.png"
+import ai from "../../../assets/ai.png"
+import { Link } from "react-router-dom"
 
 const cards = [
     {
         title: "Create Your Profile",
         icon: "iconamoon:profile-fill",
-        image: image1,
+        image: connecta,
         description: "Sign up, add your skills, portfolio, and availability all for free.",
         button: "Create profile"
     },
         {
         title: "Get Matched Instantly",
         icon: "iconamoon:profile-fill",
-        image: image1,
+        image: ai,
         description: "AI scouts jobs across platforms and alerts you with the best gigs.",
         button: "Browse jobs"
     },
@@ -35,7 +38,7 @@ const HowItWorks = () => {
                         <img src={card.image} alt={card.title} className={styles.image}/>
                         <h3 className={styles.title}>{card.title} <span><Icon icon={card.icon} className={styles.icon}/></span></h3>
                         <p className={styles.description}>{card.description}</p>
-                        <button className={styles.btn}>{card.button}</button>
+                        <button className={styles.btn}><Link to="/auth" id="link">{card.button}</Link></button>
             </div>)}
         </div>
     </div>

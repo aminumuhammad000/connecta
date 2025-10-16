@@ -45,4 +45,7 @@ a {
   text-decoration: none;
   transition: color var(--transition-fast);
 }
-
+#link{
+  text-decoration: none;
+  color: #fff;
+}

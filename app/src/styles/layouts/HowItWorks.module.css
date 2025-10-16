@@ -10,9 +10,10 @@
 }
 .cardContainer{
     display: flex;
-    overflow-x: scroll;
+    overflow-x: auto;
     gap: 20px;
     padding: 0 10px;
+    scroll-behavior: smooth;
 }
 .card{
     width: 205px;
@@ -21,6 +22,14 @@
     border-radius: 10px;
     background-color: #fff;
     overflow: hidden;
+}
+.card::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 .card .image{
     width: 100%;

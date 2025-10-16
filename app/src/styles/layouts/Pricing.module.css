@@ -20,8 +20,18 @@
     display: flex;
     width: 100%;
     gap: 10px;
-    overflow-x: scroll;
+    overflow-x: auto;
     padding: 0px 10px;
+    scroll-behavior: smooth;
+}
+
+.priceContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.priceContainer {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 .card{
     position: relative;
