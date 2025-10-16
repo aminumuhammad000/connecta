@@ -1,3 +1,49 @@
 .FeedBack{
     width: 100%;
+    margin-top: 50px;
+}
+.mainTitle{
+    font-size: 15px;
+    text-align: center;
+}
+.icon{
+    color: #FD6730;
+    padding-right: 10px;
+}
+.feedbackContainer{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 90%;
+    margin: auto;
+}
+.description{
+    font-size: 12px;
+}
+.feedbackCard{
+    position: relative;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 10px;
+}
+.profile{
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+}
+.small{
+    font-size: 10px;
+}
+.star {
+  color: gold;
+  font-size: 20px;
+  margin-right: 2px;
+}
+
+.rating {
+  display: flex;
+  margin: 8px 0;
 }
