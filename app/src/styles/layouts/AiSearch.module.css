@@ -18,7 +18,7 @@
 }
 .searchContainer{
     position: relative;
-    width: 100%;
+    width: 90%;
     height: 159px;
     border-radius: 20px;
     background-color: #fff;
@@ -30,8 +30,13 @@
     border: none;
     outline: none;
     font-size: 10px;
+    margin: auto;
 }
 .search{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
     position: absolute;
     background-color: #FD6730;
     color: #fff;
