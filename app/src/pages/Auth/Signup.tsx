@@ -45,12 +45,11 @@ const Signup = () => {
     : { question: 'Want to hire a freelancer?', link: 'Join as client' };
 
   return (
-    <div className={styles.signupContainer}>
+    <div className={styles.signupContainer} data-role={role}>
       <div className={styles.header}>
         <img src={Logo} alt="Connecta Logo" className={styles.logo} />
+        <h1 className={styles.title}>{title}</h1>
       </div>
-
-      <h1 className={styles.title}>{title}</h1>
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <button type="button" className={styles.googleBtn}>

@@ -252,6 +252,16 @@
     z-index: 1;
   }
 
+  /* Client Role - Opposite Angle */
+  .signupContainer[data-role="client"]::after {
+    clip-path: polygon(0% 0, 90% 0, 100% 100%, 0 100%);
+  }
+
+  /* Freelancer Role - Original Angle */
+  .signupContainer[data-role="freelancer"]::after {
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
   /* Brand Section */
   .header {
     position: absolute;
@@ -266,7 +276,7 @@
   .logo {
     width: 380px;
     height: auto;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     filter: brightness(0) invert(1);
   }
 
@@ -274,12 +284,14 @@
     font-size: 2.5rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 60px;
+    margin-bottom: 0;
     text-align: center;
     letter-spacing: -0.02em;
     text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     line-height: 1.2;
   }
+
+
 
   /* Form Section */
   .form {
