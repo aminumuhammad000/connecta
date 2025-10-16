@@ -14,7 +14,6 @@ width: 199px;
 height: 52px;
 top: 76px;
 left: 95px;
-angle: 0 deg;
 opacity: 1;
 }
 
@@ -157,4 +156,193 @@ margin-top: -10px;
   color:var(--color-primary);
   text-decoration: none;
   font-weight: 500;
+}
+
+/* Desktop Styles - Professional and Clean UI */
+@media (min-width: 1024px) {
+  body {
+    background: #f8fafc;
+    min-height: 100vh;
+  }
+
+  .auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .logo-section {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .logo {
+    width: 200px;
+    height: auto;
+    margin-bottom: 20px;
+  }
+
+  .auth-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+    margin-bottom: 50px;
+    line-height: 1.3;
+  }
+
+  .auth-title::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: #ff6b35;
+    margin: 20px auto 0;
+    border-radius: 2px;
+  }
+
+  /* Form Section */
+  .role-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 600px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+  }
+
+  .role-options::before {
+    content: 'Select Your Role';
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 30px;
+    text-align: center;
+    display: block;
+  }
+
+  .role-card {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 24px;
+    height: auto;
+    min-height: 80px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .role-card:hover {
+    border-color: #ff6b35;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.1);
+  }
+
+  .role-card.selected {
+    border-color: #ff6b35;
+    background: #fff8f3;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+  }
+
+  .role-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .role-icon {
+    font-size: 2rem;
+    color: #ff6b35;
+  }
+
+  .radio {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .radio:checked {
+    border-color: #ff6b35;
+    background-color: #ff6b35;
+  }
+
+  .radio:checked::after {
+    content: "";
+    display: block;
+    width: 6px;
+    height: 6px;
+    margin: 4px auto;
+    border-radius: 50%;
+    background-color: white;
+  }
+
+  .card-text {
+    font-size: 1.1rem;
+    text-align: left;
+    margin: 0;
+    color: #374151;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .create-account {
+    margin-top: 40px;
+    padding: 16px 0;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    background: #ff6b35;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .create-account:hover {
+    background: #e55a2b;
+  }
+
+  .create-account.disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+  }
+
+  .auth-footer {
+    margin-top: 30px;
+    font-size: 0.95rem;
+    color: #6b7280;
+    text-align: center;
+  }
+
+  .auth-footer a {
+    color: #ff6b35;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .auth-footer a:hover {
+    color: #e55a2b;
+    text-decoration: underline;
+  }
 }
