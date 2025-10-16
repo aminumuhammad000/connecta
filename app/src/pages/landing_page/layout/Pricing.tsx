@@ -1,4 +1,5 @@
 import styles from "../../../styles/layouts/Pricing.module.css"
+import { Icon } from '@iconify/react';
 
 const prices = [
   {
@@ -42,7 +43,7 @@ const Pricing = () => {
             <p className={styles.description}>{price.description}</p>
             <ul className={styles.navList}>
               {price.features.map((feature, idx) => (
-                <li key={idx}>{feature}</li>
+                <li key={idx}><Icon icon="fluent-mdl2:check-mark" />{feature}</li>
               ))}
             </ul>
             <button className={styles.button}>{price.button}</button>

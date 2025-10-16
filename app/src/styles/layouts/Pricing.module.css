@@ -24,9 +24,14 @@
     padding: 0px 10px;
 }
 .card{
+    position: relative;
     min-width: 250px;
+    min-height: 289px;
+    display: flex;
+    flex-direction: column;
+    /* justify-content: center; */
     background-color: #fff;
-    border: 0.5px solid #FF8A5E;
+    border: 0.2px solid #FF8A5E;
     border-radius: 20px;
     padding: 10px;
 }
@@ -44,19 +49,25 @@
     opacity: 0.8;
 }
 .navList{
- width: 100%;
+     width: 100%;
+     display: flex;
+     flex-direction: column;
+     gap: 10px;
 }
 .navList li{
     font-size: 9px;
-    /* list-style:  */
+    width: 70%;
+    list-style: none;
 }
 .button{
     width: 152px;
     height: 35px;
     background-color: #FF8A5E;
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
     border: none;
     color: #fff;
     border-radius: 10px;
-    /* position: absolute; */
-    /* right: 10px; */
+    margin-top: 20px;
 }

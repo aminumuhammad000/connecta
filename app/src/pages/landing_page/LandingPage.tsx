@@ -5,6 +5,8 @@ import HowItWorks from "./layout/HowItWorks"
 import Features from "./layout/Features"
 import AiSearch from "./layout/AiSearch"
 import Pricing from "./layout/Pricing"
+import FeedBack from "./layout/FeedBack"
+import Footer from "./layout/Footer"
 
 const LandingPage = () => {
   return (
@@ -15,6 +17,8 @@ const LandingPage = () => {
         <Features />
         <AiSearch />
         <Pricing />
+        <FeedBack />
+        <Footer />
     </div>
   )
 }
