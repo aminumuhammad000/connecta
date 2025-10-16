@@ -12,15 +12,14 @@ const Auth = () => {
     if (selectedRole) {
       navigate(`/signup?role=${selectedRole}`);
     }
-
-const buttonText =
-  selectedRole === "client"
-    ? "Create Client Account"
-    : selectedRole === "freelancer"
-    ? "Create Freelancer Account"
-    : "Next";
-
   };
+
+  const buttonText =
+    selectedRole === "client"
+      ? "Create Client Account"
+      : selectedRole === "freelancer"
+      ? "Create Freelancer Account"
+      : "Next";
 
   return (
     <div className="auth-container">
@@ -67,7 +66,7 @@ const buttonText =
         onClick={handleCreateAccount}
         disabled={!selectedRole}
       >
-        Create Account
+        {buttonText}
       </button>
 
       {/* Footer */}
