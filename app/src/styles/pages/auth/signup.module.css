@@ -226,6 +226,331 @@
   color: var(--color-primary);
 }
 
+/* Desktop Styles - Modern Split Design */
+@media (min-width: 1024px) {
+  .signupContainer {
+    display: flex;
+    min-height: 100vh;
+    background: tomato;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+
+
+  /* Right Side - Form Section */
+  .signupContainer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 55%;
+    height: 100%;
+    background: #ffffff;
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+    z-index: 1;
+  }
+
+  /* Client Role - Opposite Angle */
+  .signupContainer[data-role="client"]::after {
+    clip-path: polygon(0% 0, 90% 0, 100% 100%, 0 100%);
+  }
+
+  /* Freelancer Role - Original Angle */
+  .signupContainer[data-role="freelancer"]::after {
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  /* Brand Section */
+  .header {
+    position: absolute;
+    top: 50%;
+    left: 22.5%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 2;
+    color: #ffffff;
+  }
+
+  .logo {
+    width: 380px;
+    height: auto;
+    margin-bottom: 20px;
+    filter: brightness(0) invert(1);
+  }
+
+  .title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0;
+    text-align: center;
+    letter-spacing: -0.02em;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    line-height: 1.2;
+  }
+
+
+
+  /* Form Section */
+  .form {
+    position: absolute;
+    top: 50%;
+    right: 27.5%;
+    transform: translate(50%, -50%);
+    width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    background: #ffffff;
+    padding: 50px;
+    border-radius: 24px;
+    box-shadow: 0 25px 80px rgba(221, 207, 207, 0.12);
+    z-index: 2;
+    border: 1px solid #f0f0f0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .googleBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background-color: #ffffff;
+    color: #333333;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 0;
+  }
+
+  .googleBtn:hover {
+    background-color: #f8f9fa;
+    border-color: #f59281;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .googleIcon {
+    width: 24px;
+    height: 24px;
+    background-color: transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+  }
+
+  .googleLogo {
+    font-size: 20px;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999999;
+    font-size: 14px;
+    font-weight: 500;
+    margin: 20px 0;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 0 20px;
+  }
+
+  .nameFields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333333;
+  }
+
+  .input {
+    width: 100%;
+    padding: 18px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    color: #333333;
+    font-size: 16px;
+    outline: none;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    font-weight: 500;
+  }
+
+  .input:focus {
+    border-color: #ff6347;
+    box-shadow: 0 0 0 4px rgba(255, 99, 71, 0.1);
+  }
+
+  .input::placeholder {
+    color: #999999;
+    font-weight: 400;
+  }
+
+  .passwordField {
+    position: relative;
+  }
+
+  .eyeToggle {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+  }
+
+  .eyeToggle:hover {
+    background-color: #f8f9fa;
+  }
+
+  .eyeIcon {
+    font-size: 22px;
+    color: #666666;
+    transition: color 0.2s ease;
+  }
+
+  .eyeToggle:hover .eyeIcon {
+    color: #ff6347;
+  }
+
+  .checkboxGroup {
+    margin: 16px 0;
+  }
+
+  .checkboxLabel {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: #ff6347;
+  }
+
+  .checkboxText {
+    color: #666666;
+    flex: 1;
+    font-weight: 400;
+  }
+
+  .link {
+    color: #ff6347;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .link:hover {
+    color: #e55a3a;
+    text-decoration: underline;
+  }
+
+  .createAccountBtn {
+    width: 100%;
+    background-color: #ff6347;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .createAccountBtn:hover {
+    background-color: #e55a3a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 99, 71, 0.3);
+  }
+
+  .createAccountBtn:active {
+    transform: translateY(0px);
+  }
+
+  .createAccountBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 40px;
+    right: 27.5%;
+    transform: translateX(50%);
+    text-align: center;
+    z-index: 2;
+    margin-top: 0;
+  }
+
+  .footerText {
+    font-size: 15px;
+    color: #666666;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .footerLink {
+    color: #ff6347;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    padding: 8px 16px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .footerLink:hover {
+    background-color: rgba(255, 99, 71, 0.1);
+    color: #e55a3a;
+  }
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 480px) {
   .signupContainer {
