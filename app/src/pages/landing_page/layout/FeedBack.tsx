@@ -61,6 +61,11 @@ const FeedBack = () => {
           </div>
         ))}
       </div>
+
+      <div className={styles.exploreContainer}>
+        <h3 className={styles.details}>Get the expertise you need whether for a small task or long-term impact</h3>
+        <button className={styles.explore}>Explore Freelancers</button>
+      </div>
     </div>
   )
 }

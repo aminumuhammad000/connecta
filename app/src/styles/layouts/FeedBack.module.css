@@ -47,3 +47,34 @@
   display: flex;
   margin: 8px 0;
 }
+.exploreContainer{
+    width: 90%;
+    max-width: 348px;
+    height: 297px;
+    background: linear-gradient(180deg, #FD6730 63.46%, #FF7F50 100%);
+    border-radius: 20px;
+    margin-inline: auto;
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-content: center;
+    color: #fff;
+}
+.details{
+    text-align: center;
+    font-size: 20px;
+    font-weight: 500;
+    width: 90%;
+    margin: auto;
+}
+.explore{
+    width: 270px;
+    height: 55px;
+    border: none;
+    background-color: #fff;
+    color: #222;
+    border-radius: 10px;
+    font-style: 15px;
+    margin: auto;
+}
