@@ -3,3 +3,31 @@ node_modules
 .env
 
 /src/generated/prisma
+
+connecta-backend/
+├── src/
+│   ├── config/
+│   ├── core/
+│   │   ├── database/
+│   │   ├── middleware/
+│   │   ├── utils/
+│   │   ├── constants/
+│   │   ├── errors/
+│   │   └── interfaces/
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── users/
+│   │   └── gigs/
+│   ├── routes/
+│   ├── types/
+│   ├── app.ts
+│   └── server.ts
+├── prisma/
+├── scripts/
+├── tests/
+├── .env
+├── .env.example
+├── tsconfig.json
+├── package.json
+├── nodemon.json
+└── README.md
