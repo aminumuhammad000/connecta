@@ -1,0 +1,162 @@
+.jobDetails {
+  background-color: #fff;
+  padding: 20px 16px;
+  margin-top: 8px;
+}
+
+.section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.section:last-of-type {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.budgetRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.budgetAmount {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.budgetType {
+  font-size: 14px;
+  color: #666;
+}
+
+.experienceRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.experienceLevel, .projectType {
+  font-size: 14px;
+  color: #666;
+}
+
+.skillGroup {
+  margin-bottom: 20px;
+}
+
+.skillGroup:last-child {
+  margin-bottom: 0;
+}
+
+.skillGroupTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.skillTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skillTag {
+  background-color: #f8f9fa;
+  color: #666;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #e9ecef;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: #999;
+  font-style: italic;
+  margin: 0;
+}
+
+.activityStats {
+  margin-bottom: 16px;
+}
+
+.activityItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityLabel {
+  font-size: 14px;
+  color: #666;
+}
+
+.activityValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.premiumNote {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.premiumText {
+  font-size: 13px;
+  color: #666;
+}
+
+.highlight {
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .jobDetails {
+    padding: 12px;
+  }
+  
+  .sectionTitle {
+    font-size: 15px;
+  }
+  
+  .skillGroupTitle {
+    font-size: 13px;
+  }
+  
+  .skillTag {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  
+  .activityLabel, .activityValue {
+    font-size: 13px;
+  }
+  
+  .premiumText {
+    font-size: 12px;
+  }
+}

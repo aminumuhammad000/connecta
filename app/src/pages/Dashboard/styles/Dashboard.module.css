@@ -1,0 +1,34 @@
+.dashboard {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.jobsList {
+  padding-bottom: 20px;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+  .dashboard {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    font-size: 13px;
+  }
+  
+  .jobsList {
+    padding-bottom: 16px;
+  }
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 480px) {
+  .dashboard {
+    overflow-x: hidden;
+  }
+}
+

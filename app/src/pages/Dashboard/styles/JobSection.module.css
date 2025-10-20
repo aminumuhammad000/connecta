@@ -1,0 +1,82 @@
+.jobSection {
+  background-color: #f8f9fa;
+  padding: 16px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.tabsContainer {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  background-color: #f0f0f0;
+}
+
+.activeTab {
+  background-color: #ff6b35;
+  color: #fff;
+  font-weight: 600;
+}
+
+.activeTab:hover {
+  background-color: #e55a2b;
+}
+
+.description {
+  font-size: 15px;
+  color: #000000B2;
+  padding: 5px;
+  line-height: 1.4;
+  margin-top: 15px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .jobSection {
+    padding: 12px;
+  }
+  
+  .sectionTitle {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  .tabsContainer {
+    margin-bottom: 10px;
+  }
+  
+  .tab {
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+  
+  .description {
+    font-size: 13px;
+  }
+}
+

@@ -1,0 +1,140 @@
+.searchContainer {
+  padding: 0 16px 16px;
+  background-color: #f8f9fa;
+}
+
+.searchBar {
+  width: 348px;
+  height: 38px;
+  top: 96px;
+  left: 21px;
+  border-radius: 10px;
+  border: 0.5px solid #1771B71A;
+  opacity: 1;
+  border-width: 0.5px;
+  box-shadow: 0px 2px 4px 0px #00000026;
+
+
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+}
+
+.searchIcon {
+  margin-right: 12px;
+  width: 90px;
+  height: 90px;
+  color: #080808;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+}
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.searchActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.clearIcon {
+  width: 20px;
+  height: 20px;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.filterIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.clearIcon:hover {
+  color: #333;
+}
+
+.filterIcon:hover {
+  opacity: 0.8;
+}
+
+/* Filter Dropdown */
+.filterDropdown {
+  box-shadow: 0px 4px 4px 0px #00000040;
+  position: absolute;
+  top: 100%;
+  right: 16px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 200px;
+  z-index: 1000;
+  margin-top: 1px;
+}
+
+.filterOption {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.filterCheckbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.filterCheckbox.checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.filterLabel {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .searchContainer {
+    padding: 0 12px 12px;
+  }
+  
+  .searchBar {
+    padding: 10px 12px;
+  }
+  
+  .searchInput {
+    font-size: 14px;
+  }
+  
+  .searchIcon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .clearIcon, .filterIcon {
+    width: 18px;
+    height: 18px;
+  }
+}

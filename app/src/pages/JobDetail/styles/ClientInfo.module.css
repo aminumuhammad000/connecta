@@ -1,0 +1,256 @@
+.clientInfo {
+  background-color: #fff;
+  padding: 20px 16px;
+  margin-top: 8px;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.verificationSection {
+  margin-bottom: 16px;
+}
+
+.verificationRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.checkIcon {
+  width: 16px;
+  height: 16px;
+  color: #007bff;
+}
+
+.verificationText {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.star {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+}
+
+.ratingValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-left: 4px;
+}
+
+.reviewCount {
+  font-size: 14px;
+  color: #666;
+  margin-left: 4px;
+}
+
+.locationSection {
+  margin-bottom: 16px;
+}
+
+.location {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.stateTime {
+  font-size: 14px;
+  color: #666;
+  margin-left: 8px;
+}
+
+.statsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  font-size: 14px;
+  color: #333;
+}
+
+.jobsSection {
+  margin-bottom: 20px;
+}
+
+.jobsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.jobsTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dropdownIcon {
+  width: 20px;
+  height: 20px;
+  color: #666;
+}
+
+.jobsList {
+  margin-top: 8px;
+}
+
+.jobItem {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.jobItem:last-child {
+  border-bottom: none;
+}
+
+.jobTitle {
+  font-size: 14px;
+  color: var(--color-primary);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.freelancerLink {
+  font-size: 14px;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.jobPeriod, .jobType {
+  font-size: 14px;
+  color: #666;
+  display: block;
+  margin-top: 2px;
+}
+
+.historySection {
+  margin-top: 20px;
+}
+
+.historyItem {
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.historyItem:last-child {
+  border-bottom: none;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.historyTitle {
+  font-size: 14px;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.historyRating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.historyRatingValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-left: 4px;
+}
+
+.historyReview {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+  margin: 8px 0;
+  font-style: italic;
+}
+
+.historyFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.historyFreelancer {
+  font-size: 14px;
+  color: #333;
+}
+
+.historyFooterRating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.historyMeta {
+  display: flex;
+  gap: 8px;
+}
+
+.historyPeriod, .historyType {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .clientInfo {
+    padding: 12px;
+  }
+  
+  .sectionTitle {
+    font-size: 15px;
+  }
+  
+  .verificationText, .location, .stat {
+    font-size: 13px;
+  }
+  
+  .ratingValue, .reviewCount, .stateTime {
+    font-size: 13px;
+  }
+  
+  .jobsTitle, .jobTitle, .freelancerLink, .historyTitle {
+    font-size: 13px;
+  }
+  
+  .jobPeriod, .jobType, .historyPeriod, .historyType {
+    font-size: 13px;
+  }
+  
+  .historyReview {
+    font-size: 13px;
+  }
+  
+  .historyFreelancer {
+    font-size: 13px;
+  }
+}

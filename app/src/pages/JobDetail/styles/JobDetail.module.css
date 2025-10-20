@@ -1,0 +1,33 @@
+.jobDetail {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+.content {
+  padding-bottom: 20px;
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+  .jobDetail {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .jobDetail {
+    font-size: 13px;
+  }
+  
+  .content {
+    padding-bottom: 16px;
+  }
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 480px) {
+  .jobDetail {
+    overflow-x: hidden;
+  }
+}

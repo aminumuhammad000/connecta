@@ -4,6 +4,8 @@ import LandingPAge from './pages/landing_page/LandingPage'
 import Auth from './pages/Auth/Auth'
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
+import Dashboard from './pages/Dashboard/Dashboard'
+import JobDetail from './pages/JobDetail/JobDetail'
 
 function App() {
   return (
@@ -13,6 +15,8 @@ function App() {
         <Route path='/auth' element={<Auth />} />
         <Route path='/login' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
+        <Route path='/dashboard' element={<Dashboard />} />
+        <Route path='/job/:jobId' element={<JobDetail />} />
       </Routes>
     </Router>
   )

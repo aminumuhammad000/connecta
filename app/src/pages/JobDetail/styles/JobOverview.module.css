@@ -1,0 +1,192 @@
+.jobOverview {
+  background-color: #fff;
+  padding: 20px 16px;
+}
+
+.jobHeader {
+  margin-bottom: 24px;
+}
+
+.topRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.postedTime {
+  font-size: 14px;
+  color: #666;
+}
+
+.aiMatched {
+  background-color: #28a745;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.jobTitle {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+}
+
+.jobMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.location, .connects {
+  font-size: 14px;
+  color: #666;
+}
+
+.section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.section:last-of-type {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.summary {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.budgetInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.budgetAmount {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.budgetType {
+  font-size: 14px;
+  color: #666;
+}
+
+.requirementsList, .deliverablesList {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.requirementItem, .deliverableItem {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.requirementItem:last-child, .deliverableItem:last-child {
+  margin-bottom: 0;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.applyButton {
+  flex: 1;
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.applyButton:hover {
+  background-color: #e55a2b;
+}
+
+.saveButton {
+  flex: 1;
+  background-color: #fff;
+  color: #333;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.saveIcon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 480px) {
+  .jobOverview {
+    padding: 12px;
+  }
+  
+  .jobTitle {
+    font-size: 18px;
+  }
+  
+  .sectionTitle {
+    font-size: 15px;
+  }
+  
+  .summary {
+    font-size: 13px;
+  }
+  
+  .budgetAmount {
+    font-size: 16px;
+  }
+  
+  .requirementItem, .deliverableItem {
+    font-size: 13px;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .applyButton, .saveButton {
+    padding: 14px;
+    font-size: 15px;
+  }
+}
