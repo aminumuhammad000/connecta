@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
-import styles from '../styles/SearchBar.module.css';
+import styles from '../styles/components/SearchBar.module.css';
 
 interface SearchBarProps {
   placeholder?: string;

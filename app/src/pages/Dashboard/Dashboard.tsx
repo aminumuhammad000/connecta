@@ -1,9 +1,10 @@
 import React from 'react';
-import DashboardHeader from './components/DashboardHeader';
 import DashboardNav from './components/DashboardNav';
 import JobSection from './components/JobSection';
 import JobCard from './components/JobCard';
 import styles from './styles/Dashboard.module.css';
+import Header from '../../components/Header';
+import SearchBar from '../../components/SearchBar';
 
 const Dashboard: React.FC = () => {
   // Sample job data - in a real app, this would come from an API
@@ -64,7 +65,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className={styles.dashboard}>
-      <DashboardHeader />
+      <Header />
+      <SearchBar />
       <DashboardNav />
       <JobSection />
       

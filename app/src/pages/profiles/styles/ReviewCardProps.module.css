@@ -1,0 +1,71 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: transparent;
+  border-radius: 12px;
+  padding: 12px 16px;
+  max-width: 400px;
+  font-family: "Inter", sans-serif;
+  color: #333;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff6600;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.editIcon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #ff6600;
+  color: #fff;
+  border-radius: 50%;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+  color: #ff6600;
+  margin-top: 4px;
+}
+
+.star {
+  font-size: 18px;
+}
+
+.text {
+  font-size: 14px;
+  color: #555;
+  margin: 0;
+}

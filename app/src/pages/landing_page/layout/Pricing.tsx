@@ -43,7 +43,7 @@ const Pricing = () => {
             <p className={styles.description}>{price.description}</p>
             <ul className={styles.navList}>
               {price.features.map((feature, idx) => (
-                <li key={idx}><Icon icon="fluent-mdl2:check-mark" />{feature}</li>
+                <li key={idx}><Icon icon="fluent-mdl2:check-mark" className={styles.icon}/>{feature}</li>
               ))}
             </ul>
             <button className={styles.button}>{price.button}</button>
