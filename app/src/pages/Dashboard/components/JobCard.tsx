@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import styles from '../styles/JobCard.module.css';
+import verifiedIcon from '../../../assets/verified.png';
 
 interface JobCardProps {
   job: {
@@ -21,9 +22,23 @@ interface JobCardProps {
 
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
   const navigate = useNavigate();
+  const [liked, setLiked] = React.useState(false);
+  const [disliked, setDisliked] = React.useState(false);
 
   const handleCardClick = () => {
-    navigate(`/job/${job.id || '1'}`);
+    navigate(`/job/${(job as any).id || '1'}`);
+  };
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // prevent card navigation
+    setLiked((s) => !s);
+    if (disliked) setDisliked(false);
+  };
+
+  const handleDislikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDisliked((s) => !s);
+    if (liked) setLiked(false);
   };
 
   const renderStars = (rating: number) => {
@@ -46,10 +61,20 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
       {/* Job Title and Actions */}
       <div className={styles.titleRow}>
-        <h3 className={styles.jobTitle}>{job.title}</h3>
+        <h3 className={styles.jobTitle} style={{fontSize: "23px"}}>{job.title}</h3>
         <div className={styles.actionIcons}>
-          <Icon icon="mdi:dislike-outline" className={styles.dislikeIcon} />
-          <Icon icon="si:heart-line" className={styles.likeIcon} />
+          <Icon
+            icon="mdi:dislike-outline"
+            style={{ height: '31px', width: '31px' }}
+            className={`${styles.dislikeIcon} ${disliked ? styles.active : ''}`}
+            onClick={handleDislikeClick}
+          />
+          <Icon
+            icon="si:heart-line"
+            style={{ height: '31px', width: '31px' }}
+            className={`${styles.likeIcon} ${liked ? styles.active : ''}`}
+            onClick={handleLikeClick}
+          />
         </div>
       </div>
 
@@ -57,7 +82,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
       <div className={styles.jobDetails}>
         <p className={styles.jobType}>Fixed-price - Entry level - Est. Budget: {job.budget}</p>
         <p className={styles.jobDescription}>
-          {job.description}
+          {job.description}<br />
           <span className={styles.moreLink}> more</span>
         </p>
       </div>
@@ -75,12 +100,12 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
       <div className={styles.clientInfo}>
         <div className={styles.paymentInfo}>
           <div className={styles.verifiedRow}>
-            <Icon icon="material-symbols:check-circle" className={styles.checkIcon} />
+            <img src={verifiedIcon} className={styles.checkIcon} />
             <span className={styles.paymentVerified}>Payment verified</span>
           </div>
           <div className={styles.ratingRow}>
             {renderStars(job.rating)}
-          </div>
+          </div>                                                    
         </div>
         <div className={styles.spentLocation}>
           <div className={styles.amountSpent}>{job.amountSpent} Spent</div>

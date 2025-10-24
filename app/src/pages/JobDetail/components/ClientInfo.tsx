@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import styles from '../styles/ClientInfo.module.css';
+import verifiedIcon from '../../../assets/verified.png';
 
 interface ClientInfoProps {
   client: {
@@ -50,14 +51,14 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
       {/* Verification & Rating */}
       <div className={styles.verificationSection}>
         <div className={styles.verificationRow}>
-          <Icon icon="material-symbols:check-circle" className={styles.checkIcon} />
+          <img src={verifiedIcon} className={styles.checkIcon} alt="Verified" />
           <span className={styles.verificationText}>Payment method verified</span>
         </div>
         
         <div className={styles.ratingRow}>
           {renderStars(client.rating)}
-          <span className={styles.ratingValue}>{client.rating}</span>
-          <span className={styles.reviewCount}>of {client.totalReviews} reviews</span>
+          <span className={styles.ratingValue}>{client.rating}.0</span>
+          <span className={styles.reviewCount}>{client.rating}.00 of {client.totalReviews} reviews</span>
         </div>
       </div>
 
@@ -76,6 +77,7 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
 
       {/* Jobs in Progress */}
       <div className={styles.jobsSection}>
+          <h3 className={styles.sectionTitle}>Client’s recent history</h3>
         <div 
           className={styles.jobsHeader}
           onClick={() => setShowJobsInProgress(!showJobsInProgress)}
@@ -92,7 +94,7 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
             {client.jobsInProgress.map((job, index) => (
               <div key={index} className={styles.jobItem}>
                 <span className={styles.jobTitle}>{job.title}</span>
-                <span className={styles.freelancerLink}>{job.freelancer}</span>
+                <span className={styles.freelancerLink}> Freelancer <span className={styles.freelancerName}>{job.freelancer}</span></span>  
                 <span className={styles.jobPeriod}>{job.period}</span>
                 <span className={styles.jobType}>{job.type}</span>
               </div>
@@ -109,7 +111,7 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
               <span className={styles.historyTitle}>{history.title}</span>
               <div className={styles.historyRating}>
                 {renderStars(history.rating)}
-                <span className={styles.historyRatingValue}>{history.rating}</span>
+                <span className={styles.historyRatingValue}>{history.rating}.0</span>
               </div>
             </div>
             
@@ -119,7 +121,7 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
               <span className={styles.historyFreelancer}>To freelancer: <span className={styles.freelancerLink}>{history.freelancer}</span></span>
               <div className={styles.historyFooterRating}>
                 {renderStars(history.rating)}
-                <span className={styles.historyRatingValue}>{history.rating}</span>
+                <span className={styles.historyRatingValue}>{history.rating}.0</span>
               </div>
             </div>
             

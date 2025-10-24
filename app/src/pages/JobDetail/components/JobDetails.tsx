@@ -24,12 +24,20 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
       {/* Budget & Experience */}
       <div className={styles.section}>
         <div className={styles.budgetRow}>
-          <span className={styles.budgetAmount}>{job.budget}</span>
-          <span className={styles.budgetType}>{job.budgetType}</span>
+          <Icon icon="bytesize:tag" style={{fontSize:"24px", color:"#000000B2", marginRight:"10px"}}/>
+          <div>
+            <span className={styles.budgetAmount}>{job.budget}</span>
+            <br />
+            <span className={styles.budgetType}>{job.budgetType}</span>
+          </div>
         </div>
         <div className={styles.experienceRow}>
+          <Icon icon="bytesize:tag" style={{fontSize:"24px", color:"#000000B2", marginRight:"10px"}} />
+          <div>
           <span className={styles.experienceLevel}>{job.experienceLevel}</span>
+          <br />
           <span className={styles.projectType}>{job.projectType}</span>
+          </div>
         </div>
       </div>
 
@@ -104,8 +112,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
         
         <div className={styles.premiumNote}>
           <span className={styles.premiumText}>
-            Subscribe for <span className={styles.highlight}>premium package</span> to see <span className={styles.highlight}>bid range</span>
-          </span>
+            Subscribe for <span className={styles.highlight}>premium package</span> to see bid range</span>
         </div>
       </div>
     </div>

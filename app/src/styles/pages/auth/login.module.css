@@ -7,7 +7,7 @@
   justify-content: center;
   min-height: 100vh;
   background-color: #f5f5f5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding: 20px;
   box-sizing: border-box;
 }
@@ -56,7 +56,7 @@
 }
 
 .inputBox input:focus {
-  border-color: #ff6b35;
+  border-color: var(--color-primary);
 }
 
 .inputIcon {
@@ -82,7 +82,7 @@
 .signinBtn {
   width: 100%;
   max-width: 320px;
-  background-color: #ff6b35;
+  background-color: var(--color-primary);
   color: white;
   border: none;
   border-radius: 12px;
@@ -171,8 +171,8 @@
 }
 
 .signupLink {
-  color: #ff6b35;
-  border: 1px solid #ff6b35;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
   padding: 10px 20px;
   border-radius: 9px;
   display: inline-block;
@@ -183,7 +183,7 @@
 }
 
 .signupLink:hover {
-  background-color: #ff6b35;
+  background-color: var(--color-primary);
   color: white;
 }
 
@@ -196,7 +196,7 @@
     padding: 0;
     position: relative;
     overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   /* Right Side - Form Section */

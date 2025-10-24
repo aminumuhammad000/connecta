@@ -31,23 +31,26 @@
 .budgetAmount {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: #0a0a0a;
 }
 
-.budgetType {
+.budgetType, .projectType {
   font-size: 14px;
   color: #666;
 }
+
 
 .experienceRow {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
-.experienceLevel, .projectType {
-  font-size: 14px;
-  color: #666;
+.experienceLevel {
+  font-size: 16px;
+  color: #080808;
+  font-weight: bold;
 }
 
 .skillGroup {
@@ -61,7 +64,7 @@
 .skillGroupTitle {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #000000B2;
   margin: 0 0 8px 0;
 }
 
@@ -72,9 +75,9 @@
 }
 
 .skillTag {
-  background-color: #f8f9fa;
+  background: #8A8A8A73;
   color: #666;
-  padding: 6px 12px;
+  padding: 10px 12px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
@@ -116,15 +119,13 @@
 }
 
 .premiumNote {
-  background-color: #f8f9fa;
-  padding: 12px;
   border-radius: 8px;
-  text-align: center;
+  text-align: left;
 }
 
 .premiumText {
-  font-size: 13px;
-  color: #666;
+  font-size: 16px;
+  color: #000000;
 }
 
 .highlight {

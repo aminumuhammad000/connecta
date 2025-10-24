@@ -1,37 +1,30 @@
 .jobOverview {
   background-color: #fff;
-  padding: 20px 16px;
+  padding: 20px 20px;
 }
 
 .jobHeader {
   margin-bottom: 24px;
 }
-
 .topRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: px;
 }
 
 .postedTime {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #000000B2;
 }
 
-.aiMatched {
-  background-color: #28a745;
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-}
+
 
 .jobTitle {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
+  font-size: 30px;
+  font-weight: 400;
+  max-width: 290px;
+  color: #000000;
   margin: 0 0 12px 0;
   line-height: 1.3;
 }
@@ -43,8 +36,8 @@
 }
 
 .location, .connects {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #000000B2;
 }
 
 .section {
@@ -66,7 +59,7 @@
 
 .summary {
   font-size: 14px;
-  color: #333;
+  color: #000000B2;
   line-height: 1.5;
   margin: 0;
 }
@@ -78,7 +71,7 @@
 }
 
 .budgetAmount {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   color: #333;
 }
@@ -106,47 +99,78 @@
 
 .actionButtons {
   display: flex;
+  align-items: center;
   gap: 12px;
   margin-top: 24px;
+  margin-left: -20px;
+  margin-right: -20px;
+  flex-wrap: wrap;
+  width: calc(100% );
+  height: 80px;
+  padding-left: 10px;
+  padding: 15px 20px;
+  background-color: #FFFFFF;
+  border: 0.2px solid #dfcbcb4d;
+  box-shadow: 0px 2px 4px 0px #00000040;
 }
 
 .applyButton {
-  flex: 1;
   background-color: var(--color-primary);
-  color: #fff;
+  color: #ffffff;
   border: none;
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 10px;
+  padding: 14px 32px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  font-family: 'Roboto', Arial, Helvetica, sans-serif;
 }
 
 .applyButton:hover {
   background-color: #e55a2b;
 }
 
+.applyButton:active {
+  transform: scale(0.98);
+}
+
 .saveButton {
-  flex: 1;
-  background-color: #fff;
-  color: #333;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 16px;
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  padding: 12px 32px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition: all 0.2s ease;
+  font-family: 'Roboto', Arial, Helvetica, sans-serif;
 }
 
 .saveButton:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+}
+
+.saveButton:active {
+  transform: scale(0.98);
+}
+
+.saveButton.saved {
+  background-color: #FD6730;
+  color: #ffffff;
+  border-color: #FD6730;
+}
+
+.saveButton.saved:hover {
+  background-color: #e55a2b;
+  border-color: #e55a2b;
+  color: #ffffff;
 }
 
 .saveIcon {
@@ -181,8 +205,13 @@
   }
   
   .actionButtons {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
+  }
+  
+  .applyButton, .saveButton {
+    flex: 1;
+    min-width: 0;
   }
   
   .applyButton, .saveButton {

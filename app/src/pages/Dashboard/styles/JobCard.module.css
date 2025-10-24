@@ -30,12 +30,9 @@
 .aiMatched {
   width: 50px;
   height: 8px;
-  /* top: 18px; */
-  left: 308px;
   border-radius: 8px;
   opacity: 1;
   padding: 5px;
-  gap: 10px;
   background-color: #009E3AB2;
   color: #fff;
   font-size: 8px;
@@ -50,8 +47,8 @@
 }
 
 .jobTitle {
-  font-size: 60px;
-  font-weight: bold;
+  font-size: 1000px;
+  font-weight: 500;
   color: #FD6730;
   margin: 0;
   flex: 1;
@@ -65,8 +62,8 @@
 }
 
 .dislikeIcon, .likeIcon {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   cursor: pointer;
   padding: 4px;
   border-radius: 50%;
@@ -77,13 +74,20 @@
   background-color: #f0f0f0;
 }
 
+/* active state for like/dislike */
+.active {
+  background-color: tomato !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+}
+
 .jobDetails {
   margin-bottom: 12px;
 }
 
 .jobType {
   font-size: 14px;
-  color: #666;
+  color: #000000B2;
   margin: 0 0 8px 0;
 }
 
@@ -95,26 +99,27 @@
 }
 
 .moreLink {
-  color: #dc3545;
+  color: var(--color-primary);
   cursor: pointer;
   font-weight: 500;
+  text-decoration: underline;
 }
 
 .skillsContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 16px;
+  gap: 30px;
+  margin-bottom: 25px;
 }
 
 .skillTag {
-  background-color: #f8f9fa;
-  color: #666;
-  padding: 6px 12px;
+ background: #8D8D8D33;
+  color: #000000B2;
+  padding:200px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
-  border: 1px solid #e9ecef;
+  /* border: 1px solid #e9ecef; */
 }
 
 .clientInfo {
@@ -126,25 +131,28 @@
 
 .paymentInfo {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  /* flex-direction: column; */
+  align-items: center;  
+  gap: 150px;
+  justify-content: space-around;
+  margin-bottom: 15px;
 }
 
 .verifiedRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 20px;
 }
 
 .checkIcon {
-  color: #007bff;
-  width: 16px;
-  height: 16px;
+  width: 30px;
+  height: 30px;
 }
 
 .paymentVerified {
-  font-size: 12px;
-  color: #333;
+  font-size: 16px;
+  margin-left: -15px;
+  color: #000000B2;
   font-weight: 500;
 }
 
@@ -161,14 +169,16 @@
 
 .spentLocation {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;  
+  gap: 200px;
+  padding: 8px;
+  justify-content: space-around;
+  margin-bottom: 1px;
 }
 
 .amountSpent {
   font-size: 12px;
-  color: #333;
+  color: #000000B2;
   font-weight: 500;
 }
 
@@ -181,7 +191,7 @@
 .locationIcon {
   width: 12px;
   height: 12px;
-  color: #666;
+  color: #000000B2;
 }
 
 .location {
@@ -243,6 +253,7 @@
   
   .spentLocation {
     align-items: flex-start;
+
   }
   
   .applicationStats {

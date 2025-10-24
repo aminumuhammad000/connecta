@@ -17,39 +17,42 @@ interface JobOverviewProps {
 }
 
 const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
+  const [isSaved, setIsSaved] = React.useState(false);
+
+  const handleSaveClick = () => {
+    setIsSaved(!isSaved);
+  };
+
   return (
     <div className={styles.jobOverview}>
       {/* Job Header */}
       <div className={styles.jobHeader}>
-        <div className={styles.topRow}>
-          <span className={styles.postedTime}>Posted {job.postedTime}</span>
-          <span className={styles.aiMatched}>AI matched</span>
-        </div>
         
-        <h1 className={styles.jobTitle}>{job.title}</h1>
+        <h1 style={{fontSize:"22px"}} className={styles.jobTitle}>{job.title}</h1>
         
         <div className={styles.jobMeta}>
-          <span className={styles.location}>{job.location}</span>
+            <span className={styles.postedTime}>Posted {job.postedTime}</span>
+            <div style={{display: "flex", justifyItems:"left", gap:"10px"}}>
+          <Icon style={{fontSize:"19px"}} icon="mdi:location-radius-outline"/> <span className={styles.location}>{job.location}</span>
+             </div>
           <span className={styles.connects}>{job.connectsRequired}</span>
+
         </div>
       </div>
-
+      <div className={styles.section } />
       {/* Summary Section */}
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Summary</h3>
         <p className={styles.summary}>{job.summary}</p>
-      </div>
 
-      {/* Budget Section */}
-      <div className={styles.section}>
+<br />
+ 
         <div className={styles.budgetInfo}>
-          <span className={styles.budgetAmount}>{job.budget}</span>
-          <span className={styles.budgetType}>({job.budgetType})</span>
-        </div>
-      </div>
-
-      {/* Requirements Section */}
-      <div className={styles.section}>
+          <span className={styles.budgetAmount}>Budget:</span>
+          <span className={styles.budgetType}>{job.budget} ({job.budgetType})</span>
+        </div><br />
+              {/* Requirements Section */}
+      <div >
         <h3 className={styles.sectionTitle}>Requirements</h3>
         <ul className={styles.requirementsList}>
           {job.requirements.map((requirement, index) => (
@@ -58,9 +61,8 @@ const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* Deliverables Section */}
+      </div><br />
+        {/* Deliverables Section */}
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Deliverables</h3>
         <ul className={styles.deliverablesList}>
@@ -72,14 +74,24 @@ const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
         </ul>
       </div>
 
+      
+      </div>
+
+
       {/* Action Buttons */}
       <div className={styles.actionButtons}>
         <button className={styles.applyButton}>
           Apply now
         </button>
-        <button className={styles.saveButton}>
-          <Icon icon="material-symbols:favorite-outline" className={styles.saveIcon} />
-          Save job
+        <button 
+          className={`${styles.saveButton} ${isSaved ? styles.saved : ''}`}
+          onClick={handleSaveClick}
+        >
+          <Icon 
+            icon={isSaved ? "material-symbols:favorite" : "material-symbols:favorite-outline"} 
+            className={styles.saveIcon} 
+          />
+          {isSaved ? 'Saved' : 'Save job'}
         </button>
       </div>
     </div>

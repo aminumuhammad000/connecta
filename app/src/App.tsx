@@ -7,6 +7,7 @@ import Signup from './pages/Auth/Signup'
 import Dashboard from './pages/Dashboard/Dashboard'
 import JobDetail from './pages/JobDetail/JobDetail'
 import Profile from './pages/profiles/Profile'
+import Proposals from './pages/Proposals/Proposals'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/job/:jobId' element={<JobDetail />} />
         <Route path='/profile' element={<Profile />} />
+        <Route path='/proposals' element={<Proposals />} />
       </Routes>
     </Router>
   )
