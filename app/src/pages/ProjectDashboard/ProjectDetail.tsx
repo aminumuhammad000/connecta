@@ -1,22 +1,98 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import styles from './styles/ProjectDetail.module.css';
+import DetailHeader from "../.././pages/JobDetail/components/JobDetailHeader"
 
 const ProjectDetail: React.FC = () => {
   const navigate = useNavigate();
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentFileType, setCurrentFileType] = useState<string>('');
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{
+    file: File;
+    preview: string | null;
+    type: string;
+  }>>([]);
 
   const handleClose = () => {
     navigate('/project-dashboard');
+  };
+
+  const handleFileUpload = (accept: string) => {
+    setCurrentFileType(accept);
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = accept;
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      processFiles(files);
+    }
+  };
+
+  const processFiles = (files: FileList) => {
+    Array.from(files).forEach(file => {
+      const fileType = file.type.split('/')[0]; // 'image', 'video', 'audio', etc.
+      
+      if (fileType === 'image' || fileType === 'video') {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setUploadedFiles(prev => [...prev, {
+            file,
+            preview: reader.result as string,
+            type: fileType
+          }]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // For non-media files, just add without preview
+        setUploadedFiles(prev => [...prev, {
+          file,
+          preview: null,
+          type: 'document'
+        }]);
+      }
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFiles(files);
+    }
   };
 
   return (
     <div className={styles.projectDetailPage}>
       {/* Header */}
       <div className={styles.header}>
-        <button className={styles.closeButton} onClick={handleClose}>
-          <Icon icon="maki:cross" />
-        </button>
+        <DetailHeader
+          jobTitle="Project Detail"
+          onBack={handleClose}
+          onShare={() => {}}
+          onSave={() => {}}
+        />
       </div>
 
       {/* Content */}
@@ -79,28 +155,101 @@ const ProjectDetail: React.FC = () => {
         </div>
 
         {/* Upload Section */}
-        <div className={styles.uploadSection}>
+        <div 
+          className={`${styles.uploadSection} ${isDragging ? styles.dragging : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+            multiple
+          />
           <div className={styles.uploadIcons}>
-            <button className={styles.uploadIconButton}>
-              <Icon icon="bxs:image" />
+            <button 
+              className={styles.uploadIconButton}
+              onClick={() => handleFileUpload('image/*')}
+              title="Upload Image"
+            >
+              <Icon icon="majesticons:image" />
             </button>
-            <button className={styles.uploadIconButton}>
-              <Icon icon="bxs:video" />
+            <button 
+              className={styles.uploadIconButton}
+              onClick={() => handleFileUpload('video/*')}
+              title="Upload Video"
+            >
+              <Icon icon="uil:video" />
             </button>
-            <button className={styles.uploadIconButton}>
+            <button 
+              className={styles.uploadIconButton}
+              onClick={() => handleFileUpload('.txt,.doc,.docx')}
+              title="Upload Text Document"
+            >
               <Icon icon="tabler:txt" />
             </button>
-            <button className={styles.uploadIconButton}>
+            <button 
+              className={styles.uploadIconButton}
+              onClick={() => handleFileUpload('*')}
+              title="Upload Link/URL"
+            >
               <Icon icon="mdi:link-variant" />
             </button>
-            <button className={styles.uploadIconButton}>
-              <Icon icon="bxs:file" />
+            <button 
+              className={styles.uploadIconButton}
+              onClick={() => handleFileUpload('.pdf,.doc,.docx,.zip')}
+              title="Upload File"
+            >
+              <Icon icon="ic:baseline-link" />
             </button>
-            <button className={styles.uploadIconButton}>
-              <Icon icon="bxs:music" />
+            <button 
+              className={styles.uploadIconButton}
+              onClick={() => handleFileUpload('audio/*')}
+              title="Upload Audio"
+            >
+              <Icon icon="uil:music" />
             </button>
           </div>
           <p className={styles.uploadText}>Upload file / project here</p>
+          
+          {/* Uploaded Files Preview */}
+          {uploadedFiles.length > 0 && (
+            <div className={styles.uploadedFilesContainer}>
+              {uploadedFiles.map((uploadedFile, index) => (
+                <div key={index} className={styles.filePreview}>
+                  {uploadedFile.type === 'image' && uploadedFile.preview && (
+                    <img 
+                      src={uploadedFile.preview} 
+                      alt={uploadedFile.file.name}
+                      className={styles.previewImage}
+                    />
+                  )}
+                  {uploadedFile.type === 'video' && uploadedFile.preview && (
+                    <video 
+                      src={uploadedFile.preview} 
+                      controls
+                      className={styles.previewVideo}
+                    />
+                  )}
+                  {uploadedFile.type === 'document' && (
+                    <div className={styles.documentPreview}>
+                      <Icon icon="bxs:file" className={styles.documentIcon} />
+                      <span className={styles.fileName}>{uploadedFile.file.name}</span>
+                    </div>
+                  )}
+                  <button 
+                    className={styles.removeButton}
+                    onClick={() => removeFile(index)}
+                    title="Remove file"
+                  >
+                    <Icon icon="maki:cross" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
