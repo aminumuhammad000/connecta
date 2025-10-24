@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard/Dashboard'
 import JobDetail from './pages/JobDetail/JobDetail'
 import Profile from './pages/profiles/Profile'
 import Proposals from './pages/Proposals/Proposals'
+import ProjectDashboard from './pages/ProjectDashboard/ProjectDashboard'
+import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
         <Route path='/job/:jobId' element={<JobDetail />} />
         <Route path='/profile' element={<Profile />} />
         <Route path='/proposals' element={<Proposals />} />
+        <Route path='/project-dashboard' element={<ProjectDashboard />} />
+        <Route path='/project/:projectId' element={<ProjectDetail />} />
       </Routes>
     </Router>
   )
