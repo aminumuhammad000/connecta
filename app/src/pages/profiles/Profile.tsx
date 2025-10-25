@@ -2,6 +2,7 @@ import Header from "../../components/Header";
 import ReviewCard from "./components/ReviewCardProps";
 import styles from "./styles/Profile.module.css";
 import profile from "../../assets/user.png"
+import ProfileDetails from "./components/ProfileDetails";
 
 const Profile = () => {
   return (
@@ -14,6 +15,7 @@ const Profile = () => {
         rating={4}
         imageUrl={profile}
       />
+      <ProfileDetails />
     </div>
   );
 };

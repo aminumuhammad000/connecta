@@ -1,13 +1,19 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 15px;
   background: transparent;
   border-radius: 12px;
   padding: 12px 16px;
-  max-width: 400px;
+  width: 400px;
   font-family: "Inter", sans-serif;
   color: #333;
+}
+.contentContainer{
+  display: flex;
+  flex-direction: column;
+  /* align-items: center; */
+  padding-left: 10px;
 }
 
 .profile {
@@ -18,8 +24,8 @@
 
 .avatarWrapper {
   position: relative;
-  width: 60px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
 }
 
 .avatar {
@@ -27,32 +33,51 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #ff6600;
+  border: 1px solid #ff6600;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .editIcon {
+  width: 20px;
+  height: 20px;
   position: absolute;
   bottom: 0;
-  right: 0;
-  background: #ff6600;
-  color: #fff;
+  right: -10px;
+  background: #fff;
+  color: #ff6600;
   border-radius: 50%;
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  border: 2px solid #fff;
+  border: 2px solid #ff6600;
   cursor: pointer;
+}
+.icon{
+  font-size: 20px;
 }
 
 .name {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   margin: 0;
 }
-
+.location{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.starNumber{
+  color: #555;
+  margin-top: -3px;
+  margin-left: 10px;
+}
+.successRate{
+  font-size: 12px;
+}
 .stars {
   display: flex;
   gap: 2px;
@@ -68,4 +93,9 @@
   font-size: 14px;
   color: #555;
   margin: 0;
+}
+.progress{
+  width: 70%;
+  height: 10px;
+   accent-color: #ff6600;
 }

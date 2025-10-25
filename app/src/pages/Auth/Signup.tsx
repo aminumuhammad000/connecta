@@ -1,36 +1,102 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+// import jwtDecode from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
+import { Icon } from '@iconify/react';
 import styles from '../../styles/pages/auth/signup.module.css';
 import Logo from '../../assets/logo.png';
-import { Icon } from '@iconify/react';
+
+// API base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const role = searchParams.get('role') as 'client' | 'freelancer';
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     helpfulEmails: true,
-    termsAccepted: false
+    termsAccepted: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Handle normal signup
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, userType: role }),
+      });
+
+      const data = await response.json();
+      console.log('Signup Response:', data);
+
+      if (response.ok) {
+        alert('Signup successful!');
+        navigate('/login');
+      } else {
+        alert(data.message || 'Signup failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Google signup
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      const decoded: any = jwtDecode(credentialResponse.credential);
+      const { email, given_name, family_name, picture } = decoded;
+
+      const response = await fetch(`${API_BASE_URL}/users/google-signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          firstName: given_name,
+          lastName: family_name,
+          profileImage: picture,
+          userType: role,
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Google Signup Response:', data);
+
+      if (response.ok) {
+        alert('Google signup successful!');
+        navigate('/dashboard');
+      } else {
+        alert(data.message || 'Google signup failed');
+      }
+    } catch (error) {
+      console.error('Google signup error:', error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    alert('Google sign-in failed. Please try again.');
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted:', { ...formData, role });
   };
 
   const handleRoleSwitch = () => {
@@ -38,11 +104,12 @@ const Signup = () => {
     navigate(`/signup?role=${newRole}`);
   };
 
-  // Dynamic content based on role
-  const title = role === 'client' ? 'Sign up to hire freelancer' : 'Sign up to find job';
-  const footerText = role === 'client' 
-    ? { question: 'Need a job?', link: 'Join as Freelancer' }
-    : { question: 'Want to hire a freelancer?', link: 'Join as client' };
+  const title =
+    role === 'client' ? 'Sign up to hire freelancer' : 'Sign up to find job';
+  const footerText =
+    role === 'client'
+      ? { question: 'Need a job?', link: 'Join as Freelancer' }
+      : { question: 'Want to hire a freelancer?', link: 'Join as client' };
 
   return (
     <div className={styles.signupContainer} data-role={role}>
@@ -52,43 +119,42 @@ const Signup = () => {
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit}>
-        <button type="button" className={styles.googleBtn}>
-          <div className={styles.googleIcon}>
-            <Icon icon="logos:google-icon" className={styles.googleLogo} />
-          </div>
-          Continue with Google
-        </button>
+        {/* Google Signup */}
+        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+          <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+        </GoogleOAuthProvider>
 
         <div className={styles.divider}>
           <span>or</span>
         </div>
 
-       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <div className={styles.nameFields} style={{ display: "inline-flex", gap: "10px" }}>
-    <div className={styles.fieldGroup}>
-      <label className={styles.label}>First name</label>
-      <input
-        type="text"
-        name="firstName"
-        value={formData.firstName}
-        onChange={handleInputChange}
-        placeholder="Enter your first name"
-        className={styles.input}
-      />
-    </div>
-    <div className={styles.fieldGroup}>
-      <label className={styles.label}>Last name</label>
-      <input
-        type="text"
-        name="lastName"
-        value={formData.lastName}
-        onChange={handleInputChange}
-        placeholder="Enter your last name"
-        className={styles.input}
-      />
-    </div>
-  </div>
-</div>
+        {/* Normal Signup */}
+        <div className={styles.nameFields}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>First name</label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              placeholder="Enter your first name"
+              className={styles.input}
+              required
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Last name</label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              placeholder="Enter your last name"
+              className={styles.input}
+              required
+            />
+          </div>
+        </div>
 
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Email</label>
@@ -97,8 +163,9 @@ const Signup = () => {
             name="email"
             value={formData.email}
             onChange={handleInputChange}
-            placeholder="Enter your email address"
+            placeholder="Enter your email"
             className={styles.input}
+            required
           />
         </div>
 
@@ -110,57 +177,25 @@ const Signup = () => {
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              placeholder="Create a new password (8 or more characters)"
+              placeholder="Create a password (8+ characters)"
               className={styles.input}
+              required
             />
             <button
               type="button"
               className={styles.eyeToggle}
               onClick={() => setShowPassword(!showPassword)}
             >
-              <Icon 
-                icon={showPassword ? "mdi:eye-outline" : "mdi:eye-off-outline"} 
-                className={styles.eyeIcon} 
+              <Icon
+                icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'}
+                className={styles.eyeIcon}
               />
             </button>
           </div>
         </div>
 
-        <div className={styles.checkboxGroup}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              name="helpfulEmails"
-              checked={formData.helpfulEmails}
-              onChange={handleInputChange}
-              className={styles.checkbox}
-            />
-            <span className={styles.checkboxText}>
-              Send you helpful emails to find rewarding work and job deals
-            </span>
-          </label>
-        </div>
-
-        <div className={styles.checkboxGroup}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              name="termsAccepted"
-              checked={formData.termsAccepted}
-              onChange={handleInputChange}
-              className={styles.checkbox}
-            />
-            <span className={styles.checkboxText}>
-              Yes, i understand and agree to the{' '}
-              <span className={styles.link}>Connecta Terms and Conditions</span>, including the{' '}
-              <span className={styles.link}>User Agreement</span> and{' '}
-              <span className={styles.link}>Privacy Policy</span>.
-            </span>
-          </label>
-        </div>
-
-        <button type="submit" className={styles.createAccountBtn}>
-          Create Account
+        <button type="submit" className={styles.createAccountBtn} disabled={loading}>
+          {loading ? 'Creating Account...' : 'Create Account'}
         </button>
       </form>
 

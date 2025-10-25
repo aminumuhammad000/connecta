@@ -24,15 +24,19 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ name, text, rating, imageUrl })
         <div className={styles.avatarWrapper}>
           <img src={imageUrl} alt={name} className={styles.avatar} />
           <div className={styles.editIcon}>
-            <Icon icon="mdi:pencil" />
+            <Icon icon="ic:outline-edit" className={styles.icon}/>
           </div>
         </div>
-        <div>
+        <div className={styles.contentContainer}>
           <h3 className={styles.name}>{name}</h3>
-          <div className={styles.stars}>{stars}</div>
+          <p className={styles.location}> <Icon icon="tdesign:location" className={styles.icon}/> kano, Nigeria</p>
+          <div className={styles.stars}>{stars} <span className={styles.starNumber}>4.9</span></div>
+          <p className={styles.successRate}>Job Success Rate: 98%</p>
         </div>
       </div>
-      <p className={styles.text}>{text}</p>
+      
+      <p className={styles.progressTitle}>Complete your profile {">"}</p>
+      <progress min="0" max="100" value="40" className={styles.progress}></progress>
     </div>
   );
 };

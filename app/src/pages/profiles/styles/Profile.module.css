@@ -1,5 +1,6 @@
 .profile{
     width: 100%;
+    overflow-x: hidden;
 }
 .title{
     font-size: 20px;
