@@ -1,0 +1,385 @@
+/* Header Component */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: color 0.2s;
+}
+
+.menuButton:hover {
+  color: var(--color-primary);
+}
+
+.menuIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.logo {
+  height: 32px;
+  width: auto;
+}
+
+.spacer {
+  width: 40px;
+}
+
+/* ProfileHeader Component */
+.profileHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 20px;
+  background-color: white;
+  margin: 0 20px;
+  border-radius: 12px;
+}
+
+.profileInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.avatarContainer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primary);
+}
+
+.editButton {
+  position: absolute;
+  bottom: 0;
+  right: -2px;
+  background-color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editButton:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.editButton:hover .editIcon {
+  color: white;
+}
+
+.editIcon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+}
+
+.userDetails {
+  flex: 1;
+  margin-left: 16px;
+}
+
+.userName {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.locationIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.ratingContainer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.starRating {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  width: 14px;
+  height: 14px;
+  color: #fbbf24;
+}
+
+.starFilled {
+  fill: #fbbf24;
+}
+
+.ratingValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-left: 2px;
+}
+
+.successRate {
+  font-size: 11px;
+  color: #6b7280;
+  margin: 6px 0 0 0;
+}
+
+.profileProgress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.completeButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+}
+
+.completeButton:hover {
+  background-color: #e55527;
+}
+
+.chevronIcon {
+  width: 14px;
+  height: 14px;
+}
+
+.progressBarContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+/* SectionHeader Component */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sectionTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000;
+}
+
+.sectionTitleMuted {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconWrapper {
+  width: 18px;
+  height: 18px;
+  color: #FD6730;
+  transition: color 0.2s;
+}
+
+.actionButton:hover .iconWrapper {
+  color: #e55527;
+}
+
+/* PortfolioGrid Component */
+.portfolioGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.portfolioCard {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 0.5px solid rgba(253, 103, 48, 0.3);
+  aspect-ratio: 169 / 164;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.portfolioCard:hover {
+  transform: translateY(-2px);
+}
+
+.portfolioOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.portfolioTitle {
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: pre-line;
+  margin: 0 0 6px 0;
+}
+
+.portfolioFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.portfolioAuthor {
+  color: white;
+  font-size: 7px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.portfolioLikes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: white;
+}
+
+.likeIcon {
+  width: 10px;
+  height: 10px;
+  color: white;
+  fill: white;
+}
+
+.likeCount {
+  font-size: 10px;
+  font-weight: 300;
+}
+
+/* ExperienceEducation Component */
+.experienceContainer {
+  margin-top: 16px;
+}
+
+.textBlock {
+  margin-bottom: 28px;
+}
+
+.blockText {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.7;
+  white-space: pre-line;
+  margin: 0;
+}
+
+.blockText strong {
+  color: #000;
+  font-weight: 600;
+}
+
+.suggestionText {
+  font-size: 11px;
+  color: #FD6730;
+  font-style: italic;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header {
+    padding: 12px;
+  }
+
+  .profileHeader {
+    padding: 16px 12px;
+  }
+
+  .portfolioGrid {
+    gap: 12px;
+  }
+
+  .userName {
+    font-size: 16px;
+  }
+}
