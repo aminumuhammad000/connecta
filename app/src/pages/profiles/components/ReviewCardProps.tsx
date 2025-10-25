@@ -9,7 +9,7 @@ interface ReviewCardProps {
   imageUrl: string;
 }
 
-const ReviewCard: React.FC<ReviewCardProps> = ({ name, text, rating, imageUrl }) => {
+const ReviewCard: React.FC<ReviewCardProps> = ({ name, rating, imageUrl }) => {
   const stars = Array.from({ length: 5 }, (_, i) =>
     i + 1 <= rating ? (
       <Icon key={i} icon="mdi:star" className={styles.star} />
@@ -36,7 +36,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ name, text, rating, imageUrl })
       </div>
       
       <p className={styles.progressTitle}>Complete your profile {">"}</p>
-      <progress min="0" max="100" value="40" className={styles.progress}></progress>
+      <progress max={100} value={40} className={styles.progress}></progress>
     </div>
   );
 };
