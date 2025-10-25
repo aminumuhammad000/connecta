@@ -8,7 +8,6 @@ const ProjectDetail: React.FC = () => {
   const navigate = useNavigate();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [currentFileType, setCurrentFileType] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<Array<{
     file: File;
     preview: string | null;
@@ -20,7 +19,6 @@ const ProjectDetail: React.FC = () => {
   };
 
   const handleFileUpload = (accept: string) => {
-    setCurrentFileType(accept);
     if (fileInputRef.current) {
       fileInputRef.current.accept = accept;
       fileInputRef.current.click();
