@@ -10,16 +10,20 @@ const Auth = () => {
 
   const handleCreateAccount = () => {
     if (selectedRole) {
+      localStorage.setItem('userType', selectedRole);
       navigate(`/signup?role=${selectedRole}`);
     }
   };
 
+  const userType = localStorage.getItem('userType');
+  console.log(userType);
+
   const buttonText =
-    selectedRole === "client"
-      ? "Create Client Account"
-      : selectedRole === "freelancer"
-      ? "Create Freelancer Account"
-      : "Next";
+    selectedRole === 'client'
+      ? 'Create Client Account'
+      : selectedRole === 'freelancer'
+      ? 'Create Freelancer Account'
+      : 'Next';
 
   return (
     <div className="auth-container">
@@ -33,30 +37,40 @@ const Auth = () => {
 
       {/* Role Options */}
       <div className="role-options">
+        {/* Client Card */}
         <div
           className={`role-card ${selectedRole === 'client' ? 'selected' : ''}`}
           onClick={() => setSelectedRole('client')}
         >
-        <div className="role-header">
-          <div className="role-icon"><Icon  icon="healthicons:city-worker"/></div>
-          <input className='radio' type="radio" checked={selectedRole === 'client'} readOnly /><br />
+          <div className="role-header">
+            <div className="role-icon"><Icon icon="healthicons:city-worker" /></div>
+            <input
+              className="client"
+              type="radio"
+              checked={selectedRole === 'client'}
+              readOnly
+            />
           </div>
-          <p className='card-text'>I’m a client, hiring for a project ewewertd</p>
+          <p className="card-text">I’m a client, hiring for a project</p>
         </div>
-        
 
+        {/* Freelancer Card */}
         <div
           className={`role-card ${selectedRole === 'freelancer' ? 'selected' : ''}`}
           onClick={() => setSelectedRole('freelancer')}
         >
-             <div className="role-header">
-          <div className="role-icon">
-            <Icon icon="streamline-cyber-color:business-laptop"/>
+          <div className="role-header">
+            <div className="role-icon">
+              <Icon icon="streamline-cyber-color:business-laptop" />
+            </div>
+            <input
+              className="radio"
+              type="radio"
+              checked={selectedRole === 'freelancer'}
+              readOnly
+            />
           </div>
-          
-          <input className='radio' type="radio" checked={selectedRole === 'freelancer'} readOnly />
-</div>
-          <p className='card-text'>I’m a freelancer, looking for work</p>
+          <p className="card-text">I’m a freelancer, looking for work</p>
         </div>
       </div>
 
