@@ -50,21 +50,35 @@ opacity: 1;
   width: 100%;
   max-width: 320px;
 }
-
 .role-card {
+  position: relative;
   border: 1px solid #000000;
   border-radius: 8px;
   padding: 15px;
-  /* padding-top: 0; */
   height: 100px;
-  /* text-align: left; */
-  /* display: flex;
-  align-items: center; */
-  /* justify-content: space-between; */
   cursor: pointer;
   background-color: #f9f9f9;
   transition: border-color 0.2s, background-color 0.2s;
 }
+.client{
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  appearance: none; /* remove default browser style */
+  width: 22px;
+  height: 22px;
+  border: 2px solid #aaa;
+  border-radius: 50%;
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+}
+.client:checked {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+}
+
 
 .role-card.selected {
   border-color:var(--color-primary);
