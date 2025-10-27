@@ -1,9 +1,98 @@
-.profile{
-    width: 100%;
-    overflow-x: hidden;
+.profilePage {
+  min-height: 100vh;
+  background: #F5F7FA;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  overflow-x: hidden;
 }
+
+.container {
+  max-width: 448px;
+  margin: 0 auto;
+  background-color: #F5F7FA;
+}
+
+.main {
+  padding-bottom: 40px;
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.8);
+  padding: 16px 20px 20px 20px;
+  margin: 0;
+}
+
+.sections {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.section {
+  padding: 0 20px;
+  margin-bottom: 24px;
+}
+
+.sectionContent {
+  margin-top: 12px;
+}
+
+.skillsText {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.6;
+  white-space: pre-line;
+  margin: 0;
+}
+
+.rateText {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.summaryText {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.moreLink {
+  color: #FD6730;
+  font-weight: 500;
+  margin-left: 4px;
+  text-decoration: none;
+}
+
+.moreLink:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  margin-top: 20px;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .title{
     font-size: 20px;
     font-weight: 500;
     margin-left: 21px;
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 18px;
+  }
+  
+  .container {
+    max-width: 100%;
+  }
 }

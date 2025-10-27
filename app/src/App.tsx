@@ -10,6 +10,8 @@ import Profile from './pages/profiles/Profile'
 import Proposals from './pages/Proposals/Proposals'
 import ProjectDashboard from './pages/ProjectDashboard/ProjectDashboard'
 import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
+import { EditProfile } from './pages/EditProfile/EditProfile'
+import { AddPortfolio } from './pages/AddPortfolio/AddPortfolio'
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path='/dashboard' element={<Dashboard />} />
         <Route path='/job/:jobId' element={<JobDetail />} />
         <Route path='/profile' element={<Profile />} />
+        <Route path='/edit-profile' element={<EditProfile />} />
+        <Route path='/add-portfolio' element={<AddPortfolio />} />
         <Route path='/proposals' element={<Proposals />} />
         <Route path='/project-dashboard' element={<ProjectDashboard />} />
         <Route path='/project/:projectId' element={<ProjectDetail />} />

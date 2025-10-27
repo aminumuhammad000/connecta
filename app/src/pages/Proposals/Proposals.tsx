@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import Header from '../../components/Header';
 import styles from './styles/Proposals.module.css';
-import Logo from '../../assets/logo.png';
 
 interface Proposal {
   id: number;

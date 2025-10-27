@@ -1,0 +1,267 @@
+.addPortfolioPage {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: 'Roboto', sans-serif;
+  max-width: 414px;
+  margin: 0 auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background-color: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.spacer {
+  width: 24px;
+}
+
+.closeButton {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.closeIcon {
+  width: 24px;
+  height: 24px;
+  color: #374151;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 0 16px 100px 16px;
+  background-color: white;
+}
+
+/* Title Section */
+.titleSection {
+  padding: 24px 0 32px 0;
+}
+
+.pageTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2937;
+  margin: 0;
+}
+
+.optional {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.input {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1f2937;
+  background-color: white;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #fd6730;
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.textarea {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1f2937;
+  background-color: white;
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #fd6730;
+}
+
+.textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Media Section */
+.mediaSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 16px;
+  border: 2px dashed #fd6730;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.mediaButton {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #fd6730;
+  border-radius: 50%;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mediaButton:hover {
+  background-color: #fd6730;
+}
+
+.mediaButton:hover .mediaIcon {
+  color: white;
+}
+
+.mediaIcon {
+  width: 20px;
+  height: 20px;
+  color: #fd6730;
+  transition: color 0.2s;
+}
+
+.mediaText {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  text-align: center;
+}
+
+/* Action Buttons */
+.actionButtons {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 414px;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+}
+
+.draftButton {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #374151;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.draftButton:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.previewButton {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background-color: #fd6730;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.previewButton:hover {
+  background-color: #ea5a28;
+}
+
+/* Responsive adjustments */
+@media (max-width: 414px) {
+  .content {
+    padding: 0 12px 100px 12px;
+  }
+  
+  .titleSection {
+    padding: 20px 0 28px 0;
+  }
+  
+  .pageTitle {
+    font-size: 18px;
+  }
+  
+  .mediaGrid {
+    gap: 12px;
+  }
+  
+  .mediaButton {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .mediaIcon {
+    width: 18px;
+    height: 18px;
+  }
+}
