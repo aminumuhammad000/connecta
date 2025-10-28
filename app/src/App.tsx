@@ -16,6 +16,7 @@ import { EditProfile } from './pages/EditProfile/EditProfile'
 import { AddPortfolio } from './pages/AddPortfolio/AddPortfolio'
 import { Messages } from './pages/Messages/Messages'
 import Chats from './pages/Chats/Chats'
+import CompleteProfile from './pages/CompleteProfile/CompleteProfile'
 import ConnectaAI from './pages/ConnectaAI/ConnectaAI'
 
 function App() {
@@ -47,6 +48,11 @@ function App() {
           <Route path='/edit-profile' element={
             <ProtectedRoute>
               <EditProfile />
+            </ProtectedRoute>
+          } />
+          <Route path='/complete-profile' element={
+            <ProtectedRoute>
+              <CompleteProfile />
             </ProtectedRoute>
           } />
           <Route path='/add-portfolio' element={

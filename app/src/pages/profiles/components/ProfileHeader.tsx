@@ -27,7 +27,7 @@ export const ProfileHeader = () => {
   };
 
   const handleCompleteProfile = () => {
-    navigate('/edit-profile');
+    navigate('/complete-profile');
   };
 
   return (
