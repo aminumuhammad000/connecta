@@ -1,0 +1,20 @@
+{
+  "text": "Aminu Muhammad is a developer at Swallern in Nigeria.",
+  "entities": [
+    {
+      "entity": "PER",
+      "word": "Aminu Muhammad",
+      "score": 0.9478749
+    },
+    {
+      "entity": "ORG",
+      "word": "Swallern",
+      "score": 0.9915867
+    },
+    {
+      "entity": "LOC",
+      "word": "Nigeria",
+      "score": 0.99976474
+    }
+  ]
+}
