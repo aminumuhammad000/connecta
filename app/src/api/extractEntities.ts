@@ -1,11 +1,9 @@
-import axios, { AxiosResponse } from "axios";
-import dotenv from "dotenv";
-import fs from "fs";
+import axios, { type AxiosResponse } from "axios";
 
-dotenv.config();
-
-// Environment variables
-const HF_API_KEY: string = process.env.HUGGINGFACE_API_KEY || "";
+// In a Vite (frontend) app you cannot use `dotenv` or `fs` (Node-only).
+// Read the Hugging Face API key from Vite env (must be prefixed with VITE_)
+// e.g. VITE_HUGGINGFACE_API_KEY in your .env
+const HF_API_KEY: string = import.meta.env.VITE_HUGGINGFACE_API_KEY || "";
 const MODEL: string = "dslim/bert-base-NER";
 
 // Define types for clarity
@@ -29,7 +27,12 @@ interface ExtractedOutput {
  * Extract named entities from a text using Hugging Face model.
  * @param text The input text to analyze
  */
-async function extractEntities(text: string): Promise<void> {
+export async function extractEntities(text: string): Promise<ExtractedOutput | null> {
+  if (!HF_API_KEY) {
+    console.error("Hugging Face API key not set. Set VITE_HUGGINGFACE_API_KEY in your .env");
+    return null;
+  }
+
   try {
     const response: AxiosResponse<Entity[][]> = await axios.post(
       `https://api-inference.huggingface.co/models/${MODEL}`,
@@ -42,9 +45,8 @@ async function extractEntities(text: string): Promise<void> {
       }
     );
 
-    const rawData = response.data.flat(); // Flatten nested arrays from HuggingFace output
+    const rawData = Array.isArray(response.data) ? (response.data as any).flat() : [];
 
-    // Map and structure entities into clean JSON
     const entities = rawData.map((item: any) => ({
       entity: item.entity_group || item.entity || "UNKNOWN",
       word: item.word,
@@ -53,15 +55,14 @@ async function extractEntities(text: string): Promise<void> {
 
     const output: ExtractedOutput = { text, entities };
 
-    // Save results to a JSON file
-    // fs.writeFileSync("entities.json", JSON.stringify(output, null, 2));
-
-    console.log("✅ Entities extracted and saved to entities.json");
+    // Return the parsed output instead of writing to disk (not available in browser)
+    return output;
   } catch (error: any) {
     console.error("❌ Error extracting entities:", error.response?.data || error.message);
+    return null;
   }
 }
 
-// Example usage
-const text = "Aminu Muhammad is a developer at Swallern in Nigeria.";
-extractEntities(text);
+// Example usage (in browser code import and call the function):
+// const result = await extractEntities("Aminu Muhammad is a developer at Swallern in Nigeria.");
+// console.log(result);
