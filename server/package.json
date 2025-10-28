@@ -6,6 +6,8 @@
   "scripts": {
     "start": "ts-node src/app.ts",
     "dev": "nodemon src/app.ts",
+    "seed:jobs": "ts-node scripts/seedJobs.ts",
+    "seed:proposals": "ts-node scripts/seedProposals.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

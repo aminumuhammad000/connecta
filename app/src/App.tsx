@@ -15,6 +15,7 @@ import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
 import { EditProfile } from './pages/EditProfile/EditProfile'
 import { AddPortfolio } from './pages/AddPortfolio/AddPortfolio'
 import { Messages } from './pages/Messages/Messages'
+import ConnectaAI from './pages/ConnectaAI/ConnectaAI'
 
 function App() {
   return (
@@ -75,6 +76,11 @@ function App() {
           <Route path='/project/:projectId' element={
             <ProtectedRoute>
               <ProjectDetail />
+            </ProtectedRoute>
+          } />
+          <Route path='/connecta-ai' element={
+            <ProtectedRoute>
+              <ConnectaAI />
             </ProtectedRoute>
           } />
         </Routes>

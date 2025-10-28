@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from '../styles/JobSection.module.css';
 
-const JobSection: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('Best Matches');
-  
+interface JobSectionProps {
+  activeFilter: string;
+  onFilterChange: (filter: string) => void;
+}
+
+const JobSection: React.FC<JobSectionProps> = ({ activeFilter, onFilterChange }) => {
   const tabs = ['Best Matches', 'Most Recent', 'Saved Jobs'];
 
   return (
@@ -14,8 +17,8 @@ const JobSection: React.FC = () => {
         {tabs.map((tab) => (
           <button
             key={tab}
-            className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab(tab)}
+            className={`${styles.tab} ${activeFilter === tab ? styles.activeTab : ''}`}
+            onClick={() => onFilterChange(tab)}
           >
             {tab}
           </button>
@@ -23,7 +26,9 @@ const JobSection: React.FC = () => {
       </div>
       
       <p className={styles.description}>
-        Handpicked gigs just for you matched by AI based on your skills and experience
+        {activeFilter === 'Best Matches' && 'Handpicked gigs just for you matched by AI based on your skills and experience'}
+        {activeFilter === 'Most Recent' && 'Latest job postings sorted by date'}
+        {activeFilter === 'Saved Jobs' && 'Jobs you have saved for later'}
       </p>
     </div>
   );

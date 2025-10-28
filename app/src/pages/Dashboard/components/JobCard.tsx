@@ -6,6 +6,7 @@ import verifiedIcon from '../../../assets/verified.png';
 
 interface JobCardProps {
   job: {
+    id?: string;
     postedTime: string;
     title: string;
     budget: string;
@@ -18,19 +19,29 @@ interface JobCardProps {
     proposals: string;
     freelancersNeeded: number;
   };
+  isSaved?: boolean;
+  onSaveToggle?: () => void;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, isSaved = false, onSaveToggle }) => {
   const navigate = useNavigate();
-  const [liked, setLiked] = React.useState(false);
+  const [liked, setLiked] = React.useState(isSaved);
   const [disliked, setDisliked] = React.useState(false);
 
+  // Update liked state when isSaved prop changes
+  React.useEffect(() => {
+    setLiked(isSaved);
+  }, [isSaved]);
+
   const handleCardClick = () => {
-    navigate(`/job/${(job as any).id || '1'}`);
+    navigate(`/job/${job.id || '1'}`);
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // prevent card navigation
+    if (onSaveToggle) {
+      onSaveToggle();
+    }
     setLiked((s) => !s);
     if (disliked) setDisliked(false);
   };
