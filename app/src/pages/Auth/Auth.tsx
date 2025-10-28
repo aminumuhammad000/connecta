@@ -10,8 +10,9 @@ const Auth = () => {
 
   const handleCreateAccount = () => {
     if (selectedRole) {
-      localStorage.setItem('userType', selectedRole);
-      navigate(`/signup?role=${selectedRole}`);
+      try { localStorage.setItem('userRole', selectedRole); } catch (e) {}
+      const base = import.meta.env.BASE_URL || '/';
+      navigate(`${base}signup?role=${selectedRole}`);
     }
   };
 
@@ -40,7 +41,10 @@ const Auth = () => {
         {/* Client Card */}
         <div
           className={`role-card ${selectedRole === 'client' ? 'selected' : ''}`}
-          onClick={() => setSelectedRole('client')}
+          onClick={() => {
+            setSelectedRole('client');
+            try { localStorage.setItem('userRole', 'client'); } catch (e) {}
+          }}
         >
           <div className="role-header">
             <div className="role-icon"><Icon icon="healthicons:city-worker" /></div>
@@ -57,7 +61,10 @@ const Auth = () => {
         {/* Freelancer Card */}
         <div
           className={`role-card ${selectedRole === 'freelancer' ? 'selected' : ''}`}
-          onClick={() => setSelectedRole('freelancer')}
+          onClick={() => {
+            setSelectedRole('freelancer');
+            try { localStorage.setItem('userRole', 'freelancer'); } catch (e) {}
+          }}
         >
           <div className="role-header">
             <div className="role-icon">
@@ -85,7 +92,7 @@ const Auth = () => {
 
       {/* Footer */}
       <p className="auth-footer">
-        Already have an account? <a href="/login">Log In</a>
+        Already have an account? <a href={`${import.meta.env.BASE_URL || '/'}login`}>Log In</a>
       </p>
     </div>
   );
