@@ -12,6 +12,7 @@ import ProjectDashboard from './pages/ProjectDashboard/ProjectDashboard'
 import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
 import { EditProfile } from './pages/EditProfile/EditProfile'
 import { AddPortfolio } from './pages/AddPortfolio/AddPortfolio'
+import { Messages } from './pages/Messages/Messages'
 
 function App() {
   return (
@@ -26,6 +27,8 @@ function App() {
         <Route path='/profile' element={<Profile />} />
         <Route path='/edit-profile' element={<EditProfile />} />
         <Route path='/add-portfolio' element={<AddPortfolio />} />
+        <Route path='/message' element={<Messages />} />
+        <Route path='/messages' element={<Messages />} />
         <Route path='/proposals' element={<Proposals />} />
         <Route path='/project-dashboard' element={<ProjectDashboard />} />
         <Route path='/project/:projectId' element={<ProjectDetail />} />

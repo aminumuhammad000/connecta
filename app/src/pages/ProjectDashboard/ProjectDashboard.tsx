@@ -74,6 +74,11 @@ const ProjectDashboard: React.FC = () => {
     navigate(`/project/${projectId}`);
   };
 
+  const handleChatClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click navigation
+    navigate('/messages');
+  };
+
   return (
     <div className={styles.projectDashboardPage}>
       <Header />
@@ -116,7 +121,10 @@ const ProjectDashboard: React.FC = () => {
 
               <div className={`${styles.cardFooter} ${project.status === 'completed' ? styles.completedFooter : ''}`}>
                 {project.status === 'ongoing' && (
-                  <button className={styles.chatButton}>
+                  <button 
+                    className={styles.chatButton}
+                    onClick={handleChatClick}
+                  >
                     <span>Chat</span>
                     <Icon icon="fluent:chat-28-regular" />
                   </button>
