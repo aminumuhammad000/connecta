@@ -1,5 +1,7 @@
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 import LandingPAge from './pages/landing_page/LandingPage'
 import Auth from './pages/Auth/Auth'
 import Login from './pages/Auth/Login'
@@ -16,24 +18,68 @@ import { Messages } from './pages/Messages/Messages'
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPAge />} />
-        <Route path='/auth' element={<Auth />} />
-        <Route path='/login' element={<Login />} />
-        <Route path='/signup' element={<Signup />} />
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path='/job/:jobId' element={<JobDetail />} />
-        <Route path='/profile' element={<Profile />} />
-        <Route path='/edit-profile' element={<EditProfile />} />
-        <Route path='/add-portfolio' element={<AddPortfolio />} />
-        <Route path='/message' element={<Messages />} />
-        <Route path='/messages' element={<Messages />} />
-        <Route path='/proposals' element={<Proposals />} />
-        <Route path='/project-dashboard' element={<ProjectDashboard />} />
-        <Route path='/project/:projectId' element={<ProjectDetail />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPAge />} />
+          <Route path='/auth' element={<Auth />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/signup' element={<Signup />} />
+          
+          {/* Protected Routes */}
+          <Route path='/dashboard' element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path='/job/:jobId' element={
+            <ProtectedRoute>
+              <JobDetail />
+            </ProtectedRoute>
+          } />
+          <Route path='/profile' element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path='/edit-profile' element={
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          } />
+          <Route path='/add-portfolio' element={
+            <ProtectedRoute>
+              <AddPortfolio />
+            </ProtectedRoute>
+          } />
+          <Route path='/message' element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          } />
+          <Route path='/messages' element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          } />
+          <Route path='/proposals' element={
+            <ProtectedRoute>
+              <Proposals />
+            </ProtectedRoute>
+          } />
+          <Route path='/project-dashboard' element={
+            <ProtectedRoute>
+              <ProjectDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path='/project/:projectId' element={
+            <ProtectedRoute>
+              <ProjectDetail />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AuthProvider>
   )
 }
 

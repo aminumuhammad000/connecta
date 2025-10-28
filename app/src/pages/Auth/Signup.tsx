@@ -4,6 +4,8 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 // import jwtDecode from 'jwt-decode';
 import { jwtDecode } from "jwt-decode";
 import { Icon } from '@iconify/react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotification } from '../../contexts/NotificationContext';
 import styles from '../../styles/pages/auth/signup.module.css';
 import Logo from '../../assets/logo.png';
 
@@ -14,6 +16,8 @@ const Signup = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const role = searchParams.get('role') as 'client' | 'freelancer';
+  const { login } = useAuth();
+  const { showLoader, hideLoader, showSuccess, showError } = useNotification();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -30,7 +34,7 @@ const Signup = () => {
   // Handle normal signup
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    showLoader();
     try {
       const response = await fetch(`${API_BASE_URL}/users/signup`, {
         method: 'POST',
@@ -41,22 +45,28 @@ const Signup = () => {
       const data = await response.json();
       console.log('Signup Response:', data);
 
-      if (response.ok) {
-        alert('Signup successful!');
-        navigate('/login');
+      if (response.ok && data.token) {
+        // Store token and user data, then redirect to dashboard
+        login(data.token, data.user);
+        showSuccess('Signup successful! Redirecting to dashboard...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       } else {
-        alert(data.message || 'Signup failed');
+        showError(data.message || 'Signup failed');
       }
     } catch (err) {
       console.error(err);
-      alert('Something went wrong');
+      showError('Something went wrong. Please try again.');
     } finally {
+      hideLoader();
       setLoading(false);
     }
   };
 
   // Handle Google signup
   const handleGoogleSuccess = async (credentialResponse: any) => {
+    showLoader();
     try {
       const decoded: any = jwtDecode(credentialResponse.credential);
       const { email, given_name, family_name, picture } = decoded;
@@ -76,19 +86,26 @@ const Signup = () => {
       const data = await response.json();
       console.log('Google Signup Response:', data);
 
-      if (response.ok) {
-        alert('Google signup successful!');
-        navigate('/dashboard');
+      if (response.ok && data.token) {
+        // Store token and user data, then redirect to dashboard
+        login(data.token, data.user);
+        showSuccess('Google signup successful! Redirecting to dashboard...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       } else {
-        alert(data.message || 'Google signup failed');
+        showError(data.message || 'Google signup failed');
       }
     } catch (error) {
       console.error('Google signup error:', error);
+      showError('Google sign-in failed. Please try again.');
+    } finally {
+      hideLoader();
     }
   };
 
   const handleGoogleError = () => {
-    alert('Google sign-in failed. Please try again.');
+    showError('Google sign-in failed. Please try again.');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

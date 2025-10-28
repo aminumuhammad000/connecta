@@ -30,6 +30,11 @@
   font-weight: 1000;
   color: #000000;
   cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.hamburgerIcon:hover {
+  transform: scale(1.1);
 }
 
 .logo {
@@ -42,6 +47,127 @@
 
 .logoicon{
   height: 30px;
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Menu Drawer */
+.menuDrawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100%;
+  background-color: #ffffff;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  animation: slideIn 0.3s ease;
+  overflow-y: auto;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Menu Header */
+.menuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid #e9ecef;
+  background: linear-gradient(135deg, #FD6730 0%, #ff8f6b 100%);
+}
+
+.menuTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.closeIcon {
+  width: 28px;
+  height: 28px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.closeIcon:hover {
+  transform: rotate(90deg);
+}
+
+/* Menu Items */
+.menuItems {
+  padding: 20px 0;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.menuItem:hover {
+  background-color: #f8f9fa;
+  border-left-color: #FD6730;
+}
+
+.menuItemIcon {
+  width: 24px;
+  height: 24px;
+  color: #495057;
+  margin-right: 16px;
+  transition: color 0.3s ease;
+}
+
+.menuItem:hover .menuItemIcon {
+  color: #FD6730;
+}
+
+.menuItemText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #212529;
+  transition: color 0.3s ease;
+}
+
+.menuItem:hover .menuItemText {
+  color: #FD6730;
+}
+
+.menuDivider {
+  height: 1px;
+  background-color: #e9ecef;
+  margin: 12px 20px;
 }
 
 /* Mobile optimizations */
@@ -61,5 +187,9 @@
   
   .logoC {
     font-size: 24px;
+  }
+
+  .menuDrawer {
+    width: 260px;
   }
 }
