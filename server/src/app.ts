@@ -6,7 +6,7 @@ import connectDB from "./config/db.config";
 
 // routes 
 import userRoutes from "./routes/user.routes";
-
+import profileRoutes from "./routes/Profile.routes";
 dotenv.config();
 
 const app = express();
@@ -25,6 +25,7 @@ connectDB();
 
 // Routes
 app.use("/api/users", userRoutes);
+app.use("/api/profiles", profileRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
