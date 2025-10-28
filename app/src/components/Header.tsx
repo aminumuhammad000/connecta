@@ -34,6 +34,11 @@ const Header: React.FC = () => {
     setIsMenuOpen(false);
   };
 
+  const handleChats = () => {
+    navigate('/chats');
+    setIsMenuOpen(false);
+  };
+
   return (
     <div className={styles.header}>
       {/* Navigation Bar */}
@@ -71,6 +76,11 @@ const Header: React.FC = () => {
                 <span className={styles.menuItemText}>Dashboard</span>
               </div>
 
+              <div className={styles.menuItem} onClick={handleChats}>
+                <Icon icon="mdi:message-text" className={styles.menuItemIcon} />
+                <span className={styles.menuItemText}>Chats</span>
+              </div>
+
               <div className={styles.menuItem} onClick={handleProfile}>
                 <Icon icon="mdi:account-circle" className={styles.menuItemIcon} />
                 <span className={styles.menuItemText}>Profile</span>
@@ -93,6 +103,6 @@ const Header: React.FC = () => {
       )}
     </div>
   );
-};
+};  
 
 export default Header;

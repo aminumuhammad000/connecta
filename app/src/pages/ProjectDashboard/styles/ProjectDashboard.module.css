@@ -4,6 +4,34 @@
   padding-bottom: 20px;
 }
 
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyState p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
 .content {
   padding: 0 20px;
 }
@@ -68,6 +96,16 @@
 .projectCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.completedCard {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.completedCard:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .cardHeader {

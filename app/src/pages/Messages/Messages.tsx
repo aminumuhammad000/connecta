@@ -1,77 +1,107 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import { io, Socket } from 'socket.io-client';
 import styles from './Messages.module.css';
-import clientImage from '../../assets/client.png';
-import sampleImage from '../../assets/sample.png';
+import { useNotification } from '../../contexts/NotificationContext';
 
-interface Message {
-  sender: 'me' | 'other';
-  name?: string;
-  avatar?: string;
-  text?: string;
-  images?: string[];
-  timestamp: string;
-  read?: boolean;
+interface MessageData {
+  _id: string;
+  conversationId: string;
+  senderId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  receiverId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  text: string;
+  attachments?: {
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+  }[];
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const initialMessages: Message[] = [
-  {
-    sender: 'me',
-    text: 'Hello, how are you doing?',
-    timestamp: '08:15 AM',
-  },
-  {
-    sender: 'other',
-    name: 'Client',
-    avatar: clientImage,
-    text: "I'm doing well, thank you! How can I help you today?",
-    timestamp: '08:16 AM',
-  },
-  {
-    sender: 'me',
-    text: 'I have a question about the return policy for a product I purchased.',
-    timestamp: 'Just Now',
-  },
-  {
-    sender: 'other',
-    avatar: clientImage,
-    text: "This is your delivery driver from Speedy Chow. I'm just around the corner from your place. 😊",
-    timestamp: '10:10',
-  },
-  {
-    sender: 'other',
-    avatar: clientImage,
-    text: "Hey there! \nI've arrived at your delivery address.",
-    images: [
-      sampleImage,
-      sampleImage
-    ],
-    timestamp: '10:14',
-  },
-  {
-    sender: 'me',
-    text: 'Wow, that was quick!',
-    timestamp: '10:15',
-    read: true,
-  },
-  {
-    sender: 'me',
-    text: "I'll be right out. Thanks for coming early!",
-    timestamp: '10:15',
-    read: true,
-  },
-];
+interface ConversationData {
+  _id: string;
+  participants: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  }[];
+  lastMessage?: string;
+  lastMessageAt: string;
+}
 
 export const Messages: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { showLoader, hideLoader, showError } = useNotification();
+  
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
   
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<MessageData[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [conversation, setConversation] = useState<ConversationData | null>(null);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  
+  // Get user IDs from localStorage and navigation state
+  const currentUserId = localStorage.getItem('userId') || '6900eacbda56fcad22cea38b'; // Freelancer ID
+  const { clientId, clientName, projectId, projectTitle } = location.state as { 
+    clientId?: string; 
+    clientName?: string; 
+    projectId?: string;
+    projectTitle?: string;
+  } || {};
+  const otherUserId = clientId || '6900eb778d6ad0cd3e8921a7'; // Default to seeded client
+
+  useEffect(() => {
+    // Initialize Socket.io connection
+    socketRef.current = io('http://localhost:5000');
+
+    // Join as current user
+    socketRef.current.emit('user:join', currentUserId);
+
+    // Listen for incoming messages
+    socketRef.current.on('message:receive', (message: MessageData) => {
+      setMessages((prev) => [...prev, message]);
+    });
+
+    // Listen for typing indicators
+    socketRef.current.on('typing:show', () => {
+      setOtherUserTyping(true);
+    });
+
+    socketRef.current.on('typing:hide', () => {
+      setOtherUserTyping(false);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    // Fetch messages when component mounts
+    fetchMessages();
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -80,59 +110,223 @@ export const Messages: React.FC = () => {
     }
   }, [messages]);
 
-  const handleBack = () => {
-    navigate('/dashboard');
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      showLoader();
+
+      // First, get or create conversation with project context
+      const convResponse = await fetch('http://localhost:5000/api/messages/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId1: currentUserId,
+          userId2: otherUserId,
+          projectId: projectId || undefined, // Include projectId if available
+        }),
+      });
+
+      const convData = await convResponse.json();
+
+      if (convData.success && convData.data) {
+        setConversation(convData.data);
+
+        // Then fetch messages for this specific conversation
+        const response = await fetch(
+          `http://localhost:5000/api/messages/conversations/${convData.data._id}/messages`
+        );
+        const data = await response.json();
+
+        if (data.success) {
+          setMessages(data.data || []);
+        } else {
+          showError(data.message || 'Failed to load messages');
+        }
+      } else {
+        showError('Failed to initialize conversation');
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      showError('Failed to load messages. Please try again.');
+    } finally {
+      hideLoader();
+      setLoading(false);
+    }
   };
 
-  const getCurrentTime = () => {
+  const handleBack = () => {
+    navigate('/project-dashboard');
+  };
+
+  const formatTime = (dateString: string): string => {
+    const date = new Date(dateString);
     const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
+    
+    // Check if message is from today
+    const isToday = date.toDateString() === now.toDateString();
+    
+    // Check if message is from yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     const displayHours = hours % 12 || 12;
     const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
-    return `${displayHours}:${displayMinutes} ${ampm}`;
+    const timeStr = `${displayHours}:${displayMinutes} ${ampm}`;
+    
+    if (isToday) {
+      return timeStr;
+    } else if (isYesterday) {
+      return `Yesterday ${timeStr}`;
+    } else {
+      // Show date for older messages
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const day = date.getDate();
+      return `${month} ${day}, ${timeStr}`;
+    }
   };
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim() && selectedFiles.length === 0) return;
+  const handleTyping = () => {
+    if (!socketRef.current || !conversation) return;
 
-    const newMessage: Message = {
-      sender: 'me',
-      text: messageInput.trim() || undefined,
-      timestamp: getCurrentTime(),
-      read: false,
-    };
+    // Emit typing start
+    socketRef.current.emit('typing:start', {
+      conversationId: conversation._id,
+      userId: currentUserId,
+      receiverId: otherUserId,
+    });
 
-    // Handle file attachments
-    if (selectedFiles.length > 0) {
-      const imageUrls: string[] = [];
-      
-      selectedFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result) {
-            imageUrls.push(e.target.result as string);
-            
-            // When all files are read, add the message
-            if (imageUrls.length === selectedFiles.length) {
-              const messageWithImages: Message = {
-                ...newMessage,
-                images: imageUrls,
-              };
-              setMessages((prev) => [...prev, messageWithImages]);
-            }
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    } else {
-      setMessages((prev) => [...prev, newMessage]);
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
     }
 
-    // Clear inputs
-    setMessageInput('');
-    setSelectedFiles([]);
+    // Set timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      if (socketRef.current && conversation) {
+        socketRef.current.emit('typing:stop', {
+          conversationId: conversation._id,
+          userId: currentUserId,
+          receiverId: otherUserId,
+        });
+      }
+    }, 1000);
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() && selectedFiles.length === 0) return;
+    
+    // Ensure conversation exists
+    let currentConversation = conversation;
+    
+    // If conversation doesn't exist, create it first
+    if (!currentConversation) {
+      try {
+        const convResponse = await fetch('http://localhost:5000/api/messages/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId1: currentUserId,
+            userId2: otherUserId,
+          }),
+        });
+
+        const convData = await convResponse.json();
+
+        if (convData.success && convData.data) {
+          currentConversation = convData.data;
+          setConversation(convData.data);
+        } else {
+          // Try fallback: maybe conversation already exists (different endpoint)
+          try {
+            const betweenResp = await fetch(
+              `http://localhost:5000/api/messages/between/${currentUserId}/${otherUserId}`
+            );
+            const betweenData = await betweenResp.json();
+            if (betweenData.success && betweenData.conversation) {
+              currentConversation = betweenData.conversation;
+              setConversation(betweenData.conversation);
+            } else {
+              showError(convData.message || 'Failed to initialize conversation');
+              return;
+            }
+          } catch (innerErr) {
+            console.error('Fallback conversation lookup failed:', innerErr);
+            showError(convData.message || 'Failed to initialize conversation');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        showError('Failed to initialize conversation');
+        return;
+      }
+    }
+
+    // Double check conversation exists
+    if (!currentConversation) {
+      showError('Failed to initialize conversation');
+      return;
+    }
+
+    try {
+      // Prepare attachments array if files are selected
+      const attachments = selectedFiles.map(file => ({
+        fileName: file.name,
+        fileUrl: `uploads/${file.name}`, // Simulated URL
+        fileType: file.type,
+      }));
+
+      const messageData = {
+        conversationId: currentConversation._id,
+        senderId: currentUserId,
+        receiverId: otherUserId,
+        text: messageInput.trim() || (selectedFiles.length > 0 ? '📎 Attachment' : ''),
+        attachments: attachments.length > 0 ? attachments : [],
+      };
+
+      // Send to backend
+      const response = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messageData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Add message to local state
+        setMessages((prev) => [...prev, data.data]);
+
+        // Emit via Socket.io for real-time delivery
+        if (socketRef.current) {
+          socketRef.current.emit('message:send', {
+            conversationId: currentConversation._id,
+            senderId: currentUserId,
+            receiverId: otherUserId,
+            message: data.data,
+          });
+        }
+
+        // Clear inputs
+        setMessageInput('');
+        setSelectedFiles([]);
+      } else {
+        showError(data.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      showError('Failed to send message. Please try again.');
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -156,6 +350,35 @@ export const Messages: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const getOtherUserName = (): string => {
+    if (clientName) return clientName;
+    if (conversation && conversation.participants.length > 0) {
+      const otherUser = conversation.participants.find(p => p._id !== currentUserId);
+      if (otherUser) {
+        return `${otherUser.firstName} ${otherUser.lastName}`;
+      }
+    }
+    return 'Client';
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.messagesPage}>
+        <div className={styles.mobileView}>
+          <header className={styles.chatHeader}>
+            <button className={styles.iconButton} onClick={handleBack}>
+              <Icon icon="lucide:arrow-left" className={styles.icon} />
+            </button>
+            <h1 className={styles.title}>Message</h1>
+          </header>
+          <div className={styles.loadingContainer}>
+            <p>Loading messages...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.messagesPage}>
       <div className={styles.mobileView}>
@@ -164,7 +387,10 @@ export const Messages: React.FC = () => {
           <button className={styles.iconButton} onClick={handleBack}>
             <Icon icon="lucide:arrow-left" className={styles.icon} />
           </button>
-          <h1 className={styles.title}>Message</h1>
+          <div className={styles.headerInfo}>
+            <h1 className={styles.title}>{getOtherUserName()}</h1>
+            {projectTitle && <p className={styles.subtitle}>{projectTitle}</p>}
+          </div>
           <div className={styles.statusBarIcons}>
             {/* Mobile status bar icons placeholder */}
           </div>
@@ -173,28 +399,25 @@ export const Messages: React.FC = () => {
         {/* Chat Body */}
         <main className={styles.chatBody} ref={chatBodyRef}>
           {messages.map((msg, index) => {
-            const isSent = msg.sender === 'me';
+            const isSent = msg.senderId._id === currentUserId;
             return (
               <div
-                key={index}
+                key={msg._id || index}
                 className={`${styles.messageContainer} ${
                   isSent ? styles.sent : styles.received
                 }`}
               >
-                {msg.avatar && (
-                  <img
-                    src={msg.avatar}
-                    alt={msg.name || 'User'}
-                    className={styles.avatar}
-                  />
-                )}
-                {!isSent && !msg.avatar && (
-                  <div className={styles.avatarPlaceholder}></div>
+                {!isSent && (
+                  <div className={styles.avatarPlaceholder}>
+                    {msg.senderId.firstName.charAt(0)}
+                  </div>
                 )}
 
                 <div className={styles.messageContent}>
-                  {msg.name && (
-                    <span className={styles.senderName}>{msg.name}</span>
+                  {!isSent && (
+                    <span className={styles.senderName}>
+                      {msg.senderId.firstName} {msg.senderId.lastName}
+                    </span>
                   )}
 
                   <div
@@ -204,14 +427,13 @@ export const Messages: React.FC = () => {
                   >
                     {msg.text && <p>{msg.text}</p>}
 
-                    {msg.images && msg.images.length > 0 && (
+                    {msg.attachments && msg.attachments.length > 0 && (
                       <div className={styles.messageImages}>
-                        {msg.images.map((imgSrc, imgIndex) => (
-                          <img
-                            key={imgIndex}
-                            src={imgSrc}
-                            alt="Uploaded content"
-                          />
+                        {msg.attachments.map((attachment, imgIndex) => (
+                          <div key={imgIndex} className={styles.attachment}>
+                            <Icon icon="lucide:file" className={styles.fileIcon} />
+                            <span>{attachment.fileName}</span>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -222,15 +444,31 @@ export const Messages: React.FC = () => {
                       isSent ? styles.sentInfo : ''
                     }`}
                   >
-                    <span>{msg.timestamp}</span>
-                    {msg.read && (
-                      <Icon icon="lucide:check-check" className={styles.readIcon} />
+                    <span>{formatTime(msg.createdAt)}</span>
+                    {isSent && (
+                      msg.isRead ? (
+                        <Icon icon="lucide:check-check" className={styles.readIcon} />
+                      ) : (
+                        <Icon icon="lucide:check" className={styles.unreadIcon} />
+                      )
                     )}
                   </div>
                 </div>
               </div>
             );
           })}
+          
+          {/* Typing Indicator */}
+          {otherUserTyping && (
+            <div className={styles.typingIndicator}>
+              <div className={styles.typingDots}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span className={styles.typingText}>{getOtherUserName()} is typing...</span>
+            </div>
+          )}
         </main>
 
         {/* Selected Files Preview */}
@@ -282,7 +520,10 @@ export const Messages: React.FC = () => {
               type="text"
               placeholder="Type a message ..."
               value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
+              onChange={(e) => {
+                setMessageInput(e.target.value);
+                handleTyping();
+              }}
               onKeyPress={handleKeyPress}
             />
             <div className={styles.inputIcons}>

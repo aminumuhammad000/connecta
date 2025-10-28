@@ -8,6 +8,8 @@
     "dev": "nodemon src/app.ts",
     "seed:jobs": "ts-node scripts/seedJobs.ts",
     "seed:proposals": "ts-node scripts/seedProposals.ts",
+    "seed:projects": "ts-node scripts/seedProjects.ts",
+    "seed:messages": "ts-node scripts/seedMessages.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -27,7 +29,8 @@
     "mongoose": "^8.19.2",
     "morgan": "^1.10.1",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

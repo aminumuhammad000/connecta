@@ -103,7 +103,8 @@ const Proposals: React.FC = () => {
 
       if (data.success) {
         showSuccess('Proposal accepted successfully!');
-        fetchProposals(); // Refresh the list
+        // Remove the accepted proposal from the list
+        setProposals(prev => prev.filter(p => p._id !== proposalId));
       } else {
         showError(data.message || 'Failed to accept proposal');
       }
@@ -130,7 +131,8 @@ const Proposals: React.FC = () => {
 
       if (data.success) {
         showSuccess('Proposal declined');
-        fetchProposals(); // Refresh the list
+        // Remove the declined proposal from the list
+        setProposals(prev => prev.filter(p => p._id !== proposalId));
       } else {
         showError(data.message || 'Failed to decline proposal');
       }

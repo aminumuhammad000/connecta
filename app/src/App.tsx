@@ -15,6 +15,7 @@ import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
 import { EditProfile } from './pages/EditProfile/EditProfile'
 import { AddPortfolio } from './pages/AddPortfolio/AddPortfolio'
 import { Messages } from './pages/Messages/Messages'
+import Chats from './pages/Chats/Chats'
 import ConnectaAI from './pages/ConnectaAI/ConnectaAI'
 
 function App() {
@@ -61,6 +62,11 @@ function App() {
           <Route path='/messages' element={
             <ProtectedRoute>
               <Messages />
+            </ProtectedRoute>
+          } />
+          <Route path='/chats' element={
+            <ProtectedRoute>
+              <Chats />
             </ProtectedRoute>
           } />
           <Route path='/proposals' element={

@@ -48,6 +48,28 @@
   padding: 2px 0;
 }
 
+.statusBadge.active {
+  color: #43A047;
+}
+
+.statusBadge.completed {
+  color: #6B7280;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
 /* Info Section */
 .infoSection {
   margin-bottom: 24px;
@@ -347,6 +369,55 @@
 
 .completeButton:hover {
   background-color: #e55a2b;
+}
+
+.submitButton {
+  width: 100%;
+  background-color: #FD6730;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.submitButton:hover {
+  background-color: #e55a2b;
+}
+
+.existingUploads {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uploadItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.uploadItem .documentIcon {
+  font-size: 24px;
+  color: #FD6730;
+}
+
+.uploadItem .fileName {
+  flex: 1;
+  font-size: 14px;
+  color: #000000;
+}
+
+.uploadItem .uploadDate {
+  font-size: 12px;
+  color: #6B7280;
 }
 
 /* Mobile optimizations */

@@ -1,8 +1,8 @@
-import { Header } from './components/Header';
 import { ProfileHeader } from './components/ProfileHeader';
 import { SectionHeader } from './components/SectionHeader';
 import { PortfolioGrid } from './components/PortfolioGrid';
 import { ExperienceEducation } from './components/ExperienceEducation';
+import Header from '../../components/Header';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import styles from './styles/Profile.module.css';

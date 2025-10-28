@@ -2,6 +2,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import http from "http";
+import { Server } from "socket.io";
 import connectDB from "./config/db.config";
 
 // routes 
@@ -9,10 +11,25 @@ import userRoutes from "./routes/user.routes";
 import profileRoutes from "./routes/Profile.routes";
 import jobRoutes from "./routes/Job.routes";
 import proposalRoutes from "./routes/Proposal.routes";
+import projectRoutes from "./routes/Project.routes";
+import messageRoutes from "./routes/Message.routes";
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
 // Middleware
 app.use(cors({
@@ -30,12 +47,98 @@ app.use("/api/users", userRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/proposals", proposalRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/messages", messageRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+// Socket.io connection handling
+const activeUsers = new Map<string, string>(); // userId -> socketId
+
+io.on("connection", (socket) => {
+  console.log("✅ User connected:", socket.id);
+
+  // User joins with their userId
+  socket.on("user:join", (userId: string) => {
+    activeUsers.set(userId, socket.id);
+    socket.join(userId);
+    console.log(`User ${userId} joined with socket ${socket.id}`);
+    
+    // Emit online status
+    io.emit("user:online", { userId, socketId: socket.id });
+  });
+
+  // Send message event
+  socket.on("message:send", (data: {
+    conversationId: string;
+    senderId: string;
+    receiverId: string;
+    message: any;
+  }) => {
+    console.log("Message sent:", data);
+    
+    // Send to receiver if online
+    const receiverSocketId = activeUsers.get(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("message:receive", data.message);
+    }
+    
+    // Send confirmation to sender
+    socket.emit("message:sent", data.message);
+  });
+
+  // Typing indicator
+  socket.on("typing:start", (data: { conversationId: string; userId: string; receiverId: string }) => {
+    const receiverSocketId = activeUsers.get(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("typing:show", {
+        conversationId: data.conversationId,
+        userId: data.userId,
+      });
+    }
+  });
+
+  socket.on("typing:stop", (data: { conversationId: string; userId: string; receiverId: string }) => {
+    const receiverSocketId = activeUsers.get(data.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("typing:hide", {
+        conversationId: data.conversationId,
+        userId: data.userId,
+      });
+    }
+  });
+
+  // Message read event
+  socket.on("message:read", (data: { conversationId: string; userId: string; senderId: string }) => {
+    const senderSocketId = activeUsers.get(data.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("message:read", {
+        conversationId: data.conversationId,
+        readBy: data.userId,
+      });
+    }
+  });
+
+  // Disconnect
+  socket.on("disconnect", () => {
+    console.log("❌ User disconnected:", socket.id);
+    
+    // Find and remove user from activeUsers
+    for (const [userId, socketId] of activeUsers.entries()) {
+      if (socketId === socket.id) {
+        activeUsers.delete(userId);
+        io.emit("user:offline", { userId });
+        break;
+      }
+    }
+  });
 });
+
+// Start Server
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🔌 Socket.io ready for real-time messaging`);
+});
+
