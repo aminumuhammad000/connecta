@@ -71,4 +71,9 @@ PUT /api/profiles/6720bc8f2a9a442f208b912e
   ]
 }
 
+<!-- uploading a file to google drive -->
+POST /upload
+curl -X POST http://localhost:5000/api/upload \
+  -F "file=@/path/to/your/file.pdf"
+
 <!-- profile API END HERE -->
