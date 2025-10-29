@@ -41,6 +41,7 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.6;
+  background: #FD6730;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -53,4 +54,11 @@ a {
 #link{
   text-decoration: none;
   color: #fff;
+}
+
+/* Spinner animation for loading states */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

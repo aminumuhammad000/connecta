@@ -46,11 +46,16 @@ const Signup = () => {
       console.log('Signup Response:', data);
 
       if (response.ok && data.token) {
-        // Store token and user data, then redirect to dashboard
+        // Store token and user data, then redirect based on user type
         login(data.token, data.user);
-        showSuccess('Signup successful! Redirecting to dashboard...');
+        showSuccess('Signup successful! Redirecting...');
         setTimeout(() => {
-          navigate('/dashboard');
+          // Redirect clients to client dashboard, freelancers to regular dashboard
+          if (data.user.userType === 'client') {
+            navigate('/client-dashboard');
+          } else {
+            navigate('/dashboard');
+          }
         }, 1000);
       } else {
         showError(data.message || 'Signup failed');
@@ -87,11 +92,16 @@ const Signup = () => {
       console.log('Google Signup Response:', data);
 
       if (response.ok && data.token) {
-        // Store token and user data, then redirect to dashboard
+        // Store token and user data, then redirect based on user type
         login(data.token, data.user);
-        showSuccess('Google signup successful! Redirecting to dashboard...');
+        showSuccess('Google signup successful! Redirecting...');
         setTimeout(() => {
-          navigate('/dashboard');
+          // Redirect clients to client dashboard, freelancers to regular dashboard
+          if (data.user.userType === 'client') {
+            navigate('/client-dashboard');
+          } else {
+            navigate('/dashboard');
+          }
         }, 1000);
       } else {
         showError(data.message || 'Google signup failed');

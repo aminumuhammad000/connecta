@@ -52,11 +52,15 @@ const Login = () => {
       if (response.ok && data.token) {
         // Store token and user data
         login(data.token, data.user);
-        showSuccess('Login successful! Redirecting to dashboard...');
+        showSuccess('Login successful! Redirecting...');
         
-        // Redirect to dashboard after a short delay
+        // Redirect based on user type
         setTimeout(() => {
-          navigate('/dashboard');
+          if (data.user.userType === 'client') {
+            navigate('/client-dashboard');
+          } else {
+            navigate('/dashboard');
+          }
         }, 1000);
       } else {
         showError(data.message || 'Login failed. Please check your credentials.');
@@ -75,80 +79,105 @@ const Login = () => {
 
   return (
     <div className={styles.loginContainer}>
-      <div className={styles.header}>
-        <img src={Logo} alt="Connecta Logo" className={styles.logo} />
-        <h1 className={styles.title}>Login in to Connecta</h1>
+      {/* Desktop: Left Side - Brand Section */}
+      <div className={styles.leftSection}>
+        <div className={styles.brandContent}>
+          <div className={styles.brandHeader}>
+            <img src={Logo} alt="Connecta Logo" className={styles.brandIcon} />
+          </div>
+          <h2 className={styles.brandTitle}>The future of work, connected by AI.</h2>
+          <p className={styles.brandDescription}>
+            Find the best talent or your next big opportunity with our intelligent matching platform.
+          </p>
+          <div className={styles.brandImageContainer}>
+            <div className={styles.brandImagePlaceholder}></div>
+          </div>
+        </div>
       </div>
 
-      <form className={styles.form} onSubmit={handleSubmit}>
-        {error && (
-          <div style={{ 
-            color: 'red', 
-            padding: '10px', 
-            marginBottom: '15px', 
-            backgroundColor: '#fee', 
-            borderRadius: '5px',
-            fontSize: '14px'
-          }}>
-            {error}
-          </div>
-        )}
-
-        <div className={styles.inputContainer}>
-          <div className={styles.inputBox}>
-            <Icon icon="majesticons:user-line" className={styles.inputIcon} />
-            <input 
-              type="email" 
-              name="email"
-              placeholder="Email" 
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-            />
+      {/* Right Side - Form Section */}
+      <div className={styles.rightSection}>
+        <div className={styles.formWrapper}>
+          {/* Mobile Logo */}
+          <div className={styles.mobileHeader}>
+            <img src={Logo} alt="Connecta Logo" className={styles.mobileLogo} />
           </div>
 
-          <div className={styles.inputBox}>
-            <Icon icon="carbon:password" className={styles.inputIcon} />
-            <input 
-              type={showPassword ? 'text' : 'password'} 
-              name="password"
-              placeholder="Password" 
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-            />
-            <Icon 
-              icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} 
-              className={styles.eyeIcon}
-              onClick={() => setShowPassword(!showPassword)}
-              style={{ cursor: 'pointer' }}
-            />
+          <div className={styles.formHeader}>
+            <h1 className={styles.formTitle}>Welcome Back</h1>
+            <p className={styles.formSubtitle}>Log in to access your dashboard.</p>
           </div>
+
+          <form className={styles.form} onSubmit={handleSubmit}>
+            {error && (
+              <div className={styles.errorBox}>
+                {error}
+              </div>
+            )}
+
+            <div className={styles.inputContainer}>
+              <div className={styles.inputGroup}>
+                <label className={styles.inputLabel}>Email address</label>
+                <input 
+                  type="email" 
+                  name="email"
+                  placeholder="Enter your email" 
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={styles.input}
+                  required
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label className={styles.inputLabel}>Password</label>
+                <div className={styles.passwordWrapper}>
+                  <input 
+                    type={showPassword ? 'text' : 'password'} 
+                    name="password"
+                    placeholder="Enter your password" 
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className={styles.input}
+                    required
+                  />
+                  <Icon 
+                    icon={showPassword ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} 
+                    className={styles.eyeIcon}
+                    onClick={() => setShowPassword(!showPassword)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.forgotPassword}>
+              <a href="#" className={styles.forgotLink}>Forgot Password?</a>
+            </div>
+
+            <button type="submit" className={styles.loginBtn} disabled={loading}>
+              {loading ? 'Signing in...' : 'Log In'}
+            </button>
+
+            <div className={styles.divider}>
+              <span>or</span>
+            </div>
+
+            <button type="button" className={styles.socialBtn}>
+              <Icon icon="flat-color-icons:google" className={styles.socialIcon} />
+              Continue with Google
+            </button>
+
+            <button type="button" className={styles.socialBtn}>
+              <Icon icon="ic:baseline-apple" className={styles.socialIcon} />
+              Continue with Apple
+            </button>
+
+            <div className={styles.footerText}>
+              <p>Don't have an account? <a href="/auth" className={styles.signupLink}>Sign Up</a></p>
+            </div>
+          </form>
         </div>
-
-        <button type="submit" className={styles.signinBtn} disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-
-        <div className={styles.divider}>
-          <span>or</span>
-        </div>
-
-        <button type="button" className={`${styles.socialBtn} ${styles.googleBtn}`}>
-          <Icon icon="logos:google-icon" className={styles.socialIcon} />
-          Continue with Google
-        </button>
-
-        <button type="button" className={`${styles.socialBtn} ${styles.appleBtn}`}>
-          <Icon icon="logos:apple" className={styles.socialIcon} />
-          Continue with Apple
-        </button>
-
-        <div className={styles.footerText}>
-          <p>Don't have a connecta account?</p>
-          <a href="/auth" className={styles.signupLink}>Sign up</a>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

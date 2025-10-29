@@ -1,0 +1,123 @@
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+  padding: 0 1.5rem;
+  background-color: #f5f5f7;
+  border-bottom: none;
+  flex-shrink: 0;
+}
+
+/* Mobile Menu Button */
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s;
+}
+
+.menuButton:hover {
+  color: #1e293b;
+}
+
+@media (min-width: 1024px) {
+  .menuButton {
+    display: none;
+  }
+}
+
+/* Welcome Section */
+.welcomeSection {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .welcomeSection {
+    display: block;
+  }
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+/* Right Section */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Notification Button */
+.notificationButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s;
+}
+
+.notificationButton:hover {
+  color: #f97316;
+}
+
+/* User Profile */
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.userInfo {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .userInfo {
+    display: block;
+  }
+}
+
+.userName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1e293b;
+  margin: 0;
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+

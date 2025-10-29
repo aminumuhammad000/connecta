@@ -1,3 +1,4 @@
+import CreateJob from './pages/client/CreateJob'
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
@@ -18,6 +19,8 @@ import { Messages } from './pages/Messages/Messages'
 import Chats from './pages/Chats/Chats'
 import CompleteProfile from './pages/CompleteProfile/CompleteProfile'
 import ConnectaAI from './pages/ConnectaAI/ConnectaAI'
+import ClientDashboard from './pages/client/ClientDashboard'
+import ClientProjects from './pages/client/ClientProjects'
 
 function App() {
   return (
@@ -93,6 +96,27 @@ function App() {
           <Route path='/connecta-ai' element={
             <ProtectedRoute>
               <ConnectaAI />
+            </ProtectedRoute>
+          } />
+          <Route path='/client-dashboard' element={
+            <ProtectedRoute>
+              <div className="client-projects-bg">
+              <ClientDashboard />
+              </div>
+            </ProtectedRoute>
+          } />
+          <Route path='/client/projects' element={
+            <ProtectedRoute>
+             <div className="client-projects-bg">
+         <ClientProjects />
+            </div>
+            </ProtectedRoute>
+          } />
+          <Route path='/client/create-job' element={
+            <ProtectedRoute>
+              <div className="client-projects-bg">
+                <CreateJob />
+              </div>
             </ProtectedRoute>
           } />
         </Routes>

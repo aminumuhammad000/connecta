@@ -1,0 +1,135 @@
+/* Backdrop */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 29;
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .backdrop {
+    display: block;
+  }
+}
+
+/* Sidebar */
+.sidebar {
+  position: absolute;
+  inset-y: 0;
+  left: 0;
+  z-index: 30;
+  width: 16rem;
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  transition: transform 0.3s ease-in-out;
+}
+
+@media (max-width: 1023px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    position: static;
+    transform: translateX(0);
+  }
+}
+
+.sidebarInner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Logo Section */
+.logoSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.logoImage {
+  height: 32px;
+  /* width: 100px; */
+}
+
+.logoText {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Navigation */
+.nav {
+  flex: 1;
+  padding: 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 82%;
+  text-align: left;
+}
+
+.navItem:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.navItem.active {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.navIcon {
+  margin-right: 0.75rem;
+  font-size: 1.25rem;
+}
+
+/* Bottom Section */
+.bottomSection {
+  padding: 1rem 1rem;
+  margin-top: auto;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+

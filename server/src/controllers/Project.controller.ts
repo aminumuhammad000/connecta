@@ -32,6 +32,65 @@ export const getFreelancerProjects = async (req: Request, res: Response) => {
   }
 };
 
+// Get logged-in client's own projects
+export const getMyProjects = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Unauthorized' 
+      });
+    }
+
+    const { status } = req.query;
+    let query: any = { clientId: userId };
+
+    if (status && (status === 'ongoing' || status === 'completed' || status === 'cancelled')) {
+      query.status = status;
+    }
+
+    const projects = await Project.find(query)
+      .populate('clientId', 'firstName lastName email profileImage')
+      .populate('freelancerId', 'firstName lastName email profileImage')
+      .sort({ createdAt: -1 });
+
+    // Calculate progress for each project (mock calculation based on status)
+    const projectsWithProgress = projects.map(project => {
+      let progress = 0;
+      if (project.status === 'ongoing') {
+        // Calculate based on time elapsed
+        const start = new Date(project.dateRange.startDate).getTime();
+        const end = new Date(project.dateRange.endDate).getTime();
+        const now = Date.now();
+        const totalDuration = end - start;
+        const elapsed = now - start;
+        progress = Math.min(Math.max(Math.round((elapsed / totalDuration) * 100), 0), 95);
+      } else if (project.status === 'completed') {
+        progress = 100;
+      }
+
+      return {
+        ...project.toObject(),
+        progress
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      count: projectsWithProgress.length,
+      data: projectsWithProgress,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching projects',
+      error: error.message,
+    });
+  }
+};
+
 // Get all projects for a client
 export const getClientProjects = async (req: Request, res: Response) => {
   try {

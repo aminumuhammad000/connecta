@@ -1,3 +1,19 @@
+// ===================
+// Get Jobs for Current Client
+// ===================
+export const getClientJobs = async (req: Request, res: Response) => {
+  try {
+    // Assume req.user._id is set by auth middleware
+    const clientId = req.user?._id;
+    if (!clientId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+    const jobs = await Job.find({ clientId }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: jobs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
 // src/controllers/Job.controller.ts
 import { Request, Response } from "express";
 import Job from "../models/Job.model";

@@ -13,6 +13,7 @@ import jobRoutes from "./routes/Job.routes";
 import proposalRoutes from "./routes/Proposal.routes";
 import projectRoutes from "./routes/Project.routes";
 import messageRoutes from "./routes/Message.routes";
+import dashboardRoutes from "./routes/Dashboard.routes";
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/proposals", proposalRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");

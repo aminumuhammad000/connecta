@@ -8,9 +8,15 @@ import {
   deleteJob,
   getRecommendedJobs,
   searchJobs,
+  getClientJobs
 } from "../controllers/Job.controller";
 
+
+
 const router = express.Router();
+
+// Get jobs for the current client
+router.get("/client/my-jobs", getClientJobs);
 
 // Get all jobs with filters
 router.get("/", getAllJobs);
