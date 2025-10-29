@@ -13,6 +13,8 @@ export const signup = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, userType } = req.body;
 
+    console.log('Signup attempt:', { firstName, lastName, email, userType });
+
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "User already exists" });
 
@@ -29,6 +31,7 @@ export const signup = async (req: Request, res: Response) => {
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
     res.status(201).json({ user: newUser, token });
   } catch (err) {
+    console.error('Signup error:', err);
     res.status(500).json({ message: "Server error", error: err });
   }
 };

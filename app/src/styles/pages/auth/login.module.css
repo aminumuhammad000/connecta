@@ -1,5 +1,6 @@
 /* login.module.css */
 
+/* ========== MOBILE STYLES (DEFAULT) ========== */
 .loginContainer {
   display: flex;
   flex-direction: column;
@@ -12,61 +13,109 @@
   box-sizing: border-box;
 }
 
-.logoSection {
-  margin-bottom: 20px;
+/* Hide desktop sections on mobile */
+
+
+.rightSection {
+  width: 100%;
+  max-width: 400px;
 }
 
-.logoSection img {
-  width: 180px;
-  height: auto;
+.formWrapper {
+  width: 100%;
 }
 
-.title {
-  font-size: 24px;
-  font-weight: 100;
-  color: #000000CC;
+/* Mobile Header */
+.mobileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 30px;
+}
+
+.mobileLogo {
+  height: 40px;
+  width: auto;
+}
+
+.formHeader {
   text-align: center;
+  margin-bottom: 30px;
+}
+
+.formTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 8px 0;
+}
+
+.formSubtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.form {
+  width: 100%;
+}
+
+.errorBox {
+  color: #dc2626;
+  padding: 12px;
+  margin-bottom: 20px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #fecaca;
 }
 
 .inputContainer {
   width: 100%;
-  max-width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 20px;
+  margin-bottom: 16px;
 }
 
-.inputBox {
-  position: relative;
+.inputGroup {
   width: 100%;
 }
 
-.inputBox input {
+.inputLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+.input {
   width: 100%;
-  padding: 15px 50px 15px 50px;
-  border: 1px solid #000000;
-  color: #0000004D;
-  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
   font-size: 16px;
   outline: none;
   background-color: white;
   box-sizing: border-box;
+  color: #000;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
 }
 
-.inputBox input:focus {
+.input:focus {
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
-.inputIcon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 20px;
-  color: #000000;
-  pointer-events: none;
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.passwordWrapper {
+  position: relative;
+  width: 100%;
 }
 
 .eyeIcon {
@@ -75,37 +124,52 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 20px;
-  color: #000000;
+  color: #6b7280;
   cursor: pointer;
 }
 
-.signinBtn {
+.forgotPassword {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgotLink {
+  font-size: 14px;
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.loginBtn {
   width: 100%;
-  max-width: 320px;
   background-color: var(--color-primary);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 15px;
-  font-size: 18px;
-  font-weight: 200;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   margin-bottom: 20px;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
-.signinBtn:hover {
-  background-color: var(--color-primary);
+.loginBtn:hover {
+  background-color: #ea580c;
+}
+
+.loginBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .divider {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: #6b7280;
   font-size: 14px;
   width: 100%;
-  max-width: 320px;
   margin: 20px 0;
 }
 
@@ -114,8 +178,8 @@
   content: '';
   flex: 1;
   height: 1px;
-  background-color: #ddd;
-  margin: 0 15px;
+  background-color: #d1d5db;
+  margin: 0 16px;
 }
 
 .socialBtn {
@@ -123,284 +187,298 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 320px;
-  padding: 15px;
-  border-radius: 12px;
-  font-size: 16px;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   margin-bottom: 12px;
   transition: all 0.2s;
   box-sizing: border-box;
-}
-
-.googleBtn {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-}
-
-.googleBtn:hover {
-  background-color: #3367d6;
-}
-
-.appleBtn {
+  border: 1px solid #d1d5db;
   background-color: white;
-  color: black;
-  border: 1px solid #000000;
+  color: #000;
 }
 
-.appleBtn:hover {
-  background-color: #f8f8f8;
+.socialBtn:hover {
+  background-color: #f9fafb;
 }
 
 .socialIcon {
   font-size: 20px;
-  margin-right: 12px;
+  margin-right: 10px;
 }
 
 .footerText {
-  margin-top: 30px;
+  margin-top: 24px;
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: #6b7280;
 }
 
 .footerText p {
-  margin: 0 0 15px 0;
+  margin: 0;
 }
 
 .signupLink {
   color: var(--color-primary);
-  border: 1px solid var(--color-primary);
-  padding: 10px 20px;
-  border-radius: 9px;
-  display: inline-block;
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 500;
-  transition: all 0.2s;
-  width: 100px;
 }
 
 .signupLink:hover {
-  background-color: var(--color-primary);
-  color: white;
+  text-decoration: underline;
 }
 
-/* Desktop Styles - Split Screen Design (Same as Signup) */
+/* Hide desktop brand sections on mobile */
+
+
+/* ========== DESKTOP STYLES (≥1024px) ========== */
 @media (min-width: 1024px) {
   .loginContainer {
-    display: flex;
-    min-height: 100vh;
-    background: tomato;
+    flex-direction: row;
     padding: 0;
-    position: relative;
-    overflow: hidden;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #2b1f17;
   }
 
-  /* Right Side - Form Section */
-  .loginContainer::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 55%;
-    height: 100%;
-    background: #ffffff;
-    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
-    z-index: 1;
+  /* Hide mobile header on desktop */
+  .mobileHeader {
+    display: none;
   }
 
-  /* Brand Section */
-  .header {
-    position: absolute;
-    top: 50%;
-    left: 22.5%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    z-index: 2;
-    color: #ffffff;
-  }
-
-  .logo {
-    width: 380px;
-    height: auto;
-    margin-bottom: 20px;
-    filter: brightness(0) invert(1);
-  }
-
-  .title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 0;
-    text-align: center;
-    letter-spacing: -0.02em;
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    line-height: 1.2;
-  }
-
-  /* Form Section */
-  .form {
-    position: absolute;
-    top: 50%;
-    right: 27.5%;
-    transform: translate(50%, -50%);
-    width: 480px;
+  /* Left Section - Brand Side (Dark Brown) */
+  .leftSection {
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    background: #ffffff;
-    padding: 50px;
-    border-radius: 24px;
-    box-shadow: 0 25px 80px rgba(221, 207, 207, 0.12);
-    z-index: 2;
-    border: 1px solid #f0f0f0;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+    background-color: #2b1f17;
+    padding: 48px;
+    box-sizing: border-box;
+  }
+
+  .brandContent {
+    display: block;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .brandHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .brandIcon {
+    font-size: 32px;
+    color: #ff6b35;
+  }
+
+  .brandName {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+
+  .brandTitle {
+    font-size: 36px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.2;
+    margin: 0 0 24px 0;
+    letter-spacing: -0.02em;
+  }
+
+  .brandDescription {
+    font-size: 18px;
+    color: #cbaa90;
+    line-height: 1.6;
+    margin: 0 0 32px 0;
+  }
+
+  .brandImageContainer {
+    display: block;
+    width: 100%;
+    height: 256px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0.05) 100%);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    overflow: hidden;
+  }
+
+  .brandImagePlaceholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    background: radial-gradient(circle at 30% 50%, rgba(255, 107, 53, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(255, 107, 53, 0.15) 0%, transparent 50%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brandImagePlaceholder::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 107, 53, 0.03) 10px,
+      rgba(255, 107, 53, 0.03) 20px
+    );
+    animation: shimmer 20s linear infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-50%) translateY(-50%);
+    }
+    100% {
+      transform: translateX(0%) translateY(0%);
+    }
+  }
+
+  /* Right Section - Form Side (Dark Brown) */
+  .rightSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+    background-color: #2b1f17;
+    padding: 48px;
+    box-sizing: border-box;
+    max-width: none;
+  }
+
+  .formWrapper {
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .formHeader {
+    text-align: left;
+    margin-bottom: 32px;
+  }
+
+  .formTitle {
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+  }
+
+  .formSubtitle {
+    font-size: 16px;
+    color: #cbaa90;
+    margin: 0;
+  }
+
+  .form {
+    width: 100%;
   }
 
   .inputContainer {
-    display: flex;
-    flex-direction: column;
     gap: 20px;
-    margin-bottom: 0;
-    background: transparent;
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
+    margin-bottom: 12px;
   }
 
-  .inputBox {
-    position: relative;
-    width: 100%;
-  }
-
-  .inputBox input {
-    width: 100%;
-    padding: 18px 20px 18px 55px;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
+  .inputLabel {
     font-size: 16px;
-    outline: none;
-    background-color: #ffffff;
-    box-sizing: border-box;
-    transition: all 0.3s ease;
-    color: #333333;
     font-weight: 500;
+    color: white;
+    margin-bottom: 8px;
   }
 
-  .inputBox input:focus {
-    border-color: #ff6347;
-    box-shadow: 0 0 0 4px rgba(255, 99, 71, 0.1);
+  .input {
+    padding: 16px;
+    border: 1px solid #4a3a2e;
+    border-radius: 8px;
+    font-size: 16px;
+    background-color: #3a2d21;
+    color: white;
   }
 
-  .inputBox input::placeholder {
-    color: #999999;
-    font-weight: 400;
+  .input:focus {
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+    background-color: #3a2d21;
   }
 
-  .inputIcon {
-    position: absolute;
-    left: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    color: #666666;
-    pointer-events: none;
+  .input::placeholder {
+    color: #8b7355;
   }
 
   .eyeIcon {
-    position: absolute;
-    right: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 20px;
-    color: #666666;
-    cursor: pointer;
-    transition: color 0.3s ease;
+    right: 16px;
+    color: #8b7355;
   }
 
   .eyeIcon:hover {
-    color: #ff6347;
+    color: #cbaa90;
   }
 
-  .signinBtn {
-    width: 100%;
-    background-color: #ff6347;
-    color: #ffffff;
-    border: none;
-    border-radius: 12px;
-    padding: 20px;
-    font-size: 17px;
+  .forgotPassword {
+    text-align: right;
+    margin-bottom: 24px;
+  }
+
+  .forgotLink {
+    font-size: 14px;
+    color: #ff6b35;
+    text-decoration: underline;
+    font-weight: 400;
+  }
+
+  .forgotLink:hover {
+    color: #ff8559;
+  }
+
+  .loginBtn {
+    padding: 16px;
+    font-size: 16px;
     font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 24px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border-radius: 8px;
+    background-color: #ff6b35;
+    margin-bottom: 24px;
+    text-transform: none;
+    letter-spacing: normal;
   }
 
-  .signinBtn:hover {
-    background-color: #e55a3a;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 99, 71, 0.3);
-  }
-
-  .signinBtn:active {
-    transform: translateY(0px);
+  .loginBtn:hover {
+    background-color: #ff8559;
   }
 
   .divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #999999;
-    font-size: 14px;
-    font-weight: 500;
-    width: 100%;
-    margin: 20px 0;
+    margin: 24px 0;
+    color: #8b7355;
   }
 
   .divider::before,
   .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background-color: #e0e0e0;
-    margin: 0 20px;
+    background-color: #4a3a2e;
+    margin: 0 16px;
   }
 
   .socialBtn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 18px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid #4a3a2e;
+    background-color: #3a2d21;
+    color: white;
     margin-bottom: 16px;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    border: 2px solid #e0e0e0;
-    background: #ffffff;
-    color: #333333;
   }
 
-  .googleBtn:hover {
-    background-color: #f8f9fa;
-    border-color: #f59281;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  }
-
-  .appleBtn:hover {
-    background-color: #f8f9fa;
-    border-color: #f59281;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  .socialBtn:hover {
+    background-color: #4a3a2e;
+    border-color: #5a4a3e;
   }
 
   .socialIcon {
@@ -409,30 +487,23 @@
   }
 
   .footerText {
-    margin-top: 30px;
+    margin-top: 24px;
     text-align: center;
-    font-size: 15px;
-    color: #666666;
+    font-size: 14px;
+    color: #8b7355;
   }
 
   .footerText p {
-    margin: 0 0 20px 0;
-    font-weight: 500;
+    margin: 0;
   }
 
   .signupLink {
-    color: #ff6347;
-    text-decoration: none;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    padding: 8px 16px;
-    border-radius: 6px;
-    display: inline-block;
+    color: #ff6b35;
+    font-weight: 600;
   }
 
   .signupLink:hover {
-    background-color: rgba(255, 99, 71, 0.1);
-    color: #e55a3a;
+    color: #ff8559;
   }
 }
 
@@ -442,17 +513,12 @@
     padding: 15px;
   }
   
-  .title {
+  .formTitle {
     font-size: 22px;
-    margin-bottom: 25px;
   }
   
-  .inputContainer {
-    max-width: 100%;
-  }
-  
-  .signinBtn,
-  .socialBtn {
-    max-width: 100%;
+  .input {
+    font-size: 14px;
+    padding: 12px;
   }
 }

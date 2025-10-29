@@ -4,6 +4,20 @@
   padding-bottom: 20px;
 }
 
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
 /* Header */
 .header {
   display: flex;
@@ -263,4 +277,18 @@
     flex: 1;
     padding: 10px 16px;
   }
+}
+
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyState p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
 }

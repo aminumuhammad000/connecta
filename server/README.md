@@ -1,6 +1,8 @@
 <!-- api end points  -->
+
+## User Endpoints
 <!-- register a new user -->
-http://localhost:5000/api/users/signup
+POST http://localhost:5000/api/users/signup
 
 <!-- login user -->
 http://localhost:5000/api/users/signin
@@ -70,10 +72,5 @@ PUT /api/profiles/6720bc8f2a9a442f208b912e
     }
   ]
 }
-
-<!-- uploading a file to google drive -->
-POST /upload
-curl -X POST http://localhost:5000/api/upload \
-  -F "file=@/path/to/your/file.pdf"
 
 <!-- profile API END HERE -->

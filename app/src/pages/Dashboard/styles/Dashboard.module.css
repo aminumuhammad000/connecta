@@ -8,6 +8,47 @@
   padding-bottom: 20px;
 }
 
+.resultsCount {
+  padding: 12px 20px;
+  background-color: #fff;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.resultsCount p {
+  margin: 0;
+  font-size: 14px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.noJobs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.noJobs p {
+  font-size: 16px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
 /* Mobile-first responsive design */
 @media (max-width: 768px) {
   .dashboard {
@@ -22,6 +63,11 @@
   
   .jobsList {
     padding-bottom: 16px;
+  }
+
+  .loadingContainer,
+  .noJobs {
+    padding: 40px 16px;
   }
 }
 

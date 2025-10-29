@@ -46,15 +46,27 @@
   position: relative;
 }
 
+.headerInfo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
 .title {
   font-family: 'Roboto', sans-serif;
   font-weight: 600;
   font-size: 22px;
   color: rgba(0, 0, 0, 0.9);
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   margin: 0;
+}
+
+.subtitle {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
 }
 
 .iconButton {
@@ -189,6 +201,14 @@
 .readIcon {
   width: 14px;
   height: 14px;
+  color: #4A90E2;
+}
+
+.unreadIcon {
+  width: 14px;
+  height: 14px;
+  color: #8688A1;
+  opacity: 0.7;
 }
 
 /* File Preview Section */
@@ -327,6 +347,99 @@
 .sendButton .icon {
   width: 24px;
   height: 24px;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  padding: 40px 20px;
+}
+
+.loadingContainer p {
+  font-size: 16px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Typing Indicator */
+.typingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 8px;
+  max-width: 100px;
+}
+
+.typingDots {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: var(--received-bubble-bg);
+  border-radius: 16px;
+}
+
+.typingDots span {
+  width: 8px;
+  height: 8px;
+  background-color: var(--text-light);
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+  opacity: 0.6;
+}
+
+.typingDots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typingDots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typingDots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+.typingText {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Attachment Styles */
+.attachment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.attachment .fileIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-light);
+}
+
+.attachment span {
+  font-size: 13px;
+  color: var(--text-light);
 }
 
 /* Responsive Design */

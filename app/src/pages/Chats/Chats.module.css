@@ -1,0 +1,271 @@
+.chatsPage {
+  min-height: 100vh;
+  background-color: #F5F7FA;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-family: 'Inter', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2C2D3A;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #8688A1;
+  margin: 0;
+}
+
+/* Search Bar */
+.searchContainer {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #8688A1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  border: 1px solid #E0E0E0;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  background-color: #FFFFFF;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #FD6730;
+  box-shadow: 0 0 0 3px rgba(253, 103, 48, 0.1);
+}
+
+/* Conversations List */
+.conversationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conversationCard {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid #E0E0E0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.conversationCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #FD6730;
+}
+
+.avatar {
+  flex-shrink: 0;
+}
+
+.avatarIcon {
+  width: 56px;
+  height: 56px;
+  color: #8688A1;
+}
+
+.conversationInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.conversationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.userName {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2C2D3A;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timestamp {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #8688A1;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.projectTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: #F5F7FA;
+  border-radius: 6px;
+  max-width: fit-content;
+}
+
+.projectIcon {
+  width: 14px;
+  height: 14px;
+  color: #FD6730;
+}
+
+.projectTag span {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #2C2D3A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lastMessageContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.lastMessage {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  color: #8688A1;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.youPrefix {
+  color: #2C2D3A;
+  font-weight: 500;
+}
+
+.unreadBadge {
+  flex-shrink: 0;
+  background-color: #FD6730;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 80px;
+  height: 80px;
+  color: #D0D1DB;
+  margin-bottom: 16px;
+}
+
+.emptyState h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #2C2D3A;
+  margin: 0 0 8px 0;
+}
+
+.emptyState p {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #8688A1;
+  margin: 0;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.loadingIcon {
+  width: 48px;
+  height: 48px;
+  color: #FD6730;
+  margin-bottom: 16px;
+}
+
+.loadingContainer p {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #8688A1;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .conversationCard {
+    padding: 12px;
+  }
+
+  .avatarIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .userName {
+    font-size: 16px;
+  }
+}

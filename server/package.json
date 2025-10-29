@@ -6,12 +6,18 @@
   "scripts": {
     "start": "ts-node src/app.ts",
     "dev": "nodemon src/app.ts",
+    "seed:jobs": "ts-node scripts/seedJobs.ts",
+    "seed:proposals": "ts-node scripts/seedProposals.ts",
+    "seed:projects": "ts-node scripts/seedProjects.ts",
+    "seed:messages": "ts-node scripts/seedMessages.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@langchain/core": "^1.0.2",
+    "@langchain/openai": "^1.0.0",
     "@prisma/client": "^6.17.1",
     "axios": "^1.13.0",
     "bcryptjs": "^3.0.2",
@@ -23,11 +29,16 @@
     "googleapis": "^164.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "langchain": "^1.0.2",
     "mongoose": "^8.19.2",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "openrouter-ai": "^2.1.32",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "socket.io": "^4.8.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
