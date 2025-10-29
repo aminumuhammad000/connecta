@@ -1,3 +1,4 @@
+import ClientChat from './pages/client/ClientChat';
 import CreateJob from './pages/client/CreateJob'
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, } from 'react-router-dom'
@@ -9,7 +10,7 @@ import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
 import Dashboard from './pages/Dashboard/Dashboard'
 import JobDetail from './pages/JobDetail/JobDetail'
-import Profile from './pages/profiles/Profile'
+import Profile from './pages/client/Profile/Profile';
 import Proposals from './pages/Proposals/Proposals'
 import ProjectDashboard from './pages/ProjectDashboard/ProjectDashboard'
 import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
@@ -112,6 +113,20 @@ function App() {
             </div>
             </ProtectedRoute>
           } />
+                  <Route path='/client-chats' element={
+                    <ProtectedRoute>
+                      <div className="client-projects-bg">
+                      <ClientChat />
+                      </div>
+                    </ProtectedRoute>
+                  } />
+                  <Route path='/client/profile' element={
+                    <ProtectedRoute>
+                      <div className="client-projects-bg">
+                        <Profile />
+                      </div>
+                    </ProtectedRoute>
+                  } />
           <Route path='/client/create-job' element={
             <ProtectedRoute>
               <div className="client-projects-bg">

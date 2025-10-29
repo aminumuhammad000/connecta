@@ -43,9 +43,8 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
               <img src={Logo} alt="Connecta Logo" className={styles.logoImage} />
             </button>
           </div>
-
           {/* Navigation */}
-          <nav className={styles.nav}>
+          <nav className={styles.nav}>  
             <button 
               onClick={() => handleNavigation('/client-dashboard')} 
               className={`${styles.navItem} ${isActive('/client-dashboard') ? styles.active : ''}`}
@@ -68,15 +67,8 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
               Create Job
             </button>
             <button 
-              onClick={() => handleNavigation('/dashboard')} 
-              className={styles.navItem}
-            >
-              <Icon icon="material-symbols:group-outline" className={styles.navIcon} />
-              Find Freelancers
-            </button>
-            <button 
-              onClick={() => handleNavigation('/chats')} 
-              className={`${styles.navItem} ${isActive('/chats') ? styles.active : ''}`}
+              onClick={() => handleNavigation('/client-chats')} 
+              className={`${styles.navItem} ${isActive('/client-chats') ? styles.active : ''}`}
             >
               <Icon icon="material-symbols:chat-bubble-outline" className={styles.navIcon} />
               Messages
@@ -86,11 +78,11 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
           {/* Bottom Section */}
           <div className={styles.bottomSection}>
             <button 
-              onClick={() => handleNavigation('/edit-profile')} 
+              onClick={() => handleNavigation('/client/profile')} 
               className={styles.navItem}
             >
-              <Icon icon="material-symbols:settings-outline" className={styles.navIcon} />
-              Settings
+              <Icon icon="mdi:account-circle-outline" className={styles.navIcon} />
+              My Profile
             </button>
             <button onClick={handleLogout} className={styles.navItem}>
               <Icon icon="material-symbols:logout" className={styles.navIcon} />

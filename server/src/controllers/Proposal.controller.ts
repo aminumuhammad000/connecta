@@ -117,15 +117,34 @@ export const getProposalById = async (req: Request, res: Response) => {
 export const createProposal = async (req: Request, res: Response) => {
   try {
     const proposalData = req.body;
-
+    // Set freelancerId and clientId from authenticated user
+    if (req.user) {
+      proposalData.freelancerId = (req.user as any).id;
+      proposalData.clientId = req.body.clientId || undefined; // Optionally set clientId if needed
+    }
+    // Set title if not provided (use job title or fallback)
+    if (!proposalData.title) {
+      // Try to get job title from Job model if jobId is provided
+      if (proposalData.jobId) {
+        try {
+          const Job = require('../models/Job.model').default;
+          const job = await Job.findById(proposalData.jobId);
+          proposalData.title = job ? job.title : 'Job Application';
+        } catch (e) {
+          proposalData.title = 'Job Application';
+        }
+      } else {
+        proposalData.title = 'Job Application';
+      }
+    }
     const proposal = await Proposal.create(proposalData);
-
     res.status(201).json({
       success: true,
       message: 'Proposal created successfully',
       data: proposal,
     });
   } catch (error: any) {
+    console.error('Error creating proposal:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating proposal',

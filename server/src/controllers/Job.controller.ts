@@ -3,8 +3,8 @@
 // ===================
 export const getClientJobs = async (req: Request, res: Response) => {
   try {
-    // Assume req.user._id is set by auth middleware
-    const clientId = req.user?._id;
+    // Use (req.user as any) to avoid TS errors
+    const clientId = (req.user as any)?._id || (req.user as any)?.id;
     if (!clientId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -91,9 +91,13 @@ export const getJobById = async (req: Request, res: Response) => {
 export const createJob = async (req: Request, res: Response) => {
   try {
     const jobData = req.body;
-
+    // Set clientId from authenticated user (use any to avoid TS error)
+    const clientId = (req.user as any)?._id || (req.user as any)?.id;
+    if (!clientId) {
+      return res.status(401).json({ success: false, message: "Unauthorized: No clientId" });
+    }
+    jobData.clientId = clientId;
     const newJob = await Job.create(jobData);
-
     res.status(201).json({
       success: true,
       message: "Job created successfully",
