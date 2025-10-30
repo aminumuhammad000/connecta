@@ -9,6 +9,12 @@ import connectDB from "./config/db.config";
 // routes 
 import userRoutes from "./routes/user.routes";
 import profileRoutes from "./routes/Profile.routes";
+import projectRoutes from "./routes/Project.routes";
+import jobRoutes from "./routes/Job.routes";
+import messageRoutes from "./routes/Message.routes";
+import proposalRoutes from "./routes/Proposal.routes";
+import dashboardRoutes from "./routes/Dashboard.routes";
+import uploadRoutes from "./routes/upload.routes";
 dotenv.config();
 
 const app = express();
@@ -18,6 +24,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
 // Initialize Socket.io
+import { setIO } from './core/utils/socketIO';
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
@@ -25,6 +32,7 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+setIO(io);
 
 // Middleware
 app.use(cors({
@@ -40,6 +48,12 @@ connectDB();
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/profiles", profileRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/proposals", proposalRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/uploads", uploadRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");

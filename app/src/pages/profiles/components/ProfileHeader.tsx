@@ -19,7 +19,21 @@ const StarRating = ({ rating = 4.9 }: { rating?: number }) => {
   );
 };
 
-export const ProfileHeader = () => {
+type ProfileHeaderProps = {
+  name?: string;
+  location?: string;
+  profileImage?: string;
+  rating?: number;
+  successRate?: string;
+};
+
+export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  name,
+  location,
+  profileImage,
+  rating = 4.9,
+  successRate = '98%'
+}) => {
   const navigate = useNavigate();
 
   const handleEditProfile = () => {
@@ -30,26 +44,30 @@ export const ProfileHeader = () => {
     navigate('/complete-profile');
   };
 
+  const displayName = name || 'Mustapha Hussein';
+  const displayLocation = location || 'kano, Nigeria';
+  const avatar = profileImage || userImage;
+
   return (
     <div className={styles.profileHeader}>
       <div className={styles.profileInfo}>
         <div className={styles.avatarContainer}>
-          <img src={userImage} alt="Profile" className={styles.avatar} />
+          <img src={avatar} alt="Profile" className={styles.avatar} />
           <button className={styles.editButton} onClick={handleEditProfile}>
             <Icon icon="lucide:pencil" className={styles.editIcon} />
           </button>
         </div>
         <div className={styles.userDetails}>
-          <h2 className={styles.userName}>Mustapha Hussein</h2>
+          <h2 className={styles.userName}>{displayName}</h2>
           <div className={styles.location}>
             <Icon icon="lucide:map-pin" className={styles.locationIcon} />
-            <span>kano, Nigeria</span>
+            <span>{displayLocation}</span>
           </div>
           <div className={styles.ratingContainer}>
             <StarRating rating={4.9} />
-            <span className={styles.ratingValue}>4.9</span>
+            <span className={styles.ratingValue}>{rating}</span>
           </div>
-          <p className={styles.successRate}>Job Success Rate: 98%</p>
+          <p className={styles.successRate}>Job Success Rate: {successRate}</p>
         </div>
       </div>
       <div className={styles.profileProgress}>

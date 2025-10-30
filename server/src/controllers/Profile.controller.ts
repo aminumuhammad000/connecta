@@ -53,6 +53,28 @@ export const getAllProfiles = async (req: Request, res: Response) => {
 };
 
 /**
+ * @desc Get profile for authenticated user
+ * @route GET /api/profiles/me
+ */
+export const getMyProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any)?._id || (req.user as any)?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const profile = await Profile.findOne({ user: userId }).populate(
+      'user',
+      'firstName lastName email profileImage userType'
+    );
+
+    if (!profile) return res.status(404).json({ message: 'Profile not found' });
+
+    res.status(200).json(profile);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
  * @desc Get profile by ID
  * @route GET /api/profiles/:id
  */

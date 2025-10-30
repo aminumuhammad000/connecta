@@ -8,7 +8,7 @@ const DashboardNav: React.FC = () => {
 
   const navItems = [
     { label: 'My proposals', icon: 'weui:arrow-filled', path: '/proposals' },
-    { label: 'My profile', icon: 'weui:arrow-filled', path: '/profile' },
+    { label: 'My profile', icon: 'weui:arrow-filled', path: '/freelancer/profile' },
     { label: 'My project Dashboard', icon: 'weui:arrow-filled', path: '/project-dashboard' }
   ];
 

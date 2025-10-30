@@ -19,6 +19,10 @@ interface JobDetailsProps {
 }
 
 const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
+  // Defensive: fallback to empty array if undefined
+  const mandatorySkills = job.mandatorySkills || [];
+  const niceToHaveSkills = job.niceToHaveSkills || [];
+  const tools = job.tools || [];
   return (
     <div className={styles.jobDetails}>
       {/* Budget & Experience */}
@@ -49,7 +53,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
         <div className={styles.skillGroup}>
           <h4 className={styles.skillGroupTitle}>Mandatory skills</h4>
           <div className={styles.skillTags}>
-            {job.mandatorySkills.map((skill, index) => (
+            {mandatorySkills.map((skill, index) => (
               <span key={index} className={styles.skillTag}>
                 {skill}
               </span>
@@ -61,7 +65,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
         <div className={styles.skillGroup}>
           <h4 className={styles.skillGroupTitle}>Nice-to-have skills</h4>
           <div className={styles.skillTags}>
-            {job.niceToHaveSkills.map((skill, index) => (
+            {niceToHaveSkills.map((skill, index) => (
               <span key={index} className={styles.skillTag}>
                 {skill}
               </span>
@@ -73,7 +77,7 @@ const JobDetails: React.FC<JobDetailsProps> = ({ job }) => {
         <div className={styles.skillGroup}>
           <h4 className={styles.skillGroupTitle}>Tools</h4>
           <div className={styles.skillTags}>
-            {job.tools.map((tool, index) => (
+            {tools.map((tool, index) => (
               <span key={index} className={styles.skillTag}>
                 {tool}
               </span>
