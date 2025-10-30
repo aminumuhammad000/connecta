@@ -132,13 +132,3 @@ DELETE http://localhost:5000/api/messages/:id
 - user:offline - User went offline
 
 
-<!-- VITE_GOOGLE_CLIENT_ID=855950020031-io57du6qg48u27qa75gdrgh6l55sg5c9.apps.googleusercontent.com
- #   855950020031-io57du6qg48u27qa75gdrgh6l55sg5c9.apps.googleusercontent.com
-VITE_API_BASE_URL=http://localhost:5000/api
-Cloud_name=dl4smhb8s
-API_key=763434723539499
-API_secret=tTXbAMQqkpISpmnRTKe_nUzawI0
-CLOUDINARY_URL=cloudinary://763434723539499:tTXbAMQqkpISpmnRTKe_nUzawI0@dl4smhb8s
-HUGGINGFACE_API_KEY=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
-VITE_HUGGINGFACE_API_KEY=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 -->
-
