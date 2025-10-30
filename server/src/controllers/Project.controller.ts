@@ -178,9 +178,36 @@ export const getProjectById = async (req: Request, res: Response) => {
       });
     }
 
+    // Convert to plain object and ensure clientId and freelancerId are objects with _id, firstName, lastName
+    const projectObj = project.toObject();
+    let clientIdObj = projectObj.clientId;
+    let freelancerIdObj = projectObj.freelancerId;
+    // Defensive: if populated, these are objects; if not, fallback to id only
+    if (clientIdObj && typeof clientIdObj === 'object' && clientIdObj._id) {
+      clientIdObj = {
+        _id: clientIdObj._id,
+        firstName: clientIdObj.firstName,
+        lastName: clientIdObj.lastName
+      };
+    } else {
+      clientIdObj = { _id: projectObj.clientId };
+    }
+    if (freelancerIdObj && typeof freelancerIdObj === 'object' && freelancerIdObj._id) {
+      freelancerIdObj = {
+        _id: freelancerIdObj._id,
+        firstName: freelancerIdObj.firstName,
+        lastName: freelancerIdObj.lastName
+      };
+    } else {
+      freelancerIdObj = { _id: projectObj.freelancerId };
+    }
     res.status(200).json({
       success: true,
-      data: project,
+      data: {
+        ...projectObj,
+        clientId: clientIdObj,
+        freelancerId: freelancerIdObj
+      },
     });
   } catch (error: any) {
     res.status(500).json({
