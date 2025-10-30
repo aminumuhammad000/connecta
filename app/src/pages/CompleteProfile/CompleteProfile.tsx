@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import Header from '../../components/Header';
 import styles from './CompleteProfile.module.css';
+import { extractTextFromPDF } from '../../api/pdfToText';
+import { extractTextFromDocx } from '../../api/docxToText';
+import { extractEntities } from '../../api/extractEntities';
+
 
 const CompleteProfile: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -34,30 +38,49 @@ const CompleteProfile: React.FC = () => {
     setSelectedFile(file);
   };
 
-  const handleExtractData = async () => {
-    if (!selectedFile) return;
+const handleExtractData = async () => {
+  if (!selectedFile) return;
 
-    setUploading(true);
-    try {
-      // TODO: Implement actual CV parsing API call
-      // For now, simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+  setUploading(true);
+  setError('');
 
-      // Navigate to edit profile with extracted data
-      // In real implementation, pass extracted data as state
-      navigate('/edit-profile', {
-        state: {
-          fromAI: true,
-          extractedData: {
-            // This will be populated by actual API response
-          }
-        }
-      });
-    } catch (err) {
-      setError('Failed to extract data from CV. Please try again.');
-      setUploading(false);
+  try {
+    let text = '';
+
+    // Step 1: Extract raw text from file
+    if (selectedFile.type === 'application/pdf') {
+      text = await extractTextFromPDF(selectedFile);
+    } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      text = await extractTextFromDocx(selectedFile);
+    } else {
+      throw new Error('Unsupported file type');
     }
-  };
+
+    if (!text.trim()) throw new Error('No text found in file');
+
+    // Step 2: Extract entities (AI parsing)
+    const entityResult = await extractEntities(text);
+
+    if (!entityResult) throw new Error('Entity extraction failed');
+
+    // Step 3: Save parsed result in localStorage
+    localStorage.setItem('connecta_extracted_cv_data', JSON.stringify(entityResult));
+
+    // Step 4: Navigate to /edit-profile with extracted data
+    navigate('/edit-profile', {
+      state: {
+        fromAI: true,
+        extractedData: entityResult,
+      },
+    });
+  } catch (err: any) {
+    console.error('❌ Extraction error:', err);
+    setError(err.message || 'Failed to extract data from CV. Please try again.');
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   const handleManualComplete = () => {
     navigate('/edit-profile');

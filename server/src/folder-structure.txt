@@ -1,0 +1,80 @@
+.
+├── app.ts
+├── config
+│   ├── app.config.ts
+│   ├── db.config.ts
+│   ├── env.config.ts
+│   └── google.config.ts
+├── controllers
+│   ├── Dashboard.controller.ts
+│   ├── Job.controller.ts
+│   ├── Message.controller.ts
+│   ├── Profile.controller.ts
+│   ├── Project.controller.ts
+│   ├── Proposal.controller.ts
+│   ├── upload.controller.ts
+│   └── user.controller.ts
+├── core
+│   ├── ai
+│   │   ├── config
+│   │   │   └── openrouter.ts
+│   │   ├── connecta-agent
+│   │   │   ├── agent.ts
+│   │   │   ├── index.ts
+│   │   │   ├── prompts
+│   │   │   │   ├── intent-prompt.ts
+│   │   │   │   └── intent.ts
+│   │   │   ├── testAgent.ts
+│   │   │   ├── tools
+│   │   │   │   ├── create-cover-letter.tool.ts
+│   │   │   │   ├── get-matched-gigs.tool.ts
+│   │   │   │   ├── index.ts
+│   │   │   │   └── update-profile.tool.ts
+│   │   │   └── types.ts
+│   │   ├── index.ts
+│   │   └── services
+│   │       └── openrouter.service.ts
+│   ├── constants
+│   │   └── {app.constants.ts}
+│   ├── database
+│   │   └── index.ts
+│   ├── errors
+│   │   ├── AppError.ts
+│   │   └── errorHandler.ts
+│   ├── interfaces
+│   │   └── {index.ts}
+│   ├── middleware
+│   │   ├── auth.middleware.ts
+│   │   ├── error.middleware.ts
+│   │   └── logger.middleware.ts
+│   └── utils
+│       ├── helpers.ts
+│       └── pagination.ts
+├── extractEntities.ts
+├── folder-structure.txt
+├── models
+│   ├── Conversation.model.ts
+│   ├── Job.model.ts
+│   ├── Message.model.ts
+│   ├── Profile.model.ts
+│   ├── Project.model.ts
+│   ├── Proposal.model.ts
+│   └── user.model.ts
+├── routes
+│   ├── Dashboard.routes.ts
+│   ├── index.ts
+│   ├── Job.routes.ts
+│   ├── Message.routes.ts
+│   ├── Profile.routes.ts
+│   ├── Project.routes.ts
+│   ├── Proposal.routes.ts
+│   ├── upload.routes.ts
+│   ├── user.routes.ts
+│   └── v1.routes.ts
+├── test
+│   └── testConnectaAgent.ts
+└── types
+    ├── express.d.ts
+    └── global.d.ts
+
+20 directories, 58 files

@@ -13,11 +13,24 @@ export class GetMatchedGigsTool extends StructuredTool<typeof schema> {
   description = 'Finds gigs/jobs that match user profile and preferences';
   schema = schema;
   
-  constructor(private apiBaseUrl: string, private authToken: string) {
+  constructor(private apiBaseUrl: string, private authToken: string, private mockMode: boolean = false) {
     super();
   }
 
   protected async _call(params: z.infer<typeof schema>): Promise<string> {
+    if (this.mockMode) {
+      return JSON.stringify({
+        success: true,
+        message: 'Matched gigs retrieved successfully (mock)',
+        data: {
+          gigs: [
+            { id: 1, title: 'Full Stack Developer', skills: params.skills || [] },
+            { id: 2, title: 'Frontend Engineer', skills: params.skills || [] }
+          ]
+        }
+      });
+    }
+
     try {
       const response = await axios.get(
         `${this.apiBaseUrl}/api/gigs/matches`,

@@ -13,14 +13,14 @@ Available tools:
 - get_matched_gigs_tool: For finding gigs or jobs.
 
 Return JSON in this format:
-{
+{{
   "tool": "<tool_name>",
-  "parameters": { ... }
-}
+  "parameters": {{ ... }}
+}}
 `;
 
 export const IntentSchema = z.object({
-  intent: z.string(),
+  intent: z.string().optional(),
   tool: z.string(),
   parameters: z.record(z.string(), z.any()),
 });

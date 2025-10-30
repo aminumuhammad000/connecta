@@ -14,11 +14,22 @@ export class CreateCoverLetterTool extends StructuredTool<typeof schema> {
   description = 'Creates a cover letter based on user profile and job requirements';
   schema = schema;
   
-  constructor(private apiBaseUrl: string, private authToken: string) {
+  constructor(private apiBaseUrl: string, private authToken: string, private mockMode: boolean = false) {
     super();
   }
 
   protected async _call(params: z.infer<typeof schema>): Promise<string> {
+    if (this.mockMode) {
+      return JSON.stringify({
+        success: true,
+        message: 'Cover letter generated successfully (mock)',
+        data: {
+          coverLetter: `Dear Hiring Manager,\n\nI am excited to apply for the ${params.position} position${params.company ? ` at ${params.company}` : ''}.\n\nBest regards`,
+          ...params
+        }
+      });
+    }
+
     try {
       const response = await axios.post(
         `${this.apiBaseUrl}/api/cover-letter/generate`,
