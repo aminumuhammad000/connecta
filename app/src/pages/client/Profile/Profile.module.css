@@ -1,0 +1,125 @@
+/* Main Container */
+.container {
+  display: flex;
+  height: 87vh;
+  overflow: hidden;
+  background-color: #f5f5f7;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem 2rem;
+}
+
+
+.profilePageBg {
+  min-height: 100vh;
+  background: linear-gradient(120deg, #f0f6ff 0%, #e0e7ff 100%);
+  display: flex;
+}
+.profileMain {
+  flex: 1;
+  padding: 32px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.profileCard {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 16px rgba(59,130,246,0.07);
+  padding: 36px 32px 28px 32px;
+  max-width: 480px;
+  width: 100%;
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.avatarSection {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 4px solid #3b82f6;
+  object-fit: cover;
+}
+.name {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 4px 0;
+}
+.role, .email, .location, .joined {
+  color: #3b82f6;
+  font-size: 1rem;
+  margin: 0 0 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bioSection {
+  width: 100%;
+  margin-top: 18px;
+  background: #f0f6ff;
+  border-radius: 8px;
+  padding: 16px 14px;
+}
+.bioSection h3 {
+  margin: 0 0 6px 0;
+  font-size: 1.1rem;
+  color: #2563eb;
+}
+.bioSection p {
+  margin: 0;
+  color: #333;
+  font-size: 1rem;
+}
+.editBtn {
+  margin-top: 22px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 22px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.editBtn:hover {
+  background: #2563eb;
+}
+@media (max-width: 700px) {
+  .profileCard {
+    padding: 18px 6px 18px 6px;
+    max-width: 98vw;
+  }
+  .avatarSection {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}

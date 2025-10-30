@@ -10,13 +10,12 @@ import {
   searchJobs,
   getClientJobs
 } from "../controllers/Job.controller";
-
-
+import { authenticate } from "../core/middleware/auth.middleware";
 
 const router = express.Router();
 
-// Get jobs for the current client
-router.get("/client/my-jobs", getClientJobs);
+// Get jobs for the current client (protected)
+router.get("/client/my-jobs", authenticate, getClientJobs);
 
 // Get all jobs with filters
 router.get("/", getAllJobs);
@@ -30,8 +29,8 @@ router.get("/search", searchJobs);
 // Get job by ID
 router.get("/:id", getJobById);
 
-// Create new job
-router.post("/", createJob);
+// Create new job (protected)
+router.post("/", authenticate, createJob);
 
 // Update job
 router.put("/:id", updateJob);
