@@ -9,10 +9,27 @@ interface ClientSidebarProps {
   onClose: () => void;
 }
 
+import { useState, useEffect } from 'react';
+
 const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const [isExpanded, setIsExpanded] = useState(true);
+  const onToggleExpand = () => setIsExpanded((prev) => !prev);
+
+  // Toggle body class for collapsed sidebar
+  useEffect(() => {
+    const body = document.body;
+    if (!isExpanded) {
+      body.classList.add('sidebar-collapsed');
+    } else {
+      body.classList.remove('sidebar-collapsed');
+    }
+    return () => {
+      body.classList.remove('sidebar-collapsed');
+    };
+  }, [isExpanded]);
 
   const handleLogout = () => {
     logout();
@@ -42,6 +59,11 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
             <button onClick={() => handleNavigation('/client-dashboard')} className={styles.logoLink}>
               <img src={Logo} alt="Connecta Logo" className={styles.logoImage} />
             </button>
+            {/* Expand/Reduce Icon Toggle */}
+            <span style={{marginLeft: 8, cursor: 'pointer', color: 'tomato', fontSize: 20}} onClick={onToggleExpand}>
+              <Icon icon={isExpanded ? 'material-symbols:unfold-less' : 'material-symbols:unfold-more'} />
+            </span>
+
           </div>
           {/* Navigation */}
           <nav className={styles.nav}>  

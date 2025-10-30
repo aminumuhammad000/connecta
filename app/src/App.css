@@ -6,12 +6,19 @@ body {
 /* overflow: hidden; */
 
 }
+
 .client-projects-bg {
-    height: 100vh;
-    padding: 70px;
-    border-radius: 20px; 
+  height: 100vh;
+  padding: 70px;
+  border-radius: 20px;
+  transition: padding 0.2s, border-radius 0.2s;
+}
 
-
+body.sidebar-collapsed .client-projects-bg {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  
+}
 }
 
 @media (max-width: 600px) {

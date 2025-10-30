@@ -1,11 +1,11 @@
 /* Main Container */
 .container {
   display: flex;
-  height: 87vh;
+  height: 100vh;
   overflow: hidden;
   background-color: #f5f5f7;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  border-radius: 20px;
+  border-radius: px;
   overflow: hidden;
 }
 
