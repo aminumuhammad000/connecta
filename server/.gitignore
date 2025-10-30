@@ -1,6 +1,7 @@
 node_modules
 # Keep environment variables out of version control
 .env
+client_secret_855950020031-io57du6qg48u27qa75gdrgh6l55sg5c9.apps.googleusercontent.com.json
 
 /src/generated/prisma
 
