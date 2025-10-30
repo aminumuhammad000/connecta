@@ -6,14 +6,14 @@ dotenv.config();
 
 async function main() {
   const agent = new ConnectaAgent({
-    apiBaseUrl: "http://localhost:5000", // replace with your backend URL
+    apiBaseUrl: "http://localhost:5000",
     authToken: "test-auth-token",
-    userId: "YOUR_USER_ID_HERE", // Replace with actual user/profile ID
     openaiApiKey: process.env.OPENROUTER_API_KEY || "your-fallback-api-key",
-    mockMode: false, // Disabled - will use real API
+    mockMode: false,
+    userId: "68fc1d4fbea3f44d815cc272",
   });
 
-  const input = "Update my bio to say I am an AI developer passionate about automation";
+  const input = "who are you?";
 
   const result = await agent.process(input);
 

@@ -5,6 +5,7 @@ import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.config";
+import agentRoute from "./routes/agentRoute";
 
 // routes 
 import userRoutes from "./routes/user.routes";
@@ -44,7 +45,6 @@ app.use(express.json());
 // Connect to Database
 connectDB();
 
-
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/profiles", profileRoutes);
@@ -54,6 +54,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/proposals", proposalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/agent", agentRoute);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
