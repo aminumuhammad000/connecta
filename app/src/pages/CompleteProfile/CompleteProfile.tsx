@@ -38,6 +38,51 @@ const CompleteProfile: React.FC = () => {
     setSelectedFile(file);
   };
 
+// const handleExtractData = async () => {
+//   if (!selectedFile) return;
+
+//   setUploading(true);
+//   setError('');
+
+//   try {
+//     let text = '';
+
+//     // Step 1: Extract raw text from file
+//     if (selectedFile.type === 'application/pdf') {
+//       text = await extractTextFromPDF(selectedFile);
+//     } else if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+//       text = await extractTextFromDocx(selectedFile);
+//     } else {
+//       throw new Error('Unsupported file type');
+//     }
+
+//     if (!text.trim()) throw new Error('No text found in file');
+
+//     // Step 2: Extract entities (AI parsing)
+//     const entityResult = await extractEntities(text);
+
+//     if (!entityResult) throw new Error('Entity extraction failed');
+
+//     // Step 3: Save parsed result in localStorage
+//     localStorage.setItem('connecta_extracted_cv_data', JSON.stringify(entityResult));
+//     console.log(entityResult);
+
+//     // Step 4: Navigate to /edit-profile with extracted data
+//     navigate('/edit-profile', {
+//       state: {
+//         fromAI: true,
+//         extractedData: entityResult,
+//       },
+//     });
+//   } catch (err: any) {
+//     console.error('❌ Extraction error:', err);
+//     setError(err.message || 'Failed to extract data from CV. Please try again.');
+//   } finally {
+//     setUploading(false);
+//   }
+// };
+
+
 const handleExtractData = async () => {
   if (!selectedFile) return;
 
@@ -60,18 +105,21 @@ const handleExtractData = async () => {
 
     // Step 2: Extract entities (AI parsing)
     const entityResult = await extractEntities(text);
+    if (!entityResult || !entityResult.entities) throw new Error('Entity extraction failed');
 
-    if (!entityResult) throw new Error('Entity extraction failed');
+    // 🧠 Step 3: Convert to structured JSON
+    const structuredData = convertEntitiesToProfile(entityResult.entities, text);
 
-    // Step 3: Save parsed result in localStorage
-    localStorage.setItem('connecta_extracted_cv_data', JSON.stringify(entityResult));
-    console.log(entityResult);
+    // 🗂️ Step 4: Save to localStorage
+    localStorage.setItem('connecta_extracted_cv_data', JSON.stringify(structuredData, null, 2));
 
-    // Step 4: Navigate to /edit-profile with extracted data
+    console.log("✅ Structured CV Data:", structuredData);
+
+    // Step 5: Navigate to edit profile (optional)
     navigate('/edit-profile', {
       state: {
         fromAI: true,
-        extractedData: entityResult,
+        extractedData: structuredData,
       },
     });
   } catch (err: any) {
@@ -82,6 +130,50 @@ const handleExtractData = async () => {
   }
 };
 
+// Helper to structure the NER entities + regex-detected info
+function convertEntitiesToProfile(entities: any[], rawText: string) {
+  const group = (type: string) =>
+    entities
+      .filter((e) => e.entity === type)
+      .map((e) => e.word.trim())
+      .filter((v, i, a) => v && a.indexOf(v) === i);
+
+  const persons = group("PER");
+  const orgs = group("ORG");
+  const locs = group("LOC");
+  const miscs = group("MISC");
+
+  const name = persons.slice(0, 2).join(" ").replace(/\n/g, "").trim() || "Unknown";
+
+  // Regex detection for email, phone, links
+  const email = rawText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-z]{2,}/)?.[0] || "";
+  const phone = rawText.match(/(\+\d{1,3}[- ]?)?\d{9,13}/)?.[0] || "";
+  const linkedIn = rawText.match(/linkedin\.com\/[^\s)]+/i)?.[0] || "";
+  const github = rawText.match(/github\.com\/[^\s)]+/i)?.[0] || "";
+
+  // Detect technical skills (basic keyword matching)
+  const skillKeywords = [
+    "React", "Node", "JavaScript", "TypeScript", "HTML", "CSS", "Next", "Tailwind",
+    "Redux", "GraphQL", "Figma", "Canva", "Git", "MySQL", "Mongo", "PostgreSQL",
+    "AWS", "Netlify", "Vercel", "Express", "Jest", "Cypress", "Vue", "Laravel"
+  ];
+
+  const skills = miscs.filter(word =>
+    skillKeywords.some(skill => word.toLowerCase().includes(skill.toLowerCase()))
+  );
+
+  return {
+    name,
+    email,
+    phone,
+    linkedIn,
+    github,
+    location: locs,
+    organizations: orgs,
+    skills,
+    misc: miscs,
+  };
+}
 
   const handleManualComplete = () => {
     navigate('/edit-profile');

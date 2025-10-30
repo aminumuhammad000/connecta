@@ -27,4 +27,4 @@ dist-ssr
 .env.*.local
 # Vite env files (only commit public-safe envs without secrets)
 # .env and .env.local will be ignored; keep .env.example in repo instead
-.env.*
+.env.*.env

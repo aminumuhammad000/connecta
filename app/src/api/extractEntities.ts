@@ -1,10 +1,11 @@
 import axios, { type AxiosResponse } from "axios";
 
-// In a Vite (frontend) app you cannot use `dotenv` or `fs` (Node-only).
-// Read the Hugging Face API key from Vite env (must be prefixed with VITE_)
-// e.g. VITE_HUGGINGFACE_API_KEY in your .env
 const HF_API_KEY: string = import.meta.env.VITE_HUGGINGFACE_API_KEY || "";
-const MODEL: string = "dslim/bert-base-NER";
+// const MODEL: string = "dslim/bert-base-NER";
+// const MODEL: string = "Jean-Baptiste/camembert-ner-with-resume-data";
+const MODEL: string = "Jean-Baptiste/roberta-large-ner-english";
+// const MODEL = "nickmuchi/distilbert-base-uncased-finetuned-resume-ner";
+
 
 // Define types for clarity
 interface Entity {
