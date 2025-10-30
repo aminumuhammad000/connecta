@@ -29,8 +29,13 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     const totalCandidates = totalCandidatesResult[0]?.total || 0;
 
     // Get unread messages count
+
+    // Find conversations where user is either client or freelancer
     const conversations = await Conversation.find({
-      participants: userId,
+      $or: [
+        { clientId: userId },
+        { freelancerId: userId },
+      ],
     }).select('_id');
 
     const conversationIds = conversations.map((conv) => conv._id);
@@ -87,20 +92,29 @@ export const getRecentMessages = async (req: Request, res: Response) => {
     }
 
     // Get conversations for the user
+
     const conversations = await Conversation.find({
-      participants: userId,
+      $or: [
+        { clientId: userId },
+        { freelancerId: userId },
+      ],
     })
-      .populate('participants', 'firstName lastName profileImage')
+      .populate('clientId', 'firstName lastName profileImage')
+      .populate('freelancerId', 'firstName lastName profileImage')
       .populate('lastMessage')
       .sort({ updatedAt: -1 })
       .limit(3);
 
+
     const messagesData = await Promise.all(
       conversations.map(async (conv) => {
-        // Get the other participant
-        const otherParticipant = conv.participants.find(
-          (p: any) => p._id.toString() !== userId
-        ) as any;
+        // Get the other participant (populated or fallback to ObjectId)
+        let otherParticipant: any = null;
+        if (conv.clientId && typeof conv.clientId === 'object' && 'firstName' in conv.clientId && conv.clientId._id.toString() !== userId) {
+          otherParticipant = conv.clientId;
+        } else if (conv.freelancerId && typeof conv.freelancerId === 'object' && 'firstName' in conv.freelancerId && conv.freelancerId._id.toString() !== userId) {
+          otherParticipant = conv.freelancerId;
+        }
 
         // Check if there are unread messages
         const unreadCount = await Message.countDocuments({
@@ -113,7 +127,7 @@ export const getRecentMessages = async (req: Request, res: Response) => {
 
         return {
           id: conv._id,
-          name: otherParticipant
+          name: otherParticipant && otherParticipant.firstName && otherParticipant.lastName
             ? `${otherParticipant.firstName} ${otherParticipant.lastName}`
             : 'Unknown',
           message: lastMsg?.text || 'No messages yet',
@@ -122,7 +136,7 @@ export const getRecentMessages = async (req: Request, res: Response) => {
             : '',
           unread: unreadCount > 0,
           avatar:
-            otherParticipant?.profileImage ||
+            (otherParticipant && otherParticipant.profileImage) ||
             `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
         };
       })
