@@ -22,6 +22,9 @@ interface JobOverviewProps {
 
 
 const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
+  // Defensive: fallback to empty array if undefined
+  const requirements = job.requirements || [];
+  const deliverables = job.deliverables || [];
   const [isSaved, setIsSaved] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
@@ -95,7 +98,7 @@ const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
       <div >
         <h3 className={styles.sectionTitle}>Requirements</h3>
         <ul className={styles.requirementsList}>
-          {job.requirements.map((requirement, index) => (
+          {requirements.map((requirement, index) => (
             <li key={index} className={styles.requirementItem}>
               {requirement}
             </li>
@@ -106,7 +109,7 @@ const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Deliverables</h3>
         <ul className={styles.deliverablesList}>
-          {job.deliverables.map((deliverable, index) => (
+          {deliverables.map((deliverable, index) => (
             <li key={index} className={styles.deliverableItem}>
               {deliverable}
             </li>

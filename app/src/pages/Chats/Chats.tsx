@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { getSocket, disconnectSocket } from '../../utils/socket';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import Header from '../../components/Header';
@@ -37,21 +38,23 @@ const Chats: React.FC = () => {
   const navigate = useNavigate();
 
   // Get userId from localStorage, with fallback
+
+  // Force localStorage userId to seeded freelancer if not set
+  const SEEDED_FREELANCER_ID = '6900eacbda56fcad22cea38b'; // Replace with actual seeded freelancer ID if different
   const getUserId = (): string => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        return user._id || user.id || '';
-      } catch (e) {
-        console.error('Error parsing user from localStorage:', e);
-      }
+    let userId = localStorage.getItem('userId');
+    if (!userId) {
+      localStorage.setItem('userId', SEEDED_FREELANCER_ID);
+      userId = SEEDED_FREELANCER_ID;
     }
-    // Fallback to hardcoded freelancer ID for testing
-    return localStorage.getItem('userId') || '6900eacbda56fcad22cea38b';
+    return userId;
   };
 
   const currentUserId = getUserId();
+
+
+  // Socket.io real-time updates
+  const socketRef = useRef<any>(null);
 
   useEffect(() => {
     if (!currentUserId) {
@@ -60,6 +63,27 @@ const Chats: React.FC = () => {
       return;
     }
     fetchConversations();
+
+    // Setup socket connection
+    socketRef.current = getSocket();
+    socketRef.current.emit('user:join', currentUserId);
+
+    // Listen for new messages or conversations
+    socketRef.current.on('message:receive', () => {
+      fetchConversations();
+    });
+    socketRef.current.on('conversation:update', () => {
+      fetchConversations();
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('message:receive');
+        socketRef.current.off('conversation:update');
+        disconnectSocket();
+      }
+    };
+    // eslint-disable-next-line
   }, [currentUserId]);
 
   const fetchConversations = async () => {

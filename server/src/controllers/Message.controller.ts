@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import Message from '../models/Message.model';
 import Conversation from '../models/Conversation.model';
 import mongoose from 'mongoose';
+// Import io from app (singleton pattern)
+import { getIO } from '../core/utils/socketIO';
 
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req: Request, res: Response) => {
@@ -41,19 +43,20 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
           [userId2]: 0,
         },
       };
-      
       if (projectId) {
         conversationData.projectId = projectId;
       }
-      
       conversation = await Conversation.create(conversationData);
-
       conversation = await conversation.populate('participants', 'firstName lastName email');
       if (projectId) {
         conversation = await conversation.populate('projectId', 'title');
       }
+      // Emit conversation update to both users
+      const io = getIO();
+      participants.forEach((userId) => {
+        io.to(userId).emit('conversation:update');
+      });
     }
-
     res.status(200).json({
       success: true,
       data: conversation,
@@ -195,6 +198,12 @@ export const sendMessage = async (req: Request, res: Response) => {
       $inc: {
         [`unreadCount.${receiverId}`]: 1,
       },
+    });
+
+    // Emit conversation update to both users
+    const io = getIO();
+    [senderId, receiverId].forEach((userId) => {
+      io.to(userId).emit('conversation:update');
     });
 
     res.status(201).json({

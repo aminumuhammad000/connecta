@@ -23,6 +23,12 @@ export interface IJob extends Document {
   status: "active" | "closed" | "draft";
   clientId: mongoose.Types.ObjectId;
   category: string;
+  summary: string;
+  budget: string;
+  budgetType: string;
+  connectsRequired: string;
+  deliverables: string[];
+  postedTime: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,6 +70,12 @@ const JobSchema: Schema<IJob> = new Schema(
     },
     clientId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     category: { type: String, required: true },
+    summary: { type: String, default: "" },
+    budget: { type: String, default: "" },
+    budgetType: { type: String, default: "" },
+    connectsRequired: { type: String, default: "" },
+    deliverables: [{ type: String, default: "" }],
+    postedTime: { type: String, default: "" },
   },
   { timestamps: true }
 );

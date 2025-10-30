@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import styles from './EditProfile.module.css';
 import userImage from '../../assets/user.png';
 import Logo from '../../assets/connecta.png';
+import Header from '../../components/Header';
 
 export const EditProfile = () => {
   const navigate = useNavigate();
@@ -33,13 +34,7 @@ export const EditProfile = () => {
   return (
     <div className={styles.editProfilePage}>
       {/* Header */}
-      <div className={styles.header}>
-        <button className={styles.menuButton}>
-          <Icon icon="lucide:menu" className={styles.menuIcon} />
-        </button>
-        <img src={Logo} alt="Connecta" className={styles.logo} />
-        <div className={styles.spacer}></div>
-      </div>
+      <Header />
 
       {/* Title */}
       <div className={styles.titleSection}>

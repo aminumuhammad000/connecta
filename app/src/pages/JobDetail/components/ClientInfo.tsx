@@ -32,6 +32,9 @@ interface ClientInfoProps {
 }
 
 const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
+  // Defensive: fallback to empty array if undefined
+  const jobsInProgress = client.jobsInProgress || [];
+  const recentHistory = client.recentHistory || [];
   const [showJobsInProgress, setShowJobsInProgress] = useState(false);
 
   const renderStars = (rating: number) => {
@@ -91,7 +94,7 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
         
         {showJobsInProgress && (
           <div className={styles.jobsList}>
-            {client.jobsInProgress.map((job, index) => (
+            {jobsInProgress.map((job, index) => (
               <div key={index} className={styles.jobItem}>
                 <span className={styles.jobTitle}>{job.title}</span>
                 <span className={styles.freelancerLink}> Freelancer <span className={styles.freelancerName}>{job.freelancer}</span></span>  
@@ -105,7 +108,7 @@ const ClientInfo: React.FC<ClientInfoProps> = ({ client }) => {
 
       {/* Recent History */}
       <div className={styles.historySection}>
-        {client.recentHistory.map((history, index) => (
+        {recentHistory.map((history, index) => (
           <div key={index} className={styles.historyItem}>
             <div className={styles.historyHeader}>
               <span className={styles.historyTitle}>{history.title}</span>

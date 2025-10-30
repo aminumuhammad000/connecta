@@ -11,6 +11,7 @@ import Signup from './pages/Auth/Signup'
 import Dashboard from './pages/Dashboard/Dashboard'
 import JobDetail from './pages/JobDetail/JobDetail'
 import Profile from './pages/client/Profile/Profile';
+import FProfiles from './pages/profiles/Profile';
 import Proposals from './pages/Proposals/Proposals'
 import ProjectDashboard from './pages/ProjectDashboard/ProjectDashboard'
 import ProjectDetail from './pages/ProjectDashboard/ProjectDetail'
@@ -44,9 +45,9 @@ function App() {
               <JobDetail />
             </ProtectedRoute>
           } />
-          <Route path='/profile' element={
+          <Route path='/freelancer/profile' element={
             <ProtectedRoute>
-              <Profile />
+              <FProfiles />
             </ProtectedRoute>
           } />
           <Route path='/edit-profile' element={
