@@ -65,6 +65,7 @@ const handleExtractData = async () => {
 
     // Step 3: Save parsed result in localStorage
     localStorage.setItem('connecta_extracted_cv_data', JSON.stringify(entityResult));
+    console.log(entityResult);
 
     // Step 4: Navigate to /edit-profile with extracted data
     navigate('/edit-profile', {
