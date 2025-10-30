@@ -8,52 +8,45 @@ import { getIO } from '../core/utils/socketIO';
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req: Request, res: Response) => {
   try {
-    const { userId1, userId2, projectId } = req.body;
+    const { clientId, freelancerId, projectId } = req.body;
+    console.log('getOrCreateConversation payload:', { clientId, freelancerId, projectId });
 
-    if (!userId1 || !userId2) {
+    if (!clientId || !freelancerId || !projectId) {
       return res.status(400).json({
         success: false,
-        message: 'Both user IDs are required',
+        message: 'clientId, freelancerId, and projectId are required',
       });
     }
 
-    // Sort user IDs to ensure consistent conversation lookup
-    const participants = [userId1, userId2].sort();
-
-    // Build query - if projectId provided, look for conversation with that project
-    const query: any = {
-      participants: { $all: participants, $size: 2 },
-    };
-    
-    if (projectId) {
-      query.projectId = projectId;
-    }
-
-    // Check if conversation exists
-    let conversation = await Conversation.findOne(query)
-      .populate('participants', 'firstName lastName email')
+    // Find conversation by all three fields
+    let conversation = await Conversation.findOne({
+      clientId,
+      freelancerId,
+      projectId,
+    })
+      .populate('clientId', 'firstName lastName email')
+      .populate('freelancerId', 'firstName lastName email')
       .populate('projectId', 'title');
 
     if (!conversation) {
       // Create new conversation
       const conversationData: any = {
-        participants,
+        clientId,
+        freelancerId,
+        projectId,
         unreadCount: {
-          [userId1]: 0,
-          [userId2]: 0,
+          [clientId]: 0,
+          [freelancerId]: 0,
         },
       };
-      if (projectId) {
-        conversationData.projectId = projectId;
-      }
       conversation = await Conversation.create(conversationData);
-      conversation = await conversation.populate('participants', 'firstName lastName email');
-      if (projectId) {
-        conversation = await conversation.populate('projectId', 'title');
-      }
+      conversation = await conversation.populate('clientId', 'firstName lastName email');
+      conversation = await conversation.populate('freelancerId', 'firstName lastName email');
+      conversation = await conversation.populate('projectId', 'title');
+      console.log('Created new conversation:', conversation._id?.toString());
       // Emit conversation update to both users
       const io = getIO();
-      participants.forEach((userId) => {
+      [clientId, freelancerId].forEach((userId) => {
         io.to(userId).emit('conversation:update');
       });
     }
@@ -75,32 +68,33 @@ export const getUserConversations = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
+    // Find conversations where user is either client or freelancer
     const conversations = await Conversation.find({
-      participants: userId,
+      $or: [
+        { clientId: userId },
+        { freelancerId: userId },
+      ],
     })
-      .populate('participants', 'firstName lastName email')
+      .populate('clientId', 'firstName lastName email')
+      .populate('freelancerId', 'firstName lastName email')
       .populate('projectId', 'title')
-      .populate('lastMessage')
       .sort({ lastMessageAt: -1 });
 
     // For each conversation, get the last message if not populated
     const conversationsWithMessages = await Promise.all(
       conversations.map(async (conv) => {
         const convObj = conv.toObject();
-        
         // If lastMessage is not populated, fetch the most recent message
         if (!convObj.lastMessage) {
           const lastMsg = await Message.findOne({ conversationId: conv._id })
             .sort({ createdAt: -1 })
             .limit(1)
             .lean();
-          
           if (lastMsg) {
-            convObj.lastMessage = lastMsg.text; // Store just the text
-            convObj.lastMessageAt = lastMsg.createdAt; // Update timestamp
+            convObj.lastMessage = lastMsg.text;
+            convObj.lastMessageAt = lastMsg.createdAt;
           }
         }
-        
         return convObj;
       })
     );
@@ -123,6 +117,7 @@ export const getUserConversations = async (req: Request, res: Response) => {
 export const getConversationMessages = async (req: Request, res: Response) => {
   try {
     const { conversationId } = req.params;
+    console.log('[getConversationMessages] conversationId:', conversationId);
     const { page = 1, limit = 50 } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -133,6 +128,8 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       .sort({ createdAt: 1 })
       .limit(Number(limit))
       .skip(skip);
+
+    console.log('[getConversationMessages] messages found:', messages.length);
 
     const total = await Message.countDocuments({ conversationId });
 
@@ -145,6 +142,7 @@ export const getConversationMessages = async (req: Request, res: Response) => {
       data: messages,
     });
   } catch (error: any) {
+    console.error('[getConversationMessages] error:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching messages',

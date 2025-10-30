@@ -61,13 +61,21 @@ export const Messages: React.FC = () => {
   
   // Get user IDs from localStorage and navigation state
   const currentUserId = localStorage.getItem('userId') || '6900eacbda56fcad22cea38b'; // Freelancer ID
-  const { clientId, clientName, projectId, projectTitle } = location.state as { 
-    clientId?: string; 
-    clientName?: string; 
+  const { clientId, clientName, freelancerId, freelancerName, projectId, projectTitle } = location.state as {
+    clientId?: string;
+    clientName?: string;
+    freelancerId?: string;
+    freelancerName?: string;
     projectId?: string;
     projectTitle?: string;
   } || {};
-  const otherUserId = clientId || '6900eb778d6ad0cd3e8921a7'; // Default to seeded client
+
+  // Determine roles based on user type
+  // If current user is a freelancer, other user is client, and vice versa
+  const isFreelancer = localStorage.getItem('userType') === 'freelancer';
+  const myId = currentUserId;
+  const theirId = isFreelancer ? clientId : freelancerId;
+
 
   useEffect(() => {
     // Initialize Socket.io connection
@@ -114,6 +122,21 @@ export const Messages: React.FC = () => {
     try {
       setLoading(true);
       showLoader();
+      // Validate required IDs before creating/fetching conversation
+      const clientIdToSend = isFreelancer ? theirId : myId;
+      const freelancerIdToSend = isFreelancer ? myId : theirId;
+      if (!clientIdToSend || !freelancerIdToSend || !projectId) {
+        console.error('Missing IDs for conversation:', { clientIdToSend, freelancerIdToSend, projectId });
+        showError('Missing conversation data (clientId, freelancerId or projectId). Please reopen the chat from the project page.');
+        return;
+      }
+
+      const payload = {
+        clientId: clientIdToSend,
+        freelancerId: freelancerIdToSend,
+        projectId: projectId,
+      };
+      console.log('Creating/fetching conversation with payload:', payload);
 
       // First, get or create conversation with project context
       const convResponse = await fetch('http://localhost:5000/api/messages/conversations', {
@@ -121,31 +144,46 @@ export const Messages: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId1: currentUserId,
-          userId2: otherUserId,
-          projectId: projectId || undefined, // Include projectId if available
-        }),
+        body: JSON.stringify(payload),
       });
 
-      const convData = await convResponse.json();
+      let convData: any;
+      try {
+        convData = await convResponse.json();
+      } catch (jsonErr) {
+        const text = await convResponse.text();
+        console.error('Conversation endpoint returned non-json:', text);
+        showError('Server error initializing conversation');
+        return;
+      }
 
-      if (convData.success && convData.data) {
+      if (convResponse.ok && convData && convData.success && convData.data) {
         setConversation(convData.data);
 
         // Then fetch messages for this specific conversation
         const response = await fetch(
           `http://localhost:5000/api/messages/conversations/${convData.data._id}/messages`
         );
-        const data = await response.json();
 
-        if (data.success) {
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (jsonErr) {
+          const text = await response.text();
+          console.error('Messages endpoint returned non-json:', text);
+          showError('Server error loading messages');
+          return;
+        }
+
+        if (response.ok && data.success) {
           setMessages(data.data || []);
         } else {
-          showError(data.message || 'Failed to load messages');
+          console.error('Failed to load messages response:', data);
+          showError(data.message || data.error || 'Failed to load messages');
         }
       } else {
-        showError('Failed to initialize conversation');
+        console.error('Failed to initialize conversation response:', convData);
+        showError(convData?.message || convData?.error || 'Failed to initialize conversation');
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -233,8 +271,9 @@ export const Messages: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId1: currentUserId,
-            userId2: otherUserId,
+            clientId: isFreelancer ? theirId : myId,
+            freelancerId: isFreelancer ? myId : theirId,
+            projectId: projectId || undefined,
           }),
         });
 
