@@ -36,11 +36,6 @@ interface Project {
   };
   clientName: string;
   clientVerified: boolean;
-  freelancerId?: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
   budget: {
     amount: number;
     currency: string;
@@ -106,17 +101,13 @@ const ProjectDetail: React.FC = () => {
   };
 
   const handleChatClient = () => {
-    if (project?.clientId && project?.freelancerId && projectId) {
-      const chatState = {
-        clientId: project.clientId._id,
-        clientName: project.clientName,
-        freelancerId: project.freelancerId._id,
-        freelancerName: `${project.freelancerId.firstName} ${project.freelancerId.lastName}`,
-        projectId,
-        projectTitle: project.title
-      };
-  console.log('Navigating to /messages with state:', JSON.stringify(chatState, null, 2));
-      navigate('/messages', { state: chatState });
+    if (project?.clientId) {
+      navigate('/messages', { 
+        state: { 
+          clientId: project.clientId._id, 
+          clientName: project.clientName 
+        } 
+      });
     }
   };
 

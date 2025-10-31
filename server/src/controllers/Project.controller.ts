@@ -175,65 +175,9 @@ export const getProjectById = async (req: Request, res: Response) => {
       });
     }
 
-    const projectObj = project.toObject();
-<<<<<<< HEAD
-
-    // Safely handle populated user data
-    const clientData = projectObj.clientId as any;
-    const freelancerData = projectObj.freelancerId as any;
-
-    const clientIdObj =
-      clientData && typeof clientData === 'object' && clientData._id
-        ? {
-            _id: clientData._id,
-            firstName: clientData.firstName || '',
-            lastName: clientData.lastName || '',
-          }
-        : { _id: projectObj.clientId };
-
-    const freelancerIdObj =
-      freelancerData && typeof freelancerData === 'object' && freelancerData._id
-        ? {
-            _id: freelancerData._id,
-            firstName: freelancerData.firstName || '',
-            lastName: freelancerData.lastName || '',
-          }
-        : { _id: projectObj.freelancerId };
-
-=======
-    let clientIdObj: any = projectObj.clientId;
-    let freelancerIdObj: any = projectObj.freelancerId;
-    // Only return firstName/lastName if present, else just string id
-    if (clientIdObj && typeof clientIdObj === 'object' && 'firstName' in clientIdObj && 'lastName' in clientIdObj) {
-      clientIdObj = {
-        _id: clientIdObj._id,
-        firstName: clientIdObj.firstName,
-        lastName: clientIdObj.lastName
-      };
-    } else if (clientIdObj && clientIdObj._id) {
-      clientIdObj = { _id: clientIdObj._id };
-    } else {
-      clientIdObj = { _id: String(projectObj.clientId) };
-    }
-    if (freelancerIdObj && typeof freelancerIdObj === 'object' && 'firstName' in freelancerIdObj && 'lastName' in freelancerIdObj) {
-      freelancerIdObj = {
-        _id: freelancerIdObj._id,
-        firstName: freelancerIdObj.firstName,
-        lastName: freelancerIdObj.lastName
-      };
-    } else if (freelancerIdObj && freelancerIdObj._id) {
-      freelancerIdObj = { _id: freelancerIdObj._id };
-    } else {
-      freelancerIdObj = { _id: String(projectObj.freelancerId) };
-    }
->>>>>>> 7036bce81491c40c94890d55a700d28e3c3dbb3e
     res.status(200).json({
       success: true,
-      data: {
-        ...projectObj,
-        clientId: clientIdObj,
-        freelancerId: freelancerIdObj,
-      },
+      data: project,
     });
   } catch (error: any) {
     res.status(500).json({
