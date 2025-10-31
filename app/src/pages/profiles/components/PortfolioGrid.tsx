@@ -30,7 +30,12 @@ const portfolioItems = [
   },
 ];
 
-type PortfolioItemProps = typeof portfolioItems[0];
+type PortfolioItemProps = {
+  imageUrl?: string;
+  title: string;
+  author?: string;
+  likes?: number;
+};
 
 const PortfolioCard: React.FC<{ item: PortfolioItemProps }> = ({ item }) => (
   <div className={styles.portfolioCard} style={{ backgroundImage: `url(${item.imageUrl})` }}>
@@ -47,10 +52,16 @@ const PortfolioCard: React.FC<{ item: PortfolioItemProps }> = ({ item }) => (
   </div>
 );
 
-export const PortfolioGrid = () => (
-  <div className={styles.portfolioGrid}>
-    {portfolioItems.map((item, index) => (
-      <PortfolioCard key={index} item={item} />
-    ))}
-  </div>
-);
+export const PortfolioGrid: React.FC<{ items?: PortfolioItemProps[] }> = ({ items }) => {
+  const data = Array.isArray(items) ? items : [];
+  if (data.length === 0) {
+    return <div className={styles.emptyState}>No portfolio items yet</div>;
+  }
+  return (
+    <div className={styles.portfolioGrid}>
+      {data.map((item, index) => (
+        <PortfolioCard key={index} item={item} />
+      ))}
+    </div>
+  );
+};

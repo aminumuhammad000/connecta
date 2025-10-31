@@ -180,26 +180,30 @@ export const getProjectById = async (req: Request, res: Response) => {
 
     // Convert to plain object and ensure clientId and freelancerId are objects with _id, firstName, lastName
     const projectObj = project.toObject();
-    let clientIdObj = projectObj.clientId;
-    let freelancerIdObj = projectObj.freelancerId;
-    // Defensive: if populated, these are objects; if not, fallback to id only
-    if (clientIdObj && typeof clientIdObj === 'object' && clientIdObj._id) {
+    let clientIdObj: any = projectObj.clientId;
+    let freelancerIdObj: any = projectObj.freelancerId;
+    // Only return firstName/lastName if present, else just string id
+    if (clientIdObj && typeof clientIdObj === 'object' && 'firstName' in clientIdObj && 'lastName' in clientIdObj) {
       clientIdObj = {
         _id: clientIdObj._id,
         firstName: clientIdObj.firstName,
         lastName: clientIdObj.lastName
       };
+    } else if (clientIdObj && clientIdObj._id) {
+      clientIdObj = { _id: clientIdObj._id };
     } else {
-      clientIdObj = { _id: projectObj.clientId };
+      clientIdObj = { _id: String(projectObj.clientId) };
     }
-    if (freelancerIdObj && typeof freelancerIdObj === 'object' && freelancerIdObj._id) {
+    if (freelancerIdObj && typeof freelancerIdObj === 'object' && 'firstName' in freelancerIdObj && 'lastName' in freelancerIdObj) {
       freelancerIdObj = {
         _id: freelancerIdObj._id,
         firstName: freelancerIdObj.firstName,
         lastName: freelancerIdObj.lastName
       };
+    } else if (freelancerIdObj && freelancerIdObj._id) {
+      freelancerIdObj = { _id: freelancerIdObj._id };
     } else {
-      freelancerIdObj = { _id: projectObj.freelancerId };
+      freelancerIdObj = { _id: String(projectObj.freelancerId) };
     }
     res.status(200).json({
       success: true,
