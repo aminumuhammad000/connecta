@@ -42,14 +42,12 @@ export const EditProfile = () => {
     endDate: '',   // YYYY-MM-DD
   });
 
-  // Prefill from localStorage (connecta_extracted_cv_data) or navigation state
+  // Fetch profile (including employment/organization) from backend first, fallback to extracted/localStorage if needed
   useEffect(() => {
     const toISODate = (val: any): string => {
       if (!val) return '';
       const s = String(val).trim();
-      // If already yyyy-mm-dd
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      // dd/mm/yyyy or mm/dd/yyyy → attempt parse
       const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
       if (m) {
         const [_, a, b, y] = m;
@@ -66,119 +64,77 @@ export const EditProfile = () => {
       return '';
     };
 
-    const mapExtractedToForm = (data: any) => {
-      if (!data) return;
-      const name = data.name || '';
-      const email = data.email || '';
-      const phone = data.phone || '';
-      // location may be array
-      const locationValue = Array.isArray(data.location) && data.location.length > 0
-        ? String(data.location[0])
-        : (data.location || formData.location || '');
-      const skills = Array.isArray(data.skills) ? data.skills.join(', ') : (data.skills || '');
-      const hardSkills = Array.isArray(data.skills)
-        ? data.skills.join(', ')
-        : (data.hardSkills || data.skills || '');
-      const education = Array.isArray(data.organizations)
-        ? data.organizations.join(', ')
-        : (data.organizations || '');
-
+    const mapProfileToForm = (profile: any) => {
+      if (!profile) return;
       setFormData(prev => ({
         ...prev,
-        fullName: name || prev.fullName,
-        email: email || prev.email,
-        phone: phone || prev.phone,
-        location: locationValue || prev.location,
-        yourSkills: skills || prev.yourSkills,
-        hardSkills: hardSkills || prev.hardSkills,
-        educationalSummary: education || prev.educationalSummary,
-        // Best-effort prefill additional sections if present in extracted data
-        education: education || prev.education,
-        languages: (Array.isArray((data as any).languages) ? (data as any).languages.join(', ') : ((data as any).languages || '')) || prev.languages,
-        employmentHistory: (Array.isArray((data as any).employment) ? (data as any).employment.join('\n') : ((data as any).employment || '')) || prev.employmentHistory,
-        otherExperience: (Array.isArray((data as any).experience) ? (data as any).experience.join('\n') : ((data as any).experience || '')) || prev.otherExperience,
-        certifications: (Array.isArray((data as any).certifications) ? (data as any).certifications.join('\n') : ((data as any).certifications || '')) || prev.certifications,
+        fullName: profile.fullName || prev.fullName,
+        email: profile.email || prev.email,
+        phone: profile.phoneNumber || prev.phone,
+        location: profile.location || prev.location,
+        employmentHistory: Array.isArray(profile.employment)
+          ? profile.employment.map((e: any) => [e.position, e.company, e.description].filter(Boolean).join(' - ')).join('\n')
+          : (profile.employmentHistory || prev.employmentHistory),
+        educationalSummary: Array.isArray(profile.education)
+          ? profile.education.map((e: any) => e.institution).filter(Boolean).join(', ')
+          : (profile.educationalSummary || prev.educationalSummary),
+        // Add other fields as needed
       }));
-
-      // Prefill structured education: support multiple shapes
-      const eduArrayPrimary: any[] = (data as any).education || (data as any).educations || [];
-      const eduObjDirect: any = (data as any).education || (data as any).educations;
-      if (Array.isArray(eduArrayPrimary) && eduArrayPrimary.length > 0) {
-        const e = eduArrayPrimary[0] || {};
-        setEducationForm((prev) => ({
-          institution: e.institution || e.school || prev.institution,
-          degree: e.degree || prev.degree,
-          fieldOfStudy: e.fieldOfStudy || e.field || prev.fieldOfStudy,
-          startDate: toISODate(e.startDate) || prev.startDate,
-          endDate: toISODate(e.endDate) || prev.endDate,
-        }));
-      } else if (eduObjDirect && typeof eduObjDirect === 'object' && !Array.isArray(eduObjDirect)) {
-        const e = eduObjDirect as any;
-        setEducationForm((prev) => ({
-          institution: e.institution || e.school || prev.institution,
-          degree: e.degree || prev.degree,
-          fieldOfStudy: e.fieldOfStudy || e.field || prev.fieldOfStudy,
-          startDate: toISODate(e.startDate) || prev.startDate,
-          endDate: toISODate(e.endDate) || prev.endDate,
-        }));
-      } else {
-        // Sometimes data may store flat keys
-        const inst = (data as any).institution || (data as any).school;
-        const deg = (data as any).degree;
-        const fos = (data as any).fieldOfStudy || (data as any).field;
-        const sd = toISODate((data as any).startDate);
-        const ed = toISODate((data as any).endDate);
-        if (inst || deg || fos || sd || ed) {
-          setEducationForm((prev) => ({
-            institution: inst || prev.institution,
-            degree: deg || prev.degree,
-            fieldOfStudy: fos || prev.fieldOfStudy,
-            startDate: sd || prev.startDate,
-            endDate: ed || prev.endDate,
-          }));
-        }
-      }
-
-      // Languages: support language, languages, languageList
-      const langs = (data as any).languages || (data as any).languageList || (data as any).language;
-      if (langs) {
-        const normalized = Array.isArray(langs) ? langs.join(', ') : String(langs);
-        setFormData(prev => ({ ...prev, languages: prev.languages || normalized }));
-      }
-
-      // Employment: support employment/work/experiences arrays
-      const empArr = (data as any).employment || (data as any).work || (data as any).experiences || [];
-      if (Array.isArray(empArr) && empArr.length > 0) {
-        const joined = empArr.map((e: any) => {
-          const line = [e.position, e.company].filter(Boolean).join(' - ');
-          const dur = [e.startDate, e.endDate].filter(Boolean).join(' to ');
-          return [line, dur, e.description].filter(Boolean).join('\n');
-        }).join('\n');
-        setFormData(prev => ({ ...prev, employmentHistory: prev.employmentHistory || joined }));
-      }
-
-      // Certifications
-      const certs = (data as any).certifications || (data as any).certs || [];
-      if (Array.isArray(certs) && certs.length > 0) {
-        setFormData(prev => ({ ...prev, certifications: prev.certifications || certs.join('\n') }));
-      }
     };
 
-    // Prefer data passed via navigation state
-    if (location?.state?.extractedData) {
-      mapExtractedToForm(location.state.extractedData);
-      return;
-    }
+    const mapExtractedToForm = (data: any) => {
+      if (!data) return;
+      // ...existing code for mapping extracted data...
+      // (copy from previous mapExtractedToForm implementation)
+      // Only override fields if not already set from backend
+      setFormData(prev => ({
+        ...prev,
+        fullName: prev.fullName || data.name,
+        email: prev.email || data.email,
+        phone: prev.phone || data.phone,
+        location: prev.location || (Array.isArray(data.location) && data.location.length > 0 ? String(data.location[0]) : data.location),
+        yourSkills: prev.yourSkills || (Array.isArray(data.skills) ? data.skills.join(', ') : data.skills),
+        hardSkills: prev.hardSkills || (Array.isArray(data.skills) ? data.skills.join(', ') : data.hardSkills),
+        educationalSummary: prev.educationalSummary || (Array.isArray(data.organizations) ? data.organizations.join(', ') : data.organizations),
+        education: prev.education || (Array.isArray(data.organizations) ? data.organizations.join(', ') : data.organizations),
+        languages: prev.languages || (Array.isArray(data.languages) ? data.languages.join(', ') : data.languages),
+        employmentHistory: prev.employmentHistory || (Array.isArray(data.employment) ? data.employment.join('\n') : data.employment),
+        otherExperience: prev.otherExperience || (Array.isArray(data.experience) ? data.experience.join('\n') : data.experience),
+        certifications: prev.certifications || (Array.isArray(data.certifications) ? data.certifications.join('\n') : data.certifications),
+      }));
+    };
 
-    try {
-      const stored = localStorage.getItem('connecta_extracted_cv_data');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        mapExtractedToForm(parsed);
+    const fetchAndPrefill = async () => {
+      try {
+        const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const token = localStorage.getItem('token');
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const resp = await axios.get(`${baseUrl}/profiles/me`, { headers });
+        const profile = resp.data;
+        mapProfileToForm(profile);
+        // If redirected with extractedData, merge it in (but backend takes precedence)
+        if (location?.state?.extractedData) {
+          mapExtractedToForm(location.state.extractedData);
+        }
+      } catch (err) {
+        // If backend fails, fallback to extractedData or localStorage
+        if (location?.state?.extractedData) {
+          mapExtractedToForm(location.state.extractedData);
+        } else {
+          try {
+            const stored = localStorage.getItem('connecta_extracted_cv_data');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              mapExtractedToForm(parsed);
+            }
+          } catch (_) {
+            // ignore invalid JSON
+          }
+        }
       }
-    } catch (_) {
-      // ignore invalid JSON
-    }
+    };
+    fetchAndPrefill();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

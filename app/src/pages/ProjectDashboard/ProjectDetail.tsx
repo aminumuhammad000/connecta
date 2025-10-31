@@ -116,15 +116,7 @@ const ProjectDetail: React.FC = () => {
         projectTitle: project.title
       };
   console.log('Navigating to /messages with state:', JSON.stringify(chatState, null, 2));
-      const query = new URLSearchParams({
-        clientId: chatState.clientId,
-        clientName: chatState.clientName,
-        freelancerId: chatState.freelancerId,
-        freelancerName: chatState.freelancerName,
-        projectId: chatState.projectId,
-        projectTitle: chatState.projectTitle,
-      }).toString();
-      navigate(`/messages?${query}`, { state: chatState });
+      navigate('/messages', { state: chatState });
     }
   };
 

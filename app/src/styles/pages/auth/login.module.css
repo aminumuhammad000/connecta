@@ -233,6 +233,11 @@
 /* Hide desktop brand sections on mobile */
 
 
+/* Hide leftSection (brand/marketing) on mobile */
+.leftSection {
+  display: none;
+}
+
 /* ========== DESKTOP STYLES (≥1024px) ========== */
 @media (min-width: 1024px) {
   .loginContainer {
