@@ -18,13 +18,13 @@ POST /api/profiles
 GET /api/profiles
 GET /api/profiles/:id
 PUT /api/profiles/:id
-DELETE /api/profiles/6720bc8f2a9a442f208b912e
+<!-- DELETE /api/profiles/6720bc8f2a9a442f208b912e -->
  <!-- eg:  -->
  {
   "message": "Profile deleted successfully"
 }
 
-PUT /api/profiles/6720bc8f2a9a442f208b912e
+<!-- PUT /api/profiles/6720bc8f2a9a442f208b912e -->
 
 <!-- eg:  -->
 {
