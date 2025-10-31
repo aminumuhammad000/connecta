@@ -44,13 +44,22 @@ interface ConversationData {
 export const Messages: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  // Debug: log navigation state on mount
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    try {
+      console.log('Messages.tsx location.state:', JSON.stringify(location.state, null, 2));
+    } catch (e) {
+      console.log('Messages.tsx location.state:', location.state);
+    }
+  }, [location.state]);
   const { showLoader, hideLoader, showError } = useNotification();
   
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const socketRef = useRef<Socket | null>(null);
-  const typingTimeoutRef = useRef<number | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [messageInput, setMessageInput] = useState('');
@@ -61,20 +70,30 @@ export const Messages: React.FC = () => {
   
   // Get user IDs from localStorage and navigation state
   const currentUserId = localStorage.getItem('userId') || '6900eacbda56fcad22cea38b'; // Freelancer ID
-  const { clientId, clientName, freelancerId, freelancerName, projectId, projectTitle } = location.state as {
+  // Pull identifiers from navigation state or URL query params (for refresh/deep links)
+  const searchParams = new URLSearchParams(location.search);
+  const stateData = (location.state as {
     clientId?: string;
     clientName?: string;
     freelancerId?: string;
     freelancerName?: string;
     projectId?: string;
     projectTitle?: string;
-  } || {};
+  }) || {};
+  const clientId = stateData.clientId || searchParams.get('clientId') || undefined;
+  const clientName = stateData.clientName || searchParams.get('clientName') || undefined;
+  const freelancerId = stateData.freelancerId || searchParams.get('freelancerId') || undefined;
+  const freelancerName = stateData.freelancerName || searchParams.get('freelancerName') || undefined;
+  const projectId = stateData.projectId || searchParams.get('projectId') || undefined;
+  const projectTitle = stateData.projectTitle || searchParams.get('projectTitle') || undefined;
 
   // Determine roles based on user type
   // If current user is a freelancer, other user is client, and vice versa
   const isFreelancer = localStorage.getItem('userType') === 'freelancer';
   const myId = currentUserId;
   const theirId = isFreelancer ? clientId : freelancerId;
+  // otherUserId is the id of the other participant in the chat
+  const otherUserId = theirId || '';
 
 
   useEffect(() => {
@@ -123,8 +142,29 @@ export const Messages: React.FC = () => {
       setLoading(true);
       showLoader();
       // Validate required IDs before creating/fetching conversation
-      const clientIdToSend = isFreelancer ? theirId : myId;
-      const freelancerIdToSend = isFreelancer ? myId : theirId;
+      let clientIdToSend = isFreelancer ? theirId : myId;
+      let freelancerIdToSend = isFreelancer ? myId : theirId;
+
+      // If some identifiers are missing but we have a projectId, fetch project to derive them
+      if ((!clientIdToSend || !freelancerIdToSend) && projectId) {
+        try {
+          const projResp = await fetch(`http://localhost:5000/api/projects/${projectId}`);
+          const projData = await projResp.json();
+          if (projResp.ok && projData?.success && projData?.data) {
+            const proj = projData.data;
+            const derivedClientId = proj?.clientId?._id || proj?.clientId;
+            const derivedFreelancerId = proj?.freelancerId?._id || proj?.freelancerId;
+            if (!clientIdToSend || !freelancerIdToSend) {
+              // Recompute based on role
+              clientIdToSend = isFreelancer ? (theirId || derivedClientId) : myId;
+              freelancerIdToSend = isFreelancer ? myId : (theirId || derivedFreelancerId);
+            }
+          }
+        } catch (e) {
+          // ignore, validation below will handle
+        }
+      }
+
       if (!clientIdToSend || !freelancerIdToSend || !projectId) {
         console.error('Missing IDs for conversation:', { clientIdToSend, freelancerIdToSend, projectId });
         showError('Missing conversation data (clientId, freelancerId or projectId). Please reopen the chat from the project page.');
@@ -261,6 +301,33 @@ export const Messages: React.FC = () => {
     
     // Ensure conversation exists
     let currentConversation = conversation;
+    // Resolve receiver id robustly
+    let receiverIdToUse = otherUserId;
+    if (!receiverIdToUse) {
+      // Try derive from known role + ids from state/query
+      const possibleClientId = clientId;
+      const possibleFreelancerId = freelancerId;
+      if (isFreelancer) {
+        receiverIdToUse = possibleClientId || receiverIdToUse || '';
+      } else {
+        receiverIdToUse = possibleFreelancerId || receiverIdToUse || '';
+      }
+      // As a fallback, fetch project to derive peer id
+      if (!receiverIdToUse && projectId) {
+        try {
+          const projResp = await fetch(`http://localhost:5000/api/projects/${projectId}`);
+          const projData = await projResp.json();
+          if (projResp.ok && projData?.success && projData?.data) {
+            const proj = projData.data;
+            receiverIdToUse = isFreelancer
+              ? (proj?.clientId?._id || proj?.clientId)
+              : (proj?.freelancerId?._id || proj?.freelancerId);
+          }
+        } catch (e) {
+          // ignore, will validate below
+        }
+      }
+    }
     
     // If conversation doesn't exist, create it first
     if (!currentConversation) {
@@ -282,6 +349,14 @@ export const Messages: React.FC = () => {
         if (convData.success && convData.data) {
           currentConversation = convData.data;
           setConversation(convData.data);
+          // Try to derive receiver from conversation if still missing
+          if (!receiverIdToUse) {
+            const participants: any[] = convData.data.participants || [];
+            const other = participants.find((p) => p?._id && p._id !== currentUserId);
+            if (other && other._id) {
+              receiverIdToUse = other._id;
+            }
+          }
         } else {
           // Try fallback: maybe conversation already exists (different endpoint)
           try {
@@ -292,6 +367,13 @@ export const Messages: React.FC = () => {
             if (betweenData.success && betweenData.conversation) {
               currentConversation = betweenData.conversation;
               setConversation(betweenData.conversation);
+              if (!receiverIdToUse) {
+                const participants: any[] = betweenData.conversation.participants || [];
+                const other = participants.find((p: any) => p?._id && p._id !== currentUserId);
+                if (other && other._id) {
+                  receiverIdToUse = other._id;
+                }
+              }
             } else {
               showError(convData.message || 'Failed to initialize conversation');
               return;
@@ -315,6 +397,12 @@ export const Messages: React.FC = () => {
       return;
     }
 
+    // Validate sender/receiver
+    if (!currentUserId || !receiverIdToUse) {
+      showError('Failed to resolve chat participants. Please reopen the chat from the project page.');
+      return;
+    }
+
     try {
       // Prepare attachments array if files are selected
       const attachments = selectedFiles.map(file => ({
@@ -326,7 +414,7 @@ export const Messages: React.FC = () => {
       const messageData = {
         conversationId: currentConversation._id,
         senderId: currentUserId,
-        receiverId: otherUserId,
+        receiverId: receiverIdToUse,
         text: messageInput.trim() || (selectedFiles.length > 0 ? '📎 Attachment' : ''),
         attachments: attachments.length > 0 ? attachments : [],
       };

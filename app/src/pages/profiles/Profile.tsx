@@ -50,6 +50,8 @@ const Profile = () => {
                 name={profile?.user ? `${profile.user.firstName} ${profile.user.lastName}` : undefined}
                 location={profile?.location}
                 profileImage={profile?.user?.profileImage}
+                rating={typeof profile?.rating === 'number' ? profile.rating : undefined}
+                successRate={profile?.successRate}
               />
 
               <div className={styles.sections}>
@@ -57,9 +59,11 @@ const Profile = () => {
                   <SectionHeader title="Skills / Tools" variant="muted" />
                   <div className={styles.sectionContent}>
                     <p className={styles.skillsText}>
-                      {profile?.skills?.join(', ') || 'UI/UX Design, Product Design, Video Editing\nFigma, A. Premiere pro'}
+                      {Array.isArray(profile?.skills) ? profile.skills.join(', ') : ''}
                     </p>
-                    <p className={styles.rateText}>{profile?.hourlyRate ? `₦ ${profile.hourlyRate}/hr` : '₦ 10,000/hr'}</p>
+                    {profile?.hourlyRate && (
+                      <p className={styles.rateText}>{`₦ ${profile.hourlyRate}/hr`}</p>
+                    )}
                   </div>
                   <hr className={styles.divider} />
                 </section>
@@ -71,12 +75,13 @@ const Profile = () => {
                     ActionIcon={() => <Icon icon="lucide:pencil" />} 
                   />
                   <div className={styles.sectionContent}>
-                    <p className={styles.summaryText}>
-                      {profile?.summary || profile?.resume || 'A skilled problem solver and professional UI/UX designer with over 4 years of experience...'}
-                      {!(profile?.summary || profile?.resume) && (
-                        <a href="#" className={styles.moreLink}>more</a>
-                      )}
-                    </p>
+                    {profile?.summary || profile?.resume ? (
+                      <p className={styles.summaryText}>
+                        {profile.summary || profile.resume}
+                      </p>
+                    ) : (
+                      <p className={styles.summaryText} />
+                    )}
                   </div>
                   <hr className={styles.divider} />
                 </section>
@@ -87,7 +92,7 @@ const Profile = () => {
                     ActionIcon={() => <Icon icon="lucide:plus" />} 
                     onActionClick={handleAddPortfolio}
                   />
-                  <PortfolioGrid />
+                  <PortfolioGrid items={profile?.portfolio || profile?.projects || []} />
                   <hr className={styles.divider} />
                 </section>
 

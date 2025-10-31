@@ -20,6 +20,8 @@ interface Project {
 interface Conversation {
   _id: string;
   participants: User[];
+  clientId?: User | { _id: string } | string;
+  freelancerId?: User | { _id: string } | string;
   lastMessage?: {
     text: string;
     createdAt: string;
@@ -119,10 +121,28 @@ const Chats: React.FC = () => {
   };
 
   const getOtherUser = (conversation: Conversation): User | null => {
-    const otherUser = conversation.participants.find(
-      (participant) => participant._id !== currentUserId
-    );
-    return otherUser || null;
+    const participants = Array.isArray(conversation.participants)
+      ? conversation.participants
+      : [];
+    // Prefer participants if available
+    if (participants.length > 0) {
+      const other = participants.find((p) => p && p._id !== currentUserId);
+      if (other) return other;
+    }
+
+    // Fallback to clientId/freelancerId fields from backend
+    const clientField: any = (conversation as any).clientId;
+    const freelancerField: any = (conversation as any).freelancerId;
+    const clientUser: User | null = clientField && typeof clientField === 'object' && 'firstName' in clientField
+      ? (clientField as User)
+      : null;
+    const freelancerUser: User | null = freelancerField && typeof freelancerField === 'object' && 'firstName' in freelancerField
+      ? (freelancerField as User)
+      : null;
+
+    if (clientUser && clientUser._id !== currentUserId) return clientUser;
+    if (freelancerUser && freelancerUser._id !== currentUserId) return freelancerUser;
+    return null;
   };
 
   const formatTime = (dateString?: string): string => {
@@ -147,17 +167,47 @@ const Chats: React.FC = () => {
     const otherUser = getOtherUser(conversation);
     if (!otherUser) return;
 
-    navigate('/messages', {
+    // Build chat params using explicit roles when available
+    const clientField: any = (conversation as any).clientId;
+    const freelancerField: any = (conversation as any).freelancerId;
+    const clientId = clientField && typeof clientField === 'object' && clientField._id ? clientField._id : clientField;
+    const freelancerId = freelancerField && typeof freelancerField === 'object' && freelancerField._id ? freelancerField._id : freelancerField;
+
+    const clientName = clientField && typeof clientField === 'object' && clientField.firstName
+      ? `${clientField.firstName} ${clientField.lastName}`
+      : undefined;
+    const freelancerName = freelancerField && typeof freelancerField === 'object' && freelancerField.firstName
+      ? `${freelancerField.firstName} ${freelancerField.lastName}`
+      : undefined;
+
+    const params = new URLSearchParams({
+      ...(clientId ? { clientId: String(clientId) } : {}),
+      ...(clientName ? { clientName } : {}),
+      ...(freelancerId ? { freelancerId: String(freelancerId) } : {}),
+      ...(freelancerName ? { freelancerName } : {}),
+      ...(conversation.projectId?._id ? { projectId: conversation.projectId._id } : {}),
+      ...(conversation.projectId?.title ? { projectTitle: conversation.projectId.title } : {}),
+    }).toString();
+
+    navigate(`/messages?${params}`, {
       state: {
-        clientId: otherUser._id,
-        clientName: `${otherUser.firstName} ${otherUser.lastName}`,
+        clientId,
+        clientName,
+        freelancerId,
+        freelancerName,
         projectId: conversation.projectId?._id,
         projectTitle: conversation.projectId?.title,
       },
     });
   };
 
-  const filteredConversations = conversations.filter((conversation) => {
+  // Only show conversations that have at least one message
+  const conversationsWithMessages = conversations.filter((c) => {
+    const lm: any = c.lastMessage as any;
+    return Boolean(lm) || Boolean(c.lastMessageAt);
+  });
+
+  const filteredConversations = conversationsWithMessages.filter((conversation) => {
     const otherUser = getOtherUser(conversation);
     if (!otherUser) return false;
 
@@ -219,7 +269,7 @@ const Chats: React.FC = () => {
         <div className={styles.header}>
           <h1 className={styles.title}>Chats</h1>
           <p className={styles.subtitle}>
-            {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+            {conversationsWithMessages.length} conversation{conversationsWithMessages.length !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -249,8 +299,12 @@ const Chats: React.FC = () => {
               if (!otherUser) return null;
 
               const unreadCount = conversation.unreadCount?.[currentUserId] || 0;
-              const lastMessageText = conversation.lastMessage?.text || 'No messages yet';
-              const isLastMessageFromMe = conversation.lastMessage?.senderId === currentUserId;
+              // Support both string and object shapes for lastMessage
+              const lastMsgAny: any = conversation.lastMessage as any;
+              const lastMessageText = typeof lastMsgAny === 'string'
+                ? lastMsgAny
+                : (lastMsgAny?.text || 'No messages yet');
+              const isLastMessageFromMe = typeof lastMsgAny === 'object' && lastMsgAny?.senderId === currentUserId;
 
               return (
                 <div

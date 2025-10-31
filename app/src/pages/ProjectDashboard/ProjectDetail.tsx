@@ -107,16 +107,24 @@ const ProjectDetail: React.FC = () => {
 
   const handleChatClient = () => {
     if (project?.clientId && project?.freelancerId && projectId) {
-      navigate('/messages', {
-        state: {
-          clientId: project.clientId._id,
-          clientName: project.clientName,
-          freelancerId: project.freelancerId._id,
-          freelancerName: `${project.freelancerId.firstName} ${project.freelancerId.lastName}`,
-          projectId,
-          projectTitle: project.title
-        }
-      });
+      const chatState = {
+        clientId: project.clientId._id,
+        clientName: project.clientName,
+        freelancerId: project.freelancerId._id,
+        freelancerName: `${project.freelancerId.firstName} ${project.freelancerId.lastName}`,
+        projectId,
+        projectTitle: project.title
+      };
+  console.log('Navigating to /messages with state:', JSON.stringify(chatState, null, 2));
+      const query = new URLSearchParams({
+        clientId: chatState.clientId,
+        clientName: chatState.clientName,
+        freelancerId: chatState.freelancerId,
+        freelancerName: chatState.freelancerName,
+        projectId: chatState.projectId,
+        projectTitle: chatState.projectTitle,
+      }).toString();
+      navigate(`/messages?${query}`, { state: chatState });
     }
   };
 
@@ -290,6 +298,8 @@ const ProjectDetail: React.FC = () => {
     );
   }
 
+  // Debug: log the full project object before rendering
+  console.log('ProjectDetail.tsx project:', project);
   return (
     <div className={styles.projectDetailPage}>
       {/* Header */}
