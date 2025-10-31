@@ -56,11 +56,9 @@ export const getMyProjects = async (req: Request, res: Response) => {
       .populate('freelancerId', 'firstName lastName email profileImage')
       .sort({ createdAt: -1 });
 
-    // Calculate progress for each project (mock calculation based on status)
     const projectsWithProgress = projects.map(project => {
       let progress = 0;
       if (project.status === 'ongoing') {
-        // Calculate based on time elapsed
         const start = new Date(project.dateRange.startDate).getTime();
         const end = new Date(project.dateRange.endDate).getTime();
         const now = Date.now();
@@ -126,7 +124,6 @@ export const getClientProjects = async (req: Request, res: Response) => {
 export const getAllProjects = async (req: Request, res: Response) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
-
     let query: any = {};
 
     if (status) {
@@ -161,7 +158,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
   }
 };
 
-// Get single project by ID
+// ✅ FIXED: Get single project by ID (Type-safe)
 export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -178,8 +175,32 @@ export const getProjectById = async (req: Request, res: Response) => {
       });
     }
 
-    // Convert to plain object and ensure clientId and freelancerId are objects with _id, firstName, lastName
     const projectObj = project.toObject();
+<<<<<<< HEAD
+
+    // Safely handle populated user data
+    const clientData = projectObj.clientId as any;
+    const freelancerData = projectObj.freelancerId as any;
+
+    const clientIdObj =
+      clientData && typeof clientData === 'object' && clientData._id
+        ? {
+            _id: clientData._id,
+            firstName: clientData.firstName || '',
+            lastName: clientData.lastName || '',
+          }
+        : { _id: projectObj.clientId };
+
+    const freelancerIdObj =
+      freelancerData && typeof freelancerData === 'object' && freelancerData._id
+        ? {
+            _id: freelancerData._id,
+            firstName: freelancerData.firstName || '',
+            lastName: freelancerData.lastName || '',
+          }
+        : { _id: projectObj.freelancerId };
+
+=======
     let clientIdObj: any = projectObj.clientId;
     let freelancerIdObj: any = projectObj.freelancerId;
     // Only return firstName/lastName if present, else just string id
@@ -205,12 +226,13 @@ export const getProjectById = async (req: Request, res: Response) => {
     } else {
       freelancerIdObj = { _id: String(projectObj.freelancerId) };
     }
+>>>>>>> 7036bce81491c40c94890d55a700d28e3c3dbb3e
     res.status(200).json({
       success: true,
       data: {
         ...projectObj,
         clientId: clientIdObj,
-        freelancerId: freelancerIdObj
+        freelancerId: freelancerIdObj,
       },
     });
   } catch (error: any) {

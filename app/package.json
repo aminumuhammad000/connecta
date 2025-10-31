@@ -12,15 +12,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@cloudinary/react": "^1.14.3",
-    "@cloudinary/url-gen": "^1.22.0",
     "@iconify/react": "^6.0.2",
     "@react-oauth/google": "^0.12.2",
     "axios": "^1.12.2",
     "googleapis": "^164.1.0",
     "jwt-decode": "^4.0.0",
     "mammoth": "^1.11.0",
-    "multer": "^2.0.2",
     "pdfjs-dist": "^5.4.296",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -29,7 +26,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
-    "@types/multer": "^2.0.0",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",

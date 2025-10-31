@@ -130,3 +130,5 @@ DELETE http://localhost:5000/api/messages/:id
 - typing:stop - Stop typing indicator
 - user:online - User came online
 - user:offline - User went offline
+
+
