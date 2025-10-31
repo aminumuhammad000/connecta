@@ -1,10 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { BaseTool } from "./base.tool";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// __dirname is available globally in ts-node/CommonJS context
 
 // Choose extension based on runtime (ts-node / dev vs built js)
 const ext = process.env.NODE_ENV === "development" ? ".ts" : ".js";
