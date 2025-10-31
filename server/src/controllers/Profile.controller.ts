@@ -56,9 +56,12 @@ export const getAllProfiles = async (req: Request, res: Response) => {
  * @desc Get profile for authenticated user
  * @route GET /api/profiles/me
  */
-export const getMyProfile = async (req: Request, res: Response) => {
+export const getMyProfile = async (
+  req: Request & { user?: { id?: string; _id?: string } },
+  res: Response
+) => {
   try {
-    const userId = (req.user as any)?._id || (req.user as any)?.id;
+    const userId = req.user?._id || req.user?.id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const profile = await Profile.findOne({ user: userId }).populate(
