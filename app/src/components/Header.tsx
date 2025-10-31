@@ -20,22 +20,26 @@ const Header: React.FC = () => {
   };
 
   const handleDashboard = () => {
-    navigate('/dashboard');
+    const userType = localStorage.getItem('userType') || 'freelancer';
+    navigate(`/${userType}/dashboard`);
     setIsMenuOpen(false);
   };
 
   const handleProfile = () => {
-    navigate('/profile');
+    const userType = localStorage.getItem('userType') || 'freelancer';
+    navigate(`/${userType}/profile`);
     setIsMenuOpen(false);
   };
 
   const handleConnectaAI = () => {
-    navigate('/connecta-ai');
+    const userType = localStorage.getItem('userType') || 'freelancer';
+    navigate(`/${userType}/ai`);
     setIsMenuOpen(false);
   };
 
   const handleChats = () => {
-    navigate('/chats');
+    const userType = localStorage.getItem('userType') || 'freelancer';
+    navigate(`/${userType}/chats`);
     setIsMenuOpen(false);
   };
 

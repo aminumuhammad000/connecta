@@ -57,9 +57,9 @@ const Login = () => {
         // Redirect based on user type
         setTimeout(() => {
           if (data.user.userType === 'client') {
-            navigate('/client-dashboard');
+            navigate('/client/dashboard');
           } else {
-            navigate('/dashboard');
+            navigate('/freelancer/dashboard');
           }
         }, 1000);
       } else {

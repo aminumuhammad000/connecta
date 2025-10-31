@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNotification } from '../../contexts/NotificationContext';
 import styles from './ConnectaAI.module.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 interface SuggestionCard {
   title: string;
@@ -21,8 +25,11 @@ const ConnectaAI = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { showError } = useNotification();
 
   const suggestions: SuggestionCard[] = [
     {
@@ -51,68 +58,120 @@ const ConnectaAI = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // Load initial message if no messages
+  useEffect(() => {
+    if (messages.length === 0) {
+      const initialMessage: Message = {
+        id: 'welcome',
+        text: 'Hello! I\'m your Connecta AI assistant. How can I help you today?',
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      setMessages([initialMessage]);
+    }
+  }, []);
+
   const handleBack = () => {
     navigate(-1);
   };
 
-  const simulateAIResponse = (userMessage: string) => {
+  const getAIResponse = async (userMessage: string) => {
+    if (!user) {
+      showError('Please log in to use Connecta AI');
+      return;
+    }
+
     setIsTyping(true);
     
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(userMessage);
+    try {
+      const response = await fetch(`${API_BASE_URL}/agent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          input: userMessage,
+          userId: "69035c535004be639bc0f83b",
+          userType: user.userType || 'freelancer'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      
+      // Handle different response formats
+      let responseText = "I'm sorry, I couldn't process your request. Please try again.";
+      
+      if (data.result) {
+        if (typeof data.result === 'string') {
+          // If result is a string, use it directly
+          responseText = data.result;
+        } else if (data.result.message) {
+          // If result has a message property, use that
+          responseText = data.result.message;
+        } else if (typeof data.result === 'object') {
+          // If it's an object without a message, format it as a string
+          responseText = JSON.stringify(data.result);
+        }
+      }
+      
       const aiMessage: Message = {
         id: Date.now().toString(),
-        text: aiResponse,
+        text: responseText,
         sender: 'ai',
         timestamp: new Date(),
       };
       
       setMessages(prev => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const generateAIResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('profile')) {
-      return "I can help you update your profile! Make sure to include your key skills, experience, and a professional summary. Would you like me to review your current profile?";
-    } else if (lowerMessage.includes('cover letter')) {
-      return "I'll help you create a professional cover letter. Please share the job description and I'll craft a compelling letter highlighting your relevant skills and experience.";
-    } else if (lowerMessage.includes('cv') || lowerMessage.includes('resume')) {
-      return "Great! I can optimize your CV. Focus on quantifiable achievements, use action verbs, and tailor it to your target role. Would you like specific suggestions?";
-    } else if (lowerMessage.includes('portfolio')) {
-      return "Let's build an impressive portfolio! Include your best work, case studies, and testimonials. I can guide you through the structure and content.";
-    } else {
-      return "I'm here to help! I can assist with updating your profile, creating cover letters, optimizing your CV, or building your portfolio. What would you like to work on?";
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (message.trim() || attachments.length > 0) {
-      const attachmentData = attachments.map(file => ({
-        name: file.name,
-        type: file.type,
-        url: URL.createObjectURL(file),
-      }));
-
-      const userMessage: Message = {
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      showError('Failed to get response from AI. Please try again.');
+      
+      const errorMessage: Message = {
         id: Date.now().toString(),
-        text: message.trim(),
-        sender: 'user',
+        text: "I'm having trouble connecting to the AI service. Please try again in a moment.",
+        sender: 'ai',
         timestamp: new Date(),
-        attachments: attachmentData.length > 0 ? attachmentData : undefined,
       };
       
-      setMessages(prev => [...prev, userMessage]);
-      simulateAIResponse(message.trim());
-      setMessage('');
-      setAttachments([]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
-  const handleSuggestionClick = (suggestion: SuggestionCard) => {
+  const handleSendMessage = async () => {
+    const messageText = message.trim();
+    if (!messageText && attachments.length === 0) return;
+
+    const attachmentData = attachments.map(file => ({
+      name: file.name,
+      type: file.type,
+      url: URL.createObjectURL(file),
+    }));
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: messageText,
+      sender: 'user',
+      timestamp: new Date(),
+      attachments: attachmentData.length > 0 ? attachmentData : undefined,
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setMessage('');
+    setAttachments([]);
+    
+    // Get AI response
+    await getAIResponse(messageText);
+  };
+
+  const handleSuggestionClick = async (suggestion: SuggestionCard) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       text: suggestion.title,
@@ -121,7 +180,7 @@ const ConnectaAI = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
-    simulateAIResponse(suggestion.title);
+    await getAIResponse(suggestion.title);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -199,7 +258,7 @@ const ConnectaAI = () => {
                     ))}
                   </div>
                 )}
-                {msg.text && <p>{msg.text}</p>}
+                {msg.text && <p>{typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)}</p>}
               </div>
             ))}
             
