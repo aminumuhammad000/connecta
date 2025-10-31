@@ -6,6 +6,6 @@ export class GetGigPerformanceTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     const userId = params.userId || this.userId;
-    return this.request(`/api/v1/analytics/gigs?userId=${userId}`, "GET");
+return this.request(`/api/analytics/gigs?userId=${userId}`, "GET");
   }
 }

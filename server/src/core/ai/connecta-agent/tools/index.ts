@@ -2,22 +2,19 @@ import fs from "fs";
 import path from "path";
 import { BaseTool } from "./base.tool";
 
-// __dirname is available globally in ts-node/CommonJS context
-// Choose extension based on runtime (ts-node / dev vs built js)
-const ext = process.env.NODE_ENV === "development" ? ".ts" : ".js";
-
 export const tools: Record<string, any> = {};
 
 const currentDir = __dirname;
 
+// Support both TS (dev with ts-node) and JS (built) tool files
 const files = fs
   .readdirSync(currentDir)
-  .filter(
-    (f) =>
-      f.endsWith(`.tool${ext}`) &&
-      f !== `base.tool${ext}` &&
-      f !== `index${ext}`
-  );
+  .filter((f) => {
+    const isTool = f.endsWith(".tool.ts") || f.endsWith(".tool.js");
+    const isIndex = f === "index.ts" || f === "index.js";
+    const isBase = f === "base.tool.ts" || f === "base.tool.js";
+    return isTool && !isIndex && !isBase;
+  });
 
 // Loader function to register tool classes
 export async function loadTools() {

@@ -5,6 +5,6 @@ export class GetUserMessagesTool extends BaseTool {
   description = "Fetch user’s messages or conversations.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/messages/${params.userId || this.userId}`, "GET");
+    return this.request(`/api/messages/${params.userId || this.userId}`, "GET");
   }
 }

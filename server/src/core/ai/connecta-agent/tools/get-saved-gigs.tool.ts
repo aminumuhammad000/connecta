@@ -6,6 +6,6 @@ export class GetSavedGigsTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     const userId = params.userId || this.userId;
-    return this.request(`/api/v1/jobs/saved?userId=${userId}`, "GET");
+return this.request(`/api/jobs/saved?userId=${userId}`, "GET");
   }
 }

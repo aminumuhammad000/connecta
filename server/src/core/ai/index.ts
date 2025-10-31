@@ -1,1 +1,1 @@
-export * from './intentPrompt';
+export * from './connecta-agent/prompts/intent-prompt';

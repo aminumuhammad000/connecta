@@ -5,6 +5,6 @@ export class EditCoverLetterTool extends BaseTool {
   description = "Edit or rewrite an existing cover letter to be stronger.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/proposals/cover-letter/edit`, "PATCH", params);
+return this.request(`/api/proposals/cover-letter/edit`, "PATCH", params);
   }
 }

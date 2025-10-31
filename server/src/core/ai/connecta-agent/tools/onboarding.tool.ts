@@ -5,6 +5,6 @@ export class OnboardingTool extends BaseTool {
   description = "Run onboarding steps or return onboarding content.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/support/onboarding`, "POST", params);
+return this.request(`/api/support/onboarding`, "POST", params);
   }
 }

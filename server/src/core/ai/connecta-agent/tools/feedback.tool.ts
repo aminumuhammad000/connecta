@@ -5,6 +5,6 @@ export class FeedbackTool extends BaseTool {
   description = "Send feedback to Connecta team.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/support/feedback`, "POST", params);
+return this.request(`/api/support/feedback`, "POST", params);
   }
 }

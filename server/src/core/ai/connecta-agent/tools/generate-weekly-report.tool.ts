@@ -6,6 +6,6 @@ export class GenerateWeeklyReportTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     const userId = params.userId || this.userId;
-    return this.request(`/api/v1/reports/weekly?userId=${userId}`, "GET");
+    return this.request(`/api/analytics/reports/weekly?userId=${userId}`, "GET");
   }
 }

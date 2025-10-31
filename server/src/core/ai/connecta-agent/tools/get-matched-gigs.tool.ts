@@ -5,7 +5,8 @@ export class GetMatchedGigsTool extends BaseTool {
   description = "Get gigs that match the user's skills and preferences.";
 
   async _call(params: Record<string, any>) {
+    // Use the existing 'recommended' endpoint under /api/jobs
     const query = params.query || {};
-    return this.request(`/api/v1/jobs/matched`, "GET", undefined, query);
+    return this.request(`/api/jobs/recommended`, "GET", undefined, query);
   }
 }

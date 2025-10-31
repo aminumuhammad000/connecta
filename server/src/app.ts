@@ -16,6 +16,11 @@ import messageRoutes from "./routes/Message.routes";
 import proposalRoutes from "./routes/Proposal.routes";
 import dashboardRoutes from "./routes/Dashboard.routes";
 import uploadRoutes from "./routes/upload.routes";
+// Additional feature routers used by agent tools
+import insightsRoutes from "./routes/insights.routes"; // /api/analytics
+import supportRoutes from "./routes/support.routes";   // /api/support
+import v1ProposalRoutes from "./routes/proposal.routes"; // /api/proposals (cover-letter endpoints)
+import gigsFeatureRoutes from "./routes/gigs.routes";    // /api/jobs (apply/save/saved/applications)
 dotenv.config();
 
 const app = express();
@@ -50,8 +55,18 @@ app.use("/api/users", userRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/jobs", jobRoutes);
+// Add gigs feature endpoints (apply/save/saved/applications, matched, recommendations)
+app.use("/api/jobs", gigsFeatureRoutes);
+
 app.use("/api/messages", messageRoutes);
+// Add cover-letter endpoints alongside proposals
 app.use("/api/proposals", proposalRoutes);
+app.use("/api/proposals", v1ProposalRoutes);
+
+// Analytics and Support used by tools
+app.use("/api/analytics", insightsRoutes);
+app.use("/api/support", supportRoutes);
+
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/agent", agentRoute);

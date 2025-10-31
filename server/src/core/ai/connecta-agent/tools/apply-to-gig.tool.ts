@@ -6,6 +6,6 @@ export class ApplyToGigTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     // params: { gigId, userId?, coverLetterId?, message }
-    return this.request(`/api/v1/jobs/${params.gigId}/apply`, "POST", params);
+return this.request(`/api/jobs/${params.gigId}/apply`, "POST", params);
   }
 }

@@ -6,6 +6,6 @@ export class TrackGigApplicationsTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     const userId = params.userId || this.userId;
-    return this.request(`/api/v1/jobs/applications?userId=${userId}`, "GET");
+return this.request(`/api/jobs/applications?userId=${userId}`, "GET");
   }
 }

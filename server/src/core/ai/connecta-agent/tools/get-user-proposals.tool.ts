@@ -5,6 +5,6 @@ export class GetUserProposalsTool extends BaseTool {
   description = "Retrieve proposals submitted by the user.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/proposals/user/${params.userId || this.userId}`, "GET");
+return this.request(`/api/proposals/freelancer/${params.userId || this.userId}`, "GET");
   }
 }

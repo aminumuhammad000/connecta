@@ -5,6 +5,6 @@ export class CompareSkillsToMarketTool extends BaseTool {
   description = "Compare user's skills with market demand/trends.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/analytics/skills/compare`, "POST", params);
+return this.request(`/api/analytics/skills/compare`, "POST", params);
   }
 }

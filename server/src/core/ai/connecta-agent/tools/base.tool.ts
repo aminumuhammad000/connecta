@@ -16,7 +16,7 @@ export abstract class BaseTool {
 
   protected async request(
     path: string,
-    method: "GET" | "POST" | "PATCH" | "DELETE" = "GET",
+    method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     body?: any,
     params?: Record<string, any>
   ): Promise<ToolResponse> {

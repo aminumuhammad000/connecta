@@ -5,6 +5,6 @@ export class SaveCoverLetterTool extends BaseTool {
   description = "Save a generated cover letter to drafts.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/proposals/cover-letter/save`, "POST", params);
+return this.request(`/api/proposals/cover-letter/save`, "POST", params);
   }
 }

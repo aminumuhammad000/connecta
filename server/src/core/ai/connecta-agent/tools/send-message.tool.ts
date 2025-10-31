@@ -5,7 +5,7 @@ export class SendMessageTool extends BaseTool {
   description = "Send a message to another user.";
 
   async _call(params: Record<string, any>) {
-    // params: { senderId, receiverId, content }
-    return this.request(`/api/v1/messages/send`, "POST", params);
+    // params: { conversationId, senderId, receiverId, text, attachments? }
+    return this.request(`/api/messages`, "POST", params);
   }
 }

@@ -5,6 +5,6 @@ export class GetDashboardSummaryTool extends BaseTool {
   description = "Fetch overview summary for user dashboard.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/dashboard/summary?userId=${params.userId || this.userId}`, "GET");
+    return this.request(`/api/dashboard/stats`, "GET");
   }
 }

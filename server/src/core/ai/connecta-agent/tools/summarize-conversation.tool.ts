@@ -5,6 +5,6 @@ export class SummarizeConversationTool extends BaseTool {
   description = "Summarize a conversation or message thread.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/messages/${params.threadId}/summarize`, "GET");
+    return this.request(`/api/messages/thread/${params.threadId}/summarize`, "GET");
   }
 }

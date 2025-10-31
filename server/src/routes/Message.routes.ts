@@ -8,6 +8,7 @@ import {
   getMessagesBetweenUsers,
   deleteMessage,
 } from '../controllers/Message.controller';
+import { summarizeConversation } from '../controllers/message.controller';
 
 const router = express.Router();
 
@@ -15,6 +16,9 @@ const router = express.Router();
 router.post('/conversations', getOrCreateConversation);
 router.get('/conversations/:userId', getUserConversations);
 router.get('/conversations/:conversationId/messages', getConversationMessages);
+
+// Extra route used by agent
+router.get('/thread/:threadId/summarize', summarizeConversation);
 
 // Message routes
 router.get('/between/:userId1/:userId2', getMessagesBetweenUsers);

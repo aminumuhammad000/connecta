@@ -6,6 +6,6 @@ export class CreateCoverLetterTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     // params: { jobTitle, jobDesc?, profileSummary?, tone?, extras? }
-    return this.request(`/api/v1/proposals/cover-letter`, "POST", params);
+return this.request(`/api/proposals/cover-letter`, "POST", params);
   }
 }

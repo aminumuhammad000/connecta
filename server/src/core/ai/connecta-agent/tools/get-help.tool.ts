@@ -5,6 +5,6 @@ export class GetHelpTool extends BaseTool {
   description = "Return help / FAQ content for Connecta features.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/support/help`, "GET", params);
+return this.request(`/api/support/help`, "GET", params);
   }
 }

@@ -5,7 +5,7 @@ export class UploadPortfolioTool extends BaseTool {
   description = "Upload or link a new portfolio project.";
 
   async _call(params: Record<string, any>) {
-    // params expected: { userId?, project: { title, description, url, files? } }
-    return this.request(`/api/v1/projects`, "POST", params);
+    // params expected: { userId?, title, description, url, files? }
+    return this.request(`/api/projects`, "POST", params);
   }
 }

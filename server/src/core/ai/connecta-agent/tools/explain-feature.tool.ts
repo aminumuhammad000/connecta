@@ -5,6 +5,6 @@ export class ExplainFeatureTool extends BaseTool {
   description = "Explain a Connecta feature to the user.";
 
   async _call(params: Record<string, any>) {
-    return this.request(`/api/v1/support/explain`, "POST", params);
+return this.request(`/api/support/explain`, "POST", params);
   }
 }

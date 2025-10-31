@@ -6,6 +6,6 @@ export class GetSavedCoverLettersTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     const userId = params.userId || this.userId;
-    return this.request(`/api/v1/proposals/cover-letters?userId=${userId}`, "GET");
+return this.request(`/api/proposals/cover-letters?userId=${userId}`, "GET");
   }
 }
