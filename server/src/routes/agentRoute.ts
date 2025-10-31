@@ -1,7 +1,20 @@
+// src/routes/agent.routes.ts
 import { Router, Request, Response } from "express";
-import { ConnectaAgent } from "../core/ai/connecta-agent/agent"; // adjust the path if needed
+import { loadTools } from "../core/ai/connecta-agent/tools";
+import { ConnectaAgent } from "../core/ai/connecta-agent/agent";
 
 const router = Router();
+
+// 🧠 Global init: load tools once when the server starts
+let toolsLoaded = false;
+
+async function ensureToolsLoaded() {
+  if (!toolsLoaded) {
+    await loadTools();
+    toolsLoaded = true;
+    console.log("✅ Tools successfully loaded for Connecta Agent.");
+  }
+}
 
 interface AgentRequest {
   input: string;
@@ -10,14 +23,19 @@ interface AgentRequest {
 }
 
 // Helper to create agent
-function createAgent(userId: string, userType?: string) {
-  return new ConnectaAgent({
+async function createAgent(userId: string, userType?: string) {
+  await ensureToolsLoaded(); // ensure tools are ready before creating agent
+
+  const agent = new ConnectaAgent({
     apiBaseUrl: "http://localhost:5000",
     authToken: "test-auth-token",
     openaiApiKey: process.env.OPENROUTER_API_KEY || "fallback-api-key",
     mockMode: false,
     userId,
   });
+
+  await agent.initializeTools(); // populate toolMap dynamically
+  return agent;
 }
 
 // POST /api/agent
@@ -31,7 +49,7 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    const agent = createAgent(userId, userType);
+    const agent = await createAgent(userId, userType);
     const result = await agent.process(input);
 
     return res.json({
