@@ -93,18 +93,16 @@ const ConnectaAI = () => {
     setIsTyping(true);
     
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const token = localStorage.getItem('token');
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(`${API_BASE_URL}/agent`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers,
         body: JSON.stringify({
           input: userMessage,
-          userId: user._id || localStorage.getItem('userId'),
-
-          userId: "69035ceb526dcadeee50d557",
-
+          userId: "68fc1d4fbea3f44d815cc272",
           userType: user.userType || 'freelancer'
         })
       });

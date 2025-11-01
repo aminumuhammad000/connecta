@@ -505,7 +505,138 @@ export class ConnectaAgent {
     console.error("❌ Error processing request:", error);
     throw error;
   }
-}
+  }
+
+  // Load user context with optional tokenless fallback
+  private async loadUserContext(): Promise<void> {
+    // If no auth token, try public profiles list and match by userId
+    if (!this.config.authToken) {
+      try {
+        const res = await axios.get(`${this.config.apiBaseUrl}/api/profiles`, { timeout: 5000 });
+        const profiles = Array.isArray(res.data) ? res.data : [];
+        const profile = profiles.find((p: any) => {
+          const uid = p?.user?._id || p?.user || p?.userId;
+          return String(uid) === String(this.config.userId);
+        });
+        if (profile) {
+          const userType = profile?.user?.userType || profile?.userType;
+          const name = profile?.user?.firstName || profile?.firstName;
+          this.userContext = {
+            userId: this.config.userId,
+            userType,
+            name,
+            profile,
+            lastFetched: Date.now(),
+          };
+          return;
+        }
+      } catch {
+        // ignore and fall through to minimal context
+      }
+      // Minimal context if no profile available publicly
+      this.userContext = {
+        userId: this.config.userId,
+        lastFetched: Date.now(),
+      };
+      return;
+    }
+
+    // Authenticated fetch
+    try {
+      const res = await axios.get(`${this.config.apiBaseUrl}/api/profiles/me`, {
+        headers: { Authorization: `Bearer ${this.config.authToken}` },
+        timeout: 5000,
+      });
+      const profile = res.data;
+      const userType = profile?.user?.userType || profile?.userType;
+      const name = profile?.user?.firstName || profile?.firstName;
+      this.userContext = {
+        userId: this.config.userId,
+        userType,
+        name,
+        profile,
+        lastFetched: Date.now(),
+      };
+    } catch (e) {
+      // On auth failure or any error, keep minimal context
+      this.userContext = {
+        userId: this.config.userId,
+        lastFetched: Date.now(),
+      };
+    }
+  }
+
+  /**
+   * Create standardized response object and record history
+   */
+  private createResponse(
+    message: string,
+    data: any,
+    success: boolean,
+    startTime: number,
+    suggestions: string[] = [],
+    toolUsed?: string
+  ): AgentResponse {
+    const response: AgentResponse = {
+      message,
+      data,
+      success,
+      toolUsed,
+      suggestions,
+      metadata: {
+        responseTime: Date.now() - startTime,
+        cached: false,
+      },
+    };
+    this.addToHistory(message, JSON.stringify(response), toolUsed, success);
+    return response;
+  }
+
+  /**
+   * Persist a chat turn into history
+   */
+  private addToHistory(input: string, output: string, toolUsed?: string, success?: boolean): void {
+    this.chatHistory.push({
+      input,
+      output,
+      timestamp: new Date(),
+      toolUsed,
+      success,
+    });
+    this.saveMemory();
+  }
+
+  /**
+   * Utility to determine if a tool result is effectively empty
+   */
+  private isEmptyResult(result: any): boolean {
+    const d = result?.data;
+    if (d == null) return true;
+    if (Array.isArray(d)) return d.length === 0;
+    if (typeof d === "object") {
+      if (Array.isArray(d.data) && d.data.length === 0) return true;
+      if (typeof (d as any).count === "number" && (d as any).count === 0) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Friendly message templates for empty results
+   */
+  private emptyMessage(tool: string): string {
+    const map: Record<string, string> = {
+      get_messages_tool: "📭 Your inbox is empty! No conversations yet.",
+      get_user_messages_tool: "💬 No recent conversations found.",
+      get_matched_gigs_tool: "🔍 I couldn't find matching gigs right now. Want me to suggest profile improvements?",
+      get_recommended_gigs_tool: "💡 No recommendations available yet. Let's optimize your profile first!",
+      get_saved_gigs_tool: "⭐ You haven't saved any gigs yet. Start exploring!",
+      get_saved_cover_letters_tool: "📝 No saved cover letters yet. Want to create one?",
+      track_gig_applications_tool: "📊 You haven't applied to any gigs yet. Ready to start?",
+      get_profile_details_tool: "👤 Couldn't load profile. Let's try again.",
+      get_profile_analytics_tool: "📈 No analytics data available yet.",
+    };
+    return map[tool] || "🤔 Nothing found. Want to try something else?";
+  }
 
   private async explainError(tool: string, error: string): Promise<string> {
     try {
