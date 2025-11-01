@@ -23,12 +23,12 @@ interface AgentRequest {
 }
 
 // Helper to create agent
-async function createAgent(userId: string, userType?: string) {
+async function createAgent(userId: string, authToken?: string, userType?: string) {
   await ensureToolsLoaded(); // ensure tools are ready before creating agent
 
   const agent = new ConnectaAgent({
     apiBaseUrl: "http://localhost:5000",
-    authToken: "test-auth-token",
+    authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
     openaiApiKey: process.env.OPENROUTER_API_KEY || "fallback-api-key",
     mockMode: false,
     userId,
@@ -42,6 +42,8 @@ async function createAgent(userId: string, userType?: string) {
 router.post("/", async (req: Request, res: Response) => {
   try {
     const { input, userId, userType } = req.body as AgentRequest;
+    const authHeader = (req.headers["authorization"] as string) || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
     if (!input || !userId) {
       return res.status(400).json({
@@ -49,7 +51,7 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    const agent = await createAgent(userId, userType);
+    const agent = await createAgent(userId, token, userType);
     const result = await agent.process(input);
 
     return res.json({

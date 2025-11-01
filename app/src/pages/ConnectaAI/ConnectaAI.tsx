@@ -92,7 +92,7 @@ const ConnectaAI = () => {
         },
         body: JSON.stringify({
           input: userMessage,
-          userId: "69035c535004be639bc0f83b",
+          userId: "69035ceb526dcadeee50d557",
           userType: user.userType || 'freelancer'
         })
       });
