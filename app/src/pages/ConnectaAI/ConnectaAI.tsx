@@ -102,6 +102,9 @@ const ConnectaAI = () => {
         body: JSON.stringify({
           input: userMessage,
           userId: user._id || localStorage.getItem('userId'),
+
+          userId: "69035ceb526dcadeee50d557",
+
           userType: user.userType || 'freelancer'
         })
       });

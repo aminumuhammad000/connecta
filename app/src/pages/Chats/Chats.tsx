@@ -42,7 +42,7 @@ const Chats: React.FC = () => {
   // Get userId from localStorage, with fallback
 
   // Force localStorage userId to seeded freelancer if not set
-  const SEEDED_FREELANCER_ID = '6900eacbda56fcad22cea38b'; // Replace with actual seeded freelancer ID if different
+  const SEEDED_FREELANCER_ID = '69035ceb526dcadeee50d557'; // Replace with actual seeded freelancer ID if different
   const getUserId = (): string => {
     let userId = localStorage.getItem('userId');
     if (!userId) {
