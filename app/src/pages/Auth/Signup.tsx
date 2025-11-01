@@ -52,7 +52,7 @@ const Signup = () => {
         setTimeout(() => {
           // Redirect clients to client dashboard, freelancers to regular dashboard
           if (data.user.userType === 'client') {
-            navigate('/client-dashboard');
+            navigate('/client/dashboard');
           } else {
             navigate('/dashboard');
           }

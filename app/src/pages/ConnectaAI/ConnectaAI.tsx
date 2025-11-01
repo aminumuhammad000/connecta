@@ -379,7 +379,7 @@ const ConnectaAI = () => {
             </button>
             <div className={styles.inputArea__wrapper}>
               <input 
-                type="text" 
+                type="text" A
                 className={styles.inputArea__textField} 
                 placeholder="Send a message"
                 value={message}
