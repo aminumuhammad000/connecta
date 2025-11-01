@@ -69,7 +69,14 @@ export const Messages: React.FC = () => {
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   
   // Get user IDs from localStorage and navigation state
-  const currentUserId = localStorage.getItem('userId') || '6900eacbda56fcad22cea38b'; // Freelancer ID
+  const currentUserId = localStorage.getItem('userId') || '';
+  
+  // Debug: Log current user ID
+  useEffect(() => {
+    console.log('Current User ID (Freelancer):', currentUserId);
+    console.log('User Type:', localStorage.getItem('userType'));
+  }, [currentUserId]);
+  
   // Pull identifiers from navigation state or URL query params (for refresh/deep links)
   const searchParams = new URLSearchParams(location.search);
   const stateData = (location.state as {
@@ -478,14 +485,15 @@ export const Messages: React.FC = () => {
   };
 
   const getOtherUserName = (): string => {
-    if (clientName) return clientName;
-    if (conversation && conversation.participants.length > 0) {
+    if (isFreelancer && clientName) return clientName;
+    if (!isFreelancer && freelancerName) return freelancerName;
+    if (conversation && conversation.participants && conversation.participants.length > 0) {
       const otherUser = conversation.participants.find(p => p._id !== currentUserId);
       if (otherUser) {
         return `${otherUser.firstName} ${otherUser.lastName}`;
       }
     }
-    return 'Client';
+    return isFreelancer ? 'Client' : 'Freelancer';
   };
 
   if (loading) {
@@ -526,7 +534,26 @@ export const Messages: React.FC = () => {
         {/* Chat Body */}
         <main className={styles.chatBody} ref={chatBodyRef}>
           {messages.map((msg, index) => {
-            const isSent = msg.senderId._id === currentUserId;
+            // Extract sender ID - handle both populated and string formats
+            const messageSenderId = msg.senderId?._id || msg.senderId;
+            const senderIdString = typeof messageSenderId === 'object' ? messageSenderId.toString() : messageSenderId;
+            const currentUserIdString = currentUserId;
+            
+            // FREELANCER sends messages (RIGHT side) = isSent true
+            // CLIENT sends messages (LEFT side, grey) = isSent false
+            const isSent = senderIdString === currentUserIdString;
+            
+            // Debug log for first 3 messages
+            if (index < 3) {
+              console.log(`Message ${index}:`, {
+                text: msg.text?.substring(0, 20),
+                senderIdString,
+                currentUserIdString,
+                isSent: isSent ? 'RIGHT (Freelancer)' : 'LEFT (Client)',
+                senderName: `${msg.senderId.firstName} ${msg.senderId.lastName}`
+              });
+            }
+            
             return (
               <div
                 key={msg._id || index}

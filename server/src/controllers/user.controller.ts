@@ -7,6 +7,72 @@ import User from "../models/user.model";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 
 // ===================
+// Get All Users / Search Users
+// ===================
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const { userType, skills, limit = 50 } = req.query;
+    
+    const query: any = {};
+    
+    if (userType) {
+      query.userType = userType;
+    }
+    
+    if (skills) {
+      query.skills = { $in: [skills] };
+    }
+    
+    const users = await User.find(query)
+      .select('-password') // Exclude password
+      .limit(parseInt(limit as string));
+    
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users
+    });
+  } catch (err) {
+    console.error('Get users error:', err);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error", 
+      error: err 
+    });
+  }
+};
+
+// ===================
+// Get User By ID
+// ===================
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (err) {
+    console.error('Get user by ID error:', err);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error", 
+      error: err 
+    });
+  }
+};
+
+// ===================
 // Local Sign Up
 // ===================
 export const signup = async (req: Request, res: Response) => {

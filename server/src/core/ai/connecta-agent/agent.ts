@@ -150,6 +150,13 @@ export class ConnectaAgent {
           return { message: friendly };
         }
 
+        // Format profile details if the tool is get_profile_details_tool
+        if (validatedOutput.tool === 'get_profile_details_tool' && result?.data) {
+          const formattedMessage = await this.formatProfileDetails(result.data);
+          this.chatHistory.push({ input, output: formattedMessage });
+          return { message: formattedMessage };
+        }
+
         this.chatHistory.push({ input, output: JSON.stringify(result) });
         return result;
       },
@@ -163,6 +170,50 @@ export class ConnectaAgent {
   }
 }
 
+  private async formatProfileDetails(profileData: any): Promise<string> {
+    // Extract user data (profile data might have nested user object)
+    const user = profileData.user || profileData;
+    
+    const name = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+    const email = user.email || 'Not provided';
+    const userType = user.userType === 'freelancer' ? '👨‍💼 Freelancer' : '👤 Client';
+    const bio = user.bio || profileData.bio || 'No bio added yet';
+    const skills = user.skills || profileData.skills || [];
+    const hourlyRate = user.hourlyRate || profileData.hourlyRate;
+    const location = user.location || profileData.location;
+    const experience = user.experience || profileData.experience;
+    
+    let message = `📋 **Your Connecta Profile**\n\n`;
+    message += `**Name:** ${name}\n`;
+    message += `**Email:** ${email}\n`;
+    message += `**Account Type:** ${userType}\n`;
+    
+    if (bio !== 'No bio added yet') {
+      message += `\n**About Me:**\n${bio}\n`;
+    }
+    
+    if (skills && skills.length > 0) {
+      message += `\n**Skills:** ${skills.join(', ')}\n`;
+    }
+    
+    if (hourlyRate) {
+      message += `**Hourly Rate:** $${hourlyRate}/hr\n`;
+    }
+    
+    if (location) {
+      message += `**Location:** ${location}\n`;
+    }
+    
+    if (experience) {
+      message += `**Experience:** ${experience}\n`;
+    }
+    
+    message += `\n**User ID:** ${user._id || 'N/A'}\n`;
+    message += `\nWould you like to update any of these details? 😊`;
+    
+    return message;
+  }
+
   private async explainError(tool: string, error: string): Promise<string> {
     try {
       const prompt = ChatPromptTemplate.fromTemplate(
@@ -174,9 +225,9 @@ export class ConnectaAgent {
         new StringOutputParser(),
       ]);
       const msg = await chain.invoke({ tool, error });
-      return (msg || "Sorry, I couldn’t complete that just now. Please try again in a moment.").trim();
+      return (msg || "Sorry, I couldn't complete that just now. Please try again in a moment.").trim();
     } catch {
-      return "Sorry, I couldn’t complete that just now. Please try again in a moment.";
+      return "Sorry, I couldn't complete that just now. Please try again in a moment.";
     }
   }
 }

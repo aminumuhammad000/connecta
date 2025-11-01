@@ -1,4 +1,5 @@
 <!-- api end points  -->
+npm run seed:job-proposals
 
 ## User Endpoints
 <!-- register a new user -->

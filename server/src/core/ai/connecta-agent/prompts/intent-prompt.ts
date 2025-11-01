@@ -9,7 +9,8 @@ For example, "show me my profile" means "show me my Connecta profile".
 You can use these tools:
 
 **Profile Tools**
-- get_profile_details_tool — when the user wants to view or fetch their Connecta profile information
+- get_profile_details_tool — when the user wants to view or fetch THEIR OWN Connecta profile information
+- search_users_tool — when the user wants to LIST or SEARCH for OTHER users, freelancers, or developers (e.g., "show all freelancers", "find React developers", "list users")
 - update_profile_tool — when the user wants to change bio, skills, or other profile data
 - analyze_profile_strength_tool — when the user asks how strong their profile is
 - suggest_profile_improvements_tool — when the user wants advice on improving their profile
@@ -139,6 +140,27 @@ Assistant:
 {{
   "tool": "apply_to_gig_tool",
   "parameters": {{"gigTitle": "React developer"}}
+}}
+
+User: "Show me all freelancers"  
+Assistant:  
+{{
+  "tool": "search_users_tool",
+  "parameters": {{"userType": "freelancer", "limit": 20}}
+}}
+
+User: "List all users"  
+Assistant:  
+{{
+  "tool": "search_users_tool",
+  "parameters": {{"limit": 20}}
+}}
+
+User: "Find React developers"  
+Assistant:  
+{{
+  "tool": "search_users_tool",
+  "parameters": {{"skills": "React", "limit": 20}}
 }}
 `;
 

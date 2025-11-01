@@ -1,12 +1,20 @@
 import { Icon } from '@iconify/react';
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from '../styles/ClientHeader.module.css';
 
 interface ClientHeaderProps {
   onMenuClick: () => void;
 }
 
+
 const ClientHeader = ({ onMenuClick }: ClientHeaderProps) => {
+  const navigate = useNavigate();
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    onMenuClick(); // Close mobile sidebar after navigation
+  };
   const [user, setUser] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -64,9 +72,22 @@ const ClientHeader = ({ onMenuClick }: ClientHeaderProps) => {
         <button className={styles.notificationButton}>
           <Icon icon="material-symbols:notifications-outline" />
         </button>
-        <div style={{background:"tomato", padding:"5px", width:"25px", color:"white", cursor:"pointer", borderRadius:"50%"}}>
-        <Icon icon="material-symbols:auto-awesome-outline" className={styles.navIcon} />
-         
+        <div 
+          onClick={() => handleNavigation('/client/ai')} 
+          style={{
+            background: "tomato", 
+            padding: "5px", 
+            width: "25px", 
+            height: "25px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white", 
+            cursor: "pointer", 
+            borderRadius: "50%"
+          }}
+        >
+          <Icon icon="material-symbols:auto-awesome-outline" className={styles.navIcon} />
         </div>
 
         {/* User Profile Dropdown */}

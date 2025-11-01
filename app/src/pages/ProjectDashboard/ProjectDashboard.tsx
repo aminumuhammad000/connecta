@@ -81,19 +81,22 @@ const ProjectDashboard: React.FC = () => {
   const filteredProjects = projects.filter(project => project.status === activeTab);
 
   const handleCardClick = (projectId: string, status: string) => {
-    // Only allow navigation for ongoing projects
+    // Navigate to project detail for submission
     if (status === 'ongoing') {
-      navigate(`/project/${projectId}`);
+      navigate(`/freelancer/project/${projectId}`);
     }
   };
 
   const handleChatClick = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation(); // Prevent card click navigation
     // Navigate to messages with client info and project context
-    navigate('/messages', { 
+    const clientId = project.clientId?._id || project.clientId;
+    const clientName = project.clientName || `${project.clientId?.firstName || ''} ${project.clientId?.lastName || ''}`.trim();
+    
+    navigate('/freelancer/messages', { 
       state: { 
-        clientId: project.clientId._id, 
-        clientName: project.clientName,
+        clientId: clientId, 
+        clientName: clientName,
         projectId: project._id,
         projectTitle: project.title
       } 

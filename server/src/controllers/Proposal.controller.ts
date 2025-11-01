@@ -293,3 +293,193 @@ export const getProposalStats = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Get accepted proposals for a client
+export const getClientAcceptedProposals = async (req: Request, res: Response) => {
+  try {
+    const clientId = (req.user as any)?.id;
+
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized',
+      });
+    }
+
+    const proposals = await Proposal.find({
+      clientId,
+      status: 'accepted',
+    })
+      .populate('freelancerId', 'firstName lastName email profileImage skills bio hourlyRate')
+      .populate('jobId', 'title budget description')
+      .sort({ createdAt: -1 });
+
+    // Transform proposals to include coverLetter, proposedRate, estimatedDuration
+    const transformedProposals = proposals.map(proposal => ({
+      _id: proposal._id,
+      jobId: proposal.jobId,
+      freelancerId: proposal.freelancerId,
+      coverLetter: proposal.description || 'I am interested in this project and would love to work with you.',
+      proposedRate: proposal.budget?.amount || 0,
+      estimatedDuration: `${Math.ceil((new Date(proposal.dateRange.endDate).getTime() - new Date(proposal.dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7))} weeks`,
+      status: proposal.status,
+      createdAt: proposal.createdAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: transformedProposals,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching accepted proposals',
+      error: error.message,
+    });
+  }
+};
+
+// Approve a proposal and create a project
+export const approveProposal = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const clientId = (req.user as any)?.id;
+
+    const proposal = await Proposal.findById(id)
+      .populate('jobId')
+      .populate('freelancerId', 'firstName lastName email')
+      .populate('clientId', 'firstName lastName');
+
+    if (!proposal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proposal not found',
+      });
+    }
+
+    // Get the actual clientId (handle both populated and unpopulated)
+    const proposalClientId = (proposal.clientId as any)?._id 
+      ? (proposal.clientId as any)._id.toString() 
+      : proposal.clientId?.toString();
+
+    // Verify the client owns this proposal
+    if (proposalClientId !== clientId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to approve this proposal',
+      });
+    }
+
+    // Update proposal status to approved
+    proposal.status = 'approved' as any;
+    await proposal.save();
+
+    // Create a project
+    const Project = require('../models/Project.model').default;
+    const freelancer = proposal.freelancerId as any;
+    const client = proposal.clientId as any;
+    
+    // Handle case where client is not populated (get the actual ID)
+    const actualClientId = client?._id || proposal.clientId;
+    const actualFreelancerId = freelancer?._id || proposal.freelancerId;
+    
+    // Get client name (fetch if not populated)
+    let clientName = client?.firstName && client?.lastName 
+      ? `${client.firstName} ${client.lastName}` 
+      : 'Client';
+    
+    if (!client?.firstName) {
+      // Fetch client info if not populated
+      const User = require('../models/user.model').default;
+      const clientUser = await User.findById(actualClientId);
+      if (clientUser) {
+        clientName = `${clientUser.firstName} ${clientUser.lastName}`;
+      }
+    }
+
+    const project = await Project.create({
+      title: proposal.title,
+      description: proposal.description,
+      summary: proposal.description.substring(0, 200) + '...',
+      status: 'ongoing',
+      statusLabel: 'Active',
+      budget: {
+        amount: proposal.budget.amount,
+        currency: proposal.budget.currency,
+        type: proposal.priceType,
+      },
+      dateRange: {
+        startDate: new Date(),
+        endDate: proposal.dateRange.endDate,
+      },
+      clientId: actualClientId,
+      clientName: clientName,
+      clientVerified: true,
+      freelancerId: actualFreelancerId,
+      projectType: 'One-time project',
+      deliverables: [],
+      activity: [{
+        date: new Date(),
+        description: `Project started with ${freelancer?.firstName || 'freelancer'} ${freelancer?.lastName || ''}`.trim(),
+      }],
+      uploads: [],
+      milestones: [],
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Proposal approved and project created successfully',
+      data: {
+        proposal,
+        project,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error approving proposal:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error approving proposal',
+      error: error.message,
+    });
+  }
+};
+
+// Reject a proposal
+export const rejectProposal = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const clientId = (req.user as any)?.id;
+
+    const proposal = await Proposal.findById(id);
+
+    if (!proposal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Proposal not found',
+      });
+    }
+
+    // Verify the client owns this proposal
+    if (proposal.clientId?.toString() !== clientId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to reject this proposal',
+      });
+    }
+
+    proposal.status = 'declined';
+    await proposal.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Proposal rejected successfully',
+      data: proposal,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error rejecting proposal',
+      error: error.message,
+    });
+  }
+};

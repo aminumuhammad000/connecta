@@ -443,7 +443,7 @@
 }
 
 /* Responsive Design */
-@media (max-width: 414px) {
+@media (min-width: 768px) {
   .messagesPage {
     padding: 0;
   }
@@ -452,5 +452,40 @@
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;
+    height: 100vh;
+  }
+
+  .chatBody {
+    padding: 24px;
+  }
+
+  .messageContainer {
+    max-width: 60%;
+  }
+}
+
+@media (max-width: 767px) {
+  .messagesPage {
+    padding: 0;
+  }
+
+  .mobileView {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    height: 100vh;
+  }
+
+  .messageContainer {
+    max-width: 85%;
+  }
+
+  .messageBubble {
+    font-size: 15px;
+    padding: 10px 14px;
+  }
+
+  .chatFooter {
+    padding: 12px;
   }
 }

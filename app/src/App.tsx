@@ -1,4 +1,4 @@
-import ClientChat from './pages/client/ClientChat';
+import ClientChat from './pages/client/ClientChatReal';
 import CreateJob from './pages/client/CreateJob'
 import './App.css'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
@@ -197,6 +197,11 @@ function App() {
               <div className="client-projects-bg">
                 <Profile />
               </div>
+            </ProtectedRoute>
+          } />
+          <Route path='/client/messages' element={
+            <ProtectedRoute>
+              <ClientChat />
             </ProtectedRoute>
           } />
           <Route path='/client/ai' element={

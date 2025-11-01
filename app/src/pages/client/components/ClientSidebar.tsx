@@ -56,7 +56,7 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
         <div className={styles.sidebarInner}>
           {/* Logo */}
           <div className={styles.logoSection}>
-            <button onClick={() => handleNavigation('/client-dashboard')} className={styles.logoLink}>
+            <button onClick={() => handleNavigation('/client/dashboard')} className={styles.logoLink}>
               <img src={Logo} alt="Connecta Logo" className={styles.logoImage} />
             </button>
             {/* Expand/Reduce Icon Toggle */}
@@ -68,7 +68,7 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
           {/* Navigation */}
           <nav className={styles.nav}>  
             <button 
-              onClick={() => handleNavigation('/client-dashboard')} 
+              onClick={() => handleNavigation('/client/dashboard')} 
               className={`${styles.navItem} ${isActive('/client-dashboard') ? styles.active : ''}`}
             >
               <Icon icon="material-symbols:dashboard-outline" className={styles.navIcon} />
@@ -89,8 +89,8 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
               Create Job
             </button>
             <button 
-              onClick={() => handleNavigation('/client-chats')} 
-              className={`${styles.navItem} ${isActive('/client-chats') ? styles.active : ''}`}
+              onClick={() => handleNavigation('/client/messages')} 
+              className={`${styles.navItem} ${isActive('/client/messages') ? styles.active : ''}`}
             >
               <Icon icon="material-symbols:chat-bubble-outline" className={styles.navIcon} />
               Messages

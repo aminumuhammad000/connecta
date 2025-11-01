@@ -1,90 +1,73 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import { io, Socket } from 'socket.io-client';
 import styles from './ClientChat.module.css';
 import ClientSidebar from './components/ClientSidebar';
-import ClientHeader from './components/ClientHeader';
 
-// Demo data for UI matching the screenshot
-const conversations = [
-  {
-    id: '1',
-    name: 'Eleanor Vance',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    lastMsg: "Great, I'll get that over to ...",
-    time: '10:42 AM',
-    unread: 1,
-    selected: true,
-  },
-  {
-    id: '2',
-    name: 'Marcus Holloway',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    lastMsg: 'The file is attached. Let me...',
-    time: 'Yesterday',
-    unread: 3,
-    selected: false,
-  },
-  {
-    id: '3',
-    name: 'Lena Petrova',
-    avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-    lastMsg: 'Perfect, thank you!',
-    time: 'Mon',
-    unread: 0,
-    selected: false,
-  },
-  {
-    id: '4',
-    name: 'Kenji Tanaka',
-    avatar: 'https://randomuser.me/api/portraits/men/76.jpg',
-    lastMsg: 'Sure, I can do that.',
-    time: 'Sun',
-    unread: 0,
-    selected: false,
-  },
-];
+interface MessageData {
+  _id: string;
+  conversationId: string;
+  senderId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  receiverId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  text: string;
+  attachments?: {
+    fileName: string;
+    fileUrl: string;
+    fileType: string;
+  }[];
+  isRead: boolean;
+  createdAt: string;
+}
 
-import { useState, useRef } from 'react';
-
-const initialMessages = [
-  {
-    id: 1,
-    sender: 'Eleanor Vance',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    role: 'UX/UI Designer',
-    text: "Hi there! I've just pushed the latest designs for the dashboard. Please let me know your thoughts.",
-    time: '10:40 AM',
-    sent: false,
-    type: 'text',
-  },
-  {
-    id: 2,
-    sender: 'You',
-    text: 'Looks great, Eleanor. The new data visualization components are exactly what we were looking for.',
-    time: '10:41 AM',
-    sent: true,
-    type: 'text',
-  },
-  {
-    id: 3,
-    sender: 'Eleanor Vance',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    role: 'UX/UI Designer',
-    text: "Great, I’ll get that over to you by EOD. I’ll also include the mobile mockups.",
-    time: '10:42 AM',
-    sent: false,
-    type: 'text',
-  },
-];
-
+interface ConversationData {
+  _id: string;
+  participants: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    profileImage?: string;
+  }[];
+  lastMessage?: string;
+  lastMessageAt: string;
+}
 
 const ClientChat: React.FC = () => {
-  const [messages, setMessages] = useState(initialMessages);
+  const location = useLocation();
+  const chatBodyRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  
+  const [messages, setMessages] = useState<MessageData[]>([]);
   const [input, setInput] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [fileInput, setFileInput] = useState<HTMLInputElement | null>(null);
   const [search, setSearch] = useState('');
-  const chatBodyRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [conversation, setConversation] = useState<ConversationData | null>(null);
+  const [conversations, setConversations] = useState<any[]>([]);
+  
+  // Get user IDs from localStorage and navigation state
+  const currentUserId = localStorage.getItem('userId') || '';
+  const searchParams = new URLSearchParams(location.search);
+  const stateData = (location.state as {
+    freelancerId?: string;
+    freelancerName?: string;
+    projectId?: string;
+    projectTitle?: string;
+  }) || {};
+  
+  const freelancerId = stateData.freelancerId || searchParams.get('freelancerId') || undefined;
+  const freelancerName = stateData.freelancerName || searchParams.get('freelancerName') || undefined;
+  const projectId = stateData.projectId || searchParams.get('projectId') || undefined;
+  const projectTitle = stateData.projectTitle || searchParams.get('projectTitle') || undefined;
 
   // Scroll to bottom when messages change
   React.useEffect(() => {

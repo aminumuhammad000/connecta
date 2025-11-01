@@ -18,7 +18,7 @@ export interface IProposal extends Document {
   freelancerId: mongoose.Types.ObjectId;
   jobId?: mongoose.Types.ObjectId;
   clientId?: mongoose.Types.ObjectId;
-  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'approved';
   level: 'entry' | 'intermediate' | 'expert';
   priceType: 'fixed' | 'hourly';
   createdAt: Date;
@@ -87,7 +87,7 @@ const ProposalSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'declined', 'expired'],
+      enum: ['pending', 'accepted', 'declined', 'expired', 'approved'],
       default: 'pending',
     },
     level: {

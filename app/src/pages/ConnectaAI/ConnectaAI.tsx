@@ -11,12 +11,20 @@ interface SuggestionCard {
   description: string;
 }
 
+import JobList from './components/JobList';
+import type { Job } from './components/JobCard';
+import ProfileList from './components/ProfileList';
+import type { Profile } from './components/ProfileCard';
+
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
   attachments?: { name: string; type: string; url: string }[];
+  jobs?: Job[];
+  profiles?: Profile[];
+  type?: 'text' | 'jobs' | 'profiles';
 }
 
 const ConnectaAI = () => {
@@ -66,6 +74,7 @@ const ConnectaAI = () => {
         text: 'Hello! I\'m your Connecta AI assistant. How can I help you today?',
         sender: 'ai',
         timestamp: new Date(),
+        type: 'text',
       };
       setMessages([initialMessage]);
     }
@@ -92,7 +101,7 @@ const ConnectaAI = () => {
         },
         body: JSON.stringify({
           input: userMessage,
-          userId: "69035c535004be639bc0f83b",
+          userId: user._id || localStorage.getItem('userId'),
           userType: user.userType || 'freelancer'
         })
       });
@@ -103,43 +112,69 @@ const ConnectaAI = () => {
       }
 
       const data = await response.json();
+      console.log('AI Response:', JSON.stringify(data, null, 2));
       
-      // Handle different response formats
-      let responseText = "I'm sorry, I couldn't process your request. Please try again.";
+      // Try to parse different response formats
+      let jobsData = [];
+      let profilesData = [];
+      let messageText = data.result?.message || data.message || '';
+      let responseType: 'text' | 'jobs' | 'profiles' = 'text';
       
-      if (data.result) {
-        if (typeof data.result === 'string') {
-          // If result is a string, use it directly
-          responseText = data.result;
-        } else if (data.result.message) {
-          // If result has a message property, use that
-          responseText = data.result.message;
-        } else if (typeof data.result === 'object') {
-          // If it's an object without a message, format it as a string
-          responseText = JSON.stringify(data.result);
+      // Extract jobs from various nested structures
+      const possibleJobsData = data.result?.data?.data || data.data?.data || data.data || data.jobs || [];
+      if (Array.isArray(possibleJobsData) && possibleJobsData.length > 0) {
+        // Check if first item looks like a job
+        const firstItem = possibleJobsData[0];
+        if (firstItem?.title && (firstItem?.company || firstItem?.description)) {
+          jobsData = possibleJobsData;
+          responseType = 'jobs';
+          messageText = 'Here are some job listings that match your criteria:';
         }
       }
       
+      // Extract profiles from various nested structures
+      const possibleProfilesData = data.result?.data?.data || data.data?.data || data.data || data.profiles || data.users || [];
+      if (Array.isArray(possibleProfilesData) && possibleProfilesData.length > 0 && jobsData.length === 0) {
+        // Check if first item looks like a profile
+        const firstItem = possibleProfilesData[0];
+        if (firstItem?.firstName && firstItem?.email) {
+          profilesData = possibleProfilesData;
+          responseType = 'profiles';
+          messageText = 'Here are some profiles that match your search:';
+        }
+      }
+      
+      console.log('Parsed response:', { responseType, jobsCount: jobsData.length, profilesCount: profilesData.length });
+      
+      // Create the AI message
       const aiMessage: Message = {
         id: Date.now().toString(),
-        text: responseText,
+        text: messageText,
         sender: 'ai',
         timestamp: new Date(),
+        type: responseType,
       };
+      
+      // Add data based on type
+      if (jobsData.length > 0) {
+        aiMessage.jobs = jobsData;
+      } else if (profilesData.length > 0) {
+        aiMessage.profiles = profilesData;
+      }
       
       setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting AI response:', error);
-      showError('Failed to get response from AI. Please try again.');
+      const errorMessage = error?.message || 'Failed to get response from AI. Please try again.';
+      showError(errorMessage);
       
-      const errorMessage: Message = {
+      setMessages(prev => [...prev, {
         id: Date.now().toString(),
-        text: "I'm having trouble connecting to the AI service. Please try again in a moment.",
+        text: errorMessage,
         sender: 'ai',
         timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
+        type: 'text'
+      }]);
     } finally {
       setIsTyping(false);
     }
@@ -258,7 +293,25 @@ const ConnectaAI = () => {
                     ))}
                   </div>
                 )}
-                {msg.text && <p>{typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)}</p>}
+                {/* Render based on message type */}
+                {msg.jobs && msg.jobs.length > 0 ? (
+                  // Show job cards
+                  <div className={styles.jobsContainer}>
+                    {msg.text && <p className={styles.jobsHeader}>{msg.text}</p>}
+                    <JobList jobs={msg.jobs} />
+                  </div>
+                ) : msg.profiles && msg.profiles.length > 0 ? (
+                  // Show profile cards
+                  <div className={styles.profilesContainer}>
+                    {msg.text && <p className={styles.profilesHeader}>{msg.text}</p>}
+                    <ProfileList profiles={msg.profiles} />
+                  </div>
+                ) : msg.text ? (
+                  // Show plain text message
+                  <div className={msg.sender === 'ai' ? styles.aiMessageText : styles.userMessageText}>
+                    {msg.text}
+                  </div>
+                ) : null}
               </div>
             ))}
             
@@ -276,20 +329,18 @@ const ConnectaAI = () => {
         )}
 
         <footer className={styles.chatFooter}>
-          {messages.length === 0 && (
-            <div className={styles.suggestions}>
-              {suggestions.map((suggestion, index) => (
-                <div 
-                  key={index}
-                  className={styles.suggestionCard}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                >
-                  <p className={styles.suggestionCard__title}>{suggestion.title}</p>
-                  <p className={styles.suggestionCard__description}>{suggestion.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className={styles.suggestions}>
+            {suggestions.map((suggestion, index) => (
+              <div 
+                key={index}
+                className={styles.suggestionCard}
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                <p className={styles.suggestionCard__title}>{suggestion.title}</p>
+                <p className={styles.suggestionCard__description}>{suggestion.description}</p>
+              </div>
+            ))}
+          </div>
           
           {attachments.length > 0 && (
             <div className={styles.attachmentPreview}>

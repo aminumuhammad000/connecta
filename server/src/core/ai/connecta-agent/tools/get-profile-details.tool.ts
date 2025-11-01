@@ -2,30 +2,28 @@ import { BaseTool } from "./base.tool";
 
 export class GetProfileDetailsTool extends BaseTool {
   name = "get_profile_details_tool";
-  description = "Fetch user profile details by profile ID or by associated user ID.";
+  description = "Fetch a SINGLE user's profile details by their profile ID or user ID. Use this only when user asks about their own profile or a specific user. NOT for listing multiple users.";
 
   async _call(params: Record<string, any>) {
-    const profileId = params.profileId;
     const userId = params.userId || this.userId;
 
-    if (profileId) {
-      return this.request(`/api/profiles/${profileId}`, "GET");
+    if (!userId) {
+      return { success: false, message: "User ID is required" };
     }
 
-    // Fallback: find profile by userId by listing and filtering client-side
-    const listRes = await this.request(`/api/profiles`, "GET");
-    if (!listRes.success) return listRes;
-
-    const profiles = Array.isArray(listRes.data) ? listRes.data : [];
-    const profile = profiles.find((p: any) => {
-      const uid = p?.user?._id || p?.user || p?.userId;
-      return uid == userId; // loose equality to handle string/ObjectId serialization
-    });
-
-    if (!profile) {
-      return { success: false, message: "Profile not found for user" };
+    // Fetch user directly from /api/users/:id
+    const response = await this.request(`/api/users/${userId}`, "GET");
+    
+    if (!response.success) {
+      return { 
+        success: false, 
+        message: "Could not fetch your profile details. Please try again." 
+      };
     }
 
-    return { success: true, data: profile };
+    return { 
+      success: true, 
+      data: response.data 
+    };
   }
 }
