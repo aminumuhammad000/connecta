@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start": "node dist/app.js",
+    "build": "tsc",
     "dev": "nodemon src/app.ts",
+    "dev:ts": "ts-node src/app.ts",
     "seed:jobs": "ts-node scripts/seedJobs.ts",
     "seed:proposals": "ts-node scripts/seedProposals.ts",
     "seed:job-proposals": "ts-node scripts/seedJobProposals.ts",
