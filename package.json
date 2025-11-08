@@ -1,0 +1,8 @@
+{
+  "name": "connecta",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd server && npm start",
+    "install": "cd server && npm install"
+  }
+}
