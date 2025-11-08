@@ -7,6 +7,13 @@ import { Server } from "socket.io";
 import connectDB from "./config/db.config";
 import agentRoute from "./routes/agentRoute"
 
+// Load environment variables from .env.production if in production, otherwise .env
+if (process.env.NODE_ENV === 'production') {
+  dotenv.config({ path: '.env.production' });
+} else {
+  dotenv.config();
+}
+
 // routes 
 import userRoutes from "./routes/user.routes";
 import profileRoutes from "./routes/Profile.routes";
