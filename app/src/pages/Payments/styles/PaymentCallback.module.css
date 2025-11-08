@@ -1,0 +1,114 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 100%;
+  padding: 3rem;
+  text-align: center;
+}
+
+.spinner {
+  color: #667eea;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.successIcon {
+  color: #48bb78;
+  margin-bottom: 1.5rem;
+}
+
+.errorIcon {
+  color: #f56565;
+  margin-bottom: 1.5rem;
+}
+
+.card h2 {
+  margin: 0 0 1rem 0;
+  color: #2d3748;
+  font-size: 1.75rem;
+}
+
+.card p {
+  color: #718096;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.info {
+  background: #edf2f7;
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.info svg {
+  color: #667eea;
+}
+
+.btn,
+.retryBtn {
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  font-size: 1rem;
+}
+
+.btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  width: 100%;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.actions .btn {
+  flex: 1;
+  width: auto;
+}
+
+.retryBtn {
+  flex: 1;
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.retryBtn:hover {
+  background: #cbd5e0;
+}

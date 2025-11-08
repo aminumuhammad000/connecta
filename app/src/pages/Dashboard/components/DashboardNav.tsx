@@ -9,7 +9,8 @@ const DashboardNav: React.FC = () => {
   const navItems = [
     { label: 'My proposals', icon: 'weui:arrow-filled', path: '/freelancer/proposals' },
     { label: 'My profile', icon: 'weui:arrow-filled', path: '/freelancer/profile' },
-    { label: 'My project Dashboard', icon: 'weui:arrow-filled', path: '/freelancer/projects' }
+    { label: 'My project Dashboard', icon: 'weui:arrow-filled', path: '/freelancer/projects' },
+    { label: 'My Wallet', icon: 'weui:arrow-filled', path: '/freelancer/wallet' }
   ];
 
   const handleNavClick = (path: string) => {

@@ -95,6 +95,13 @@ const ClientSidebar = ({ isOpen, onClose }: ClientSidebarProps) => {
               <Icon icon="material-symbols:chat-bubble-outline" className={styles.navIcon} />
               Messages
             </button>
+            <button 
+              onClick={() => handleNavigation('/client/wallet')} 
+              className={`${styles.navItem} ${isActive('/client/wallet') ? styles.active : ''}`}
+            >
+              <Icon icon="material-symbols:account-balance-wallet-outline" className={styles.navIcon} />
+              Payments
+            </button>
           </nav>
 
           {/* Bottom Section */}

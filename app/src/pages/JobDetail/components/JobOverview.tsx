@@ -17,6 +17,7 @@ interface JobOverviewProps {
     requirements: string[];
     deliverables: string[];
     id?: string;
+    paymentVerified?: boolean;
   };
 }
 
@@ -71,7 +72,15 @@ const JobOverview: React.FC<JobOverviewProps> = ({ job }) => {
       {/* Job Header */}
       <div className={styles.jobHeader}>
         
-        <h1 style={{fontSize:"22px"}} className={styles.jobTitle}>{job.title}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <h1 style={{fontSize:"22px"}} className={styles.jobTitle}>{job.title}</h1>
+          {job.paymentVerified && (
+            <div className={styles.paymentVerifiedBadge}>
+              <Icon icon="mdi:shield-check" width="18" />
+              <span>Payment Verified</span>
+            </div>
+          )}
+        </div>
         
         <div className={styles.jobMeta}>
             <span className={styles.postedTime}>Posted {job.postedTime}</span>

@@ -23,6 +23,10 @@ import ConnectaAI from './pages/ConnectaAI/ConnectaAI'
 import ClientDashboard from './pages/client/ClientDashboard'
 import ClientProjects from './pages/client/ClientProjects'
 import Profile from './pages/client/Profile/Profile';
+import FreelancerWallet from './pages/Payments/FreelancerWallet';
+import ClientWallet from './pages/Payments/ClientWallet';
+import PaymentPage from './pages/Payments/PaymentPage';
+import PaymentCallback from './pages/Payments/PaymentCallback';
 
 function App() {
   return (
@@ -161,6 +165,11 @@ function App() {
               <ConnectaAI />
             </ProtectedRoute>
           } />
+          <Route path='/freelancer/wallet' element={
+            <ProtectedRoute>
+              <FreelancerWallet />
+            </ProtectedRoute>
+          } />
           {/* ==================== END FREELANCER ROUTES ==================== */}
 
           {/* ==================== CLIENT ROUTES ==================== */}
@@ -211,7 +220,27 @@ function App() {
               </div>
             </ProtectedRoute>
           } />
+          <Route path='/client/wallet' element={
+            <ProtectedRoute>
+              <div className="client-projects-bg">
+                <ClientWallet />
+              </div>
+            </ProtectedRoute>
+          } />
           {/* ==================== END CLIENT ROUTES ==================== */}
+
+          {/* ==================== PAYMENT ROUTES ==================== */}
+          <Route path='/payment' element={
+            <ProtectedRoute>
+              <PaymentPage />
+            </ProtectedRoute>
+          } />
+          <Route path='/payment/callback' element={
+            <ProtectedRoute>
+              <PaymentCallback />
+            </ProtectedRoute>
+          } />
+          {/* ==================== END PAYMENT ROUTES ==================== */}
         </Routes>
       </Router>
     </AuthProvider>

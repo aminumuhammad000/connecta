@@ -3,7 +3,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IProposal extends Document {
   title: string;
   recommended: boolean;
-  description: string;
+  description: string; // Main cover letter
+  coverLetter?: string; // Enhanced cover letter for customization
   budget: {
     amount: number;
     currency: string;
@@ -18,9 +19,41 @@ export interface IProposal extends Document {
   freelancerId: mongoose.Types.ObjectId;
   jobId?: mongoose.Types.ObjectId;
   clientId?: mongoose.Types.ObjectId;
-  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'approved';
+  status: 'pending' | 'accepted' | 'declined' | 'expired' | 'approved' | 'withdrawn';
   level: 'entry' | 'intermediate' | 'expert';
   priceType: 'fixed' | 'hourly';
+  
+  // New fields for improvements
+  templateId?: mongoose.Types.ObjectId;
+  isCustomized?: boolean;
+  
+  // Edit tracking
+  editHistory?: {
+    editedAt: Date;
+    changes: string;
+  }[];
+  lastEditedAt?: Date;
+  
+  // Withdrawal
+  withdrawnAt?: Date;
+  withdrawalReason?: string;
+  
+  // Expiry
+  expiresAt?: Date;
+  
+  // Counter-offer
+  counterOffers?: {
+    amount: number;
+    message: string;
+    offeredBy: 'client' | 'freelancer';
+    offeredAt: Date;
+    status: 'pending' | 'accepted' | 'declined';
+  }[];
+  
+  // Analytics
+  views?: number;
+  viewedBy?: mongoose.Types.ObjectId[];
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,7 +120,7 @@ const ProposalSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'declined', 'expired', 'approved'],
+      enum: ['pending', 'accepted', 'declined', 'expired', 'approved', 'withdrawn'],
       default: 'pending',
     },
     level: {
@@ -100,6 +133,46 @@ const ProposalSchema: Schema = new Schema(
       enum: ['fixed', 'hourly'],
       default: 'fixed',
     },
+    // New fields
+    coverLetter: String,
+    templateId: {
+      type: Schema.Types.ObjectId,
+      ref: 'ProposalTemplate',
+    },
+    isCustomized: {
+      type: Boolean,
+      default: false,
+    },
+    editHistory: [{
+      editedAt: Date,
+      changes: String,
+    }],
+    lastEditedAt: Date,
+    withdrawnAt: Date,
+    withdrawalReason: String,
+    expiresAt: Date,
+    counterOffers: [{
+      amount: Number,
+      message: String,
+      offeredBy: {
+        type: String,
+        enum: ['client', 'freelancer'],
+      },
+      offeredAt: Date,
+      status: {
+        type: String,
+        enum: ['pending', 'accepted', 'declined'],
+        default: 'pending',
+      },
+    }],
+    views: {
+      type: Number,
+      default: 0,
+    },
+    viewedBy: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }],
   },
   {
     timestamps: true,
@@ -110,5 +183,7 @@ const ProposalSchema: Schema = new Schema(
 ProposalSchema.index({ freelancerId: 1, status: 1 });
 ProposalSchema.index({ type: 1, freelancerId: 1 });
 ProposalSchema.index({ createdAt: -1 });
+ProposalSchema.index({ jobId: 1 });
+ProposalSchema.index({ expiresAt: 1 });
 
 export default mongoose.model<IProposal>('Proposal', ProposalSchema);

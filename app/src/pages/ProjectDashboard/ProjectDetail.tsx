@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import styles from './styles/ProjectDetail.module.css';
 import DetailHeader from "../.././pages/JobDetail/components/JobDetailHeader"
 import { useNotification } from '../../contexts/NotificationContext';
+import ReviewForm from '../../components/ReviewForm/ReviewForm';
 
 interface Activity {
   date: string;
@@ -55,6 +56,7 @@ const ProjectDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Array<{
     file: File;
     preview: string | null;
@@ -384,6 +386,23 @@ const ProjectDetail: React.FC = () => {
           </div>
         )}
 
+        {/* Review Section - Only show for completed projects */}
+        {project.status === 'completed' && (
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>Project Completed!</h2>
+            <p className={styles.completedText}>
+              This project has been completed. Share your experience by writing a review.
+            </p>
+            <button 
+              className={styles.reviewButton}
+              onClick={() => setShowReviewModal(true)}
+            >
+              <Icon icon="mdi:star" width="20" />
+              Write a Review
+            </button>
+          </div>
+        )}
+
         {/* Upload Section - Only show for ongoing projects */}
         {project.status === 'ongoing' && (
           <div 
@@ -513,6 +532,25 @@ const ProjectDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && project && (
+        <div className={styles.modalOverlay} onClick={() => setShowReviewModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <ReviewForm
+              projectId={project._id}
+              projectTitle={project.title}
+              revieweeType="client"
+              revieweeName={project.clientName}
+              onSuccess={() => {
+                setShowReviewModal(false);
+                showSuccess('Review submitted successfully!');
+              }}
+              onCancel={() => setShowReviewModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -11,6 +11,7 @@
     "seed:job-proposals": "ts-node scripts/seedJobProposals.ts",
     "seed:projects": "ts-node scripts/seedProjects.ts",
     "seed:messages": "ts-node scripts/seedMessages.ts",
+    "check:wallet": "ts-node scripts/checkWalletData.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

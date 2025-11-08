@@ -49,6 +49,12 @@
   height: 30px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Overlay */
 .overlay {
   position: fixed;

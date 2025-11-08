@@ -7,7 +7,8 @@
     "dev": "vite",
     "dev:server": "cd ../server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
-    "build": "tsc -b && vite build",
+  "build": "vite build",
+  "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview"
   },

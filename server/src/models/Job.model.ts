@@ -29,6 +29,8 @@ export interface IJob extends Document {
   connectsRequired: string;
   deliverables: string[];
   postedTime: string;
+  paymentVerified: boolean;
+  paymentId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,6 +78,8 @@ const JobSchema: Schema<IJob> = new Schema(
     connectsRequired: { type: String, default: "" },
     deliverables: [{ type: String, default: "" }],
     postedTime: { type: String, default: "" },
+    paymentVerified: { type: Boolean, default: false },
+    paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
   },
   { timestamps: true }
 );

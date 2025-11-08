@@ -480,8 +480,8 @@ export class ConnectaAgent {
         if (validatedOutput.tool === "none" || !this.toolMap[validatedOutput.tool]) {
           const fallbackMessage =
             "⚠️ Sorry, I can only help with Connecta-related tasks — like updating your profile, writing cover letters, or finding gigs.";
-          this.chatHistory.push({ input, output: fallbackMessage });
-          return { message: fallbackMessage };
+          this.chatHistory.push({ input, output: fallbackMessage, success: false });
+          return { message: fallbackMessage, success: false, data: null };
         }
 
         const selectedTool = this.toolMap[validatedOutput.tool];
@@ -490,20 +490,46 @@ export class ConnectaAgent {
         // If tool failed, provide a friendly explanation instead of raw error
         if (!result?.success) {
           const friendly = await this.explainError(validatedOutput.tool, result?.message ?? "Unknown error");
-          this.chatHistory.push({ input, output: friendly });
-          return { message: friendly };
+          this.chatHistory.push({ input, output: friendly, success: false });
+          return { message: friendly, success: false, data: null };
         }
 
-        this.chatHistory.push({ input, output: JSON.stringify(result) });
-        return result;
+        this.chatHistory.push({ input, output: JSON.stringify(result), success: true });
+        // Ensure result has success field
+        return { ...result, success: result.success ?? true };
       },
     ]);
 
     const result = await chain.invoke({ input });
+    
+    // Ensure result has proper AgentResponse structure
+    if (!result || typeof result !== 'object') {
+      console.warn("⚠️ Chain returned invalid result:", result);
+      return this.createResponse(
+        "I encountered an issue processing your request. Please try again.",
+        null,
+        false,
+        startTime
+      );
+    }
+    
+    // Ensure success field exists
+    if (result.success === undefined) {
+      result.success = !!result.message || !!result.data;
+    }
+    
     return result;
   } catch (error) {
     console.error("❌ Error processing request:", error);
-    throw error;
+    this.sessionMetrics.failedRequests++;
+    
+    // Return a proper error response instead of throwing
+    return this.createResponse(
+      "I encountered an error processing your request. Please try again.",
+      null,
+      false,
+      startTime
+    );
   }
   }
 

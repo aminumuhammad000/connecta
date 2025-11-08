@@ -426,12 +426,31 @@ export const approveProposal = async (req: Request, res: Response) => {
       milestones: [],
     });
 
+    // Create a pending payment record for the freelancer wallet to show
+    const Payment = require('../models/Payment.model').default;
+    const pendingPayment = await Payment.create({
+      projectId: project._id,
+      payerId: actualClientId,
+      payeeId: actualFreelancerId,
+      amount: proposal.budget.amount,
+      platformFee: (proposal.budget.amount * 10) / 100, // 10% fee
+      netAmount: proposal.budget.amount - ((proposal.budget.amount * 10) / 100),
+      currency: proposal.budget.currency || 'NGN',
+      paymentType: 'full_payment',
+      description: `Payment for project: ${proposal.title}`,
+      status: 'pending',
+      escrowStatus: 'none',
+      paymentMethod: 'paystack',
+    });
+
     res.status(200).json({
       success: true,
       message: 'Proposal approved and project created successfully',
       data: {
         proposal,
         project,
+        payment: pendingPayment,
+        requiresPayment: true, // Frontend should redirect to payment
       },
     });
   } catch (error: any) {

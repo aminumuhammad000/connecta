@@ -45,6 +45,8 @@ router.post("/", async (req: Request, res: Response) => {
     const authHeader = (req.headers["authorization"] as string) || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
 
+    console.log("📥 Agent request received:", { input: input?.substring(0, 50), userId, userType });
+
     if (!input || !userId) {
       return res.status(400).json({
         error: "Missing required fields: 'input' and 'userId' are required.",
@@ -54,14 +56,22 @@ router.post("/", async (req: Request, res: Response) => {
     const agent = await createAgent(userId, token, userType);
     const result = await agent.process(input);
 
+    console.log("✅ Agent response:", { success: result.success, hasData: !!result.data });
+
     return res.json({
       success: true,
       result,
     });
   } catch (error: any) {
-    console.error("❌ Agent error:", error);
+    console.error("❌ Agent error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause,
+    });
     return res.status(500).json({
       success: false,
+      message: error.message || "Internal Server Error",
       error: error.message || "Internal Server Error",
     });
   }

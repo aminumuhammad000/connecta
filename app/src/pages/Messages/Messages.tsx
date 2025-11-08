@@ -536,7 +536,9 @@ export const Messages: React.FC = () => {
           {messages.map((msg, index) => {
             // Extract sender ID - handle both populated and string formats
             const messageSenderId = msg.senderId?._id || msg.senderId;
-            const senderIdString = typeof messageSenderId === 'object' ? messageSenderId.toString() : messageSenderId;
+            const senderIdString = messageSenderId 
+              ? (typeof messageSenderId === 'object' ? messageSenderId.toString() : messageSenderId)
+              : '';
             const currentUserIdString = currentUserId;
             
             // FREELANCER sends messages (RIGHT side) = isSent true
@@ -550,7 +552,7 @@ export const Messages: React.FC = () => {
                 senderIdString,
                 currentUserIdString,
                 isSent: isSent ? 'RIGHT (Freelancer)' : 'LEFT (Client)',
-                senderName: `${msg.senderId.firstName} ${msg.senderId.lastName}`
+                senderName: msg.senderId ? `${msg.senderId.firstName} ${msg.senderId.lastName}` : 'Unknown'
               });
             }
             

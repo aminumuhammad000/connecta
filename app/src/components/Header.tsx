@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../assets/logo.png';
+import NotificationBell from './NotificationBell/NotificationBell';
 import styles from '../styles/components/Header.module.css';
 
 const Header: React.FC = () => {
@@ -57,7 +58,10 @@ const Header: React.FC = () => {
           <img className={styles.logoicon} src={Logo} alt="Connecta Logo" />
         </div>
 
-        <Icon icon="ri:search-ai-line" className={styles.hamburgerIcon} onClick={handleConnectaAI} />
+        <div className={styles.headerActions}>
+          <NotificationBell />
+          <Icon icon="ri:search-ai-line" className={styles.hamburgerIcon} onClick={handleConnectaAI} />
+        </div>
       </div>
 
       {/* Hamburger Menu */}

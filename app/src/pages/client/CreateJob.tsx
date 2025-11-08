@@ -5,7 +5,9 @@ import ClientSidebar from './components/ClientSidebar';
 import ClientHeader from './components/ClientHeader';
 import ConnectaAI from '../ConnectaAI/ConnectaAI';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useNavigate } from 'react-router-dom';
 const CreateJob: React.FC = () => {
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [budget, setBudget] = useState('');
   const [description, setDescription] = useState('');
@@ -32,6 +34,7 @@ const CreateJob: React.FC = () => {
   const [skillInput, setSkillInput] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [publishWithPayment, setPublishWithPayment] = useState(false);
 
   const togglePreview = () => {
     setIsPreview(!isPreview);
@@ -204,6 +207,15 @@ const CreateJob: React.FC = () => {
       });
       const data = await res.json();
       if (data.success) {
+        const jobId = data.data._id;
+        
+        // If publish with payment is selected, redirect to payment page
+        if (publishWithPayment && !selectedJobId) {
+          const budgetAmount = budget.replace(/[^0-9.-]/g, '');
+          navigate(`/payment?jobId=${jobId}&amount=${budgetAmount}&projectTitle=${encodeURIComponent(title)}`);
+          return;
+        }
+        
         setSuccess(true);
         const successMessage = selectedJobId ? 'Job updated successfully!' : 'Job posted successfully!';
         showSuccess(successMessage);
@@ -524,6 +536,42 @@ const CreateJob: React.FC = () => {
                       onKeyDown={handleSkillInputKeyDown}
                     />
                   </div>
+                </div>
+
+                {/* Payment Option */}
+                <div style={{ 
+                  marginTop: 24, 
+                  padding: 16, 
+                  background: '#f0f9ff', 
+                  border: '1px solid #bae6fd', 
+                  borderRadius: 8 
+                }}>
+                  <label style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 12, 
+                    cursor: 'pointer' 
+                  }}>
+                    <input 
+                      type="checkbox" 
+                      checked={publishWithPayment}
+                      onChange={(e) => setPublishWithPayment(e.target.checked)}
+                      style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    />
+                    <div>
+                      <div style={{ 
+                        fontSize: 15, 
+                        fontWeight: 600, 
+                        color: '#075985', 
+                        marginBottom: 4 
+                      }}>
+                        💳 Publish with Payment Verification
+                      </div>
+                      <div style={{ fontSize: 13, color: '#0c4a6e' }}>
+                        Pay now and get a "Payment Verified" badge on your job posting to attract more qualified freelancers
+                      </div>
+                    </div>
+                  </label>
                 </div>
               </div>
               <div className={styles.publishRow}>

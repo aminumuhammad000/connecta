@@ -1,0 +1,451 @@
+/* Dashboard Layout - Professional Design */
+.dashboard {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 3rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+/* Page Title */
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: #7f8c8d;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  color: #ff6b35;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Balance Section */
+.balanceSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.balanceCard {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+}
+
+.balanceInfo {
+  flex: 1;
+}
+
+.balanceLabel {
+  font-size: 0.875rem;
+  color: #7f8c8d;
+  margin: 0 0 0.5rem 0;
+  font-weight: 400;
+}
+
+.balanceAmount {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+}
+
+.balanceHint {
+  font-size: 0.75rem;
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.withdrawButton {
+  background: #ff6b35;
+  color: white;
+  border: none;
+  padding: 0.625rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1rem;
+  align-self: flex-start;
+}
+
+.withdrawButton:hover:not(:disabled) {
+  background: #e85a28;
+}
+
+.withdrawButton:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+/* Transactions Section */
+.transactionsSection {
+  margin-top: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+}
+
+.transactionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.transactionCard {
+  background: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s;
+}
+
+.transactionCard:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.transactionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.transactionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.transactionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+  flex: 1;
+}
+
+.badgeSuccess {
+  background: #d4edda;
+  color: #27ae60;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeWarning {
+  background: #fff3cd;
+  color: #e67e22;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.transactionDate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.transactionFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid #ecf0f1;
+}
+
+.transactionType {
+  font-size: 0.875rem;
+  color: #7f8c8d;
+  text-transform: capitalize;
+}
+
+.transactionAmount {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.positive {
+  color: #27ae60;
+}
+
+.negative {
+  color: #e74c3c;
+}
+
+/* Empty State */
+.emptyState {
+  background: white;
+  border-radius: 8px;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.emptyState svg {
+  color: #bdc3c7;
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  font-size: 1rem;
+  color: #7f8c8d;
+  margin: 0.5rem 0;
+  font-weight: 500;
+}
+
+.emptyState small {
+  font-size: 0.875rem;
+  color: #95a5a6;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modalHeader button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #95a5a6;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.modalHeader button:hover {
+  color: #7f8c8d;
+}
+
+.modalBody {
+  padding: 1.5rem;
+}
+
+.formGroup {
+  margin-bottom: 1.25rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.formGroup input,
+.formGroup select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dfe6e9;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  transition: border-color 0.2s;
+  background: white;
+  color: #2c3e50;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #ff6b35;
+}
+
+.hint {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: #7f8c8d;
+}
+
+.infoBox {
+  background: #e8f5e9;
+  border-left: 4px solid #27ae60;
+  padding: 1rem;
+  border-radius: 6px;
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #2c3e50;
+  line-height: 1.5;
+}
+
+.infoBox svg {
+  color: #27ae60;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.modalFooter {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid #ecf0f1;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cancelBtn,
+.submitBtn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.cancelBtn {
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.cancelBtn:hover {
+  background: #dfe6e9;
+}
+
+.submitBtn {
+  background: #ff6b35;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.submitBtn:hover {
+  background: #e85a28;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .pageTitle {
+    font-size: 1.25rem;
+  }
+
+  .balanceSection {
+    grid-template-columns: 1fr;
+  }
+
+  .balanceCard {
+    padding: 1.25rem;
+  }
+
+  .balanceAmount {
+    font-size: 1.5rem;
+  }
+
+  .transactionCard {
+    padding: 1rem;
+  }
+
+  .transactionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .transactionFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .transactionAmount {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 1.125rem;
+  }
+
+  .balanceAmount {
+    font-size: 1.25rem;
+  }
+
+  .modalContent {
+    margin: 1rem;
+  }
+}

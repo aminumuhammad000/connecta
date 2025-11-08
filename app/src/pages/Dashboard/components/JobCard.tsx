@@ -110,10 +110,12 @@ const JobCard: React.FC<JobCardProps> = ({ job, isSaved = false, onSaveToggle })
       {/* Client Info and Rating */}
       <div className={styles.clientInfo}>
         <div className={styles.paymentInfo}>
-          <div className={styles.verifiedRow}>
-            <img src={verifiedIcon} className={styles.checkIcon} />
-            <span className={styles.paymentVerified}>Payment verified</span>
-          </div>
+          {job.isPaymentVerified && (
+            <div className={styles.verifiedRow}>
+              <img src={verifiedIcon} className={styles.checkIcon} />
+              <span className={styles.paymentVerified}>Payment verified</span>
+            </div>
+          )}
           <div className={styles.ratingRow}>
             {renderStars(job.rating)}
           </div>                                                    
