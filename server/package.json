@@ -4,10 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node dist/app.js",
+    "start": "NODE_ENV=production ts-node src/app.ts",
     "dev": "nodemon src/app.ts",
-    "build": "tsc",
-    "postinstall": "npm run build",
+    "build": "tsc --skipLibCheck",
     "seed:jobs": "ts-node scripts/seedJobs.ts",
     "seed:proposals": "ts-node scripts/seedProposals.ts",
     "seed:projects": "ts-node scripts/seedProjects.ts",
@@ -31,6 +30,7 @@
     "mongoose": "^8.19.2",
     "multer": "^2.0.2",
     "socket.io": "^4.8.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0",
     "zod": "^4.1.12"
   },
@@ -41,7 +41,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.8.1",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2"
+    "nodemon": "^3.1.10"
   }
 }
