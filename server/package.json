@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production ts-node src/app.ts",
+    "start": "NODE_ENV=production node dist/app.js",
     "dev": "nodemon src/app.ts",
+    "build": "tsc",
+    "postinstall": "npm run build",
     "seed:jobs": "ts-node scripts/seedJobs.ts",
     "seed:proposals": "ts-node scripts/seedProposals.ts",
     "seed:projects": "ts-node scripts/seedProjects.ts",
@@ -29,6 +31,7 @@
     "mongoose": "^8.19.2",
     "multer": "^2.0.2",
     "socket.io": "^4.8.1",
+    "typescript": "^5.0.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

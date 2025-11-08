@@ -4,12 +4,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import path from "path";
 import connectDB from "./config/db.config";
 import agentRoute from "./routes/agentRoute"
 
 // Load environment variables from .env.production if in production, otherwise .env
 if (process.env.NODE_ENV === 'production') {
-  dotenv.config({ path: '.env.production' });
+  // When running from dist/, the .env.production is in the parent directory
+  dotenv.config({ path: path.join(__dirname, '../.env.production') });
 } else {
   dotenv.config();
 }
