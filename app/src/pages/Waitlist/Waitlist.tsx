@@ -122,56 +122,9 @@ const Waitlist: React.FC = () => {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Reset errors
-    setErrors({
-      fullName: '',
-      email: ''
-    });
-
-    // Validation
-    let hasError = false;
-    const newErrors = {
-      fullName: '',
-      email: ''
-    };
-
-    // Validate full name
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Please enter your full name';
-      hasError = true;
-    } else if (formData.fullName.trim().length < 2) {
-      newErrors.fullName = 'Name must be at least 2 characters';
-      hasError = true;
-    }
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = 'Please enter your email address';
-      hasError = true;
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-      hasError = true;
-    }
-
-    if (hasError) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // If validation passes, save data and navigate to success page
-    console.log('Form submitted:', formData);
-    
-    // You can add API call here to save to backend
-    // await saveToWaitlist(formData);
-    
-    // Navigate to success page
-    navigate('/success');
-  };
-
+// const handleClick = () => {
+//     navigate('/success');
+//   }
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -270,7 +223,7 @@ const Waitlist: React.FC = () => {
                   Get Your Exclusive Invite
                 </h2>
                 <div className="w-full mt-6 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                  <form className="flex flex-col gap-6" onSubmit={handleSubmit} method='POST' action='https://formspree.io/f/mkgkwdlq'>
+                  <form className="flex flex-col gap-6" method='POST' action='https://formspree.io/f/mkgkwdlq'>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-[#333333] dark:text-gray-200" htmlFor="fullName">
                         Full Name
@@ -316,6 +269,7 @@ const Waitlist: React.FC = () => {
                     <button
                       className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 mt-2 bg-[#f27f0d] text-white text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity"
                       type="submit"
+                      // onClick={handleClick}
                     >
                       <span className="truncate">Get Early Access</span>
                     </button>
