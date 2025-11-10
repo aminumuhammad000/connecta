@@ -70,3 +70,16 @@ a {
     transform: rotate(360deg);
   }
 }
+
+/* Gradient button animation */
+.bg-size-200 {
+  background-size: 200% auto;
+}
+
+.bg-pos-0 {
+  background-position: 0% center;
+}
+
+.bg-pos-100 {
+  background-position: 100% center;
+}

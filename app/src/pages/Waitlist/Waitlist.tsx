@@ -1,108 +1,175 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../../assets/logo.png';
 
 const Waitlist: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     email: ''
   });
-  const [submitted, setSubmitted] = useState(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // Animated Canvas Background
+  const [errors, setErrors] = useState({
+    fullName: '',
+    email: ''
+  });
+  // Vanta Birds background (loaded dynamically from CDN)
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    let vantaEffect: any = null;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Set canvas size
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // Particle system
-    interface Particle {
-      x: number;
-      y: number;
-      size: number;
-      speedX: number;
-      speedY: number;
-      opacity: number;
-    }
-
-    const particles: Particle[] = [];
-    const particleCount = 50;
-    const connectionDistance = 150;
-
-    // Create particles
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 3 + 1,
-        speedX: (Math.random() - 0.5) * 0.5,
-        speedY: (Math.random() - 0.5) * 0.5,
-        opacity: Math.random() * 0.5 + 0.2
-      });
-    }
-
-    // Animation loop
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Update and draw particles
-      particles.forEach((particle, index) => {
-        particle.x += particle.speedX;
-        particle.y += particle.speedY;
-
-        // Bounce off edges
-        if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1;
-        if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1;
-
-        // Draw particle
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(242, 127, 13, ${particle.opacity})`;
-        ctx.fill();
-
-        // Draw connections
-        for (let j = index + 1; j < particles.length; j++) {
-          const dx = particles[j].x - particle.x;
-          const dy = particles[j].y - particle.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < connectionDistance) {
-            ctx.beginPath();
-            ctx.moveTo(particle.x, particle.y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            const opacity = (1 - distance / connectionDistance) * 0.2;
-            ctx.strokeStyle = `rgba(242, 127, 13, ${opacity})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
+    const loadScript = (src: string) =>
+      new Promise<void>((resolve, reject) => {
+        // Check if already loaded
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+          resolve();
+          return;
         }
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false; // Load in order
+        s.onload = () => {
+          console.log(`Loaded: ${src}`);
+          resolve();
+        };
+        s.onerror = () => reject(new Error(`Failed to load script ${src}`));
+        document.head.appendChild(s);
       });
 
-      requestAnimationFrame(animate);
+    const initVanta = async () => {
+      try {
+        // Use reliable CDN versions
+        const threeUrl = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js';
+        const vantaUrl = 'https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.birds.min.js';
+
+        console.log('Loading Three.js...');
+        await loadScript(threeUrl);
+        
+        console.log('Loading Vanta Birds...');
+        await loadScript(vantaUrl);
+
+        // Wait a moment for scripts to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // @ts-ignore - VANTA is attached to window by the script
+        const VANTA = (window as any).VANTA;
+        const THREE = (window as any).THREE;
+
+        console.log('VANTA:', VANTA);
+        console.log('THREE:', THREE);
+
+        if (!VANTA || !VANTA.BIRDS) {
+          console.error('VANTA.BIRDS not available');
+          return;
+        }
+
+        if (!THREE) {
+          console.error('THREE.js not available');
+          return;
+        }
+
+        const targetEl = document.querySelector('#vanta-bg');
+        if (!targetEl) {
+          console.error('Target element #vanta-bg not found');
+          return;
+        }
+
+        console.log('Initializing VANTA.BIRDS...');
+        
+        // Initialize VANTA Birds
+        vantaEffect = VANTA.BIRDS({
+          el: targetEl,
+          THREE: THREE,
+          mouseControls: true,
+          touchControls: true,
+          gyroControls: false,
+          minHeight: 200.0,
+          minWidth: 200.0,
+          scale: 1.0,
+          scaleMobile: 1.0,
+          backgroundColor: 0xf8f7f5,
+          color1: 0xf27f0d,
+          color2: 0xff6b35,
+          birdSize: 1.5,
+          wingSpan: 30.0,
+          speedLimit: 5.0,
+          separation: 20.0,
+          alignment: 20.0,
+          cohesion: 20.0,
+          quantity: 3.0
+        });
+        
+        console.log('VANTA effect initialized:', vantaEffect);
+      } catch (err) {
+        console.error('Failed to initialize Vanta:', err);
+      }
     };
 
-    animate();
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      initVanta();
+    }, 100);
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      clearTimeout(timer);
+      try {
+        if (vantaEffect && typeof vantaEffect.destroy === 'function') {
+          console.log('Destroying Vanta effect');
+          vantaEffect.destroy();
+        }
+      } catch (e) {
+        console.error('Error destroying Vanta:', e);
+      }
     };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    // You can add form submission logic here later
+    
+    // Reset errors
+    setErrors({
+      fullName: '',
+      email: ''
+    });
+
+    // Validation
+    let hasError = false;
+    const newErrors = {
+      fullName: '',
+      email: ''
+    };
+
+    // Validate full name
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Please enter your full name';
+      hasError = true;
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Name must be at least 2 characters';
+      hasError = true;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = 'Please enter your email address';
+      hasError = true;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      hasError = true;
+    }
+
+    if (hasError) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // If validation passes, save data and navigate to success page
     console.log('Form submitted:', formData);
+    
+    // You can add API call here to save to backend
+    // await saveToWaitlist(formData);
+    
+    // Navigate to success page
+    navigate('/success');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,24 +177,32 @@ const Waitlist: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    
+    // Clear error for this field when user starts typing
+    if (errors[e.target.name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [e.target.name]: ''
+      });
+    }
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f8f7f5] dark:bg-[#221910]">
-      {/* Animated Canvas Background */}
-      <canvas
-        ref={canvasRef}
-        className="fixed inset-0 w-full h-full pointer-events-none z-0"
-        style={{ opacity: 0.4 }}
-      />
-      
+    <div id="vanta-bg" className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-gradient-to-br from-[#f8f7f5] via-[#fff5e6] to-[#ffe4cc] dark:from-[#221910] dark:via-[#2d1f16] dark:to-[#3a2a1f]">
+      {/* Animated background circles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#f27f0d]/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#ff6b35]/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#f27f0d]/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+      </div>
+
       <div className="layout-container flex h-full grow flex-col relative z-10">
         {/* Header Section */}
         <header className="w-full flex justify-center sticky top-0 bg-[#f8f7f5]/80 dark:bg-[#221910]/80 backdrop-blur-sm z-50">
           <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-gray-700 py-4">
               <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-                <img src={logo} alt="Connecta Logo" style={{height:"700xp"}} />
+                <img src={logo} alt="Connecta Logo" style={{height:"100xp"}} />
               </div>
             </div>
           </div>
@@ -145,10 +220,22 @@ const Waitlist: React.FC = () => {
                   Join the waitlist to get early access to Connecta, the AI-powered platform that connects top talent with exciting opportunities.
                 </p>
                 <a
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-6 mt-4 bg-[#f27f0d] text-white text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity"
+                  className="group relative flex min-w-[200px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-14 px-8 mt-6 bg-gradient-to-r from-[#f27f0d] via-[#ff6b35] to-[#f27f0d] bg-size-200 bg-pos-0 hover:bg-pos-100 text-white text-lg font-bold leading-normal tracking-wide shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-out"
                   href="#waitlist-form"
                 >
-                  <span className="truncate">Join the Waitlist</span>
+                  <span className="relative z-10 flex items-center gap-2">
+                    <span className="truncate">Join the Waitlist</span>
+                    <svg 
+                      className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </span>
+                  {/* Shine effect */}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700 ease-in-out"></div>
                 </a>
               </div>
             </section>
@@ -189,30 +276,42 @@ const Waitlist: React.FC = () => {
                         Full Name
                       </label>
                       <input
-                        className="w-full h-11 px-4 rounded-lg bg-[#f8f7f5] dark:bg-[#221910] border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-[#f27f0d] focus:border-[#f27f0d] transition"
+                        className={`w-full h-11 px-4 rounded-lg bg-[#f8f7f5] dark:bg-[#221910] border ${
+                          errors.fullName 
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                            : 'border-gray-300 dark:border-gray-600 focus:ring-[#f27f0d] focus:border-[#f27f0d]'
+                        } focus:ring-2 transition`}
                         id="fullName"
                         name="fullName"
                         placeholder="Enter your full name"
                         type="text"
                         value={formData.fullName}
                         onChange={handleChange}
-                        required
                       />
+                      {errors.fullName && (
+                        <p className="text-sm text-red-500 mt-1">{errors.fullName}</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-[#333333] dark:text-gray-200" htmlFor="email">
                         Email Address
                       </label>
                       <input
-                        className="w-full h-11 px-4 rounded-lg bg-[#f8f7f5] dark:bg-[#221910] border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-[#f27f0d] focus:border-[#f27f0d] transition"
+                        className={`w-full h-11 px-4 rounded-lg bg-[#f8f7f5] dark:bg-[#221910] border ${
+                          errors.email 
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                            : 'border-gray-300 dark:border-gray-600 focus:ring-[#f27f0d] focus:border-[#f27f0d]'
+                        } focus:ring-2 transition`}
                         id="email"
                         name="email"
                         placeholder="Enter your email address"
                         type="email"
                         value={formData.email}
                         onChange={handleChange}
-                        required
                       />
+                      {errors.email && (
+                        <p className="text-sm text-red-500 mt-1">{errors.email}</p>
+                      )}
                     </div>
                     <button
                       className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 mt-2 bg-[#f27f0d] text-white text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity"
@@ -222,11 +321,6 @@ const Waitlist: React.FC = () => {
                     </button>
                   </form>
                 </div>
-                {submitted && (
-                  <p className="text-center text-sm text-[#666666] dark:text-gray-400 mt-2">
-                    Thanks for joining! We'll be in touch soon.
-                  </p>
-                )}
               </div>
             </section>
           </div>

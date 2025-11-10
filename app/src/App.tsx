@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPAge from './pages/landing_page/LandingPage'
 import Waitlist from './pages/Waitlist/Waitlist'
+import Success from './pages/Waitlist/Success'
 import Auth from './pages/Auth/Auth'
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
@@ -36,6 +37,7 @@ function App() {
         <Routes>
           {/* ==================== AUTH ROUTES (Public) ==================== */}
           <Route path="/" element={<Waitlist />} />
+          <Route path="/success" element={<Success />} />
           <Route path="/landing" element={<LandingPAge />} />
           <Route path='/auth' element={<Auth />} />
           <Route path='/login' element={<Login />} />
