@@ -202,7 +202,7 @@ const Waitlist: React.FC = () => {
           <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-gray-700 py-4">
               <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-                <img src={logo} alt="Connecta Logo" style={{height:"100xp"}} />
+                <img src={logo} alt="Connecta Logo" style={{width:"100xp"}} />
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@ const Waitlist: React.FC = () => {
                   Get Your Exclusive Invite
                 </h2>
                 <div className="w-full mt-6 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-                  <form className="flex flex-col gap-6" method='POST' action='https://formspree.io/f/mkgkwdlq'>
+                  <form className="flex flex-col gap-6" onSubmit={handleSubmit} method='POST' action='https://formspree.io/f/mkgkwdlq'>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-[#333333] dark:text-gray-200" htmlFor="fullName">
                         Full Name
