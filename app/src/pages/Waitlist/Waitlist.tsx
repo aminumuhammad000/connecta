@@ -155,7 +155,7 @@ const Waitlist: React.FC = () => {
           <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-gray-700 py-4">
               <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-                <img src={logo} alt="Connecta Logo" style={{width:"100xp"}} />
+                <img src={logo} alt="Connecta Logo" width={100} />
               </div>
             </div>
           </div>
@@ -284,7 +284,7 @@ const Waitlist: React.FC = () => {
         <footer className="w-full flex justify-center mt-16 sm:mt-24">
           <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 py-6">
-              <p className="text-sm text-[#666666] dark:text-gray-400">© 2024 Connecta. All rights reserved.</p>
+              <p className="text-sm text-[#666666] dark:text-gray-400">© 2025 Connecta. All rights reserved.</p>
               <div className="flex items-center gap-4">
                 {/* Facebook */}
                 <a 
