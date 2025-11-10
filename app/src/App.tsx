@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPAge from './pages/landing_page/LandingPage'
+import Waitlist from './pages/Waitlist/Waitlist'
 import Auth from './pages/Auth/Auth'
 import Login from './pages/Auth/Login'
 import Signup from './pages/Auth/Signup'
@@ -34,7 +35,8 @@ function App() {
       <Router>
         <Routes>
           {/* ==================== AUTH ROUTES (Public) ==================== */}
-          <Route path="/" element={<LandingPAge />} />
+          <Route path="/" element={<Waitlist />} />
+          <Route path="/landing" element={<LandingPAge />} />
           <Route path='/auth' element={<Auth />} />
           <Route path='/login' element={<Login />} />
           <Route path='/signup' element={<Signup />} />
@@ -46,7 +48,7 @@ function App() {
             <ProtectedRoute>
               <JobDetail />
             </ProtectedRoute>
-          } />
+          } />          
           
           {/* Catch-all route for unmatched paths */}
           <Route path="*" element={

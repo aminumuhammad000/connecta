@@ -4,17 +4,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import path from "path";
 import connectDB from "./config/db.config";
 import agentRoute from "./routes/agentRoute"
-
-// Load environment variables from .env.production if in production, otherwise .env
-if (process.env.NODE_ENV === 'production') {
-  // When running from dist/, the .env.production is in the parent directory
-  dotenv.config({ path: path.join(__dirname, '../.env.production') });
-} else {
-  dotenv.config();
-}
 
 // routes 
 import userRoutes from "./routes/user.routes";
@@ -25,16 +16,6 @@ import messageRoutes from "./routes/Message.routes";
 import proposalRoutes from "./routes/Proposal.routes";
 import dashboardRoutes from "./routes/Dashboard.routes";
 import uploadRoutes from "./routes/upload.routes";
-import paymentRoutes from "./routes/payment.routes";
-import reviewRoutes from "./routes/review.routes";
-import notificationRoutes from "./routes/notification.routes";
-import contractRoutes from "./routes/contract.routes";
-// Additional feature routers used by agent tools
-import insightsRoutes from "./routes/insights.routes"; // /api/analytics
-import supportRoutes from "./routes/support.routes";   // /api/support
-import v1ProposalRoutes from "./routes/proposal.routes"; // /api/proposals (cover-letter endpoints)
-import gigsFeatureRoutes from "./routes/gigs.routes";    // /api/jobs (apply/save/saved/applications)
-import proposalImprovementsRoutes from "./routes/proposalImprovements.routes"; // /api/proposals/improvements
 dotenv.config();
 
 const app = express();
@@ -69,26 +50,11 @@ app.use("/api/users", userRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/jobs", jobRoutes);
-// Add gigs feature endpoints (apply/save/saved/applications, matched, recommendations)
-app.use("/api/jobs", gigsFeatureRoutes);
-
 app.use("/api/messages", messageRoutes);
-// Add cover-letter endpoints alongside proposals
 app.use("/api/proposals", proposalRoutes);
-app.use("/api/proposals", v1ProposalRoutes);
-app.use("/api/proposals/improvements", proposalImprovementsRoutes);
-
-// Analytics and Support used by tools
-app.use("/api/analytics", insightsRoutes);
-app.use("/api/support", supportRoutes);
-
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/agent", agentRoute);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/contracts", contractRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
