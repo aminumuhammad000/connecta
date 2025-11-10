@@ -202,7 +202,7 @@ const Waitlist: React.FC = () => {
           <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-gray-700 py-4">
               <div className="flex items-center gap-3 text-gray-900 dark:text-white">
-                <img src={logo} alt="Connecta Logo" style={{height:"100xp"}} />
+                <img src={logo} alt="Connecta Logo" style={{width:"100xp"}} />
               </div>
             </div>
           </div>
