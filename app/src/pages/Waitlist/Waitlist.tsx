@@ -335,7 +335,7 @@ const Waitlist: React.FC = () => {
                 {/* Facebook */}
                 <a 
                   className="text-[#666666] dark:text-gray-400 hover:text-[#f27f0d] dark:hover:text-[#f27f0d] transition-colors" 
-                  href="https://facebook.com/connecta" 
+                  href="https://www.facebook.com/share/1AMAmsGr9w/" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   aria-label="Facebook"
@@ -348,7 +348,7 @@ const Waitlist: React.FC = () => {
                 {/* Instagram */}
                 <a 
                   className="text-[#666666] dark:text-gray-400 hover:text-[#f27f0d] dark:hover:text-[#f27f0d] transition-colors" 
-                  href="https://instagram.com/connecta" 
+                  href="https://www.instagram.com/connecta_inc?igsh=NHFkZmo3ajByYng=" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   aria-label="Instagram"
@@ -361,7 +361,7 @@ const Waitlist: React.FC = () => {
                 {/* Twitter/X */}
                 <a 
                   className="text-[#666666] dark:text-gray-400 hover:text-[#f27f0d] dark:hover:text-[#f27f0d] transition-colors" 
-                  href="https://twitter.com/connecta" 
+                  href="https://x.com/Connectainc?t=e8jFBD6s_K3XEjx3QxkCfg&s=09" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   aria-label="Twitter"
