@@ -7,8 +7,8 @@ import {
   markMessagesAsRead,
   getMessagesBetweenUsers,
   deleteMessage,
+  summarizeConversation,
 } from '../controllers/Message.controller';
-import { summarizeConversation } from '../controllers/message.controller';
 
 const router = express.Router();
 

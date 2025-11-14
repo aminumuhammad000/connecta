@@ -28,6 +28,7 @@ export interface IProfile extends Document {
   phoneNumber?: string;
   location?: string;
   resume?: string; // Could be a URL to uploaded file
+  skills?: string[]; // Array of skills
 
   education?: IEducation[];
   languages?: ILanguage[];
@@ -77,6 +78,7 @@ const ProfileSchema = new Schema<IProfile>(
     phoneNumber: { type: String },
     location: { type: String },
     resume: { type: String },
+    skills: [{ type: String }],
 
     education: [EducationSchema],
     languages: [LanguageSchema],
