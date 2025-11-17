@@ -4,8 +4,8 @@ import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
-import { z } from "zod";
-import axios from "axios";
+// import { z } from "zod";
+import axios from "axios"; 
 
 // Dynamic tool loading
 import { tools, loadTools } from "./tools";
