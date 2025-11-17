@@ -348,3 +348,13 @@ export const deleteMessage = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const summarizeConversation = async (req: Request, res: Response) => {
+  try {
+    const threadId = req.params.threadId;
+    // placeholder: real summarization would call an LLM
+    res.json({ success: true, data: { summary: "Short summary..." } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

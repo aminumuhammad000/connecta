@@ -10,6 +10,7 @@
     "seed:proposals": "ts-node scripts/seedProposals.ts",
     "seed:projects": "ts-node scripts/seedProjects.ts",
     "seed:messages": "ts-node scripts/seedMessages.ts",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -39,4 +40,6 @@
     "@types/multer": "^2.0.0",
     "@types/node": "^24.8.1",
     "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
+    "ts-node": "^10.9.2"
+  }
+}

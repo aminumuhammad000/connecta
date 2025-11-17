@@ -480,7 +480,7 @@ export class ConnectaAgent {
         if (validatedOutput.tool === "none" || !this.toolMap[validatedOutput.tool]) {
           const fallbackMessage =
             "⚠️ Sorry, I can only help with Connecta-related tasks — like updating your profile, writing cover letters, or finding gigs.";
-          this.chatHistory.push({ input, output: fallbackMessage, success: false });
+          this.chatHistory.push({ input, output: fallbackMessage, success: false, timestamp: new Date() });
           return { message: fallbackMessage, success: false, data: null };
         }
 
@@ -490,11 +490,11 @@ export class ConnectaAgent {
         // If tool failed, provide a friendly explanation instead of raw error
         if (!result?.success) {
           const friendly = await this.explainError(validatedOutput.tool, result?.message ?? "Unknown error");
-          this.chatHistory.push({ input, output: friendly, success: false });
+          this.chatHistory.push({ input, output: friendly, success: false, timestamp: new Date() });
           return { message: friendly, success: false, data: null };
         }
 
-        this.chatHistory.push({ input, output: JSON.stringify(result), success: true });
+        this.chatHistory.push({ input, output: JSON.stringify(result), success: true, timestamp: new Date() });
         // Ensure result has success field
         return { ...result, success: result.success ?? true };
       },
