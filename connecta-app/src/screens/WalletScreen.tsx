@@ -12,7 +12,9 @@ interface Txn {
   amount: number; // positive for income, negative for withdrawal, positive pending
 }
 
-const WalletScreen: React.FC = () => {
+interface WalletScreenProps { onOpenNotifications?: () => void }
+
+const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenNotifications }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'income' | 'withdrawal' | 'pending'>('all');
@@ -35,7 +37,7 @@ const WalletScreen: React.FC = () => {
         <View style={{ width: 48, height: 40 }} />
         <Text style={[styles.title, { color: c.text }]}>Wallet</Text>
         <View style={{ width: 48, height: 40, alignItems: 'flex-end', justifyContent: 'center' }}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Notifications" style={styles.iconBtn}>
+          <TouchableOpacity onPress={onOpenNotifications} accessibilityRole="button" accessibilityLabel="Notifications" style={styles.iconBtn}>
             <MaterialIcons name="notifications" size={22} color={c.text} />
           </TouchableOpacity>
         </View>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -14,7 +14,9 @@ interface NotificationItem {
   type: 'payment' | 'message' | 'like' | 'job' | 'welcome';
 }
 
-const NotificationsScreen: React.FC = () => {
+interface NotificationsScreenProps { onNavigateTab?: (key: string) => void }
+
+const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onNavigateTab }) => {
   const c = useThemeColors();
   const [items, setItems] = useState<NotificationItem[]>(() => ([
     { id: 'n1', title: 'Payment of $1,250 has been released', subtitle: 'Project: Website Redesign', icon: 'payments' as any, time: '5m ago', read: false, type: 'payment' },
@@ -48,8 +50,14 @@ const NotificationsScreen: React.FC = () => {
         {items.map(n => {
           const iconBg = n.read ? (c.isDark ? '#3f3f46' : '#F4F4F5') : (c.isDark ? 'rgba(253,103,48,0.12)' : 'rgba(253,103,48,0.12)');
           const iconColor = n.read ? (c.isDark ? '#a1a1aa' : '#6B7280') : c.primary;
+          const targetTab: string | null = n.type === 'message' ? 'messages' : n.type === 'job' ? 'jobs' : n.type === 'payment' ? 'wallet' : n.type === 'like' ? 'proposals' : null;
           return (
-            <View key={n.id} style={[styles.row, { backgroundColor: c.card, borderColor: c.isDark ? '#2a2a2e' : '#E5E7EB' }]}> 
+            <TouchableOpacity
+              key={n.id}
+              activeOpacity={0.8}
+              onPress={() => { if (onNavigateTab && targetTab) onNavigateTab(targetTab); }}
+              style={[styles.row, { backgroundColor: c.card, borderColor: c.isDark ? '#2a2a2e' : '#E5E7EB' }]}
+            > 
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                 <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: iconBg, position: 'relative' }}>
                   <MaterialIcons name={n.icon} size={22} color={iconColor} />
@@ -63,7 +71,7 @@ const NotificationsScreen: React.FC = () => {
                 </View>
               </View>
               <Text style={[styles.time, { color: c.subtext }]}>{n.time}</Text>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>

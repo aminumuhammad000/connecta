@@ -17,11 +17,8 @@ interface BottomNavProps {
 
 const ITEMS: Item[] = [
   { key: 'home', label: 'Home', icon: 'home' },
-  { key: 'jobs', label: 'Jobs', icon: 'work-outline' },
-  { key: 'proposals', label: 'Proposals', icon: 'description' },
-  { key: 'wallet', label: 'Wallet', icon: 'account-balance-wallet' },
-  { key: 'notifications', label: 'Notifications', icon: 'notifications' },
-  { key: 'messages', label: 'Messages', icon: 'chat-bubble-outline' },
+  { key: 'jobs', label: 'Project', icon: 'work-outline' },
+  { key: 'messages', label: 'Message', icon: 'chat-bubble-outline' },
   { key: 'profile', label: 'Profile', icon: 'account-circle' },
 ];
 
@@ -30,7 +27,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeKey, onChange }) => 
   const insets = useSafeAreaInsets();
   const padBottom = Math.min(insets.bottom, 6);
   return (
-    <View style={[styles.wrap, { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: padBottom }]}> 
+    <View style={[styles.wrap, { borderTopColor: c.border, backgroundColor: c.card, paddingBottom: padBottom }]}>
       {ITEMS.map(it => {
         const active = it.key === activeKey;
         return (

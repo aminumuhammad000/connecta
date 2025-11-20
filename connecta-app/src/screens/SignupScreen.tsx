@@ -5,10 +5,12 @@ import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Logo from '../components/Logo';
+import { useRole } from '../context/RoleContext';
 
 const SignupScreen: React.FC = () => {
   const c = useThemeColors();
   const navigation = useNavigation();
+  const { role } = useRole();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,7 +66,16 @@ const SignupScreen: React.FC = () => {
             />
           </View>
 
-          <TouchableOpacity activeOpacity={0.9} style={[styles.primaryBtn, { backgroundColor: c.primary }]}> 
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+            onPress={() => {
+              // Simulate account creation success
+              if (role === 'client') (navigation as any).reset({ index: 0, routes: [{ name: 'ClientDashboard' }] });
+              else if (role === 'freelancer') (navigation as any).reset({ index: 0, routes: [{ name: 'FreelancerDashboard' }] });
+              else (navigation as any).reset({ index: 0, routes: [{ name: 'Dashboard' }] });
+            }}
+          > 
             <Text style={styles.primaryBtnText}>Create Account</Text>
           </TouchableOpacity>
         </View>

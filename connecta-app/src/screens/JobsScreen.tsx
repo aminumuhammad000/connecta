@@ -16,7 +16,9 @@ interface JobItem {
   description: string;
 }
 
-const JobsScreen: React.FC = () => {
+interface JobsScreenProps { onOpenNotifications?: () => void }
+
+const JobsScreen: React.FC<JobsScreenProps> = ({ onOpenNotifications: _onOpenNotifications }) => {
   const c = useThemeColors();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -89,7 +91,7 @@ const JobsScreen: React.FC = () => {
       {/* List */}
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 96 + insets.bottom, gap: 12 }}>
         {filtered.map(j => (
-          <View key={j.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
+          <TouchableOpacity key={j.id} onPress={() => (navigation as any).navigate('JobDetail')} activeOpacity={0.8} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
             <View style={styles.cardHeader}> 
               <View style={styles.companyRow}> 
                 <Image source={{ uri: j.logoUri }} style={styles.logo} />
@@ -109,7 +111,7 @@ const JobsScreen: React.FC = () => {
               <Text style={[styles.rate, { color: c.primary, backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}>{j.rate}</Text>
               <Text style={[styles.posted, { color: c.subtext }]}>{j.posted}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 

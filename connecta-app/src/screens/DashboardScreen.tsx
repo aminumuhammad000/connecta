@@ -10,6 +10,7 @@ import JobsScreen from './JobsScreen';
 import ProposalsScreen from './ProposalsScreen';
 import MessagesScreen from './MessagesScreen';
 import WalletScreen from './WalletScreen';
+import NotificationsScreen from './NotificationsScreen';
 import ProfileScreen from './ProfileScreen';
 
 interface ActiveJob {
@@ -55,7 +56,7 @@ const DashboardScreen: React.FC = () => {
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {activeTab === 'home' && (
           <>
-            <Header name="Alex Morgan" />
+            <Header name="Aminu Muhammad" onNotificationsPress={() => setActiveTab('notifications')} />
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 72 }}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.h2, { color: c.text }]}>Active Jobs ({jobs.length})</Text>
@@ -85,17 +86,19 @@ const DashboardScreen: React.FC = () => {
           </>
         )}
 
-        {activeTab === 'jobs' && <JobsScreen />}
+        {activeTab === 'jobs' && <JobsScreen onOpenNotifications={() => setActiveTab('notifications')} />}
 
         {activeTab === 'messages' && <MessagesScreen />}
 
-        {activeTab === 'proposals' && <ProposalsScreen />}
+        {activeTab === 'proposals' && <ProposalsScreen onOpenNotifications={() => setActiveTab('notifications')} />}
 
-        {activeTab === 'wallet' && <WalletScreen />}
+        {activeTab === 'wallet' && <WalletScreen onOpenNotifications={() => setActiveTab('notifications')} />}
+
+        {activeTab === 'notifications' && <NotificationsScreen onNavigateTab={(key: string) => setActiveTab(key as any)} />}
 
         {activeTab === 'profile' && <ProfileScreen />}
 
-        {activeTab !== 'home' && activeTab !== 'jobs' && activeTab !== 'messages' && activeTab !== 'proposals' && activeTab !== 'wallet' && activeTab !== 'profile' && (
+        {activeTab !== 'home' && activeTab !== 'jobs' && activeTab !== 'messages' && activeTab !== 'proposals' && activeTab !== 'wallet' && activeTab !== 'notifications' && activeTab !== 'profile' && (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: c.subtext }}>Coming soon</Text>
           </View>

@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
+import { useRole } from '../context/RoleContext';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const RoleSelectScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
+  const { setRole } = useRole();
   const [selected, setSelected] = useState<'client' | 'freelancer' | null>(null);
 
   return (
@@ -22,7 +24,7 @@ const RoleSelectScreen: React.FC<any> = ({ navigation }) => {
           <View style={styles.options}>
           <TouchableOpacity
             style={[styles.option, { backgroundColor: c.card, borderColor: selected === 'client' ? c.primary : c.border }]}
-            onPress={() => { setSelected('client'); navigation.navigate('Signup'); }}
+            onPress={() => { setSelected('client'); setRole('client'); navigation.navigate('Signup'); }}
           >
             <View style={styles.optionLeft}>
               <View style={[styles.iconWrap, { backgroundColor: selected === 'client' ? c.primary + '22' : c.background, borderColor: c.border }]}>
@@ -39,7 +41,7 @@ const RoleSelectScreen: React.FC<any> = ({ navigation }) => {
 
           <TouchableOpacity
             style={[styles.option, { backgroundColor: c.card, borderColor: selected === 'freelancer' ? c.primary : c.border }]}
-            onPress={() => { setSelected('freelancer'); navigation.navigate('Signup'); }}
+            onPress={() => { setSelected('freelancer'); setRole('freelancer'); navigation.navigate('Signup'); }}
           >
             <View style={styles.optionLeft}>
               <View style={[styles.iconWrap, { backgroundColor: selected === 'freelancer' ? c.primary + '22' : c.background, borderColor: c.border }]}>

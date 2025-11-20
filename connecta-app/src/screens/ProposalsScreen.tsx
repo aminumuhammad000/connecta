@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
 
 interface Proposal {
@@ -14,8 +15,11 @@ interface Proposal {
   status: 'accepted' | 'pending' | 'rejected';
 }
 
-const ProposalsScreen: React.FC = () => {
+interface ProposalsScreenProps { onOpenNotifications?: () => void }
+
+const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }) => {
   const c = useThemeColors();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
@@ -67,8 +71,13 @@ const ProposalsScreen: React.FC = () => {
           <MaterialIcons name="menu" size={24} color={c.text} />
         </View>
         <Text style={[styles.appBarTitle, { color: c.text }]}>Proposals</Text>
-        <View style={{ width: 48, height: 40, alignItems: 'flex-end', justifyContent: 'center' }}>
-          <MaterialIcons name="notifications" size={24} color={c.text} />
+        <View style={{ width: 72, height: 40, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity onPress={() => (navigation as any).navigate('MyProposals')} accessibilityRole="button" accessibilityLabel="Open My Proposals" style={{ padding: 6 }}>
+            <MaterialIcons name="tune" size={22} color={c.text} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onOpenNotifications} accessibilityRole="button" accessibilityLabel="Open notifications" style={{ padding: 6 }}>
+            <MaterialIcons name="notifications" size={22} color={c.text} />
+          </TouchableOpacity>
         </View>
       </View>
 

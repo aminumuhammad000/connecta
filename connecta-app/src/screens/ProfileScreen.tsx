@@ -25,7 +25,7 @@ const ProfileScreen: React.FC = () => {
               style={styles.avatar}
             />
             <View style={{ alignItems: 'center' }}>
-              <Text style={[styles.name, { color: c.text }]}>Alexandre Dupont</Text>
+              <Text style={[styles.name, { color: c.text }]}>Aminu Muhammad</Text>
               <Text style={[styles.role, { color: c.subtext }]}>UI/UX Designer</Text>
               <View style={styles.locationRow}> 
                 <MaterialIcons name="location-on" size={16} color={c.subtext} />
