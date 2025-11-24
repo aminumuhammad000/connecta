@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 interface ContractItem {
   id: string;
@@ -115,16 +114,7 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
             ))}
           </View>
         </ScrollView>
-
-        <BottomNav
-          activeKey="jobs"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('ClientDashboard');
-            if (key === 'jobs') return navigation.navigate('ClientProjects');
-            navigation.navigate('Dashboard');
-          }}
-        />
-      </View>
+</View>
     </SafeAreaView>
   );
 };

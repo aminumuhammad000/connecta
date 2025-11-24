@@ -60,7 +60,7 @@ const MyProposalsScreen: React.FC = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* Top App Bar */}
-      <View style={[styles.appBar, { borderBottomColor: c.border }]}> 
+      <View style={[styles.appBar, { borderBottomColor: c.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.appIcon} accessibilityRole="button" accessibilityLabel="Go back">
           <MaterialIcons name="arrow-back" size={24} color={c.text} />
         </TouchableOpacity>
@@ -71,8 +71,8 @@ const MyProposalsScreen: React.FC = () => {
       </View>
 
       {/* Tabs */}
-      <View style={[styles.tabsBar, { borderBottomColor: c.border }]}> 
-        {(['all','pending','accepted','rejected','withdrawn'] as const).map(k => (
+      <View style={[styles.tabsBar, { borderBottomColor: c.border }]}>
+        {(['all', 'pending', 'accepted', 'rejected', 'withdrawn'] as const).map(k => (
           <TouchableOpacity key={k} onPress={() => setTab(k)} style={chipStyle(tab === k)}>
             <Text style={chipTextStyle(tab === k)}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
           </TouchableOpacity>
@@ -84,21 +84,25 @@ const MyProposalsScreen: React.FC = () => {
         {filtered.map(p => {
           const pill = statusPill(p.status);
           return (
-            <View key={p.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-              <View style={styles.cardHeader}> 
+            <TouchableOpacity
+              key={p.id}
+              onPress={() => (navigation as any).navigate('ProposalDetail')}
+              style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            >
+              <View style={styles.cardHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                  <Text style={{ color: c.subtext, fontSize: 13 }}>{p.company}</Text>
+                  <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
                 </View>
-                <MaterialIcons name="chevron-right" size={22} color={c.subtext} />
+                <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
               </View>
-              <View style={styles.cardFooter}> 
-                <View style={[styles.pill, { backgroundColor: pill.bg }]}> 
+              <View style={styles.cardFooter}>
+                <View style={[styles.pill, { backgroundColor: pill.bg }]}>
                   <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
                 </View>
-                <Text style={{ color: c.subtext, fontSize: 12 }}>{p.submitted}</Text>
+                <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>

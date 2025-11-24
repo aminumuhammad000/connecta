@@ -3,19 +3,44 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
 
 interface ClientJob {
   id: string;
   title: string;
   status: 'Open' | 'In Progress' | 'Closed';
   proposals: number;
+  budget: string;
+  postedDate: string;
 }
 
 const SEED: ClientJob[] = [
-  { id: 'c1', title: 'UX/UI Designer for Mobile App', status: 'Open', proposals: 15 },
-  { id: 'c2', title: 'Senior Frontend Developer', status: 'In Progress', proposals: 22 },
-  { id: 'c3', title: 'Backend API Integration', status: 'Closed', proposals: 8 },
+  {
+    id: 'c1',
+    title: 'UX/UI Designer for Mobile App',
+    status: 'Open',
+    proposals: 15,
+    budget: '$3,500',
+    postedDate: '2 days ago',
+  },
+  {
+    id: 'c2',
+    title: 'Senior Frontend Developer',
+    status: 'In Progress',
+    proposals: 22,
+    budget: '$5,000',
+    postedDate: '1 week ago',
+  },
+  {
+    id: 'c3',
+    title: 'Backend API Integration',
+    status: 'Closed',
+    proposals: 8,
+    budget: '$2,800',
+    postedDate: '2 weeks ago',
+  },
 ];
 
 const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
@@ -25,111 +50,215 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
 
   const filtered = useMemo(() => {
     if (tab === 'All') return jobs;
-    if (tab === 'Open') return jobs.filter(j => j.status === 'Open' || j.status === 'In Progress');
-    return jobs.filter(j => j.status === 'Closed');
+    if (tab === 'Open') return jobs.filter((j) => j.status === 'Open' || j.status === 'In Progress');
+    return jobs.filter((j) => j.status === 'Closed');
   }, [jobs, tab]);
+
+  const getStatusVariant = (status: ClientJob['status']): 'success' | 'info' | 'neutral' => {
+    if (status === 'Open') return 'success';
+    if (status === 'In Progress') return 'info';
+    return 'neutral';
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        <View style={[styles.appBar, { borderBottomColor: c.border }]}> 
-          <View style={{ width: 48 }} />
-          <Text style={[styles.appBarTitle, { color: c.text }]}>My Jobs</Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Search" style={styles.iconBtn}>
-            <MaterialIcons name="search" size={22} color={c.text} />
+        {/* Header */}
+        <View style={[styles.header, { borderBottomColor: c.border }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+            <MaterialIcons name="arrow-back" size={24} color={c.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: c.text }]}>My Jobs</Text>
+          <TouchableOpacity style={styles.iconBtn}>
+            <MaterialIcons name="search" size={24} color={c.text} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 84 }}>
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            <TouchableOpacity
+        <ScrollView contentContainerStyle={{ paddingBottom: 84 }} showsVerticalScrollIndicator={false}>
+          {/* Post Job Button */}
+          <View style={styles.section}>
+            <Button
+              title="Post a New Job"
               onPress={() => navigation.navigate('PostJob')}
-              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+              size="large"
+              style={{ marginBottom: 16 }}
+            />
+          </View>
+
+          {/* Tabs */}
+          <View style={[styles.tabsContainer, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              onPress={() => setTab('All')}
+              style={[styles.tab, { borderBottomColor: tab === 'All' ? c.primary : 'transparent' }]}
             >
-              <MaterialIcons name="add" size={22} color="#fff" />
-              <Text style={styles.primaryBtnText}>Post a New Job</Text>
+              <Text style={[styles.tabText, { color: tab === 'All' ? c.primary : c.subtext }]}>All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setTab('Open')}
+              style={[styles.tab, { borderBottomColor: tab === 'Open' ? c.primary : 'transparent' }]}
+            >
+              <Text style={[styles.tabText, { color: tab === 'Open' ? c.primary : c.subtext }]}>Open</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setTab('Closed')}
+              style={[styles.tab, { borderBottomColor: tab === 'Closed' ? c.primary : 'transparent' }]}
+            >
+              <Text style={[styles.tabText, { color: tab === 'Closed' ? c.primary : c.subtext }]}>Closed</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.tabsWrap, { borderBottomColor: c.border, backgroundColor: c.background }]}> 
-            <View style={styles.tabsRow}>
-              <TabBtn label="All" active={tab === 'All'} onPress={() => setTab('All')} color={c} />
-              <TabBtn label="Open" active={tab === 'Open'} onPress={() => setTab('Open')} color={c} />
-              <TabBtn label="Closed" active={tab === 'Closed'} onPress={() => setTab('Closed')} color={c} />
-            </View>
-          </View>
-
-          <View style={{ paddingHorizontal: 16, gap: 12, paddingTop: 12 }}>
-            {filtered.map(j => (
-              <View key={j.id} style={[styles.card, { backgroundColor: c.card }]}> 
-                <View style={styles.cardHeader}>
-                  <View style={{ gap: 4 }}>
-                    <Text style={[styles.cardTitle, { color: c.text }]}>{j.title}</Text>
-                    <View style={[styles.statusPill, { backgroundColor: statusBg(j.status), borderColor: statusFg(j.status) }]}> 
-                      <Text style={[styles.statusText, { color: statusFg(j.status) }]}>{j.status === 'In Progress' ? 'In Progress' : j.status}</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity>
-                    <MaterialIcons name="more-vert" size={22} color={c.subtext} />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.metaRow}> 
-                  <MaterialIcons name="content-copy" size={16} color={c.subtext} />
-                  <Text style={{ color: c.subtext, fontSize: 12 }}>{j.proposals} Proposals</Text>
-                </View>
+          {/* Jobs List */}
+          <View style={styles.section}>
+            {filtered.length === 0 ? (
+              <View style={styles.emptyState}>
+                <MaterialIcons name="work-outline" size={64} color={c.subtext} />
+                <Text style={[styles.emptyTitle, { color: c.text }]}>No jobs found</Text>
+                <Text style={[styles.emptyText, { color: c.subtext }]}>
+                  {tab === 'All' ? 'Post your first job to get started' : `No ${tab.toLowerCase()} jobs`}
+                </Text>
               </View>
-            ))}
+            ) : (
+              <View style={{ gap: 12 }}>
+                {filtered.map((j) => (
+                  <Card key={j.id} variant="elevated" padding={16}>
+                    <View style={styles.jobCard}>
+                      <View style={styles.jobHeader}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.jobTitle, { color: c.text }]}>{j.title}</Text>
+                          <Badge label={j.status} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
+                        </View>
+                        <TouchableOpacity>
+                          <MaterialIcons name="more-vert" size={24} color={c.subtext} />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View style={styles.jobMeta}>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="description" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.text }]}>{j.proposals} Proposals</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.text }]}>{j.budget}</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.subtext }]}>{j.postedDate}</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.jobActions}>
+                        <Button
+                          title="View Proposals"
+                          onPress={() => navigation.navigate('JobDetail')}
+                          variant="outline"
+                          size="small"
+                          style={{ flex: 1 }}
+                        />
+                        <Button
+                          title="Edit Job"
+                          onPress={() => navigation.navigate('PostJob')}
+                          variant="primary"
+                          size="small"
+                          style={{ flex: 1 }}
+                        />
+                      </View>
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            )}
           </View>
         </ScrollView>
-
-        <BottomNav
-          activeKey="jobs"
-          onChange={(key) => {
-            if (key === 'home') navigation.replace('ClientDashboard');
-            if (key === 'jobs') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
       </View>
     </SafeAreaView>
   );
 };
 
-function TabBtn({ label, active, onPress, color }: { label: string; active: boolean; onPress: () => void; color: ReturnType<typeof useThemeColors> }) {
-  return (
-    <TouchableOpacity onPress={onPress} style={[styles.tabBtn, { borderBottomColor: active ? color.primary : 'transparent' }]}> 
-      <Text style={[styles.tabText, { color: active ? color.primary : color.subtext, fontWeight: active ? '800' as const : '600' as const }]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function statusBg(status: ClientJob['status']) {
-  if (status === 'Open') return 'rgba(52,199,89,0.12)';
-  if (status === 'In Progress') return 'rgba(0,122,255,0.12)';
-  return 'rgba(138,138,142,0.12)';
-}
-function statusFg(status: ClientJob['status']) {
-  if (status === 'Open') return '#34C759';
-  if (status === 'In Progress') return '#007AFF';
-  return '#8A8A8E';
-}
-
 const styles = StyleSheet.create({
-  appBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  appBarTitle: { fontSize: 18, fontWeight: '800' },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  primaryBtn: { height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  tabsWrap: { position: 'sticky' as any, top: 72, borderBottomWidth: StyleSheet.hairlineWidth },
-  tabsRow: { flexDirection: 'row', paddingHorizontal: 16, justifyContent: 'space-between' },
-  tabBtn: { paddingVertical: 12, flex: 1, alignItems: 'center', borderBottomWidth: 3 },
-  tabText: { fontSize: 13, letterSpacing: 0.15 },
-  card: { padding: 12, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 1 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  cardTitle: { fontSize: 16, fontWeight: '800' },
-  statusPill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, marginTop: 4, borderWidth: StyleSheet.hairlineWidth },
-  statusText: { fontSize: 12, fontWeight: '700' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    marginTop: 8,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginTop: 16,
+  },
+  emptyText: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  jobCard: {
+    gap: 12,
+  },
+  jobHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  jobTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  jobMeta: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  jobActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
 });
 
 export default ClientJobsScreen;

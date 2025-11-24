@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, TextInput 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 interface SavedGigItem {
   id: string;
@@ -37,6 +36,47 @@ const SAVED: SavedGigItem[] = [
 
 const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('all');
+  const [selectedPayType, setSelectedPayType] = React.useState<string>('all');
+  const [showCategoryMenu, setShowCategoryMenu] = React.useState(false);
+  const [showPayTypeMenu, setShowPayTypeMenu] = React.useState(false);
+
+  const filteredGigs = React.useMemo(() => {
+    let gigs = [...SAVED];
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      gigs = gigs.filter(gig =>
+        gig.chips.some(chip => chip.toLowerCase().includes(selectedCategory.toLowerCase()))
+      );
+    }
+
+    // Filter by pay type
+    if (selectedPayType !== 'all') {
+      gigs = gigs.filter(gig => {
+        if (selectedPayType === 'fixed') {
+          return gig.chips.some(chip => chip.startsWith('Fixed-Price'));
+        } else if (selectedPayType === 'hourly') {
+          return gig.chips.some(chip => chip.startsWith('Hourly'));
+        }
+        return true;
+      });
+    }
+
+    return gigs;
+  }, [selectedCategory, selectedPayType]);
+
+  const getCategoryLabel = () => {
+    if (selectedCategory === 'all') return 'Category';
+    return selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1);
+  };
+
+  const getPayTypeLabel = () => {
+    if (selectedPayType === 'all') return 'Pay Type';
+    if (selectedPayType === 'fixed') return 'Fixed Price';
+    if (selectedPayType === 'hourly') return 'Hourly';
+    return 'Pay Type';
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -44,15 +84,18 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
         {/* Top App Bar */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ width: 48, height: 48 }} />
-            <Text style={{ color: c.text, fontSize: 18, fontWeight: '800' }}>Saved Gigs</Text>
-            <TouchableOpacity accessibilityRole="button">
-              <Text style={{ color: c.primary, fontSize: 16, fontWeight: '800' }}>Edit</Text>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={c.text} />
             </TouchableOpacity>
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '800' }}>Saved Gigs</Text>
+            <View style={{ width: 48, height: 48 }} />
           </View>
           {/* Search */}
           <View style={{ marginTop: 12 }}>
-            <View style={[styles.searchWrap, { backgroundColor: c.card, borderColor: c.border }]}> 
+            <View style={[styles.searchWrap, { backgroundColor: c.card, borderColor: c.border }]}>
               <MaterialIcons name="search" size={20} color={c.subtext} style={{ marginHorizontal: 12 }} />
               <TextInput
                 placeholder="Search by keyword, skill, etc."
@@ -63,26 +106,111 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
           </View>
           {/* Chips */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingTop: 10, paddingBottom: 10 }}>
-            <View style={[styles.chip, { borderColor: c.border, backgroundColor: c.isDark ? 'rgba(0,0,0,0.2)' : '#fff' }]}> 
-              <MaterialIcons name="swap-vert" size={16} color={c.subtext} />
-              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Sort By</Text>
+            <TouchableOpacity
+              onPress={() => setShowCategoryMenu(!showCategoryMenu)}
+              style={[styles.chip, { borderColor: c.border, backgroundColor: c.isDark ? 'rgba(0,0,0,0.2)' : '#fff' }]}
+            >
+              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>{getCategoryLabel()}</Text>
               <MaterialIcons name="expand-more" size={16} color={c.subtext} />
-            </View>
-            <View style={[styles.chip, { borderColor: c.border, backgroundColor: c.isDark ? 'rgba(0,0,0,0.2)' : '#fff' }]}> 
-              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Category</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowPayTypeMenu(!showPayTypeMenu)}
+              style={[styles.chip, { borderColor: c.border, backgroundColor: c.isDark ? 'rgba(0,0,0,0.2)' : '#fff' }]}
+            >
+              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>{getPayTypeLabel()}</Text>
               <MaterialIcons name="expand-more" size={16} color={c.subtext} />
-            </View>
-            <View style={[styles.chip, { borderColor: c.border, backgroundColor: c.isDark ? 'rgba(0,0,0,0.2)' : '#fff' }]}> 
-              <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Pay Type</Text>
-              <MaterialIcons name="expand-more" size={16} color={c.subtext} />
-            </View>
+            </TouchableOpacity>
           </ScrollView>
+
+          {/* Category Menu Dropdown */}
+          {showCategoryMenu && (
+            <View style={[styles.sortMenu, { backgroundColor: c.card, borderColor: c.border }]}>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => {
+                  setSelectedCategory('all');
+                  setShowCategoryMenu(false);
+                }}
+              >
+                <Text style={{ color: selectedCategory === 'all' ? c.primary : c.text, fontSize: 14, fontWeight: selectedCategory === 'all' ? '600' : '500' }}>
+                  All Categories
+                </Text>
+                {selectedCategory === 'all' && <MaterialIcons name="check" size={20} color={c.primary} />}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => {
+                  setSelectedCategory('design');
+                  setShowCategoryMenu(false);
+                }}
+              >
+                <Text style={{ color: selectedCategory === 'design' ? c.primary : c.text, fontSize: 14, fontWeight: selectedCategory === 'design' ? '600' : '500' }}>
+                  Design
+                </Text>
+                {selectedCategory === 'design' && <MaterialIcons name="check" size={20} color={c.primary} />}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => {
+                  setSelectedCategory('development');
+                  setShowCategoryMenu(false);
+                }}
+              >
+                <Text style={{ color: selectedCategory === 'development' ? c.primary : c.text, fontSize: 14, fontWeight: selectedCategory === 'development' ? '600' : '500' }}>
+                  Development
+                </Text>
+                {selectedCategory === 'development' && <MaterialIcons name="check" size={20} color={c.primary} />}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Pay Type Menu Dropdown */}
+          {showPayTypeMenu && (
+            <View style={[styles.sortMenu, { backgroundColor: c.card, borderColor: c.border }]}>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => {
+                  setSelectedPayType('all');
+                  setShowPayTypeMenu(false);
+                }}
+              >
+                <Text style={{ color: selectedPayType === 'all' ? c.primary : c.text, fontSize: 14, fontWeight: selectedPayType === 'all' ? '600' : '500' }}>
+                  All Types
+                </Text>
+                {selectedPayType === 'all' && <MaterialIcons name="check" size={20} color={c.primary} />}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => {
+                  setSelectedPayType('fixed');
+                  setShowPayTypeMenu(false);
+                }}
+              >
+                <Text style={{ color: selectedPayType === 'fixed' ? c.primary : c.text, fontSize: 14, fontWeight: selectedPayType === 'fixed' ? '600' : '500' }}>
+                  Fixed Price
+                </Text>
+                {selectedPayType === 'fixed' && <MaterialIcons name="check" size={20} color={c.primary} />}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sortOption}
+                onPress={() => {
+                  setSelectedPayType('hourly');
+                  setShowPayTypeMenu(false);
+                }}
+              >
+                <Text style={{ color: selectedPayType === 'hourly' ? c.primary : c.text, fontSize: 14, fontWeight: selectedPayType === 'hourly' ? '600' : '500' }}>
+                  Hourly
+                </Text>
+                {selectedPayType === 'hourly' && <MaterialIcons name="check" size={20} color={c.primary} />}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* List */}
         <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, gap: 12 }}>
-          {SAVED.map(item => (
-            <View key={item.id} style={[styles.card, { backgroundColor: c.card, shadowColor: '#000' }]}> 
+          {filteredGigs.map(item => (
+            <View key={item.id} style={[styles.card, { backgroundColor: c.card, shadowColor: '#000' }]}>
               <View style={{ gap: 6 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <View>
@@ -97,7 +225,7 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {item.chips.map(ch => (
-                  <View key={ch} style={[styles.pill, { backgroundColor: ch.startsWith('Fixed-Price') || ch.startsWith('Hourly') ? c.primary + '1A' : (c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6') }]}> 
+                  <View key={ch} style={[styles.pill, { backgroundColor: ch.startsWith('Fixed-Price') || ch.startsWith('Hourly') ? c.primary + '1A' : (c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6') }]}>
                     <Text style={{ color: ch.startsWith('Fixed-Price') || ch.startsWith('Hourly') ? c.primary : c.subtext, fontSize: 12, fontWeight: '700' }}>{ch}</Text>
                   </View>
                 ))}
@@ -105,10 +233,10 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
                 <Text style={{ color: c.isDark ? '#6B7280' : '#9CA3AF', fontSize: 12 }}>{item.savedAgo}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <TouchableOpacity onPress={() => navigation.navigate('JobDetail')} style={[styles.btn, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}> 
+                  <TouchableOpacity onPress={() => navigation.navigate('JobDetail')} style={[styles.btn, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
                     <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>View Details</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('JobDetail')} style={[styles.btn, { backgroundColor: c.primary }]}> 
+                  <TouchableOpacity onPress={() => navigation.navigate('JobDetail')} style={[styles.btn, { backgroundColor: c.primary }]}>
                     <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Apply Now</Text>
                   </TouchableOpacity>
                 </View>
@@ -117,15 +245,7 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
           ))}
         </ScrollView>
 
-        <BottomNav
-          activeKey="jobs"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('FreelancerDashboard');
-            if (key === 'jobs') return; // already here
-            if (key === 'profile') return navigation.navigate('Dashboard');
-            navigation.navigate('Dashboard');
-          }}
-        />
+
       </View>
     </SafeAreaView>
   );
@@ -137,6 +257,25 @@ const styles = StyleSheet.create({
   card: { borderRadius: 12, padding: 16, gap: 10, shadowOpacity: 0.08, shadowOffset: { width: 0, height: 2 }, shadowRadius: 6 },
   pill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   btn: { height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  sortMenu: {
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  sortOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
 });
 
 export default FreelancerSavedGigsScreen;

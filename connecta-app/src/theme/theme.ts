@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export const palette = {
   primary: '#FD6730',
@@ -15,15 +16,29 @@ export const palette = {
 };
 
 export function useThemeColors() {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  return {
-    isDark,
-    background: isDark ? palette.backgroundDark : palette.backgroundLight,
-    card: isDark ? palette.cardDark : palette.cardLight,
-    text: isDark ? palette.textDark : palette.textLight,
-    subtext: isDark ? palette.subtextDark : palette.subtextLight,
-    border: isDark ? palette.borderDark : palette.borderLight,
-    primary: palette.primary,
-  };
+  try {
+    const { isDark } = useTheme();
+    return {
+      isDark,
+      background: isDark ? palette.backgroundDark : palette.backgroundLight,
+      card: isDark ? palette.cardDark : palette.cardLight,
+      text: isDark ? palette.textDark : palette.textLight,
+      subtext: isDark ? palette.subtextDark : palette.subtextLight,
+      border: isDark ? palette.borderDark : palette.borderLight,
+      primary: palette.primary,
+    };
+  } catch {
+    // Fallback if ThemeContext is not available
+    const scheme = useColorScheme();
+    const isDark = scheme === 'dark';
+    return {
+      isDark,
+      background: isDark ? palette.backgroundDark : palette.backgroundLight,
+      card: isDark ? palette.cardDark : palette.cardLight,
+      text: isDark ? palette.textDark : palette.textLight,
+      subtext: isDark ? palette.subtextDark : palette.subtextLight,
+      border: isDark ? palette.borderDark : palette.borderLight,
+      primary: palette.primary,
+    };
+  }
 }

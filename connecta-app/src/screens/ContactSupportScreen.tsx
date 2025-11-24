@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -11,11 +10,29 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
   const [category, setCategory] = useState<string | null>(null);
   const [message, setMessage] = useState('');
 
+  const handleContact = async (type: 'whatsapp' | 'email' | 'call') => {
+    try {
+      switch (type) {
+        case 'whatsapp':
+          await Linking.openURL('whatsapp://send?phone=15551234567');
+          break;
+        case 'email':
+          await Linking.openURL('mailto:support@connecta.com');
+          break;
+        case 'call':
+          await Linking.openURL('tel:+15551234567');
+          break;
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
         {/* Top App Bar */}
-        <View style={[styles.appBar, { borderBottomColor: c.border }]}> 
+        <View style={[styles.appBar, { borderBottomColor: c.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack?.()} style={styles.iconBtn}>
             <MaterialIcons name="arrow-back" size={22} color={c.text} />
           </TouchableOpacity>
@@ -24,6 +41,55 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+          {/* Contact Options */}
+          <View style={{ marginBottom: 24, gap: 12 }}>
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>Get in Touch</Text>
+
+            <TouchableOpacity
+              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => handleContact('whatsapp')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: '#25D36620' }]}>
+                <MaterialIcons name="chat" size={24} color="#25D366" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactLabel, { color: c.text }]}>WhatsApp</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>Chat with our support team</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => handleContact('email')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: c.primary + '20' }]}>
+                <MaterialIcons name="email" size={24} color={c.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactLabel, { color: c.text }]}>Email</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>support@connecta.com</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => handleContact('call')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: '#3B82F620' }]}>
+                <MaterialIcons name="call" size={24} color="#3B82F6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactLabel, { color: c.text }]}>Call Us</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>+1 (555) 123-4567</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={{ color: c.text, fontSize: 18, fontWeight: '600', marginBottom: 16 }}>Send a Message</Text>
+
           {/* Subject */}
           <View style={{ marginBottom: 16 }}>
             <Text style={[styles.label, { color: c.text }]}>Subject</Text>
@@ -73,23 +139,23 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
           {/* Attachments */}
           <View style={{ marginTop: 8 }}>
             <Text style={[styles.label, { color: c.text }]}>Attachments</Text>
-            <View style={[styles.attachRow, { borderColor: c.border }]}> 
+            <View style={[styles.attachRow, { borderColor: c.border }]}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>Add files (screenshots, documents, etc.)</Text>
+                <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }}>Add files (screenshots, documents, etc.)</Text>
                 <Text style={{ color: c.subtext, fontSize: 11 }}>Max file size: 5MB</Text>
               </View>
-              <TouchableOpacity style={[styles.addBtn, { backgroundColor: c.primary + '33' }]}> 
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: c.primary + '33' }]}>
                 <MaterialIcons name="attach-file" size={16} color={c.primary} />
-                <Text style={{ color: c.primary, fontSize: 13, fontWeight: '800' }}>Add</Text>
+                <Text style={{ color: c.primary, fontSize: 13, fontWeight: '700' }}>Add</Text>
               </TouchableOpacity>
             </View>
 
             {/* Example attached file */}
-            <View style={[styles.fileRow, { backgroundColor: c.primary + '1A' }]}> 
+            <View style={[styles.fileRow, { backgroundColor: c.primary + '1A' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                 <MaterialIcons name="description" size={20} color={c.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>billing_statement_dec.pdf</Text>
+                  <Text style={{ color: c.text, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>billing_statement_dec.pdf</Text>
                   <Text style={{ color: c.subtext, fontSize: 11 }}>128 KB</Text>
                 </View>
               </View>
@@ -107,21 +173,11 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
 
           {/* Submit */}
           <View style={{ marginTop: 24 }}>
-            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: c.primary }]}> 
-              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>Submit</Text>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: c.primary }]}>
+              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Submit</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
-
-        <BottomNav
-          activeKey="profile"
-          onChange={(key) => {
-            if (key === 'home') return navigation.navigate('Dashboard');
-            if (key === 'jobs') return navigation.navigate('Dashboard');
-            if (key === 'profile') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
       </View>
     </SafeAreaView>
   );
@@ -130,14 +186,17 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
 const styles = StyleSheet.create({
   appBar: { height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   iconBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  h1: { fontSize: 18, fontWeight: '800' },
-  label: { fontSize: 14, fontWeight: '700', marginBottom: 8 },
+  h1: { fontSize: 18, fontWeight: '600' },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   input: { height: 56, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, paddingHorizontal: 12 },
   textarea: { minHeight: 140, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, paddingHorizontal: 12, paddingTop: 12, textAlignVertical: 'top' },
   attachRow: { borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   addBtn: { height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, flexDirection: 'row', gap: 6 },
   fileRow: { marginTop: 10, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   submitBtn: { height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  contactRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
+  iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  contactLabel: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
 });
 
 export default ContactSupportScreen;

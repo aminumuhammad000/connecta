@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 type AppStatus = 'All' | 'Pending' | 'Reviewed' | 'Accepted' | 'Rejected';
 
@@ -53,7 +52,7 @@ const FreelancerApplicationsScreen: React.FC<any> = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {/* Top App Bar */}
-        <View style={[styles.appBar]}> 
+        <View style={[styles.appBar]}>
           <Text style={[styles.h1, { color: c.text }]}>My Applications</Text>
           <TouchableOpacity style={styles.iconBtn}>
             <MaterialIcons name="search" size={22} color={c.text} />
@@ -95,7 +94,7 @@ const FreelancerApplicationsScreen: React.FC<any> = ({ navigation }) => {
           {list.map(item => {
             const st = statusStyle(c, item.status);
             return (
-              <View key={item.id} style={[styles.card, { borderColor: c.border, backgroundColor: c.card }]}> 
+              <View key={item.id} style={[styles.card, { borderColor: c.border, backgroundColor: c.card }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, justifyContent: 'space-between' }}>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>{item.title}</Text>
@@ -116,16 +115,7 @@ const FreelancerApplicationsScreen: React.FC<any> = ({ navigation }) => {
           })}
         </ScrollView>
 
-        {/* Bottom Nav */}
-        <BottomNav
-          activeKey="jobs"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('FreelancerDashboard');
-            if (key === 'jobs') return; // already here
-            if (key === 'profile') return navigation.navigate('Dashboard');
-            navigation.navigate('Dashboard');
-          }}
-        />
+
       </View>
     </SafeAreaView>
   );

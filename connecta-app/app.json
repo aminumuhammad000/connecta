@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "connecta-app",
+    "name": "Connecta",
     "slug": "connecta-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/favicon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/favicon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,19 +18,26 @@
     "android": {
       "package": "com.connecta.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/favicon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "notification": {
+        "color": "#2563EB"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "expo-notifications"
+    ],
     "extra": {
       "eas": {
-        "projectId": "78992f33-afae-47ab-ae0a-7a4e4868613d"
+        "projectId": "4cf7c9ea-1ae6-4e76-9b3b-b6bcfac9cda4"
       }
-    }
+    },
+    "owner": "aminuamee2025"
   }
 }

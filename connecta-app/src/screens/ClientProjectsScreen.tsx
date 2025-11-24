@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 interface ProjectItem {
   id: string;
@@ -148,15 +147,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
         </TouchableOpacity>
 
         {/* Bottom Nav */}
-        <BottomNav
-          activeKey="jobs"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('ClientDashboard');
-            if (key === 'jobs') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
-      </View>
+</View>
     </SafeAreaView>
   );
 };

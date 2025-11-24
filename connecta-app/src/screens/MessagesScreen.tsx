@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, FlatList } 
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import Avatar from '../components/Avatar';
 
 interface ChatMessage {
   id: string;
@@ -11,11 +12,13 @@ interface ChatMessage {
   time: string;
 }
 
-const MessagesScreen: React.FC = () => {
+const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  const { userName, userAvatar } = route?.params || {};
 
   const data = useMemo<ChatMessage[]>(() => ([
     { id: 'd1', from: 'system' as any, text: 'Today', time: '' },
@@ -37,10 +40,9 @@ const MessagesScreen: React.FC = () => {
     return (
       <View style={[styles.row, mine ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }]}>
         {!mine && (
-          <Image
-            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBL5PbqSun56WA-UjupXWGWeuaDbSTOR1IRDiKb4clTLqdFRGbNjuNuIQOfa9N--K5Oph-Wn95F62EOpGONs4EJksFyqqQcRLPDaLPdwoqIxt5dhSK-5qXgSxRHiwv4Xp5xsuP5bfTiemssdp_wbmItn8PQaixxiUzPGmh4nzpJryGSi-f4aVzU06PzTTL0vlMWpUEu3oE3HKQGt2gxacDtsXm-94mZ9bVQami9u3E0Yngr0p0XfcEkHFIOFVMlSbBBBruLPPp87E' }}
-            style={styles.avatar}
-          />
+          <View style={styles.avatar}>
+            <Avatar uri={userAvatar || undefined} name={userName} size={32} />
+          </View>
         )}
         <View style={[styles.bubbleWrap, { maxWidth: '75%' }, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }] }>
           <View style={[styles.bubble, mine ? { backgroundColor: c.primary, borderTopRightRadius: 8 } : { backgroundColor: c.card, borderTopLeftRadius: 8 } ]}>
@@ -62,12 +64,15 @@ const MessagesScreen: React.FC = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: c.border }]}> 
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
           <MaterialIcons name="arrow-back-ios-new" size={20} color={c.text} />
         </TouchableOpacity>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={[styles.title, { color: c.text }]}>Cameron Williamson</Text>
-          <Text style={[styles.subtitle, { color: c.subtext }]}>Online</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Avatar uri={userAvatar || undefined} name={userName} size={28} />
+          <View style={{ alignItems: 'flex-start' }}>
+            <Text style={[styles.title, { color: c.text }]}>{userName || 'Chat'}</Text>
+            <Text style={[styles.subtitle, { color: c.subtext }]}>Online</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.iconBtn}>
           <MaterialIcons name="more-vert" size={22} color={c.text} />

@@ -12,25 +12,25 @@ interface WelcomeScreenProps {
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGetStarted, onLogin }) => {
   const c = useThemeColors();
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.center}> 
-        <Logo size={96} style={styles.logo} />
-        <Text style={[styles.title, { color: c.text }]}>Connecta</Text>
-        <Text style={[styles.subtitle, { color: c.subtext }]}>The platform to connect with talented freelancers and find your next project.</Text>
-      </View>
-
-      <View style={styles.footer}> 
-        <TouchableOpacity onPress={onGetStarted} activeOpacity={0.9} style={[styles.cta, { backgroundColor: c.primary }]}> 
-          <Text style={styles.ctaText}>Get Started</Text>
-        </TouchableOpacity>
-        <View style={styles.loginRow}> 
-          <Text style={[styles.loginText, { color: c.subtext }]}>Already have an account?</Text>
-          <TouchableOpacity onPress={onLogin}>
-            <Text style={[styles.loginLink, { color: c.primary }]}>Log In</Text>
-          </TouchableOpacity>
+        <View style={styles.center}>
+          <Logo size={64} style={styles.logo} />
+          <Text style={[styles.title, { color: c.text }]}>Connecta</Text>
+          <Text style={[styles.subtitle, { color: c.subtext }]}>The platform to connect with talented freelancers and find your next project.</Text>
         </View>
-      </View>
+
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={onGetStarted} activeOpacity={0.9} style={[styles.cta, { backgroundColor: c.primary }]}>
+            <Text style={styles.ctaText}>Get Started</Text>
+          </TouchableOpacity>
+          <View style={styles.loginRow}>
+            <Text style={[styles.loginText, { color: c.subtext }]}>Already have an account?</Text>
+            <TouchableOpacity onPress={onLogin}>
+              <Text style={[styles.loginLink, { color: c.primary }]}>Log In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -47,10 +47,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   logo: {
-    width: 96,
-    height: 96,
-    marginBottom: 24,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    marginBottom: 16,
+    borderRadius: 12,
   },
   title: {
     fontSize: 32,

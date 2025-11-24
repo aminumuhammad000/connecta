@@ -10,82 +10,194 @@ import { useRole } from '../context/RoleContext';
 const SignupScreen: React.FC = () => {
   const c = useThemeColors();
   const navigation = useNavigation();
-  const { role } = useRole();
+  const { setRole } = useRole();
+  const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer'>('client');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleCreateAccount = () => {
+    // Set the role in context
+    setRole(selectedRole);
+
+    // Simulate account creation success and navigate to appropriate dashboard
+    if (selectedRole === 'client') {
+      (navigation as any).reset({ index: 0, routes: [{ name: 'ClientDashboard' }] });
+    } else if (selectedRole === 'freelancer') {
+      (navigation as any).reset({ index: 0, routes: [{ name: 'FreelancerDashboard' }] });
+    } else {
+      (navigation as any).reset({ index: 0, routes: [{ name: 'Dashboard' }] });
+    }
+  };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}> 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-      <View style={styles.center}> 
-        <View style={styles.backRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <MaterialIcons name="arrow-back" size={22} color={c.text} />
-          </TouchableOpacity>
-        </View>
-        <View style={[styles.logoWrap, { backgroundColor: c.card }]}> 
-          <Logo size={40} />
-        </View>
-        <Text style={[styles.title, { color: c.text }]}>Create your account</Text>
-        <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta to find projects and talent.</Text>
+          <View style={styles.center}>
+            <View style={styles.backRow}>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <MaterialIcons name="arrow-back" size={22} color={c.text} />
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.form}> 
-          <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}> 
-            <MaterialIcons name="person-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="Full name"
-              placeholderTextColor={c.subtext}
-              style={[styles.input, { color: c.text }]}
-            />
-          </View>
-          <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}> 
-            <MaterialIcons name="mail-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholderTextColor={c.subtext}
-              style={[styles.input, { color: c.text }]}
-            />
-          </View>
-          <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}> 
-            <MaterialIcons name="lock-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              placeholderTextColor={c.subtext}
-              secureTextEntry
-              style={[styles.input, { color: c.text }]}
-            />
-          </View>
+            <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
+              <Logo size={40} />
+            </View>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-            onPress={() => {
-              // Simulate account creation success
-              if (role === 'client') (navigation as any).reset({ index: 0, routes: [{ name: 'ClientDashboard' }] });
-              else if (role === 'freelancer') (navigation as any).reset({ index: 0, routes: [{ name: 'FreelancerDashboard' }] });
-              else (navigation as any).reset({ index: 0, routes: [{ name: 'Dashboard' }] });
-            }}
-          > 
-            <Text style={styles.primaryBtnText}>Create Account</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.footerRow}>
-          <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => (navigation as any).navigate('Login')} accessibilityRole="button" accessibilityLabel="Go to Login">
-            <Text style={[styles.footerLink, { color: c.primary }]}>Log in</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <Text style={[styles.title, { color: c.text }]}>Create your account</Text>
+            <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta to find projects and talent.</Text>
+
+            <View style={styles.form}>
+              {/* Role Selection */}
+              <View style={styles.roleSection}>
+                <Text style={[styles.roleLabel, { color: c.text }]}>I want to:</Text>
+                <View style={styles.roleOptions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.roleOption,
+                      {
+                        backgroundColor: selectedRole === 'client' ? c.primary + '15' : c.card,
+                        borderColor: selectedRole === 'client' ? c.primary : c.border
+                      }
+                    ]}
+                    onPress={() => setSelectedRole('client')}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.roleIconWrap,
+                      {
+                        backgroundColor: selectedRole === 'client' ? c.primary : c.background,
+                      }
+                    ]}>
+                      <MaterialIcons
+                        name="work-outline"
+                        size={20}
+                        color={selectedRole === 'client' ? '#fff' : c.subtext}
+                      />
+                    </View>
+                    <View style={styles.roleTextWrap}>
+                      <Text style={[
+                        styles.roleTitle,
+                        { color: selectedRole === 'client' ? c.primary : c.text }
+                      ]}>
+                        Hire Talent
+                      </Text>
+                      <Text style={[styles.roleDesc, { color: c.subtext }]}>
+                        Post jobs & find freelancers
+                      </Text>
+                    </View>
+                    <MaterialIcons
+                      name={selectedRole === 'client' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                      size={22}
+                      color={selectedRole === 'client' ? c.primary : c.subtext}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.roleOption,
+                      {
+                        backgroundColor: selectedRole === 'freelancer' ? c.primary + '15' : c.card,
+                        borderColor: selectedRole === 'freelancer' ? c.primary : c.border
+                      }
+                    ]}
+                    onPress={() => setSelectedRole('freelancer')}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.roleIconWrap,
+                      {
+                        backgroundColor: selectedRole === 'freelancer' ? c.primary : c.background,
+                      }
+                    ]}>
+                      <MaterialIcons
+                        name="person-outline"
+                        size={20}
+                        color={selectedRole === 'freelancer' ? '#fff' : c.subtext}
+                      />
+                    </View>
+                    <View style={styles.roleTextWrap}>
+                      <Text style={[
+                        styles.roleTitle,
+                        { color: selectedRole === 'freelancer' ? c.primary : c.text }
+                      ]}>
+                        Find Work
+                      </Text>
+                      <Text style={[styles.roleDesc, { color: c.subtext }]}>
+                        Browse jobs & get hired
+                      </Text>
+                    </View>
+                    <MaterialIcons
+                      name={selectedRole === 'freelancer' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                      size={22}
+                      color={selectedRole === 'freelancer' ? c.primary : c.subtext}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Form Inputs */}
+              <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}>
+                <MaterialIcons name="person-outline" size={20} color={c.subtext} style={styles.inputIcon} />
+                <TextInput
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Full name"
+                  placeholderTextColor={c.subtext}
+                  style={[styles.input, { color: c.text }]}
+                />
+              </View>
+
+              <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}>
+                <MaterialIcons name="mail-outline" size={20} color={c.subtext} style={styles.inputIcon} />
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholderTextColor={c.subtext}
+                  style={[styles.input, { color: c.text }]}
+                />
+              </View>
+
+              <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}>
+                <MaterialIcons name="lock-outline" size={20} color={c.subtext} style={styles.inputIcon} />
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Password"
+                  placeholderTextColor={c.subtext}
+                  secureTextEntry={!showPassword}
+                  style={[styles.input, { color: c.text }]}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                  <MaterialIcons
+                    name={showPassword ? "visibility" : "visibility-off"}
+                    size={20}
+                    color={c.subtext}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+                onPress={handleCreateAccount}
+              >
+                <Text style={styles.primaryBtnText}>Create Account</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.footerRow}>
+              <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => (navigation as any).navigate('Login')} accessibilityRole="button" accessibilityLabel="Go to Login">
+                <Text style={[styles.footerLink, { color: c.primary }]}>Log in</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -99,6 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   logoWrap: {
     padding: 16,
@@ -122,7 +235,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: '800',
+    fontWeight: '600',
   },
   subtitle: {
     marginTop: 6,
@@ -134,6 +247,44 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     marginTop: 24,
     gap: 12,
+  },
+  roleSection: {
+    marginBottom: 8,
+  },
+  roleLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  roleOptions: {
+    gap: 10,
+  },
+  roleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    gap: 12,
+  },
+  roleIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleTextWrap: {
+    flex: 1,
+  },
+  roleTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  roleDesc: {
+    fontSize: 11,
+    fontWeight: '400',
   },
   inputWrap: {
     flexDirection: 'row',
@@ -150,6 +301,9 @@ const styles = StyleSheet.create({
     height: 48,
     fontSize: 16,
   },
+  eyeIcon: {
+    padding: 4,
+  },
   primaryBtn: {
     height: 48,
     borderRadius: 12,
@@ -159,8 +313,8 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
   },
   footerRow: {
     flexDirection: 'row',
@@ -168,11 +322,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   footerText: {
-    fontSize: 14,
+    fontSize: 13,
   },
   footerLink: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

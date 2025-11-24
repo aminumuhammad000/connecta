@@ -1,15 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
+import { useRole } from '../context/RoleContext';
 
 const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
+  const { role } = useRole();
 
   const [open, setOpen] = useState<{ [k: string]: boolean }>({ account: true });
   const toggle = (k: string) => setOpen(s => ({ ...s, [k]: !s[k] }));
+
+  const handleContact = async (type: 'whatsapp' | 'email' | 'call') => {
+    try {
+      switch (type) {
+        case 'whatsapp':
+          await Linking.openURL('whatsapp://send?phone=15551234567');
+          break;
+        case 'email':
+          await Linking.openURL('mailto:support@connecta.com');
+          break;
+        case 'call':
+          await Linking.openURL('tel:+15551234567');
+          break;
+      }
+    } catch (error) {
+      console.error('Error opening link:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -19,13 +38,13 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
           <TouchableOpacity onPress={() => navigation.goBack?.()} style={{ width: 48, height: 48, alignItems: 'flex-start', justifyContent: 'center' }}>
             <MaterialIcons name="arrow-back" size={22} color={c.text} />
           </TouchableOpacity>
-          <Text style={{ color: c.text, fontSize: 18, fontWeight: '800' }}>Help & Support</Text>
+          <Text style={{ color: c.text, fontSize: 18, fontWeight: '600' }}>Help & Support</Text>
           <View style={{ width: 48 }} />
         </View>
 
         {/* Search */}
         <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
-          <View style={[styles.searchWrap, { backgroundColor: c.card, borderColor: c.border }]}> 
+          <View style={[styles.searchWrap, { backgroundColor: c.card, borderColor: c.border }]}>
             <MaterialIcons name="search" size={22} color={c.subtext} style={{ marginHorizontal: 12 }} />
             <TextInput
               placeholder="What can we help you with?"
@@ -37,7 +56,7 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
 
         <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
           {/* FAQ Headline */}
-          <Text style={{ color: c.text, fontSize: 28, fontWeight: '800', paddingHorizontal: 16, paddingTop: 12 }}>Frequently Asked Questions</Text>
+          <Text style={{ color: c.text, fontSize: 24, fontWeight: '600', paddingHorizontal: 16, paddingTop: 12 }}>Frequently Asked Questions</Text>
 
           {/* Accordions */}
           <View style={{ paddingHorizontal: 16, marginTop: 4 }}>
@@ -111,24 +130,55 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Contact Button */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-            <TouchableOpacity style={[styles.contactBtn, { backgroundColor: c.primary }]} onPress={() => navigation.navigate('ContactSupport')}>
-              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>Still need help? Contact Support</Text>
+          {/* Contact Options */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 24, gap: 12 }}>
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>Contact Us</Text>
+
+            <TouchableOpacity
+              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => handleContact('whatsapp')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: '#25D36620' }]}>
+                <MaterialIcons name="chat" size={24} color="#25D366" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactLabel, { color: c.text }]}>WhatsApp</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>Chat with our support team</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => handleContact('email')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: c.primary + '20' }]}>
+                <MaterialIcons name="email" size={24} color={c.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactLabel, { color: c.text }]}>Email</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>support@connecta.com</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
+              onPress={() => handleContact('call')}
+            >
+              <View style={[styles.iconBox, { backgroundColor: '#3B82F620' }]}>
+                <MaterialIcons name="call" size={24} color="#3B82F6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.contactLabel, { color: c.text }]}>Call Us</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>+1 (555) 123-4567</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
             </TouchableOpacity>
           </View>
         </ScrollView>
 
         {/* Bottom Nav */}
-        <BottomNav
-          activeKey="profile"
-          onChange={(key) => {
-            if (key === 'home') return navigation.navigate('Dashboard');
-            if (key === 'jobs') return navigation.navigate('Dashboard');
-            if (key === 'profile') return; // already here as support entry under profile
-            navigation.navigate('Dashboard');
-          }}
-        />
       </View>
     </SafeAreaView>
   );
@@ -137,10 +187,12 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
 const styles = StyleSheet.create({
   searchWrap: { height: 56, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center' },
   accordionHeader: { paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  accTitle: { fontSize: 14, fontWeight: '700' },
+  accTitle: { fontSize: 14, fontWeight: '600' },
   accBody: { fontSize: 13, lineHeight: 20, paddingBottom: 8 },
   linkRow: { paddingVertical: 6 },
-  contactBtn: { height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  contactRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
+  iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  contactLabel: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
 });
 
 export default HelpSupportScreen;

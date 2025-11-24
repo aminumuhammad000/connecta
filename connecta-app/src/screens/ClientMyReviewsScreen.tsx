@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 interface ReviewItem {
   id: string;
@@ -114,16 +113,7 @@ const ClientMyReviewsScreen: React.FC<any> = ({ navigation }) => {
         </ScrollView>
 
         {/* Bottom Nav */}
-        <BottomNav
-          activeKey="profile"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('ClientDashboard');
-            if (key === 'jobs') return navigation.navigate('ClientProjects');
-            if (key === 'profile') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
-      </View>
+</View>
     </SafeAreaView>
   );
 };

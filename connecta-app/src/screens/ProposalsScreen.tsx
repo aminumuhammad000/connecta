@@ -66,7 +66,7 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* App Bar */}
-      <View style={[styles.appBar, { backgroundColor: c.background, borderBottomColor: c.border }]}> 
+      <View style={[styles.appBar, { backgroundColor: c.background, borderBottomColor: c.border }]}>
         <View style={{ width: 48, height: 40, alignItems: 'flex-start', justifyContent: 'center' }}>
           <MaterialIcons name="menu" size={24} color={c.text} />
         </View>
@@ -82,8 +82,8 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
       </View>
 
       {/* Search */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}> 
-        <View style={[styles.searchWrap, { backgroundColor: c.isDark ? '#1F2937' : '#FFFFFF' }]}> 
+      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
+        <View style={[styles.searchWrap, { backgroundColor: c.isDark ? '#1F2937' : '#FFFFFF' }]}>
           <MaterialIcons name="search" size={20} color={c.subtext} style={{ marginLeft: 12, marginRight: 6 }} />
           <TextInput
             value={q}
@@ -109,7 +109,7 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
 
       {/* Tabs */}
       <View style={{ paddingTop: 12 }}>
-        <View style={[styles.tabsBar, { borderBottomColor: c.border }]}> 
+        <View style={[styles.tabsBar, { borderBottomColor: c.border }]}>
           <TouchableOpacity onPress={() => setTab('mine')} style={[styles.tabItem, tab === 'mine' ? { borderBottomColor: c.primary } : { borderBottomColor: 'transparent' }]}>
             <Text style={[styles.tabText, { color: tab === 'mine' ? c.primary : c.subtext }]}>My Proposals</Text>
           </TouchableOpacity>
@@ -122,28 +122,31 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
       {/* List */}
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96 + Math.max(insets.bottom, 0), gap: 12 }}>
         {filtered.map(p => (
-          <View key={p.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-            <View style={styles.cardHeader}> 
-              <View style={styles.headerLeft}> 
+          <View key={p.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+            <View style={styles.cardHeader}>
+              <View style={styles.headerLeft}>
                 <Image source={{ uri: p.avatar }} style={styles.avatar} />
                 <View>
                   <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
                   <Text style={[styles.cardSubtitle, { color: c.subtext }]}>{p.name}</Text>
                 </View>
               </View>
-              <View style={[styles.status, p.status === 'accepted' ? { backgroundColor: 'rgba(34,197,94,0.2)' } : p.status === 'pending' ? { backgroundColor: 'rgba(245,158,11,0.2)' } : { backgroundColor: 'rgba(239,68,68,0.2)' } ]}> 
+              <View style={[styles.status, p.status === 'accepted' ? { backgroundColor: 'rgba(34,197,94,0.2)' } : p.status === 'pending' ? { backgroundColor: 'rgba(245,158,11,0.2)' } : { backgroundColor: 'rgba(239,68,68,0.2)' }]}>
                 <Text style={[styles.statusText, p.status === 'accepted' ? { color: '#22C55E' } : p.status === 'pending' ? { color: '#F59E0B' } : { color: '#EF4444' }]}>
                   {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
                 </Text>
               </View>
             </View>
             <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: 8 }} />
-            <View style={styles.cardFooter}> 
+            <View style={styles.cardFooter}>
               <View>
                 <Text style={[styles.meta, { color: c.subtext }]}>Submitted: Oct 26</Text>
                 <Text style={[styles.price, { color: c.text }]}>{p.price} <Text style={{ color: c.subtext }}>/ {p.time}</Text></Text>
               </View>
-              <TouchableOpacity style={[styles.cta, { backgroundColor: p.status === 'accepted' ? c.primary : c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}> 
+              <TouchableOpacity
+                onPress={() => (navigation as any).navigate('ProposalDetail')}
+                style={[styles.cta, { backgroundColor: p.status === 'accepted' ? c.primary : c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}
+              >
                 <Text style={[styles.ctaText, { color: p.status === 'accepted' ? '#fff' : c.text }]}>{p.status === 'accepted' ? 'Message' : 'View Details'}</Text>
                 <MaterialIcons name={p.status === 'accepted' ? 'send' : 'arrow-forward'} size={18} color={p.status === 'accepted' ? '#fff' : c.text} />
               </TouchableOpacity>
@@ -165,8 +168,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   appBarTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
   searchWrap: {
     flexDirection: 'row',
@@ -188,8 +191,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chipLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '400',
     textTransform: 'capitalize',
   },
   tabsBar: {
@@ -204,8 +207,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '600',
   },
   card: {
     borderWidth: 1,
@@ -223,15 +226,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: { width: 40, height: 40, borderRadius: 20 },
-  cardTitle: { fontSize: 16, fontWeight: '700' },
-  cardSubtitle: { fontSize: 12, fontWeight: '500' },
+  cardTitle: { fontSize: 15, fontWeight: '600' },
+  cardSubtitle: { fontSize: 11, fontWeight: '400' },
   status: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  statusText: { fontSize: 12, fontWeight: '700' },
+  statusText: { fontSize: 11, fontWeight: '600' },
   cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   meta: { fontSize: 12 },
-  price: { fontSize: 14, fontWeight: '700' },
+  price: { fontSize: 13, fontWeight: '600' },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 10 },
-  ctaText: { fontSize: 13, fontWeight: '700' },
+  ctaText: { fontSize: 12, fontWeight: '600' },
 });
 
 export default ProposalsScreen;

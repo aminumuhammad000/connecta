@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 function Stars({ value, onChange, size = 28 }: { value: number; onChange: (v: number) => void; size?: number }) {
   const c = useThemeColors();
@@ -96,17 +95,7 @@ const ClientWriteReviewScreen: React.FC<any> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </ScrollView>
-
-        <BottomNav
-          activeKey="profile"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('ClientDashboard');
-            if (key === 'jobs') return navigation.navigate('ClientProjects');
-            if (key === 'profile') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
-      </View>
+</View>
     </SafeAreaView>
   );
 };

@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getUserById } from "../controllers/user.controller";
+import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword } from "../controllers/user.controller";
 
 const router = express.Router();
 
@@ -9,8 +9,14 @@ router.post("/signin", signin);
 router.post("/google/signup", googleSignup);
 router.post("/google/signin", googleSignin);
 
+// Password recovery routes
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-otp", verifyOTP);
+router.post("/reset-password", resetPassword);
+
 // User data routes
 router.get("/", getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20
 router.get("/:id", getUserById); // GET /api/users/:id
 
 export default router;
+

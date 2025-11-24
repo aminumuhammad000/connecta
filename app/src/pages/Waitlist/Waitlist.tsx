@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../assets/logo.png';
+import videoExplainer from '../../assets/connecta_explainer.mp4';
 
 const Waitlist: React.FC = () => {
   const navigate = useNavigate();
@@ -200,18 +201,7 @@ const Waitlist: React.FC = () => {
                   What is Connecta?
                 </h2>
                 <div className="w-full mt-6">
-                  <div
-                    className="relative flex items-center justify-center bg-gray-900 bg-cover bg-center aspect-video rounded-xl shadow-lg"
-                    style={{
-                      backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAoG1wiizxrvbktYrGqvJl0doUiqMv7Bu5tgDQElOIzDAYGMP6oDawNm6YhiZjYfpCo3oIct1deFQu0IeS9V0MDC2qtKf03hinkYO3IZjUQlP8IYMsTT73qaCsYAtRowaG1fQiZKecld2jMZXcnpdAlwBOb_7IXNujvFIAtSU317n3lwhD8J6yxOMK-fqARAqnKDqiuJmpNJqB_yV_VuxpicpVQqG1MSsaROOxoVBkaQsb7Zeb8dYS0qI3gBLANZo9NWH0bkWU5OBOe")'
-                    }}
-                  >
-                    <button className="flex shrink-0 items-center justify-center rounded-full w-20 h-20 bg-black/50 text-white hover:bg-black/70 transition-colors">
-                      <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </button>
-                  </div>
+                  <video src={videoExplainer} controls autoPlay loop playsInline></video>
                 </div>
               </div>
             </section>

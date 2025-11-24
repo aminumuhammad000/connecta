@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRoQQ-xxcLo9YcmbA5AWwLA-FKTuhoFyvCtoj3YzgnBUHc3Bck-0K5CDGhw26GGSiL4TVmx-echTOzkIszt19LuAJSmxtNX4gLR84lGhbyBU_ylBR9UPjYUsGq-sCWYMZU8YMxAwFk3vUMj8iG1B-JkvTnZ33PaK6gy8KAqR6GAF4C1IoRLxDv3FB7Jl0FhWIXIXurfNORMKY7rKh4LRJjYzPXNlfWTAvV548j73C9tUL04WQzqGCFCWqIVMqtsa2VztnMJKvY5rM';
 
@@ -12,26 +12,26 @@ export default function ClientProfileScreen({ navigation }: any) {
   const [following, setFollowing] = useState(false);
 
   const onBack = () => navigation.goBack?.();
-  const onMore = () => {};
+  const onMore = () => { };
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       {/* Top App Bar */}
-      <View style={[styles.appBar, { borderBottomColor: c.border }]}> 
+      <View style={[styles.appBar, { borderBottomColor: c.border }]}>
         <TouchableOpacity onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" style={styles.iconBtn}>
           <MaterialIcons name="arrow-back" size={24} color={c.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: c.text }]}>Client Profile</Text>
-        <TouchableOpacity onPress={onMore} accessibilityRole="button" accessibilityLabel="More options" style={styles.iconBtn}>
-          <MaterialIcons name="more-vert" size={24} color={c.text} />
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')} accessibilityRole="button" accessibilityLabel="Settings" style={styles.iconBtn}>
+          <MaterialIcons name="settings" size={24} color={c.text} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
         {/* Profile Header */}
         <View style={styles.sectionPad}>
-          <View style={styles.headerRow}> 
-            <View style={styles.headerLeft}> 
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
               <Image source={{ uri: AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture of Alexandria Smith" />
               <View>
                 <Text style={[styles.name, { color: c.text }]}>Alexandria Smith</Text>
@@ -42,48 +42,51 @@ export default function ClientProfileScreen({ navigation }: any) {
                 </View>
               </View>
             </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityState={{ pressed: following }}
-                onPress={() => setFollowing(v => !v)}
-                style={[styles.followBtn, { backgroundColor: c.card, borderColor: c.border }]}
-              >
-                <Text style={[styles.btnText, { color: c.text }]}>{following ? 'Following' : 'Follow'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => {}}
-                style={[styles.messageBtn, { backgroundColor: c.primary }]}
-              >
-                <Text style={[styles.btnText, { color: 'white' }]}>Message</Text>
-              </TouchableOpacity>
-            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: c.primary }]}
+              onPress={() => navigation.navigate('ClientEditProfile')}
+            >
+              <Text style={[styles.btnText, { color: 'white' }]}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
+              onPress={() => { }}
+            >
+              <Text style={[styles.btnText, { color: c.text }]}>Share</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Stats */}
-        <View style={[styles.sectionPad, styles.rowWrap, { gap: 12 }]}> 
-          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}> 
+        <View style={[styles.sectionPad, styles.rowWrap, { gap: 12 }]}>
+          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Total Spend</Text>
             <Text style={[styles.statValue, { color: c.text }]}>$25K+</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}> 
+          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs Posted</Text>
             <Text style={[styles.statValue, { color: c.text }]}>42</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}> 
+          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Avg. Rate Paid</Text>
             <Text style={[styles.statValue, { color: c.text }]}>$65/hr</Text>
           </View>
         </View>
 
         {/* About */}
-        <Text style={[styles.sectionTitle, { color: c.text }]}>About</Text>
+        <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
+          <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>About</Text>
+          <TouchableOpacity onPress={() => { }}>
+            <MaterialIcons name="edit" size={20} color={c.primary} />
+          </TouchableOpacity>
+        </View>
         <Text style={[styles.about, { color: c.subtext }]}>We are a design-first company focused on creating beautiful and intuitive user experiences. We're looking for talented freelancers to partner with on exciting new projects.</Text>
 
         {/* Tabs */}
-        <View style={[styles.tabs, { borderBottomColor: c.border }]}> 
+        <View style={[styles.tabs, { borderBottomColor: c.border }]}>
           <View style={styles.tabList} accessibilityRole="tablist">
             <TouchableOpacity
               accessibilityRole="tab"
@@ -105,7 +108,7 @@ export default function ClientProfileScreen({ navigation }: any) {
         </View>
 
         {/* Content */}
-        <View style={styles.sectionPad}> 
+        <View style={styles.sectionPad}>
           {activeTab === 'history' ? (
             <>
               <JobCard
@@ -139,21 +142,14 @@ export default function ClientProfileScreen({ navigation }: any) {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <BottomNav
-        activeKey="jobs"
-        onChange={(key) => {
-          if (key === 'home') navigation.navigate('Dashboard');
-          if (key === 'jobs') navigation.navigate('Dashboard');
-        }}
-      />
-    </View>
+    </SafeAreaView>
   );
 }
 
 function JobCard({ title, budget, status, description }: { title: string; budget: string; status: string; description: string }) {
   const c = useThemeColors();
   return (
-    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <Text style={[styles.cardTitle, { color: c.text }]}>{title}</Text>
       <View style={styles.metaRow}>
         <Text style={[styles.metaText, { color: c.subtext }]}>Budget: {budget}</Text>
@@ -168,8 +164,8 @@ function JobCard({ title, budget, status, description }: { title: string; budget
 function ReviewCard({ author, rating, comment }: { author: string; rating: number; comment: string }) {
   const c = useThemeColors();
   return (
-    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-      <View style={[styles.metaRow, { marginBottom: 4 }]}> 
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.metaRow, { marginBottom: 4 }]}>
         <Text style={[styles.cardTitle, { color: c.text, fontSize: 14 }]}>{author}</Text>
         <View style={{ flexDirection: 'row', marginLeft: 'auto' }}>
           {Array.from({ length: 5 }).map((_, i) => (
@@ -209,8 +205,7 @@ const styles = StyleSheet.create({
   verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   verifiedText: { color: '#22c55e', fontSize: 12, fontWeight: '600' },
   headerActions: { flexDirection: 'row', gap: 8 },
-  followBtn: { paddingHorizontal: 16, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth },
-  messageBtn: { paddingHorizontal: 16, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  actionBtn: { flex: 1, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnText: { fontSize: 13, fontWeight: '700' },
   rowWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   statCard: { flexBasis: '32%', minWidth: 150, flexGrow: 1, borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth },
@@ -229,4 +224,5 @@ const styles = StyleSheet.create({
   dot: { marginHorizontal: 6 },
   status: { fontSize: 12, fontWeight: '700' },
   cardDesc: { fontSize: 13, marginTop: 6, lineHeight: 18 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

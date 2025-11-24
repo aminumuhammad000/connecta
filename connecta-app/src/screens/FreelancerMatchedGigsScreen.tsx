@@ -1,144 +1,364 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
 
 interface GigItem {
   id: string;
-  client: string;
-  clientAvatar: string;
-  clientRating: number;
-  clientReviews: number;
-  matchNote: string;
   title: string;
-  summary: string;
-  chips: string[];
-  footer: string; // rate or fixed price
+  company: string;
+  budget: string;
+  type: 'Fixed' | 'Hourly';
+  skills: string[];
+  postedAgo: string;
+  status: 'New' | 'Hot' | 'Featured';
+  description: string;
 }
 
 const GIGS: GigItem[] = [
   {
     id: 'g1',
-    client: 'Innovate Inc.',
-    clientAvatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBCht5EhafSiD4V4Tbw_nUOmqlc-SH9q3sWwDVl903XzsUM5dF5TZMCedpA8plyXtckZy7Tk590rNmMrQXp6cDb_I1RLnDBLIQp6ouXsJpr34wEJnZU9W3ORQxlFT8zoreGLF8dE92Lp2C56iMPIUwBYMAghhfnqBCU-8H2ZBv5VqxKyqHwaSac-8vtBBiMVduIohBUVrrYqmpAYMrVVXrkNlFiM6GXG38NurQ8Tqm81MeBZOSsmq5KAjruVRr8QGciBcSfjQntG2U',
-    clientRating: 4.9,
-    clientReviews: 124,
-    matchNote: "Matches your 'UI Design' skill",
-    title: 'Senior UX Designer for Mobile App',
-    summary:
-      "We're looking for an experienced UX designer to help redesign our flagship mobile application.",
-    chips: ['UI Design', 'UX Research', '3-6 Months'],
-    footer: '$50 - $70 / hour',
+    title: 'Mobile App UI/UX Design',
+    company: 'Innovate Inc.',
+    budget: '$3,500',
+    type: 'Fixed',
+    skills: ['Figma', 'Mobile Design', 'Prototyping'],
+    postedAgo: '2 hours ago',
+    status: 'Featured',
+    description: 'Looking for an experienced UI/UX designer to create a modern mobile app interface...',
   },
   {
     id: 'g2',
-    client: 'SaaS Co.',
-    clientAvatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDmzt1ZwaG0_YKfyBl20CBgf7dE4XJ3eAOcwMoADVmUDrRjmi57SQa0hsP2x2Ns6N7YtbfKt3GRpB2PtTjt90qMO_GVWZfrQsXei3jN408ALLpPzWZUvFAaxIchebzPogOIBM_2KSgu1IAn47zKT0I-elo329-HocfZZNc3E1PNf0EBdWelI6Gf77CUZQ60tiBnKs3WlZcwqhJj3B6SpUAOH9SmMQeHteBcoWtmrtIVUbD8itUvlOroHJs5Zi0juqS7jhX5IQzR064',
-    clientRating: 4.8,
-    clientReviews: 89,
-    matchNote: "Matches your 'Copywriting' skill",
-    title: 'Website Copywriting for SaaS Company',
-    summary:
-      'Craft compelling copy for our new website launch, focusing on user conversion and brand voice.',
-    chips: ['Copywriting', 'Fixed Price'],
-    footer: 'Fixed Price: $2,500',
+    title: 'React Native Developer',
+    company: 'Tech Startup',
+    budget: '$75-$95/hr',
+    type: 'Hourly',
+    skills: ['React Native', 'TypeScript', 'Mobile'],
+    postedAgo: '5 hours ago',
+    status: 'Hot',
+    description: 'We need a skilled React Native developer for our fintech application...',
   },
   {
     id: 'g3',
-    client: 'E-Shop',
-    clientAvatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDe64rK90zs77XIfvDrOXCkkQR-94JwSF0W4pjp2ACis0jvt70MEz8DdDDJrT1BV7l1bq-rtdNsgK-Q0-eTOrVrYz-5rdzFGSsGCIUmEjkZOjTfB6bF9SIhPiohoPQb3XFu6FjOZsPSJFjpAnSm1qxkY_XkbyQjIMXJ4lCvvguLI3GX6yymXR9HcINp9p7-t409Y8575C8prlCZYxghxHWh1DspPJHJGnA1e5UZWhJxbooHlV2tDTSCasuGiiYEyRQDF1EwYq2X2DE',
-    clientRating: 5.0,
-    clientReviews: 210,
-    matchNote: "Matches your 'Web Development' skill",
-    title: 'Frontend Developer for E-commerce Site',
-    summary:
-      'Develop and maintain the frontend of our Shopify store, implementing new features and ensuring responsiveness.',
-    chips: ['Shopify', 'React', 'Project-based'],
-    footer: '$4k - $6k Project',
+    title: 'Brand Identity Package',
+    company: 'Fintech Hub',
+    budget: '$1,800',
+    type: 'Fixed',
+    skills: ['Branding', 'Logo Design', 'Style Guide'],
+    postedAgo: '1 day ago',
+    status: 'New',
+    description: 'Create a complete brand identity package including logo, colors, and guidelines...',
   },
 ];
 
 const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'fixed' | 'hourly' | 'remote'>('all');
+  const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
+
+  const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
+    if (status === 'Featured') return 'success';
+    if (status === 'Hot') return 'warning';
+    return 'primary';
+  };
+
+  const toggleSaveGig = (gigId: string) => {
+    setSavedGigs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(gigId)) {
+        newSet.delete(gigId);
+      } else {
+        newSet.add(gigId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        {/* Top App Bar */}
-        <View style={[styles.appBar, { borderBottomColor: c.border }]}> 
-          <TouchableOpacity style={styles.iconBtn}>
-            <MaterialIcons name="search" size={22} color={c.text} />
+        {/* Header */}
+        <View style={[styles.header, { borderBottomColor: c.border }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+            <MaterialIcons name="arrow-back" size={24} color={c.text} />
           </TouchableOpacity>
-          <Text style={[styles.h1, { color: c.text }]}>Matched For You</Text>
-          <TouchableOpacity style={styles.iconBtn}>
-            <MaterialIcons name="tune" size={22} color={c.text} />
+          <Text style={[styles.headerTitle, { color: c.text }]}>Find Jobs</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('FreelancerSavedGigs')} style={styles.iconBtn}>
+            <MaterialIcons name="bookmark" size={24} color={c.text} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12 }}>
-          {GIGS.map(g => (
-            <View key={g.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-              <View style={{ padding: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <Image source={{ uri: g.clientAvatar }} style={styles.avatar} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: c.text, fontWeight: '700' }}>{g.client}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <MaterialIcons name="star" size={14} color="#f59e0b" />
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>{g.clientRating.toFixed(1)} ({g.clientReviews} reviews)</Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>{g.matchNote}</Text>
-                <Text style={[styles.title, { color: c.text }]}>{g.title}</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>{g.summary}</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                  {g.chips.map(ch => (
-                    <View key={ch} style={[styles.chip, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}> 
-                      <Text style={{ color: c.subtext, fontSize: 12, fontWeight: '700' }}>{ch}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-              <View style={[styles.footer, { borderTopColor: c.border, backgroundColor: c.isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }]}> 
-                <Text style={{ color: c.text, fontWeight: '800' }}>{g.footer}</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('JobDetail')} style={[styles.applyBtn, { backgroundColor: c.primary }]}> 
-                  <Text style={styles.applyText}>Apply Now</Text>
+        <ScrollView contentContainerStyle={{ paddingBottom: 84 }} showsVerticalScrollIndicator={false}>
+          {/* Search Bar */}
+          <View style={styles.section}>
+            <View style={[styles.searchBar, { backgroundColor: c.card, borderColor: c.border }]}>
+              <MaterialIcons name="search" size={20} color={c.subtext} />
+              <TextInput
+                placeholder="Search by keyword, skill..."
+                placeholderTextColor={c.subtext}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={[styles.searchInput, { color: c.text }]}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <MaterialIcons name="close" size={20} color={c.subtext} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Filter Chips */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+              <View style={styles.filterChips}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilter === 'all'
+                      ? { backgroundColor: c.primary, borderWidth: 0 }
+                      : { backgroundColor: c.card, borderColor: c.border }
+                  ]}
+                  onPress={() => setSelectedFilter('all')}
+                >
+                  <Text style={selectedFilter === 'all' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    All Jobs
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilter === 'fixed'
+                      ? { backgroundColor: c.primary, borderWidth: 0 }
+                      : { backgroundColor: c.card, borderColor: c.border }
+                  ]}
+                  onPress={() => setSelectedFilter('fixed')}
+                >
+                  <Text style={selectedFilter === 'fixed' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    Fixed Price
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilter === 'hourly'
+                      ? { backgroundColor: c.primary, borderWidth: 0 }
+                      : { backgroundColor: c.card, borderColor: c.border }
+                  ]}
+                  onPress={() => setSelectedFilter('hourly')}
+                >
+                  <Text style={selectedFilter === 'hourly' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    Hourly
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilter === 'remote'
+                      ? { backgroundColor: c.primary, borderWidth: 0 }
+                      : { backgroundColor: c.card, borderColor: c.border }
+                  ]}
+                  onPress={() => setSelectedFilter('remote')}
+                >
+                  <Text style={selectedFilter === 'remote' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    Remote
+                  </Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          ))}
-        </ScrollView>
+            </ScrollView>
+          </View>
 
-        <BottomNav
-          activeKey="home"
-          onChange={(key) => {
-            if (key === 'home') return;
-            if (key === 'jobs') return navigation.navigate('Dashboard');
-            navigation.navigate('Dashboard');
-          }}
-        />
+          {/* Jobs List */}
+          <View style={styles.section}>
+            <Text style={[styles.resultsText, { color: c.subtext }]}>{GIGS.length} jobs found</Text>
+
+            <View style={{ gap: 12, marginTop: 12 }}>
+              {GIGS.map((gig) => (
+                <Card key={gig.id} variant="elevated" padding={16}>
+                  <View style={styles.gigCard}>
+                    <View style={styles.gigHeader}>
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.titleRow}>
+                          <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
+                            {gig.title}
+                          </Text>
+                          <Badge label={gig.status} variant={getStatusVariant(gig.status)} size="small" />
+                        </View>
+                        <Text style={[styles.company, { color: c.subtext }]}>{gig.company}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => toggleSaveGig(gig.id)}>
+                        <MaterialIcons
+                          name={savedGigs.has(gig.id) ? "bookmark" : "bookmark-border"}
+                          size={24}
+                          color={savedGigs.has(gig.id) ? c.primary : c.subtext}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
+                      {gig.description}
+                    </Text>
+
+                    <View style={styles.gigMeta}>
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                        <Text style={[styles.metaText, { color: c.text }]}>{gig.budget}</Text>
+                      </View>
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                        <Text style={[styles.metaText, { color: c.subtext }]}>{gig.postedAgo}</Text>
+                      </View>
+                      <Badge label={gig.type} variant="neutral" size="small" />
+                    </View>
+
+                    <View style={styles.skillsRow}>
+                      {gig.skills.map((skill, idx) => (
+                        <Badge key={idx} label={skill} variant="info" size="small" />
+                      ))}
+                    </View>
+
+                    <View style={styles.gigActions}>
+                      <Button
+                        title="View Details"
+                        onPress={() => navigation.navigate('JobDetail')}
+                        variant="outline"
+                        size="small"
+                        style={{ flex: 1 }}
+                      />
+                      <Button
+                        title="Apply Now"
+                        onPress={() => navigation.navigate('JobDetail')}
+                        variant="primary"
+                        size="small"
+                        style={{ flex: 1 }}
+                      />
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  appBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  h1: { fontSize: 18, fontWeight: '800' },
-  card: { borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  avatar: { width: 40, height: 40, borderRadius: 999, backgroundColor: '#ddd' },
-  title: { fontSize: 16, fontWeight: '800', marginVertical: 4 },
-  chip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
-  footer: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  applyBtn: { height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
-  applyText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    gap: 12,
+    borderWidth: 1,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+  },
+  filterChips: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterChip: {
+    height: 36,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filterChipTextActive: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  resultsText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  gigCard: {
+    gap: 12,
+  },
+  gigHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 4,
+  },
+  gigTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    flex: 1,
+  },
+  company: {
+    fontSize: 14,
+  },
+  description: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  gigMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  skillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  gigActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
 });
 
 export default FreelancerMatchedGigsScreen;

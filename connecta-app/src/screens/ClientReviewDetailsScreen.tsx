@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 const HERO = 'https://lh3.googleusercontent.com/aida-public/AB6AXuB6ZapeOOvByVSAoyV6kxUfMlZOYeZhT8XOOBdnD8ob2JZIiIEvPCXQUy0tI1y3PBMPKuQkPl1t8iMr69c4Q6izi6XjwsJX0NHiDo5V-bC8PUbSoVQbFEwoO6ytHvXFpPE9Pbz0XaJGwtP13sgynm6_4rSeSfWbfEBO59cTlSSZG71NppXFQHlZzCBYEZHwyxidCP4HowRXOQJ6PAybWkiCm90THjlFXLH0s-PiFW1t6fYQPnI-cGRrC0OFQS1-WspFqfbmg9a3YeQ';
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuDoObvTj2HYoFTDFURG18mkXKlDZcZHBoNVXUTily6QSHTosSFCjZCoe3GtKk8kVGwhhKjr_F7eYmbt7fz82ivi4Xm4By6iowM3VG8iwSgwBAlGBDWRUU3bJ8ZozDu9grTsk04_sB9gTSlNq6aIBPg8s8sQXYNcq7fYnU1PRU4DyQyTA34e37_MkB3khwS4XWTg1YQOvHvTbYtifDx3WcRHYuq6Y8AWjoQl8s80aKyNvRv42Q9gYhK3Vw3ndqmavHnXe9YopCOpP-Y';
@@ -106,17 +105,7 @@ const ClientReviewDetailsScreen: React.FC<any> = ({ navigation }) => {
             </View>
           </View>
         </ScrollView>
-
-        <BottomNav
-          activeKey="profile"
-          onChange={(key) => {
-            if (key === 'home') return navigation.replace('ClientDashboard');
-            if (key === 'jobs') return navigation.navigate('ClientProjects');
-            if (key === 'profile') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
-      </View>
+</View>
     </SafeAreaView>
   );
 };

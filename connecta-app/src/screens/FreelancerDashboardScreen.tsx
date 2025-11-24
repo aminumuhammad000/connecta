@@ -3,7 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
+import Card from '../components/Card';
+import Badge from '../components/Badge';
+import Button from '../components/Button';
+import Avatar from '../components/Avatar';
 
 interface JobRec {
   id: string;
@@ -11,117 +14,380 @@ interface JobRec {
   company: string;
   budget: string;
   status: 'New' | 'Hot' | 'Featured';
+  type: 'Fixed' | 'Hourly';
+  skills: string[];
+  postedAgo: string;
 }
 
 const JOBS: JobRec[] = [
-  { id: 'j1', title: 'Mobile App UI/UX', company: 'Innovate Inc.', budget: '$3,500', status: 'Featured' },
-  { id: 'j2', title: 'Brand Identity Package', company: 'Fintech Hub', budget: '$1,800', status: 'Hot' },
-  { id: 'j3', title: 'Marketing Website Redesign', company: 'Growth Labs', budget: '$4,200', status: 'New' },
+  {
+    id: 'j1',
+    title: 'Mobile App UI/UX Design',
+    company: 'Innovate Inc.',
+    budget: '$3,500',
+    status: 'Featured',
+    type: 'Fixed',
+    skills: ['Figma', 'Mobile Design', 'Prototyping'],
+    postedAgo: '2 hours ago',
+  },
+  {
+    id: 'j2',
+    title: 'Brand Identity Package',
+    company: 'Fintech Hub',
+    budget: '$1,800',
+    status: 'Hot',
+    type: 'Fixed',
+    skills: ['Branding', 'Logo Design', 'Style Guide'],
+    postedAgo: '5 hours ago',
+  },
+  {
+    id: 'j3',
+    title: 'Marketing Website Redesign',
+    company: 'Growth Labs',
+    budget: '$4,200',
+    status: 'New',
+    type: 'Fixed',
+    skills: ['Web Design', 'Responsive', 'Webflow'],
+    postedAgo: '1 day ago',
+  },
 ];
 
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
 
+  const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
+    if (status === 'Featured') return 'success';
+    if (status === 'Hot') return 'warning';
+    return 'primary';
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 72 }}>
-          <View style={styles.appBarWrap}>
-            <View style={styles.appBar}> 
-              <View style={{ width: 40, height: 40, borderRadius: 999, alignItems: 'center', justifyContent: 'center' }}>
-                <MaterialIcons name="account-circle" size={32} color={c.text} />
-              </View>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Notifications" style={styles.appBarBtn}>
-                <MaterialIcons name="notifications" size={24} color={c.text} />
+        <ScrollView contentContainerStyle={{ paddingBottom: 72 }} showsVerticalScrollIndicator={false}>
+          {/* Header with Gradient */}
+          <View
+            style={[
+              styles.header,
+              {
+                backgroundColor: c.isDark ? '#1F2937' : c.primary,
+              },
+            ]}
+          >
+            <View style={styles.headerTop}>
+              <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+                <Avatar name="Sarah Johnson" size={48} />
               </TouchableOpacity>
-            </View>
-            <Text style={[styles.greeting, { color: c.text }]}>Welcome back!</Text>
-          </View>
-
-          <View style={{ paddingHorizontal: 16 }}>
-            <View style={styles.statsRow}>
-              <StatCard label="Active Proposals" value="4" />
-              <StatCard label="Invites" value="2" />
-              <StatCard label="New Messages" value="1" valueColor={c.primary} />
-            </View>
-          </View>
-
-          <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Dashboard')}
-              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-              accessibilityRole="button"
-              accessibilityLabel="Find Jobs"
-            >
-              <Text style={styles.primaryBtnText}>Find Jobs</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.sectionTitle, { color: c.text }]}>Recommended Jobs</Text>
-
-          <View style={{ paddingHorizontal: 16, gap: 12 }}>
-            {JOBS.map(job => (
-              <View key={job.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardTitle, { color: c.text }]}>{job.title}</Text>
-                  <Text style={[styles.cardSub, { color: c.subtext }]}>{job.company}</Text>
-                  <View style={styles.metaRow}>
-                    <Text style={[styles.meta, { color: c.subtext }]}>Budget: {job.budget}</Text>
-                    <Text style={[styles.dot, { color: c.subtext }]}>·</Text>
-                    <Text style={[styles.badge, { color: c.primary, borderColor: c.primary }]}>{job.status}</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Notifications')}
+                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                >
+                  <MaterialIcons name="notifications" size={22} color="#fff" />
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>2</Text>
                   </View>
-                </View>
-                <TouchableOpacity onPress={() => navigation.navigate('JobDetail')} style={[styles.viewBtn, { backgroundColor: c.primary + '22' }]}> 
-                  <Text style={[styles.viewBtnText, { color: c.primary }]}>View Details</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ConnectaAI')}
+                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                >
+                  <MaterialIcons name="smart-toy" size={22} color="#fff" />
                 </TouchableOpacity>
               </View>
-            ))}
+            </View>
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.name}>Sarah!</Text>
+          </View>
+
+          {/* Stats Cards */}
+          <View style={styles.statsContainer}>
+            <Card variant="elevated" padding={16} style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: c.primary + '22' }]}>
+                <MaterialIcons name="description" size={24} color={c.primary} />
+              </View>
+              <Text style={[styles.statValue, { color: c.text }]}>4</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>Active Proposals</Text>
+            </Card>
+
+            <Card variant="elevated" padding={16} style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#F59E0B22' }]}>
+                <MaterialIcons name="mail" size={24} color="#F59E0B" />
+              </View>
+              <Text style={[styles.statValue, { color: c.text }]}>2</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>New Invites</Text>
+            </Card>
+
+            <Card variant="elevated" padding={16} style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: '#10B98122' }]}>
+                <MaterialIcons name="attach-money" size={24} color="#10B981" />
+              </View>
+              <Text style={[styles.statValue, { color: c.text }]}>$8.5k</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>This Month</Text>
+            </Card>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Button
+              title="Browse All Jobs"
+              onPress={() => navigation.navigate('Gigs')}
+              size="large"
+              style={{ marginBottom: 12 }}
+            />
+            <View style={styles.quickActions}>
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => navigation.navigate('Proposals')}
+              >
+                <MaterialIcons name="description" size={24} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>My Proposals</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => navigation.navigate('FreelancerSavedGigs')}
+              >
+                <MaterialIcons name="bookmark" size={24} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>Saved Jobs</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => navigation.navigate('Profile')}
+              >
+                <MaterialIcons name="person" size={24} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>My Profile</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Recommended Jobs */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Recommended Jobs</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Gigs')}>
+                <Text style={[styles.seeAll, { color: c.primary }]}>See All</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ gap: 12 }}>
+              {JOBS.map((job) => (
+                <Card key={job.id} variant="elevated" padding={16}>
+                  <View style={styles.jobCard}>
+                    <View style={styles.jobHeader}>
+                      <View style={{ flex: 1 }}>
+                        <View style={styles.jobTitleRow}>
+                          <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
+                            {job.title}
+                          </Text>
+                          <Badge label={job.status} variant={getStatusVariant(job.status)} size="small" />
+                        </View>
+                        <Text style={[styles.company, { color: c.subtext }]}>{job.company}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.jobMeta}>
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                        <Text style={[styles.metaText, { color: c.text }]}>{job.budget}</Text>
+                      </View>
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                        <Text style={[styles.metaText, { color: c.subtext }]}>{job.postedAgo}</Text>
+                      </View>
+                      <Badge label={job.type} variant="neutral" size="small" />
+                    </View>
+
+                    <View style={styles.skillsRow}>
+                      {job.skills.map((skill, idx) => (
+                        <Badge key={idx} label={skill} variant="info" size="small" />
+                      ))}
+                    </View>
+
+                    <View style={styles.jobActions}>
+                      <Button
+                        title="View Details"
+                        onPress={() => navigation.navigate('JobDetail')}
+                        variant="outline"
+                        size="small"
+                        style={{ flex: 1 }}
+                      />
+                      <Button
+                        title="Apply Now"
+                        onPress={() => navigation.navigate('JobDetail')}
+                        variant="primary"
+                        size="small"
+                        style={{ flex: 1 }}
+                      />
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </View>
           </View>
         </ScrollView>
-
-        <BottomNav
-          activeKey="home"
-          onChange={(key) => {
-            if (key === 'home') return;
-            navigation.navigate('Dashboard');
-          }}
-        />
       </View>
     </SafeAreaView>
   );
 };
 
-function StatCard({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
-  const c = useThemeColors();
-  return (
-    <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}> 
-      <Text style={[styles.statLabel, { color: c.subtext }]}>{label}</Text>
-      <Text style={[styles.statValue, { color: valueColor || c.text }]}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  appBarWrap: { paddingHorizontal: 16, paddingTop: 12 },
-  appBar: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  appBarBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  greeting: { fontSize: 24, fontWeight: '800', marginTop: 8 },
-  statsRow: { flexDirection: 'row', gap: 12, marginTop: 12 },
-  statCard: { flex: 1, borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth },
-  statLabel: { fontSize: 12, fontWeight: '600' },
-  statValue: { fontSize: 24, fontWeight: '800' },
-  primaryBtn: { height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  sectionTitle: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12, fontSize: 20, fontWeight: '800' },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
-  cardTitle: { fontSize: 16, fontWeight: '800' },
-  cardSub: { fontSize: 13, fontWeight: '500' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  meta: { fontSize: 12 },
-  dot: { marginHorizontal: 6 },
-  badge: { fontSize: 12, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 2, borderWidth: StyleSheet.hairlineWidth, borderRadius: 999 },
-  viewBtn: { height: 36, paddingHorizontal: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  viewBtnText: { fontSize: 12, fontWeight: '800' },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#EF4444',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  greeting: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '600',
+  },
+  name: {
+    fontSize: 24,
+    color: '#fff',
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginTop: -20,
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 24,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickAction: {
+    flex: 1,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  jobCard: {
+    gap: 12,
+  },
+  jobHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  jobTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  jobTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  company: {
+    fontSize: 14,
+  },
+  jobMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  skillsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  jobActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
 });
 
 export default FreelancerDashboardScreen;

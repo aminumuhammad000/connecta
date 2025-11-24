@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import BottomNav from '../components/BottomNav';
 
 const STEPS = [
   {
@@ -81,7 +80,7 @@ const GettingStartedGuideScreen: React.FC<any> = ({ navigation }) => {
                   isActive && { borderWidth: 2, borderColor: c.primary },
                 ]}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                    <View style={[styles.iconCircle, { backgroundColor: isCompleted ? (c.isDark ? 'rgba(16,185,129,0.15)' : '#D1FAE5') : (c.isDark ? '#374151' : '#F3F4F6') }]}> 
+                    <View style={[styles.iconCircle, { backgroundColor: isCompleted ? (c.isDark ? 'rgba(16,185,129,0.15)' : '#D1FAE5') : (c.isDark ? '#374151' : '#F3F4F6') }]}>
                       {isCompleted ? (
                         <MaterialIcons name="check-circle" size={22} color={c.isDark ? '#6EE7B7' : '#10B981'} />
                       ) : (
@@ -102,16 +101,7 @@ const GettingStartedGuideScreen: React.FC<any> = ({ navigation }) => {
           </View>
         </ScrollView>
 
-        {/* Bottom Nav */}
-        <BottomNav
-          activeKey="profile"
-          onChange={(key) => {
-            if (key === 'home') return navigation.navigate('Dashboard');
-            if (key === 'jobs') return navigation.navigate('Dashboard');
-            if (key === 'profile') return; // treat under help/profile path
-            navigation.navigate('Dashboard');
-          }}
-        />
+
       </View>
     </SafeAreaView>
   );

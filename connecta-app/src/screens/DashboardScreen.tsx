@@ -5,7 +5,6 @@ import { useThemeColors } from '../theme/theme';
 import Header from '../components/Header';
 import ActiveJobCard from '../components/ActiveJobCard';
 import RecommendedCard from '../components/RecommendedCard';
-import BottomNav from '../components/BottomNav';
 import JobsScreen from './JobsScreen';
 import ProposalsScreen from './ProposalsScreen';
 import MessagesScreen from './MessagesScreen';
@@ -103,9 +102,7 @@ const DashboardScreen: React.FC = () => {
             <Text style={{ color: c.subtext }}>Coming soon</Text>
           </View>
         )}
-
-        <BottomNav activeKey={activeTab} onChange={setActiveTab} />
-      </View>
+</View>
     </SafeAreaView>
   );
 };

@@ -1,236 +1,238 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const ProfileScreen: React.FC = () => {
+const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
+
+export default function ProfileScreen({ navigation }: any) {
   const c = useThemeColors();
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
+
+  const onBack = () => navigation.goBack?.();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       {/* Top App Bar */}
-      <View style={[styles.appBar, { backgroundColor: c.card }]}> 
-        <Text style={[styles.appBarTitle, { color: c.text }]}>Profile</Text>
-        <TouchableOpacity style={[styles.editBtn, { backgroundColor: c.primary }]}> 
-          <Text style={styles.editBtnText}>Edit</Text>
+      <View style={[styles.appBar, { borderBottomColor: c.border }]}>
+        <TouchableOpacity onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" style={styles.iconBtn}>
+          <MaterialIcons name="arrow-back" size={24} color={c.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: c.text }]}>My Profile</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')} accessibilityRole="button" accessibilityLabel="Settings" style={styles.iconBtn}>
+          <MaterialIcons name="settings" size={24} color={c.text} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
         {/* Profile Header */}
-        <View style={[styles.headerCard, { backgroundColor: c.card }]}> 
-          <View style={styles.headerContent}> 
-            <Image
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc' }}
-              style={styles.avatar}
-            />
-            <View style={{ alignItems: 'center' }}>
-              <Text style={[styles.name, { color: c.text }]}>Aminu Muhammad</Text>
-              <Text style={[styles.role, { color: c.subtext }]}>UI/UX Designer</Text>
-              <View style={styles.locationRow}> 
-                <MaterialIcons name="location-on" size={16} color={c.subtext} />
-                <Text style={[styles.location, { color: c.subtext }]}>Paris, France</Text>
+        <View style={styles.sectionPad}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <Image source={{ uri: AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
+              <View>
+                <Text style={[styles.name, { color: c.text }]}>Aminu Muhammad</Text>
+                <Text style={[styles.role, { color: c.subtext }]}>UI/UX Designer</Text>
+                <View style={styles.verifiedRow}>
+                  <MaterialIcons name="location-on" size={14} color={c.subtext} />
+                  <Text style={[styles.location, { color: c.subtext }]}>Paris, France</Text>
+                </View>
+                <View style={[styles.verifiedRow, { marginTop: 4 }]}>
+                  <MaterialIcons name="verified" size={16} color="#22c55e" />
+                  <Text style={styles.verifiedText}>Identity Verified</Text>
+                </View>
               </View>
             </View>
-            <View style={[styles.availability, { backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}> 
-              <View style={[styles.dot, { backgroundColor: c.primary }]} />
-              <Text style={[styles.availabilityText, { color: c.primary }]}>Available for hire</Text>
-            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: c.primary }]}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={[styles.btnText, { color: 'white' }]}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
+              onPress={() => { }}
+            >
+              <Text style={[styles.btnText, { color: c.text }]}>Share</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Tabs (static visual) */}
-        <View style={[styles.tabsBar, { backgroundColor: c.card, borderBottomColor: c.border }]}> 
-          <View style={styles.tabsInner}> 
-            <View style={[styles.tabItemActive, { borderBottomColor: c.primary }]}> 
-              <Text style={[styles.tabTextActive, { color: c.primary }]}>About</Text>
-            </View>
-            <View style={styles.tabItem}> 
-              <Text style={[styles.tabText, { color: c.subtext }]}>Portfolio</Text>
-            </View>
-            <View style={styles.tabItem}> 
-              <Text style={[styles.tabText, { color: c.subtext }]}>Reviews</Text>
-            </View>
+        {/* Stats */}
+        <View style={[styles.sectionPad, styles.rowWrap, { gap: 12 }]}>
+          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.statLabel, { color: c.subtext }]}>Earnings</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>$45K+</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs Done</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>38</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>1.2k</Text>
           </View>
         </View>
 
-        {/* About Card */}
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-          <Text style={[styles.cardTitle, { color: c.text }]}>About</Text>
-          <Text style={[styles.paragraph, { color: c.text }]}>A passionate UI/UX designer with over 5 years of experience in creating intuitive and engaging digital products. I specialize in mobile app design and user-centered design methodologies.</Text>
+        {/* About */}
+        <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
+          <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>About</Text>
+          <TouchableOpacity onPress={() => { }}>
+            <MaterialIcons name="edit" size={20} color={c.primary} />
+          </TouchableOpacity>
         </View>
+        <Text style={[styles.about, { color: c.subtext }]}>A passionate UI/UX designer with over 5 years of experience in creating intuitive and engaging digital products. I specialize in mobile app design and user-centered design methodologies.</Text>
 
         {/* Skills */}
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-          <Text style={[styles.cardTitle, { color: c.text }]}>Skills</Text>
-          <View style={styles.skillsRow}> 
-            {['UI Design', 'UX Research', 'Prototyping', 'Figma', 'Design Systems'].map(s => (
-              <Text key={s} style={[styles.skillChip, { color: c.primary, backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}>
-                {s}
-              </Text>
-            ))}
+        <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
+          <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>Skills</Text>
+          <TouchableOpacity onPress={() => { }}>
+            <MaterialIcons name="edit" size={20} color={c.primary} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.skillsRow}>
+          {['UI Design', 'UX Research', 'Prototyping', 'Figma', 'Design Systems'].map(s => (
+            <Text key={s} style={[styles.skillChip, { color: c.primary, backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}>
+              {s}
+            </Text>
+          ))}
+        </View>
+
+        {/* Tabs */}
+        <View style={[styles.tabs, { borderBottomColor: c.border }]}>
+          <View style={styles.tabList} accessibilityRole="tablist">
+            <TouchableOpacity
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'portfolio' }}
+              onPress={() => setActiveTab('portfolio')}
+              style={[styles.tabItem, activeTab === 'portfolio' && { borderBottomColor: c.primary }]}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'portfolio' ? c.primary : c.subtext }]}>Portfolio</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'reviews' }}
+              onPress={() => setActiveTab('reviews')}
+              style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Work Experience */}
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
-          <Text style={[styles.cardTitle, { color: c.text }]}>Work Experience</Text>
-          <View style={[styles.timeline, { borderLeftColor: c.border }]}> 
-            <View style={styles.tlItem}> 
-              <View style={[styles.tlDot, { backgroundColor: c.primary }]} />
-              <Text style={[styles.tlTitle, { color: c.text }]}>Senior Product Designer</Text>
-              <Text style={[styles.tlOrg, { color: c.subtext }]}>Innovatech Solutions</Text>
-              <Text style={[styles.tlTime, { color: c.subtext }]}>2021 - Present</Text>
-            </View>
-            <View style={styles.tlItem}> 
-              <View style={[styles.tlDot, { backgroundColor: c.border }]} />
-              <Text style={[styles.tlTitle, { color: c.text }]}>UI/UX Designer</Text>
-              <Text style={[styles.tlOrg, { color: c.subtext }]}>Creative Minds Agency</Text>
-              <Text style={[styles.tlTime, { color: c.subtext }]}>2018 - 2021</Text>
-            </View>
-          </View>
+        {/* Content */}
+        <View style={styles.sectionPad}>
+          {activeTab === 'portfolio' ? (
+            <>
+              <PortfolioCard
+                title="Fintech Mobile App"
+                category="Mobile Design"
+                image="https://lh3.googleusercontent.com/aida-public/AB6AXuCEjA1qkTeGlFqHIJJxs96X8h7SWh3pp4bJJze9IaLG4bgFtH9cYiYYLxc0afI6nhNNop2i5SQHGPzAU4_ieX1ifB_e8FqV07caEx8PbLyRk0cHS40qYV4pfwXn4LD-vakHid3us0-5UBeGpuBqZmg59j9g1w1_pdtkEX2bK0HXc6zq9J8DXn5sNqbeVlcWbIzhGzmV_dupJuae8ajdKUAhQGKkQUiYaAlJcGUzurUc1gQJoef6_ngZB5caZqdX2UJgTQeuf36FJVo"
+              />
+              <PortfolioCard
+                title="E-commerce Website"
+                category="Web Design"
+                image="https://lh3.googleusercontent.com/aida-public/AB6AXuBku_SBx_jdljBMvRoNSlxAzHNgYe99IoIDbg0INB9dxG-qJGw0tTm-KPPZJlh7Tfphorgu06whI0cCoq8ce0NiWTkibZc0aBbVUElMbcmwVdjWgRILxZH8CFe2Uq5NX3L72sYb6JqbirS0oqrMcPA__RsAkNB5QwDIX9zP8FJH5A00q9GFyqfUcZDAIQURju2Ozi6UZDHAPv01VWNXnGBh7srCZjxd1D5JshH8wMxWdjYWDFIQQDf7KuyQHCDrUyWlxCdbbPbTIXI"
+              />
+            </>
+          ) : (
+            <>
+              <ReviewCard
+                author="Innovatech Solutions"
+                rating={5}
+                comment="Aminu is a fantastic designer. He understood our requirements perfectly and delivered high-quality work."
+              />
+              <ReviewCard
+                author="Creative Minds"
+                rating={5}
+                comment="Great attention to detail and very professional. Highly recommended!"
+              />
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-};
+}
+
+function PortfolioCard({ title, category, image }: { title: string; category: string; image: string }) {
+  const c = useThemeColors();
+  return (
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 0, overflow: 'hidden' }]}>
+      <Image source={{ uri: image }} style={{ width: '100%', height: 160 }} />
+      <View style={{ padding: 12 }}>
+        <Text style={[styles.cardTitle, { color: c.text }]}>{title}</Text>
+        <Text style={[styles.cardDesc, { color: c.subtext, marginTop: 2 }]}>{category}</Text>
+      </View>
+    </View>
+  );
+}
+
+function ReviewCard({ author, rating, comment }: { author: string; rating: number; comment: string }) {
+  const c = useThemeColors();
+  return (
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[styles.metaRow, { marginBottom: 4 }]}>
+        <Text style={[styles.cardTitle, { color: c.text, fontSize: 14 }]}>{author}</Text>
+        <View style={{ flexDirection: 'row', marginLeft: 'auto' }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <MaterialIcons key={i} name={i < rating ? 'star' : 'star-border'} size={16} color={i < rating ? '#f59e0b' : c.subtext} />
+          ))}
+        </View>
+      </View>
+      <Text style={[styles.cardDesc, { color: c.subtext }]}>{comment}</Text>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   appBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  appBarTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  editBtn: {
-    minWidth: 84,
-    height: 40,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  editBtnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  headerCard: {
-    padding: 16,
-  },
-  headerContent: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  avatar: {
-    width: 128,
-    height: 128,
-    borderRadius: 64,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  role: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  locationRow: {
-    marginTop: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  location: {
-    fontSize: 13,
-  },
-  availability: {
-    marginTop: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  availabilityText: { fontSize: 13, fontWeight: '700' },
-
-  tabsBar: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  tabsInner: {
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-  },
-  tabItemActive: {
-    flex: 1,
+  iconBtn: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 3,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  tabTextActive: { fontSize: 14, fontWeight: '800' },
-  tabText: { fontSize: 14, fontWeight: '800' },
-
-  card: {
-    marginTop: 12,
-    marginHorizontal: 16,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  paragraph: {
-    marginTop: 8,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  skillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  skillChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    justifyContent: 'center',
     borderRadius: 999,
-    fontSize: 13,
-    fontWeight: '700',
   },
-  timeline: {
-    marginTop: 8,
-    paddingLeft: 12,
-    borderLeftWidth: 2,
-    gap: 12,
-  },
-  tlItem: { position: 'relative' },
-  tlDot: {
-    position: 'absolute',
-    left: -14,
-    top: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  tlTitle: { fontSize: 14, fontWeight: '700' },
-  tlOrg: { fontSize: 13, fontWeight: '500', marginTop: 2 },
-  tlTime: { fontSize: 11, marginTop: 2 },
+  title: { fontSize: 18, fontWeight: '700' },
+  sectionPad: { paddingHorizontal: 16, paddingTop: 12 },
+  headerRow: { flexDirection: 'row', gap: 12, alignItems: 'center', justifyContent: 'space-between' },
+  headerLeft: { flexDirection: 'row', gap: 12, alignItems: 'center', flex: 1 },
+  avatar: { width: 80, height: 80, borderRadius: 999, backgroundColor: '#ddd' },
+  name: { fontSize: 22, fontWeight: '800' },
+  role: { fontSize: 14, marginTop: 2, fontWeight: '500' },
+  location: { fontSize: 13, marginLeft: 4 },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  verifiedText: { color: '#22c55e', fontSize: 12, fontWeight: '600' },
+  actionBtn: { flex: 1, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  btnText: { fontSize: 13, fontWeight: '700' },
+  rowWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+  statCard: { flexBasis: '30%', flexGrow: 1, borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center' },
+  statLabel: { fontSize: 12 },
+  statValue: { fontSize: 18, fontWeight: '800', marginTop: 2 },
+  sectionTitle: { paddingHorizontal: 16, paddingTop: 16, fontSize: 18, fontWeight: '800' },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  about: { paddingHorizontal: 16, paddingTop: 6, fontSize: 14, lineHeight: 20 },
+  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 8 },
+  skillChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, fontSize: 13, fontWeight: '700' },
+  tabs: { marginTop: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  tabList: { flexDirection: 'row', paddingHorizontal: 16 },
+  tabItem: { paddingVertical: 12, marginRight: 18, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabText: { fontSize: 13, fontWeight: '700' },
+  card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 12, marginBottom: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  cardDesc: { fontSize: 13, marginTop: 6, lineHeight: 18 },
 });
-
-export default ProfileScreen;
