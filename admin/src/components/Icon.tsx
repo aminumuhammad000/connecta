@@ -43,6 +43,7 @@ import {
   MdLogin,
   MdBolt,
   MdAutorenew,
+  MdVerified,
 } from 'react-icons/md'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number; color?: string }>> = {
@@ -89,6 +90,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string; size?: n
   login: MdLogin,
   bolt: MdBolt,
   progress_activity: MdAutorenew,
+  verified: MdVerified,
 }
 
 export default function Icon({ name, className, size, color }: { name: string; className?: string; size?: number; color?: string }) {

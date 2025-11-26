@@ -32,6 +32,70 @@ export default function Analytics() {
     }).format(amount)
   }
 
+  const generateCSVReport = (reportType: string) => {
+    let csvContent = ''
+    let filename = ''
+    const date = new Date().toISOString().split('T')[0]
+
+    if (reportType === 'weekly-users') {
+      filename = `weekly-user-report-${date}.csv`
+      csvContent = 'Month,Users\n'
+      userGrowth.forEach((item: any) => {
+        csvContent += `${item.month},${item.users}\n`
+      })
+    } else if (reportType === 'monthly-financials') {
+      filename = `monthly-financials-${date}.csv`
+      csvContent = 'Metric,Value\n'
+      csvContent += `Total Revenue,${overview.totalRevenue || 0}\n`
+      csvContent += `Payment Revenue,${overview.paymentRevenue || 0}\n`
+      csvContent += `Subscription Revenue,${overview.subscriptionRevenue || 0}\n`
+      csvContent += `Total Payments,${overview.totalPayments || 0}\n`
+      csvContent += `Active Subscriptions,${overview.activeSubscriptions || 0}\n`
+      csvContent += `Total Users,${overview.totalUsers || 0}\n`
+      csvContent += `Total Projects,${overview.totalProjects || 0}\n`
+      csvContent += `Total Jobs,${overview.totalJobs || 0}\n`
+    } else if (reportType === 'performance') {
+      filename = `performance-review-${date}.csv`
+      csvContent = 'Metric,Value\n'
+      csvContent += `Total Users,${overview.totalUsers || 0}\n`
+      csvContent += `Clients,${overview.clientsCount || 0}\n`
+      csvContent += `Freelancers,${overview.freelancersCount || 0}\n`
+      csvContent += `Total Jobs,${jobStats.total || 0}\n`
+      csvContent += `Open Jobs,${jobStats.open || 0}\n`
+      csvContent += `In Progress Jobs,${jobStats.inProgress || 0}\n`
+      csvContent += `Closed Jobs,${jobStats.closed || 0}\n`
+      csvContent += `Total Proposals,${proposalStats.total || 0}\n`
+      csvContent += `Accepted Proposals,${proposalStats.accepted || 0}\n`
+      csvContent += `Rejected Proposals,${proposalStats.rejected || 0}\n`
+      csvContent += `Success Rate,${proposalStats.successRate || 0}%\n`
+    } else {
+      // Full export
+      filename = `analytics-full-export-${date}.csv`
+      csvContent = 'Category,Metric,Value\n'
+      csvContent += `Overview,Total Users,${overview.totalUsers || 0}\n`
+      csvContent += `Overview,Total Projects,${overview.totalProjects || 0}\n`
+      csvContent += `Overview,Total Jobs,${overview.totalJobs || 0}\n`
+      csvContent += `Overview,Total Revenue,${overview.totalRevenue || 0}\n`
+      csvContent += `Overview,Subscription Revenue,${overview.subscriptionRevenue || 0}\n`
+      csvContent += `Overview,Active Subscriptions,${overview.activeSubscriptions || 0}\n`
+      csvContent += `Jobs,Open,${jobStats.open || 0}\n`
+      csvContent += `Jobs,In Progress,${jobStats.inProgress || 0}\n`
+      csvContent += `Jobs,Closed,${jobStats.closed || 0}\n`
+      csvContent += `Proposals,Total,${proposalStats.total || 0}\n`
+      csvContent += `Proposals,Success Rate,${proposalStats.successRate || 0}%\n`
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   if (loading) {
     return (
       <AppLayout>
@@ -45,6 +109,7 @@ export default function Analytics() {
   const overview = stats?.overview || {}
   const userGrowth = stats?.userGrowth || []
   const proposalStats = stats?.proposalStats || {}
+  const jobStats = stats?.jobStats || {}
   const weeklyRevenue = stats?.weeklyRevenue || []
 
   return (
@@ -60,7 +125,10 @@ export default function Analytics() {
               <p className="text-text-light-primary dark:text-dark-primary text-sm font-medium leading-normal">Last 30 Days</p>
               <Icon name="calendar_today" size={20} className="text-text-light-secondary dark:text-dark-secondary" />
             </button>
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] gap-2">
+            <button 
+              onClick={() => generateCSVReport('full')}
+              className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] gap-2 hover:bg-primary/90 transition-colors"
+            >
               <Icon name="download" size={20} />
               <span className="truncate">Export Data</span>
             </button>
@@ -122,68 +190,99 @@ export default function Analytics() {
               <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-4">New user registrations over time</p>
               <div className="h-64 flex flex-col">
                 <div className="flex-1 flex items-end justify-between gap-3 px-2">
-                  {[
-                    { month: 'Jan', users: 450, height: 45 },
-                    { month: 'Feb', users: 520, height: 52 },
-                    { month: 'Mar', users: 480, height: 48 },
-                    { month: 'Apr', users: 650, height: 65 },
-                    { month: 'May', users: 580, height: 58 },
-                    { month: 'Jun', users: 720, height: 72 },
-                    { month: 'Jul', users: 680, height: 68 },
-                    { month: 'Aug', users: 800, height: 80 },
-                    { month: 'Sep', users: 750, height: 75 },
-                    { month: 'Oct', users: 880, height: 88 },
-                    { month: 'Nov', users: 920, height: 92 },
-                    { month: 'Dec', users: 1000, height: 100 },
-                  ].map((data, index) => (
-                    <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
-                      <div className="relative w-full">
-                        <div 
-                          className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-lg transition-all duration-300 group-hover:from-primary/90 group-hover:to-primary/70 cursor-pointer"
-                          style={{ height: `${data.height * 2}px` }}
-                        />
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                          {data.users} users
+                  {(() => {
+                    // Get last 12 months
+                    const months = [];
+                    const now = new Date();
+                    for (let i = 11; i >= 0; i--) {
+                      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+                      const userData = userGrowth?.find((item: any) => item.month === monthKey);
+                      months.push({
+                        month: monthName,
+                        users: userData?.users || 0,
+                        key: monthKey
+                      });
+                    }
+                    const maxUsers = Math.max(...months.map(m => m.users), 1);
+                    
+                    return months.map((data, index) => (
+                      <div key={index} className="flex-1 flex flex-col items-center gap-2 group">
+                        <div className="relative w-full">
+                          <div 
+                            className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-lg transition-all duration-300 group-hover:from-primary/90 group-hover:to-primary/70 cursor-pointer"
+                            style={{ height: `${Math.max((data.users / maxUsers) * 200, 8)}px` }}
+                          />
+                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none z-10">
+                            {data.users} user{data.users !== 1 ? 's' : ''}
+                          </div>
                         </div>
+                        <span className="text-xs text-text-light-secondary dark:text-dark-secondary font-medium">
+                          {data.month}
+                        </span>
                       </div>
-                      <span className="text-xs text-text-light-secondary dark:text-dark-secondary font-medium">
-                        {data.month}
-                      </span>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
 
             <div className="bg-card-light dark:bg-card-dark rounded-xl p-6">
-              <h3 className="text-lg font-bold text-text-light-primary dark:text-dark-primary">Gig Performance</h3>
-              <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-4">Posted vs Filled Gigs</p>
+              <h3 className="text-lg font-bold text-text-light-primary dark:text-dark-primary">Job Status Overview</h3>
+              <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-4">Current status of all jobs</p>
               <div className="h-64 flex flex-col justify-center gap-6 px-4">
                 {[
-                  { label: 'Week 1', posted: 85, filled: 72 },
-                  { label: 'Week 2', posted: 92, filled: 78 },
-                  { label: 'Week 3', posted: 78, filled: 65 },
-                  { label: 'Week 4', posted: 95, filled: 88 },
-                ].map((week, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-text-light-secondary dark:text-dark-secondary">
-                      <span className="font-medium">{week.label}</span>
-                      <span>{week.filled}/{week.posted}</span>
+                  { 
+                    label: 'Open Jobs', 
+                    count: jobStats?.open || 0,
+                    total: jobStats?.total || 1,
+                    color: 'blue'
+                  },
+                  { 
+                    label: 'In Progress', 
+                    count: jobStats?.inProgress || 0,
+                    total: jobStats?.total || 1,
+                    color: 'yellow'
+                  },
+                  { 
+                    label: 'Closed/Filled', 
+                    count: jobStats?.closed || 0,
+                    total: jobStats?.total || 1,
+                    color: 'green'
+                  },
+                ].map((item, index) => {
+                  const percentage = (item.count / item.total) * 100;
+                  return (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-text-light-secondary dark:text-dark-secondary">
+                        <span className="font-medium">{item.label}</span>
+                        <span className="font-semibold text-text-light-primary dark:text-dark-primary">
+                          {item.count} / {item.total}
+                        </span>
+                      </div>
+                      <div className="relative h-8 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden">
+                        <div 
+                          className={`h-full rounded-lg transition-all duration-500 ${
+                            item.color === 'blue' ? 'bg-blue-500' :
+                            item.color === 'yellow' ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">
+                          {percentage.toFixed(0)}%
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <div className="h-8 bg-blue-500/20 rounded" style={{ width: `${week.posted}%` }} />
-                      <div className="h-8 bg-green-500 rounded" style={{ width: `${week.filled}%` }} />
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center justify-center gap-6 mt-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500/20 rounded" />
-                    <span className="text-text-light-secondary dark:text-dark-secondary">Posted</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded" />
-                    <span className="text-text-light-secondary dark:text-dark-secondary">Filled</span>
+                  );
+                })}
+                <div className="flex items-center justify-center gap-6 mt-4 text-xs border-t border-border-light dark:border-border-dark pt-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-text-light-primary dark:text-dark-primary">
+                      {jobStats?.total || 0}
+                    </p>
+                    <p className="text-text-light-secondary dark:text-dark-secondary">Total Jobs</p>
                   </div>
                 </div>
               </div>
@@ -241,8 +340,8 @@ export default function Analytics() {
             </div>
 
             <div className="bg-card-light dark:bg-card-dark rounded-xl p-6">
-              <h3 className="text-lg font-bold text-text-light-primary dark:text-dark-primary">Weekly Subscription Revenue</h3>
-              <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-4">Premium subscriptions for the past 7 days</p>
+              <h3 className="text-lg font-bold text-text-light-primary dark:text-dark-primary">New Subscriptions (7 Days)</h3>
+              <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-4">Premium memberships purchased in the past week (₦5,000/month each)</p>
               <div className="h-48">
                 <div className="w-full h-full flex items-end justify-between gap-2">
                   {[0, 1, 2, 3, 4, 5, 6].map((day) => {
@@ -300,30 +399,45 @@ export default function Analytics() {
                     <div className="bg-primary/10 p-2 rounded-lg"><Icon name="description" className="text-primary" size={24} /></div>
                     <div>
                       <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Weekly User Report</p>
-                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Generated on Oct 26, 2023</p>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">User growth and registration data</p>
                     </div>
                   </div>
-                  <button className="text-text-light-secondary dark:text-dark-secondary hover:text-primary"><Icon name="download" /></button>
+                  <button 
+                    onClick={() => generateCSVReport('weekly-users')}
+                    className="text-text-light-secondary dark:text-dark-secondary hover:text-primary transition-colors"
+                  >
+                    <Icon name="download" />
+                  </button>
                 </li>
                 <li className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-lg"><Icon name="description" className="text-primary" size={24} /></div>
                     <div>
                       <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Monthly Financials</p>
-                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Generated on Oct 01, 2023</p>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Revenue and payment statistics</p>
                     </div>
                   </div>
-                  <button className="text-text-light-secondary dark:text-dark-secondary hover:text-primary"><Icon name="download" /></button>
+                  <button 
+                    onClick={() => generateCSVReport('monthly-financials')}
+                    className="text-text-light-secondary dark:text-dark-secondary hover:text-primary transition-colors"
+                  >
+                    <Icon name="download" />
+                  </button>
                 </li>
                 <li className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-lg"><Icon name="description" className="text-primary" size={24} /></div>
                     <div>
-                      <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Q3 Performance Review</p>
-                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Generated on Sep 30, 2023</p>
+                      <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Performance Review</p>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Jobs, proposals, and success metrics</p>
                     </div>
                   </div>
-                  <button className="text-text-light-secondary dark:text-dark-secondary hover:text-primary"><Icon name="download" /></button>
+                  <button 
+                    onClick={() => generateCSVReport('performance')}
+                    className="text-text-light-secondary dark:text-dark-secondary hover:text-primary transition-colors"
+                  >
+                    <Icon name="download" />
+                  </button>
                 </li>
               </ul>
             </div>

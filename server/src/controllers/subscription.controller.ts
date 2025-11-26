@@ -1,151 +1,103 @@
 import { Request, Response } from 'express';
-import Subscription from '../models/Subscription.model';
+import Subscription from '../models/subscription.model';
 import User from '../models/user.model';
 
-const PREMIUM_PRICE = 5000; // ₦5,000
-
-/**
- * Create premium subscription
- */
-export const createSubscription = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
-    const { paymentReference } = req.body;
-
-    // Check if user already has active subscription
-    const existingSubscription = await Subscription.findOne({
-      userId,
-      status: 'active',
-      endDate: { $gt: new Date() }
-    });
-
-    if (existingSubscription) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already has an active premium subscription'
-      });
-    }
-
-    // Calculate subscription period (30 days)
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 30);
-
-    // Create subscription
-    const subscription = await Subscription.create({
-      userId,
-      plan: 'premium',
-      amount: PREMIUM_PRICE,
-      currency: 'NGN',
-      status: 'active',
-      startDate,
-      endDate,
-      paymentReference: paymentReference || `SUB-${Date.now()}`,
-      autoRenew: false,
-    });
-
-    // Update user to premium
-    await User.findByIdAndUpdate(userId, {
-      isPremium: true,
-      premiumExpiryDate: endDate,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: 'Premium subscription activated successfully',
-      data: subscription,
-    });
-  } catch (error: any) {
-    console.error('Create subscription error:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to create subscription',
-    });
-  }
-};
-
-/**
- * Get all subscriptions for admin
- */
+// Get all subscriptions (Admin)
 export const getAllSubscriptions = async (req: Request, res: Response) => {
   try {
-    const subscriptions = await Subscription.find()
-      .populate('userId', 'firstName lastName email userType profileImage')
-      .sort({ createdAt: -1 })
-      .limit(100);
+    const { status, limit = 100 } = req.query;
+    
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
 
-    const stats = await Subscription.aggregate([
+    const subscriptions = await Subscription.find(query)
+      .populate('userId', 'firstName lastName email userType isPremium')
+      .sort({ createdAt: -1 })
+      .limit(Number(limit));
+
+    res.status(200).json({
+      success: true,
+      subscriptions,
+      total: subscriptions.length,
+    });
+  } catch (error: any) {
+    console.error('Get subscriptions error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch subscriptions',
+      error: error.message,
+    });
+  }
+};
+
+// Get subscription stats (Admin)
+export const getSubscriptionStats = async (req: Request, res: Response) => {
+  try {
+    const activeSubscriptions = await Subscription.countDocuments({ status: 'active' });
+    const totalSubscriptions = await Subscription.countDocuments();
+    const expiredSubscriptions = await Subscription.countDocuments({ status: 'expired' });
+    const cancelledSubscriptions = await Subscription.countDocuments({ status: 'cancelled' });
+
+    // Calculate monthly revenue (active subscriptions this month)
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const monthlyRevenue = await Subscription.aggregate([
+      {
+        $match: {
+          status: 'active',
+          createdAt: { $gte: startOfMonth },
+        },
+      },
       {
         $group: {
-          _id: '$status',
-          count: { $sum: 1 },
-          revenue: { $sum: '$amount' }
-        }
-      }
+          _id: null,
+          total: { $sum: '$amount' },
+        },
+      },
     ]);
 
-    const totalRevenue = await Subscription.aggregate([
-      { $group: { _id: null, total: { $sum: '$amount' } } }
+    // Calculate total revenue from all subscriptions
+    const totalRevenueResult = await Subscription.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' },
+        },
+      },
     ]);
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      data: subscriptions,
-      stats: {
-        byStatus: stats,
-        totalRevenue: totalRevenue[0]?.total || 0,
-        totalSubscriptions: subscriptions.length
-      }
+      data: {
+        activeSubscriptions,
+        totalSubscriptions,
+        expiredSubscriptions,
+        cancelledSubscriptions,
+        monthlyRevenue: monthlyRevenue.length > 0 ? monthlyRevenue[0].total : 0,
+        totalRevenue: totalRevenueResult.length > 0 ? totalRevenueResult[0].total : 0,
+        pricePerSubscription: 5000,
+      },
     });
   } catch (error: any) {
-    console.error('Get all subscriptions error:', error);
-    return res.status(500).json({
+    console.error('Get subscription stats error:', error);
+    res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch subscriptions',
+      message: 'Failed to fetch subscription stats',
+      error: error.message,
     });
   }
 };
 
-/**
- * Get user subscription
- */
-export const getUserSubscription = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
-
-    const subscription = await Subscription.findOne({
-      userId,
-      status: 'active',
-      endDate: { $gt: new Date() }
-    }).sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      data: subscription,
-      isPremium: !!subscription,
-    });
-  } catch (error: any) {
-    console.error('Get user subscription error:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to fetch subscription',
-    });
-  }
-};
-
-/**
- * Cancel subscription
- */
+// Cancel subscription (Admin)
 export const cancelSubscription = async (req: Request, res: Response) => {
   try {
-    const { subscriptionId } = req.params;
+    const { id } = req.params;
 
-    const subscription = await Subscription.findByIdAndUpdate(
-      subscriptionId,
-      { status: 'cancelled' },
-      { new: true }
-    );
-
+    const subscription = await Subscription.findById(id);
     if (!subscription) {
       return res.status(404).json({
         success: false,
@@ -153,84 +105,114 @@ export const cancelSubscription = async (req: Request, res: Response) => {
       });
     }
 
-    // Update user premium status
-    await User.findByIdAndUpdate(subscription.userId, {
-      isPremium: false,
-      premiumExpiryDate: null,
-    });
+    if (subscription.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Subscription is already cancelled',
+      });
+    }
 
-    return res.status(200).json({
+    subscription.status = 'cancelled';
+    subscription.autoRenew = false;
+    await subscription.save();
+
+    // Update user's premium status
+    if (subscription.userId) {
+      await User.findByIdAndUpdate(subscription.userId, {
+        isPremium: false,
+        premiumExpiryDate: null,
+      });
+    }
+
+    res.status(200).json({
       success: true,
       message: 'Subscription cancelled successfully',
-      data: subscription,
+      subscription,
     });
   } catch (error: any) {
     console.error('Cancel subscription error:', error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: error.message || 'Failed to cancel subscription',
+      message: 'Failed to cancel subscription',
+      error: error.message,
     });
   }
 };
 
-/**
- * Get subscription stats for analytics
- */
-export const getSubscriptionStats = async (req: Request, res: Response) => {
+// Reactivate subscription (Admin)
+export const reactivateSubscription = async (req: Request, res: Response) => {
   try {
-    const activeSubscriptions = await Subscription.countDocuments({
-      status: 'active',
-      endDate: { $gt: new Date() }
-    });
+    const { id } = req.params;
 
-    const monthlyRevenue = await Subscription.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: new Date(new Date().setDate(new Date().getDate() - 30))
-          }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$amount' }
-        }
-      }
-    ]);
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found',
+      });
+    }
 
-    const weeklyRevenue = await Subscription.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          }
-        }
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          amount: { $sum: '$amount' },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    // Update subscription status to active and extend end date
+    subscription.status = 'active';
+    const newEndDate = new Date();
+    newEndDate.setDate(newEndDate.getDate() + 30);
+    subscription.endDate = newEndDate;
+    await subscription.save();
 
-    return res.status(200).json({
+    // Update user's premium status
+    if (subscription.userId) {
+      await User.findByIdAndUpdate(subscription.userId, {
+        isPremium: true,
+        premiumExpiryDate: newEndDate,
+      });
+    }
+
+    res.status(200).json({
       success: true,
-      data: {
-        activeSubscriptions,
-        monthlyRevenue: monthlyRevenue[0]?.total || 0,
-        weeklyRevenue,
-        pricePerSubscription: PREMIUM_PRICE
-      }
+      message: 'Subscription reactivated successfully',
+      subscription,
     });
   } catch (error: any) {
-    console.error('Get subscription stats error:', error);
-    return res.status(500).json({
+    console.error('Reactivate subscription error:', error);
+    res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch subscription stats',
+      message: 'Failed to reactivate subscription',
+      error: error.message,
+    });
+  }
+};
+
+// Delete subscription (Admin)
+export const deleteSubscription = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const subscription = await Subscription.findByIdAndDelete(id);
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        message: 'Subscription not found',
+      });
+    }
+
+    // Update user's premium status if subscription was active
+    if (subscription.userId && subscription.status === 'active') {
+      await User.findByIdAndUpdate(subscription.userId, {
+        isPremium: false,
+        premiumExpiryDate: null,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Subscription deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Delete subscription error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete subscription',
+      error: error.message,
     });
   }
 };

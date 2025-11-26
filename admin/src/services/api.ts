@@ -381,16 +381,19 @@ export const analyticsAPI = {
 // ============================================
 export const subscriptionsAPI = {
   getAll: async () => {
-    const response = await api.get('/api/subscriptions/admin/all')
-    return response.data
+    return await api.get('/api/subscriptions/admin/all')
   },
   getStats: async () => {
-    const response = await api.get('/api/subscriptions/admin/stats')
-    return response.data
+    return await api.get('/api/subscriptions/admin/stats')
   },
   cancel: async (subscriptionId: string) => {
-    const response = await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
-    return response.data
+    return await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
+  },
+  reactivate: async (subscriptionId: string) => {
+    return await api.patch(`/api/subscriptions/${subscriptionId}/reactivate`)
+  },
+  delete: async (subscriptionId: string) => {
+    return await api.delete(`/api/subscriptions/${subscriptionId}`)
   },
 }
 

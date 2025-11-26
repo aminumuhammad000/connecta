@@ -46,6 +46,8 @@ export default function Users() {
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const usersPerPage = 10
 
   useEffect(() => {
     fetchUsers()
@@ -54,7 +56,9 @@ export default function Users() {
   const fetchUsers = async () => {
     try {
       setLoading(true)
-      const params: any = {}
+      const params: any = {
+        limit: 100 // Increase limit to ensure all users are fetched
+      }
       
       // Only fetch non-admin users
       if (filterType === 'all') {
@@ -74,6 +78,12 @@ export default function Users() {
       } else if (response.data && Array.isArray(response.data)) {
         userData = response.data
       }
+      
+      console.log('Users data with isPremium:', userData.map((u: any) => ({
+        name: `${u.firstName} ${u.lastName}`,
+        isPremium: u.isPremium,
+        userType: u.userType
+      })))
       
       setUsers(userData)
       
@@ -222,6 +232,17 @@ export default function Users() {
     return matchesSearch
   })
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
+  const indexOfLastUser = currentPage * usersPerPage
+  const indexOfFirstUser = indexOfLastUser - usersPerPage
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser)
+
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterType])
+
   // Calculate stats (excluding admins)
   const stats = {
     total: users.length,
@@ -360,28 +381,29 @@ export default function Users() {
                   <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">Try adjusting your search or filters</p>
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Joined
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {filteredUsers.map((user) => (
+                <>
+                  <table className="w-full">
+                    <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                          User
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                          Joined
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                      {currentUsers.map((user) => (
                       <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -400,12 +422,15 @@ export default function Users() {
                                 <p className="font-semibold text-slate-900 dark:text-white truncate">
                                   {user.firstName} {user.lastName}
                                 </p>
-                                {user.isPremium && (
+                                {user.isPremium === true && (
                                   <Icon
                                     name="verified"
                                     size={18}
-                                    className="text-purple-600 dark:text-purple-400 flex-shrink-0"
-                                    title="Premium Member"
+                                    className={`flex-shrink-0 ${
+                                      user.userType === 'freelancer' 
+                                        ? 'text-blue-500' 
+                                        : 'text-red-500'
+                                    }`}
                                   />
                                 )}
                               </div>
@@ -475,6 +500,66 @@ export default function Users() {
                     ))}
                   </tbody>
                 </table>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
+                      Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                          // Show first page, last page, current page, and pages around current
+                          if (
+                            page === 1 ||
+                            page === totalPages ||
+                            (page >= currentPage - 1 && page <= currentPage + 1)
+                          ) {
+                            return (
+                              <button
+                                key={page}
+                                onClick={() => setCurrentPage(page)}
+                                className={`min-w-[2.5rem] h-10 rounded-lg font-medium transition-colors ${
+                                  page === currentPage
+                                    ? 'bg-primary text-white'
+                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            )
+                          } else if (page === currentPage - 2 || page === currentPage + 2) {
+                            return (
+                              <span key={page} className="px-2 text-slate-500">
+                                ...
+                              </span>
+                            )
+                          }
+                          return null
+                        })}
+                      </div>
+                      
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </div>
           </div>
