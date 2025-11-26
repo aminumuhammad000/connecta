@@ -350,5 +350,5 @@ The application uses Socket.IO for real-time communication on the same port as t
 
 ---
 
-*Last Updated: November 2024*
+*Last Updated: November 2025*
 *Total Endpoints: 100+*

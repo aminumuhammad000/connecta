@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
+import { useAuth } from '../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
@@ -54,12 +55,16 @@ const JOBS: JobRec[] = [
 
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
+  const { user } = useAuth();
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
     if (status === 'Featured') return 'success';
     if (status === 'Hot') return 'warning';
     return 'primary';
   };
+
+  const userName = user ? `${user.firstName}` : 'User';
+  const fullName = user ? `${user.firstName} ${user.lastName}` : 'User';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -76,7 +81,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
           >
             <View style={styles.headerTop}>
               <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <Avatar name="Sarah Johnson" size={48} />
+                <Avatar name={fullName} size={48} />
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
@@ -97,7 +102,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
             </View>
             <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.name}>Sarah!</Text>
+            <Text style={styles.name}>{userName}!</Text>
           </View>
 
           {/* Stats Cards */}

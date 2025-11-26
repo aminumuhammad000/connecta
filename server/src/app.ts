@@ -34,7 +34,7 @@ const server = http.createServer(app);
 import { setIO } from './core/utils/socketIO';
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -43,7 +43,7 @@ setIO(io);
 
 // Middleware
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
   credentials: true
 }));
 app.use(express.json());
@@ -87,7 +87,7 @@ io.on("connection", (socket) => {
     activeUsers.set(userId, socket.id);
     socket.join(userId);
     console.log(`User ${userId} joined with socket ${socket.id}`);
-    
+
     // Emit online status
     io.emit("user:online", { userId, socketId: socket.id });
   });
@@ -100,13 +100,13 @@ io.on("connection", (socket) => {
     message: any;
   }) => {
     console.log("Message sent:", data);
-    
+
     // Send to receiver if online
     const receiverSocketId = activeUsers.get(data.receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("message:receive", data.message);
     }
-    
+
     // Send confirmation to sender
     socket.emit("message:sent", data.message);
   });
@@ -146,7 +146,7 @@ io.on("connection", (socket) => {
   // Disconnect
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
-    
+
     // Find and remove user from activeUsers
     for (const [userId, socketId] of activeUsers.entries()) {
       if (socketId === socket.id) {

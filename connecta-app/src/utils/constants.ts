@@ -1,0 +1,130 @@
+// API Configuration
+// For Android Emulator use: http://10.0.2.2:5000
+// For iOS Simulator use: http://localhost:5000
+// For Physical Device use: http://YOUR_LOCAL_IP:5000
+// export const API_BASE_URL = 'http://10.0.2.2:5000';
+export const API_BASE_URL = 'http://192.168.43.204:5000';
+
+// AsyncStorage Keys
+export const STORAGE_KEYS = {
+    AUTH_TOKEN: '@connecta/auth_token',
+    USER_DATA: '@connecta/user_data',
+    USER_ROLE: '@connecta/user_role',
+    THEME_MODE: '@connecta/theme_mode',
+} as const;
+
+// API Endpoints
+export const API_ENDPOINTS = {
+    // Auth
+    SIGNUP: '/api/users/signup',
+    SIGNIN: '/api/users/signin',
+    GOOGLE_SIGNUP: '/api/users/google/signup',
+    GOOGLE_SIGNIN: '/api/users/google/signin',
+
+    // Users
+    USERS: '/api/users',
+    USER_BY_ID: (id: string) => `/api/users/${id}`,
+
+    // Profiles
+    PROFILES: '/api/profiles',
+    PROFILE_ME: '/api/profiles/me',
+    PROFILE_BY_ID: (id: string) => `/api/profiles/${id}`,
+
+    // Jobs
+    JOBS: '/api/jobs',
+    MY_JOBS: '/api/jobs/client/my-jobs',
+    RECOMMENDED_JOBS: '/api/jobs/recommended',
+    JOB_SEARCH: '/api/jobs/search',
+    JOB_BY_ID: (id: string) => `/api/jobs/${id}`,
+
+    // Proposals
+    PROPOSALS: '/api/proposals',
+    ACCEPTED_PROPOSALS: '/api/proposals/client/accepted',
+    FREELANCER_PROPOSALS: (freelancerId: string) => `/api/proposals/freelancer/${freelancerId}`,
+    PROPOSAL_STATS: (freelancerId: string) => `/api/proposals/stats/${freelancerId}`,
+    PROPOSAL_BY_ID: (id: string) => `/api/proposals/${id}`,
+    APPROVE_PROPOSAL: (id: string) => `/api/proposals/${id}/approve`,
+    REJECT_PROPOSAL: (id: string) => `/api/proposals/${id}/reject`,
+
+    // Projects
+    PROJECTS: '/api/projects',
+    MY_PROJECTS: '/api/projects/client/my-projects',
+    FREELANCER_PROJECTS: (freelancerId: string) => `/api/projects/freelancer/${freelancerId}`,
+    CLIENT_PROJECTS: (clientId: string) => `/api/projects/client/${clientId}`,
+    PROJECT_STATS: (userId: string) => `/api/projects/stats/${userId}`,
+    PROJECT_BY_ID: (id: string) => `/api/projects/${id}`,
+    PROJECT_UPLOAD: (id: string) => `/api/projects/${id}/upload`,
+    PROJECT_ACTIVITY: (id: string) => `/api/projects/${id}/activity`,
+
+    // Messages
+    CONVERSATIONS: '/api/messages/conversations',
+    USER_CONVERSATIONS: (userId: string) => `/api/messages/user/${userId}/conversations`,
+    CONVERSATION_MESSAGES: (conversationId: string) => `/api/messages/conversations/${conversationId}/messages`,
+    MESSAGES_BETWEEN: (userId1: string, userId2: string) => `/api/messages/between/${userId1}/${userId2}`,
+    SEND_MESSAGE: '/api/messages',
+    MARK_READ: '/api/messages/read',
+
+    // Dashboard
+    DASHBOARD_STATS: '/api/dashboard/stats',
+    DASHBOARD_FREELANCERS: '/api/dashboard/freelancers',
+    DASHBOARD_MESSAGES: '/api/dashboard/messages',
+
+    // Payments
+    INITIALIZE_PAYMENT: '/api/payments/initialize',
+    VERIFY_PAYMENT: (reference: string) => `/api/payments/verify/${reference}`,
+    PAYMENT_HISTORY: '/api/payments/history',
+    WALLET_BALANCE: '/api/payments/wallet/balance',
+    TRANSACTIONS: '/api/payments/transactions',
+    WITHDRAWAL_REQUEST: '/api/payments/withdrawal/request',
+    BANKS: '/api/payments/banks',
+    RESOLVE_BANK: '/api/payments/banks/resolve',
+
+    // Notifications
+    NOTIFICATIONS: '/api/notifications',
+    UNREAD_COUNT: '/api/notifications/unread-count',
+    MARK_NOTIFICATION_READ: (id: string) => `/api/notifications/${id}/read`,
+    MARK_ALL_READ: '/api/notifications/mark-all-read',
+
+    // Reviews
+    REVIEWS: '/api/reviews',
+    USER_REVIEWS: (userId: string) => `/api/reviews/user/${userId}`,
+    REVIEW_STATS: (userId: string) => `/api/reviews/user/${userId}/stats`,
+
+    // Contracts
+    CONTRACTS: '/api/contracts',
+    CONTRACT_BY_ID: (id: string) => `/api/contracts/${id}`,
+    SIGN_CONTRACT: (id: string) => `/api/contracts/${id}/sign`,
+
+    // Gigs
+    MATCHED_GIGS: '/api/gigs/matched',
+    SAVED_GIGS: '/api/gigs/saved',
+    GIG_APPLICATIONS: '/api/gigs/applications',
+    APPLY_TO_GIG: (id: string) => `/api/gigs/${id}/apply`,
+    SAVE_GIG: (id: string) => `/api/gigs/${id}/save`,
+
+    // AI Agent
+    AI_AGENT: '/api/agent',
+
+    // Support
+    SUPPORT_FEEDBACK: '/api/support/feedback',
+    SUPPORT_HELP: '/api/support/help',
+
+    // Uploads
+    UPLOAD_FILE: '/api/uploads/upload',
+} as const;
+
+// Default Values
+export const DEFAULT_PAGE_SIZE = 20;
+export const DEFAULT_TIMEOUT = 30000; // 30 seconds
+
+// Socket Events
+export const SOCKET_EVENTS = {
+    CONNECTION: 'connection',
+    DISCONNECT: 'disconnect',
+    JOIN: 'join',
+    LEAVE: 'leave',
+    SEND_MESSAGE: 'sendMessage',
+    MESSAGE_RECEIVED: 'messageReceived',
+    TYPING: 'typing',
+    STOP_TYPING: 'stopTyping',
+} as const;
