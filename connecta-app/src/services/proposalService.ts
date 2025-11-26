@@ -1,0 +1,92 @@
+import { get, post, put, patch } from './api';
+import { API_ENDPOINTS } from '../utils/constants';
+import { Proposal, ProposalStats } from '../types';
+
+/**
+ * Proposal Service
+ * Handles proposal-related API calls
+ */
+
+/**
+ * Get all proposals
+ */
+export const getAllProposals = async (): Promise<Proposal[]> => {
+    const response = await get<Proposal[]>(API_ENDPOINTS.PROPOSALS);
+    return response.data!;
+};
+
+/**
+ * Get accepted proposals for client
+ */
+export const getAcceptedProposals = async (): Promise<Proposal[]> => {
+    const response = await get<Proposal[]>(API_ENDPOINTS.ACCEPTED_PROPOSALS);
+    return response.data!;
+};
+
+/**
+ * Get proposals for a specific freelancer
+ */
+export const getFreelancerProposals = async (freelancerId: string): Promise<Proposal[]> => {
+    const response = await get<Proposal[]>(API_ENDPOINTS.FREELANCER_PROPOSALS(freelancerId));
+    return response.data!;
+};
+
+/**
+ * Get proposal statistics for freelancer
+ */
+export const getProposalStats = async (freelancerId: string): Promise<ProposalStats> => {
+    const response = await get<ProposalStats>(API_ENDPOINTS.PROPOSAL_STATS(freelancerId));
+    return response.data!;
+};
+
+/**
+ * Get proposal by ID
+ */
+export const getProposalById = async (id: string): Promise<Proposal> => {
+    const response = await get<Proposal>(API_ENDPOINTS.PROPOSAL_BY_ID(id));
+    return response.data!;
+};
+
+/**
+ * Create new proposal
+ */
+export const createProposal = async (proposalData: Partial<Proposal>): Promise<Proposal> => {
+    const response = await post<Proposal>(API_ENDPOINTS.PROPOSALS, proposalData);
+    return response.data!;
+};
+
+/**
+ * Approve a proposal
+ */
+export const approveProposal = async (id: string): Promise<Proposal> => {
+    const response = await put<Proposal>(API_ENDPOINTS.APPROVE_PROPOSAL(id));
+    return response.data!;
+};
+
+/**
+ * Reject a proposal
+ */
+export const rejectProposal = async (id: string): Promise<Proposal> => {
+    const response = await put<Proposal>(API_ENDPOINTS.REJECT_PROPOSAL(id));
+    return response.data!;
+};
+
+/**
+ * Update proposal status
+ */
+export const updateProposalStatus = async (id: string, status: string): Promise<Proposal> => {
+    const response = await patch<Proposal>(API_ENDPOINTS.PROPOSAL_BY_ID(id) + '/status', { status });
+    return response.data!;
+};
+
+export default {
+    getAllProposals,
+    getAcceptedProposals,
+    getFreelancerProposals,
+    getProposalStats,
+    getProposalById,
+    createProposal,
+    approveProposal,
+    rejectProposal,
+    updateProposalStatus,
+};

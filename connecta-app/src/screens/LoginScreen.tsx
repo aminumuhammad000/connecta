@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, BackHandler, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
+import { useAuth } from '../context/AuthContext';
+import { useInAppAlert } from '../components/InAppAlert';
 
 interface LoginScreenProps {
   onSignedIn?: () => void;
@@ -13,14 +15,37 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgotPassword }) => {
   const c = useThemeColors();
+  const { login } = useAuth();
+  const { showAlert } = useInAppAlert();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
   }, []);
+
+  const handleLogin = async () => {
+    // Validation
+    if (!email.trim() || !password.trim()) {
+      showAlert({ title: 'Error', message: 'Please enter both email and password', type: 'error' });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await login({ email: email.trim(), password });
+      showAlert({ title: 'Success', message: 'Logged in successfully!', type: 'success' });
+      // Navigation will happen automatically via AuthContext
+      onSignedIn?.();
+    } catch (error: any) {
+      showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
@@ -70,8 +95,17 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                 <Text style={[styles.forgotPasswordText, { color: c.primary }]}>Forgot Password?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={onSignedIn} activeOpacity={0.9} style={[styles.primaryBtn, { backgroundColor: c.primary }]}>
-                <Text style={styles.primaryBtnText}>Sign In</Text>
+              <TouchableOpacity
+                onPress={handleLogin}
+                activeOpacity={0.9}
+                style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Sign In</Text>
+                )}
               </TouchableOpacity>
             </View>
 

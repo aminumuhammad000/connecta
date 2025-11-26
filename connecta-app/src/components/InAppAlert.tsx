@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 
 type AlertType = 'info' | 'success' | 'error';
@@ -50,6 +51,7 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
   }, [opacity, translateY]);
 
   const showAlert = useCallback((p: AlertPayload) => {
+    console.log('📢 Showing alert:', p);
     if (timerRef.current) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -81,24 +83,55 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
             { opacity },
           ]}
         >
-          <View pointerEvents="box-none" style={{ paddingTop: insets.top + 12 }}>
+          <View pointerEvents="box-none" style={{ paddingTop: insets.top + 12, paddingHorizontal: 16 }}>
             <Animated.View
               style={[
                 styles.card,
                 {
-                  backgroundColor: palette.bg,
-                  borderColor: palette.border,
+                  backgroundColor: type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : (c.isDark ? '#1F2937' : '#FFFFFF'),
+                  borderLeftWidth: 4,
+                  borderLeftColor: type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : c.primary,
+                  borderColor: type === 'info' ? c.border : 'transparent',
                   shadowColor: '#000',
                   transform: [{ translateY }],
-                  marginHorizontal: 12,
                 },
               ]}
             >
-              <Pressable onPress={hide} style={{ flex: 1 }}>
-                <Text style={[styles.title, { color: type === 'info' ? c.text : '#fff' }]}>{payload.title}</Text>
-                {payload.message ? (
-                  <Text style={[styles.message, { color: type === 'info' ? c.subtext : '#fff' }]}>{payload.message}</Text>
-                ) : null}
+              <Pressable onPress={hide} style={styles.content}>
+                <View style={styles.iconContainer}>
+                  {type === 'success' && (
+                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                      <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+                    </View>
+                  )}
+                  {type === 'error' && (
+                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                      <Ionicons name="close-circle" size={24} color="#FFFFFF" />
+                    </View>
+                  )}
+                  {type === 'info' && (
+                    <View style={[styles.iconCircle, { backgroundColor: c.primary + '20' }]}>
+                      <Ionicons name="information-circle" size={24} color={c.primary} />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={[styles.title, { color: type === 'info' ? c.text : '#FFFFFF' }]}>
+                    {payload.title}
+                  </Text>
+                  {payload.message ? (
+                    <Text style={[styles.message, { color: type === 'info' ? c.subtext : 'rgba(255,255,255,0.9)' }]}>
+                      {payload.message}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={styles.closeButton}>
+                  <Ionicons
+                    name="close"
+                    size={20}
+                    color={type === 'info' ? c.subtext : 'rgba(255,255,255,0.8)'}
+                  />
+                </View>
               </Pressable>
             </Animated.View>
           </View>
@@ -110,23 +143,50 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginTop: 8,
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    minHeight: 70,
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 10,
+    borderWidth: 1,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 15,
     fontWeight: '700',
+    lineHeight: 20,
   },
   message: {
-    marginTop: 6,
+    marginTop: 4,
     fontSize: 13,
     lineHeight: 18,
+    fontWeight: '500',
+  },
+  closeButton: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

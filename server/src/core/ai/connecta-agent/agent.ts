@@ -5,7 +5,7 @@ import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemp
 import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 // import { z } from "zod";
-import axios from "axios"; 
+import axios from "axios";
 
 // Dynamic tool loading
 import { tools, loadTools } from "./tools";
@@ -85,7 +85,7 @@ export class ConnectaAgent {
       temperature: config.temperature ?? 0.3, // Slightly creative but focused
       maxTokens: 2000,
     });
-    
+
     this.conversationId = config.conversationId || `conv_${config.userId}_${Date.now()}`;
     this.maxHistoryLength = config.maxHistoryLength ?? 50;
     this.loadMemory();
@@ -107,12 +107,12 @@ export class ConnectaAgent {
           this.config.userId,
           mockMode
         );
-        
+
         // Validate tool has required methods
         if (!inst.name || typeof inst._call !== 'function') {
           throw new Error(`Invalid tool structure for ${toolName}`);
         }
-        
+
         this.toolMap[inst.name] = inst;
         successCount++;
       } catch (err) {
@@ -120,7 +120,7 @@ export class ConnectaAgent {
         console.warn(`⚠️ Failed to initialize tool: ${toolName}`, err);
       }
     }
-    
+
     console.log(`✅ Tools initialized: ${successCount} successful, ${failCount} failed`);
   }
 
@@ -131,7 +131,7 @@ export class ConnectaAgent {
     try {
       const memoryKey = `${this.config.userId}_${this.conversationId}`;
       const stored = this.memoryStore.get(memoryKey);
-      
+
       if (stored) {
         this.chatHistory = stored.chatHistory;
         this.userContext = stored.userContext;
@@ -148,14 +148,14 @@ export class ConnectaAgent {
   private saveMemory(): void {
     try {
       const memoryKey = `${this.config.userId}_${this.conversationId}`;
-      
+
       if (this.chatHistory.length > this.maxHistoryLength) {
         this.chatHistory = this.chatHistory.slice(-this.maxHistoryLength);
       }
-      
+
       const successfulTools = this.chatHistory.filter(m => m.success).length;
       const failedTools = this.chatHistory.filter(m => m.success === false).length;
-      
+
       const memory: ConversationMemory = {
         userId: this.config.userId,
         conversationId: this.conversationId,
@@ -166,12 +166,12 @@ export class ConnectaAgent {
           totalTools: successfulTools + failedTools,
           successfulTools,
           failedTools,
-          averageResponseTime: this.sessionMetrics.totalRequests > 0 
+          averageResponseTime: this.sessionMetrics.totalRequests > 0
             ? this.sessionMetrics.totalResponseTime / this.sessionMetrics.totalRequests
             : 0,
         },
       };
-      
+
       this.memoryStore.set(memoryKey, memory);
     } catch (error) {
       console.warn("⚠️ Failed to save memory:", error);
@@ -193,9 +193,9 @@ export class ConnectaAgent {
   /**
    * Get conversation summary with analytics
    */
-  getMemorySummary(): { 
-    messageCount: number; 
-    userContext: any; 
+  getMemorySummary(): {
+    messageCount: number;
+    userContext: any;
     conversationId: string;
     metrics: typeof this.sessionMetrics;
   } {
@@ -226,12 +226,12 @@ export class ConnectaAgent {
   private getCachedResponse(input: string): any | null {
     const normalizedInput = input.toLowerCase().trim();
     const cached = this.responseCache.get(normalizedInput);
-    
+
     if (cached && (Date.now() - cached.timestamp) < this.cacheTTL) {
       console.log("⚡ Cache hit for:", input.substring(0, 50));
       return cached.response;
     }
-    
+
     return null;
   }
 
@@ -244,7 +244,7 @@ export class ConnectaAgent {
       response,
       timestamp: Date.now(),
     });
-    
+
     // Cleanup old cache entries
     if (this.responseCache.size > 100) {
       const oldestKey = Array.from(this.responseCache.keys())[0];
@@ -258,19 +258,19 @@ export class ConnectaAgent {
   private async generateSuggestions(input: string, result: any): Promise<string[]> {
     const suggestions: string[] = [];
     const lowerInput = input.toLowerCase();
-    
+
     // Profile-related suggestions
     if (lowerInput.includes("profile")) {
       suggestions.push("Would you like me to analyze your profile strength?");
       suggestions.push("I can suggest improvements to make your profile stand out");
     }
-    
+
     // Gig-related suggestions
     if (lowerInput.includes("gig") || lowerInput.includes("job")) {
       suggestions.push("Want me to find more gigs matching your skills?");
       suggestions.push("I can help you write a cover letter for any gig");
     }
-    
+
     // Empty results suggestions
     if (this.isEmptyResult(result)) {
       if (this.userContext?.userType === "freelancer") {
@@ -278,13 +278,13 @@ export class ConnectaAgent {
         suggestions.push("I can show you trending skills in your field");
       }
     }
-    
+
     // Dynamic suggestions based on recent activity
     const recentTools = this.chatHistory.slice(-3).map(h => h.toolUsed).filter(Boolean);
     if (recentTools.includes("get_matched_gigs_tool") && !recentTools.includes("create_cover_letter_tool")) {
       suggestions.push("Ready to apply? I can help you create a cover letter");
     }
-    
+
     return suggestions.slice(0, 2); // Return top 2 suggestions
   }
 
@@ -293,12 +293,12 @@ export class ConnectaAgent {
    */
   private async handleToolError(tool: string, error: any, parameters: any, retryCount: number = 0): Promise<any> {
     console.error(`❌ Tool ${tool} failed (attempt ${retryCount + 1}):`, error);
-    
+
     // Retry logic for transient errors
     if (retryCount < 2 && this.isRetriableError(error)) {
       console.log(`🔄 Retrying ${tool}...`);
       await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-      
+
       try {
         const selectedTool = this.toolMap[tool];
         return await selectedTool._call(parameters);
@@ -306,7 +306,7 @@ export class ConnectaAgent {
         return this.handleToolError(tool, retryError, parameters, retryCount + 1);
       }
     }
-    
+
     return {
       success: false,
       message: await this.explainError(tool, error?.message || "Unknown error"),
@@ -327,7 +327,7 @@ export class ConnectaAgent {
       "502",
       "429", // Rate limit
     ];
-    
+
     const errorMsg = (error?.message || error?.toString() || "").toLowerCase();
     return retriableErrors.some(err => errorMsg.includes(err.toLowerCase()));
   }
@@ -340,9 +340,9 @@ export class ConnectaAgent {
       await this.loadUserContext();
       return;
     }
-    
+
     const hoursSinceLastFetch = (Date.now() - this.userContext.lastFetched) / (1000 * 60 * 60);
-    
+
     // Refresh context if older than 1 hour
     if (hoursSinceLastFetch > 1) {
       console.log("🔄 Refreshing stale user context...");
@@ -357,13 +357,23 @@ export class ConnectaAgent {
   async process(input: string): Promise<AgentResponse> {
     const startTime = Date.now();
     this.sessionMetrics.totalRequests++;
-    
+
+    // Mock Mode Bypass
+    if (this.config.mockMode) {
+      return this.createResponse(
+        `[MOCK] I received your message: "${input}". Since I am in mock mode, I cannot process complex requests, but I am connected!`,
+        { originalInput: input },
+        true,
+        startTime
+      );
+    }
+
     try {
       // Ensure fresh context
       await this.ensureContextFreshness();
 
       const lowerInput = input.toLowerCase().trim();
-      
+
       // Check cache first
       const cached = this.getCachedResponse(input);
       if (cached) {
@@ -399,17 +409,17 @@ export class ConnectaAgent {
         const userName = this.userContext?.name ? `, ${this.userContext.name}` : "";
         const timeOfDay = new Date().getHours();
         const greeting = timeOfDay < 12 ? "Good morning" : timeOfDay < 18 ? "Good afternoon" : "Good evening";
-        
+
         const responses = [
           `${greeting}${userName}! 👋 I'm Connecta Assistant — here to supercharge your freelance journey.`,
           `Hey${userName}! 😊 Ready to tackle some gigs or polish your profile?`,
         ];
-        
+
         const randomGreeting = responses[Math.floor(Math.random() * responses.length)];
         const contextNote = this.chatHistory.length > 0
           ? " Welcome back! Want to continue where we left off?"
           : " What would you like to accomplish today?";
-        
+
         const message = `${randomGreeting}${contextNote}`;
         return this.createResponse(message, null, true, startTime, [
           "Find gigs matching my skills",
@@ -436,7 +446,7 @@ export class ConnectaAgent {
           message = "I'm Connecta Assistant — your AI-powered partner for freelancing success. Think of me as your personal career coach! 💼";
         else if (lowerInput.includes("what can you do") || lowerInput.includes("what do you do"))
           message = "Great question! I can:\n• Find perfect gigs for you\n• Write compelling cover letters\n• Analyze your profile\n• Track applications\n• Give career insights\n\nAnd much more!";
-        
+
         return this.createResponse(message, null, true, startTime, [
           "Show me what you can do with my profile",
           "Find gigs for me",
@@ -477,60 +487,60 @@ export class ConnectaAgent {
 
           const validatedOutput = IntentSchema.parse(parsedOutput);
 
-        if (validatedOutput.tool === "none" || !this.toolMap[validatedOutput.tool]) {
-          const fallbackMessage =
-            "⚠️ Sorry, I can only help with Connecta-related tasks — like updating your profile, writing cover letters, or finding gigs.";
-          this.chatHistory.push({ input, output: fallbackMessage, success: false, timestamp: new Date() });
-          return { message: fallbackMessage, success: false, data: null };
-        }
+          if (validatedOutput.tool === "none" || !this.toolMap[validatedOutput.tool]) {
+            const fallbackMessage =
+              "⚠️ Sorry, I can only help with Connecta-related tasks — like updating your profile, writing cover letters, or finding gigs.";
+            this.chatHistory.push({ input, output: fallbackMessage, success: false, timestamp: new Date() });
+            return { message: fallbackMessage, success: false, data: null };
+          }
 
-        const selectedTool = this.toolMap[validatedOutput.tool];
-        const result = await selectedTool._call(validatedOutput.parameters);
+          const selectedTool = this.toolMap[validatedOutput.tool];
+          const result = await selectedTool._call(validatedOutput.parameters);
 
-        // If tool failed, provide a friendly explanation instead of raw error
-        if (!result?.success) {
-          const friendly = await this.explainError(validatedOutput.tool, result?.message ?? "Unknown error");
-          this.chatHistory.push({ input, output: friendly, success: false, timestamp: new Date() });
-          return { message: friendly, success: false, data: null };
-        }
+          // If tool failed, provide a friendly explanation instead of raw error
+          if (!result?.success) {
+            const friendly = await this.explainError(validatedOutput.tool, result?.message ?? "Unknown error");
+            this.chatHistory.push({ input, output: friendly, success: false, timestamp: new Date() });
+            return { message: friendly, success: false, data: null };
+          }
 
-        this.chatHistory.push({ input, output: JSON.stringify(result), success: true, timestamp: new Date() });
-        // Ensure result has success field
-        return { ...result, success: result.success ?? true };
-      },
-    ]);
+          this.chatHistory.push({ input, output: JSON.stringify(result), success: true, timestamp: new Date() });
+          // Ensure result has success field
+          return { ...result, success: result.success ?? true };
+        },
+      ]);
 
-    const result = await chain.invoke({ input });
-    
-    // Ensure result has proper AgentResponse structure
-    if (!result || typeof result !== 'object') {
-      console.warn("⚠️ Chain returned invalid result:", result);
+      const result = await chain.invoke({ input });
+
+      // Ensure result has proper AgentResponse structure
+      if (!result || typeof result !== 'object') {
+        console.warn("⚠️ Chain returned invalid result:", result);
+        return this.createResponse(
+          "I encountered an issue processing your request. Please try again.",
+          null,
+          false,
+          startTime
+        );
+      }
+
+      // Ensure success field exists
+      if (result.success === undefined) {
+        result.success = !!result.message || !!result.data;
+      }
+
+      return result;
+    } catch (error) {
+      console.error("❌ Error processing request:", error);
+      this.sessionMetrics.failedRequests++;
+
+      // Return a proper error response instead of throwing
       return this.createResponse(
-        "I encountered an issue processing your request. Please try again.",
+        "I encountered an error processing your request. Please try again.",
         null,
         false,
         startTime
       );
     }
-    
-    // Ensure success field exists
-    if (result.success === undefined) {
-      result.success = !!result.message || !!result.data;
-    }
-    
-    return result;
-  } catch (error) {
-    console.error("❌ Error processing request:", error);
-    this.sessionMetrics.failedRequests++;
-    
-    // Return a proper error response instead of throwing
-    return this.createResponse(
-      "I encountered an error processing your request. Please try again.",
-      null,
-      false,
-      startTime
-    );
-  }
   }
 
   // Load user context with optional tokenless fallback

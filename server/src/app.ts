@@ -28,7 +28,7 @@ const server = http.createServer(app);
 import { setIO } from './core/utils/socketIO';
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -37,7 +37,7 @@ setIO(io);
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
   credentials: true
 }));
 app.use(express.json());

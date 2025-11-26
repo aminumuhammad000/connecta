@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useRole } from '../context/RoleContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { scheduleLocalNotification } from '../utils/notifications';
 import { useInAppAlert } from '../components/InAppAlert';
 
@@ -12,6 +13,7 @@ export default function SettingsScreen({ navigation }: any) {
     const c = useThemeColors();
     const { setRole } = useRole();
     const { isDark, toggleTheme } = useTheme();
+    const { logout } = useAuth();
     const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
     const { showAlert } = useInAppAlert();
 
@@ -25,9 +27,14 @@ export default function SettingsScreen({ navigation }: any) {
         }
     };
 
-    const handleLogout = () => {
-        setRole(null);
-        // App.tsx will handle navigation to AuthNavigator
+    const handleLogout = async () => {
+        try {
+            await logout();
+            setRole(null);
+            showAlert({ title: 'Logged out', message: 'You have been logged out successfully', type: 'success' });
+        } catch (error: any) {
+            showAlert({ title: 'Error', message: error.message || 'Failed to logout', type: 'error' });
+        }
     };
 
     return (

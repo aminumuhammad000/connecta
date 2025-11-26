@@ -30,7 +30,7 @@ async function createAgent(userId: string, authToken?: string, userType?: string
     apiBaseUrl: "http://localhost:5000",
     authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
     openaiApiKey: process.env.OPENROUTER_API_KEY || "fallback-api-key",
-    mockMode: false,
+    mockMode: true,
     userId,
   });
 

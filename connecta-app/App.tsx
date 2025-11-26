@@ -1,9 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { RoleProvider, useRole } from './src/context/RoleContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { useThemeColors } from './src/theme/theme';
 import * as Notifications from 'expo-notifications';
 import { configureNotifications, registerForPushNotificationsAsync } from './src/utils/notifications';
@@ -20,11 +21,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <RoleProvider>
-          <InAppAlertProvider>
-            <AppContent />
-          </InAppAlertProvider>
-        </RoleProvider>
+        <AuthProvider>
+          <RoleProvider>
+            <InAppAlertProvider>
+              <AppContent />
+            </InAppAlertProvider>
+          </RoleProvider>
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
@@ -72,13 +75,35 @@ function AppContent() {
 }
 
 function RootNavigation() {
-  const { role } = useRole();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { setRole } = useRole();
+  const c = useThemeColors();
 
-  if (!role) {
+  // Sync user type with role context
+  useEffect(() => {
+    if (user) {
+      setRole(user.userType);
+    } else {
+      setRole(null);
+    }
+  }, [user, setRole]);
+
+  // Show loading screen while checking auth status
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  // Show auth screens if not authenticated
+  if (!isAuthenticated || !user) {
     return <AuthNavigator />;
   }
 
-  if (role === 'client') {
+  // Show role-based navigator
+  if (user.userType === 'client') {
     return <ClientNavigator />;
   }
 

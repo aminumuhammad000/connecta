@@ -1,33 +1,60 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Logo from '../components/Logo';
-import { useRole } from '../context/RoleContext';
+import { useAuth } from '../context/AuthContext';
+import { useInAppAlert } from '../components/InAppAlert';
 
 const SignupScreen: React.FC = () => {
   const c = useThemeColors();
   const navigation = useNavigation();
-  const { setRole } = useRole();
+  const { signup } = useAuth();
+  const { showAlert } = useInAppAlert();
   const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer'>('client');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreateAccount = () => {
-    // Set the role in context
-    setRole(selectedRole);
+  const handleCreateAccount = async () => {
+    // Validation
+    if (!name.trim()) {
+      showAlert({ title: 'Error', message: 'Please enter your full name', type: 'error' });
+      return;
+    }
+    if (!email.trim()) {
+      showAlert({ title: 'Error', message: 'Please enter your email', type: 'error' });
+      return;
+    }
+    if (!password.trim() || password.length < 6) {
+      showAlert({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
+      return;
+    }
 
-    // Simulate account creation success and navigate to appropriate dashboard
-    if (selectedRole === 'client') {
-      (navigation as any).reset({ index: 0, routes: [{ name: 'ClientDashboard' }] });
-    } else if (selectedRole === 'freelancer') {
-      (navigation as any).reset({ index: 0, routes: [{ name: 'FreelancerDashboard' }] });
-    } else {
-      (navigation as any).reset({ index: 0, routes: [{ name: 'Dashboard' }] });
+    setIsLoading(true);
+    try {
+      // Split name into first and last name
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
+      await signup({
+        email: email.trim(),
+        password,
+        firstName,
+        lastName,
+        userType: selectedRole,
+      });
+      showAlert({ title: 'Success', message: 'Account created successfully!', type: 'success' });
+      // Navigation will happen automatically via AuthContext
+    } catch (error: any) {
+      showAlert({ title: 'Signup Failed', message: error.message || 'Failed to create account', type: 'error' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -184,10 +211,15 @@ const SignupScreen: React.FC = () => {
 
               <TouchableOpacity
                 activeOpacity={0.9}
-                style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+                style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
                 onPress={handleCreateAccount}
+                disabled={isLoading}
               >
-                <Text style={styles.primaryBtnText}>Create Account</Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Create Account</Text>
+                )}
               </TouchableOpacity>
             </View>
 
