@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Users from './pages/Users'
 import Jobs from './pages/Jobs'
 import Proposals from './pages/Proposals'
 import Projects from './pages/Projects'
@@ -11,6 +12,9 @@ import Reviews from './pages/Reviews'
 import Contracts from './pages/Contracts'
 import GigApplications from './pages/GigApplications'
 import Analytics from './pages/Analytics'
+import Subscriptions from './pages/Subscriptions'
+import Profile from './pages/Profile'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -18,15 +22,19 @@ function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/users" element={<Users />} />
       <Route path="/jobs" element={<Jobs />} />
       <Route path="/proposals" element={<Proposals />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/contracts" element={<Contracts />} />
       <Route path="/applications" element={<GigApplications />} />
       <Route path="/analytics" element={<Analytics />} />
+      <Route path="/subscriptions" element={<Subscriptions />} />
       <Route path="/payments" element={<Payments />} />
       <Route path="/reviews" element={<Reviews />} />
       <Route path="/notifications" element={<Notifications />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )

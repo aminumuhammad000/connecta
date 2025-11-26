@@ -477,3 +477,46 @@ export const getContractTemplate = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Get all contracts (Admin only)
+ */
+export const getAllContracts = async (req: Request, res: Response) => {
+  try {
+    const { status, page = 1, limit = 100 } = req.query;
+
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
+
+    const contracts = await Contract.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .populate('clientId', 'firstName lastName email')
+      .populate('freelancerId', 'firstName lastName email')
+      .populate('projectId', 'title description');
+
+    const total = await Contract.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: contracts,
+      count: contracts.length,
+      total,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    console.error('Get all contracts error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch contracts',
+    });
+  }
+};

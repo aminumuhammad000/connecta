@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Connecta",
-    "slug": "connecta-app",
+    "slug": "connecta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
@@ -35,9 +35,15 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "4cf7c9ea-1ae6-4e76-9b3b-b6bcfac9cda4"
+        "projectId": "6726d9ba-7936-44be-988e-331265e60d7a"
       }
     },
-    "owner": "aminuamee2025"
+    "owner": "0x_mrcoder",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6726d9ba-7936-44be-988e-331265e60d7a"
+    }
   }
 }

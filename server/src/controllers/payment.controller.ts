@@ -801,3 +801,46 @@ export const resolveAccount = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Get all payments (Admin only)
+ */
+export const getAllPayments = async (req: Request, res: Response) => {
+  try {
+    const { status, page = 1, limit = 100 } = req.query;
+
+    const query: any = {};
+    if (status) {
+      query.status = status;
+    }
+
+    const payments = await Payment.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .populate('payerId', 'firstName lastName email profileImage')
+      .populate('payeeId', 'firstName lastName email profileImage')
+      .populate('projectId', 'title description');
+
+    const total = await Payment.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: payments,
+      count: payments.length,
+      total,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    console.error('Get all payments error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch payments',
+    });
+  }
+};

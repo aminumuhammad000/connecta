@@ -310,3 +310,27 @@ export const notifyReviewReceived = async (
     priority: 'medium',
   });
 };
+
+/**
+ * Get all notifications for admin (no auth required)
+ */
+export const getAllNotifications = async (req: Request, res: Response) => {
+  try {
+    const notifications = await Notification.find()
+      .populate('userId', 'firstName lastName email profileImage')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    return res.status(200).json({
+      success: true,
+      data: notifications,
+      count: notifications.length,
+    });
+  } catch (error: any) {
+    console.error('Get all notifications error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch notifications',
+    });
+  }
+};

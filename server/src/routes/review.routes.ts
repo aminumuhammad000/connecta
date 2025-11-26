@@ -1,4 +1,5 @@
 import express from 'express';
+import { getAllReviews } from '../controllers/review.controller';
 import {
   createReview,
   getUserReviews,
@@ -11,6 +12,8 @@ import {
 import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = express.Router();
+// Admin: Get all reviews (no auth)
+router.get('/admin/all', getAllReviews);
 
 // Create review (protected)
 router.post('/', authenticate, createReview);

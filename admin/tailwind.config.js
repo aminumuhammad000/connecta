@@ -26,7 +26,8 @@ export default {
         'border-dark': '#40312c',
       },
       fontFamily: {
-        display: ['Inter', 'sans-serif'],
+        sans: ['Nunito', 'system-ui', 'sans-serif'],
+        display: ['Nunito', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '0.25rem',

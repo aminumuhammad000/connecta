@@ -1,0 +1,616 @@
+import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
+import AppLayout from '../components/AppLayout'
+import Icon from '../components/Icon'
+import { usersAPI } from '../services/api'
+
+interface User {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  userType: 'client' | 'freelancer' | 'admin'
+  profileImage?: string
+  phone?: string
+  location?: string
+  createdAt: string
+  isVerified?: boolean
+  rating?: number
+  totalJobs?: number
+  totalProjects?: number
+}
+
+export default function Users() {
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterType, setFilterType] = useState<string>('all')
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [showModal, setShowModal] = useState(false)
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'delete'>('view')
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: '',
+    userType: 'freelancer' as 'client' | 'freelancer' | 'admin',
+  })
+
+  useEffect(() => {
+    fetchUsers()
+  }, [filterType])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      const params: any = {}
+      if (filterType !== 'all') {
+        params.userType = filterType
+      }
+      
+      console.log('Fetching users with params:', params)
+      const response = await usersAPI.getAll(params)
+      console.log('Users API response:', response)
+      
+      // Handle different response formats
+      let userData = []
+      if (response.success && response.data) {
+        userData = response.data
+      } else if (Array.isArray(response)) {
+        userData = response
+      } else if (response.data && Array.isArray(response.data)) {
+        userData = response.data
+      } else {
+        console.warn('Unexpected response format:', response)
+      }
+      
+      console.log('Processed user data:', userData)
+      setUsers(userData)
+      
+      if (userData.length === 0) {
+        toast('No users found', { icon: 'ℹ️' })
+      }
+    } catch (error: any) {
+      console.error('Error fetching users:', error)
+      console.error('Error response:', error.response)
+      console.error('Error message:', error.message)
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load users'
+      toast.error(errorMessage)
+      setUsers([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user)
+    setModalMode('view')
+    setShowModal(true)
+  }
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user)
+    setFormData({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone || '',
+      location: user.location || '',
+      userType: user.userType,
+    })
+    setModalMode('edit')
+    setShowModal(true)
+  }
+
+  const handleDeleteUser = (user: User) => {
+    setSelectedUser(user)
+    setModalMode('delete')
+    setShowModal(true)
+  }
+
+  const handleSaveUser = async () => {
+    if (!selectedUser) return
+
+    try {
+      await usersAPI.update(selectedUser._id, formData)
+      toast.success('User updated successfully')
+      setShowModal(false)
+      fetchUsers()
+    } catch (error: any) {
+      console.error('Error updating user:', error)
+      toast.error(error.response?.data?.message || 'Failed to update user')
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!selectedUser) return
+
+    try {
+      await usersAPI.delete(selectedUser._id)
+      toast.success('User deleted successfully')
+      setShowModal(false)
+      fetchUsers()
+    } catch (error: any) {
+      console.error('Error deleting user:', error)
+      toast.error(error.response?.data?.message || 'Failed to delete user')
+    }
+  }
+
+  const closeModal = () => {
+    setShowModal(false)
+    setSelectedUser(null)
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      location: '',
+      userType: 'freelancer',
+    })
+  }
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesSearch
+  })
+
+  const stats = {
+    total: users.length,
+    clients: users.filter(u => u.userType === 'client').length,
+    freelancers: users.filter(u => u.userType === 'freelancer').length,
+    admins: users.filter(u => u.userType === 'admin').length,
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
+  }
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase()
+  }
+
+  return (
+    <AppLayout>
+      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">Total Users</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.total}</p>
+                </div>
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Icon name="group" size={24} className="text-blue-600 dark:text-blue-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">Clients</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.clients}</p>
+                </div>
+                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <Icon name="business" size={24} className="text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">Freelancers</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.freelancers}</p>
+                </div>
+                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <Icon name="person" size={24} className="text-purple-600 dark:text-purple-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase">Admins</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.admins}</p>
+                </div>
+                <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <Icon name="shield" size={24} className="text-amber-600 dark:text-amber-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters and Search */}
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">User Management</h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                    Manage all platform users
+                  </p>
+                </div>
+                <button
+                  onClick={fetchUsers}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <Icon name="refresh" size={18} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              {/* Search and Filter */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                <div className="flex-1 relative">
+                  <Icon name="search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="all">All Users</option>
+                  <option value="client">Clients</option>
+                  <option value="freelancer">Freelancers</option>
+                  <option value="admin">Admins</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="overflow-x-auto">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                  <p className="text-slate-600 dark:text-slate-400 font-medium">Loading users...</p>
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="text-center py-20">
+                  <Icon name="person_off" size={64} className="mx-auto text-slate-400 mb-4 opacity-50" />
+                  <p className="text-slate-600 dark:text-slate-400 text-lg">No users found</p>
+                  <p className="text-slate-500 dark:text-slate-500 text-sm mt-1">Try adjusting your search or filters</p>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {filteredUsers.map((user) => (
+                      <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-white font-bold text-sm"
+                              style={user.profileImage ? {
+                                backgroundImage: `url(${user.profileImage})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center'
+                              } : undefined}
+                            >
+                              {!user.profileImage && getInitials(user.firstName, user.lastName)}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">
+                                {user.firstName} {user.lastName}
+                              </p>
+                              <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            user.userType === 'admin' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                            user.userType === 'client' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                          }`}>
+                            {user.userType}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                          {user.phone || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                          {user.location || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                          {formatDate(user.createdAt)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            user.isVerified 
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          }`}>
+                            <Icon name={user.isVerified ? 'verified' : 'pending'} size={14} />
+                            {user.isVerified ? 'Verified' : 'Pending'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleViewUser(user)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="View Details"
+                            >
+                              <Icon name="visibility" size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleEditUser(user)}
+                              className="p-2 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                              title="Edit User"
+                            >
+                              <Icon name="edit" size={18} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user)}
+                              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Delete User"
+                            >
+                              <Icon name="delete" size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
+            
+            <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {modalMode === 'view' ? 'User Details' : modalMode === 'edit' ? 'Edit User' : 'Delete User'}
+                </h3>
+                <button
+                  onClick={closeModal}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <Icon name="close" size={20} className="text-slate-500" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6">
+                {modalMode === 'view' && selectedUser && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                      <div
+                        className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-white font-bold text-2xl"
+                        style={selectedUser.profileImage ? {
+                          backgroundImage: `url(${selectedUser.profileImage})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        } : undefined}
+                      >
+                        {!selectedUser.profileImage && getInitials(selectedUser.firstName, selectedUser.lastName)}
+                      </div>
+                      <div>
+                        <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
+                          {selectedUser.firstName} {selectedUser.lastName}
+                        </h4>
+                        <p className="text-slate-600 dark:text-slate-400">{selectedUser.email}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">User Type</p>
+                        <p className="text-slate-900 dark:text-white font-medium capitalize">{selectedUser.userType}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Phone</p>
+                        <p className="text-slate-900 dark:text-white font-medium">{selectedUser.phone || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Location</p>
+                        <p className="text-slate-900 dark:text-white font-medium">{selectedUser.location || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Joined</p>
+                        <p className="text-slate-900 dark:text-white font-medium">{formatDate(selectedUser.createdAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Status</p>
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          selectedUser.isVerified 
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                        }`}>
+                          <Icon name={selectedUser.isVerified ? 'verified' : 'pending'} size={14} />
+                          {selectedUser.isVerified ? 'Verified' : 'Pending'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Rating</p>
+                        <p className="text-slate-900 dark:text-white font-medium">
+                          {selectedUser.rating ? `${selectedUser.rating}/5 ⭐` : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {modalMode === 'edit' && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                          className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        User Type
+                      </label>
+                      <select
+                        value={formData.userType}
+                        onChange={(e) => setFormData({ ...formData, userType: e.target.value as any })}
+                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      >
+                        <option value="freelancer">Freelancer</option>
+                        <option value="client">Client</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {modalMode === 'delete' && selectedUser && (
+                  <div className="text-center py-4">
+                    <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                      <Icon name="warning" size={32} className="text-red-600 dark:text-red-400" />
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+                      Delete User Account?
+                    </h4>
+                    <p className="text-slate-600 dark:text-slate-400 mb-1">
+                      Are you sure you want to delete <strong>{selectedUser.firstName} {selectedUser.lastName}</strong>?
+                    </p>
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                {modalMode === 'edit' && (
+                  <button
+                    onClick={handleSaveUser}
+                    className="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                  >
+                    Save Changes
+                  </button>
+                )}
+                {modalMode === 'delete' && (
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Delete User
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </AppLayout>
+  )
+}

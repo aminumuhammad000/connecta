@@ -2,9 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
+import { authAPI } from '../services/api'
 
-const DEMO_EMAIL = 'admin@connecta.com'
-const DEMO_PASSWORD = 'demo1234'
+// Demo admin accounts (fallback when database is unavailable)
+const DEMO_ADMINS = [
+  { email: 'admin@connecta.com', password: 'demo1234', name: 'Admin User' },
+  { email: 'safe@admin.com', password: 'imsafe', name: 'Safe Admin' }
+]
 
 export default function Login() {
   const navigate = useNavigate()
@@ -13,30 +17,68 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
-      if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-        toast.success('Welcome back! Redirecting...')
-        navigate('/dashboard')
-      } else {
-        toast.error('Invalid credentials')
+    try {
+      // Always try backend first
+      try {
+        const response = await authAPI.login(email, password)
+        if (response.success && response.token) {
+          localStorage.setItem('admin_token', response.token)
+          localStorage.setItem('admin_user', JSON.stringify(response.user))
+          toast.success('Welcome back! Redirecting...')
+          setTimeout(() => navigate('/dashboard'), 500)
+          return
+        }
+      } catch (backendError: any) {
+        console.warn('Backend error:', backendError.message)
+        
+        // Check if this is a demo admin account
+        const demoAdmin = DEMO_ADMINS.find(
+          admin => admin.email === email && admin.password === password
+        )
+        
+        if (demoAdmin) {
+          // Backend unavailable but valid demo credentials - use mock login
+          const names = demoAdmin.name.split(' ')
+          const mockUser = {
+            _id: 'mock-admin-' + Date.now(),
+            email: demoAdmin.email,
+            firstName: names[0],
+            lastName: names[1] || 'User',
+            userType: 'admin',
+            profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(demoAdmin.name)}&background=fd6730&color=fff&size=256`,
+          }
+          const mockToken = 'mock-jwt-token-' + Date.now()
+          localStorage.setItem('admin_token', mockToken)
+          localStorage.setItem('admin_user', JSON.stringify(mockUser))
+          toast.success('Welcome back! (Demo Mode) 🚀')
+          setTimeout(() => navigate('/dashboard'), 500)
+          return
+        }
+        
+        // Not a demo account and backend failed
+        throw backendError
       }
+    } catch (error: any) {
+      console.error('Login error:', error)
+      const errorMessage = error.response?.data?.message || 'Invalid credentials. Please check your email and password.'
+      toast.error(errorMessage)
+    } finally {
       setLoading(false)
-    }, 700)
+    }
   }
 
   const handleDemoLogin = () => {
-    setEmail(DEMO_EMAIL)
-    setPassword(DEMO_PASSWORD)
+    setEmail(DEMO_ADMINS[0].email)
+    setPassword(DEMO_ADMINS[0].password)
     toast('Using demo account', { icon: '👋' })
-    setLoading(true)
+    // Automatically trigger login after setting demo credentials
     setTimeout(() => {
-      toast.success('Signed in as Demo Admin')
-      navigate('/dashboard')
-      setLoading(false)
-    }, 600)
+      const form = document.querySelector('form')
+      form?.requestSubmit()
+    }, 500)
   }
 
   return (
@@ -44,9 +86,16 @@ export default function Login() {
       <div className="absolute inset-0 pointer-events-none [background:radial-gradient(1200px_600px_at_50%_-20%,theme(colors.primary/0.08),transparent_70%)]" />
 
       <div className="relative z-10 w-full max-w-md mx-auto p-8 bg-white/80 dark:bg-stone-900/70 backdrop-blur border border-stone-200/70 dark:border-stone-800 rounded-xl shadow-xl">
-        <div className="flex items-center gap-2 mb-6">
-          <Icon name="hub" className="text-primary" size={30} />
-          <h1 className="text-2xl font-bold">Connecta Admin</h1>
+        <div className="flex flex-col items-center gap-4 mb-6">
+          <img 
+            src="/logo.png" 
+            alt="Connecta Logo" 
+            className="h-12 w-auto"
+          />
+          <div className="text-center">
+            <h1 className="text-2xl font-bold">Admin Portal</h1>
+            <p className="text-sm text-stone-500 mt-1">Manage your platform with ease</p>
+          </div>
         </div>
         <h2 className="text-xl font-semibold mb-1">Sign in</h2>
         <p className="text-sm text-stone-500 mb-6">Use your admin credentials or try the demo account.</p>
@@ -121,7 +170,7 @@ export default function Login() {
         </form>
 
         <p className="mt-6 text-xs text-stone-500">
-          Hint: Demo email <span className="font-medium">{DEMO_EMAIL}</span> & password <span className="font-medium">{DEMO_PASSWORD}</span>
+          Hint: Use <span className="font-medium">{DEMO_ADMINS[0].email}</span> or <span className="font-medium">{DEMO_ADMINS[1].email}</span>
         </p>
       </div>
     </div>

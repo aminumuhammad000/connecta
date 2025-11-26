@@ -1,6 +1,5 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword } from "../controllers/user.controller";
-
+import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser } from "../controllers/user.controller";
 const router = express.Router();
 
 // Auth routes
@@ -18,5 +17,8 @@ router.post("/reset-password", resetPassword);
 router.get("/", getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20
 router.get("/:id", getUserById); // GET /api/users/:id
 
-export default router;
+// User management routes
+router.put("/:id/ban", banUser); // PUT /api/users/:id/ban
+router.put("/:id/unban", unbanUser); // PUT /api/users/:id/unban
 
+export default router;

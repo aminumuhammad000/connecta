@@ -16,6 +16,12 @@ import messageRoutes from "./routes/Message.routes";
 import proposalRoutes from "./routes/Proposal.routes";
 import dashboardRoutes from "./routes/Dashboard.routes";
 import uploadRoutes from "./routes/upload.routes";
+import contractRoutes from "./routes/contract.routes";
+import paymentRoutes from "./routes/payment.routes";
+import reviewRoutes from "./routes/review.routes";
+import gigsRoutes from "./routes/gigs.routes";
+import notificationRoutes from "./routes/notification.routes";
+import insightsRoutes from "./routes/insights.routes";
 dotenv.config();
 
 const app = express();
@@ -55,6 +61,16 @@ app.use("/api/proposals", proposalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/agent", agentRoute);
+app.use("/api/contracts", contractRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/gigs", gigsRoutes);
+app.use("/api/notifications", notificationRoutes);
+import analyticsRoutes from "./routes/analytics.routes";
+app.use("/api/analytics", analyticsRoutes);
+import subscriptionRoutes from "./routes/subscription.routes";
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/analytics", insightsRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
@@ -71,7 +87,7 @@ io.on("connection", (socket) => {
     activeUsers.set(userId, socket.id);
     socket.join(userId);
     console.log(`User ${userId} joined with socket ${socket.id}`);
-    
+
     // Emit online status
     io.emit("user:online", { userId, socketId: socket.id });
   });
@@ -84,13 +100,13 @@ io.on("connection", (socket) => {
     message: any;
   }) => {
     console.log("Message sent:", data);
-    
+
     // Send to receiver if online
     const receiverSocketId = activeUsers.get(data.receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("message:receive", data.message);
     }
-    
+
     // Send confirmation to sender
     socket.emit("message:sent", data.message);
   });
@@ -130,7 +146,7 @@ io.on("connection", (socket) => {
   // Disconnect
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
-    
+
     // Find and remove user from activeUsers
     for (const [userId, socketId] of activeUsers.entries()) {
       if (socketId === socket.id) {

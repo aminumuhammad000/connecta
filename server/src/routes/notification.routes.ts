@@ -1,4 +1,5 @@
 import express from 'express';
+import { getAllNotifications } from '../controllers/notification.controller';
 import {
   getNotifications,
   getUnreadCount,
@@ -10,6 +11,8 @@ import {
 import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = express.Router();
+// Admin: Get all notifications (no auth)
+router.get('/admin/all', getAllNotifications);
 
 // Get all notifications (protected)
 router.get('/', authenticate, getNotifications);
