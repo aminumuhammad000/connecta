@@ -1,7 +1,80 @@
+import { useEffect, useState } from 'react'
 import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
+import { notificationsAPI } from '../services/api'
 
 export default function Notifications() {
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all')
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await notificationsAPI.getAll()
+      console.log('Notifications response:', response)
+      const notificationsData = Array.isArray(response) ? response : (response?.data || [])
+      setNotifications(notificationsData)
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getNotificationIcon = (type: string) => {
+    const icons: Record<string, { name: string; color: string }> = {
+      payment: { name: 'payments', color: 'text-green-500' },
+      payment_received: { name: 'account_balance_wallet', color: 'text-green-500' },
+      proposal_accepted: { name: 'assignment_turned_in', color: 'text-blue-500' },
+      project_completed: { name: 'task_alt', color: 'text-primary' },
+      review_received: { name: 'star', color: 'text-yellow-500' },
+      message: { name: 'chat', color: 'text-primary' },
+      dispute: { name: 'report', color: 'text-red-500' },
+      user_registered: { name: 'person_add', color: 'text-blue-500' },
+    }
+    return icons[type] || { name: 'notifications', color: 'text-text-light-secondary dark:text-dark-secondary' }
+  }
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMs = now.getTime() - date.getTime()
+    const diffInMins = Math.floor(diffInMs / 60000)
+    const diffInHours = Math.floor(diffInMs / 3600000)
+    const diffInDays = Math.floor(diffInMs / 86400000)
+
+    if (diffInMins < 1) return 'Just now'
+    if (diffInMins < 60) return `${diffInMins} minute${diffInMins > 1 ? 's' : ''} ago`
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`
+    if (diffInDays === 1) return 'Yesterday'
+    if (diffInDays < 7) return `${diffInDays} days ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  const filteredNotifications = notifications.filter((notif) => {
+    const matchesSearch =
+      searchQuery === '' ||
+      notif.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      notif.message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      notif.userId?.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      notif.userId?.lastName?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'read' && notif.read) ||
+      (statusFilter === 'unread' && !notif.read)
+
+    return matchesSearch && matchesStatus
+  })
+
+  const unreadCount = notifications.filter((n) => !n.read).length
+
   return (
     <AppLayout>
       {/* Main Content */}
@@ -12,14 +85,10 @@ export default function Notifications() {
             <p className="text-text-light-secondary dark:text-dark-secondary text-base font-normal leading-normal">Manage all platform notifications.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary text-sm font-medium leading-normal gap-2 border border-border-light dark:border-border-dark hover:bg-primary/10 hover:text-primary">
-              <Icon name="done_all" size={20} />
-              <span className="truncate">Mark all as read</span>
-            </button>
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary text-sm font-medium leading-normal gap-2 border border-border-light dark:border-border-dark hover:bg-primary/10 hover:text-primary">
-              <Icon name="delete" size={20} />
-              <span className="truncate">Clear read</span>
-            </button>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+              <Icon name="notifications" size={20} className="text-primary" />
+              <span className="text-sm font-medium text-primary">{unreadCount} Unread</span>
+            </div>
           </div>
         </header>
 
@@ -35,6 +104,8 @@ export default function Notifications() {
                     <input
                       className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-text-light-primary dark:text-dark-primary focus:outline-0 focus:ring-2 focus:ring-primary focus:ring-inset border-none bg-background-light dark:bg-background-dark h-full placeholder:text-text-light-secondary placeholder:dark:text-dark-secondary px-4 pl-2 text-base font-normal leading-normal"
                       placeholder="Search notifications..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                     />
                   </div>
                 </label>
@@ -51,108 +122,78 @@ export default function Notifications() {
           </div>
 
           <div className="divide-y divide-border-light dark:divide-border-dark">
-            <div className="flex items-center gap-4 p-4 md:p-6 hover:bg-primary/5 relative">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-              <Icon name="chat" className="text-primary" size={32} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">New message from Alicia Keys</p>
-                <p className="text-sm text-text-light-secondary dark:text-dark-secondary">"Hey, just wanted to check in on the project progress..."</p>
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <Icon name="progress_activity" size={32} className="animate-spin text-primary" />
               </div>
-              <div className="flex flex-col items-end gap-2 text-xs text-text-light-secondary dark:text-dark-secondary">
-                <p>2 minutes ago</p>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Mark as read">
-                    <Icon name="drafts" size={20} />
-                  </button>
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Delete">
-                    <Icon name="delete" size={20} />
-                  </button>
-                </div>
+            ) : filteredNotifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-8 gap-3">
+                <Icon name="notifications_off" size={48} className="text-text-light-secondary dark:text-dark-secondary" />
+                <p className="text-text-light-secondary dark:text-dark-secondary">No notifications found</p>
               </div>
-            </div>
+            ) : (
+              filteredNotifications.map((notif) => {
+                const icon = getNotificationIcon(notif.type)
+                const isUnread = !notif.read
+                return (
+                  <div
+                    key={notif._id}
+                    className={`flex items-start gap-4 p-4 md:p-6 relative transition-colors ${
+                      isUnread ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-background-light dark:hover:bg-background-dark/50'
+                    }`}
+                  >
+                    {isUnread && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl" />}
+                    
+                    {/* Icon */}
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                      isUnread ? 'bg-white dark:bg-background-dark' : 'bg-background-light dark:bg-background-dark'
+                    }`}>
+                      <Icon name={icon.name} className={icon.color} size={24} />
+                    </div>
 
-            <div className="flex items-center gap-4 p-4 md:p-6 hover:bg-primary/5 relative">
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
-              <Icon name="assignment_turned_in" className="text-primary" size={32} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Project 'Mobile App Development' marked as completed</p>
-                <p className="text-sm text-text-light-secondary dark:text-dark-secondary">Client Innovate Solutions has approved the final delivery.</p>
-              </div>
-              <div className="flex flex-col items-end gap-2 text-xs text-text-light-secondary dark:text-dark-secondary">
-                <p>1 hour ago</p>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Mark as read">
-                    <Icon name="drafts" size={20} />
-                  </button>
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Delete">
-                    <Icon name="delete" size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 md:p-6 hover:bg-black/5 dark:hover:bg-white/5">
-              <Icon name="payments" className="text-green-500" size={32} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Payment of $2,500 received</p>
-                <p className="text-sm text-text-light-secondary dark:text-dark-secondary">From Global Mart Inc. for 'E-commerce Platform Redesign'.</p>
-              </div>
-              <div className="flex flex-col items-end gap-2 text-xs text-text-light-secondary dark:text-dark-secondary">
-                <p>3 hours ago</p>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Delete">
-                    <Icon name="delete" size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 md:p-6 hover:bg-black/5 dark:hover:bg-white/5">
-              <Icon name="person_add" className="text-blue-500" size={32} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">New freelancer account created</p>
-                <p className="text-sm text-text-light-secondary dark:text-dark-secondary">Bruno Mars has joined the platform. Review profile.</p>
-              </div>
-              <div className="flex flex-col items-end gap-2 text-xs text-text-light-secondary dark:text-dark-secondary">
-                <p>Yesterday</p>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Delete">
-                    <Icon name="delete" size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 md:p-6 hover:bg-black/5 dark:hover:bg-white/5">
-              <Icon name="report" className="text-red-500" size={32} />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Dispute filed for project 'SEO & Content Strategy'</p>
-                <p className="text-sm text-text-light-secondary dark:text-dark-secondary">Client Digital Growth Agency has raised an issue.</p>
-              </div>
-              <div className="flex flex-col items-end gap-2 text-xs text-text-light-secondary dark:text-dark-secondary">
-                <p>2 days ago</p>
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center justify-center size-8 rounded-lg hover:bg-primary/10 text-text-light-secondary dark:text-dark-secondary hover:text-primary" title="Delete">
-                    <Icon name="delete" size={20} />
-                  </button>
-                </div>
-              </div>
-            </div>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 mb-1">
+                        <h4 className="text-sm font-semibold text-text-light-primary dark:text-dark-primary leading-tight">
+                          {notif.title}
+                        </h4>
+                        {isUnread && (
+                          <span className="flex-shrink-0 px-2 py-0.5 bg-primary text-white rounded-full text-xs font-medium">
+                            New
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-sm text-text-light-secondary dark:text-dark-secondary leading-relaxed mb-2">
+                        {notif.message}
+                      </p>
+                      
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-text-light-secondary dark:text-dark-secondary flex items-center gap-1">
+                          <Icon name="schedule" size={14} />
+                          {formatTimeAgo(notif.createdAt)}
+                        </span>
+                        {notif.userId && (
+                          <>
+                            <span className="text-text-light-secondary dark:text-dark-secondary">•</span>
+                            <span className="text-primary font-medium flex items-center gap-1">
+                              <Icon name="person" size={14} />
+                              {notif.userId.firstName} {notif.userId.lastName}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
 
           <div className="flex items-center justify-between p-4 md:p-6 border-t border-border-light dark:border-border-dark">
-            <p className="text-sm text-text-light-secondary dark:text-dark-secondary">Showing 1 to 5 of 42 results</p>
-            <div className="flex items-center gap-2">
-              <button className="flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10">
-                <Icon name="chevron_left" size={20} />
-              </button>
-              <button className="flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary text-white text-sm">1</button>
-              <button className="flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10 text-sm">2</button>
-              <button className="flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10 text-sm">3</button>
-              <button className="flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10">
-                <Icon name="chevron_right" size={20} />
-              </button>
-            </div>
+            <p className="text-sm text-text-light-secondary dark:text-dark-secondary">
+              Showing {filteredNotifications.length} of {notifications.length} notifications
+            </p>
           </div>
         </div>
       </main>

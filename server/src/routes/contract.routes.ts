@@ -3,6 +3,7 @@ import {
   createContract,
   getContractById,
   getUserContracts,
+  getAllContracts,
   signContract,
   terminateContract,
   getContractTemplate,
@@ -10,6 +11,9 @@ import {
 import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = express.Router();
+
+// Admin route - Get all contracts (no auth)
+router.get('/admin/all', getAllContracts);
 
 // Create contract (protected - client only)
 router.post('/', authenticate, createContract);

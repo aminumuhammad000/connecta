@@ -6,6 +6,7 @@ import {
   releasePayment,
   refundPayment,
   getPaymentHistory,
+  getAllPayments,
   getWalletBalance,
   requestWithdrawal,
   processWithdrawal,
@@ -16,6 +17,9 @@ import {
 import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = Router();
+
+// Admin route - Get all payments (no auth)
+router.get('/admin/all', getAllPayments);
 
 // Payment routes
 router.post('/initialize', authenticate, initializePayment);

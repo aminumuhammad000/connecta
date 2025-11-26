@@ -16,6 +16,12 @@ import messageRoutes from "./routes/Message.routes";
 import proposalRoutes from "./routes/Proposal.routes";
 import dashboardRoutes from "./routes/Dashboard.routes";
 import uploadRoutes from "./routes/upload.routes";
+import contractRoutes from "./routes/contract.routes";
+import paymentRoutes from "./routes/payment.routes";
+import reviewRoutes from "./routes/review.routes";
+import gigsRoutes from "./routes/gigs.routes";
+import notificationRoutes from "./routes/notification.routes";
+import insightsRoutes from "./routes/insights.routes";
 dotenv.config();
 
 const app = express();
@@ -28,7 +34,7 @@ const server = http.createServer(app);
 import { setIO } from './core/utils/socketIO';
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", "http://localhost:5174"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -37,7 +43,7 @@ setIO(io);
 
 // Middleware
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://localhost:5174"],
   credentials: true
 }));
 app.use(express.json());
@@ -55,6 +61,16 @@ app.use("/api/proposals", proposalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/agent", agentRoute);
+app.use("/api/contracts", contractRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/gigs", gigsRoutes);
+app.use("/api/notifications", notificationRoutes);
+import analyticsRoutes from "./routes/analytics.routes";
+app.use("/api/analytics", analyticsRoutes);
+import subscriptionRoutes from "./routes/subscription.routes";
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/analytics", insightsRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");

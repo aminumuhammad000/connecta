@@ -382,3 +382,28 @@ async function updateUserAverageRating(userId: any) {
     console.error('Update average rating error:', error);
   }
 }
+
+/**
+ * Get all reviews for admin (no auth required)
+ */
+export const getAllReviews = async (req: Request, res: Response) => {
+  try {
+    const reviews = await Review.find()
+      .populate('reviewerId', 'firstName lastName email profileImage')
+      .populate('revieweeId', 'firstName lastName email profileImage')
+      .populate('projectId', 'title description')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: reviews,
+      count: reviews.length,
+    });
+  } catch (error: any) {
+    console.error('Get all reviews error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch reviews',
+    });
+  }
+};

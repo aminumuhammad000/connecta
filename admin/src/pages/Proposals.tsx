@@ -1,7 +1,87 @@
+import { useEffect, useState, useMemo } from 'react'
 import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
+import { proposalsAPI } from '../services/api'
+import type { Proposal } from '../types'
+import toast from 'react-hot-toast'
 
 export default function Proposals() {
+  const [proposals, setProposals] = useState<Proposal[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+
+  useEffect(() => {
+    fetchProposals()
+  }, [])
+
+  const fetchProposals = async () => {
+    try {
+      setLoading(true)
+      const response = await proposalsAPI.getAll()
+      console.log('Proposals response:', response)
+      
+      // Handle different response formats
+      const proposalsData = Array.isArray(response) ? response : (response?.data || [])
+      setProposals(proposalsData)
+      console.log('Loaded proposals:', proposalsData.length)
+    } catch (error) {
+      console.error('Failed to fetch proposals:', error)
+      toast.error('Failed to load proposals')
+      setProposals([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApprove = async (id: string) => {
+    try {
+      await proposalsAPI.approve(id)
+      toast.success('Proposal approved successfully')
+      fetchProposals()
+    } catch (error) {
+      console.error('Failed to approve proposal:', error)
+      toast.error('Failed to approve proposal')
+    }
+  }
+
+  const handleReject = async (id: string) => {
+    try {
+      await proposalsAPI.reject(id)
+      toast.success('Proposal rejected')
+      fetchProposals()
+    } catch (error) {
+      console.error('Failed to reject proposal:', error)
+      toast.error('Failed to reject proposal')
+    }
+  }
+
+  const filteredProposals = useMemo(() => {
+    return proposals.filter(proposal => {
+      const freelancerName = `${proposal.freelancerId?.firstName || ''} ${proposal.freelancerId?.lastName || ''}`.toLowerCase()
+      const jobTitle = proposal.jobId?.title?.toLowerCase() || ''
+      const matchesSearch = 
+        freelancerName.includes(searchTerm.toLowerCase()) ||
+        jobTitle.includes(searchTerm.toLowerCase()) ||
+        proposal.coverLetter?.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesStatus = statusFilter === 'all' || proposal.status === statusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [proposals, searchTerm, statusFilter])
+
+  const getStatusBadge = (status: string) => {
+    const styles = {
+      pending: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-400',
+      approved: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-400',
+      rejected: 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-400'
+    }
+    return styles[status as keyof typeof styles] || styles.pending
+  }
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  }
+
   return (
     <AppLayout>
       {/* Main Content */}
@@ -69,108 +149,86 @@ export default function Proposals() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-200 dark:divide-neutral-900/50">
-                  <tr className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                          data-alt="Avatar of Emily Carter"
-                          style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCObUpU3nzRdpXe3h-lwFlsOCCORh3nU1PmG2UTwmCyMICjbc7WD2hqQscYeNlvriwyQpNIvTCBgg1umQZsAOdFVlGe7PCiNxjBqX6sD11VVjiAmqluM6iSkLqDKNctr2TbxU-NpZxzw4Ok-XwdKpshVqYh2c4k1hm5V3k-_RPWrh5H8TRproUqltS7RHcgaZyl4wd_eWGOJI961wXRifIHztZhqRK30Y6Y5W8dEVbl64h1lwjOWPNIqz5bEpLMuwPfQ72zfRalB4c")' }}
-                        />
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Emily Carter</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">UI/UX Design for Mobile App</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">Oct 26, 2023</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/20 text-success">Approved</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a className="text-primary hover:text-primary/80" href="#">View Details</a>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                          data-alt="Avatar of Michael Chen"
-                          style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuB5rpkGZzGT-41Fl7oy_q5W7svw88uqUphoHrScs7gd4kD1DGW3IDxXnNNqcyG24r_F75Ldm-KTGQmSHvua7n31M46RiNSCZNb2HgMUs1_A-7crgNA91h1zX6Cvkxb1Cba8EfcZHnagPIYzotCr_CvwzIm0qtC2Zb47m3kTPaq41WNeaHvkMSGg0wNINhRgqas3d1-NWzl0keHqoGSxM6qd9BmlTMJu2fVT-qV1IHKon4fdt6kXPIdTjzhPZw6Qr-JzxnbdyWzhx84")' }}
-                        />
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Michael Chen</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">Brand Identity & Logo Design</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">Oct 25, 2023</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning">Pending</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                      <a className="text-primary hover:text-primary/80" href="#">Approve</a>
-                      <a className="text-danger hover:text-danger/80" href="#">Reject</a>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                          data-alt="Avatar of Sarah Johnson"
-                          style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuA9YIPYcLKJwThZaczq8EsGeUKNfPo62EMYBKVHxtekTBzEsgy1TU12wPgbXYxBXBUmm0bDzMCr8YNj6WgN8BgIF3A_QCkX53ohfh6Fkub3EueCHfg3SgpxgYXXoSKfu-gcx2MrR9MowRQJY8UaG3KL29vKtJewadYDf2gBCQBtV2lHkRxKJzWERqqM9ThpsNxN5pafE5qPBLUrRPnJE0mlx5EQOh3XfPeSIdC7kpPZiMuif-D9C13wYi3HwL0-6o9TXMRGPhi1aPc")' }}
-                        />
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Sarah Johnson</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">E-commerce Website Development</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">Oct 24, 2023</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-danger/20 text-danger">Rejected</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a className="text-primary hover:text-primary/80" href="#">View Details</a>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                          data-alt="Avatar of David Lee"
-                          style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDhiPkTWrtQLBzWfakVyWIbSr2RgfNxnVmFMrlJ7cUQrrBBaHwwLlt5PRTpm6hOWnrPpSLTlN1wvCYHu4L50stuzAcPhN333ajzmHQQ4crcNK-LyyhdMK5hsNXGCGbdSXC2S-efDCyFcTXW82qUlIcplz7Qnq-M9hIb883jo03h4Xh_R53MprFhTYYOoXnx2S-hImyhkumOWXV3Sh3W9eBtd-uOaVJ5W93pwsblZoHPMufkNAAUA2aE4we10AVPTnzm22x2DxLYPyY")' }}
-                        />
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">David Lee</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">Social Media Marketing Campaign</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">Oct 23, 2023</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/20 text-success">Approved</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a className="text-primary hover:text-primary/80" href="#">View Details</a>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                          data-alt="Avatar of Maria Garcia"
-                          style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAHGHDRx_KgPTiQjbmn7L7rgOb4XvwjCeF9RvQeVgihVPo2jiUPU3pP2WqZUI194ZQG8Ldl14MMVh7b2i1m7Q_AcrA0I0mIh2JUE4oiITf4RUxMOAwwUzh3qBCP9JTpoB9rdl9fSr_Gfkx5S8I0uS7XCZwEiLmB3dY-lQ6RShZbHQGYIn_xdMUbWlMXpm6HzjyCEiCkgljlUqBfC2KcAJIPNMy4qKA6m6X-Ek4OZi3wxpHbal5VFGUTzRrEigC17CeWyghnxwcdjEg")' }}
-                        />
-                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Maria Garcia</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">Copywriting for Product Launch</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">Oct 22, 2023</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning">Pending</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                      <a className="text-primary hover:text-primary/80" href="#">Approve</a>
-                      <a className="text-danger hover:text-danger/80" href="#">Reject</a>
-                    </td>
-                  </tr>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <Icon name="progress_activity" size={32} className="animate-spin text-primary" />
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">Loading proposals...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredProposals.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                          <Icon name="inbox" size={48} className="text-neutral-300 dark:text-neutral-700" />
+                          <div>
+                            <p className="text-sm font-medium text-neutral-900 dark:text-white">No proposals found</p>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                              {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'No proposals have been submitted yet'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProposals.map((proposal) => (
+                      <tr key={proposal._id} className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-gradient-to-br from-primary to-amber-500"
+                              style={{ 
+                                backgroundImage: proposal.freelancerId?.profileImage 
+                                  ? `url(${proposal.freelancerId.profileImage})` 
+                                  : `url("https://ui-avatars.com/api/?name=${proposal.freelancerId?.firstName}+${proposal.freelancerId?.lastName}&background=fd6730&color=fff&size=128")`
+                              }}
+                            />
+                            <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                              {proposal.freelancerId?.firstName} {proposal.freelancerId?.lastName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
+                          {proposal.jobId?.title || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">
+                          {formatDate(proposal.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(proposal.status)}`}>
+                            {proposal.status.charAt(0).toUpperCase() + proposal.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                          {proposal.status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={() => handleApprove(proposal._id)}
+                                className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(proposal._id)}
+                                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => toast.info(`Proposal ${proposal.status}`, { icon: '📋' })}
+                              className="text-primary hover:text-primary/80"
+                            >
+                              View Details
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -183,23 +241,10 @@ export default function Proposals() {
               <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-200/60">
-                    Showing <span className="font-medium">1</span> to <span className="font-medium">5</span> of <span className="font-medium">23</span> results
+                    Showing <span className="font-medium">{filteredProposals.length > 0 ? 1 : 0}</span> to{' '}
+                    <span className="font-medium">{filteredProposals.length}</span> of{' '}
+                    <span className="font-medium">{proposals.length}</span> results
                   </p>
-                </div>
-                <div>
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                    <a className="relative inline-flex items-center rounded-l-md px-2 py-2 text-neutral-600 dark:text-neutral-200/60 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-900/50 hover:bg-neutral-100/50 dark:hover:bg-background-dark/50 focus:z-20 focus:outline-offset-0" href="#">
-                      <Icon name="chevron_left" size={16} />
-                    </a>
-                    <a className="relative z-10 inline-flex items-center bg-primary/20 text-primary px-4 py-2 text-sm font-semibold focus:z-20" href="#" aria-current="page">1</a>
-                    <a className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-900/50 hover:bg-neutral-100/50 dark:hover:bg-background-dark/50 focus:z-20" href="#">2</a>
-                    <a className="relative hidden items-center px-4 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-900/50 hover:bg-neutral-100/50 dark:hover:bg-background-dark/50 focus:z-20 md:inline-flex" href="#">3</a>
-                    <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-neutral-600 dark:text-neutral-200/60 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-900/50">...</span>
-                    <a className="relative hidden items-center px-4 py-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-900/50 hover:bg-neutral-100/50 dark:hover:bg-background-dark/50 focus:z-20 md:inline-flex" href="#">5</a>
-                    <a className="relative inline-flex items-center rounded-r-md px-2 py-2 text-neutral-600 dark:text-neutral-200/60 ring-1 ring-inset ring-neutral-200 dark:ring-neutral-900/50 hover:bg-neutral-100/50 dark:hover:bg-background-dark/50 focus:z-20 focus:outline-offset-0" href="#">
-                      <Icon name="chevron_right" size={16} />
-                    </a>
-                  </nav>
                 </div>
               </div>
             </div>
