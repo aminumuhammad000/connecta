@@ -40,10 +40,13 @@ export default function Login() {
           })
           
           localStorage.setItem('admin_token', response.token)
-          localStorage.setItem('admin_user', JSON.stringify(response.user))
+          localStorage.setItem('admin_user', JSON.stringify(response.user || { email }))
           toast.success('Welcome back! Redirecting...')
           setTimeout(() => navigate('/dashboard'), 500)
           return
+        } else {
+          console.error('No token in response:', response)
+          throw new Error('No token received from server')
         }
       } catch (backendError: any) {
         console.error('Backend login error:', backendError.response?.data || backendError.message)
@@ -59,14 +62,14 @@ export default function Login() {
         const demoAdmin = DEMO_ADMINS.find(
           admin => admin.email === email && admin.password === password
         )
-        
+
         if (demoAdmin) {
           // Backend unavailable but valid demo credentials - use mock login
           toast.error('Cannot use demo account with production server. Please create an admin account on the server.')
           setLoading(false)
           return
         }
-        
+
         // Not a demo account and backend failed
         throw backendError
       }
@@ -96,9 +99,9 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-md mx-auto p-8 bg-white/80 dark:bg-stone-900/70 backdrop-blur border border-stone-200/70 dark:border-stone-800 rounded-xl shadow-xl">
         <div className="flex flex-col items-center gap-4 mb-6">
-          <img 
-            src="/logo.png" 
-            alt="Connecta Logo" 
+          <img
+            src="/logo.png"
+            alt="Connecta Logo"
             className="h-12 w-auto"
           />
           <div className="text-center">

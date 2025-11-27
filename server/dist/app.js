@@ -43,7 +43,11 @@ const io = new socket_io_1.Server(server, {
 (0, socketIO_1.setIO)(io);
 // Middleware
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
+    origin: [
+        "http://102.68.84.56",
+        "http://localhost:5173",
+        "http://localhost:8081"
+    ],
     credentials: true
 }));
 app.use(express_1.default.json());
