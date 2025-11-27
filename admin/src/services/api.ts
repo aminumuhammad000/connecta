@@ -1,13 +1,17 @@
 import axios from 'axios'
 
 // API Base Configuration
-const API_BASE_URL = 'http://localhost:5000'
+// Use 'http://localhost:5000' for local development
+const API_BASE_URL = 'http://102.68.84.56:5000'
+
+// const API_BASE_URL = 'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: false, // Set to true if using cookies
 })
 
 // Request interceptor to add auth token
@@ -31,10 +35,21 @@ api.interceptors.response.use(
     return response.data
   },
   (error) => {
+    console.error('API Error:', {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      url: error.config?.url,
+      method: error.config?.method
+    })
+    
     if (error.response?.status === 401) {
-      localStorage.removeItem('admin_token')
-      localStorage.removeItem('admin_user')
-      window.location.href = '/login'
+      // Only redirect if we're not already on the login page
+      if (!window.location.pathname.includes('/login')) {
+        console.warn('Unauthorized - clearing auth and redirecting to login')
+        localStorage.removeItem('admin_token')
+        localStorage.removeItem('admin_user')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

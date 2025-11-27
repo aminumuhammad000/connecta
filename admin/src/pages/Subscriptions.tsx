@@ -50,7 +50,7 @@ export default function Subscriptions() {
   const fetchSubscriptions = async () => {
     try {
       setLoading(true);
-      const response = await subscriptionsAPI.getAll();
+      const response: any = await subscriptionsAPI.getAll();
       console.log('Subscriptions response:', response);
       setSubscriptions(response.subscriptions || []);
       if (response.subscriptions && response.subscriptions.length === 0) {

@@ -67,7 +67,7 @@ export default function Users() {
         params.userType = filterType
       }
       
-      const response = await usersAPI.getAll(params)
+      const response: any = await usersAPI.getAll(params)
       
       // Handle different response formats
       let userData = []

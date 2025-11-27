@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
-import { projectsAPI, usersAPI } from '../services/api'
+import { projectsAPI } from '../services/api'
 
 interface ProjectData {
   _id: string

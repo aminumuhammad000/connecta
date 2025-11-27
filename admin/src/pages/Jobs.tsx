@@ -14,9 +14,11 @@ export default function Jobs() {
     const fetchUsers = async () => {
       try {
         setLoading(true)
-        const response = await usersAPI.getAll({ limit: 100 })
+        const response: any = await usersAPI.getAll({ limit: 100 })
         if (response.success && response.data) {
           setUsers(response.data)
+        } else if (Array.isArray(response)) {
+          setUsers(response)
         } else {
           setUsers([])
         }

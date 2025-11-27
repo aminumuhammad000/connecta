@@ -23,8 +23,22 @@ export default function Login() {
     try {
       // Always try backend first
       try {
-        const response = await authAPI.login(email, password)
+        const response: any = await authAPI.login(email, password)
+        console.log('Login response:', response)
+        
         if (response.success && response.token) {
+          // Check if user is admin
+          if (response.user?.userType !== 'admin') {
+            toast.error('Access denied. Admin privileges required.')
+            setLoading(false)
+            return
+          }
+          
+          console.log('Storing token and user:', {
+            token: response.token.substring(0, 20) + '...',
+            user: response.user
+          })
+          
           localStorage.setItem('admin_token', response.token)
           localStorage.setItem('admin_user', JSON.stringify(response.user))
           toast.success('Welcome back! Redirecting...')
@@ -32,7 +46,14 @@ export default function Login() {
           return
         }
       } catch (backendError: any) {
-        console.warn('Backend error:', backendError.message)
+        console.error('Backend login error:', backendError.response?.data || backendError.message)
+        
+        // If user not found on production, show helpful message
+        if (backendError.response?.data?.message?.includes('User not found')) {
+          toast.error('Account not found on production server. Please use valid credentials or contact administrator.')
+          setLoading(false)
+          return
+        }
         
         // Check if this is a demo admin account
         const demoAdmin = DEMO_ADMINS.find(
@@ -41,20 +62,8 @@ export default function Login() {
         
         if (demoAdmin) {
           // Backend unavailable but valid demo credentials - use mock login
-          const names = demoAdmin.name.split(' ')
-          const mockUser = {
-            _id: 'mock-admin-' + Date.now(),
-            email: demoAdmin.email,
-            firstName: names[0],
-            lastName: names[1] || 'User',
-            userType: 'admin',
-            profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(demoAdmin.name)}&background=fd6730&color=fff&size=256`,
-          }
-          const mockToken = 'mock-jwt-token-' + Date.now()
-          localStorage.setItem('admin_token', mockToken)
-          localStorage.setItem('admin_user', JSON.stringify(mockUser))
-          toast.success('Welcome back! (Demo Mode) 🚀')
-          setTimeout(() => navigate('/dashboard'), 500)
+          toast.error('Cannot use demo account with production server. Please create an admin account on the server.')
+          setLoading(false)
           return
         }
         

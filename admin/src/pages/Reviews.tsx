@@ -7,7 +7,7 @@ export default function Reviews() {
   const [reviews, setReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [ratingFilter, setRatingFilter] = useState<number | null>(null)
+  const [ratingFilter] = useState<number | null>(null)
 
   useEffect(() => {
     fetchReviews()

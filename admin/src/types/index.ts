@@ -137,8 +137,8 @@ export type ProposalStatus = 'Pending' | 'Accepted' | 'Rejected' | 'Withdrawn'
 
 export interface Proposal {
   _id: string
-  jobId: string
-  freelancerId: string
+  jobId: string | Job
+  freelancerId: string | User
   coverLetter: string
   proposedRate: number
   duration: string
@@ -146,7 +146,7 @@ export interface Proposal {
   attachments?: string[]
   createdAt: string
   updatedAt: string
-  // Populated fields
+  // Populated fields (when using populate)
   job?: Job
   freelancer?: User
 }

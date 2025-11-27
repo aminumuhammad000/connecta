@@ -7,7 +7,7 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'read' | 'unread'>('all')
+  const [statusFilter] = useState<'all' | 'read' | 'unread'>('all')
 
   useEffect(() => {
     fetchNotifications()

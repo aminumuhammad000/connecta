@@ -8,8 +8,8 @@ import toast from 'react-hot-toast'
 export default function Proposals() {
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [searchTerm] = useState('')
+  const [statusFilter] = useState('all')
 
   useEffect(() => {
     fetchProposals()
@@ -58,8 +58,10 @@ export default function Proposals() {
 
   const filteredProposals = useMemo(() => {
     return proposals.filter(proposal => {
-      const freelancerName = `${proposal.freelancerId?.firstName || ''} ${proposal.freelancerId?.lastName || ''}`.toLowerCase()
-      const jobTitle = proposal.jobId?.title?.toLowerCase() || ''
+      const freelancerId = proposal.freelancerId as any
+      const jobId = proposal.jobId as any
+      const freelancerName = `${freelancerId?.firstName || ''} ${freelancerId?.lastName || ''}`.toLowerCase()
+      const jobTitle = jobId?.title?.toLowerCase() || ''
       const matchesSearch = 
         freelancerName.includes(searchTerm.toLowerCase()) ||
         jobTitle.includes(searchTerm.toLowerCase()) ||
@@ -173,25 +175,28 @@ export default function Proposals() {
                       </td>
                     </tr>
                   ) : (
-                    filteredProposals.map((proposal) => (
+                    filteredProposals.map((proposal) => {
+                      const freelancer = proposal.freelancerId as any
+                      const job = proposal.jobId as any
+                      return (
                       <tr key={proposal._id} className="hover:bg-neutral-100/30 dark:hover:bg-background-dark/50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div
                               className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 bg-gradient-to-br from-primary to-amber-500"
                               style={{ 
-                                backgroundImage: proposal.freelancerId?.profileImage 
-                                  ? `url(${proposal.freelancerId.profileImage})` 
-                                  : `url("https://ui-avatars.com/api/?name=${proposal.freelancerId?.firstName}+${proposal.freelancerId?.lastName}&background=fd6730&color=fff&size=128")`
+                                backgroundImage: freelancer?.profileImage 
+                                  ? `url(${freelancer.profileImage})` 
+                                  : `url("https://ui-avatars.com/api/?name=${freelancer?.firstName}+${freelancer?.lastName}&background=fd6730&color=fff&size=128")`
                               }}
                             />
                             <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                              {proposal.freelancerId?.firstName} {proposal.freelancerId?.lastName}
+                              {freelancer?.firstName} {freelancer?.lastName}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100">
-                          {proposal.jobId?.title || 'N/A'}
+                          {job?.title || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600 dark:text-neutral-200/60">
                           {formatDate(proposal.createdAt)}
@@ -202,7 +207,7 @@ export default function Proposals() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                          {proposal.status === 'pending' ? (
+                          {proposal.status === 'Pending' ? (
                             <>
                               <button
                                 onClick={() => handleApprove(proposal._id)}
@@ -219,7 +224,7 @@ export default function Proposals() {
                             </>
                           ) : (
                             <button
-                              onClick={() => toast.info(`Proposal ${proposal.status}`, { icon: '📋' })}
+                              onClick={() => toast(`Proposal ${proposal.status}`, { icon: '📋' })}
                               className="text-primary hover:text-primary/80"
                             >
                               View Details
@@ -227,7 +232,7 @@ export default function Proposals() {
                           )}
                         </td>
                       </tr>
-                    ))
+                    )})
                   )}
                 </tbody>
               </table>

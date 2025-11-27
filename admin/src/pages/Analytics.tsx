@@ -110,7 +110,7 @@ export default function Analytics() {
   const userGrowth = stats?.userGrowth || []
   const proposalStats = stats?.proposalStats || {}
   const jobStats = stats?.jobStats || {}
-  const weeklyRevenue = stats?.weeklyRevenue || []
+  // const weeklyRevenue = stats?.weeklyRevenue || []
 
   return (
     <AppLayout>
