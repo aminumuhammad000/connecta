@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,8 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Avatar from '../components/Avatar';
+import dashboardService from '../services/dashboardService';
+import jobService from '../services/jobService';
 
 interface JobRec {
   id: string;
@@ -56,6 +58,35 @@ const JOBS: JobRec[] = [
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { user } = useAuth();
+  const [stats, setStats] = React.useState<any>(null);
+  const [recommendedJobs, setRecommendedJobs] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  React.useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [statsData, jobsData] = await Promise.all([
+        dashboardService.getClientStats().catch(() => null), // Assuming this endpoint returns generic stats for now
+        jobService.getRecommendedJobs().catch(() => []),
+      ]);
+      setStats(statsData);
+      setRecommendedJobs(jobsData);
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadDashboardData();
+  };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
     if (status === 'Featured') return 'success';
@@ -66,10 +97,24 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const userName = user ? `${user.firstName}` : 'User';
   const fullName = user ? `${user.firstName} ${user.lastName}` : 'User';
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 72 }} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 72 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+          }
+        >
           {/* Header with Gradient */}
           <View
             style={[
@@ -81,7 +126,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
           >
             <View style={styles.headerTop}>
               <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <Avatar name={fullName} size={48} />
+                <Avatar name={fullName} size={48} uri={user?.avatar} />
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
@@ -89,9 +134,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                   style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
                 >
                   <MaterialIcons name="notifications" size={22} color="#fff" />
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>2</Text>
-                  </View>
+                  {/* Badge logic would go here */}
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('ConnectaAI')}
@@ -111,7 +154,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               <View style={[styles.statIcon, { backgroundColor: c.primary + '22' }]}>
                 <MaterialIcons name="description" size={24} color={c.primary} />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>4</Text>
+              <Text style={[styles.statValue, { color: c.text }]}>{stats?.activeProposals || 0}</Text>
               <Text style={[styles.statLabel, { color: c.subtext }]}>Active Proposals</Text>
             </Card>
 
@@ -119,16 +162,16 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               <View style={[styles.statIcon, { backgroundColor: '#F59E0B22' }]}>
                 <MaterialIcons name="mail" size={24} color="#F59E0B" />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>2</Text>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>New Invites</Text>
+              <Text style={[styles.statValue, { color: c.text }]}>{stats?.newMessages || 0}</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>New Messages</Text>
             </Card>
 
             <Card variant="elevated" padding={16} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#10B98122' }]}>
                 <MaterialIcons name="attach-money" size={24} color="#10B981" />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>$8.5k</Text>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>This Month</Text>
+              <Text style={[styles.statValue, { color: c.text }]}>${stats?.totalEarnings || '0'}</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>Total Earnings</Text>
             </Card>
           </View>
 
@@ -175,58 +218,62 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
             </View>
 
             <View style={{ gap: 12 }}>
-              {JOBS.map((job) => (
-                <Card key={job.id} variant="elevated" padding={16}>
-                  <View style={styles.jobCard}>
-                    <View style={styles.jobHeader}>
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.jobTitleRow}>
-                          <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
-                            {job.title}
-                          </Text>
-                          <Badge label={job.status} variant={getStatusVariant(job.status)} size="small" />
+              {recommendedJobs.length > 0 ? (
+                recommendedJobs.map((job) => (
+                  <Card key={job._id} variant="elevated" padding={16}>
+                    <View style={styles.jobCard}>
+                      <View style={styles.jobHeader}>
+                        <View style={{ flex: 1 }}>
+                          <View style={styles.jobTitleRow}>
+                            <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
+                              {job.title}
+                            </Text>
+                            {/* <Badge label={job.status} variant={getStatusVariant(job.status)} size="small" /> */}
+                          </View>
+                          <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
                         </View>
-                        <Text style={[styles.company, { color: c.subtext }]}>{job.company}</Text>
+                      </View>
+
+                      <View style={styles.jobMeta}>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.text }]}>${job.budget}</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.subtext }]}>{new Date(job.createdAt).toLocaleDateString()}</Text>
+                        </View>
+                        <Badge label={job.jobType} variant="neutral" size="small" />
+                      </View>
+
+                      <View style={styles.skillsRow}>
+                        {job.skills.slice(0, 3).map((skill: string, idx: number) => (
+                          <Badge key={idx} label={skill} variant="info" size="small" />
+                        ))}
+                      </View>
+
+                      <View style={styles.jobActions}>
+                        <Button
+                          title="View Details"
+                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                          variant="outline"
+                          size="small"
+                          style={{ flex: 1 }}
+                        />
+                        <Button
+                          title="Apply Now"
+                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                          variant="primary"
+                          size="small"
+                          style={{ flex: 1 }}
+                        />
                       </View>
                     </View>
-
-                    <View style={styles.jobMeta}>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                        <Text style={[styles.metaText, { color: c.text }]}>{job.budget}</Text>
-                      </View>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                        <Text style={[styles.metaText, { color: c.subtext }]}>{job.postedAgo}</Text>
-                      </View>
-                      <Badge label={job.type} variant="neutral" size="small" />
-                    </View>
-
-                    <View style={styles.skillsRow}>
-                      {job.skills.map((skill, idx) => (
-                        <Badge key={idx} label={skill} variant="info" size="small" />
-                      ))}
-                    </View>
-
-                    <View style={styles.jobActions}>
-                      <Button
-                        title="View Details"
-                        onPress={() => navigation.navigate('JobDetail')}
-                        variant="outline"
-                        size="small"
-                        style={{ flex: 1 }}
-                      />
-                      <Button
-                        title="Apply Now"
-                        onPress={() => navigation.navigate('JobDetail')}
-                        variant="primary"
-                        size="small"
-                        style={{ flex: 1 }}
-                      />
-                    </View>
-                  </View>
-                </Card>
-              ))}
+                  </Card>
+                ))
+              ) : (
+                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>No recommended jobs found</Text>
+              )}
             </View>
           </View>
         </ScrollView>

@@ -1,19 +1,66 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import jobService from '../services/jobService';
 
 const JobDetailScreen: React.FC = () => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const route = useRoute<any>();
+  const { id } = route.params || {};
+
+  const [job, setJob] = React.useState<any>(null);
   const [isSaved, setIsSaved] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const fullDescription = "We are looking for a talented and experienced Senior UX/UI Designer to lead the design of our new flagship mobile application. You will be responsible for the entire design process, from user research and wireframing to creating high-fidelity mockups and interactive prototypes. The ideal candidate will have a strong portfolio showcasing mobile app designs, excellent communication skills, and the ability to work collaboratively with cross-functional teams.";
-  const shortDescription = "We are looking for a talented and experienced Senior UX/UI Designer to lead the design of our new flagship mobile application. You will be responsible for the entire design process, from user research and wireframing to creating high-fidelity mockups and interactive prototypes...";
+  React.useEffect(() => {
+    if (id) {
+      loadJobDetails();
+    }
+  }, [id]);
+
+  const loadJobDetails = async () => {
+    try {
+      setIsLoading(true);
+      const data = await jobService.getJobById(id).catch(() => null);
+      setJob(data);
+      // Check if saved status is available in data or requires separate call
+      if (data?.saved) setIsSaved(true);
+    } catch (error) {
+      console.error('Error loading job details:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    // Implement save functionality
+    setIsSaved(!isSaved);
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!job) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: c.text }}>Job not found</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
+          <Text style={{ color: c.primary }}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -27,7 +74,7 @@ const JobDetailScreen: React.FC = () => {
           style={styles.iconBtn}
           accessibilityRole="button"
           accessibilityLabel="Save"
-          onPress={() => setIsSaved(!isSaved)}
+          onPress={handleSave}
         >
           <MaterialIcons
             name={isSaved ? "bookmark" : "bookmark-border"}
@@ -37,32 +84,32 @@ const JobDetailScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
           {/* Header */}
-          <Text style={[styles.title, { color: c.text }]}>Senior UX/UI Designer for Mobile App</Text>
+          <Text style={[styles.title, { color: c.text }]}>{job.title}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 8 }}>
-            <Text style={{ color: c.subtext, fontSize: 12 }}>Posted by WebFlow ★ 4.8</Text>
-            <Text style={{ color: c.subtext, fontSize: 12 }}>Posted 2 hours ago</Text>
+            <Text style={{ color: c.subtext, fontSize: 12 }}>Posted by {job.clientName || 'Unknown'} ★ {job.clientRating || '0.0'}</Text>
+            <Text style={{ color: c.subtext, fontSize: 12 }}>Posted {new Date(job.createdAt).toLocaleDateString()}</Text>
           </View>
 
           {/* Key Info */}
           <View style={[styles.keyInfoWrap, { borderTopColor: c.border, borderBottomColor: c.border }]}>
             <View style={styles.keyInfoItem}>
               <Text style={[styles.keyLabel, { color: c.subtext }]}>Budget</Text>
-              <Text style={[styles.keyValue, { color: c.text }]}>$5,000</Text>
+              <Text style={[styles.keyValue, { color: c.text }]}>${job.budget}</Text>
             </View>
             <View style={styles.keyInfoItem}>
               <Text style={[styles.keyLabel, { color: c.subtext }]}>Duration</Text>
-              <Text style={[styles.keyValue, { color: c.text }]}>1-3 Months</Text>
+              <Text style={[styles.keyValue, { color: c.text }]}>{job.duration || 'N/A'}</Text>
             </View>
             <View style={styles.keyInfoItem}>
               <Text style={[styles.keyLabel, { color: c.subtext }]}>Experience</Text>
-              <Text style={[styles.keyValue, { color: c.text }]}>Expert</Text>
+              <Text style={[styles.keyValue, { color: c.text }]}>{job.experienceLevel || 'Intermediate'}</Text>
             </View>
             <View style={styles.keyInfoItem}>
               <Text style={[styles.keyLabel, { color: c.subtext }]}>Location</Text>
-              <Text style={[styles.keyValue, { color: c.text }]}>Remote (US)</Text>
+              <Text style={[styles.keyValue, { color: c.text }]}>{job.location || 'Remote'}</Text>
             </View>
           </View>
 
@@ -70,8 +117,8 @@ const JobDetailScreen: React.FC = () => {
           <View style={{ marginTop: 16 }}>
             <Text style={[styles.sectionTitle, { color: c.text }]}>Job Description</Text>
             <Text style={{ color: c.subtext, lineHeight: 18, fontSize: 13 }}>
-              {isExpanded ? fullDescription : shortDescription}
-              {!isExpanded && (
+              {isExpanded ? job.description : (job.description?.substring(0, 150) + '...')}
+              {!isExpanded && job.description?.length > 150 && (
                 <Text
                   style={{ color: c.primary, fontWeight: '600' }}
                   onPress={() => setIsExpanded(true)}
@@ -86,7 +133,7 @@ const JobDetailScreen: React.FC = () => {
           <View style={{ marginTop: 16 }}>
             <Text style={[styles.sectionTitle, { color: c.text }]}>Required Skills</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {['UX Design', 'UI Design', 'Figma', 'Prototyping', 'Mobile App Design'].map(s => (
+              {job.skills?.map((s: string) => (
                 <Text key={s} style={[styles.skill, { color: c.primary, backgroundColor: c.isDark ? 'rgba(253,103,48,0.15)' : 'rgba(253,103,48,0.08)' }]}>{s}</Text>
               ))}
             </View>
@@ -97,40 +144,42 @@ const JobDetailScreen: React.FC = () => {
             <Text style={[styles.sectionTitle, { color: c.text }]}>About the Client</Text>
             <View style={[styles.clientCard, { borderColor: c.border, backgroundColor: c.card }]}>
               <Image
-                source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCQNttYGpLWFCHyqSkmyj2QMKiPcO-haGRcyAY9WKxoOJO1axYFTrgC_u2_qZ-tlP_coX-Zv5V69Rf_HE8htwMGyXGnepVy6KffYfx4F5UXj06VGZm4qae6NArCEoIKRk8tS-9yAbR_IL74gQjtVj5lAdEBt44fWX1R_X77uUeg9FRICz6FjysLffUrBFeZIObcNgSnfS0H5O9Qv4OeV2lzMm62dLkHxGFfi7ZGTtX-EZeSmZlBU-x7yKdHIRHwWffdcf2h15iFteE' }}
+                source={{ uri: job.clientAvatar || 'https://via.placeholder.com/150' }}
                 style={styles.avatar}
               />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.clientName, { color: c.text }]}>Eleanor Vance</Text>
-                <Text style={{ color: c.subtext, fontSize: 11 }}>San Francisco, CA</Text>
-                <Text style={{ color: c.subtext, fontSize: 10, marginTop: 4 }}>15 Jobs Posted • Member Since 2022</Text>
+                <Text style={[styles.clientName, { color: c.text }]}>{job.clientName || 'Client'}</Text>
+                <Text style={{ color: c.subtext, fontSize: 11 }}>{job.clientLocation || 'Location Hidden'}</Text>
+                <Text style={{ color: c.subtext, fontSize: 10, marginTop: 4 }}>{job.clientJobsPosted || 0} Jobs Posted • Member Since {new Date(job.clientJoinedAt || Date.now()).getFullYear()}</Text>
               </View>
               <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
             </View>
           </View>
 
           {/* Attachments */}
-          <View style={{ marginTop: 16, marginBottom: 16 }}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Attachments</Text>
-            <View style={{ gap: 8 }}>
-              <View style={[styles.attachment, { borderColor: c.border }]}>
-                <MaterialIcons name="description" size={20} color={c.primary} />
-                <Text style={[styles.attachmentLabel, { color: c.text }]}>Project_Brief_v2.pdf</Text>
-                <MaterialIcons name="download" size={20} color={c.subtext} />
-              </View>
-              <View style={[styles.attachment, { borderColor: c.border }]}>
-                <MaterialIcons name="image" size={20} color={c.primary} />
-                <Text style={[styles.attachmentLabel, { color: c.text }]}>Brand_Guidelines.png</Text>
-                <MaterialIcons name="download" size={20} color={c.subtext} />
+          {job.attachments?.length > 0 && (
+            <View style={{ marginTop: 16, marginBottom: 16 }}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Attachments</Text>
+              <View style={{ gap: 8 }}>
+                {job.attachments.map((att: any, index: number) => (
+                  <View key={index} style={[styles.attachment, { borderColor: c.border }]}>
+                    <MaterialIcons name="description" size={20} color={c.primary} />
+                    <Text style={[styles.attachmentLabel, { color: c.text }]}>{att.name}</Text>
+                    <MaterialIcons name="download" size={20} color={c.subtext} />
+                  </View>
+                ))}
               </View>
             </View>
-          </View>
+          )}
         </View>
       </ScrollView>
 
       {/* Fixed CTA */}
       <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
-        <TouchableOpacity style={[styles.applyBtn, { backgroundColor: c.primary }]}>
+        <TouchableOpacity
+          style={[styles.applyBtn, { backgroundColor: c.primary }]}
+          onPress={() => navigation.navigate('ProposalDetail', { jobId: job._id })} // Or a dedicated ApplyScreen
+        >
           <Text style={styles.applyText}>Apply Now</Text>
         </TouchableOpacity>
       </View>

@@ -1,16 +1,44 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import profileService from '../services/profileService';
+import profileService from '../services/profileService'; // Assuming this path
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
 
 export default function ProfileScreen({ navigation }: any) {
   const c = useThemeColors();
   const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setIsLoading(true);
+      const data = await profileService.getMyProfile().catch(() => null);
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onBack = () => navigation.goBack?.();
+
+  if (isLoading && !profile) { // Only show loading indicator if profile is null and still loading
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
@@ -25,18 +53,23 @@ export default function ProfileScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 80 }}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} />
+        }
+      >
         {/* Profile Header */}
         <View style={styles.sectionPad}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <Image source={{ uri: AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
+              <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
               <View>
-                <Text style={[styles.name, { color: c.text }]}>Aminu Muhammad</Text>
-                <Text style={[styles.role, { color: c.subtext }]}>UI/UX Designer</Text>
+                <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                <Text style={[styles.role, { color: c.subtext }]}>{profile?.title || 'Freelancer'}</Text>
                 <View style={styles.verifiedRow}>
                   <MaterialIcons name="location-on" size={14} color={c.subtext} />
-                  <Text style={[styles.location, { color: c.subtext }]}>Paris, France</Text>
+                  <Text style={[styles.location, { color: c.subtext }]}>{profile?.location || 'Location not set'}</Text>
                 </View>
                 <View style={[styles.verifiedRow, { marginTop: 4 }]}>
                   <MaterialIcons name="verified" size={16} color="#22c55e" />
@@ -66,40 +99,44 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={[styles.sectionPad, styles.rowWrap, { gap: 12 }]}>
           <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Earnings</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>$45K+</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>${profile?.totalEarnings || '0'}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs Done</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>38</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>{profile?.completedJobs || '0'}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>1.2k</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>{profile?.totalHours || '0'}</Text>
           </View>
         </View>
 
         {/* About */}
         <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
           <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>About</Text>
-          <TouchableOpacity onPress={() => { }}>
+          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
             <MaterialIcons name="edit" size={20} color={c.primary} />
           </TouchableOpacity>
         </View>
-        <Text style={[styles.about, { color: c.subtext }]}>A passionate UI/UX designer with over 5 years of experience in creating intuitive and engaging digital products. I specialize in mobile app design and user-centered design methodologies.</Text>
+        <Text style={[styles.about, { color: c.subtext }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
         {/* Skills */}
         <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
           <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>Skills</Text>
-          <TouchableOpacity onPress={() => { }}>
+          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
             <MaterialIcons name="edit" size={20} color={c.primary} />
           </TouchableOpacity>
         </View>
         <View style={styles.skillsRow}>
-          {['UI Design', 'UX Research', 'Prototyping', 'Figma', 'Design Systems'].map(s => (
-            <Text key={s} style={[styles.skillChip, { color: c.primary, backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}>
-              {s}
-            </Text>
-          ))}
+          {profile?.skills?.length > 0 ? (
+            profile.skills.map((s: string) => (
+              <Text key={s} style={[styles.skillChip, { color: c.primary, backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}>
+                {s}
+              </Text>
+            ))
+          ) : (
+            <Text style={{ color: c.subtext, paddingHorizontal: 16 }}>No skills added yet</Text>
+          )}
         </View>
 
         {/* Tabs */}
@@ -127,34 +164,36 @@ export default function ProfileScreen({ navigation }: any) {
         {/* Content */}
         <View style={styles.sectionPad}>
           {activeTab === 'portfolio' ? (
-            <>
-              <PortfolioCard
-                title="Fintech Mobile App"
-                category="Mobile Design"
-                image="https://lh3.googleusercontent.com/aida-public/AB6AXuCEjA1qkTeGlFqHIJJxs96X8h7SWh3pp4bJJze9IaLG4bgFtH9cYiYYLxc0afI6nhNNop2i5SQHGPzAU4_ieX1ifB_e8FqV07caEx8PbLyRk0cHS40qYV4pfwXn4LD-vakHid3us0-5UBeGpuBqZmg59j9g1w1_pdtkEX2bK0HXc6zq9J8DXn5sNqbeVlcWbIzhGzmV_dupJuae8ajdKUAhQGKkQUiYaAlJcGUzurUc1gQJoef6_ngZB5caZqdX2UJgTQeuf36FJVo"
-              />
-              <PortfolioCard
-                title="E-commerce Website"
-                category="Web Design"
-                image="https://lh3.googleusercontent.com/aida-public/AB6AXuBku_SBx_jdljBMvRoNSlxAzHNgYe99IoIDbg0INB9dxG-qJGw0tTm-KPPZJlh7Tfphorgu06whI0cCoq8ce0NiWTkibZc0aBbVUElMbcmwVdjWgRILxZH8CFe2Uq5NX3L72sYb6JqbirS0oqrMcPA__RsAkNB5QwDIX9zP8FJH5A00q9GFyqfUcZDAIQURju2Ozi6UZDHAPv01VWNXnGBh7srCZjxd1D5JshH8wMxWdjYWDFIQQDf7KuyQHCDrUyWlxCdbbPbTIXI"
-              />
-            </>
+            profile?.portfolio?.length > 0 ? (
+              profile.portfolio.map((item: any, index: number) => (
+                <PortfolioCard
+                  key={index}
+                  title={item.title}
+                  category={item.category}
+                  image={item.image}
+                />
+              ))
+            ) : (
+              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No portfolio items yet</Text>
+            )
           ) : (
-            <>
-              <ReviewCard
-                author="Innovatech Solutions"
-                rating={5}
-                comment="Aminu is a fantastic designer. He understood our requirements perfectly and delivered high-quality work."
-              />
-              <ReviewCard
-                author="Creative Minds"
-                rating={5}
-                comment="Great attention to detail and very professional. Highly recommended!"
-              />
-            </>
+            profile?.reviews?.length > 0 ? (
+              profile.reviews.map((review: any, index: number) => (
+                <ReviewCard
+                  key={index}
+                  author={review.author}
+                  rating={review.rating}
+                  comment={review.comment}
+                />
+              ))
+            ) : (
+              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No reviews yet</Text>
+            )
           )}
         </View>
       </ScrollView>
+
+      {/* Bottom Navigation */}
     </SafeAreaView>
   );
 }

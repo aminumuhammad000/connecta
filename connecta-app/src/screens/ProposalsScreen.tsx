@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
+import proposalService from '../services/proposalService';
 
 interface Proposal {
   id: string;
@@ -24,44 +25,59 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
   const [tab, setTab] = useState<'mine' | 'received'>('mine');
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const data = useMemo<Proposal[]>(() => ([
-    {
-      id: 'p1',
-      title: 'UI/UX Designer for Mobile App',
-      name: 'Laura Williams',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQuTpi8W0GMXLNYIGw2ZoGXa07wgvbTBZNSK0mijj-45lyvzpyzjkfddIq7Fl0amYxo3MjGAbO_JDTxRidyV-EivrF42jj79Rdv21Nk7z8zdvbG9lYZpH6LB6McTPNXJDOT0nUBC8uXj3DrZ5757YV9cMe9_EPNa2ONasmmtCdXmRBbCW_qQu04cjzghMg7k_C-jAv-HRSzJBVb9fEFrDTjl9b7sCe0zptaj8_pi_FEkhiorrI0DU2DCi8W9nwlIuVp3-l5S8hyFk',
-      price: '$3,500',
-      time: '2 weeks',
-      status: 'accepted',
-    },
-    {
-      id: 'p2',
-      title: 'Brand Identity & Logo Design',
-      name: 'David Smith',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBPCdC0xaEEADk64KZZPAOopPGj2wgIr_8Exme0NZncrR_rRKrNG0Xl8DElad8M8K9fKObYMH7yYxrfevjS3tva7ytNa0PYlkUCmK3lgVY0GUR4tfl9udwh-_pyQHKmUvcPyjqOsyYWi9sh4LAWK5uWbea-TvGNLIceBC8sPptXz1cIR83qPByMaJBRWhZv9oDxVdxzhoR8iv88ix0z5DuDLAkOPIL9Iw3_BsRXRSnUtxufSMEJUb6GHRxw6ht6r925gDxRKT0_Zmo',
-      price: '$1,200',
-      time: '1 week',
-      status: 'pending',
-    },
-    {
-      id: 'p3',
-      title: 'Social Media Manager',
-      name: 'Emily Carter',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAqeOj4v5N5mTxSC4xgv1bKb-e6LCeIxctgtAajgEfE-n3qMy6JXL4snTK5K0rW08AbUkkbzoU27E1hG-KohtuX67mSH1H7iUe-R2EaCPAjhq3kfhJd-smsIVQHN2BVe8JRIQKAIu0Bpc9o3LQmrltI2CgYMtJxvthaxGkiMlrY1BHGdhvjOgMkw2HT-mNI17dvSayuQ-JjkdGfqUmROYX7RI-z7cMjTi40xf37PqUD9tYH4QsclH4zQ9FXv8kbeaxzJmQI8sGbTME',
-      price: '$800',
-      time: 'month',
-      status: 'rejected',
-    },
-  ]), []);
+  useEffect(() => {
+    loadProposals();
+  }, [tab]);
+
+  const loadProposals = async () => {
+    try {
+      setIsLoading(true);
+      let data = [];
+      if (tab === 'mine') {
+        // Assuming current user is freelancer for 'mine' tab, or client viewing their sent proposals (if applicable)
+        // For now, let's use getAllProposals as a placeholder or specific endpoint if available
+        data = await proposalService.getAllProposals().catch(() => []);
+      } else {
+        // 'received' tab - likely for clients viewing proposals on their jobs
+        data = await proposalService.getAcceptedProposals().catch(() => []); // This might need a different endpoint for all received
+      }
+
+      // Map API data to UI format
+      const mapped = data.map((p: any) => ({
+        id: p._id,
+        title: p.jobTitle || 'Untitled Job',
+        name: p.freelancerName || 'Unknown Freelancer',
+        avatar: p.freelancerAvatar || 'https://via.placeholder.com/150',
+        price: `$${p.proposedRate}`,
+        time: p.estimatedDuration,
+        status: p.status,
+      }));
+      setProposals(mapped);
+    } catch (error) {
+      console.error('Error loading proposals:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
-    return data.filter(d =>
+    return proposals.filter(d =>
       (filter === 'all' || d.status === filter) &&
       (t.length === 0 || d.title.toLowerCase().includes(t) || d.name.toLowerCase().includes(t))
     );
-  }, [q, filter, data]);
+  }, [q, filter, proposals]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -121,38 +137,42 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
 
       {/* List */}
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96 + Math.max(insets.bottom, 0), gap: 12 }}>
-        {filtered.map(p => (
-          <View key={p.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-            <View style={styles.cardHeader}>
-              <View style={styles.headerLeft}>
-                <Image source={{ uri: p.avatar }} style={styles.avatar} />
-                <View>
-                  <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                  <Text style={[styles.cardSubtitle, { color: c.subtext }]}>{p.name}</Text>
+        {filtered.length > 0 ? (
+          filtered.map(p => (
+            <View key={p.id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+              <View style={styles.cardHeader}>
+                <View style={styles.headerLeft}>
+                  <Image source={{ uri: p.avatar }} style={styles.avatar} />
+                  <View>
+                    <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                    <Text style={[styles.cardSubtitle, { color: c.subtext }]}>{p.name}</Text>
+                  </View>
+                </View>
+                <View style={[styles.status, p.status === 'accepted' ? { backgroundColor: 'rgba(34,197,94,0.2)' } : p.status === 'pending' ? { backgroundColor: 'rgba(245,158,11,0.2)' } : { backgroundColor: 'rgba(239,68,68,0.2)' }]}>
+                  <Text style={[styles.statusText, p.status === 'accepted' ? { color: '#22C55E' } : p.status === 'pending' ? { color: '#F59E0B' } : { color: '#EF4444' }]}>
+                    {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
+                  </Text>
                 </View>
               </View>
-              <View style={[styles.status, p.status === 'accepted' ? { backgroundColor: 'rgba(34,197,94,0.2)' } : p.status === 'pending' ? { backgroundColor: 'rgba(245,158,11,0.2)' } : { backgroundColor: 'rgba(239,68,68,0.2)' }]}>
-                <Text style={[styles.statusText, p.status === 'accepted' ? { color: '#22C55E' } : p.status === 'pending' ? { color: '#F59E0B' } : { color: '#EF4444' }]}>
-                  {p.status.charAt(0).toUpperCase() + p.status.slice(1)}
-                </Text>
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: 8 }} />
+              <View style={styles.cardFooter}>
+                <View>
+                  <Text style={[styles.meta, { color: c.subtext }]}>Submitted: Oct 26</Text>
+                  <Text style={[styles.price, { color: c.text }]}>{p.price} <Text style={{ color: c.subtext }}>/ {p.time}</Text></Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
+                  style={[styles.cta, { backgroundColor: p.status === 'accepted' ? c.primary : c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}
+                >
+                  <Text style={[styles.ctaText, { color: p.status === 'accepted' ? '#fff' : c.text }]}>{p.status === 'accepted' ? 'Message' : 'View Details'}</Text>
+                  <MaterialIcons name={p.status === 'accepted' ? 'send' : 'arrow-forward'} size={18} color={p.status === 'accepted' ? '#fff' : c.text} />
+                </TouchableOpacity>
               </View>
             </View>
-            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: 8 }} />
-            <View style={styles.cardFooter}>
-              <View>
-                <Text style={[styles.meta, { color: c.subtext }]}>Submitted: Oct 26</Text>
-                <Text style={[styles.price, { color: c.text }]}>{p.price} <Text style={{ color: c.subtext }}>/ {p.time}</Text></Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => (navigation as any).navigate('ProposalDetail')}
-                style={[styles.cta, { backgroundColor: p.status === 'accepted' ? c.primary : c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}
-              >
-                <Text style={[styles.ctaText, { color: p.status === 'accepted' ? '#fff' : c.text }]}>{p.status === 'accepted' ? 'Message' : 'View Details'}</Text>
-                <MaterialIcons name={p.status === 'accepted' ? 'send' : 'arrow-forward'} size={18} color={p.status === 'accepted' ? '#fff' : c.text} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
+          ))
+        ) : (
+          <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

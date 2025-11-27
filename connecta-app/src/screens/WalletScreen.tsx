@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import paymentService from '../services/paymentService';
 
 interface Txn {
   id: string;
@@ -18,22 +19,64 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenNotifications }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const [filter, setFilter] = useState<'all' | 'income' | 'withdrawal' | 'pending'>('all');
+  const [balance, setBalance] = useState<number | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const txns = useMemo<Txn[]>(() => ([
-    { id: 't1', type: 'income', title: 'Logo Design for Client A', date: 'Oct 26, 2023', amount: 500 },
-    { id: 't2', type: 'withdrawal', title: 'Withdrawal to Bank', date: 'Oct 24, 2023', amount: -250 },
-    { id: 't3', type: 'pending', title: 'Payment for Project B', date: 'Oct 27, 2023', amount: 150 },
-  ]), []);
+  useEffect(() => {
+    loadWalletData();
+  }, []);
+
+  const loadWalletData = async () => {
+    try {
+      setIsLoading(true);
+      const [balanceData, txnsData] = await Promise.all([
+        paymentService.getWalletBalance().catch(() => ({ balance: 0, currency: 'USD' })),
+        paymentService.getTransactions().catch(() => []),
+      ]);
+      setBalance(balanceData.balance);
+
+      // Map API transactions to UI format
+      const mappedTxns = txnsData.map(t => ({
+        id: t._id,
+        type: mapTransactionType(t.type, t.status),
+        title: t.description,
+        date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        amount: t.type === 'withdrawal' ? -t.amount : t.amount,
+        status: t.status
+      }));
+
+      setTransactions(mappedTxns);
+    } catch (error) {
+      console.error('Error loading wallet data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const mapTransactionType = (type: string, status: string) => {
+    if (status === 'pending') return 'pending';
+    if (type === 'withdrawal') return 'withdrawal';
+    return 'income';
+  };
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return txns;
-    return txns.filter(t => t.type === filter);
-  }, [filter, txns]);
+    if (filter === 'all') return transactions;
+    return transactions.filter(t => t.type === filter);
+  }, [filter, transactions]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* App Bar */}
-      <View style={[styles.appBar, { backgroundColor: c.background }]}> 
+      <View style={[styles.appBar, { backgroundColor: c.background }]}>
         <View style={{ width: 48, height: 40 }} />
         <Text style={[styles.title, { color: c.text }]}>Wallet</Text>
         <View style={{ width: 48, height: 40, alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -43,10 +86,12 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenNotifications }) => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 96 + insets.bottom }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 96 + insets.bottom }} refreshControl={
+        <RefreshControl refreshing={isLoading} onRefresh={loadWalletData} colors={[c.primary]} />
+      }>
         {/* Balance Card */}
         <View style={{ padding: 16 }}>
-          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}> 
+          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
             <Image
               source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBJ_2zDOQ-YaBz2w09YQ1FseC2TjNrKGrVlPo-93sA1kdurmJcwQMBW03Rqi4eYGb7euLKfeCg9oUwqDCbQaZws_HIKzmxkUygGSnxq_jDauo7Qyfij7xRmCr4ZIYlArs-SMgabqG7Tu4k488zW2H09FlIb-VlkQMn9CtVsMthICTen43vP04kxPngeNQMLC8BCPC2dsrw1gXZtWgA7SXuN05OZQTpUe0ug2H3q0lWjpp4Su4sSjtjyYNgM-9ddBnN4CHRdl2OrxFI' }}
               style={styles.banner}
@@ -54,7 +99,9 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenNotifications }) => {
             />
             <View style={{ padding: 16 }}>
               <Text style={{ color: c.subtext, fontSize: 13 }}>Available Balance</Text>
-              <Text style={{ color: c.text, fontSize: 28, fontWeight: '800', marginTop: 2 }}>$1,234.56</Text>
+              <Text style={{ color: c.text, fontSize: 28, fontWeight: '800', marginTop: 2 }}>
+                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balance || 0)}
+              </Text>
             </View>
           </View>
         </View>
@@ -87,26 +134,30 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenNotifications }) => {
 
         {/* Transactions */}
         <View style={{ padding: 16, gap: 8 }}>
-          {filtered.map(t => {
-            const color = t.type === 'income' ? '#22C55E' : t.type === 'withdrawal' ? '#EF4444' : '#F59E0B';
-            const bg = t.type === 'income' ? 'rgba(34,197,94,0.12)' : t.type === 'withdrawal' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)';
-            const iconName = t.type === 'income' ? 'arrow-downward' : t.type === 'withdrawal' ? 'arrow-upward' : 'hourglass-top';
-            return (
-              <View key={t.id} style={[styles.txnRow, { backgroundColor: c.card, borderColor: c.isDark ? '#27272a' : '#E5E7EB' }]}> 
-                <View style={[styles.txnIconWrap, { backgroundColor: bg }]}> 
-                  <MaterialIcons name={iconName as any} size={22} color={color} />
+          {filtered.length > 0 ? (
+            filtered.map(t => {
+              const color = t.type === 'income' ? '#22C55E' : t.type === 'withdrawal' ? '#EF4444' : '#F59E0B';
+              const bg = t.type === 'income' ? 'rgba(34,197,94,0.12)' : t.type === 'withdrawal' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)';
+              const iconName = t.type === 'income' ? 'arrow-downward' : t.type === 'withdrawal' ? 'arrow-upward' : 'hourglass-top';
+              return (
+                <View key={t.id} style={[styles.txnRow, { backgroundColor: c.card, borderColor: c.isDark ? '#27272a' : '#E5E7EB' }]}>
+                  <View style={[styles.txnIconWrap, { backgroundColor: bg }]}>
+                    <MaterialIcons name={iconName as any} size={22} color={color} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.txnTitle, { color: c.text }]}>{t.title}</Text>
+                    <Text style={[styles.txnDate, { color: c.subtext }]}>{t.date}</Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.txnAmount, { color }]}>{t.amount > 0 ? `+$${t.amount.toFixed(2)}` : `-$${Math.abs(t.amount).toFixed(2)}`}</Text>
+                    <Text style={[styles.txnStatus, { color: c.subtext }]}>{t.status === 'pending' ? 'Pending' : 'Completed'}</Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.txnTitle, { color: c.text }]}>{t.title}</Text>
-                  <Text style={[styles.txnDate, { color: c.subtext }]}>{t.date}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.txnAmount, { color }]}>{t.amount > 0 ? `+$${t.amount.toFixed(2)}` : `-$${Math.abs(t.amount).toFixed(2)}`}</Text>
-                  <Text style={[styles.txnStatus, { color: c.subtext }]}>{t.type === 'pending' ? 'Pending' : 'Completed'}</Text>
-                </View>
-              </View>
-            );
-          })}
+              );
+            })
+          ) : (
+            <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No transactions found</Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

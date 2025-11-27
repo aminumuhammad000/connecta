@@ -1,7 +1,17 @@
-import axios from 'axios'
+import axios, { type AxiosResponse } from 'axios'
+
+// API Response Type
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  token?: string;
+  user?: any;
+}
 
 // API Base Configuration
-const API_BASE_URL = 'http://localhost:5000'
+// const API_BASE_URL = 'http://localhost:5000'
+const API_BASE_URL = 'http://102.68.84.56'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -26,15 +36,23 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
-    // Return the data directly
-    return response.data
+  (response: AxiosResponse<ApiResponse>) => {
+    // Return the full response object to maintain proper typing
+    return response
   },
   (error) => {
+    // Only redirect to login on 401 if we're not already on the login page
+    // and not during a login attempt
     if (error.response?.status === 401) {
-      localStorage.removeItem('admin_token')
-      localStorage.removeItem('admin_user')
-      window.location.href = '/login'
+      const isLoginPage = window.location.pathname === '/login'
+      const isLoginRequest = error.config?.url?.includes('/signin') || error.config?.url?.includes('/login')
+
+      if (!isLoginPage && !isLoginRequest) {
+        console.warn('Unauthorized request detected, redirecting to login...')
+        localStorage.removeItem('admin_token')
+        localStorage.removeItem('admin_user')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
@@ -45,10 +63,12 @@ api.interceptors.response.use(
 // ============================================
 export const authAPI = {
   login: async (email: string, password: string) => {
-    return await api.post('/api/users/signin', { email, password })
+    const { data } = await api.post('/api/users/signin', { email, password })
+    return data
   },
   signup: async (userData: any) => {
-    return await api.post('/api/users/signup', userData)
+    const { data } = await api.post('/api/users/signup', userData)
+    return data
   },
 }
 
@@ -57,22 +77,28 @@ export const authAPI = {
 // ============================================
 export const usersAPI = {
   getAll: async (params?: { userType?: string; skills?: string; limit?: number; page?: number; search?: string }) => {
-    return await api.get('/api/users', { params })
+    const { data } = await api.get('/api/users', { params })
+    return data
   },
   getById: async (id: string) => {
-    return await api.get(`/api/users/${id}`)
+    const { data } = await api.get(`/api/users/${id}`)
+    return data
   },
   update: async (id: string, userData: any) => {
-    return await api.put(`/api/users/${id}`, userData)
+    const { data } = await api.put(`/api/users/${id}`, userData)
+    return data
   },
   delete: async (id: string) => {
-    return await api.delete(`/api/users/${id}`)
+    const { data } = await api.delete(`/api/users/${id}`)
+    return data
   },
   ban: async (id: string) => {
-    return await api.put(`/api/users/${id}/ban`)
+    const { data } = await api.put(`/api/users/${id}/ban`)
+    return data
   },
   unban: async (id: string) => {
-    return await api.put(`/api/users/${id}/unban`)
+    const { data } = await api.put(`/api/users/${id}/unban`)
+    return data
   },
 }
 
@@ -111,10 +137,12 @@ export const contractsAPI = {
 // ============================================
 export const projectsAPI = {
   getAll: async (params?: { status?: string; search?: string; limit?: number; page?: number; userId?: string }) => {
-    return await api.get('/api/projects', { params })
+    const { data } = await api.get('/api/projects', { params })
+    return data
   },
   getById: async (id: string) => {
-    return await api.get(`/api/projects/${id}`)
+    const { data } = await api.get(`/api/projects/${id}`)
+    return data
   },
   getByFreelancer: async (freelancerId: string) => {
     const { data } = await api.get(`/api/projects/freelancer/${freelancerId}`)
@@ -185,7 +213,8 @@ export const jobsAPI = {
 // ============================================
 export const proposalsAPI = {
   getAll: async (params?: { status?: string; search?: string; limit?: number; page?: number; userId?: string }) => {
-    return await api.get('/api/proposals', { params })
+    const { data } = await api.get('/api/proposals', { params })
+    return data
   },
   getById: async (id: string) => {
     const { data } = await api.get(`/api/proposals/${id}`)
@@ -241,17 +270,17 @@ export const paymentsAPI = {
     // Calculate stats from all payments
     const { data: response } = await api.get('/api/payments/admin/all')
     const payments = Array.isArray(response) ? response : response?.data || []
-    
+
     const totalRevenue = payments
       .filter((p: any) => p.status === 'completed')
       .reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-    
+
     const pendingWithdrawals = payments
       .filter((p: any) => p.status === 'pending')
       .reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-    
+
     const successfulTransactions = payments.filter((p: any) => p.status === 'completed').length
-    
+
     return { totalRevenue, pendingWithdrawals, successfulTransactions }
   },
   release: async (paymentId: string) => {
@@ -381,16 +410,16 @@ export const analyticsAPI = {
 // ============================================
 export const subscriptionsAPI = {
   getAll: async () => {
-    const response = await api.get('/api/subscriptions/admin/all')
-    return response.data
+    const { data } = await api.get('/api/subscriptions/admin/all')
+    return data
   },
   getStats: async () => {
-    const response = await api.get('/api/subscriptions/admin/stats')
-    return response.data
+    const { data } = await api.get('/api/subscriptions/admin/stats')
+    return data
   },
   cancel: async (subscriptionId: string) => {
-    const response = await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
-    return response.data
+    const { data } = await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
+    return data
   },
 }
 

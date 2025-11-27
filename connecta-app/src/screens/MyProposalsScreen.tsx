@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
+import { useAuth } from '../context/AuthContext';
+import proposalService from '../services/proposalService';
 
 interface ProposalCard {
   id: string;
@@ -16,19 +18,41 @@ interface ProposalCard {
 const MyProposalsScreen: React.FC = () => {
   const c = useThemeColors();
   const navigation = useNavigation();
+  const { user } = useAuth();
   const [tab, setTab] = useState<'all' | 'pending' | 'accepted' | 'rejected' | 'withdrawn'>('all');
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const data = useMemo<ProposalCard[]>(() => ([
-    { id: 'a1', title: 'Senior UX/UI Designer', company: 'Innovatech Solutions', status: 'accepted', submitted: 'Submitted 3 days ago' },
-    { id: 'p1', title: 'Brand Identity and Logo Design', company: 'Creative Minds Inc.', status: 'pending', submitted: 'Submitted 1 week ago' },
-    { id: 'r1', title: 'Mobile App Development', company: 'NextGen Apps', status: 'rejected', submitted: 'Submitted 2 weeks ago' },
-    { id: 'v1', title: 'Content Writer for Tech Blog', company: 'WebWizards', status: 'viewed', submitted: 'Submitted 1 month ago' },
-  ]), []);
+  useEffect(() => {
+    loadProposals();
+  }, []);
+
+  const loadProposals = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch proposals for the current user (freelancer)
+      const data = await proposalService.getAllProposals().catch(() => []);
+
+      // Map API data to UI format
+      const mapped = data.map((p: any) => ({
+        id: p._id,
+        title: p.jobTitle || 'Untitled Job',
+        company: p.clientName || 'Unknown Client',
+        status: p.status,
+        submitted: `Submitted ${new Date(p.createdAt).toLocaleDateString()}`,
+      }));
+      setProposals(mapped);
+    } catch (error) {
+      console.error('Error loading proposals:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
-    if (tab === 'all') return data;
-    return data.filter(d => d.status === tab);
-  }, [tab, data]);
+    if (tab === 'all') return proposals;
+    return proposals.filter(d => d.status === tab);
+  }, [tab, proposals]);
 
   const chipStyle = (active: boolean) => [
     styles.tabItem,
@@ -57,6 +81,14 @@ const MyProposalsScreen: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* Top App Bar */}
@@ -81,30 +113,34 @@ const MyProposalsScreen: React.FC = () => {
 
       {/* List */}
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12 }}>
-        {filtered.map(p => {
-          const pill = statusPill(p.status);
-          return (
-            <TouchableOpacity
-              key={p.id}
-              onPress={() => (navigation as any).navigate('ProposalDetail')}
-              style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-            >
-              <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                  <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
+        {filtered.length > 0 ? (
+          filtered.map(p => {
+            const pill = statusPill(p.status);
+            return (
+              <TouchableOpacity
+                key={p.id}
+                onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
+                style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                    <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
+                  </View>
+                  <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
                 </View>
-                <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-              </View>
-              <View style={styles.cardFooter}>
-                <View style={[styles.pill, { backgroundColor: pill.bg }]}>
-                  <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                <View style={styles.cardFooter}>
+                  <View style={[styles.pill, { backgroundColor: pill.bg }]}>
+                    <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                  </View>
+                  <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
                 </View>
-                <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

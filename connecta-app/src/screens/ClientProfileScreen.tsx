@@ -1,18 +1,43 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import profileService from '../services/profileService';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRoQQ-xxcLo9YcmbA5AWwLA-FKTuhoFyvCtoj3YzgnBUHc3Bck-0K5CDGhw26GGSiL4TVmx-echTOzkIszt19LuAJSmxtNX4gLR84lGhbyBU_ylBR9UPjYUsGq-sCWYMZU8YMxAwFk3vUMj8iG1B-JkvTnZ33PaK6gy8KAqR6GAF4C1IoRLxDv3FB7Jl0FhWIXIXurfNORMKY7rKh4LRJjYzPXNlfWTAvV548j73C9tUL04WQzqGCFCWqIVMqtsa2VztnMJKvY5rM';
 
 export default function ClientProfileScreen({ navigation }: any) {
   const c = useThemeColors();
   const [activeTab, setActiveTab] = useState<'history' | 'reviews'>('history');
-  const [following, setFollowing] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setIsLoading(true);
+      const data = await profileService.getMyProfile().catch(() => null);
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onBack = () => navigation.goBack?.();
-  const onMore = () => { };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
@@ -27,15 +52,17 @@ export default function ClientProfileScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 }} refreshControl={
+        <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} />
+      }>
         {/* Profile Header */}
         <View style={styles.sectionPad}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <Image source={{ uri: AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture of Alexandria Smith" />
+              <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
               <View>
-                <Text style={[styles.name, { color: c.text }]}>Alexandria Smith</Text>
-                <Text style={[styles.location, { color: c.subtext }]}>London, UK</Text>
+                <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                <Text style={[styles.location, { color: c.subtext }]}>{profile?.location || 'Location not set'}</Text>
                 <View style={styles.verifiedRow}>
                   <MaterialIcons name="verified" size={16} color="#22c55e" />
                   <Text style={styles.verifiedText}>Payment Method Verified</Text>
@@ -64,26 +91,26 @@ export default function ClientProfileScreen({ navigation }: any) {
         <View style={[styles.sectionPad, styles.rowWrap, { gap: 12 }]}>
           <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Total Spend</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>$25K+</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>${profile?.totalSpend || '0'}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs Posted</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>42</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsPosted || '0'}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
             <Text style={[styles.statLabel, { color: c.subtext }]}>Avg. Rate Paid</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>$65/hr</Text>
+            <Text style={[styles.statValue, { color: c.text }]}>${profile?.avgRate || '0'}/hr</Text>
           </View>
         </View>
 
         {/* About */}
         <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
           <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>About</Text>
-          <TouchableOpacity onPress={() => { }}>
+          <TouchableOpacity onPress={() => navigation.navigate('ClientEditProfile')}>
             <MaterialIcons name="edit" size={20} color={c.primary} />
           </TouchableOpacity>
         </View>
-        <Text style={[styles.about, { color: c.subtext }]}>We are a design-first company focused on creating beautiful and intuitive user experiences. We're looking for talented freelancers to partner with on exciting new projects.</Text>
+        <Text style={[styles.about, { color: c.subtext }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
         {/* Tabs */}
         <View style={[styles.tabs, { borderBottomColor: c.border }]}>
@@ -110,33 +137,32 @@ export default function ClientProfileScreen({ navigation }: any) {
         {/* Content */}
         <View style={styles.sectionPad}>
           {activeTab === 'history' ? (
-            <>
-              <JobCard
-                title="UX/UI Designer for Mobile App"
-                budget="$3,500"
-                status="Completed"
-                description="Looking for a skilled designer to create a modern and intuitive interface for our new productivity app..."
-              />
-              <JobCard
-                title="Brand Identity & Logo Design"
-                budget="$1,200"
-                status="Completed"
-                description="We need a full brand identity package for a new fintech startup, including a logo, color palette, and typography..."
-              />
-            </>
+            profile?.jobHistory?.length > 0 ? (
+              profile.jobHistory.map((job: any, index: number) => (
+                <JobCard
+                  key={index}
+                  title={job.title}
+                  budget={job.budget}
+                  status={job.status}
+                  description={job.description}
+                />
+              ))
+            ) : (
+              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No job history</Text>
+            )
           ) : (
-            <>
-              <ReviewCard
-                author="John D."
-                rating={5}
-                comment="Great experience working with Alexandria. Clear requirements and prompt payments."
-              />
-              <ReviewCard
-                author="Emily R."
-                rating={4}
-                comment="Professional client. Quick feedback cycles. Would work again."
-              />
-            </>
+            profile?.reviews?.length > 0 ? (
+              profile.reviews.map((review: any, index: number) => (
+                <ReviewCard
+                  key={index}
+                  author={review.author}
+                  rating={review.rating}
+                  comment={review.comment}
+                />
+              ))
+            ) : (
+              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No reviews yet</Text>
+            )
           )}
         </View>
       </ScrollView>

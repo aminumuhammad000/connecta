@@ -43,7 +43,11 @@ setIO(io);
 
 // Middleware
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
+  origin: [
+    "http://102.68.84.56",
+    "http://localhost:5173",
+    "http://localhost:8081"
+  ],
   credentials: true
 }));
 app.use(express.json());
