@@ -6,7 +6,7 @@ import Payment from '../models/Payment.model';
 import Contract from '../models/Contract.model';
 import Review from '../models/Review.model';
 import Job from '../models/Job.model';
-import Subscription from '../models/Subscription.model';
+import Subscription from '../models/subscription.model';
 
 export const getAnalyticsStats = async (req: Request, res: Response) => {
   try {

@@ -62,5 +62,5 @@ const subscriptionSchema = new Schema<ISubscription>(
   }
 );
 
-// Check if model already exists before creating
-export default mongoose.models.Subscription || mongoose.model<ISubscription>('Subscription', subscriptionSchema);
+const Subscription = mongoose.model<ISubscription>('Subscription', subscriptionSchema);
+export default Subscription;
