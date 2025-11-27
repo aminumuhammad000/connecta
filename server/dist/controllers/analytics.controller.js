@@ -11,7 +11,7 @@ const Payment_model_1 = __importDefault(require("../models/Payment.model"));
 const Contract_model_1 = __importDefault(require("../models/Contract.model"));
 const Review_model_1 = __importDefault(require("../models/Review.model"));
 const Job_model_1 = __importDefault(require("../models/Job.model"));
-const Subscription_model_1 = __importDefault(require("../models/Subscription.model"));
+const subscription_model_1 = __importDefault(require("../models/subscription.model"));
 const getAnalyticsStats = async (req, res) => {
     try {
         // Get total counts
@@ -81,12 +81,12 @@ const getAnalyticsStats = async (req, res) => {
             amount: item.amount
         }));
         // Get subscription revenue
-        const subscriptionRevenue = await Subscription_model_1.default.aggregate([
+        const subscriptionRevenue = await subscription_model_1.default.aggregate([
             { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
         const totalSubscriptionRevenue = subscriptionRevenue[0]?.total || 0;
         // Get weekly subscription revenue (last 7 days)
-        const weeklySubscriptionRevenue = await Subscription_model_1.default.aggregate([
+        const weeklySubscriptionRevenue = await subscription_model_1.default.aggregate([
             {
                 $match: {
                     createdAt: {
@@ -110,10 +110,14 @@ const getAnalyticsStats = async (req, res) => {
             subscriptions: item.count
         }));
         // Get active subscriptions count
-        const activeSubscriptions = await Subscription_model_1.default.countDocuments({
+        const activeSubscriptions = await subscription_model_1.default.countDocuments({
             status: 'active',
             endDate: { $gt: new Date() }
         });
+        // Get job statistics
+        const openJobs = await Job_model_1.default.countDocuments({ status: 'open' });
+        const inProgressJobs = await Job_model_1.default.countDocuments({ status: 'in-progress' });
+        const closedJobs = await Job_model_1.default.countDocuments({ status: 'closed' });
         return res.status(200).json({
             success: true,
             data: {
@@ -141,6 +145,12 @@ const getAnalyticsStats = async (req, res) => {
                     rejected: rejectedProposals,
                     pending: totalProposals - acceptedProposals - rejectedProposals,
                     successRate: proposalSuccessRate
+                },
+                jobStats: {
+                    total: totalJobs,
+                    open: openJobs,
+                    inProgress: inProgressJobs,
+                    closed: closedJobs
                 },
                 weeklyPaymentRevenue: formattedWeeklyPaymentRevenue,
                 weeklySubscriptionRevenue: formattedWeeklySubscriptionRevenue

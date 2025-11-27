@@ -6,7 +6,7 @@ import Payment from '../models/Payment.model';
 import Contract from '../models/Contract.model';
 import Review from '../models/Review.model';
 import Job from '../models/Job.model';
-import Subscription from '../models/subscription.model';
+import Subscription from '../models/Subscription.model';
 
 export const getAnalyticsStats = async (req: Request, res: Response) => {
   try {
@@ -120,14 +120,14 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
 
     // Get active subscriptions count
     const activeSubscriptions = await Subscription.countDocuments({
-      status: 'active',
-      endDate: { $gt: new Date() }
-    });
 
     // Get job statistics
     const openJobs = await Job.countDocuments({ status: 'open' });
     const inProgressJobs = await Job.countDocuments({ status: 'in-progress' });
     const closedJobs = await Job.countDocuments({ status: 'closed' });
+      status: 'active',
+      endDate: { $gt: new Date() }
+    });
 
     return res.status(200).json({
       success: true,
@@ -149,6 +149,12 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
           totalRevenue: totalPaymentRevenue + totalSubscriptionRevenue,
           activeSubscriptions
         },
+        jobStats: {
+          total: totalJobs,
+          open: openJobs,
+          inProgress: inProgressJobs,
+          closed: closedJobs
+        },
         userGrowth: formattedUserGrowth,
         proposalStats: {
           total: totalProposals,
@@ -156,12 +162,6 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
           rejected: rejectedProposals,
           pending: totalProposals - acceptedProposals - rejectedProposals,
           successRate: proposalSuccessRate
-        },
-        jobStats: {
-          total: totalJobs,
-          open: openJobs,
-          inProgress: inProgressJobs,
-          closed: closedJobs
         },
         weeklyPaymentRevenue: formattedWeeklyPaymentRevenue,
         weeklySubscriptionRevenue: formattedWeeklySubscriptionRevenue

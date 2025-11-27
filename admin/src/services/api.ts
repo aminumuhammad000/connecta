@@ -410,16 +410,16 @@ export const analyticsAPI = {
 // ============================================
 export const subscriptionsAPI = {
   getAll: async () => {
-    const { data } = await api.get('/api/subscriptions/admin/all')
-    return data
+    const response = await api.get('/api/subscriptions/admin/all')
+    return response.data
   },
   getStats: async () => {
-    const { data } = await api.get('/api/subscriptions/admin/stats')
-    return data
+    const response = await api.get('/api/subscriptions/admin/stats')
+    return response.data
   },
   cancel: async (subscriptionId: string) => {
-    const { data } = await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
-    return data
+    const response = await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
+    return response.data
   },
 }
 

@@ -11,7 +11,8 @@
     "seed:projects": "ts-node scripts/seedProjects.ts",
     "seed:messages": "ts-node scripts/seedMessages.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "ts-node src/scripts/seedDatabase.ts"
   },
   "keywords": [],
   "author": "",

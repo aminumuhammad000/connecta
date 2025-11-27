@@ -8,13 +8,13 @@ export interface ISubscription extends Document {
   status: 'active' | 'expired' | 'cancelled';
   startDate: Date;
   endDate: Date;
-  paymentReference: string;
+  paymentReference?: string;
   autoRenew: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const SubscriptionSchema = new Schema<ISubscription>(
+const subscriptionSchema = new Schema<ISubscription>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -25,7 +25,6 @@ const SubscriptionSchema = new Schema<ISubscription>(
       type: String,
       enum: ['free', 'premium'],
       default: 'free',
-      required: true,
     },
     amount: {
       type: Number,
@@ -63,10 +62,5 @@ const SubscriptionSchema = new Schema<ISubscription>(
   }
 );
 
-// Index for faster queries
-SubscriptionSchema.index({ userId: 1, status: 1 });
-SubscriptionSchema.index({ endDate: 1 });
-
-const Subscription = mongoose.model<ISubscription>('Subscription', SubscriptionSchema);
-
+const Subscription = mongoose.model<ISubscription>('Subscription', subscriptionSchema);
 export default Subscription;
