@@ -41,10 +41,16 @@ function AppContent() {
   useEffect(() => {
     (async () => {
       await configureNotifications();
-      const token = await registerForPushNotificationsAsync();
+      const { token, reason } = await registerForPushNotificationsAsync();
       if (token) {
         // You can send this token to your backend
         // console.log('Expo push token:', token);
+      } else if (reason === 'expo-go') {
+        showAlert({
+          title: 'Push notifications limited in Expo Go',
+          message: 'Build a development client to test remote push notifications on device.',
+          type: 'info',
+        });
       } else {
         showAlert({ title: 'Notifications disabled', message: 'Enable permissions to receive alerts.', type: 'info' });
       }

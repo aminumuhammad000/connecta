@@ -12,7 +12,7 @@ import { Proposal, ProposalStats } from '../types';
  */
 export const getAllProposals = async (): Promise<Proposal[]> => {
     const response = await get<Proposal[]>(API_ENDPOINTS.PROPOSALS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -20,7 +20,7 @@ export const getAllProposals = async (): Promise<Proposal[]> => {
  */
 export const getAcceptedProposals = async (): Promise<Proposal[]> => {
     const response = await get<Proposal[]>(API_ENDPOINTS.ACCEPTED_PROPOSALS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -28,7 +28,7 @@ export const getAcceptedProposals = async (): Promise<Proposal[]> => {
  */
 export const getFreelancerProposals = async (freelancerId: string): Promise<Proposal[]> => {
     const response = await get<Proposal[]>(API_ENDPOINTS.FREELANCER_PROPOSALS(freelancerId));
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -36,7 +36,7 @@ export const getFreelancerProposals = async (freelancerId: string): Promise<Prop
  */
 export const getProposalStats = async (freelancerId: string): Promise<ProposalStats> => {
     const response = await get<ProposalStats>(API_ENDPOINTS.PROPOSAL_STATS(freelancerId));
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -44,7 +44,7 @@ export const getProposalStats = async (freelancerId: string): Promise<ProposalSt
  */
 export const getProposalById = async (id: string): Promise<Proposal> => {
     const response = await get<Proposal>(API_ENDPOINTS.PROPOSAL_BY_ID(id));
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -52,23 +52,23 @@ export const getProposalById = async (id: string): Promise<Proposal> => {
  */
 export const createProposal = async (proposalData: Partial<Proposal>): Promise<Proposal> => {
     const response = await post<Proposal>(API_ENDPOINTS.PROPOSALS, proposalData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
  * Approve a proposal
  */
 export const approveProposal = async (id: string): Promise<Proposal> => {
-    const response = await put<Proposal>(API_ENDPOINTS.APPROVE_PROPOSAL(id));
-    return response.data!;
+    const response = await put<Proposal>(API_ENDPOINTS.APPROVE_PROPOSAL(id), {});
+    return (response as any)?.data || response;
 };
 
 /**
  * Reject a proposal
  */
 export const rejectProposal = async (id: string): Promise<Proposal> => {
-    const response = await put<Proposal>(API_ENDPOINTS.REJECT_PROPOSAL(id));
-    return response.data!;
+    const response = await put<Proposal>(API_ENDPOINTS.REJECT_PROPOSAL(id), {});
+    return (response as any)?.data || response;
 };
 
 /**
@@ -76,7 +76,7 @@ export const rejectProposal = async (id: string): Promise<Proposal> => {
  */
 export const updateProposalStatus = async (id: string, status: string): Promise<Proposal> => {
     const response = await patch<Proposal>(API_ENDPOINTS.PROPOSAL_BY_ID(id) + '/status', { status });
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 export default {

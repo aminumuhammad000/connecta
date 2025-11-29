@@ -39,11 +39,11 @@ export default function EditProfileScreen({ navigation }: any) {
                 firstName: user?.firstName || '',
                 lastName: user?.lastName || '',
                 email: user?.email || '',
-                phone: profile.phone || '',
-                location: profile.location || '',
-                bio: profile.bio || '',
-                skills: profile.skills || [],
-                skillsText: (profile.skills || []).join(', '),
+                phone: profile?.phone || '',
+                location: profile?.location || '',
+                bio: profile?.bio || '',
+                skills: profile?.skills || [],
+                skillsText: (profile?.skills || []).join(', '),
             });
         } catch (error: any) {
             console.error('Error loading profile:', error);
@@ -71,7 +71,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 .filter(s => s.length > 0);
 
             // Update profile
-            await profileService.updateMyProfile({
+            const savedProfile = await profileService.updateMyProfile({
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 phone: formData.phone,

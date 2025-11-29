@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as projectService from '../services/projectService';
+import { Project } from '../types';
 
 interface ProjectItem {
   id: string;
@@ -12,36 +14,6 @@ interface ProjectItem {
   avatar: string;
   status: 'In Progress' | 'Completed' | 'Pending Approval';
 }
-
-const SEED: ProjectItem[] = [
-  {
-    id: 'p1',
-    title: 'Redesign of E-commerce Website',
-    price: '$2,500',
-    freelancer: 'Jane Doe',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAM3FfVA23LbdasyDkpgbk88avK34sH2E8BSWhZS3nm-YM9ob4NEdCyXWqHSCYNMBLCyJLEjSb3uXF8lDCGdE-0Nrabk9iS-tU_5ySp-yRJTlZwLxduI5-NL-ucdM-r0R0hKZYY8l_JhlbDUot4VISidpmRs6gjD1G_Ujy3g-lag13YPzNtNeEfWAMac3dmJU9VuAA8IAgI-6_RAv2ldlAK6J8q6TYOFz2hETOiSIX0e54Fi7FCQNzJeINRL6vte_AdCcgA2QOcXSc',
-    status: 'In Progress',
-  },
-  {
-    id: 'p2',
-    title: 'Mobile App Development',
-    price: '$5,000',
-    freelancer: 'John Smith',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDchTnQcabTPw_U1c7heTmFSBqCMmtQLviInTfv0BeSjO5BxQFcYnw5QwVxBEbJcGnjGNkLg4RP1jljNdk_SLgQMPgFGLv8lsHw6AoQAOV2FjWqUEc0IGyHggd3DlvqYGKQPH_4Wl-YkfnegoEL5iGLeDGp98KJ-6yGR82QXMbGUWztQTO75UVm3wv0vUsawto-vcrX9exQdhqOz8B_qiy6IWv9LCs_wJeQKlQw0zHy1rhxVJbdmiLbA2NxLzNGnQZa7ZCObi9k-5A',
-    status: 'Completed',
-  },
-  {
-    id: 'p3',
-    title: 'Social Media Marketing Campaign',
-    price: '$1,200',
-    freelancer: 'Sarah Lee',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCB5Nri-yYB34CuXp2J-PtCnzbV6tGq6UauTUL8UBn0BzbnltUFzUgMbJWCleKsIqt53OlA3V3FHYrggz97SF2nmR7Y07Lo6dwYla-zuWCZIF2vHxuKtjUv4mqaiwq_Eltf6HrgjCOCR-Rz5pbbRBYXcOPdKGWyvidvCkOPkcmIC7zFpRfunlkhFrfXHEg7347mhYMLxlYrH0iXEkQWMKWEQJMl6W5TED2h1DMNAFUQcnaKeGP05y9Yz8FRMRMKnGCuI-fsjlb30Ro',
-    status: 'Pending Approval',
-  },
-];
 
 const chips: Array<{ key: 'All' | 'Active' | 'Completed' | 'Pending'; label: string }> = [
   { key: 'All', label: 'All' },
@@ -55,17 +27,56 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<'All' | 'Active' | 'Completed' | 'Pending'>('All');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  const loadProjects = async () => {
+    try {
+      const data = await projectService.getMyProjects();
+      setProjects(data);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadProjects();
+  };
+
+  const mapProjectStatus = (status: string): 'In Progress' | 'Completed' | 'Pending Approval' => {
+    if (status === 'in_progress') return 'In Progress';
+    if (status === 'completed') return 'Completed';
+    return 'Pending Approval';
+  };
 
   const filtered = useMemo(() => {
-    const base = SEED.filter(p =>
-      p.title.toLowerCase().includes(q.trim().toLowerCase()) ||
-      p.freelancer.toLowerCase().includes(q.trim().toLowerCase())
+    const base = projects.filter((p: any) =>
+      p.title?.toLowerCase().includes(q.trim().toLowerCase())
     );
     if (filter === 'All') return base;
-    if (filter === 'Active') return base.filter(p => p.status === 'In Progress');
-    if (filter === 'Completed') return base.filter(p => p.status === 'Completed');
-    return base.filter(p => p.status === 'Pending Approval');
-  }, [q, filter]);
+    if (filter === 'Active') return base.filter((p: any) => p.status === 'in_progress');
+    if (filter === 'Completed') return base.filter((p: any) => p.status === 'completed');
+    return base.filter((p: any) => p.status === 'review');
+  }, [projects, q, filter]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -113,27 +124,39 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
         </ScrollView>
 
         {/* List */}
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96 + insets.bottom, gap: 12 }}>
-          {filtered.map(p => (
-            <TouchableOpacity key={p.id} activeOpacity={0.85} style={[styles.card, { backgroundColor: c.card }]}> 
-              <View style={styles.cardTop}> 
-                <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                <Text style={[styles.cardPrice, { color: c.primary }]}>{p.price}</Text>
-              </View>
-              <View style={styles.cardMiddle}> 
-                <Image source={{ uri: p.avatar }} style={styles.avatar} />
-                <Text style={{ color: c.subtext, fontSize: 13 }}>{p.freelancer}</Text>
-              </View>
-              <View style={styles.cardBottom}> 
-                <View style={[styles.pill, pillStyle(p.status)]}> 
-                  <Text style={[styles.pillText, { color: pillStyle(p.status).color }]}>
-                    {p.status}
+        <ScrollView 
+          contentContainerStyle={{ padding: 16, paddingBottom: 96 + insets.bottom, gap: 12 }}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+          }
+        >
+          {filtered.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingTop: 40 }}>
+              <MaterialIcons name="folder-open" size={64} color={c.subtext} />
+              <Text style={{ color: c.text, fontSize: 18, marginTop: 16 }}>No projects found</Text>
+              <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8 }}>Your projects will appear here</Text>
+            </View>
+          ) : (
+            filtered.map((p: any) => (
+              <TouchableOpacity key={p._id} activeOpacity={0.85} style={[styles.card, { backgroundColor: c.card }]}> 
+                <View style={styles.cardTop}> 
+                  <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                  <Text style={[styles.cardPrice, { color: c.primary }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
+                </View>
+                <View style={styles.cardMiddle}> 
+                  <Image source={{ uri: 'https://api.dicebear.com/7.x/avataaars/svg?seed=freelancer' }} style={styles.avatar} />
+                  <Text style={{ color: c.subtext, fontSize: 13 }}>Freelancer</Text>
+                </View>
+                <View style={styles.cardBottom}> 
+                  <View style={[styles.pill, pillStyle(mapProjectStatus(p.status))]}> 
+                    <Text style={[styles.pillText, { color: pillStyle(mapProjectStatus(p.status)).color }]}>
+                    {mapProjectStatus(p.status)}
                   </Text>
                 </View>
                 <MaterialIcons name="chevron-right" size={22} color={c.subtext} />
               </View>
             </TouchableOpacity>
-          ))}
+          )))}
         </ScrollView>
 
         {/* FAB */}

@@ -1,5 +1,15 @@
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+
+type PushRegistrationReason = 'expo-go' | 'denied' | 'error';
+
+export type PushRegistrationResult = {
+  token: string | null;
+  reason?: PushRegistrationReason;
+};
+
+let hasLoggedExpoGoWarning = false;
 
 export async function configureNotifications() {
   // Foreground presentation options
@@ -24,7 +34,7 @@ export async function configureNotifications() {
   }
 }
 
-export async function registerForPushNotificationsAsync(): Promise<string | null> {
+export async function registerForPushNotificationsAsync(): Promise<PushRegistrationResult> {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   if (existingStatus !== 'granted') {
@@ -32,10 +42,24 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     finalStatus = status;
   }
   if (finalStatus !== 'granted') {
-    return null;
+    return { token: null, reason: 'denied' };
   }
-  const token = await Notifications.getExpoPushTokenAsync();
-  return token.data;
+
+  if (Constants.appOwnership === 'expo') {
+    if (!hasLoggedExpoGoWarning) {
+      console.warn('Remote push notifications are not available in Expo Go. Use a development build to test push delivery.');
+      hasLoggedExpoGoWarning = true;
+    }
+    return { token: null, reason: 'expo-go' };
+  }
+
+  try {
+    const token = await Notifications.getExpoPushTokenAsync();
+    return { token: token.data };
+  } catch (error) {
+    console.warn('Failed to fetch Expo push token', error);
+    return { token: null, reason: 'error' };
+  }
 }
 
 export async function scheduleLocalNotification(title: string, body: string) {

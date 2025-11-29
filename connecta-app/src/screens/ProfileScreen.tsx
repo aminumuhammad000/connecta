@@ -4,15 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import profileService from '../services/profileService';
-import profileService from '../services/profileService'; // Assuming this path
+import { useAuth } from '../context/AuthContext';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
 
 export default function ProfileScreen({ navigation }: any) {
   const c = useThemeColors();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -21,10 +23,24 @@ export default function ProfileScreen({ navigation }: any) {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const data = await profileService.getMyProfile().catch(() => null);
-      setProfile(data);
-    } catch (error) {
+      const data = await profileService.getMyProfile();
+      // Merge with auth user basics so name/email show even if profile payload is sparse
+      const merged = {
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        email: user?.email,
+        ...data,
+      };
+      setProfile(merged);
+      setErrorMessage(data ? null : 'Profile not found. Create your profile to get started.');
+    } catch (error: any) {
       console.error('Error loading profile:', error);
+      if (error?.status === 404) {
+        setProfile(null);
+        setErrorMessage('Profile not found. Create your profile to get started.');
+      } else {
+        setErrorMessage('Unable to load profile. Pull to refresh to try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -36,6 +52,26 @@ export default function ProfileScreen({ navigation }: any) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!profile && !isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+        <View style={[styles.emptyState, { backgroundColor: c.card, borderColor: c.border }]}>
+          <MaterialIcons name="person-outline" size={36} color={c.subtext} />
+          <Text style={[styles.emptyTitle, { color: c.text }]}>No profile yet</Text>
+          <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 12 }}>
+            {errorMessage || 'Set up your profile to start getting matched with jobs.'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: c.primary, width: '100%' }]}
+            onPress={() => navigation.navigate('EditProfile')}
+          >
+            <Text style={[styles.btnText, { color: 'white' }]}>Create Profile</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
@@ -59,6 +95,12 @@ export default function ProfileScreen({ navigation }: any) {
           <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} />
         }
       >
+        {errorMessage && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+            <Text style={{ color: c.subtext }}>{errorMessage}</Text>
+          </View>
+        )}
+
         {/* Profile Header */}
         <View style={styles.sectionPad}>
           <View style={styles.headerRow}>
@@ -262,6 +304,8 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 18, fontWeight: '800', marginTop: 2 },
   sectionTitle: { paddingHorizontal: 16, paddingTop: 16, fontSize: 18, fontWeight: '800' },
+  emptyState: { margin: 16, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 20, alignItems: 'center', gap: 8 },
+  emptyTitle: { fontSize: 18, fontWeight: '700' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   about: { paddingHorizontal: 16, paddingTop: 6, fontSize: 14, lineHeight: 20 },
   skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 8 },

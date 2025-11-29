@@ -4,14 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import profileService from '../services/profileService';
+import { useAuth } from '../context/AuthContext';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRoQQ-xxcLo9YcmbA5AWwLA-FKTuhoFyvCtoj3YzgnBUHc3Bck-0K5CDGhw26GGSiL4TVmx-echTOzkIszt19LuAJSmxtNX4gLR84lGhbyBU_ylBR9UPjYUsGq-sCWYMZU8YMxAwFk3vUMj8iG1B-JkvTnZ33PaK6gy8KAqR6GAF4C1IoRLxDv3FB7Jl0FhWIXIXurfNORMKY7rKh4LRJjYzPXNlfWTAvV548j73C9tUL04WQzqGCFCWqIVMqtsa2VztnMJKvY5rM';
 
 export default function ClientProfileScreen({ navigation }: any) {
   const c = useThemeColors();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'history' | 'reviews'>('history');
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -20,10 +23,18 @@ export default function ClientProfileScreen({ navigation }: any) {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const data = await profileService.getMyProfile().catch(() => null);
-      setProfile(data);
+      const data = await profileService.getMyProfile();
+      const merged = {
+        firstName: user?.firstName,
+        lastName: user?.lastName,
+        email: user?.email,
+        ...data,
+      };
+      setProfile(merged);
+      setErrorMessage(data ? null : 'Profile not found. Create your profile to get started.');
     } catch (error) {
       console.error('Error loading profile:', error);
+      setErrorMessage('Unable to load profile. Pull to refresh to try again.');
     } finally {
       setIsLoading(false);
     }
@@ -31,10 +42,30 @@ export default function ClientProfileScreen({ navigation }: any) {
 
   const onBack = () => navigation.goBack?.();
 
-  if (isLoading) {
+  if (isLoading && !profile) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!isLoading && !profile) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center', padding: 16 }]}>
+        <View style={[styles.emptyState, { backgroundColor: c.card, borderColor: c.border }]}>
+          <MaterialIcons name="person-outline" size={36} color={c.subtext} />
+          <Text style={[styles.emptyTitle, { color: c.text }]}>No profile yet</Text>
+          <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 12 }}>
+            {errorMessage || 'Set up your profile to start hiring.'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: c.primary, width: '100%' }]}
+            onPress={() => navigation.navigate('ClientEditProfile')}
+          >
+            <Text style={[styles.btnText, { color: 'white' }]}>Create Profile</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
@@ -238,6 +269,8 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 20, fontWeight: '800', marginTop: 2 },
   sectionTitle: { paddingHorizontal: 16, paddingTop: 16, fontSize: 18, fontWeight: '800' },
+  emptyState: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 20, alignItems: 'center', gap: 8, width: '100%', maxWidth: 340 },
+  emptyTitle: { fontSize: 18, fontWeight: '700' },
   about: { paddingHorizontal: 16, paddingTop: 6, fontSize: 14, lineHeight: 20 },
   tabs: { marginTop: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   tabList: { flexDirection: 'row', paddingHorizontal: 16 },

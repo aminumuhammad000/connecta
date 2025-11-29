@@ -18,7 +18,7 @@ export const getAllJobs = async (params?: {
     page?: number;
 }): Promise<Job[]> => {
     const response = await get<Job[]>(API_ENDPOINTS.JOBS, params);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -26,7 +26,7 @@ export const getAllJobs = async (params?: {
  */
 export const getMyJobs = async (): Promise<Job[]> => {
     const response = await get<Job[]>(API_ENDPOINTS.MY_JOBS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -34,7 +34,7 @@ export const getMyJobs = async (): Promise<Job[]> => {
  */
 export const getRecommendedJobs = async (): Promise<Job[]> => {
     const response = await get<Job[]>(API_ENDPOINTS.RECOMMENDED_JOBS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -42,7 +42,7 @@ export const getRecommendedJobs = async (): Promise<Job[]> => {
  */
 export const searchJobs = async (query: string): Promise<Job[]> => {
     const response = await get<Job[]>(API_ENDPOINTS.JOB_SEARCH, { q: query });
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -50,7 +50,7 @@ export const searchJobs = async (query: string): Promise<Job[]> => {
  */
 export const getJobById = async (id: string): Promise<Job> => {
     const response = await get<Job>(API_ENDPOINTS.JOB_BY_ID(id));
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -58,7 +58,7 @@ export const getJobById = async (id: string): Promise<Job> => {
  */
 export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
     const response = await post<Job>(API_ENDPOINTS.JOBS, jobData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -66,7 +66,7 @@ export const createJob = async (jobData: Partial<Job>): Promise<Job> => {
  */
 export const updateJob = async (id: string, jobData: Partial<Job>): Promise<Job> => {
     const response = await put<Job>(API_ENDPOINTS.JOB_BY_ID(id), jobData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 export default {

@@ -11,6 +11,8 @@ router.post("/", Profile_controller_1.createProfile);
 router.get("/", Profile_controller_1.getAllProfiles);
 // Get profile for authenticated user
 router.get("/me", auth_middleware_1.authenticate, Profile_controller_1.getMyProfile);
+// Update profile for authenticated user
+router.put("/me", auth_middleware_1.authenticate, Profile_controller_1.updateMyProfile);
 router.get("/:id", Profile_controller_1.getProfileById);
 router.put("/:id", Profile_controller_1.updateProfile);
 router.delete("/:id", Profile_controller_1.deleteProfile);

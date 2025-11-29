@@ -1,5 +1,7 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser } from "../controllers/user.controller";
+import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, updateMe } from "../controllers/user.controller";
+import { authenticate } from "../core/middleware/auth.middleware";
+
 const router = express.Router();
 
 // Auth routes
@@ -12,6 +14,10 @@ router.post("/google/signin", googleSignin);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);
+
+// Current user routes (protected)
+router.get("/me", authenticate, getMe); // GET /api/users/me
+router.put("/me", authenticate, updateMe); // PUT /api/users/me
 
 // User data routes
 router.get("/", getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20

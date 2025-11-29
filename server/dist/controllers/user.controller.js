@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
+exports.updateMe = exports.getMe = exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const google_auth_library_1 = require("google-auth-library");
@@ -463,3 +463,79 @@ const unbanUser = async (req, res) => {
     }
 };
 exports.unbanUser = unbanUser;
+// ===================
+// Get Current User
+// ===================
+const getMe = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+        const user = await user_model_1.default.findById(userId).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    }
+    catch (err) {
+        console.error('Get current user error:', err);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: err
+        });
+    }
+};
+exports.getMe = getMe;
+// ===================
+// Update Current User
+// ===================
+const updateMe = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+        const { firstName, lastName } = req.body;
+        // Prepare update data
+        const updateData = {};
+        if (firstName)
+            updateData.firstName = firstName;
+        if (lastName)
+            updateData.lastName = lastName;
+        const user = await user_model_1.default.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select('-password');
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: "User updated successfully",
+            data: user
+        });
+    }
+    catch (err) {
+        console.error('Update current user error:', err);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: err
+        });
+    }
+};
+exports.updateMe = updateMe;

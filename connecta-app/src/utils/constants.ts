@@ -1,9 +1,29 @@
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
 // API Configuration
-// For Android Emulator use: http://10.0.2.2:5000
-// For iOS Simulator use: http://localhost:5000
-// For Physical Device use: http://YOUR_LOCAL_IP:5000
-// export const API_BASE_URL = 'http://10.0.2.2:5000';
-export const API_BASE_URL = 'http://192.168.43.204:5000';
+// Resolve the API host dynamically so emulator, simulator, and devices work without edits.
+const deriveExpoHostBaseUrl = () => {
+    const hostUri =
+        Constants.expoConfig?.hostUri ||
+        (Constants as any)?.manifest?.hostUri ||
+        (Constants as any)?.manifest2?.extra?.expoClient?.hostUri ||
+        '';
+    if (!hostUri) return undefined;
+    const host = hostUri.replace(/^https?:\/\//, '').split(':')[0];
+    if (!host) return undefined;
+    return `http://${host}:5000`;
+};
+
+const explicitBaseUrl =
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    Constants.expoConfig?.extra?.apiBaseUrl ||
+    (Constants as any)?.manifest?.extra?.apiBaseUrl;
+
+const derivedHostBaseUrl = deriveExpoHostBaseUrl();
+const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+
+export const API_BASE_URL = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {
@@ -23,6 +43,7 @@ export const API_ENDPOINTS = {
 
     // Users
     USERS: '/api/users',
+    USER_ME: '/api/users/me',
     USER_BY_ID: (id: string) => `/api/users/${id}`,
 
     // Profiles

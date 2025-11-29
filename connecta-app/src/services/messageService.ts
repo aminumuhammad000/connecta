@@ -12,7 +12,7 @@ import { Message, Conversation } from '../types';
  */
 export const getOrCreateConversation = async (participantIds: string[]): Promise<Conversation> => {
     const response = await post<Conversation>(API_ENDPOINTS.CONVERSATIONS, { participants: participantIds });
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -20,7 +20,7 @@ export const getOrCreateConversation = async (participantIds: string[]): Promise
  */
 export const getUserConversations = async (userId: string): Promise<Conversation[]> => {
     const response = await get<Conversation[]>(API_ENDPOINTS.USER_CONVERSATIONS(userId));
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -28,7 +28,7 @@ export const getUserConversations = async (userId: string): Promise<Conversation
  */
 export const getConversationMessages = async (conversationId: string): Promise<Message[]> => {
     const response = await get<Message[]>(API_ENDPOINTS.CONVERSATION_MESSAGES(conversationId));
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -48,7 +48,7 @@ export const sendMessage = async (messageData: {
     content: string;
 }): Promise<Message> => {
     const response = await post<Message>(API_ENDPOINTS.SEND_MESSAGE, messageData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**

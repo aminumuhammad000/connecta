@@ -25,7 +25,7 @@ export const createReview = async (reviewData: {
  */
 export const getUserReviews = async (userId: string): Promise<Review[]> => {
     const response = await get<Review[]>(API_ENDPOINTS.USER_REVIEWS(userId));
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**

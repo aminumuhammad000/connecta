@@ -10,6 +10,8 @@ import Button from '../components/Button';
 import Avatar from '../components/Avatar';
 import dashboardService from '../services/dashboardService';
 import jobService from '../services/jobService';
+import * as profileService from '../services/profileService';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface JobRec {
   id: string;
@@ -62,10 +64,19 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [recommendedJobs, setRecommendedJobs] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [profileMissing, setProfileMissing] = React.useState(false);
 
   React.useEffect(() => {
     loadDashboardData();
+    checkProfileStatus();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDashboardData();
+      checkProfileStatus();
+    }, [])
+  );
 
   const loadDashboardData = async () => {
     try {
@@ -86,6 +97,20 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const handleRefresh = () => {
     setIsRefreshing(true);
     loadDashboardData();
+    checkProfileStatus();
+  };
+
+  const checkProfileStatus = async () => {
+    try {
+      await profileService.getMyProfile();
+      setProfileMissing(false);
+    } catch (error: any) {
+      if (error?.status === 404) {
+        setProfileMissing(true);
+      } else {
+        setProfileMissing(false);
+      }
+    }
   };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
@@ -277,6 +302,19 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
             </View>
           </View>
         </ScrollView>
+
+        {profileMissing && (
+          <View style={styles.overlay}>
+            <View style={[styles.overlayCard, { backgroundColor: c.card, borderColor: c.border }]}>
+              <MaterialIcons name="person-outline" size={32} color={c.primary} />
+              <Text style={[styles.overlayTitle, { color: c.text }]}>Complete your profile</Text>
+              <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 8 }}>
+                Add your bio, skills, and location to get matched with jobs.
+              </Text>
+              <Button title="Complete Profile" onPress={() => navigation.navigate('EditProfile')} size="large" />
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -440,6 +478,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  overlayCard: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 20,
+    alignItems: 'center',
+    gap: 8,
+  },
+  overlayTitle: { fontSize: 18, fontWeight: '700' },
 });
 
 export default FreelancerDashboardScreen;

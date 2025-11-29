@@ -12,7 +12,7 @@ import { Project } from '../types';
  */
 export const getMyProjects = async (): Promise<Project[]> => {
     const response = await get<Project[]>(API_ENDPOINTS.MY_PROJECTS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -20,7 +20,7 @@ export const getMyProjects = async (): Promise<Project[]> => {
  */
 export const getFreelancerProjects = async (freelancerId: string): Promise<Project[]> => {
     const response = await get<Project[]>(API_ENDPOINTS.FREELANCER_PROJECTS(freelancerId));
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -28,7 +28,7 @@ export const getFreelancerProjects = async (freelancerId: string): Promise<Proje
  */
 export const getClientProjects = async (clientId: string): Promise<Project[]> => {
     const response = await get<Project[]>(API_ENDPOINTS.CLIENT_PROJECTS(clientId));
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -36,7 +36,7 @@ export const getClientProjects = async (clientId: string): Promise<Project[]> =>
  */
 export const getProjectStats = async (userId: string): Promise<any> => {
     const response = await get(API_ENDPOINTS.PROJECT_STATS(userId));
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -44,7 +44,7 @@ export const getProjectStats = async (userId: string): Promise<any> => {
  */
 export const getProjectById = async (id: string): Promise<Project> => {
     const response = await get<Project>(API_ENDPOINTS.PROJECT_BY_ID(id));
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -52,7 +52,7 @@ export const getProjectById = async (id: string): Promise<Project> => {
  */
 export const createProject = async (projectData: Partial<Project>): Promise<Project> => {
     const response = await post<Project>(API_ENDPOINTS.PROJECTS, projectData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -60,7 +60,7 @@ export const createProject = async (projectData: Partial<Project>): Promise<Proj
  */
 export const updateProjectStatus = async (id: string, status: string): Promise<Project> => {
     const response = await patch<Project>(API_ENDPOINTS.PROJECT_BY_ID(id) + '/status', { status });
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -68,7 +68,7 @@ export const updateProjectStatus = async (id: string, status: string): Promise<P
  */
 export const uploadProjectFile = async (id: string, fileData: any): Promise<any> => {
     const response = await post(API_ENDPOINTS.PROJECT_UPLOAD(id), fileData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -76,7 +76,7 @@ export const uploadProjectFile = async (id: string, fileData: any): Promise<any>
  */
 export const addProjectActivity = async (id: string, activityData: any): Promise<any> => {
     const response = await post(API_ENDPOINTS.PROJECT_ACTIVITY(id), activityData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 export default {

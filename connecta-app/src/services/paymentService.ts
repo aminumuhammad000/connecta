@@ -39,7 +39,7 @@ export const getPaymentHistory = async (): Promise<Payment[]> => {
  */
 export const getWalletBalance = async (): Promise<WalletBalance> => {
     const response = await get<WalletBalance>(API_ENDPOINTS.WALLET_BALANCE);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -47,7 +47,7 @@ export const getWalletBalance = async (): Promise<WalletBalance> => {
  */
 export const getTransactions = async (): Promise<Transaction[]> => {
     const response = await get<Transaction[]>(API_ENDPOINTS.TRANSACTIONS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**

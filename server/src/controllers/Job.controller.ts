@@ -1,3 +1,6 @@
+import { Request, Response } from "express";
+import Job from "../models/Job.model";
+
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -14,9 +17,6 @@ export const getClientJobs = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }
 };
-// src/controllers/Job.controller.ts
-import { Request, Response } from "express";
-import Job from "../models/Job.model";
 
 // ===================
 // Get All Jobs

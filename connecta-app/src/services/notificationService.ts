@@ -12,7 +12,7 @@ import { Notification } from '../types';
  */
 export const getNotifications = async (): Promise<Notification[]> => {
     const response = await get<Notification[]>(API_ENDPOINTS.NOTIFICATIONS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**

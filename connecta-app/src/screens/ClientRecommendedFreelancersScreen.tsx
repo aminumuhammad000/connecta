@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as dashboardService from '../services/dashboardService';
+import { User } from '../types';
 
 interface FreelancerItem {
   id: string;
@@ -14,52 +16,52 @@ interface FreelancerItem {
   skills: string[];
 }
 
-const SEED: FreelancerItem[] = [
-  {
-    id: 'u1',
-    name: 'Jane Doe',
-    role: 'Senior UI/UX Designer',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCefw5KA5z8woiPz0TmF-ukETj6bQgV2WqB6II5z-Sz1BvSW-GyIcEglyed7qdmF6btvEwXDmYq9w_4v4sH60mZGExdzPEA6TsII1kBLMxozFkKWFUwOEqyFMolNTKfPJaeRvONFBsJ8KiB9vEO6kOaMP-uBgCQlGU060gsVYtB4t76MY2P7IGDPL2JrMmKhrc09ZG0hHRfpwEqUutnkgknzXsTX9jo4R4NsHzKDp1jQFvs58MIkSL7cnzYBTi_0sIvEqw_tazA1Mw',
-    rating: 4.9,
-    reviews: 128,
-    skills: ['Figma', 'Webflow', 'Prototyping', 'User Research'],
-  },
-  {
-    id: 'u2',
-    name: 'John Smith',
-    role: 'Lead Backend Developer',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAP5OtbKmIv4Lpsl7zYc0No1QDA9PSt6DlYXeJlrj3fq_2764E8yCKgJUMNEQ_tGpI2Fu9P5vZ9rK3opSfz65OWfcl97mRanouM91Oab7komrL5RPR4-yKveSBN5fCYK2gXr1sAep_b8WN9Axb5E8O5qHD3GuYoneXDxn443-ttjKD93dugC5l26hIN3FYYyL_VxRSXRVHqDJsu34D-q94re4_q4mv0xYOV2TogpyoC_jLjFX0IgcynKTv9QkrSti9h-ZG6wnfgECM',
-    rating: 4.8,
-    reviews: 97,
-    skills: ['Python', 'AWS', 'Docker', 'SQL'],
-  },
-  {
-    id: 'u3',
-    name: 'Sarah Lee',
-    role: 'Brand & Identity Designer',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuC4TghlFFlGWh92eyBKWXLM5YCO0rm31J4ZXOfJHktHL6eqguYVgc3gBw4ZkryZceFWZYkU8I_WUMZAXWfb2yiiKUS3aKEiNfSaBTwBTCxn8y_udDqPz7MWoRtZXSOVXALzKQLYG2Wl7tZXAxd4SIxfLULVFLmnHxOlHCi8zqypSZRGP2l3a5BGK2xqO3wpvRevC4FoCP8x9Ymyo2Jyv2NLgFHmOn1w_rENkF-F5SU1-fHgxjrwJ3mkKJieWGiBrpz-Px_CjqHO07c',
-    rating: 5.0,
-    reviews: 210,
-    skills: ['Illustrator', 'Logo Design', 'Brand Strategy'],
-  },
-];
-
 const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [q, setQ] = useState('');
+  const [freelancers, setFreelancers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadFreelancers();
+  }, []);
+
+  const loadFreelancers = async () => {
+    try {
+      const data = await dashboardService.getRecommendedFreelancers();
+      setFreelancers(data);
+    } catch (error) {
+      console.error('Error loading freelancers:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadFreelancers();
+  };
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return SEED;
-    return SEED.filter(f =>
-      f.name.toLowerCase().includes(s) ||
-      f.role.toLowerCase().includes(s) ||
-      f.skills.some(sk => sk.toLowerCase().includes(s))
+    if (!s) return freelancers;
+    return freelancers.filter((f: any) =>
+      `${f.firstName} ${f.lastName}`.toLowerCase().includes(s) ||
+      f.userType?.toLowerCase().includes(s)
     );
-  }, [q]);
+  }, [freelancers, q]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>

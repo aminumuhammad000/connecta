@@ -29,6 +29,11 @@ export interface IProfile extends Document {
   location?: string;
   resume?: string; // Could be a URL to uploaded file
   skills?: string[]; // Array of skills
+  
+  // Client-specific fields
+  companyName?: string;
+  website?: string;
+  bio?: string;
 
   education?: IEducation[];
   languages?: ILanguage[];
@@ -79,6 +84,11 @@ const ProfileSchema = new Schema<IProfile>(
     location: { type: String },
     resume: { type: String },
     skills: [{ type: String }],
+
+    // Client-specific fields
+    companyName: { type: String },
+    website: { type: String },
+    bio: { type: String },
 
     education: [EducationSchema],
     languages: [LanguageSchema],

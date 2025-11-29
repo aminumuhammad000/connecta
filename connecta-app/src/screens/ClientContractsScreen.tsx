@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as contractService from '../services/contractService';
+import { Contract } from '../services/contractService';
 
 interface ContractItem {
   id: string;
@@ -15,23 +17,65 @@ interface ContractItem {
   status: 'Active' | 'Pending' | 'Completed';
 }
 
-const SEED: ContractItem[] = [
-  { id: 'c1', title: 'UI/UX Design for Mobile App', party: 'Client: Cameron Williamson', start: 'Mar 15, 2024', end: 'Apr 30, 2024', status: 'Active' },
-  { id: 'c2', title: 'Brand Identity Redesign', party: 'Client: Eleanor Pena', start: 'Feb 01, 2024', end: 'Mar 20, 2024', status: 'Active' },
-  { id: 'c3', title: 'Social Media Management', party: 'Client: Jacob Jones', sentDate: 'Mar 18, 2024', expires: 'Mar 25, 2024', status: 'Pending' },
-];
-
 const TABS: Array<'Active' | 'Pending' | 'Completed'> = ['Active', 'Pending', 'Completed'];
 
 const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [tab, setTab] = useState<'Active' | 'Pending' | 'Completed'>('Active');
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadContracts();
+  }, []);
+
+  const loadContracts = async () => {
+    try {
+      const data = await contractService.getContracts();
+      setContracts(data);
+    } catch (error) {
+      console.error('Error loading contracts:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadContracts();
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const mapStatus = (status: string): 'Active' | 'Pending' | 'Completed' => {
+    if (status === 'active') return 'Active';
+    if (status === 'pending') return 'Pending';
+    return 'Completed';
+  };
 
   const filtered = useMemo(() => {
-    if (tab === 'Completed') return SEED.filter(x => x.status === 'Completed');
-    if (tab === 'Pending') return SEED.filter(x => x.status === 'Pending');
-    return SEED.filter(x => x.status === 'Active');
-  }, [tab]);
+    if (tab === 'Completed') return contracts.filter((x: any) => x.status === 'completed');
+    if (tab === 'Pending') return contracts.filter((x: any) => x.status === 'pending');
+    return contracts.filter((x: any) => x.status === 'active');
+  }, [contracts, tab]);
+
+  const activeCount = contracts.filter((x: any) => x.status === 'active').length;
+  const pendingCount = contracts.filter((x: any) => x.status === 'pending').length;
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -46,55 +90,67 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+        <ScrollView 
+          contentContainerStyle={{ paddingBottom: 96 }}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+          }
+        >
           <View style={[styles.tabsRow, { borderBottomColor: c.border }]}> 
             {TABS.map(t => (
               <TouchableOpacity key={t} onPress={() => setTab(t)} style={styles.tabBtn}> 
                 <Text style={[styles.tabText, { color: tab === t ? c.primary : c.subtext, fontWeight: tab === t ? '800' : '600', borderBottomColor: tab === t ? c.primary : 'transparent', borderBottomWidth: 2, paddingBottom: 10 }]}>
-                  {t}{t === 'Active' ? ' (2)' : t === 'Pending' ? ' (1)' : ''}
+                  {t}{t === 'Active' ? ` (${activeCount})` : t === 'Pending' ? ` (${pendingCount})` : ''}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <View style={{ padding: 16, gap: 12 }}>
-            {filtered.map(item => (
-              <View key={item.id} style={[styles.card, { backgroundColor: c.isDark ? '#1E1E1E' : '#F3F4F6', borderColor: c.border }]}> 
-                <View style={styles.cardTop}> 
-                  <View>
-                    <Text style={[styles.title, { color: c.text }]}>{item.title}</Text>
-                    <Text style={{ color: c.subtext, fontSize: 12 }}>{item.party}</Text>
-                  </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <View style={[styles.pill, pillStyle(item.status)]}> 
-                      <Text style={[styles.pillText, { color: pillStyle(item.status).color }]}>{item.status}</Text>
+            {filtered.length === 0 ? (
+              <View style={{ alignItems: 'center', paddingTop: 40 }}>
+                <MaterialIcons name="description" size={64} color={c.subtext} />
+                <Text style={{ color: c.text, fontSize: 18, marginTop: 16 }}>No contracts found</Text>
+                <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8 }}>Your {tab.toLowerCase()} contracts will appear here</Text>
+              </View>
+            ) : (
+              filtered.map((item: any) => (
+                <View key={item._id} style={[styles.card, { backgroundColor: c.isDark ? '#1E1E1E' : '#F3F4F6', borderColor: c.border }]}> 
+                  <View style={styles.cardTop}> 
+                    <View>
+                      <Text style={[styles.title, { color: c.text }]}>{item.title}</Text>
+                      <Text style={{ color: c.subtext, fontSize: 12 }}>Client: {item.client?.firstName || 'N/A'} {item.client?.lastName || ''}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <View style={[styles.pill, pillStyle(mapStatus(item.status))]}> 
+                        <Text style={[styles.pillText, { color: pillStyle(mapStatus(item.status)).color }]}>{mapStatus(item.status)}</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                {item.status === 'Pending' ? (
-                  <View style={styles.metaRow}> 
-                    <View>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>Sent Date</Text>
-                      <Text style={[styles.metaValue, { color: c.text }]}>{item.sentDate}</Text>
+                  {item.status === 'pending' ? (
+                    <View style={styles.metaRow}> 
+                      <View>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>Sent Date</Text>
+                        <Text style={[styles.metaValue, { color: c.text }]}>{formatDate(item.sentDate)}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>Expires</Text>
+                        <Text style={[styles.metaValue, { color: c.text }]}>{formatDate(item.expiresDate)}</Text>
+                      </View>
                     </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>Expires</Text>
-                      <Text style={[styles.metaValue, { color: c.text }]}>{item.expires}</Text>
+                  ) : (
+                    <View style={styles.metaRow}> 
+                      <View>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>Start Date</Text>
+                        <Text style={[styles.metaValue, { color: c.text }]}>{formatDate(item.startDate)}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>End Date</Text>
+                        <Text style={[styles.metaValue, { color: c.text }]}>{formatDate(item.endDate)}</Text>
+                      </View>
                     </View>
-                  </View>
-                ) : (
-                  <View style={styles.metaRow}> 
-                    <View>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>Start Date</Text>
-                      <Text style={[styles.metaValue, { color: c.text }]}>{item.start}</Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>End Date</Text>
-                      <Text style={[styles.metaValue, { color: c.text }]}>{item.end}</Text>
-                    </View>
-                  </View>
-                )}
+                  )}
 
                 {item.status === 'Pending' ? (
                   <TouchableOpacity style={[styles.signBtn, { backgroundColor: '#FD6730' }]}>

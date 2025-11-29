@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
+import * as jobService from '../services/jobService';
+import { Job } from '../types';
 
 interface ClientJob {
   id: string;
@@ -16,49 +18,73 @@ interface ClientJob {
   postedDate: string;
 }
 
-const SEED: ClientJob[] = [
-  {
-    id: 'c1',
-    title: 'UX/UI Designer for Mobile App',
-    status: 'Open',
-    proposals: 15,
-    budget: '$3,500',
-    postedDate: '2 days ago',
-  },
-  {
-    id: 'c2',
-    title: 'Senior Frontend Developer',
-    status: 'In Progress',
-    proposals: 22,
-    budget: '$5,000',
-    postedDate: '1 week ago',
-  },
-  {
-    id: 'c3',
-    title: 'Backend API Integration',
-    status: 'Closed',
-    proposals: 8,
-    budget: '$2,800',
-    postedDate: '2 weeks ago',
-  },
-];
-
 const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [tab, setTab] = useState<'All' | 'Open' | 'Closed'>('All');
-  const jobs = SEED;
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  const loadJobs = async () => {
+    try {
+      const data = await jobService.getMyJobs();
+      setJobs(data);
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadJobs();
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - d.getTime()) / 1000 / 60 / 60 / 24);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    if (diff < 7) return `${diff} days ago`;
+    if (diff < 30) return `${Math.floor(diff / 7)} weeks ago`;
+    return `${Math.floor(diff / 30)} months ago`;
+  };
+
+  const mapJobStatus = (status: string): 'Open' | 'In Progress' | 'Closed' => {
+    if (status === 'open') return 'Open';
+    if (status === 'in_progress') return 'In Progress';
+    return 'Closed';
+  };
 
   const filtered = useMemo(() => {
     if (tab === 'All') return jobs;
-    if (tab === 'Open') return jobs.filter((j) => j.status === 'Open' || j.status === 'In Progress');
-    return jobs.filter((j) => j.status === 'Closed');
+    if (tab === 'Open') return jobs.filter((j) => j.status === 'open' || j.status === 'in_progress');
+    return jobs.filter((j) => j.status === 'completed' || j.status === 'cancelled');
   }, [jobs, tab]);
 
-  const getStatusVariant = (status: ClientJob['status']): 'success' | 'info' | 'neutral' => {
-    if (status === 'Open') return 'success';
-    if (status === 'In Progress') return 'info';
+  const getStatusVariant = (status: string): 'success' | 'info' | 'neutral' => {
+    if (status === 'open') return 'success';
+    if (status === 'in_progress') return 'info';
     return 'neutral';
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -74,7 +100,13 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 84 }} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          contentContainerStyle={{ paddingBottom: 84 }} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+          }
+        >
           {/* Post Job Button */}
           <View style={styles.section}>
             <Button
@@ -119,13 +151,13 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
               </View>
             ) : (
               <View style={{ gap: 12 }}>
-                {filtered.map((j) => (
-                  <Card key={j.id} variant="elevated" padding={16}>
+                {filtered.map((j: any) => (
+                  <Card key={j._id} variant="elevated" padding={16}>
                     <View style={styles.jobCard}>
                       <View style={styles.jobHeader}>
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.jobTitle, { color: c.text }]}>{j.title}</Text>
-                          <Badge label={j.status} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
+                          <Badge label={mapJobStatus(j.status)} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
                         </View>
                         <TouchableOpacity>
                           <MaterialIcons name="more-vert" size={24} color={c.subtext} />
@@ -135,15 +167,15 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
                       <View style={styles.jobMeta}>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="description" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.text }]}>{j.proposals} Proposals</Text>
+                          <Text style={[styles.metaText, { color: c.text }]}>{j.proposalsCount || 0} Proposals</Text>
                         </View>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.text }]}>{j.budget}</Text>
+                          <Text style={[styles.metaText, { color: c.text }]}>₦{j.budget?.toLocaleString() || '0'}</Text>
                         </View>
                         <View style={styles.metaItem}>
                           <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.subtext }]}>{j.postedDate}</Text>
+                          <Text style={[styles.metaText, { color: c.subtext }]}>{formatDate(j.postedAt)}</Text>
                         </View>
                       </View>
 

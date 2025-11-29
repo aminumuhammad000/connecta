@@ -1,44 +1,140 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { useInAppAlert } from '../components/InAppAlert';
+import * as profileService from '../services/profileService';
+import * as userService from '../services/userService';
 
 export default function ClientEditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
-    const [loading, setLoading] = useState(false);
+    const { showAlert } = useInAppAlert();
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
     const [formData, setFormData] = useState({
-        fullName: 'Alexandria Smith',
-        email: 'alexandria@example.com',
-        phone: '+44 20 7123 4567',
-        location: 'London, UK',
-        companyName: 'Design First Ltd.',
-        website: 'https://designfirst.com',
-        bio: 'We are a design-first company focused on creating beautiful and intuitive user experiences. We\'re looking for talented freelancers to partner with on exciting new projects.',
+        fullName: '',
+        email: '',
+        phone: '',
+        location: '',
+        companyName: '',
+        website: '',
+        bio: '',
     });
 
     useEffect(() => {
-        // Simulate fetching profile data
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-        }, 500);
+        loadProfileData();
     }, []);
+
+    const loadProfileData = async () => {
+        try {
+            setLoading(true);
+            console.log('🔄 Loading profile data...');
+            
+            const [user, profile] = await Promise.all([
+                userService.getMe(),
+                profileService.getMyProfile()
+            ]);
+
+            console.log('✅ User data loaded:', { firstName: user.firstName, lastName: user.lastName, email: user.email });
+            console.log('✅ Profile data loaded:', profile);
+
+            setFormData({
+                fullName: `${user.firstName} ${user.lastName}`,
+                email: user.email,
+                phone: profile?.phoneNumber || '',
+                location: profile?.location || '',
+                companyName: profile?.companyName || '',
+                website: profile?.website || '',
+                bio: profile?.bio || '',
+            });
+        } catch (error: any) {
+            console.error('❌ Failed to load profile:', error);
+            showAlert({
+                title: 'Error',
+                message: error?.message || 'Failed to load profile data',
+                type: 'error',
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleInputChange = (name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSave = async () => {
-        setSaving(true);
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            setSaving(true);
+
+            // Validate required fields
+            if (!formData.fullName.trim() || !formData.email.trim()) {
+                showAlert({
+                    title: 'Validation Error',
+                    message: 'Full name and email are required',
+                    type: 'error',
+                });
+                setSaving(false);
+                return;
+            }
+
+            console.log('💾 Saving profile data...', formData);
+
+            // Split full name into first and last name
+            const nameParts = formData.fullName.trim().split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.slice(1).join(' ') || firstName;
+
+            console.log('👤 Updating user:', { firstName, lastName });
+
+            // Update user data (firstName, lastName)
+            const updatedUser = await userService.updateMe({
+                firstName,
+                lastName,
+            });
+
+            console.log('✅ User updated:', updatedUser);
+
+            // Update profile data
+            const profileData = {
+                phoneNumber: formData.phone.trim(),
+                location: formData.location.trim(),
+                companyName: formData.companyName.trim(),
+                website: formData.website.trim(),
+                bio: formData.bio.trim(),
+            };
+
+            console.log('📝 Updating profile:', profileData);
+
+            const updatedProfile = await profileService.updateMyProfile(profileData);
+
+            console.log('✅ Profile updated:', updatedProfile);
+
+            // Show success message
+            showAlert({
+                title: 'Success!',
+                message: 'Your profile has been updated successfully',
+                type: 'success',
+                durationMs: 2500,
+            });
+
+            // Wait a moment for the success message to show, then go back
+            setTimeout(() => {
+                navigation.goBack();
+            }, 2500);
+
+        } catch (error: any) {
+            console.error('❌ Failed to save profile:', error);
+            showAlert({
+                title: 'Update Failed',
+                message: error?.message || 'Failed to save profile. Please try again.',
+                type: 'error',
+            });
+        } finally {
             setSaving(false);
-            Alert.alert('Success', 'Profile saved successfully');
-            navigation.goBack();
-        }, 1000);
+        }
     };
 
     if (loading) {

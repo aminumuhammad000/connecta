@@ -62,6 +62,10 @@ const ProfileSchema = new mongoose_1.Schema({
     location: { type: String },
     resume: { type: String },
     skills: [{ type: String }],
+    // Client-specific fields
+    companyName: { type: String },
+    website: { type: String },
+    bio: { type: String },
     education: [EducationSchema],
     languages: [LanguageSchema],
     employment: [EmploymentSchema],

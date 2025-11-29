@@ -25,7 +25,8 @@
       "predictiveBackGestureEnabled": false,
       "notification": {
         "color": "#2563EB"
-      }
+      },
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

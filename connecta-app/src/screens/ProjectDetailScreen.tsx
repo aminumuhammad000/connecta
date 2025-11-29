@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { API_BASE_URL } from '../utils/constants';
 
-// Mock API URL
-const API_URL = 'http://10.0.2.2:5000/api';
+const API_URL = `${API_BASE_URL}/api`;
 
 export default function ProjectDetailScreen({ navigation, route }: any) {
     const c = useThemeColors();

@@ -1,0 +1,11 @@
+
+> connecta-app@1.0.0 start
+> expo start
+
+Starting project at /home/mrcoder/Documents/ProjectStation/connecta/connecta-app
+Starting Metro Bundler
+The following packages should be updated for best compatibility with the installed expo version:
+  expo@54.0.23 - expected version: ~54.0.25
+Your project may not work correctly until you install the expected versions of the packages.
+Waiting on http://localhost:8081
+Logs for your project will appear below.

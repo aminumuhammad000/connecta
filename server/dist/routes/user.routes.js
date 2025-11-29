@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const user_controller_1 = require("../controllers/user.controller");
+const auth_middleware_1 = require("../core/middleware/auth.middleware");
 const router = express_1.default.Router();
 // Auth routes
 router.post("/signup", user_controller_1.signup);
@@ -15,6 +16,9 @@ router.post("/google/signin", user_controller_1.googleSignin);
 router.post("/forgot-password", user_controller_1.forgotPassword);
 router.post("/verify-otp", user_controller_1.verifyOTP);
 router.post("/reset-password", user_controller_1.resetPassword);
+// Current user routes (protected)
+router.get("/me", auth_middleware_1.authenticate, user_controller_1.getMe); // GET /api/users/me
+router.put("/me", auth_middleware_1.authenticate, user_controller_1.updateMe); // PUT /api/users/me
 // User data routes
 router.get("/", user_controller_1.getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20
 router.get("/:id", user_controller_1.getUserById); // GET /api/users/:id

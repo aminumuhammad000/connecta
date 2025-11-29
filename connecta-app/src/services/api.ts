@@ -42,7 +42,8 @@ apiClient.interceptors.response.use(
     (response) => {
         // Return the data directly for successful responses
         console.log('✅ API Response:', response.config.method?.toUpperCase(), response.status, (response.config.baseURL || '') + (response.config.url || ''));
-        return response.data;
+        // Handle both direct data and wrapped responses
+        return response.data?.data !== undefined ? response.data : response.data;
     },
     (error: AxiosError<ApiResponse>) => {
         // Handle different error scenarios
@@ -71,9 +72,14 @@ apiClient.interceptors.response.use(
         } else if (error.request) {
             // Request made but no response received
             apiError.message = 'Network error. Please check your connection.';
+        } else if (error.code === 'ECONNABORTED') {
+            apiError.message = 'Request timeout. Please try again.';
         }
 
-        console.error('API Error:', apiError);
+        const isProfile404 = apiError.status === 404 && (error.config?.url || '').includes('/profiles/me');
+        if (!isProfile404) {
+            console.error('❌ API Error:', apiError.message, '|', error.config?.url);
+        }
         return Promise.reject(apiError);
     }
 );

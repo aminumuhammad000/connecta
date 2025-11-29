@@ -136,3 +136,61 @@ export const deleteProfile = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * @desc Update current user's profile
+ * @route PUT /api/profiles/me
+ */
+export const updateMyProfile = async (
+  req: Request & { user?: { id?: string; _id?: string } },
+  res: Response
+) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const { phoneNumber, location, companyName, website, bio, skills, education, languages, employment, resume } = req.body;
+
+    // Prepare update data
+    const updateData: any = {};
+    if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
+    if (location !== undefined) updateData.location = location;
+    if (companyName !== undefined) updateData.companyName = companyName;
+    if (website !== undefined) updateData.website = website;
+    if (bio !== undefined) updateData.bio = bio;
+    if (skills !== undefined) updateData.skills = skills;
+    if (education !== undefined) updateData.education = education;
+    if (languages !== undefined) updateData.languages = languages;
+    if (employment !== undefined) updateData.employment = employment;
+    if (resume !== undefined) updateData.resume = resume;
+
+    let profile = await Profile.findOne({ user: userId });
+
+    if (!profile) {
+      // Create profile if it doesn't exist
+      profile = await Profile.create({
+        user: userId,
+        ...updateData
+      });
+    } else {
+      // Update existing profile
+      profile = await Profile.findOneAndUpdate(
+        { user: userId },
+        updateData,
+        { new: true, runValidators: true }
+      ).populate('user', 'firstName lastName email profileImage userType');
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: profile
+    });
+  } catch (error: any) {
+    console.error('Update my profile error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};

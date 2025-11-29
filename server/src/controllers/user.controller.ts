@@ -468,3 +468,88 @@ export const unbanUser = async (req: Request, res: Response) => {
     });
   }
 };
+
+// ===================
+// Get Current User
+// ===================
+export const getMe = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (err) {
+    console.error('Get current user error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err
+    });
+  }
+};
+
+// ===================
+// Update Current User
+// ===================
+export const updateMe = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    const { firstName, lastName } = req.body;
+    
+    // Prepare update data
+    const updateData: any = {};
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: user
+    });
+  } catch (err) {
+    console.error('Update current user error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err
+    });
+  }
+};
