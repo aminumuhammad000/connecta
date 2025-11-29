@@ -40,14 +40,14 @@ const UserSchema = new mongoose_1.Schema({
         type: String,
         enum: ["admin", "freelancer", "employer", "client"],
         required: true,
-        isPremium: {
-            type: Boolean,
-            default: false,
-        },
-        premiumExpiryDate: {
-            type: Date,
-        },
         default: "freelancer",
+    },
+    isPremium: {
+        type: Boolean,
+        default: false,
+    },
+    premiumExpiryDate: {
+        type: Date,
     },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },

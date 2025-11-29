@@ -95,7 +95,6 @@ const WalletSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 // Indexes
-WalletSchema.index({ userId: 1 });
 // Update available balance before saving
 WalletSchema.pre('save', function (next) {
     const balance = Number(this.balance) || 0;

@@ -477,12 +477,13 @@ const seedDatabase = async () => {
         // 10. Seed Reviews
         // ==========================
         console.log('⭐ Seeding reviews...');
-        const completedProjects = projects.filter((p) => p.status === 'Completed');
+        const completedProjects = projects.filter((p) => p.status === 'completed');
         const reviewsData = completedProjects.flatMap((project) => [
             {
                 projectId: project._id,
                 reviewerId: project.clientId,
                 revieweeId: project.freelancerId,
+                reviewerType: 'client',
                 rating: 4 + Math.random(),
                 comment: 'Great work! Very professional and delivered on time.',
                 isPublic: true,
@@ -491,6 +492,7 @@ const seedDatabase = async () => {
                 projectId: project._id,
                 reviewerId: project.freelancerId,
                 revieweeId: project.clientId,
+                reviewerType: 'freelancer',
                 rating: 4.5 + Math.random() * 0.5,
                 comment: 'Excellent client! Clear requirements and timely payments.',
                 isPublic: true,

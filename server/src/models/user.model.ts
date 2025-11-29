@@ -21,14 +21,14 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       enum: ["admin", "freelancer", "employer", "client"],
       required: true,
+      default: "freelancer",
+    },
     isPremium: {
       type: Boolean,
       default: false,
     },
     premiumExpiryDate: {
       type: Date,
-    },
-      default: "freelancer",
     },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },

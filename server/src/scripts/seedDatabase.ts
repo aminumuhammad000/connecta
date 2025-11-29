@@ -251,7 +251,7 @@ const seedDatabase = async () => {
       ['Figma', 'Sketch'],
       ['WordPress', 'PHP'],
     ];
-    
+
     const jobsData = clients.flatMap((client, clientIndex) =>
       Array.from({ length: 2 }, (_, jobIndex) => {
         const index = clientIndex * 2 + jobIndex;
@@ -497,12 +497,13 @@ const seedDatabase = async () => {
     // 10. Seed Reviews
     // ==========================
     console.log('⭐ Seeding reviews...');
-    const completedProjects = projects.filter((p) => p.status === 'Completed');
+    const completedProjects = projects.filter((p) => p.status === 'completed');
     const reviewsData = completedProjects.flatMap((project) => [
       {
         projectId: project._id,
         reviewerId: project.clientId,
         revieweeId: project.freelancerId,
+        reviewerType: 'client' as const,
         rating: 4 + Math.random(),
         comment: 'Great work! Very professional and delivered on time.',
         isPublic: true,
@@ -511,6 +512,7 @@ const seedDatabase = async () => {
         projectId: project._id,
         reviewerId: project.freelancerId,
         revieweeId: project.clientId,
+        reviewerType: 'freelancer' as const,
         rating: 4.5 + Math.random() * 0.5,
         comment: 'Excellent client! Clear requirements and timely payments.',
         isPublic: true,
@@ -629,7 +631,7 @@ const seedDatabase = async () => {
       const amount = 20000 + index * 5000;
       const processingFee = amount * 0.015; // 1.5% fee
       const netAmount = amount - processingFee;
-      
+
       return {
         userId: freelancer._id,
         amount,

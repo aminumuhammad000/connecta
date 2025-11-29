@@ -4,19 +4,19 @@ export interface IWallet extends Document {
   userId: mongoose.Types.ObjectId;
   balance: number;
   currency: string;
-  
+
   // Escrow balance (money held for ongoing projects)
   escrowBalance: number;
-  
+
   // Available balance (can be withdrawn)
   availableBalance: number;
-  
+
   // Total earnings (for freelancers)
   totalEarnings: number;
-  
+
   // Total spent (for clients)
   totalSpent: number;
-  
+
   // Bank account details for withdrawals
   bankDetails?: {
     accountName: string;
@@ -24,15 +24,15 @@ export interface IWallet extends Document {
     bankName: string;
     bankCode: string;
   };
-  
+
   // Payment gateway customer ID
   paystackCustomerId?: string;
   stripeCustomerId?: string;
-  
+
   // Status
   isActive: boolean;
   isVerified: boolean;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -102,7 +102,7 @@ const WalletSchema: Schema = new Schema(
 );
 
 // Indexes
-WalletSchema.index({ userId: 1 });
+
 
 // Update available balance before saving
 WalletSchema.pre('save', function (next) {

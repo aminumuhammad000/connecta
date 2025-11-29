@@ -147,7 +147,7 @@ const PaymentSchema: Schema = new Schema(
 PaymentSchema.index({ projectId: 1, status: 1 });
 PaymentSchema.index({ payerId: 1, status: 1 });
 PaymentSchema.index({ payeeId: 1, status: 1 });
-PaymentSchema.index({ gatewayReference: 1 });
+
 PaymentSchema.index({ createdAt: -1 });
 
 // Generate invoice number before saving
