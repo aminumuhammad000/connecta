@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { usersAPI, jobsAPI, projectsAPI, proposalsAPI, paymentsAPI, contractsAPI } from '../services/api'
 
@@ -135,8 +134,7 @@ export default function Dashboard() {
   }
 
   return (
-    <AppLayout>
-      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
+          <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900">
         {/* Page Content */}
         <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {loading ? (
@@ -424,6 +422,5 @@ export default function Dashboard() {
           )}
         </div>
       </main>
-    </AppLayout>
   )
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { projectsAPI } from '../services/api'
 
@@ -123,8 +122,6 @@ export default function Projects() {
     }
   }
   return (
-    <AppLayout>
-      {/* Main Content */}
       <main className="flex-1 flex-col p-4 md:p-6 lg:p-8">
         {/* Page Heading */}
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -530,6 +527,5 @@ export default function Projects() {
           </div>
         )}
       </main>
-    </AppLayout>
   )
 }

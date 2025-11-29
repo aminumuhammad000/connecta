@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { proposalsAPI } from '../services/api'
 
@@ -103,8 +102,7 @@ export default function GigApplications() {
   }
 
   return (
-    <AppLayout>
-      <main className="flex-1 flex-col p-4 md:p-6 lg:p-8">
+          <main className="flex-1 flex-col p-4 md:p-6 lg:p-8">
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex flex-col gap-1">
             <p className="text-text-light-primary dark:text-dark-primary text-2xl md:text-3xl font-black leading-tight tracking-tighter">Gig Applications</p>
@@ -250,6 +248,5 @@ export default function GigApplications() {
           </div>
         </div>
       </main>
-    </AppLayout>
   )
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 
 export default function Profile() {
@@ -97,8 +96,7 @@ export default function Profile() {
   }
 
   return (
-    <AppLayout>
-      <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
+          <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Header */}
           <div className="mb-6">
@@ -290,6 +288,5 @@ export default function Profile() {
           </div>
         </div>
       </main>
-    </AppLayout>
   )
 }

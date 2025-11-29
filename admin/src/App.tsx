@@ -23,29 +23,27 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Login />} />
-      
+
       {/* Protected Routes */}
-      <Route element={
-        <ProtectedRoute>
-          <AppLayout />
-        </ProtectedRoute>
-      }>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/users" element={<Users />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/proposals" element={<Proposals />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/contracts" element={<Contracts />} />
-        <Route path="/applications" element={<GigApplications />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/payments" element={<Payments />} />
-        <Route path="/reviews" element={<Reviews />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/proposals" element={<Proposals />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/contracts" element={<Contracts />} />
+          <Route path="/applications" element={<GigApplications />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/payments" element={<Payments />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
       </Route>
-      
+
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )

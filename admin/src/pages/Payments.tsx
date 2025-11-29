@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { paymentsAPI } from '../services/api'
 import type { Payment } from '../types'
@@ -28,7 +27,7 @@ export default function Payments() {
       setLoading(true)
       const response = await paymentsAPI.getAll()
       console.log('Payments response:', response)
-      
+
       // Handle response format
       const paymentsData = Array.isArray(response) ? response : response?.data || []
       setPayments(paymentsData)
@@ -45,17 +44,17 @@ export default function Payments() {
     try {
       const response = await paymentsAPI.getAll()
       const paymentsData = Array.isArray(response) ? response : response?.data || []
-      
+
       const totalRevenue = paymentsData
         .filter((p: any) => p.status === 'completed')
         .reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-      
+
       const pendingWithdrawals = paymentsData
         .filter((p: any) => p.status === 'pending')
         .reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-      
+
       const successfulTransactions = paymentsData.filter((p: any) => p.status === 'completed').length
-      
+
       setStats({ totalRevenue, pendingWithdrawals, successfulTransactions })
     } catch (error) {
       console.error('Failed to fetch payment stats:', error)
@@ -64,7 +63,7 @@ export default function Payments() {
 
   const filteredPayments = useMemo(() => {
     return payments.filter((payment: any) => {
-      const matchesSearch = 
+      const matchesSearch =
         payment.transactionId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         payment.amount?.toString().includes(searchTerm) ||
         payment.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -91,9 +90,9 @@ export default function Payments() {
   }
 
   const formatDateTime = (date: string) => {
-    return new Date(date).toLocaleString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -106,8 +105,7 @@ export default function Payments() {
   }
 
   return (
-    <AppLayout>
-      {/* Main Content */}
+    <>
       <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           {/* PageHeading */}
@@ -177,7 +175,7 @@ export default function Payments() {
                 />
               </div>
               <div className="flex gap-2 w-full md:w-auto">
-                <select 
+                <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full md:w-auto border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-300 focus:ring-primary focus:border-primary"
@@ -241,7 +239,7 @@ export default function Payments() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button 
+                          <button
                             onClick={() => handleViewDetails(payment)}
                             className="font-medium text-primary hover:underline"
                           >
@@ -287,7 +285,7 @@ export default function Payments() {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             {/* Background overlay */}
-            <div 
+            <div
               className="fixed inset-0 transition-opacity bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75"
               onClick={() => setShowModal(false)}
             ></div>
@@ -468,6 +466,6 @@ export default function Payments() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   )
 }

@@ -4,12 +4,6 @@ import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
 import { authAPI } from '../services/api'
 
-// Demo admin accounts (fallback when database is unavailable)
-const DEMO_ADMINS = [
-  { email: 'admin@connecta.com', password: 'demo1234', name: 'Admin User' },
-  { email: 'safe@admin.com', password: 'imsafe', name: 'Safe Admin' }
-]
-
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -25,7 +19,7 @@ export default function Login() {
       try {
         const response: any = await authAPI.login(email, password)
         console.log('Login response:', response)
-        
+
         if (response.success && response.token) {
           // Check if user is admin
           if (response.user?.userType !== 'admin') {
@@ -33,12 +27,12 @@ export default function Login() {
             setLoading(false)
             return
           }
-          
+
           console.log('Storing token and user:', {
             token: response.token.substring(0, 20) + '...',
             user: response.user
           })
-          
+
           localStorage.setItem('admin_token', response.token)
           localStorage.setItem('admin_user', JSON.stringify(response.user || { email }))
           toast.success('Welcome back! Redirecting...')
@@ -50,26 +44,13 @@ export default function Login() {
         }
       } catch (backendError: any) {
         console.error('Backend login error:', backendError.response?.data || backendError.message)
-        
+
         // If user not found on production, show helpful message
         if (backendError.response?.data?.message?.includes('User not found')) {
           toast.error('Account not found on production server. Please use valid credentials or contact administrator.')
           setLoading(false)
           return
         }
-        
-        // Check if this is a demo admin account
-        const demoAdmin = DEMO_ADMINS.find(
-          admin => admin.email === email && admin.password === password
-        )
-
-        if (demoAdmin) {
-          // Backend unavailable but valid demo credentials - use mock login
-          toast.error('Cannot use demo account with production server. Please create an admin account on the server.')
-          setLoading(false)
-          return
-        }
-
         // Not a demo account and backend failed
         throw backendError
       }
@@ -80,17 +61,6 @@ export default function Login() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleDemoLogin = () => {
-    setEmail(DEMO_ADMINS[0].email)
-    setPassword(DEMO_ADMINS[0].password)
-    toast('Using demo account', { icon: '👋' })
-    // Automatically trigger login after setting demo credentials
-    setTimeout(() => {
-      const form = document.querySelector('form')
-      form?.requestSubmit()
-    }, 500)
   }
 
   return (
@@ -110,7 +80,7 @@ export default function Login() {
           </div>
         </div>
         <h2 className="text-xl font-semibold mb-1">Sign in</h2>
-        <p className="text-sm text-stone-500 mb-6">Use your admin credentials or try the demo account.</p>
+        <p className="text-sm text-stone-500 mb-6">Use your admin credentials to access the portal.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -170,20 +140,10 @@ export default function Login() {
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800"
-          >
-            <Icon name="bolt" />
-            Try demo login
-          </button>
+
         </form>
 
-        <p className="mt-6 text-xs text-stone-500">
-          Hint: Use <span className="font-medium">{DEMO_ADMINS[0].email}</span> or <span className="font-medium">{DEMO_ADMINS[1].email}</span>
-        </p>
+
       </div>
     </div>
   )

@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { proposalsAPI } from '../services/api'
 import type { Proposal } from '../types'
@@ -85,8 +84,6 @@ export default function Proposals() {
   }
 
   return (
-    <AppLayout>
-      {/* Main Content */}
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
           {/* PageHeading */}
@@ -256,6 +253,5 @@ export default function Proposals() {
           </div>
         </div>
       </main>
-    </AppLayout>
   )
 }

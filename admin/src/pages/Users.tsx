@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { usersAPI, projectsAPI, paymentsAPI, proposalsAPI } from '../services/api'
 
@@ -59,16 +58,16 @@ export default function Users() {
       const params: any = {
         limit: 100 // Increase limit to ensure all users are fetched
       }
-      
+
       // Only fetch non-admin users
       if (filterType === 'all') {
         // Backend will exclude admins by default
       } else if (filterType !== 'admin') {
         params.userType = filterType
       }
-      
+
       const response: any = await usersAPI.getAll(params)
-      
+
       // Handle different response formats
       let userData = []
       if (response.success && response.data) {
@@ -78,15 +77,15 @@ export default function Users() {
       } else if (response.data && Array.isArray(response.data)) {
         userData = response.data
       }
-      
+
       console.log('Users data with isPremium:', userData.map((u: any) => ({
         name: `${u.firstName} ${u.lastName}`,
         isPremium: u.isPremium,
         userType: u.userType
       })))
-      
+
       setUsers(userData)
-      
+
       if (userData.length === 0) {
         toast('No users found', { icon: 'ℹ️' })
       }
@@ -103,12 +102,12 @@ export default function Users() {
     try {
       setLoadingDetails(true)
       setShowDetailModal(true)
-      
+
       // Fetch user basic info
       const userResponse = await usersAPI.getById(userId)
       console.log('User response:', userResponse)
       const user = userResponse.data || userResponse
-      
+
       // Fetch related data in parallel (profile fetch may fail if endpoint doesn't exist)
       const [projectsRes, paymentsRes, proposalsRes] = await Promise.allSettled([
         projectsAPI.getAll({ userId }).catch((err) => {
@@ -124,17 +123,17 @@ export default function Users() {
           return { data: [] }
         }),
       ])
-      
+
       const profile = null // Profile data not available yet
       const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value?.data || []) : []
       const payments = paymentsRes.status === 'fulfilled' ? (paymentsRes.value?.data || []) : []
       const proposals = proposalsRes.status === 'fulfilled' ? (proposalsRes.value?.data || []) : []
-      
+
       // Calculate stats
       const totalEarnings = payments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-      
+
       console.log('User details assembled:', { user, projects, payments, proposals })
-      
+
       setUserDetails({
         user,
         profile,
@@ -164,7 +163,7 @@ export default function Users() {
 
   const handleBanUser = async (userId: string) => {
     if (!confirm('Are you sure you want to ban this user?')) return
-    
+
     try {
       await usersAPI.ban(userId)
       toast.success('User banned successfully')
@@ -192,7 +191,7 @@ export default function Users() {
 
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
-    
+
     try {
       await usersAPI.delete(userId)
       toast.success('User deleted successfully')
@@ -224,11 +223,11 @@ export default function Users() {
 
   // Filter users
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    
+
     return matchesSearch
   })
 
@@ -253,7 +252,7 @@ export default function Users() {
   }
 
   return (
-    <AppLayout>
+    <>
       <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Page Header */}
@@ -404,161 +403,157 @@ export default function Users() {
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                       {currentUsers.map((user) => (
-                      <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                              style={user.profileImage ? {
-                                backgroundImage: `url(${user.profileImage})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center'
-                              } : undefined}
-                            >
-                              {!user.profileImage && getInitials(user.firstName, user.lastName)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="font-semibold text-slate-900 dark:text-white truncate">
-                                  {user.firstName} {user.lastName}
-                                </p>
-                                {user.isPremium === true && (
-                                  <Icon
-                                    name="verified"
-                                    size={18}
-                                    className={`flex-shrink-0 ${
-                                      user.userType === 'freelancer' 
-                                        ? 'text-blue-500' 
-                                        : 'text-red-500'
-                                    }`}
-                                  />
-                                )}
+                        <tr key={user._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                style={user.profileImage ? {
+                                  backgroundImage: `url(${user.profileImage})`,
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center'
+                                } : undefined}
+                              >
+                                {!user.profileImage && getInitials(user.firstName, user.lastName)}
                               </div>
-                              <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{user.email}</p>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                    {user.firstName} {user.lastName}
+                                  </p>
+                                  {user.isPremium === true && (
+                                    <Icon
+                                      name="verified"
+                                      size={18}
+                                      className={`flex-shrink-0 ${user.userType === 'freelancer'
+                                        ? 'text-blue-500'
+                                        : 'text-red-500'
+                                        }`}
+                                    />
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{user.email}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            user.userType === 'freelancer'
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${user.userType === 'freelancer'
                               ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                          }`}>
-                            <Icon name={user.userType === 'freelancer' ? 'person' : 'business'} size={14} />
-                            {user.userType}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            user.isActive === false
+                              }`}>
+                              <Icon name={user.userType === 'freelancer' ? 'person' : 'business'} size={14} />
+                              {user.userType}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${user.isActive === false
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                               : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                          }`}>
-                            <Icon name={user.isActive === false ? 'block' : 'check_circle'} size={14} />
-                            {user.isActive === false ? 'Banned' : 'Active'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                          {formatDate(user.createdAt)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleViewUser(user._id)}
-                              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                              title="View Details"
-                            >
-                              <Icon name="visibility" size={18} className="text-blue-600 dark:text-blue-400" />
-                            </button>
-                            {user.isActive === false ? (
+                              }`}>
+                              <Icon name={user.isActive === false ? 'block' : 'check_circle'} size={14} />
+                              {user.isActive === false ? 'Banned' : 'Active'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                            {formatDate(user.createdAt)}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={() => handleUnbanUser(user._id)}
-                                className="p-2 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
-                                title="Unban User"
+                                onClick={() => handleViewUser(user._id)}
+                                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                title="View Details"
                               >
-                                <Icon name="check_circle" size={18} className="text-green-600 dark:text-green-400" />
+                                <Icon name="visibility" size={18} className="text-blue-600 dark:text-blue-400" />
                               </button>
-                            ) : (
+                              {user.isActive === false ? (
+                                <button
+                                  onClick={() => handleUnbanUser(user._id)}
+                                  className="p-2 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                                  title="Unban User"
+                                >
+                                  <Icon name="check_circle" size={18} className="text-green-600 dark:text-green-400" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleBanUser(user._id)}
+                                  className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                  title="Ban User"
+                                >
+                                  <Icon name="block" size={18} className="text-red-600 dark:text-red-400" />
+                                </button>
+                              )}
                               <button
-                                onClick={() => handleBanUser(user._id)}
+                                onClick={() => handleDeleteUser(user._id)}
                                 className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                title="Ban User"
+                                title="Delete User"
                               >
-                                <Icon name="block" size={18} className="text-red-600 dark:text-red-400" />
+                                <Icon name="delete" size={18} className="text-red-600 dark:text-red-400" />
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteUser(user._id)}
-                              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                              title="Delete User"
-                            >
-                              <Icon name="delete" size={18} className="text-red-600 dark:text-red-400" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700">
-                    <div className="text-sm text-slate-600 dark:text-slate-400">
-                      Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Previous
-                      </button>
-                      
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                          // Show first page, last page, current page, and pages around current
-                          if (
-                            page === 1 ||
-                            page === totalPages ||
-                            (page >= currentPage - 1 && page <= currentPage + 1)
-                          ) {
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`min-w-[2.5rem] h-10 rounded-lg font-medium transition-colors ${
-                                  page === currentPage
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Previous
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                            // Show first page, last page, current page, and pages around current
+                            if (
+                              page === 1 ||
+                              page === totalPages ||
+                              (page >= currentPage - 1 && page <= currentPage + 1)
+                            ) {
+                              return (
+                                <button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`min-w-[2.5rem] h-10 rounded-lg font-medium transition-colors ${page === currentPage
                                     ? 'bg-primary text-white'
                                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            )
-                          } else if (page === currentPage - 2 || page === currentPage + 2) {
-                            return (
-                              <span key={page} className="px-2 text-slate-500">
-                                ...
-                              </span>
-                            )
-                          }
-                          return null
-                        })}
+                                    }`}
+                                >
+                                  {page}
+                                </button>
+                              )
+                            } else if (page === currentPage - 2 || page === currentPage + 2) {
+                              return (
+                                <span key={page} className="px-2 text-slate-500">
+                                  ...
+                                </span>
+                              )
+                            }
+                            return null
+                          })}
+                        </div>
+
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Next
+                        </button>
                       </div>
-                      
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage === totalPages}
-                        className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Next
-                      </button>
                     </div>
-                  </div>
-                )}
+                  )}
                 </>
               )}
             </div>
@@ -571,7 +566,7 @@ export default function Users() {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDetailModal(false)} />
-            
+
             <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
@@ -613,17 +608,16 @@ export default function Users() {
                             <h4 className="text-2xl font-bold text-slate-900 dark:text-white">
                               {userDetails.user.firstName} {userDetails.user.lastName}
                             </h4>
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              userDetails.user.isActive === false
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            }`}>
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${userDetails.user.isActive === false
+                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              }`}>
                               <Icon name={userDetails.user.isActive === false ? 'block' : 'check_circle'} size={14} />
                               {userDetails.user.isActive === false ? 'Banned' : 'Active'}
                             </span>
                           </div>
                           <p className="text-slate-600 dark:text-slate-400 mb-4">{userDetails.user.email}</p>
-                          
+
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
                               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-1">Type</p>
@@ -777,11 +771,10 @@ export default function Users() {
                                 <p className="font-semibold text-slate-900 dark:text-white">{proposal.title || 'Proposal'}</p>
                                 <p className="text-sm text-slate-600 dark:text-slate-400">{formatDate(proposal.createdAt)}</p>
                               </div>
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                proposal.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${proposal.status === 'accepted' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                                 proposal.status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                              }`}>
+                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                }`}>
                                 {proposal.status}
                               </span>
                             </div>
@@ -839,6 +832,6 @@ export default function Users() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   )
 }

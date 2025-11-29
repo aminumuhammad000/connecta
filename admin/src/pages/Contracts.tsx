@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { contractsAPI } from '../services/api'
 import type { Contract, ContractStatus } from '../types'
@@ -34,10 +33,10 @@ export default function Contracts() {
         const params: any = {}
         if (status !== 'all') params.status = status
         if (search.trim()) params.search = search.trim()
-        
+
         const response = await contractsAPI.getAll(params)
         console.log('Contracts response:', response)
-        
+
         // Handle both response formats: direct array, {data: []}, or {success, data}
         let contractsData = []
         if (Array.isArray(response)) {
@@ -47,7 +46,7 @@ export default function Contracts() {
         } else if (response?.data) {
           contractsData = response.data
         }
-        
+
         // Transform API data to display format with proper status mapping
         const transformedContracts: ContractDisplay[] = contractsData.map((contract: any) => {
           // Map database status to display status
@@ -56,12 +55,12 @@ export default function Contracts() {
           else if (contract.status === 'pending_signature' || contract.status === 'pending_signatures') displayStatus = 'Pending Signature'
           else if (contract.status === 'terminated') displayStatus = 'Terminated'
           else if (contract.status === 'active') displayStatus = 'Active'
-          
+
           return {
             ...contract,
             status: displayStatus,
             jobTitle: contract.projectId?.title || contract.title || 'N/A',
-            clientName: contract.clientId?.firstName && contract.clientId?.lastName 
+            clientName: contract.clientId?.firstName && contract.clientId?.lastName
               ? `${contract.clientId.firstName} ${contract.clientId.lastName}`
               : 'Unknown Client',
             freelancerName: contract.freelancerId?.firstName && contract.freelancerId?.lastName
@@ -69,7 +68,7 @@ export default function Contracts() {
               : 'Unknown Freelancer',
           }
         })
-        
+
         setContracts(transformedContracts)
         setTotalCount(transformedContracts.length)
       } catch (error) {
@@ -99,7 +98,7 @@ export default function Contracts() {
   const summary = useMemo(() => {
     const totals = filteredContracts.reduce(
       (acc: Record<string, number>, c: ContractDisplay) => {
-        acc.total += c.amount
+        acc.total += c.amount ?? 0
         acc.count += 1
         acc[c.status] = (acc[c.status] ?? 0) + 1
         return acc
@@ -110,182 +109,180 @@ export default function Contracts() {
   }, [filteredContracts])
 
   return (
-    <AppLayout>
-      <main className="flex-1 flex-col p-4 md:p-6 lg:p-8 space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <p className="text-text-light-primary dark:text-dark-primary text-2xl md:text-3xl font-black leading-tight tracking-tighter">Contract Management</p>
-            <p className="text-text-light-secondary dark:text-dark-secondary text-base font-normal leading-normal">Track signatures, status, and payouts in one place.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 h-10 rounded-lg px-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary text-sm font-medium hover:bg-primary/10">
-              <Icon name="description" size={18} />
-              Export CSV
-            </button>
-            <button className="flex items-center gap-2 h-10 rounded-lg px-4 bg-primary text-white text-sm font-bold">
-              <Icon name="add_circle" size={18} />
-              New Contract
-            </button>
-          </div>
-        </header>
+    <main className="flex-1 flex-col p-4 md:p-6 lg:p-8 space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <p className="text-text-light-primary dark:text-dark-primary text-2xl md:text-3xl font-black leading-tight tracking-tighter">Contract Management</p>
+          <p className="text-text-light-secondary dark:text-dark-secondary text-base font-normal leading-normal">Track signatures, status, and payouts in one place.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 h-10 rounded-lg px-4 border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary text-sm font-medium hover:bg-primary/10">
+            <Icon name="description" size={18} />
+            Export CSV
+          </button>
+          <button className="flex items-center gap-2 h-10 rounded-lg px-4 bg-primary text-white text-sm font-bold">
+            <Icon name="add_circle" size={18} />
+            New Contract
+          </button>
+        </div>
+      </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryCard title="Active" value={summary.Active} subtitle="Currently in progress" tone="green" />
-          <SummaryCard title="Pending Signatures" value={summary['Pending Signature']} subtitle="Awaiting actions" tone="yellow" />
-          <SummaryCard title="Completed" value={summary.Completed} subtitle="Closed & paid" tone="blue" />
-          <SummaryCard title="Total Value" value={`₦${summary.total.toLocaleString('en-NG')}`} subtitle="Across filtered contracts" tone="primary" />
-        </section>
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCard title="Active" value={summary.Active} subtitle="Currently in progress" tone="green" />
+        <SummaryCard title="Pending Signatures" value={summary['Pending Signature']} subtitle="Awaiting actions" tone="yellow" />
+        <SummaryCard title="Completed" value={summary.Completed} subtitle="Closed & paid" tone="blue" />
+        <SummaryCard title="Total Value" value={`₦${summary.total.toLocaleString('en-NG')}`} subtitle="Across filtered contracts" tone="primary" />
+      </section>
 
-        <section className="bg-card-light dark:bg-card-dark rounded-xl p-4 md:p-6 space-y-4">
-          <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
-            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <div className="flex w-full sm:w-72 items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3">
-                <Icon name="search" className="text-text-light-secondary dark:text-dark-secondary" />
-                <input
-                  className="w-full bg-transparent h-10 text-sm text-text-light-primary dark:text-dark-primary outline-none"
-                  placeholder="Search by client, freelancer, job..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-              <FilterSelect
-                label="Status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as ContractStatus | 'all')}
-                options={[
-                  { value: 'all', label: 'All statuses' },
-                  { value: 'Active', label: 'Active' },
-                  { value: 'Pending Signature', label: 'Pending signature' },
-                  { value: 'Completed', label: 'Completed' },
-                  { value: 'Terminated', label: 'Terminated' },
-                ]}
-                icon="tune"
-              />
-              <FilterSelect
-                label="Date Range"
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                options={[
-                  { value: 'all', label: 'Any time' },
-                  { value: '30', label: 'Last 30 days' },
-                  { value: '90', label: 'Last 90 days' },
-                  { value: '365', label: 'Last 12 months' },
-                ]}
-                icon="calendar_today"
+      <section className="bg-card-light dark:bg-card-dark rounded-xl p-4 md:p-6 space-y-4">
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <div className="flex w-full sm:w-72 items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3">
+              <Icon name="search" className="text-text-light-secondary dark:text-dark-secondary" />
+              <input
+                className="w-full bg-transparent h-10 text-sm text-text-light-primary dark:text-dark-primary outline-none"
+                placeholder="Search by client, freelancer, job..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <button className="text-sm font-medium text-primary hover:underline">Clear filters</button>
-              <button className="flex items-center gap-2 h-10 rounded-lg px-3 bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary text-sm font-medium border border-border-light dark:border-border-dark hover:bg-primary/10">
-                <Icon name="more_horiz" />
-                Saved views
-              </button>
-            </div>
+            <FilterSelect
+              label="Status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as ContractStatus | 'all')}
+              options={[
+                { value: 'all', label: 'All statuses' },
+                { value: 'Active', label: 'Active' },
+                { value: 'Pending Signature', label: 'Pending signature' },
+                { value: 'Completed', label: 'Completed' },
+                { value: 'Terminated', label: 'Terminated' },
+              ]}
+              icon="tune"
+            />
+            <FilterSelect
+              label="Date Range"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              options={[
+                { value: 'all', label: 'Any time' },
+                { value: '30', label: 'Last 30 days' },
+                { value: '90', label: 'Last 90 days' },
+                { value: '365', label: 'Last 12 months' },
+              ]}
+              icon="calendar_today"
+            />
           </div>
+          <div className="flex gap-2">
+            <button className="text-sm font-medium text-primary hover:underline">Clear filters</button>
+            <button className="flex items-center gap-2 h-10 rounded-lg px-3 bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary text-sm font-medium border border-border-light dark:border-border-dark hover:bg-primary/10">
+              <Icon name="more_horiz" />
+              Saved views
+            </button>
+          </div>
+        </div>
 
-          <div className="w-full overflow-x-auto rounded-xl border border-border-light dark:border-border-dark">
-            <table className="w-full text-left min-w-[720px]">
-              <thead className="bg-background-light dark:bg-background-dark">
-                <tr className="border-b border-border-light dark:border-border-dark">
-                  <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Contract</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Parties</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Dates</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Amount</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Actions</th>
+        <div className="w-full overflow-x-auto rounded-xl border border-border-light dark:border-border-dark">
+          <table className="w-full text-left min-w-[720px]">
+            <thead className="bg-background-light dark:bg-background-dark">
+              <tr className="border-b border-border-light dark:border-border-dark">
+                <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Contract</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Parties</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Status</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Dates</th>
+                <th className="px-4 py-3 text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Amount</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wide">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-12 text-center">
+                    <div className="flex items-center justify-center gap-2 text-text-light-secondary dark:text-dark-secondary">
+                      <Icon name="progress_activity" className="animate-spin" size={24} />
+                      <span>Loading contracts...</span>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center">
-                      <div className="flex items-center justify-center gap-2 text-text-light-secondary dark:text-dark-secondary">
-                        <Icon name="progress_activity" className="animate-spin" size={24} />
-                        <span>Loading contracts...</span>
+              ) : filteredContracts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-sm text-text-light-secondary dark:text-dark-secondary">
+                    No contracts match your filters.
+                  </td>
+                </tr>
+              ) : (
+                filteredContracts.map((c: ContractDisplay) => (
+                  <tr key={c._id} className="border-b border-border-light dark:border-border-dark hover:bg-primary/5">
+                    <td className="px-4 py-4 align-top">
+                      <p className="text-sm font-semibold text-text-light-primary dark:text-dark-primary">{c.jobTitle}</p>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">{c._id.slice(-8).toUpperCase()}</p>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <p className="text-sm text-text-light-primary dark:text-dark-primary">
+                        Client: <span className="font-medium">{c.clientName}</span>
+                      </p>
+                      <p className="text-sm text-text-light-primary dark:text-dark-primary">
+                        Freelancer: <span className="font-medium">{c.freelancerName}</span>
+                      </p>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <StatusPill status={c.status} />
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <p className="text-sm text-text-light-secondary dark:text-dark-secondary">
+                        {new Date(c.startDate).toLocaleDateString()}
+                        {c.endDate && ` - ${new Date(c.endDate).toLocaleDateString()}`}
+                      </p>
+                    </td>
+                    <td className="px-4 py-4 align-top">
+                      <p className="text-sm font-semibold text-text-light-primary dark:text-dark-primary">
+                        ₦{(c.amount ?? 0).toLocaleString('en-NG')}
+                      </p>
+                    </td>
+                    <td className="px-4 py-4 align-top text-right">
+                      <div className="inline-flex items-center gap-2">
+                        <button
+                          className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
+                          onClick={() => toast('View contract details', { icon: '👁️' })}
+                        >
+                          <Icon name="visibility" size={18} />
+                          View
+                        </button>
+                        <button
+                          className="flex items-center gap-1 text-text-light-secondary dark:text-dark-secondary text-sm font-medium hover:text-primary"
+                          onClick={() => toast('Sign contract feature', { icon: '✍️' })}
+                        >
+                          <Icon name="assignment_turned_in" size={18} />
+                          Sign
+                        </button>
+                        <button className="flex items-center justify-center size-9 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark hover:bg-primary/10">
+                          <Icon name="more_vert" />
+                        </button>
                       </div>
                     </td>
                   </tr>
-                ) : filteredContracts.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-6 text-center text-sm text-text-light-secondary dark:text-dark-secondary">
-                      No contracts match your filters.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredContracts.map((c: ContractDisplay) => (
-                    <tr key={c._id} className="border-b border-border-light dark:border-border-dark hover:bg-primary/5">
-                      <td className="px-4 py-4 align-top">
-                        <p className="text-sm font-semibold text-text-light-primary dark:text-dark-primary">{c.jobTitle}</p>
-                        <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">{c._id.slice(-8).toUpperCase()}</p>
-                      </td>
-                      <td className="px-4 py-4 align-top">
-                        <p className="text-sm text-text-light-primary dark:text-dark-primary">
-                          Client: <span className="font-medium">{c.clientName}</span>
-                        </p>
-                        <p className="text-sm text-text-light-primary dark:text-dark-primary">
-                          Freelancer: <span className="font-medium">{c.freelancerName}</span>
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 align-top">
-                        <StatusPill status={c.status} />
-                      </td>
-                      <td className="px-4 py-4 align-top">
-                        <p className="text-sm text-text-light-secondary dark:text-dark-secondary">
-                          {new Date(c.startDate).toLocaleDateString()}
-                          {c.endDate && ` - ${new Date(c.endDate).toLocaleDateString()}`}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 align-top">
-                        <p className="text-sm font-semibold text-text-light-primary dark:text-dark-primary">
-                          ₦{c.amount.toLocaleString('en-NG')}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 align-top text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <button 
-                            className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
-                            onClick={() => toast('View contract details', { icon: '👁️' })}
-                          >
-                            <Icon name="visibility" size={18} />
-                            View
-                          </button>
-                          <button 
-                            className="flex items-center gap-1 text-text-light-secondary dark:text-dark-secondary text-sm font-medium hover:text-primary"
-                            onClick={() => toast('Sign contract feature', { icon: '✍️' })}
-                          >
-                            <Icon name="assignment_turned_in" size={18} />
-                            Sign
-                          </button>
-                          <button className="flex items-center justify-center size-9 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark hover:bg-primary/10">
-                            <Icon name="more_vert" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between pt-3 gap-3">
-            <p className="text-sm text-text-light-secondary dark:text-dark-secondary text-center sm:text-left">
-              Showing {filteredContracts.length} of {totalCount} contracts
-            </p>
-            <div className="flex items-center gap-2">
-              <button className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10">
-                <Icon name="chevron_left" size={20} />
-              </button>
-              <button className="flex h-9 min-w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary text-white text-sm">1</button>
-              <button className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10 text-sm">2</button>
-              <button className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10">
-                <Icon name="chevron_right" size={20} />
-              </button>
-            </div>
+        <div className="flex flex-col sm:flex-row items-center justify-between pt-3 gap-3">
+          <p className="text-sm text-text-light-secondary dark:text-dark-secondary text-center sm:text-left">
+            Showing {filteredContracts.length} of {totalCount} contracts
+          </p>
+          <div className="flex items-center gap-2">
+            <button className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10">
+              <Icon name="chevron_left" size={20} />
+            </button>
+            <button className="flex h-9 min-w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary text-white text-sm">1</button>
+            <button className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10 text-sm">2</button>
+            <button className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-background-light dark:bg-background-dark text-text-light-primary dark:text-dark-primary hover:bg-primary/10">
+              <Icon name="chevron_right" size={20} />
+            </button>
           </div>
-        </section>
-      </main>
-    </AppLayout>
+        </div>
+      </section>
+    </main>
   )
 }
 

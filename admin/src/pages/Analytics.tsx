@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 import { analyticsAPI } from '../services/api'
 
@@ -98,11 +97,9 @@ export default function Analytics() {
 
   if (loading) {
     return (
-      <AppLayout>
-        <div className="flex-1 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center">
           <Icon name="progress_activity" size={48} className="animate-spin text-primary" />
         </div>
-      </AppLayout>
     )
   }
 
@@ -113,8 +110,7 @@ export default function Analytics() {
   // const weeklyRevenue = stats?.weeklyRevenue || []
 
   return (
-    <AppLayout>
-      <main className="flex-1 flex-col p-4 md:p-6 lg:p-8">
+          <main className="flex-1 flex-col p-4 md:p-6 lg:p-8">
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex flex-col gap-1">
             <p className="text-text-light-primary dark:text-dark-primary text-3xl font-black leading-tight tracking-tighter">Analytics & Reporting</p>
@@ -444,6 +440,5 @@ export default function Analytics() {
           </div>
         </div>
       </main>
-    </AppLayout>
   )
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
-import AppLayout from '../components/AppLayout'
 import Icon from '../components/Icon'
 
 export default function Settings() {
@@ -25,8 +24,7 @@ export default function Settings() {
   }
 
   return (
-    <AppLayout>
-      <div className="flex-1 p-4 md:p-6 lg:p-8">
+          <div className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-5xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -465,6 +463,5 @@ export default function Settings() {
           </div>
         </div>
       </div>
-    </AppLayout>
   )
 }

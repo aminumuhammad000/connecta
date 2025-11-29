@@ -11,9 +11,9 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'http://localhost:5000' for local development
-const API_BASE_URL = 'http://102.68.84.56:5000'
+// const API_BASE_URL = 'http://102.68.84.56:5000'
 
-// const API_BASE_URL = 'http://localhost:5000'
+const API_BASE_URL = 'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -50,7 +50,7 @@ api.interceptors.response.use(
       url: error.config?.url,
       method: error.config?.method
     })
-    
+
     if (error.response?.status === 401) {
       // Only redirect if we're not already on the login page
       if (!window.location.pathname.includes('/login')) {
@@ -74,6 +74,14 @@ export const authAPI = {
   },
   signup: async (userData: any) => {
     const { data } = await api.post('/api/users/signup', userData)
+    return data
+  },
+  getProfile: async () => {
+    const { data } = await api.get('/api/users/profile')
+    return data
+  },
+  updateProfile: async (profileData: any) => {
+    const { data } = await api.put('/api/users/profile', profileData)
     return data
   },
 }
@@ -425,6 +433,14 @@ export const subscriptionsAPI = {
   },
   cancel: async (subscriptionId: string) => {
     const response = await api.patch(`/api/subscriptions/${subscriptionId}/cancel`)
+    return response.data
+  },
+  reactivate: async (subscriptionId: string) => {
+    const response = await api.patch(`/api/subscriptions/${subscriptionId}/reactivate`)
+    return response.data
+  },
+  delete: async (subscriptionId: string) => {
+    const response = await api.delete(`/api/subscriptions/${subscriptionId}`)
     return response.data
   },
 }
