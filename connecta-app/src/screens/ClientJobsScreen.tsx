@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
@@ -8,15 +8,7 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import * as jobService from '../services/jobService';
 import { Job } from '../types';
-
-interface ClientJob {
-  id: string;
-  title: string;
-  status: 'Open' | 'In Progress' | 'Closed';
-  proposals: number;
-  budget: string;
-  postedDate: string;
-}
+import { useFocusEffect } from '@react-navigation/native';
 
 const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -25,9 +17,11 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadJobs();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadJobs();
+    }, [])
+  );
 
   const loadJobs = async () => {
     try {
@@ -59,20 +53,22 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const mapJobStatus = (status: string): 'Open' | 'In Progress' | 'Closed' => {
-    if (status === 'open') return 'Open';
-    if (status === 'in_progress') return 'In Progress';
+    if (status === 'active') return 'Open';
+    // 'draft' is not really 'In Progress' but we can map it or hide it. 
+    // For now, let's map 'draft' to 'In Progress' or just show 'Open' for active.
+    if (status === 'draft') return 'In Progress';
     return 'Closed';
   };
 
   const filtered = useMemo(() => {
     if (tab === 'All') return jobs;
-    if (tab === 'Open') return jobs.filter((j) => j.status === 'open' || j.status === 'in_progress');
-    return jobs.filter((j) => j.status === 'completed' || j.status === 'cancelled');
+    if (tab === 'Open') return jobs.filter((j) => j.status === 'active' || j.status === 'draft');
+    return jobs.filter((j) => j.status === 'closed');
   }, [jobs, tab]);
 
   const getStatusVariant = (status: string): 'success' | 'info' | 'neutral' => {
-    if (status === 'open') return 'success';
-    if (status === 'in_progress') return 'info';
+    if (status === 'active') return 'success';
+    if (status === 'draft') return 'info';
     return 'neutral';
   };
 
@@ -100,8 +96,8 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
-          contentContainerStyle={{ paddingBottom: 84 }} 
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 84 }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
@@ -152,51 +148,60 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
             ) : (
               <View style={{ gap: 12 }}>
                 {filtered.map((j: any) => (
-                  <Card key={j._id} variant="elevated" padding={16}>
-                    <View style={styles.jobCard}>
-                      <View style={styles.jobHeader}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={[styles.jobTitle, { color: c.text }]}>{j.title}</Text>
-                          <Badge label={mapJobStatus(j.status)} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
+                  <TouchableOpacity
+                    key={j._id}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('JobDetail', { id: j._id })}
+                  >
+                    <Card variant="elevated" padding={16}>
+                      <View style={styles.jobCard}>
+                        <View style={styles.jobHeader}>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.jobTitle, { color: c.text }]}>{j.title}</Text>
+                            <Badge label={mapJobStatus(j.status)} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
+                          </View>
+                          <TouchableOpacity onPress={(e) => {
+                            e.stopPropagation();
+                            // TODO: Show edit/delete menu
+                          }}>
+                            <MaterialIcons name="more-vert" size={24} color={c.subtext} />
+                          </TouchableOpacity>
                         </View>
-                        <TouchableOpacity>
-                          <MaterialIcons name="more-vert" size={24} color={c.subtext} />
-                        </TouchableOpacity>
-                      </View>
 
-                      <View style={styles.jobMeta}>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="description" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.text }]}>{j.proposalsCount || 0} Proposals</Text>
+                        <View style={styles.jobMeta}>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="description" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.text }]}>{j.proposalsCount || 0} Proposals</Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.text }]}>₦{j.budget?.toLocaleString() || '0'}</Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.subtext }]}>{formatDate(j.postedAt)}</Text>
+                          </View>
                         </View>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.text }]}>₦{j.budget?.toLocaleString() || '0'}</Text>
-                        </View>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.subtext }]}>{formatDate(j.postedAt)}</Text>
-                        </View>
-                      </View>
 
-                      <View style={styles.jobActions}>
-                        <Button
-                          title="View Proposals"
-                          onPress={() => navigation.navigate('JobDetail')}
-                          variant="outline"
-                          size="small"
-                          style={{ flex: 1 }}
-                        />
-                        <Button
-                          title="Edit Job"
-                          onPress={() => navigation.navigate('PostJob')}
-                          variant="primary"
-                          size="small"
-                          style={{ flex: 1 }}
-                        />
+                        <View style={styles.jobActions}>
+                          <Button
+                            title="View Proposals"
+                            onPress={() => navigation.navigate('Proposals', { jobId: j._id })}
+                            variant="outline"
+                            size="small"
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            title="Edit Job"
+                            onPress={() => navigation.navigate('PostJob', { jobId: j._id, mode: 'edit' })}
+                            variant="primary"
+                            size="small"
+                            style={{ flex: 1 }}
+                          />
+                        </View>
                       </View>
-                    </View>
-                  </Card>
+                    </Card>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}

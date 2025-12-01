@@ -78,6 +78,12 @@ const JobSchema = new mongoose_1.Schema({
     deliverables: [{ type: String, default: "" }],
     postedTime: { type: String, default: "" },
     paymentVerified: { type: Boolean, default: false },
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "escrow", "released", "refunded"],
+        default: "pending",
+    },
+    paymentReference: { type: String },
     paymentId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Payment" },
 }, { timestamps: true });
 const Job = mongoose_1.default.model("Job", JobSchema);

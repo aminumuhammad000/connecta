@@ -8,6 +8,11 @@ export interface User {
     firstName?: string;
     lastName?: string;
     avatar?: string;
+    profileImage?: string; // Added
+    isPremium?: boolean;
+    subscriptionTier?: 'free' | 'premium' | 'enterprise';
+    subscriptionStatus?: 'active' | 'expired' | 'cancelled';
+    premiumExpiryDate?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -36,12 +41,16 @@ export interface SignupData {
 export interface Profile {
     _id: string;
     userId: string;
+    user?: User; // Populated user data from backend
     bio?: string;
     skills?: string[];
     hourlyRate?: number;
     location?: string;
     phone?: string;
+    phoneNumber?: string; // Added alias
     website?: string;
+    companyName?: string; // Added
+    avatar?: string; // Added
     portfolio?: PortfolioItem[];
     experience?: Experience[];
     education?: Education[];
@@ -83,8 +92,8 @@ export interface Education {
 }
 
 // Job Types
-export type JobStatus = 'open' | 'in_progress' | 'completed' | 'cancelled';
-export type JobType = 'fixed' | 'hourly';
+export type JobStatus = 'active' | 'closed' | 'draft';
+export type JobType = 'full-time' | 'part-time' | 'contract' | 'freelance';
 
 export interface Job {
     _id: string;
@@ -93,13 +102,17 @@ export interface Job {
     description: string;
     category: string;
     skills: string[];
-    budget?: number;
+    budget?: string; // Backend expects String
+    budgetType?: string;
     hourlyRate?: number;
     jobType: JobType;
     duration?: string;
     experienceLevel?: string;
     status: JobStatus;
     proposalCount?: number;
+    location?: string;
+    locationType?: 'remote' | 'onsite' | 'hybrid';
+    company?: string;
     createdAt: string;
     updatedAt: string;
 }

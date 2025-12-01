@@ -60,9 +60,10 @@ export const API_ENDPOINTS = {
 
     // Proposals
     PROPOSALS: '/api/proposals',
+    PROPOSALS_BY_JOB: (jobId: string) => `/api/proposals/job/${jobId}`,
     ACCEPTED_PROPOSALS: '/api/proposals/client/accepted',
-    FREELANCER_PROPOSALS: (freelancerId: string) => `/api/proposals/freelancer/${freelancerId}`,
-    PROPOSAL_STATS: (freelancerId: string) => `/api/proposals/stats/${freelancerId}`,
+    FREELANCER_PROPOSALS: (id: string) => `/api/proposals/freelancer/${id}`,
+    PROPOSAL_STATS: (id: string) => `/api/proposals/freelancer/${id}/stats`,
     PROPOSAL_BY_ID: (id: string) => `/api/proposals/${id}`,
     APPROVE_PROPOSAL: (id: string) => `/api/proposals/${id}/approve`,
     REJECT_PROPOSAL: (id: string) => `/api/proposals/${id}/reject`,
@@ -92,6 +93,7 @@ export const API_ENDPOINTS = {
 
     // Payments
     INITIALIZE_PAYMENT: '/api/payments/initialize',
+    INITIALIZE_JOB_VERIFICATION: '/api/payments/job-verification',
     VERIFY_PAYMENT: (reference: string) => `/api/payments/verify/${reference}`,
     PAYMENT_HISTORY: '/api/payments/history',
     WALLET_BALANCE: '/api/payments/wallet/balance',

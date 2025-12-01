@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import profileService from '../services/profileService';
@@ -16,20 +17,35 @@ export default function ClientProfileScreen({ navigation }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [])
+  );
 
   const loadProfile = async () => {
     try {
       setIsLoading(true);
       const data = await profileService.getMyProfile();
+
+      // Extract user data from populated field or use auth context
+      const userData = data?.user || user;
+
       const merged = {
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        email: user?.email,
+        // User basic info
+        firstName: userData?.firstName || user?.firstName,
+        lastName: userData?.lastName || user?.lastName,
+        email: userData?.email || user?.email,
+        isPremium: userData?.isPremium || user?.isPremium,
+
+        // Profile image - prioritize avatar from profile, then profileImage from user
+        avatar: data?.avatar || userData?.profileImage || user?.profileImage,
+
+        // Spread all profile data
         ...data,
       };
+
+      console.log('📊 Loaded profile data:', merged);
       setProfile(merged);
       setErrorMessage(data ? null : 'Profile not found. Create your profile to get started.');
     } catch (error) {
@@ -87,12 +103,32 @@ export default function ClientProfileScreen({ navigation }: any) {
         <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} />
       }>
         {/* Profile Header */}
-        <View style={styles.sectionPad}>
+        <View style={[styles.sectionPad, profile?.isPremium && { backgroundColor: c.isDark ? '#3D2800' : '#FFFBEB', paddingBottom: 24, paddingTop: 20 }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
+              <View style={[styles.avatarContainer, profile?.isPremium && styles.premiumBorder]}>
+                <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
+                {profile?.isPremium && (
+                  <View style={styles.premiumIconBadge}>
+                    <MaterialIcons name="workspace-premium" size={14} color="#FFF" />
+                  </View>
+                )}
+              </View>
               <View>
-                <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                  {profile?.isPremium && (
+                    <MaterialIcons name="verified" size={20} color="#F59E0B" style={{ marginLeft: 4 }} />
+                  )}
+                </View>
+
+                {profile?.isPremium && (
+                  <View style={styles.premiumBadge}>
+                    <MaterialIcons name="star" size={12} color="#FFF" />
+                    <Text style={styles.premiumText}>PREMIUM MEMBER</Text>
+                  </View>
+                )}
+
                 <Text style={[styles.location, { color: c.subtext }]}>{profile?.location || 'Location not set'}</Text>
                 <View style={styles.verifiedRow}>
                   <MaterialIcons name="verified" size={16} color="#22c55e" />
@@ -111,9 +147,16 @@ export default function ClientProfileScreen({ navigation }: any) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
-              onPress={() => { }}
+              onPress={() => navigation.navigate('ManageSubscription')}
             >
-              <Text style={[styles.btnText, { color: c.text }]}>Share</Text>
+              <MaterialIcons
+                name={profile?.isPremium ? "settings" : "workspace-premium"}
+                size={16}
+                color={c.primary}
+              />
+              <Text style={[styles.btnText, { color: c.text, marginLeft: 4 }]}>
+                {profile?.isPremium ? 'Manage Premium' : 'Upgrade'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -152,7 +195,7 @@ export default function ClientProfileScreen({ navigation }: any) {
               onPress={() => setActiveTab('history')}
               style={[styles.tabItem, activeTab === 'history' && { borderBottomColor: c.primary }]}
             >
-              <Text style={[styles.tabText, { color: activeTab === 'history' ? c.primary : c.subtext }]}>Job History</Text>
+              <Text style={[styles.tabText, { color: activeTab === 'history' ? c.primary : c.subtext }]}>Jobs Posted</Text>
             </TouchableOpacity>
             <TouchableOpacity
               accessibilityRole="tab"
@@ -168,8 +211,8 @@ export default function ClientProfileScreen({ navigation }: any) {
         {/* Content */}
         <View style={styles.sectionPad}>
           {activeTab === 'history' ? (
-            profile?.jobHistory?.length > 0 ? (
-              profile.jobHistory.map((job: any, index: number) => (
+            profile?.jobs?.length > 0 ? (
+              profile.jobs.map((job: any, index: number) => (
                 <JobCard
                   key={index}
                   title={job.title}
@@ -179,7 +222,7 @@ export default function ClientProfileScreen({ navigation }: any) {
                 />
               ))
             ) : (
-              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No job history</Text>
+              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No jobs posted yet</Text>
             )
           ) : (
             profile?.reviews?.length > 0 ? (
@@ -262,7 +305,7 @@ const styles = StyleSheet.create({
   verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   verifiedText: { color: '#22c55e', fontSize: 12, fontWeight: '600' },
   headerActions: { flexDirection: 'row', gap: 8 },
-  actionBtn: { flex: 1, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  actionBtn: { flex: 1, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   btnText: { fontSize: 13, fontWeight: '700' },
   rowWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   statCard: { flexBasis: '32%', minWidth: 150, flexGrow: 1, borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth },
@@ -284,4 +327,47 @@ const styles = StyleSheet.create({
   status: { fontSize: 12, fontWeight: '700' },
   cardDesc: { fontSize: 13, marginTop: 6, lineHeight: 18 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  avatarContainer: { position: 'relative', marginRight: 12 },
+  premiumBorder: {
+    padding: 3,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+  },
+  premiumIconBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#F59E0B',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    marginBottom: 2,
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  premiumText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
 });

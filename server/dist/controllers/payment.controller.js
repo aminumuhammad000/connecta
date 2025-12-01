@@ -10,6 +10,8 @@ const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
 const Withdrawal_model_1 = __importDefault(require("../models/Withdrawal.model"));
 const Project_model_1 = __importDefault(require("../models/Project.model"));
 const Job_model_1 = __importDefault(require("../models/Job.model"));
+const user_model_1 = __importDefault(require("../models/user.model"));
+const flutterwave_service_1 = __importDefault(require("../services/flutterwave.service"));
 const paystack_service_1 = __importDefault(require("../services/paystack.service"));
 // Platform fee percentage (e.g., 10%)
 const PLATFORM_FEE_PERCENTAGE = 10;
@@ -52,20 +54,25 @@ const initializeJobVerification = async (req, res) => {
             escrowStatus: 'none',
         });
         await payment.save();
-        // Initialize Paystack payment
-        const user = req.user;
-        const paystackResponse = await paystack_service_1.default.initializePayment(user.email, amount, payment._id.toString(), { jobId, userId, type: 'job_verification' });
-        // Update payment with gateway reference
-        payment.gatewayReference = paystackResponse.data.reference;
-        payment.gatewayResponse = paystackResponse.data;
+        // Initialize Flutterwave payment
+        // Fetch full user details to ensure we have email
+        const user = await user_model_1.default.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        console.log('Initializing Flutterwave payment for:', user.email, 'Amount:', amount, 'Ref:', payment._id.toString());
+        const flutterwaveResponse = await flutterwave_service_1.default.initializePayment(user.email, amount, payment._id.toString(), // Use payment ID as tx_ref
+        { jobId, userId, type: 'job_verification' });
+        // Update payment with gateway reference (using tx_ref which is paymentId)
+        payment.gatewayReference = payment._id.toString();
         await payment.save();
         return res.status(200).json({
             success: true,
             message: 'Job verification payment initialized',
             data: {
                 paymentId: payment._id,
-                authorizationUrl: paystackResponse.data.authorization_url,
-                reference: paystackResponse.data.reference,
+                authorizationUrl: flutterwaveResponse.data.link,
+                reference: payment._id.toString(),
             },
         });
     }
@@ -136,25 +143,24 @@ const initializePayment = async (req, res) => {
             });
         }
         await payment.save();
-        // Initialize Paystack payment
+        // Initialize Flutterwave payment
         const user = req.user;
-        const paystackResponse = await paystack_service_1.default.initializePayment(user.email, amount, payment._id.toString(), {
+        const flutterwaveResponse = await flutterwave_service_1.default.initializePayment(user.email, amount, payment._id.toString(), {
             projectId,
             milestoneId,
             payerId,
             payeeId,
         });
         // Update payment with gateway reference
-        payment.gatewayReference = paystackResponse.data.reference;
-        payment.gatewayResponse = paystackResponse.data;
+        payment.gatewayReference = payment._id.toString();
         await payment.save();
         return res.status(200).json({
             success: true,
             message: 'Payment initialized successfully',
             data: {
                 paymentId: payment._id,
-                authorizationUrl: paystackResponse.data.authorization_url,
-                reference: paystackResponse.data.reference,
+                authorizationUrl: flutterwaveResponse.data.link,
+                reference: payment._id.toString(),
             },
         });
     }
@@ -168,7 +174,7 @@ const initializePayment = async (req, res) => {
 };
 exports.initializePayment = initializePayment;
 /**
- * Verify payment after Paystack callback
+ * Verify payment after Flutterwave callback
  */
 const verifyPayment = async (req, res) => {
     try {
@@ -176,14 +182,18 @@ const verifyPayment = async (req, res) => {
         if (!reference) {
             return res.status(400).json({ success: false, message: 'Reference is required' });
         }
-        // Find payment by reference
-        const payment = await Payment_model_1.default.findOne({ gatewayReference: reference });
+        // Find payment by reference (which is the payment ID for Flutterwave)
+        const payment = await Payment_model_1.default.findById(reference);
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment not found' });
         }
-        // Verify with Paystack
-        const verification = await paystack_service_1.default.verifyPayment(reference);
-        if (verification.data.status === 'success') {
+        // Verify with Flutterwave using the transaction ID from query params
+        const transactionId = req.query.transaction_id;
+        if (!transactionId) {
+            return res.status(400).json({ success: false, message: 'Transaction ID is required' });
+        }
+        const verification = await flutterwave_service_1.default.verifyPayment(transactionId);
+        if (verification.data.status === 'successful' && verification.data.tx_ref === reference) {
             // Update payment status
             payment.status = 'completed';
             payment.paidAt = new Date();
@@ -191,10 +201,12 @@ const verifyPayment = async (req, res) => {
             await payment.save();
             // Handle job verification payment differently
             if (payment.paymentType === 'job_verification' && payment.jobId) {
-                // Update job as payment verified
+                // Update job as payment verified and activate it
                 await Job_model_1.default.findByIdAndUpdate(payment.jobId, {
                     paymentVerified: true,
+                    paymentStatus: 'escrow',
                     paymentId: payment._id,
+                    status: 'active', // Activate the job
                 });
                 return res.status(200).json({
                     success: true,

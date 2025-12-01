@@ -1,70 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import { useThemeColors } from '../theme/theme';
-
-// Mock data for conversations
-const MOCK_CONVERSATIONS = [
-    {
-        _id: '1',
-        participants: [
-            { _id: 'u2', firstName: 'Cameron', lastName: 'Williamson', profileImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBBL5PbqSun56WA-UjupXWGWeuaDbSTOR1IRDiKb4clTLqdFRGbNjuNuIQOfa9N--K5Oph-Wn95F62EOpGONs4EJksFyqqQcRLPDaLPdwoqIxt5dhSK-5qXgSxRHiwv4Xp5xsuP5bfTiemssdp_wbmItn8PQaixxiUzPGmh4nzpJryGSi-f4aVzU06PzTTL0vlMWpUEu3oE3HKQGt2gxacDtsXm-94mZ9bVQami9u3E0Yngr0p0XfcEkHFIOFVMlSbBBBruLPPp87E' }
-        ],
-        lastMessage: { text: "I'm available this afternoon after 2 PM.", createdAt: new Date().toISOString(), senderId: 'u1' },
-        unreadCount: { 'u1': 0 },
-        projectId: { title: 'E-commerce App' }
-    },
-    {
-        _id: '2',
-        participants: [
-            { _id: 'u3', firstName: 'Esther', lastName: 'Howard', profileImage: null }
-        ],
-        lastMessage: { text: "Please check the latest designs.", createdAt: new Date(Date.now() - 86400000).toISOString(), senderId: 'u3' },
-        unreadCount: { 'u1': 2 },
-        projectId: { title: 'Website Redesign' }
-    }
-];
+import { useFocusEffect } from '@react-navigation/native';
+import * as messageService from '../services/messageService';
+import { useAuth } from '../context/AuthContext';
 
 export default function ChatsScreen({ navigation }: any) {
     const c = useThemeColors();
+    const { user } = useAuth();
     const [conversations, setConversations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        fetchConversations();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchConversations();
+        }, [])
+    );
 
     const fetchConversations = async () => {
-        // Simulate fetch
-        setTimeout(() => {
-            setConversations(MOCK_CONVERSATIONS);
+        try {
+            if (!user?._id) return;
+
+            const data = await messageService.getUserConversations(user._id);
+            setConversations(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Error fetching conversations:', error);
+            setConversations([]);
+        } finally {
             setLoading(false);
-        }, 1000);
+            setRefreshing(false);
+        }
+    };
+
+    const handleRefresh = () => {
+        setRefreshing(true);
+        fetchConversations();
     };
 
     const handleConversationPress = (conversation: any) => {
-        const otherUser = conversation.participants[0]; // Simplified
+        // Determine the other user (not the current user)
+        const otherUser = conversation.clientId?._id === user?._id
+            ? conversation.freelancerId
+            : conversation.clientId;
+
         navigation.navigate('MessagesDetail', {
             conversationId: conversation._id,
-            userName: `${otherUser.firstName} ${otherUser.lastName}`,
-            userAvatar: otherUser.profileImage
+            userName: `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User',
+            userAvatar: otherUser?.profileImage || otherUser?.avatar
         });
     };
 
     const filteredConversations = conversations.filter(conv => {
-        const name = `${conv.participants[0].firstName} ${conv.participants[0].lastName}`.toLowerCase();
+        const client = conv.clientId;
+        const freelancer = conv.freelancerId;
+        const otherUser = client?._id === user?._id ? freelancer : client;
+        const name = `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.toLowerCase();
         return name.includes(searchQuery.toLowerCase());
     });
 
     const renderItem = ({ item }: { item: any }) => {
-        const otherUser = item.participants[0];
-        const name = `${otherUser.firstName} ${otherUser.lastName}`;
-        const lastMsg = item.lastMessage?.text || 'No messages';
-        const time = new Date(item.lastMessage?.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const unread = item.unreadCount['u1'] || 0;
+        // Determine the other user
+        const otherUser = item.clientId?._id === user?._id
+            ? item.freelancerId
+            : item.clientId;
+
+        const name = `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User';
+        const lastMsg = item.lastMessage || 'No messages';
+        const time = item.lastMessageAt
+            ? new Date(item.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : '';
+        const unread = item.unreadCount?.[user?._id || ''] || 0;
 
         return (
             <TouchableOpacity
@@ -72,7 +82,7 @@ export default function ChatsScreen({ navigation }: any) {
                 onPress={() => handleConversationPress(item)}
             >
                 <View style={styles.avatar}>
-                    <Avatar uri={otherUser.profileImage || undefined} name={name} size={50} />
+                    <Avatar uri={otherUser?.profileImage || otherUser?.avatar || undefined} name={name} size={50} />
                 </View>
                 <View style={styles.conversationDetails}>
                     <View style={styles.row}>
@@ -81,7 +91,7 @@ export default function ChatsScreen({ navigation }: any) {
                     </View>
                     <View style={styles.row}>
                         <Text numberOfLines={1} style={[styles.lastMessage, { color: c.subtext }]}>
-                            {item.lastMessage?.senderId === 'u1' ? 'You: ' : ''}{lastMsg}
+                            {lastMsg}
                         </Text>
                         {unread > 0 && (
                             <View style={[styles.unreadBadge, { backgroundColor: c.primary }]}>
@@ -129,6 +139,9 @@ export default function ChatsScreen({ navigation }: any) {
                     renderItem={renderItem}
                     keyExtractor={item => item._id}
                     contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+                    }
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="chatbubbles-outline" size={48} color={c.subtext} />

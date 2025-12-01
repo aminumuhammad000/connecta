@@ -1,8 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import * as paymentService from '../services/paymentService';
+import { Payment, WalletBalance } from '../types';
 
 interface TxnItem {
   id: string;
@@ -10,42 +13,9 @@ interface TxnItem {
   purpose: string;
   date: string;
   amount: string;
-  status: 'Completed' | 'Pending';
+  status: 'Completed' | 'Pending' | 'Failed' | 'Refunded';
   avatar: string;
 }
-
-const TXNS: TxnItem[] = [
-  {
-    id: 't1',
-    who: 'Paid to Jane Doe',
-    purpose: 'For: Brand Logo Redesign',
-    date: 'Dec 15, 2023',
-    amount: '$500.00',
-    status: 'Completed',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAon50pnLDMessEvF2R4tezauju0hZts7NlXMgPgbJgYunsaYOGR4uZM9UktYpQnVxxVJHBfPTeN2nkd_Fct1K8WKLPE0mdft6-VQ4MbZ_CDNpfBH1KORkX1QFj-iSPmnuJLXb6ItnvjClNCkrGWM1axUe1vhoNAR9qsEQ5lMrL7DNb3BGHZcD9FXia7s_7F_tLygu7_70L72vf0sLKPfQx5VtLT7tn7Qq1w-CyjV9e_xzbAW5xMRRbRgeKBrcocc2MWQny4eaaNa4',
-  },
-  {
-    id: 't2',
-    who: 'Paid to John Smith',
-    purpose: 'For: Mobile App UI Kit',
-    date: 'Dec 10, 2023',
-    amount: '$1,300.00',
-    status: 'Completed',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCu8g9n1Qa8CQW6d6bEUiY43dS9wmSTavBAowfiBU2Wrd39zqEOpF-fQpnWmEn-M9hZ1KhmgdnfV8oWlDWppn3mmoCYoLB6FN2iRG469cqqzLwpK_0av9pvmJ3liJICwpyCiSpxuw29AUzT4b74EY7z14S2MwcP_mhh0VhD59U6R02Et5_B2YXUdWwPPGzy3QINd-U666sNosENZTVmNOBoX5c_xXYeN4C5L5n05wMK6lliSLeEIhIJWds9JVJMEsD_plAbcLN_8Sg',
-  },
-  {
-    id: 't3',
-    who: 'To Emily White',
-    purpose: 'For: Social Media Content',
-    date: 'Due Dec 28, 2023',
-    amount: '$750.00',
-    status: 'Pending',
-    avatar:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBON6YAD2-D4UqU-ZL2R4_vcJcL8aoRjpwN1kxzMEx5m1XM9WHZnQMp_Bjw6TM8rgtWCrTGFA54J77yl3ADyVmmPScJ0MptIJo0V3v0eWY_7ScPeTl_RzTmqI5jzeIYQ_fJQYBtk71ocmd5UNzp9F437qnzG_bEKQ430tuOj8TtS5clb57bWcyxzqVpD8xQ4q2Mb3FScXolQ7AKgw2Q84VVspeWLLK0StZOIwYy2yKXjYp_NfVj3wMwAGIY_kcwV_ra0l4FPsXywrM',
-  },
-];
 
 const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -53,18 +23,76 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
   const [range, setRange] = useState('Last 30 Days');
   const [filter, setFilter] = useState<'Completed' | 'Pending' | 'All'>('All');
 
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [wallet, setWallet] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const loadData = async () => {
+    try {
+      const [paymentsData, walletData] = await Promise.all([
+        paymentService.getPaymentHistory(),
+        paymentService.getWalletBalance()
+      ]);
+      setPayments(paymentsData);
+      setWallet(walletData);
+    } catch (error) {
+      console.error('Error loading payment data:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadData();
+  };
+
+  const mappedTransactions: TxnItem[] = useMemo(() => {
+    return payments.map(p => {
+      const payee = p.freelancerId as any; // Populated
+      const project = p.projectId as any; // Populated
+      return {
+        id: p._id,
+        who: payee ? `Paid to ${payee.firstName} ${payee.lastName}` : 'Payment',
+        purpose: project ? `For: ${project.title}` : 'Project Payment',
+        date: new Date(p.createdAt).toLocaleDateString(),
+        amount: `$${p.amount.toLocaleString()}`,
+        status: p.status.charAt(0).toUpperCase() + p.status.slice(1) as any,
+        avatar: payee?.profileImage || `https://ui-avatars.com/api/?name=${payee?.firstName}+${payee?.lastName}&background=random`,
+      };
+    });
+  }, [payments]);
+
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return TXNS.filter(t => (filter === 'All' || t.status === filter) && (
+    return mappedTransactions.filter(t => (filter === 'All' || t.status === filter) && (
       !s || t.who.toLowerCase().includes(s) || t.purpose.toLowerCase().includes(s)
     ));
-  }, [q, filter]);
+  }, [mappedTransactions, q, filter]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {/* Top Bar */}
-        <View style={styles.appBar}> 
+        <View style={styles.appBar}>
           <TouchableOpacity onPress={() => navigation.goBack?.()} style={styles.iconBtn} accessibilityLabel="Go back">
             <MaterialIcons name="arrow-back" size={22} color={c.text} />
           </TouchableOpacity>
@@ -72,26 +100,37 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
           <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 96 }}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+          }
+        >
           {/* Stats */}
           <View style={{ padding: 16, gap: 12 }}>
             <View style={[styles.statCard, { backgroundColor: c.card }]}>
               <Text style={[styles.statLabel, { color: c.subtext }]}>Total Spent</Text>
-              <Text style={[styles.statValue, { color: c.text }]}>$12,450.00</Text>
+              <Text style={[styles.statValue, { color: c.text }]}>
+                ${wallet?.totalSpent?.toLocaleString() || '0.00'}
+              </Text>
             </View>
             <View style={[styles.statCard, { backgroundColor: c.card }]}>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>This Month</Text>
-              <Text style={[styles.statValue, { color: c.text }]}>$1,800.00</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>Available Balance</Text>
+              <Text style={[styles.statValue, { color: c.text }]}>
+                ${wallet?.availableBalance?.toLocaleString() || '0.00'}
+              </Text>
             </View>
             <View style={[styles.statCardWide, { backgroundColor: c.card }]}>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Pending Payments</Text>
-              <Text style={[styles.statValue, { color: c.primary }]}>$750.00</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>Pending Payments (Escrow)</Text>
+              <Text style={[styles.statValue, { color: c.primary }]}>
+                ${wallet?.escrowBalance?.toLocaleString() || '0.00'}
+              </Text>
             </View>
           </View>
 
           {/* Search */}
           <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
-            <View style={[styles.searchWrap, { backgroundColor: c.isDark ? '#111827' : '#F3F4F6' }]}> 
+            <View style={[styles.searchWrap, { backgroundColor: c.isDark ? '#111827' : '#F3F4F6' }]}>
               <MaterialIcons name="search" size={22} color={c.subtext} style={{ marginLeft: 12 }} />
               <TextInput
                 value={q}
@@ -115,31 +154,35 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
 
           {/* List */}
           <View style={{ paddingHorizontal: 16, gap: 12 }}>
-            {filtered.map(t => (
-              <View key={t.id} style={[styles.card, { backgroundColor: c.card }]}> 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Image source={{ uri: t.avatar }} style={styles.avatar} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.txnTitle, { color: c.text }]}>{t.who}</Text>
-                    <Text style={{ color: c.subtext, fontSize: 12 }}>{t.purpose}</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <View style={[styles.pill, pillStyle(t.status)]}>
-                        <Text style={[styles.pillText, { color: pillStyle(t.status).color }]}>{t.status}</Text>
+            {filtered.length === 0 ? (
+              <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No transactions found</Text>
+            ) : (
+              filtered.map(t => (
+                <View key={t.id} style={[styles.card, { backgroundColor: c.card }]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Image source={{ uri: t.avatar }} style={styles.avatar} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.txnTitle, { color: c.text }]}>{t.who}</Text>
+                      <Text style={{ color: c.subtext, fontSize: 12 }}>{t.purpose}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <View style={[styles.pill, pillStyle(t.status)]}>
+                          <Text style={[styles.pillText, { color: pillStyle(t.status).color }]}>{t.status}</Text>
+                        </View>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>{t.date}</Text>
                       </View>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>{t.date}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[styles.amount, { color: c.text }]}>{t.amount}</Text>
+                      <TouchableOpacity>
+                        <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>View Invoice</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[styles.amount, { color: c.text }]}>{t.amount}</Text>
-                    <TouchableOpacity>
-                      <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>View Invoice</Text>
-                    </TouchableOpacity>
-                  </View>
                 </View>
-              </View>
-            ))}
+              ))
+            )}
 
-            <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: c.isDark ? '#111827' : '#F3F4F6' }]}> 
+            <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: c.isDark ? '#111827' : '#F3F4F6' }]}>
               <MaterialIcons name="download" size={20} color={c.text} />
               <Text style={[styles.downloadText, { color: c.text }]}>Download Report</Text>
             </TouchableOpacity>
@@ -147,7 +190,7 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
         </ScrollView>
 
         {/* Bottom Nav */}
-</View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -155,16 +198,18 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
 function Chip({ label, active, onPress }: { label: string; active?: boolean; onPress?: () => void }) {
   const c = useThemeColors();
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.chip, { backgroundColor: active ? c.primary + '33' : (c.isDark ? '#111827' : '#F3F4F6') }]}> 
+    <TouchableOpacity onPress={onPress} style={[styles.chip, { backgroundColor: active ? c.primary + '33' : (c.isDark ? '#111827' : '#F3F4F6') }]}>
       <Text style={[styles.chipText, { color: active ? c.primary : c.subtext }]}>{label}</Text>
       <MaterialIcons name="expand-more" size={18} color={active ? c.primary : c.subtext} />
     </TouchableOpacity>
   );
 }
 
-function pillStyle(status: TxnItem['status']) {
+function pillStyle(status: string) {
   if (status === 'Completed') return { backgroundColor: 'rgba(16,185,129,0.12)', color: '#10B981' };
-  return { backgroundColor: 'rgba(234,179,8,0.12)', color: '#ca8a04' };
+  if (status === 'Pending') return { backgroundColor: 'rgba(234,179,8,0.12)', color: '#ca8a04' };
+  if (status === 'Failed') return { backgroundColor: 'rgba(239,68,68,0.12)', color: '#ef4444' };
+  return { backgroundColor: 'rgba(107,114,128,0.12)', color: '#6b7280' };
 }
 
 const styles = StyleSheet.create({

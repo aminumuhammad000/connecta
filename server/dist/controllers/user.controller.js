@@ -509,13 +509,15 @@ const updateMe = async (req, res) => {
                 message: "Unauthorized"
             });
         }
-        const { firstName, lastName } = req.body;
+        const { firstName, lastName, profileImage } = req.body;
         // Prepare update data
         const updateData = {};
         if (firstName)
             updateData.firstName = firstName;
         if (lastName)
             updateData.lastName = lastName;
+        if (profileImage !== undefined)
+            updateData.profileImage = profileImage;
         const user = await user_model_1.default.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select('-password');
         if (!user) {
             return res.status(404).json({

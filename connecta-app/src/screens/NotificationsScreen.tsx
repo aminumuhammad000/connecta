@@ -1,19 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, SafeAreaView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useThemeColors } from '../theme/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { scheduleLocalNotification } from '../utils/notifications';
 import { useInAppAlert } from '../components/InAppAlert';
-
-// Dummy data for notifications
-const dummyNotifications = [
-  { id: '1', title: 'Payment Received', description: 'Your payment for Project X was successful.', time: '2h ago', icon: 'wallet-outline' },
-  { id: '2', title: 'New Message', description: 'You have a new message from John.', time: '5h ago', icon: 'chatbubble-ellipses-outline' },
-  { id: '3', title: 'Job Invitation', description: 'A client invited you to apply for a new job.', time: '1d ago', icon: 'document-text-outline' },
-];
-
-type Notification = typeof dummyNotifications[0];
+import * as notificationService from '../services/notificationService';
+import { Notification } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 type NotificationsScreenNavigationProp = NativeStackNavigationProp<any, any>;
 
@@ -47,22 +42,79 @@ const Header = ({ navigation, c }: { navigation: NotificationsScreenNavigationPr
 export default function NotificationsScreen({ navigation }: Props) {
   const c = useThemeColors();
   const { showAlert } = useInAppAlert();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadNotifications = async () => {
+    try {
+      const data = await notificationService.getNotifications();
+      setNotifications(data);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [])
+  );
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadNotifications();
+  };
 
   const handlePress = (item: Notification) => {
+    // Mark as read if needed, then navigate
     navigation.navigate('NotificationDetail', { notification: item });
+  };
+
+  const getIconName = (type: string) => {
+    switch (type) {
+      case 'payment': return 'wallet-outline';
+      case 'message': return 'chatbubble-ellipses-outline';
+      case 'job': return 'briefcase-outline';
+      case 'proposal': return 'document-text-outline';
+      case 'system': return 'information-circle-outline';
+      default: return 'notifications-outline';
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
   };
 
   const renderItem = ({ item }: { item: Notification }) => (
     <TouchableOpacity onPress={() => handlePress(item)} activeOpacity={0.8}>
-      <View style={[styles.item, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Ionicons name={item.icon as any} size={24} color={c.primary} style={styles.icon} />
+      <View style={[styles.item, { backgroundColor: item.read ? c.background : c.card, borderColor: c.border }]}>
+        <Ionicons name={getIconName(item.type) as any} size={24} color={c.primary} style={styles.icon} />
         <View style={styles.itemContent}>
           <View style={styles.itemHeader}>
-            <Text style={[styles.title, { color: c.text }]}>{item.title}</Text>
-            <Text style={[styles.time, { color: c.subtext }]}>{item.time}</Text>
+            <Text style={[styles.title, { color: c.text, fontWeight: item.read ? '400' : '700' }]}>{item.title}</Text>
+            <Text style={[styles.time, { color: c.subtext }]}>{formatTime(item.createdAt)}</Text>
           </View>
           <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
-            {item.description}
+            {item.message}
           </Text>
         </View>
       </View>
@@ -90,13 +142,26 @@ export default function NotificationsScreen({ navigation }: Props) {
           <Text style={[styles.actionText, { color: c.text }]}>Show In-App Alert</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={dummyNotifications}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item._id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', marginTop: 50 }}>
+              <Ionicons name="notifications-off-outline" size={48} color={c.subtext} />
+              <Text style={{ color: c.subtext, marginTop: 12 }}>No notifications yet</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }

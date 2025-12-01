@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -75,6 +75,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
     checkProfileStatus();
   };
 
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -113,7 +114,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
           >
             <View style={styles.headerTop}>
               <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <Avatar uri={user?.avatar} name={user?.firstName} size={48} />
+                <Avatar uri={user?.profileImage} name={user?.firstName} size={48} />
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity

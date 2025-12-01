@@ -51,6 +51,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // Connect to Database
 connectDB();
@@ -72,9 +73,9 @@ app.use("/api/gigs", gigsRoutes);
 app.use("/api/notifications", notificationRoutes);
 import analyticsRoutes from "./routes/analytics.routes";
 app.use("/api/analytics", analyticsRoutes);
-import subscriptionRoutes from "./routes/subscription.routes";
+import subscriptionRoutes from "./routes/Subscription.routes";
 app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/analytics", insightsRoutes);
+app.use("/api/insights", insightsRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");

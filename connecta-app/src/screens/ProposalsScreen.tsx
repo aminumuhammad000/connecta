@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
 import proposalService from '../services/proposalService';
 
@@ -28,21 +28,27 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
   const [proposals, setProposals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const route = useRoute<any>();
+  const { jobId } = route.params || {};
+
   useEffect(() => {
     loadProposals();
-  }, [tab]);
+  }, [tab, jobId]);
 
   const loadProposals = async () => {
     try {
       setIsLoading(true);
       let data = [];
-      if (tab === 'mine') {
+
+      if (jobId) {
+        // If filtering by job, ignore tabs for now or assume 'received' context
+        data = await proposalService.getProposalsByJobId(jobId).catch(() => []);
+      } else if (tab === 'mine') {
         // Assuming current user is freelancer for 'mine' tab, or client viewing their sent proposals (if applicable)
-        // For now, let's use getAllProposals as a placeholder or specific endpoint if available
         data = await proposalService.getAllProposals().catch(() => []);
       } else {
         // 'received' tab - likely for clients viewing proposals on their jobs
-        data = await proposalService.getAcceptedProposals().catch(() => []); // This might need a different endpoint for all received
+        data = await proposalService.getAcceptedProposals().catch(() => []);
       }
 
       // Map API data to UI format

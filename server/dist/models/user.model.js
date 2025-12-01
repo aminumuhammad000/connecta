@@ -46,6 +46,16 @@ const UserSchema = new mongoose_1.Schema({
         type: Boolean,
         default: false,
     },
+    subscriptionTier: {
+        type: String,
+        enum: ["free", "premium", "enterprise"],
+        default: "free",
+    },
+    subscriptionStatus: {
+        type: String,
+        enum: ["active", "expired", "cancelled"],
+        default: "active",
+    },
     premiumExpiryDate: {
         type: Date,
     },

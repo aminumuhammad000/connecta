@@ -51,6 +51,7 @@ app.use((0, cors_1.default)({
     credentials: true
 }));
 app.use(express_1.default.json());
+app.use('/uploads', express_1.default.static('uploads'));
 // Connect to Database
 (0, db_config_1.default)();
 // Routes
@@ -70,9 +71,9 @@ app.use("/api/gigs", gigs_routes_1.default);
 app.use("/api/notifications", notification_routes_1.default);
 const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
 app.use("/api/analytics", analytics_routes_1.default);
-const subscription_routes_1 = __importDefault(require("./routes/subscription.routes"));
-app.use("/api/subscriptions", subscription_routes_1.default);
-app.use("/api/analytics", insights_routes_1.default);
+const Subscription_routes_1 = __importDefault(require("./routes/Subscription.routes"));
+app.use("/api/subscriptions", Subscription_routes_1.default);
+app.use("/api/insights", insights_routes_1.default);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });

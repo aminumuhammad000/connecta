@@ -63,9 +63,15 @@ export default function ConnectaAIScreen({ navigation }: any) {
             const response = await agentService.sendMessageToAgent(text, user._id, user.userType);
 
             if (response.success && response.result.success) {
+                // Convert response data to string if it's an object
+                let responseText = response.result.data;
+                if (typeof responseText === 'object') {
+                    responseText = JSON.stringify(responseText, null, 2);
+                }
+
                 const aiMsg: Message = {
                     id: (Date.now() + 1).toString(),
-                    text: response.result.data,
+                    text: responseText,
                     sender: 'ai',
                     timestamp: new Date()
                 };

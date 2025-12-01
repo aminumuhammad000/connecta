@@ -9,6 +9,7 @@ import {
   deleteProposal,
   getProposalStats,
   getClientAcceptedProposals,
+  getProposalsByJobId,
   approveProposal,
   rejectProposal,
 } from '../controllers/Proposal.controller';
@@ -24,6 +25,9 @@ router.get('/client/accepted', authenticate, getClientAcceptedProposals);
 
 // Get proposals for a specific freelancer
 router.get('/freelancer/:freelancerId', getFreelancerProposals);
+
+// Get proposals for a specific job
+router.get('/job/:jobId', getProposalsByJobId);
 
 // Get proposal statistics for a freelancer
 router.get('/stats/:freelancerId', getProposalStats);

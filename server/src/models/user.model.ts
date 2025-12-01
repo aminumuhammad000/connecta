@@ -4,6 +4,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IUser extends Document {
   userType: "admin" | "freelancer" | "employer" | "client";
   isPremium?: boolean;
+  subscriptionTier?: "free" | "premium" | "enterprise";
+  subscriptionStatus?: "active" | "expired" | "cancelled";
   premiumExpiryDate?: Date;
   firstName: string;
   lastName: string;
@@ -26,6 +28,16 @@ const UserSchema: Schema<IUser> = new Schema(
     isPremium: {
       type: Boolean,
       default: false,
+    },
+    subscriptionTier: {
+      type: String,
+      enum: ["free", "premium", "enterprise"],
+      default: "free",
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: ["active", "expired", "cancelled"],
+      default: "active",
     },
     premiumExpiryDate: {
       type: Date,

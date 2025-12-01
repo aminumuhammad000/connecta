@@ -32,6 +32,14 @@ export const getFreelancerProposals = async (freelancerId: string): Promise<Prop
 };
 
 /**
+ * Get proposals for a specific job
+ */
+export const getProposalsByJobId = async (jobId: string): Promise<Proposal[]> => {
+    const response = await get<Proposal[]>(API_ENDPOINTS.PROPOSALS_BY_JOB(jobId));
+    return Array.isArray(response) ? response : (response as any)?.data || [];
+};
+
+/**
  * Get proposal statistics for freelancer
  */
 export const getProposalStats = async (freelancerId: string): Promise<ProposalStats> => {
@@ -83,6 +91,7 @@ export default {
     getAllProposals,
     getAcceptedProposals,
     getFreelancerProposals,
+    getProposalsByJobId,
     getProposalStats,
     getProposalById,
     createProposal,

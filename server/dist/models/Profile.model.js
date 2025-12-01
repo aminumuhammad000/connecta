@@ -66,6 +66,7 @@ const ProfileSchema = new mongoose_1.Schema({
     companyName: { type: String },
     website: { type: String },
     bio: { type: String },
+    avatar: { type: String },
     education: [EducationSchema],
     languages: [LanguageSchema],
     employment: [EmploymentSchema],

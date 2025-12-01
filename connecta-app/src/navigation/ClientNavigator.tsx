@@ -27,6 +27,8 @@ import ContactSupportScreen from '../screens/ContactSupportScreen';
 import ConnectaAIScreen from '../screens/ConnectaAIScreen';
 import ClientEditProfileScreen from '../screens/ClientEditProfileScreen';
 import NotificationDetailScreen from '../screens/NotificationDetailScreen';
+import ProposalsScreen from '../screens/ProposalsScreen';
+import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -88,6 +90,8 @@ export default function ClientNavigator() {
             <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
             <Stack.Screen name="ConnectaAI" component={ConnectaAIScreen} />
             <Stack.Screen name="ClientEditProfile" component={ClientEditProfileScreen} />
+            <Stack.Screen name="Proposals" component={ProposalsScreen} />
+            <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
         </Stack.Navigator>
     );
 }

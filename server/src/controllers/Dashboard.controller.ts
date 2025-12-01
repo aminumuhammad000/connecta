@@ -47,11 +47,9 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      stats: {
-        activeJobs: activeJobsCount,
-        totalCandidates,
-        unreadMessages: unreadMessagesCount,
-      },
+      activeProjects: activeJobsCount,
+      pendingPayments: 0, // TODO: Calculate from payment system
+      newMessages: unreadMessagesCount,
     });
   } catch (error) {
     console.error('Error fetching client dashboard:', error);

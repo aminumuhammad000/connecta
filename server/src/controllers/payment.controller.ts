@@ -5,6 +5,8 @@ import Wallet from '../models/Wallet.model';
 import Withdrawal from '../models/Withdrawal.model';
 import Project from '../models/Project.model';
 import Job from '../models/Job.model';
+import User from '../models/user.model';
+import flutterwaveService from '../services/flutterwave.service';
 import paystackService from '../services/paystack.service';
 
 // Platform fee percentage (e.g., 10%)
@@ -56,18 +58,24 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
 
     await payment.save();
 
-    // Initialize Paystack payment
-    const user = (req as any).user;
-    const paystackResponse = await paystackService.initializePayment(
+    // Initialize Flutterwave payment
+    // Fetch full user details to ensure we have email
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    console.log('Initializing Flutterwave payment for:', user.email, 'Amount:', amount, 'Ref:', payment._id.toString());
+
+    const flutterwaveResponse = await flutterwaveService.initializePayment(
       user.email,
       amount,
-      payment._id.toString(),
+      payment._id.toString(), // Use payment ID as tx_ref
       { jobId, userId, type: 'job_verification' }
     );
 
-    // Update payment with gateway reference
-    payment.gatewayReference = paystackResponse.data.reference;
-    payment.gatewayResponse = paystackResponse.data;
+    // Update payment with gateway reference (using tx_ref which is paymentId)
+    payment.gatewayReference = payment._id.toString();
     await payment.save();
 
     return res.status(200).json({
@@ -75,8 +83,8 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
       message: 'Job verification payment initialized',
       data: {
         paymentId: payment._id,
-        authorizationUrl: paystackResponse.data.authorization_url,
-        reference: paystackResponse.data.reference,
+        authorizationUrl: flutterwaveResponse.data.link,
+        reference: payment._id.toString(),
       },
     });
   } catch (error: any) {
@@ -153,9 +161,9 @@ export const initializePayment = async (req: Request, res: Response) => {
 
     await payment.save();
 
-    // Initialize Paystack payment
+    // Initialize Flutterwave payment
     const user = (req as any).user;
-    const paystackResponse = await paystackService.initializePayment(
+    const flutterwaveResponse = await flutterwaveService.initializePayment(
       user.email,
       amount,
       payment._id.toString(),
@@ -168,8 +176,7 @@ export const initializePayment = async (req: Request, res: Response) => {
     );
 
     // Update payment with gateway reference
-    payment.gatewayReference = paystackResponse.data.reference;
-    payment.gatewayResponse = paystackResponse.data;
+    payment.gatewayReference = payment._id.toString();
     await payment.save();
 
     return res.status(200).json({
@@ -177,8 +184,8 @@ export const initializePayment = async (req: Request, res: Response) => {
       message: 'Payment initialized successfully',
       data: {
         paymentId: payment._id,
-        authorizationUrl: paystackResponse.data.authorization_url,
-        reference: paystackResponse.data.reference,
+        authorizationUrl: flutterwaveResponse.data.link,
+        reference: payment._id.toString(),
       },
     });
   } catch (error: any) {
@@ -191,7 +198,7 @@ export const initializePayment = async (req: Request, res: Response) => {
 };
 
 /**
- * Verify payment after Paystack callback
+ * Verify payment after Flutterwave callback
  */
 export const verifyPayment = async (req: Request, res: Response) => {
   try {
@@ -201,16 +208,21 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Reference is required' });
     }
 
-    // Find payment by reference
-    const payment = await Payment.findOne({ gatewayReference: reference });
+    // Find payment by reference (which is the payment ID for Flutterwave)
+    const payment = await Payment.findById(reference);
     if (!payment) {
       return res.status(404).json({ success: false, message: 'Payment not found' });
     }
 
-    // Verify with Paystack
-    const verification = await paystackService.verifyPayment(reference);
+    // Verify with Flutterwave using the transaction ID from query params
+    const transactionId = req.query.transaction_id as string;
+    if (!transactionId) {
+      return res.status(400).json({ success: false, message: 'Transaction ID is required' });
+    }
 
-    if (verification.data.status === 'success') {
+    const verification = await flutterwaveService.verifyPayment(transactionId);
+
+    if (verification.data.status === 'successful' && verification.data.tx_ref === reference) {
       // Update payment status
       payment.status = 'completed';
       payment.paidAt = new Date();
@@ -219,10 +231,12 @@ export const verifyPayment = async (req: Request, res: Response) => {
 
       // Handle job verification payment differently
       if (payment.paymentType === 'job_verification' && payment.jobId) {
-        // Update job as payment verified
+        // Update job as payment verified and activate it
         await Job.findByIdAndUpdate(payment.jobId, {
           paymentVerified: true,
+          paymentStatus: 'escrow',
           paymentId: payment._id,
+          status: 'active', // Activate the job
         });
 
         return res.status(200).json({
@@ -509,15 +523,15 @@ export const getWalletBalance = async (req: Request, res: Response) => {
     let pendingAmount = 0;
     for (const project of ongoingProjects) {
       if (!project || !project._id) continue;
-      
+
       const hasPayment = payments.some((p) => {
         if (!p || !p.projectId) return false;
-        const projectIdStr = typeof p.projectId === 'object' && p.projectId._id 
-          ? p.projectId._id.toString() 
+        const projectIdStr = typeof p.projectId === 'object' && p.projectId._id
+          ? p.projectId._id.toString()
           : p.projectId.toString();
         return projectIdStr === project._id.toString();
       });
-      
+
       if (!hasPayment && project.budget && project.budget.amount) {
         pendingAmount += project.budget.amount;
       }
@@ -529,7 +543,7 @@ export const getWalletBalance = async (req: Request, res: Response) => {
       status: 'completed',
       escrowStatus: 'held',
     }).catch(() => []);
-    
+
     let actualEscrowBalance = 0;
     if (Array.isArray(escrowPayments)) {
       for (const payment of escrowPayments) {

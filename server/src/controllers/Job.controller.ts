@@ -6,8 +6,8 @@ import Job from "../models/Job.model";
 // ===================
 export const getClientJobs = async (req: Request, res: Response) => {
   try {
-    // Use (req.user as any) to avoid TS errors
-    const clientId = (req.user as any)?._id || (req.user as any)?.id;
+    // Use (req as any).user to avoid TS errors
+    const clientId = (req as any).user?._id || (req as any).user?.id;
     if (!clientId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
@@ -23,14 +23,14 @@ export const getClientJobs = async (req: Request, res: Response) => {
 // ===================
 export const getAllJobs = async (req: Request, res: Response) => {
   try {
-    const { 
-      category, 
-      location, 
-      jobType, 
-      locationType, 
+    const {
+      category,
+      location,
+      jobType,
+      locationType,
       skills,
       limit = 10,
-      page = 1 
+      page = 1
     } = req.query;
 
     const filter: any = { status: "active" };
@@ -92,7 +92,7 @@ export const createJob = async (req: Request, res: Response) => {
   try {
     const jobData = req.body;
     // Set clientId from authenticated user (use any to avoid TS error)
-    const clientId = (req.user as any)?._id || (req.user as any)?.id;
+    const clientId = (req as any).user?._id || (req as any).user?.id;
     if (!clientId) {
       return res.status(401).json({ success: false, message: "Unauthorized: No clientId" });
     }

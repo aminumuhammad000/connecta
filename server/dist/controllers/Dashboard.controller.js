@@ -42,11 +42,9 @@ const getClientDashboard = async (req, res) => {
             isRead: false,
         });
         res.status(200).json({
-            stats: {
-                activeJobs: activeJobsCount,
-                totalCandidates,
-                unreadMessages: unreadMessagesCount,
-            },
+            activeProjects: activeJobsCount,
+            pendingPayments: 0, // TODO: Calculate from payment system
+            newMessages: unreadMessagesCount,
         });
     }
     catch (error) {

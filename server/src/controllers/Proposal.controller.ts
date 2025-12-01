@@ -37,6 +37,31 @@ export const getFreelancerProposals = async (req: Request, res: Response) => {
   }
 };
 
+// Get all proposals for a specific job
+export const getProposalsByJobId = async (req: Request, res: Response) => {
+  try {
+    const { jobId } = req.params;
+
+    const proposals = await Proposal.find({ jobId })
+      .populate('freelancerId', 'firstName lastName email profileImage')
+      .populate('referredBy', 'firstName lastName')
+      .populate('clientId', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: proposals.length,
+      data: proposals,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching proposals for job',
+      error: error.message,
+    });
+  }
+};
+
 // Get all proposals (admin)
 export const getAllProposals = async (req: Request, res: Response) => {
   try {
@@ -118,8 +143,8 @@ export const createProposal = async (req: Request, res: Response) => {
   try {
     const proposalData = req.body;
     // Set freelancerId and clientId from authenticated user
-    if (req.user) {
-      proposalData.freelancerId = (req.user as any).id;
+    if ((req as any).user) {
+      proposalData.freelancerId = (req as any).user.id;
       proposalData.clientId = req.body.clientId || undefined; // Optionally set clientId if needed
     }
     // Set title if not provided (use job title or fallback)
@@ -297,7 +322,7 @@ export const getProposalStats = async (req: Request, res: Response) => {
 // Get accepted proposals for a client
 export const getClientAcceptedProposals = async (req: Request, res: Response) => {
   try {
-    const clientId = (req.user as any)?.id;
+    const clientId = (req as any).user?.id;
 
     if (!clientId) {
       return res.status(401).json({
@@ -343,7 +368,7 @@ export const getClientAcceptedProposals = async (req: Request, res: Response) =>
 export const approveProposal = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const clientId = (req.user as any)?.id;
+    const clientId = (req as any).user?.id;
 
     const proposal = await Proposal.findById(id)
       .populate('jobId')
@@ -358,8 +383,8 @@ export const approveProposal = async (req: Request, res: Response) => {
     }
 
     // Get the actual clientId (handle both populated and unpopulated)
-    const proposalClientId = (proposal.clientId as any)?._id 
-      ? (proposal.clientId as any)._id.toString() 
+    const proposalClientId = (proposal.clientId as any)?._id
+      ? (proposal.clientId as any)._id.toString()
       : proposal.clientId?.toString();
 
     // Verify the client owns this proposal
@@ -378,16 +403,16 @@ export const approveProposal = async (req: Request, res: Response) => {
     const Project = require('../models/Project.model').default;
     const freelancer = proposal.freelancerId as any;
     const client = proposal.clientId as any;
-    
+
     // Handle case where client is not populated (get the actual ID)
     const actualClientId = client?._id || proposal.clientId;
     const actualFreelancerId = freelancer?._id || proposal.freelancerId;
-    
+
     // Get client name (fetch if not populated)
-    let clientName = client?.firstName && client?.lastName 
-      ? `${client.firstName} ${client.lastName}` 
+    let clientName = client?.firstName && client?.lastName
+      ? `${client.firstName} ${client.lastName}`
       : 'Client';
-    
+
     if (!client?.firstName) {
       // Fetch client info if not populated
       const User = require('../models/user.model').default;
@@ -467,7 +492,7 @@ export const approveProposal = async (req: Request, res: Response) => {
 export const rejectProposal = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const clientId = (req.user as any)?.id;
+    const clientId = (req as any).user?.id;
 
     const proposal = await Proposal.findById(id);
 

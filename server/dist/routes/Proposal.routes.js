@@ -10,6 +10,8 @@ router.get('/', Proposal_controller_1.getAllProposals);
 router.get('/client/accepted', auth_middleware_1.authenticate, Proposal_controller_1.getClientAcceptedProposals);
 // Get proposals for a specific freelancer
 router.get('/freelancer/:freelancerId', Proposal_controller_1.getFreelancerProposals);
+// Get proposals for a specific job
+router.get('/job/:jobId', Proposal_controller_1.getProposalsByJobId);
 // Get proposal statistics for a freelancer
 router.get('/stats/:freelancerId', Proposal_controller_1.getProposalStats);
 // Approve a proposal (protected)

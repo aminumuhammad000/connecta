@@ -19,6 +19,18 @@ export const initializePayment = async (paymentData: {
 };
 
 /**
+ * Initialize job verification payment
+ */
+export const initializeJobVerification = async (paymentData: {
+    jobId: string;
+    amount: number;
+    description: string;
+}): Promise<{ reference: string; authorizationUrl: string }> => {
+    const response = await post(API_ENDPOINTS.INITIALIZE_JOB_VERIFICATION, paymentData);
+    return response.data!;
+};
+
+/**
  * Verify a payment
  */
 export const verifyPayment = async (reference: string): Promise<Payment> => {

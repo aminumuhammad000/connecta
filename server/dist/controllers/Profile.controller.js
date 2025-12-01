@@ -58,17 +58,77 @@ exports.getAllProfiles = getAllProfiles;
  * @desc Get profile for authenticated user
  * @route GET /api/profiles/me
  */
+const Job_model_1 = __importDefault(require("../models/Job.model"));
 const getMyProfile = async (req, res) => {
     try {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const profile = await Profile_model_1.default.findOne({ user: userId }).populate('user', 'firstName lastName email profileImage userType');
-        if (!profile)
-            return res.status(404).json({ message: 'Profile not found' });
-        res.status(200).json(profile);
+        let profile = await Profile_model_1.default.findOne({ user: userId }).populate('user', 'firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate');
+        // Auto-create profile if it doesn't exist
+        if (!profile) {
+            profile = await Profile_model_1.default.create({
+                user: userId,
+                bio: '',
+                skills: [],
+                phoneNumber: '',
+                location: '',
+            });
+            // Populate user data
+            profile = await Profile_model_1.default.findById(profile._id).populate('user', 'firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate');
+        }
+        // Fetch jobs posted by this client
+        const jobs = await Job_model_1.default.find({ clientId: userId }).sort({ createdAt: -1 });
+        const jobsPosted = jobs.length;
+        // Convert to plain object and add extra data
+        const profileData = profile.toObject();
+        // Extract user data from populated field
+        const userData = (profileData.user || {});
+        // Build response with profile data at top level
+        // Don't spread profileData.user to avoid overwriting profile fields
+        const responseData = {
+            _id: profileData._id,
+            userId: profileData.user,
+            phoneNumber: profileData.phoneNumber,
+            location: profileData.location,
+            skills: profileData.skills,
+            companyName: profileData.companyName,
+            website: profileData.website,
+            bio: profileData.bio,
+            avatar: profileData.avatar || userData.profileImage,
+            profileImage: userData.profileImage || profileData.avatar,
+            education: profileData.education,
+            languages: profileData.languages,
+            employment: profileData.employment,
+            resume: profileData.resume,
+            createdAt: profileData.createdAt,
+            updatedAt: profileData.updatedAt,
+            // User fields for convenience
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email,
+            userType: userData.userType,
+            isPremium: userData.isPremium,
+            subscriptionTier: userData.subscriptionTier,
+            subscriptionStatus: userData.subscriptionStatus,
+            premiumExpiryDate: userData.premiumExpiryDate,
+            // Additional data
+            jobs,
+            jobsPosted,
+            totalSpend: 0,
+            avgRate: 0,
+        };
+        console.log('📤 Profile fields:', {
+            phoneNumber: responseData.phoneNumber,
+            location: responseData.location,
+            companyName: responseData.companyName,
+            bio: responseData.bio,
+            avatar: responseData.avatar
+        });
+        res.status(200).json(responseData);
     }
     catch (error) {
+        console.error('Error in getMyProfile:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -134,7 +194,8 @@ const updateMyProfile = async (req, res) => {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const { phoneNumber, location, companyName, website, bio, skills, education, languages, employment, resume } = req.body;
+        const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume } = req.body;
+        console.log('📝 Update profile request:', { phoneNumber, location, companyName, website, bio, avatar });
         // Prepare update data
         const updateData = {};
         if (phoneNumber !== undefined)
@@ -147,6 +208,8 @@ const updateMyProfile = async (req, res) => {
             updateData.website = website;
         if (bio !== undefined)
             updateData.bio = bio;
+        if (avatar !== undefined)
+            updateData.avatar = avatar;
         if (skills !== undefined)
             updateData.skills = skills;
         if (education !== undefined)
@@ -157,6 +220,7 @@ const updateMyProfile = async (req, res) => {
             updateData.employment = employment;
         if (resume !== undefined)
             updateData.resume = resume;
+        console.log('💾 Data to save:', updateData);
         let profile = await Profile_model_1.default.findOne({ user: userId });
         if (!profile) {
             // Create profile if it doesn't exist
@@ -164,10 +228,12 @@ const updateMyProfile = async (req, res) => {
                 user: userId,
                 ...updateData
             });
+            console.log('✅ Profile created:', profile);
         }
         else {
             // Update existing profile
             profile = await Profile_model_1.default.findOneAndUpdate({ user: userId }, updateData, { new: true, runValidators: true }).populate('user', 'firstName lastName email profileImage userType');
+            console.log('✅ Profile updated:', profile);
         }
         res.status(200).json({
             success: true,

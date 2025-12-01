@@ -1,42 +1,59 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, FlatList } from 'react-native';
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
+import * as messageService from '../services/messageService';
+import { useAuth } from '../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ChatMessage {
-  id: string;
-  from: 'me' | 'them';
+  _id: string;
+  senderId: any;
+  receiverId: any;
   text: string;
-  time: string;
+  createdAt: string;
+  isRead: boolean;
 }
 
 const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const { userName, userAvatar } = route?.params || {};
+  const { conversationId, userName, userAvatar } = route?.params || {};
 
-  const data = useMemo<ChatMessage[]>(() => ([
-    { id: 'd1', from: 'system' as any, text: 'Today', time: '' },
-    { id: 'm1', from: 'them', text: "Hi there! I saw your proposal and I'm very interested in your work. Your portfolio is impressive.", time: '10:00 AM' },
-    { id: 'm2', from: 'me', text: "Thank you, Cameron! I'm glad you liked it. I'm excited about the possibility of working together.", time: '10:01 AM' },
-    { id: 'm3', from: 'them', text: "Great! Let's discuss the project details. When would be a good time for a quick call?", time: '10:02 AM' },
-    { id: 'm4', from: 'me', text: "I'm available this afternoon after 2 PM. Does that work for you?", time: '10:03 AM' },
-  ]), []);
+  useFocusEffect(
+    useCallback(() => {
+      if (conversationId) {
+        loadMessages();
+      }
+    }, [conversationId])
+  );
+
+  const loadMessages = async () => {
+    try {
+      setIsLoading(true);
+      const data = await messageService.getConversationMessages(conversationId);
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const renderItem = ({ item }: { item: ChatMessage }) => {
-    if ((item as any).from === 'system') {
-      return (
-        <View style={{ alignItems: 'center', marginVertical: 8 }}>
-          <Text style={{ fontSize: 12, color: c.subtext }}>Today</Text>
-        </View>
-      );
-    }
-    const mine = item.from === 'me';
+    const mine = item.senderId?._id === user?._id || item.senderId === user?._id;
+    const time = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     return (
       <View style={[styles.row, mine ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }]}>
         {!mine && (
@@ -44,26 +61,59 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
             <Avatar uri={userAvatar || undefined} name={userName} size={32} />
           </View>
         )}
-        <View style={[styles.bubbleWrap, { maxWidth: '75%' }, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }] }>
-          <View style={[styles.bubble, mine ? { backgroundColor: c.primary, borderTopRightRadius: 8 } : { backgroundColor: c.card, borderTopLeftRadius: 8 } ]}>
+        <View style={[styles.bubbleWrap, { maxWidth: '75%' }, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }]}>
+          <View style={[styles.bubble, mine ? { backgroundColor: c.primary, borderTopRightRadius: 8 } : { backgroundColor: c.card, borderTopLeftRadius: 8 }]}>
             <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.text}</Text>
           </View>
-          <Text style={[styles.time, { color: c.subtext }]}>{item.time}</Text>
+          <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
         </View>
       </View>
     );
   };
 
-  const onSend = () => {
+  const onSend = async () => {
+    if (!input.trim() || isSending) return;
+
+    const messageText = input.trim();
     setInput('');
-    // Normally we would append to data via state; left as UI stub
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    setIsSending(true);
+
+    try {
+      // Get receiver ID from route params or determine from conversation
+      const receiverId = route.params?.receiverId || route.params?.otherUserId;
+
+      const newMessage = await messageService.sendMessage({
+        conversationId,
+        receiverId,
+        content: messageText,
+      });
+
+      // Add message to list
+      setMessages(prev => [...prev, newMessage as any]);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Restore input on error
+      setInput(messageText);
+    } finally {
+      setIsSending(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: c.border }]}> 
+      <View style={[styles.header, { borderBottomColor: c.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
           <MaterialIcons name="arrow-back-ios-new" size={20} color={c.text} />
         </TouchableOpacity>
@@ -79,37 +129,57 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Messages */}
-      <FlatList
-        ref={listRef}
-        contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
-        data={data}
-        keyExtractor={(it) => it.id}
-        renderItem={renderItem}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-      />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        {/* Messages */}
+        <FlatList
+          ref={listRef}
+          contentContainerStyle={{ padding: 16, paddingBottom: 96 }}
+          data={messages}
+          keyExtractor={(it) => it._id}
+          renderItem={renderItem}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+          ListEmptyComponent={
+            <View style={{ alignItems: 'center', padding: 40 }}>
+              <Text style={{ color: c.subtext }}>No messages yet. Start the conversation!</Text>
+            </View>
+          }
+        />
 
-      {/* Composer */}
-      <View style={[styles.composerWrap, { borderTopColor: c.border, backgroundColor: c.background, paddingBottom: insets.bottom }]}> 
-        <View style={[styles.composer, { backgroundColor: c.card }]}> 
-          <TouchableOpacity style={styles.addBtn}>
-            <MaterialIcons name="add-circle" size={22} color={c.subtext} />
-          </TouchableOpacity>
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type a message..."
-            placeholderTextColor={c.subtext}
-            style={[styles.input, { color: c.text }]}
-          />
-          <TouchableOpacity style={styles.emojiBtn}>
-            <MaterialIcons name="sentiment-satisfied" size={22} color={c.subtext} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onSend} style={[styles.sendBtn, { backgroundColor: c.primary }]}>
-            <MaterialIcons name="send" size={18} color="#fff" />
-          </TouchableOpacity>
+        {/* Composer */}
+        <View style={[styles.composerWrap, { borderTopColor: c.border, backgroundColor: c.background, paddingBottom: insets.bottom }]}>
+          <View style={[styles.composer, { backgroundColor: c.card }]}>
+            <TouchableOpacity style={styles.addBtn}>
+              <MaterialIcons name="add-circle" size={22} color={c.subtext} />
+            </TouchableOpacity>
+            <TextInput
+              value={input}
+              onChangeText={setInput}
+              placeholder="Type a message..."
+              placeholderTextColor={c.subtext}
+              style={[styles.input, { color: c.text }]}
+              editable={!isSending}
+            />
+            <TouchableOpacity style={styles.emojiBtn}>
+              <MaterialIcons name="sentiment-satisfied" size={22} color={c.subtext} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onSend}
+              style={[styles.sendBtn, { backgroundColor: c.primary, opacity: (!input.trim() || isSending) ? 0.5 : 1 }]}
+              disabled={!input.trim() || isSending}
+            >
+              {isSending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <MaterialIcons name="send" size={18} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

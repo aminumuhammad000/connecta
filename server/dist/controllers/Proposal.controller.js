@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rejectProposal = exports.approveProposal = exports.getClientAcceptedProposals = exports.getProposalStats = exports.deleteProposal = exports.updateProposal = exports.updateProposalStatus = exports.createProposal = exports.getProposalById = exports.getAllProposals = exports.getFreelancerProposals = void 0;
+exports.rejectProposal = exports.approveProposal = exports.getClientAcceptedProposals = exports.getProposalStats = exports.deleteProposal = exports.updateProposal = exports.updateProposalStatus = exports.createProposal = exports.getProposalById = exports.getAllProposals = exports.getProposalsByJobId = exports.getFreelancerProposals = void 0;
 const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
 // Get all proposals for a freelancer
 const getFreelancerProposals = async (req, res) => {
@@ -37,6 +37,30 @@ const getFreelancerProposals = async (req, res) => {
     }
 };
 exports.getFreelancerProposals = getFreelancerProposals;
+// Get all proposals for a specific job
+const getProposalsByJobId = async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const proposals = await Proposal_model_1.default.find({ jobId })
+            .populate('freelancerId', 'firstName lastName email profileImage')
+            .populate('referredBy', 'firstName lastName')
+            .populate('clientId', 'firstName lastName')
+            .sort({ createdAt: -1 });
+        res.status(200).json({
+            success: true,
+            count: proposals.length,
+            data: proposals,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching proposals for job',
+            error: error.message,
+        });
+    }
+};
+exports.getProposalsByJobId = getProposalsByJobId;
 // Get all proposals (admin)
 const getAllProposals = async (req, res) => {
     try {

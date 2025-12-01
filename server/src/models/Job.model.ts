@@ -30,6 +30,8 @@ export interface IJob extends Document {
   deliverables: string[];
   postedTime: string;
   paymentVerified: boolean;
+  paymentStatus: "pending" | "escrow" | "released" | "refunded";
+  paymentReference?: string;
   paymentId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -79,6 +81,12 @@ const JobSchema: Schema<IJob> = new Schema(
     deliverables: [{ type: String, default: "" }],
     postedTime: { type: String, default: "" },
     paymentVerified: { type: Boolean, default: false },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "escrow", "released", "refunded"],
+      default: "pending",
+    },
+    paymentReference: { type: String },
     paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
   },
   { timestamps: true }

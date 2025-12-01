@@ -4,12 +4,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
+const Job_model_1 = __importDefault(require("../models/Job.model"));
 // ===================
 // Get Jobs for Current Client
 // ===================
 const getClientJobs = async (req, res) => {
     try {
-        // Use (req.user as any) to avoid TS errors
+        // Use (req as any).user to avoid TS errors
         const clientId = req.user?._id || req.user?.id;
         if (!clientId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -22,7 +23,6 @@ const getClientJobs = async (req, res) => {
     }
 };
 exports.getClientJobs = getClientJobs;
-const Job_model_1 = __importDefault(require("../models/Job.model"));
 // ===================
 // Get All Jobs
 // ===================

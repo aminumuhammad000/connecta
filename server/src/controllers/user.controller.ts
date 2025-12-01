@@ -409,7 +409,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 export const banUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({
@@ -442,7 +442,7 @@ export const banUser = async (req: Request, res: Response) => {
 export const unbanUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({
@@ -475,7 +475,7 @@ export const unbanUser = async (req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -511,7 +511,7 @@ export const getMe = async (req: Request, res: Response) => {
 export const updateMe = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -519,12 +519,13 @@ export const updateMe = async (req: Request, res: Response) => {
       });
     }
 
-    const { firstName, lastName } = req.body;
-    
+    const { firstName, lastName, profileImage } = req.body;
+
     // Prepare update data
     const updateData: any = {};
     if (firstName) updateData.firstName = firstName;
     if (lastName) updateData.lastName = lastName;
+    if (profileImage !== undefined) updateData.profileImage = profileImage;
 
     const user = await User.findByIdAndUpdate(
       userId,
