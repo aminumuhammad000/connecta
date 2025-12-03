@@ -12,7 +12,8 @@ const deriveExpoHostBaseUrl = () => {
     if (!hostUri) return undefined;
     const host = hostUri.replace(/^https?:\/\//, '').split(':')[0];
     if (!host) return undefined;
-    return `http://${host}:5000`;
+    // return `http://${host}:5000`;
+    return `http://13.51.86.167`;
 };
 
 const explicitBaseUrl =
