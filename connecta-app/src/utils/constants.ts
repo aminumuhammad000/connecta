@@ -12,7 +12,8 @@ const deriveExpoHostBaseUrl = () => {
     if (!hostUri) return undefined;
     const host = hostUri.replace(/^https?:\/\//, '').split(':')[0];
     if (!host) return undefined;
-    return `http://${host}:5000`;
+    // return `http://${host}:5000`;
+    return `https://api.myconnecta.ng`;
 };
 
 const explicitBaseUrl =

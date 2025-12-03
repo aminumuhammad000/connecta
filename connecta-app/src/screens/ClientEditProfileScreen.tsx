@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useThemeColors } from '../theme/theme';
 import { useInAppAlert } from '../components/InAppAlert';
+import { useAuth } from '../context/AuthContext';
 import * as profileService from '../services/profileService';
 import * as userService from '../services/userService';
 import * as uploadService from '../services/uploadService';
@@ -12,6 +13,7 @@ import * as uploadService from '../services/uploadService';
 export default function ClientEditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
     const { showAlert } = useInAppAlert();
+    const { user: authUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -34,14 +36,35 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         try {
             setLoading(true);
 
-            const [user, profile] = await Promise.all([
-                userService.getMe(),
-                profileService.getMyProfile()
-            ]);
+            // Try to get user data from API, but use AuthContext as fallback
+            let user = null;
+            try {
+                user = await userService.getMe();
+            } catch (userError: any) {
+                console.warn('⚠️ User API not found, using auth context data:', userError?.message);
+                user = authUser; // Use the authenticated user from context
+            }
+
+            const profile = await profileService.getMyProfile();
+
+            // Prioritize data sources: API user > Auth context > Profile
+            const fullName = user 
+                ? `${user.firstName} ${user.lastName}`.trim()
+                : `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim();
+            
+            const email = user?.email || profile?.email || '';
+
+            // Log the loaded data for debugging
+            console.log('📊 Loaded profile data:', { 
+                user: user ? { firstName: user.firstName, lastName: user.lastName, email: user.email } : 'null',
+                profile: profile ? { firstName: profile.firstName, lastName: profile.lastName, email: profile.email } : 'null',
+                fullName,
+                email
+            });
 
             setFormData({
-                fullName: `${user.firstName} ${user.lastName}`,
-                email: user.email,
+                fullName: fullName || '',
+                email: email || '',
                 phone: profile?.phoneNumber || '',
                 location: profile?.location || '',
                 companyName: profile?.companyName || '',
@@ -82,11 +105,15 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         try {
             setSaving(true);
 
-            if (!formData.fullName.trim() || !formData.email.trim()) {
+            // Validate required fields
+            const fullNameTrimmed = formData.fullName.trim();
+            const emailTrimmed = formData.email.trim();
+
+            if (!fullNameTrimmed || !emailTrimmed) {
                 showAlert({
-                    title: 'Validation Error',
-                    message: 'Full name and email are required',
-                    type: 'error',
+                    title: 'Required Fields',
+                    message: 'Please enter your full name and email to continue',
+                    type: 'warning',
                 });
                 setSaving(false);
                 return;
