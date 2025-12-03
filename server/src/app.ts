@@ -42,14 +42,12 @@ const io = new Server(server, {
 setIO(io);
 
 // Middleware
-app.use(cors({
-  origin: [
-    "http://102.68.84.56",
-    "http://localhost:5173",
-    "http://localhost:8081"
-  ],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "*",
+  })
+);
+
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
