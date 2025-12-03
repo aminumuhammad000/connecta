@@ -23,6 +23,14 @@ export interface IEmployment {
   description?: string;
 }
 
+export interface IPortfolio {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  projectUrl?: string;
+  tags?: string[];
+}
+
 export interface IProfile extends Document {
   user: IUser["_id"]; // Reference to User model
   phoneNumber?: string;
@@ -38,6 +46,7 @@ export interface IProfile extends Document {
 
   education?: IEducation[];
   languages?: ILanguage[];
+  portfolio?: IPortfolio[];
   employment?: IEmployment[];
 
   createdAt: Date;
@@ -78,6 +87,17 @@ const EmploymentSchema = new Schema<IEmployment>(
   { _id: false }
 );
 
+const PortfolioSchema = new Schema<IPortfolio>(
+  {
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    imageUrl: { type: String },
+    projectUrl: { type: String },
+    tags: [{ type: String }],
+  },
+  { _id: true }
+);
+
 const ProfileSchema = new Schema<IProfile>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -95,6 +115,7 @@ const ProfileSchema = new Schema<IProfile>(
     education: [EducationSchema],
     languages: [LanguageSchema],
     employment: [EmploymentSchema],
+    portfolio: [PortfolioSchema],
   },
   { timestamps: true }
 );

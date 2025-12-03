@@ -21,6 +21,7 @@ import ConnectaAIScreen from '../screens/ConnectaAIScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -80,6 +81,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="HelpSupport" component={require('../screens/HelpSupportScreen').default} />
             <Stack.Screen name="ContactSupport" component={require('../screens/ContactSupportScreen').default} />
             <Stack.Screen name="ProposalDetail" component={require('../screens/ProposalDetailScreen').default} />
+            <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
         </Stack.Navigator>
     );
 }

@@ -53,9 +53,6 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// Connect to Database
-connectDB();
-
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/profiles", profileRoutes);
@@ -164,8 +161,20 @@ io.on("connection", (socket) => {
 });
 
 // Start Server
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🔌 Socket.io ready for real-time messaging`);
-});
+const startServer = async () => {
+  try {
+    // Connect to Database first
+    await connectDB();
 
+    // Then start the server
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`🔌 Socket.io ready for real-time messaging`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

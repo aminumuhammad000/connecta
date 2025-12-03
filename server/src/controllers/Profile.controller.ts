@@ -114,6 +114,7 @@ export const getMyProfile = async (
       education: profileData.education,
       languages: profileData.languages,
       employment: profileData.employment,
+      portfolio: profileData.portfolio,
       resume: profileData.resume,
       createdAt: profileData.createdAt,
       updatedAt: profileData.updatedAt,
@@ -220,9 +221,9 @@ export const updateMyProfile = async (
     const userId = req.user?._id || req.user?.id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume } = req.body;
+    const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume, portfolio } = req.body;
 
-    console.log('📝 Update profile request:', { phoneNumber, location, companyName, website, bio, avatar });
+    console.log('📝 Update profile request:', { phoneNumber, location, companyName, website, bio, avatar, portfolio });
 
     // Prepare update data
     const updateData: any = {};
@@ -237,6 +238,7 @@ export const updateMyProfile = async (
     if (languages !== undefined) updateData.languages = languages;
     if (employment !== undefined) updateData.employment = employment;
     if (resume !== undefined) updateData.resume = resume;
+    if (portfolio !== undefined) updateData.portfolio = portfolio;
 
     console.log('💾 Data to save:', updateData);
 

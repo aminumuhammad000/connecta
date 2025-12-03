@@ -106,8 +106,10 @@ const PostJobScreen: React.FC = () => {
   };
 
   const nextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(prev => prev + 1);
+    if (validateStep()) {
+      if (currentStep < 3) {
+        setCurrentStep(prev => prev + 1);
+      }
     }
   };
 

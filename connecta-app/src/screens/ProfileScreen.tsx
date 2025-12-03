@@ -5,6 +5,7 @@ import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import profileService from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
 
@@ -19,6 +20,12 @@ export default function ProfileScreen({ navigation }: any) {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadProfile();
+    }, [])
+  );
 
   const loadProfile = async () => {
     try {
@@ -102,12 +109,32 @@ export default function ProfileScreen({ navigation }: any) {
         )}
 
         {/* Profile Header */}
-        <View style={styles.sectionPad}>
+        <View style={[styles.sectionPad, profile?.isPremium && { backgroundColor: c.isDark ? '#3D2800' : '#FFFBEB', paddingBottom: 24, paddingTop: 20 }]}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
-              <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
+              <View style={[styles.avatarContainer, profile?.isPremium && styles.premiumBorder]}>
+                <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
+                {profile?.isPremium && (
+                  <View style={styles.premiumIconBadge}>
+                    <MaterialIcons name="workspace-premium" size={14} color="#FFF" />
+                  </View>
+                )}
+              </View>
               <View>
-                <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                  {profile?.isPremium && (
+                    <MaterialIcons name="verified" size={20} color="#F59E0B" style={{ marginLeft: 4 }} />
+                  )}
+                </View>
+
+                {profile?.isPremium && (
+                  <View style={styles.premiumBadge}>
+                    <MaterialIcons name="star" size={12} color="#FFF" />
+                    <Text style={styles.premiumText}>PREMIUM MEMBER</Text>
+                  </View>
+                )}
+
                 <Text style={[styles.role, { color: c.subtext }]}>{profile?.title || 'Freelancer'}</Text>
                 <View style={styles.verifiedRow}>
                   <MaterialIcons name="location-on" size={14} color={c.subtext} />
@@ -130,9 +157,16 @@ export default function ProfileScreen({ navigation }: any) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
-              onPress={() => { }}
+              onPress={() => navigation.navigate('ManageSubscription')}
             >
-              <Text style={[styles.btnText, { color: c.text }]}>Share</Text>
+              <MaterialIcons
+                name={profile?.isPremium ? "settings" : "workspace-premium"}
+                size={16}
+                color={c.primary}
+              />
+              <Text style={[styles.btnText, { color: c.text, marginLeft: 4 }]}>
+                {profile?.isPremium ? 'Manage Premium' : 'Upgrade'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -211,12 +245,34 @@ export default function ProfileScreen({ navigation }: any) {
                 <PortfolioCard
                   key={index}
                   title={item.title}
-                  category={item.category}
-                  image={item.image}
+                  category={item.description}
+                  image={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
                 />
               ))
             ) : (
-              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No portfolio items yet</Text>
+              <View style={{ alignItems: 'center', padding: 40 }}>
+                <MaterialIcons name="work-outline" size={48} color={c.subtext} style={{ marginBottom: 12 }} />
+                <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 20, fontSize: 16 }}>
+                  No portfolio items yet
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: c.primary,
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                  onPress={() => navigation.navigate('EditProfile')}
+                >
+                  <MaterialIcons name="add" size={20} color="white" />
+                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                    Create Portfolio
+                  </Text>
+                </TouchableOpacity>
+              </View>
             )
           ) : (
             profile?.reviews?.length > 0 ? (
@@ -318,4 +374,42 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '700' },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   cardDesc: { fontSize: 13, marginTop: 6, lineHeight: 18 },
+  avatarContainer: {
+    position: 'relative',
+  },
+  premiumBorder: {
+    borderWidth: 3,
+    borderColor: '#F59E0B',
+    borderRadius: 999,
+    padding: 2,
+  },
+  premiumIconBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#F59E0B',
+    borderRadius: 999,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  premiumText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+    marginLeft: 2,
+  },
 });

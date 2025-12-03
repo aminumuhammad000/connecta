@@ -56,6 +56,13 @@ const EmploymentSchema = new mongoose_1.Schema({
     endDate: { type: Date },
     description: { type: String },
 }, { _id: false });
+const PortfolioSchema = new mongoose_1.Schema({
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    imageUrl: { type: String },
+    projectUrl: { type: String },
+    tags: [{ type: String }],
+}, { _id: true });
 const ProfileSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
     phoneNumber: { type: String },
@@ -70,6 +77,7 @@ const ProfileSchema = new mongoose_1.Schema({
     education: [EducationSchema],
     languages: [LanguageSchema],
     employment: [EmploymentSchema],
+    portfolio: [PortfolioSchema],
 }, { timestamps: true });
 const Profile = mongoose_1.default.model("Profile", ProfileSchema);
 exports.default = Profile;

@@ -81,7 +81,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const loadDashboardData = async () => {
     try {
       const [statsData, jobsData] = await Promise.all([
-        dashboardService.getClientStats().catch(() => null), // Assuming this endpoint returns generic stats for now
+        dashboardService.getFreelancerStats().catch(() => null),
         jobService.getRecommendedJobs().catch(() => []),
       ]);
       setStats(statsData);
@@ -229,6 +229,13 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               >
                 <MaterialIcons name="person" size={24} color={c.primary} />
                 <Text style={[styles.quickActionText, { color: c.text }]}>My Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => navigation.navigate('ManageSubscription')}
+              >
+                <MaterialIcons name="workspace-premium" size={24} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>Manage Premium</Text>
               </TouchableOpacity>
             </View>
           </View>

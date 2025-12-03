@@ -24,10 +24,18 @@ export const getMySubscription = async (): Promise<SubscriptionData> => {
 };
 
 /**
- * Upgrade subscription
+ * Initialize upgrade payment
  */
-export const upgradeSubscription = async (tier: 'premium' | 'enterprise', durationMonths: number = 1): Promise<SubscriptionData> => {
-    const response = await post<SubscriptionData>('/api/subscriptions/upgrade', { tier, durationMonths });
+export const initializeUpgradePayment = async (tier: 'premium' | 'enterprise', durationMonths: number = 1): Promise<{ reference: string; authorizationUrl: string }> => {
+    const response = await post<{ reference: string; authorizationUrl: string }>('/api/subscriptions/initialize-upgrade', { tier, durationMonths });
+    return (response as any)?.data || response;
+};
+
+/**
+ * Verify upgrade payment
+ */
+export const verifyUpgradePayment = async (transactionId: string, txRef: string): Promise<SubscriptionData> => {
+    const response = await post<SubscriptionData>('/api/subscriptions/verify-upgrade', { transaction_id: transactionId, tx_ref: txRef });
     return (response as any)?.data || response;
 };
 
@@ -40,6 +48,8 @@ export const cancelSubscription = async (): Promise<void> => {
 
 export default {
     getMySubscription,
-    upgradeSubscription,
+    getMySubscription,
+    initializeUpgradePayment,
+    verifyUpgradePayment,
     cancelSubscription,
 };

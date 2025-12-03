@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getClientDashboard,
+  getFreelancerDashboard,
   getTopFreelancers,
   getRecentMessages,
 } from '../controllers/Dashboard.controller';
@@ -13,6 +14,9 @@ router.use(authenticate);
 
 // Get client dashboard stats
 router.get('/stats', getClientDashboard);
+
+// Get freelancer dashboard stats
+router.get('/freelancer/stats', getFreelancerDashboard);
 
 // Get top freelancers recommendations
 router.get('/freelancers', getTopFreelancers);

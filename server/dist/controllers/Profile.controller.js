@@ -100,6 +100,7 @@ const getMyProfile = async (req, res) => {
             education: profileData.education,
             languages: profileData.languages,
             employment: profileData.employment,
+            portfolio: profileData.portfolio,
             resume: profileData.resume,
             createdAt: profileData.createdAt,
             updatedAt: profileData.updatedAt,
@@ -194,8 +195,8 @@ const updateMyProfile = async (req, res) => {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume } = req.body;
-        console.log('📝 Update profile request:', { phoneNumber, location, companyName, website, bio, avatar });
+        const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume, portfolio } = req.body;
+        console.log('📝 Update profile request:', { phoneNumber, location, companyName, website, bio, avatar, portfolio });
         // Prepare update data
         const updateData = {};
         if (phoneNumber !== undefined)
@@ -220,6 +221,8 @@ const updateMyProfile = async (req, res) => {
             updateData.employment = employment;
         if (resume !== undefined)
             updateData.resume = resume;
+        if (portfolio !== undefined)
+            updateData.portfolio = portfolio;
         console.log('💾 Data to save:', updateData);
         let profile = await Profile_model_1.default.findOne({ user: userId });
         if (!profile) {

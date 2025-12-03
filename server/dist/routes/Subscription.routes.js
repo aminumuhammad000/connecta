@@ -8,8 +8,10 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 // Get current user's subscription
 router.get('/me', Subscription_controller_1.getMySubscription);
-// Upgrade subscription
-router.post('/upgrade', Subscription_controller_1.upgradeSubscription);
+// Initialize upgrade payment
+router.post('/initialize-upgrade', Subscription_controller_1.initializeUpgradePayment);
+// Verify upgrade payment
+router.post('/verify-upgrade', Subscription_controller_1.verifyUpgradePayment);
 // Cancel subscription
 router.post('/cancel', Subscription_controller_1.cancelSubscription);
 exports.default = router;

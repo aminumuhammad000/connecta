@@ -509,7 +509,8 @@ const updateMe = async (req, res) => {
                 message: "Unauthorized"
             });
         }
-        const { firstName, lastName, profileImage } = req.body;
+        const { firstName, lastName, profileImage, email } = req.body;
+        console.log('UpdateMe request body:', { firstName, lastName, profileImage, email });
         // Prepare update data
         const updateData = {};
         if (firstName)
@@ -518,7 +519,11 @@ const updateMe = async (req, res) => {
             updateData.lastName = lastName;
         if (profileImage !== undefined)
             updateData.profileImage = profileImage;
+        if (email)
+            updateData.email = email;
+        console.log('UpdateMe updateData:', updateData);
         const user = await user_model_1.default.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select('-password');
+        console.log('UpdateMe result - user email:', user?.email);
         if (!user) {
             return res.status(404).json({
                 success: false,

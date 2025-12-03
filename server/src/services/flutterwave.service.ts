@@ -39,6 +39,7 @@ interface FlutterwaveVerifyResponse {
             email: string;
             created_at: string;
         };
+        meta?: any; // Metadata passed during initialization
     };
 }
 

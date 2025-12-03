@@ -1,65 +1,37 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
-
-interface GigItem {
-  id: string;
-  title: string;
-  company: string;
-  budget: string;
-  type: 'Fixed' | 'Hourly';
-  skills: string[];
-  postedAgo: string;
-  status: 'New' | 'Hot' | 'Featured';
-  description: string;
-}
-
-const GIGS: GigItem[] = [
-  {
-    id: 'g1',
-    title: 'Mobile App UI/UX Design',
-    company: 'Innovate Inc.',
-    budget: '$3,500',
-    type: 'Fixed',
-    skills: ['Figma', 'Mobile Design', 'Prototyping'],
-    postedAgo: '2 hours ago',
-    status: 'Featured',
-    description: 'Looking for an experienced UI/UX designer to create a modern mobile app interface...',
-  },
-  {
-    id: 'g2',
-    title: 'React Native Developer',
-    company: 'Tech Startup',
-    budget: '$75-$95/hr',
-    type: 'Hourly',
-    skills: ['React Native', 'TypeScript', 'Mobile'],
-    postedAgo: '5 hours ago',
-    status: 'Hot',
-    description: 'We need a skilled React Native developer for our fintech application...',
-  },
-  {
-    id: 'g3',
-    title: 'Brand Identity Package',
-    company: 'Fintech Hub',
-    budget: '$1,800',
-    type: 'Fixed',
-    skills: ['Branding', 'Logo Design', 'Style Guide'],
-    postedAgo: '1 day ago',
-    status: 'New',
-    description: 'Create a complete brand identity package including logo, colors, and guidelines...',
-  },
-];
+import jobService from '../services/jobService';
+import { Job } from '../types';
 
 const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'fixed' | 'hourly' | 'remote'>('all');
   const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  const loadJobs = async () => {
+    try {
+      setIsLoading(true);
+      const jobsData = await jobService.getAllJobs({ limit: 50 });
+      setJobs(jobsData);
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
     if (status === 'Featured') return 'success';
@@ -78,6 +50,47 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
       return newSet;
     });
   };
+
+  // Helper function to format posted time
+  const formatPostedTime = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays === 1) return '1 day ago';
+    return `${diffDays} days ago`;
+  };
+
+  // Filter jobs based on selected filter and search query
+  const filteredJobs = jobs.filter(job => {
+    // Filter by type
+    if (selectedFilter === 'fixed' && job.budgetType !== 'fixed') return false;
+    if (selectedFilter === 'hourly' && job.budgetType !== 'hourly') return false;
+    if (selectedFilter === 'remote' && job.locationType !== 'remote') return false;
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        job.title?.toLowerCase().includes(query) ||
+        job.company?.toLowerCase().includes(query) ||
+        job.skills?.some(skill => skill.toLowerCase().includes(query))
+      );
+    }
+
+    return true;
+  });
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -173,72 +186,93 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
 
           {/* Jobs List */}
           <View style={styles.section}>
-            <Text style={[styles.resultsText, { color: c.subtext }]}>{GIGS.length} jobs found</Text>
+            <Text style={[styles.resultsText, { color: c.subtext }]}>{filteredJobs.length} jobs found</Text>
 
             <View style={{ gap: 12, marginTop: 12 }}>
-              {GIGS.map((gig) => (
-                <Card key={gig.id} variant="elevated" padding={16}>
-                  <View style={styles.gigCard}>
-                    <View style={styles.gigHeader}>
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.titleRow}>
-                          <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
-                            {gig.title}
-                          </Text>
-                          <Badge label={gig.status} variant={getStatusVariant(gig.status)} size="small" />
+              {filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => (
+                  <Card key={job._id} variant="elevated" padding={16}>
+                    <View style={styles.gigCard}>
+                      <View style={styles.gigHeader}>
+                        <View style={{ flex: 1 }}>
+                          <View style={styles.titleRow}>
+                            <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
+                              {job.title}
+                            </Text>
+                            {job.status === 'active' && (
+                              <Badge label="Active" variant="success" size="small" />
+                            )}
+                          </View>
+                          <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
                         </View>
-                        <Text style={[styles.company, { color: c.subtext }]}>{gig.company}</Text>
+                        <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
+                          <MaterialIcons
+                            name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
+                            size={24}
+                            color={savedGigs.has(job._id) ? c.primary : c.subtext}
+                          />
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity onPress={() => toggleSaveGig(gig.id)}>
-                        <MaterialIcons
-                          name={savedGigs.has(gig.id) ? "bookmark" : "bookmark-border"}
-                          size={24}
-                          color={savedGigs.has(gig.id) ? c.primary : c.subtext}
+
+                      <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
+                        {job.description || job.summary || 'No description available'}
+                      </Text>
+
+                      <View style={styles.gigMeta}>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.text }]}>{job.budget || 'N/A'}</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                          <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                          <Text style={[styles.metaText, { color: c.subtext }]}>
+                            {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
+                          </Text>
+                        </View>
+                        {job.budgetType && (
+                          <Badge
+                            label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
+                            variant="neutral"
+                            size="small"
+                          />
+                        )}
+                      </View>
+
+                      {job.skills && job.skills.length > 0 && (
+                        <View style={styles.skillsRow}>
+                          {job.skills.slice(0, 5).map((skill, idx) => (
+                            <Badge key={idx} label={skill} variant="info" size="small" />
+                          ))}
+                        </View>
+                      )}
+
+                      <View style={styles.gigActions}>
+                        <Button
+                          title="View Details"
+                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                          variant="outline"
+                          size="small"
+                          style={{ flex: 1 }}
                         />
-                      </TouchableOpacity>
-                    </View>
-
-                    <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
-                      {gig.description}
-                    </Text>
-
-                    <View style={styles.gigMeta}>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                        <Text style={[styles.metaText, { color: c.text }]}>{gig.budget}</Text>
+                        <Button
+                          title="Apply Now"
+                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                          variant="primary"
+                          size="small"
+                          style={{ flex: 1 }}
+                        />
                       </View>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                        <Text style={[styles.metaText, { color: c.subtext }]}>{gig.postedAgo}</Text>
-                      </View>
-                      <Badge label={gig.type} variant="neutral" size="small" />
                     </View>
-
-                    <View style={styles.skillsRow}>
-                      {gig.skills.map((skill, idx) => (
-                        <Badge key={idx} label={skill} variant="info" size="small" />
-                      ))}
-                    </View>
-
-                    <View style={styles.gigActions}>
-                      <Button
-                        title="View Details"
-                        onPress={() => navigation.navigate('JobDetail')}
-                        variant="outline"
-                        size="small"
-                        style={{ flex: 1 }}
-                      />
-                      <Button
-                        title="Apply Now"
-                        onPress={() => navigation.navigate('JobDetail')}
-                        variant="primary"
-                        size="small"
-                        style={{ flex: 1 }}
-                      />
-                    </View>
-                  </View>
-                </Card>
-              ))}
+                  </Card>
+                ))
+              ) : (
+                <View style={{ padding: 40, alignItems: 'center' }}>
+                  <MaterialIcons name="work-outline" size={48} color={c.subtext} />
+                  <Text style={{ color: c.subtext, marginTop: 12, textAlign: 'center' }}>
+                    No jobs found matching your criteria
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </ScrollView>

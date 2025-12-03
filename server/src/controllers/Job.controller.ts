@@ -103,8 +103,13 @@ export const createJob = async (req: Request, res: Response) => {
       message: "Job created successfully",
       data: newJob,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server error", error: err });
+  } catch (err: any) {
+    console.error("Error creating job:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Server error",
+      error: err
+    });
   }
 };
 

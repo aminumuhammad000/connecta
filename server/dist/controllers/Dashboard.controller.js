@@ -3,11 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRecentMessages = exports.getTopFreelancers = exports.getClientDashboard = void 0;
+exports.getRecentMessages = exports.getTopFreelancers = exports.getFreelancerDashboard = exports.getClientDashboard = void 0;
 const Job_model_1 = __importDefault(require("../models/Job.model"));
 const Message_model_1 = __importDefault(require("../models/Message.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const Conversation_model_1 = __importDefault(require("../models/Conversation.model"));
+const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 // Get Client Dashboard Data
 const getClientDashboard = async (req, res) => {
@@ -53,6 +54,46 @@ const getClientDashboard = async (req, res) => {
     }
 };
 exports.getClientDashboard = getClientDashboard;
+// Get Freelancer Dashboard Data
+const getFreelancerDashboard = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+        // Get active proposals count (proposals that are not rejected or withdrawn)
+        const activeProposalsCount = await Proposal_model_1.default.countDocuments({
+            freelancerId: userId,
+            status: { $in: ['pending', 'accepted', 'viewed'] },
+        });
+        // Get unread messages count (same logic as client)
+        const conversations = await Conversation_model_1.default.find({
+            $or: [
+                { clientId: userId },
+                { freelancerId: userId },
+            ],
+        }).select('_id');
+        const conversationIds = conversations.map((conv) => conv._id);
+        const unreadMessagesCount = await Message_model_1.default.countDocuments({
+            conversationId: { $in: conversationIds },
+            sender: { $ne: userId },
+            isRead: false,
+        });
+        // Get total earnings (mocked for now as we don't have a Transaction model fully integrated yet)
+        // In a real app, we would sum up completed transactions.
+        const totalEarnings = 0;
+        res.status(200).json({
+            activeProposals: activeProposalsCount,
+            newMessages: unreadMessagesCount,
+            totalEarnings: totalEarnings,
+        });
+    }
+    catch (error) {
+        console.error('Error fetching freelancer dashboard:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+exports.getFreelancerDashboard = getFreelancerDashboard;
 // Get Top Freelancers (AI-powered recommendations)
 const getTopFreelancers = async (req, res) => {
     try {

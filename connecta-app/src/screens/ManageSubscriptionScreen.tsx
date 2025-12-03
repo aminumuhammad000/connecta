@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -7,12 +7,21 @@ import * as subscriptionService from '../services/subscriptionService';
 import { SubscriptionData } from '../services/subscriptionService';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import { useInAppAlert } from '../components/InAppAlert';
+
+import PaymentWebView from '../components/PaymentWebView';
 
 export default function ManageSubscriptionScreen({ navigation }: any) {
     const c = useThemeColors();
+    const { showAlert } = useInAppAlert();
     const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpgrading, setIsUpgrading] = useState(false);
+
+    // Payment state
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentUrl, setPaymentUrl] = useState('');
+    const [paymentReference, setPaymentReference] = useState('');
 
     useEffect(() => {
         loadSubscription();
@@ -25,7 +34,7 @@ export default function ManageSubscriptionScreen({ navigation }: any) {
             setSubscription(data);
         } catch (error) {
             console.error('Error loading subscription:', error);
-            Alert.alert('Error', 'Failed to load subscription details');
+            showAlert({ title: 'Error', message: 'Failed to load subscription details', type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -34,22 +43,62 @@ export default function ManageSubscriptionScreen({ navigation }: any) {
     const handleUpgrade = async (tier: 'premium' | 'enterprise') => {
         try {
             setIsUpgrading(true);
-            await subscriptionService.upgradeSubscription(tier, 1);
-            Alert.alert('Success', `Upgraded to ${tier} successfully!`);
-            loadSubscription();
-        } catch (error) {
-            console.error('Error upgrading subscription:', error);
-            Alert.alert('Error', 'Failed to upgrade subscription');
+
+            // Initialize payment
+            const response = await subscriptionService.initializeUpgradePayment(tier, 1);
+
+            setPaymentUrl(response.authorizationUrl);
+            setPaymentReference(response.reference);
+            setShowPaymentModal(true);
+
+        } catch (error: any) {
+            console.error('Error initializing upgrade:', error);
+
+            // Show helpful message if email is invalid
+            if (error.message && error.message.includes('email')) {
+                showAlert({
+                    title: 'Email Required',
+                    message: 'Please add a valid email address in Settings > Personal Information before upgrading.',
+                    type: 'error'
+                });
+            } else {
+                showAlert({ title: 'Error', message: error.message || 'Failed to initialize upgrade', type: 'error' });
+            }
         } finally {
             setIsUpgrading(false);
         }
     };
 
+    const handlePaymentSuccess = async (transactionId: string) => {
+        try {
+            setShowPaymentModal(false);
+            setIsLoading(true);
+
+            // Verify payment
+            await subscriptionService.verifyUpgradePayment(transactionId, paymentReference);
+
+            showAlert({ title: 'Success', message: 'Subscription upgraded successfully!', type: 'success' });
+            loadSubscription();
+
+        } catch (error: any) {
+            console.error('Payment verification error:', error);
+            showAlert({ title: 'Error', message: 'Payment verification failed. Please contact support.', type: 'error' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handlePaymentCancel = () => {
+        setShowPaymentModal(false);
+        showAlert({ title: 'Cancelled', message: 'Upgrade cancelled.', type: 'info' });
+    };
+
     const handleCancel = async () => {
-        Alert.alert(
-            'Cancel Subscription',
-            'Are you sure you want to cancel your subscription? You will retain access until the expiry date.',
-            [
+        showAlert({
+            title: 'Cancel Subscription',
+            message: 'Are you sure you want to cancel your subscription? You will retain access until the expiry date.',
+            type: 'error',
+            actions: [
                 { text: 'No', style: 'cancel' },
                 {
                     text: 'Yes, Cancel',
@@ -57,16 +106,16 @@ export default function ManageSubscriptionScreen({ navigation }: any) {
                     onPress: async () => {
                         try {
                             await subscriptionService.cancelSubscription();
-                            Alert.alert('Cancelled', 'Your subscription has been cancelled');
+                            showAlert({ title: 'Cancelled', message: 'Your subscription has been cancelled', type: 'success' });
                             loadSubscription();
                         } catch (error) {
                             console.error('Error cancelling subscription:', error);
-                            Alert.alert('Error', 'Failed to cancel subscription');
+                            showAlert({ title: 'Error', message: 'Failed to cancel subscription', type: 'error' });
                         }
-                    },
-                },
+                    }
+                }
             ]
-        );
+        });
     };
 
     const formatDate = (dateString?: string) => {
@@ -89,7 +138,7 @@ export default function ManageSubscriptionScreen({ navigation }: any) {
         }
     };
 
-    if (isLoading) {
+    if (isLoading && !subscription) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -246,11 +295,20 @@ export default function ManageSubscriptionScreen({ navigation }: any) {
                                 onPress={() => handleUpgrade('premium')}
                                 variant="primary"
                                 disabled={isUpgrading}
+                                loading={isUpgrading}
                             />
                         </Card>
                     </>
                 )}
             </ScrollView>
+
+            {/* Payment Modal */}
+            <PaymentWebView
+                visible={showPaymentModal}
+                paymentUrl={paymentUrl}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+            />
         </SafeAreaView >
     );
 }

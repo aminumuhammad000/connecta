@@ -24,6 +24,14 @@ export const getClientStats = async (): Promise<DashboardStats> => {
 };
 
 /**
+ * Get freelancer dashboard statistics
+ */
+export const getFreelancerStats = async (): Promise<DashboardStats> => {
+    const response = await get<DashboardStats>('/dashboard/freelancer/stats');
+    return unwrap<DashboardStats>(response, {} as DashboardStats);
+};
+
+/**
  * Get recommended freelancers for client dashboard
  */
 export const getRecommendedFreelancers = async (): Promise<User[]> => {
@@ -41,6 +49,7 @@ export const getRecentMessages = async (): Promise<Message[]> => {
 
 export default {
     getClientStats,
+    getFreelancerStats,
     getRecommendedFreelancers,
     getRecentMessages,
     testConnection,

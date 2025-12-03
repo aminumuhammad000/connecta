@@ -4,6 +4,7 @@ import Project from '../models/Project.model';
 import Message from '../models/Message.model';
 import User from '../models/user.model';
 import Conversation from '../models/Conversation.model';
+import Proposal from '../models/Proposal.model';
 import mongoose from 'mongoose';
 
 // Get Client Dashboard Data
@@ -53,6 +54,52 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching client dashboard:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Get Freelancer Dashboard Data
+export const getFreelancerDashboard = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Get active proposals count (proposals that are not rejected or withdrawn)
+    const activeProposalsCount = await Proposal.countDocuments({
+      freelancerId: userId,
+      status: { $in: ['pending', 'accepted', 'viewed'] },
+    });
+
+    // Get unread messages count (same logic as client)
+    const conversations = await Conversation.find({
+      $or: [
+        { clientId: userId },
+        { freelancerId: userId },
+      ],
+    }).select('_id');
+
+    const conversationIds = conversations.map((conv) => conv._id);
+
+    const unreadMessagesCount = await Message.countDocuments({
+      conversationId: { $in: conversationIds },
+      sender: { $ne: userId },
+      isRead: false,
+    });
+
+    // Get total earnings (mocked for now as we don't have a Transaction model fully integrated yet)
+    // In a real app, we would sum up completed transactions.
+    const totalEarnings = 0;
+
+    res.status(200).json({
+      activeProposals: activeProposalsCount,
+      newMessages: unreadMessagesCount,
+      totalEarnings: totalEarnings,
+    });
+  } catch (error) {
+    console.error('Error fetching freelancer dashboard:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

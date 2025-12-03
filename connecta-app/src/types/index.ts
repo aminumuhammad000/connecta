@@ -100,6 +100,7 @@ export interface Job {
     clientId: string;
     title: string;
     description: string;
+    summary?: string;
     category: string;
     skills: string[];
     budget?: string; // Backend expects String
@@ -113,6 +114,8 @@ export interface Job {
     location?: string;
     locationType?: 'remote' | 'onsite' | 'hybrid';
     company?: string;
+    posted?: Date;
+    postedTime?: string;
     createdAt: string;
     updatedAt: string;
 }
