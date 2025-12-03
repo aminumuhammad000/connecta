@@ -11,9 +11,9 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'http://localhost:5000' for local development
-// const API_BASE_URL = 'http://102.68.84.56:5000'
+const API_BASE_URL = 'http://13.51.86.167:5000'
 
-const API_BASE_URL = 'http://localhost:5000'
+// const API_BASE_URL = 'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
