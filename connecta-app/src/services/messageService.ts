@@ -44,8 +44,9 @@ export const getMessagesBetween = async (userId1: string, userId2: string): Prom
  */
 export const sendMessage = async (messageData: {
     conversationId: string;
+    senderId: string;
     receiverId: string;
-    content: string;
+    text: string;
 }): Promise<Message> => {
     const response = await post<Message>(API_ENDPOINTS.SEND_MESSAGE, messageData);
     return (response as any)?.data || response;
@@ -54,8 +55,8 @@ export const sendMessage = async (messageData: {
 /**
  * Mark messages as read
  */
-export const markMessagesAsRead = async (messageIds: string[]): Promise<void> => {
-    await patch(API_ENDPOINTS.MARK_READ, { messageIds });
+export const markMessagesAsRead = async (conversationId: string, userId: string): Promise<void> => {
+    await patch(API_ENDPOINTS.MARK_READ, { conversationId, userId });
 };
 
 export default {

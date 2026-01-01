@@ -52,9 +52,9 @@ const ProposalsScreen: React.FC<ProposalsScreenProps> = ({ onOpenNotifications }
       }
 
       // Map API data to UI format
-      const mapped = data.map((p: any) => ({
+      const mapped = data.filter((p: any) => p !== null).map((p: any) => ({
         id: p._id,
-        title: p.jobTitle || 'Untitled Job',
+        title: p.jobId?.title || p.title || 'Untitled Job',
         name: p.freelancerName || 'Unknown Freelancer',
         avatar: p.freelancerAvatar || 'https://via.placeholder.com/150',
         price: `$${p.proposedRate}`,

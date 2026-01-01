@@ -11,6 +11,7 @@ import { useInAppAlert } from '../components/InAppAlert';
 import PaymentWebView from '../components/PaymentWebView';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
+import SuccessModal from '../components/SuccessModal';
 
 const PostJobScreen: React.FC = () => {
   const c = useThemeColors();
@@ -42,6 +43,7 @@ const PostJobScreen: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { user, token } = useAuth();
 
   useEffect(() => {
@@ -167,34 +169,19 @@ const PostJobScreen: React.FC = () => {
       setIsLoading(true);
 
       // Verify payment with backend
-      const token = await import('../utils/storage').then(s => s.getToken());
-      const verifyResponse = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL || 'http://172.20.10.3:5000'}/api/payments/verify/${paymentReference}?transaction_id=${transactionId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      const verifiedPayment = await paymentService.verifyPayment(paymentReference, transactionId);
 
-      const verifiedPayment = await verifyResponse.json();
-
-      if (verifiedPayment.success) {
+      if (verifiedPayment && (verifiedPayment.jobVerified || verifiedPayment.payment?.status === 'completed' || verifiedPayment.status === 'completed')) {
         // Payment verified - job is already updated to active by backend
-        showAlert({
-          title: 'Success!',
-          message: 'Your job has been posted and payment is held in escrow.',
-          type: 'success',
-        });
-
-        navigation.goBack();
+        // Show animated success modal instead of alert
+        setShowSuccessModal(true);
+        // Navigation will happen on modal close
       } else {
-        throw new Error('Payment verification failed');
+        throw new Error('Payment verification failed or pending');
       }
     } catch (error: any) {
       console.error('Payment verification error:', error);
-      Alert.alert('Error', 'Payment verification failed. Please contact support.');
+      Alert.alert('Error', error.message || 'Payment verification failed. Please contact support.');
     } finally {
       setIsLoading(false);
     }
@@ -574,6 +561,17 @@ const PostJobScreen: React.FC = () => {
           paymentUrl={paymentUrl}
           onSuccess={handlePaymentSuccess}
           onCancel={handlePaymentCancel}
+        />
+
+        <SuccessModal
+          visible={showSuccessModal}
+          title="Payment Successful!"
+          message="Your job has been posted and payment is held securely in escrow."
+          buttonText="Go to My Jobs"
+          onClose={() => {
+            setShowSuccessModal(false);
+            navigation.goBack();
+          }}
         />
 
       </KeyboardAvoidingView>

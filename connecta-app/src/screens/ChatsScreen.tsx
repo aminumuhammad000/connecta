@@ -43,31 +43,54 @@ export default function ChatsScreen({ navigation }: any) {
     };
 
     const handleConversationPress = (conversation: any) => {
-        // Determine the other user (not the current user)
-        const otherUser = conversation.clientId?._id === user?._id
-            ? conversation.freelancerId
-            : conversation.clientId;
+        // Determine the other user
+        let otherUser;
+        if (conversation.participants && conversation.participants.length > 0) {
+            otherUser = conversation.participants.find((p: any) => p._id !== user?._id);
+        }
+        if (!otherUser) {
+            otherUser = conversation.clientId?._id === user?._id
+                ? conversation.freelancerId
+                : conversation.clientId;
+        }
 
         navigation.navigate('MessagesDetail', {
             conversationId: conversation._id,
             userName: `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User',
-            userAvatar: otherUser?.profileImage || otherUser?.avatar
+            userAvatar: otherUser?.profileImage || otherUser?.avatar,
+            receiverId: otherUser?._id // Pass receiverId to help MessagesScreen if needed
         });
     };
 
     const filteredConversations = conversations.filter(conv => {
-        const client = conv.clientId;
-        const freelancer = conv.freelancerId;
-        const otherUser = client?._id === user?._id ? freelancer : client;
+        let otherUser;
+        if (conv.participants && conv.participants.length > 0) {
+            otherUser = conv.participants.find((p: any) => p._id !== user?._id);
+        }
+        if (!otherUser) {
+            const client = conv.clientId;
+            const freelancer = conv.freelancerId;
+            otherUser = client?._id === user?._id ? freelancer : client;
+        }
         const name = `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.toLowerCase();
         return name.includes(searchQuery.toLowerCase());
     });
 
     const renderItem = ({ item }: { item: any }) => {
         // Determine the other user
-        const otherUser = item.clientId?._id === user?._id
-            ? item.freelancerId
-            : item.clientId;
+        let otherUser;
+
+        // Strategy 1: Check participants array (new generic chats)
+        if (item.participants && item.participants.length > 0) {
+            otherUser = item.participants.find((p: any) => p._id !== user?._id);
+        }
+
+        // Strategy 2: Fallback to legacy clientId/freelancerId
+        if (!otherUser) {
+            otherUser = item.clientId?._id === user?._id
+                ? item.freelancerId
+                : item.clientId;
+        }
 
         const name = `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User';
         const lastMsg = item.lastMessage || 'No messages';
@@ -75,6 +98,7 @@ export default function ChatsScreen({ navigation }: any) {
             ? new Date(item.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
         const unread = item.unreadCount?.[user?._id || ''] || 0;
+        const isPremium = otherUser?.isPremium;
 
         return (
             <TouchableOpacity
@@ -86,8 +110,13 @@ export default function ChatsScreen({ navigation }: any) {
                 </View>
                 <View style={styles.conversationDetails}>
                     <View style={styles.row}>
-                        <Text style={[styles.name, { color: c.text }]}>{name}</Text>
-                        <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+                            <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>{name}</Text>
+                            {isPremium && (
+                                <Ionicons name="checkmark-circle" size={16} color="#F59E0B" />
+                            )}
+                        </View>
+                        <Text style={[styles.time, { color: c.subtext, marginLeft: 8 }]}>{time}</Text>
                     </View>
                     <View style={styles.row}>
                         <Text numberOfLines={1} style={[styles.lastMessage, { color: c.subtext }]}>

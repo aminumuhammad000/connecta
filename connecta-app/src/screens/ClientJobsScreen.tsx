@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
@@ -8,7 +8,15 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import * as jobService from '../services/jobService';
 import { Job } from '../types';
-import { useFocusEffect } from '@react-navigation/native';
+
+interface ClientJob {
+  id: string;
+  title: string;
+  status: 'Open' | 'In Progress' | 'Closed';
+  proposals: number;
+  budget: string;
+  postedDate: string;
+}
 
 const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -17,11 +25,9 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadJobs();
-    }, [])
-  );
+  useEffect(() => {
+    loadJobs();
+  }, []);
 
   const loadJobs = async () => {
     try {
@@ -53,22 +59,20 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const mapJobStatus = (status: string): 'Open' | 'In Progress' | 'Closed' => {
-    if (status === 'active') return 'Open';
-    // 'draft' is not really 'In Progress' but we can map it or hide it. 
-    // For now, let's map 'draft' to 'In Progress' or just show 'Open' for active.
-    if (status === 'draft') return 'In Progress';
+    if (status === 'open') return 'Open';
+    if (status === 'in_progress') return 'In Progress';
     return 'Closed';
   };
 
   const filtered = useMemo(() => {
     if (tab === 'All') return jobs;
-    if (tab === 'Open') return jobs.filter((j) => j.status === 'active' || j.status === 'draft');
-    return jobs.filter((j) => j.status === 'closed');
+    if (tab === 'Open') return jobs.filter((j) => j && (j.status === 'open' || j.status === 'in_progress'));
+    return jobs.filter((j) => j && (j.status === 'completed' || j.status === 'cancelled'));
   }, [jobs, tab]);
 
   const getStatusVariant = (status: string): 'success' | 'info' | 'neutral' => {
-    if (status === 'active') return 'success';
-    if (status === 'draft') return 'info';
+    if (status === 'open') return 'success';
+    if (status === 'in_progress') return 'info';
     return 'neutral';
   };
 
@@ -147,23 +151,17 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
               </View>
             ) : (
               <View style={{ gap: 12 }}>
-                {filtered.map((j: any) => (
-                  <TouchableOpacity
-                    key={j._id}
-                    activeOpacity={0.7}
-                    onPress={() => navigation.navigate('JobDetail', { id: j._id })}
-                  >
-                    <Card variant="elevated" padding={16}>
+                {filtered.map((j: any) => {
+                  if (!j) return null;
+                  return (
+                    <Card key={j._id} variant="elevated" padding={16}>
                       <View style={styles.jobCard}>
                         <View style={styles.jobHeader}>
                           <View style={{ flex: 1 }}>
-                            <Text style={[styles.jobTitle, { color: c.text }]}>{j.title}</Text>
+                            <Text style={[styles.jobTitle, { color: c.text }]}>{j?.title || 'Untitled Job'}</Text>
                             <Badge label={mapJobStatus(j.status)} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
                           </View>
-                          <TouchableOpacity onPress={(e) => {
-                            e.stopPropagation();
-                            // TODO: Show edit/delete menu
-                          }}>
+                          <TouchableOpacity>
                             <MaterialIcons name="more-vert" size={24} color={c.subtext} />
                           </TouchableOpacity>
                         </View>
@@ -179,14 +177,14 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
                           </View>
                           <View style={styles.metaItem}>
                             <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.subtext }]}>{formatDate(j.postedAt)}</Text>
+                            <Text style={[styles.metaText, { color: c.subtext }]}>{formatDate(j.postedAt || j.createdAt)}</Text>
                           </View>
                         </View>
 
                         <View style={styles.jobActions}>
                           <Button
                             title="View Proposals"
-                            onPress={() => navigation.navigate('Proposals', { jobId: j._id })}
+                            onPress={() => navigation.navigate('JobDetail', { id: j._id })}
                             variant="outline"
                             size="small"
                             style={{ flex: 1 }}
@@ -201,8 +199,8 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
                         </View>
                       </View>
                     </Card>
-                  </TouchableOpacity>
-                ))}
+                  );
+                })}
               </View>
             )}
           </View>

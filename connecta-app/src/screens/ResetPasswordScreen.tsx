@@ -4,13 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
+import { resetPassword } from '../services/authService';
+import CustomAlert, { AlertType } from '../components/CustomAlert';
 
 interface ResetPasswordScreenProps {
     email: string;
+    resetToken: string;
     onPasswordReset?: () => void;
 }
 
-const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, onPasswordReset }) => {
+const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, resetToken, onPasswordReset }) => {
+    // ... (keep state)
     const c = useThemeColors();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -18,19 +22,39 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, onPass
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Alert State
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType; onOk?: () => void }>({
+        title: '',
+        message: '',
+        type: 'success'
+    });
+
+    const showAlert = (title: string, message: string, type: AlertType = 'success', onOk?: () => void) => {
+        setAlertConfig({ title, message, type, onOk });
+        setAlertVisible(true);
+    };
+
+    const handleAlertClose = () => {
+        setAlertVisible(false);
+        if (alertConfig.onOk) {
+            alertConfig.onOk();
+        }
+    };
+
     const validatePassword = () => {
         if (!password.trim() || !confirmPassword.trim()) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showAlert('Error', 'Please fill in all fields', 'error');
             return false;
         }
 
         if (password.length < 8) {
-            Alert.alert('Error', 'Password must be at least 8 characters long');
+            showAlert('Error', 'Password must be at least 8 characters long', 'error');
             return false;
         }
 
         if (password !== confirmPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+            showAlert('Error', 'Passwords do not match', 'error');
             return false;
         }
 
@@ -43,24 +67,16 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, onPass
         setIsLoading(true);
 
         try {
-            // TODO: Replace with actual API call
-            // const response = await api.resetPassword(email, password);
+            await resetPassword(resetToken, password);
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            Alert.alert(
+            showAlert(
                 'Success',
                 'Your password has been reset successfully!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => onPasswordReset?.()
-                    }
-                ]
+                'success',
+                () => onPasswordReset?.()
             );
-        } catch (error) {
-            Alert.alert('Error', 'Failed to reset password. Please try again.');
+        } catch (error: any) {
+            showAlert('Error', error.response?.data?.message || 'Failed to reset password. Please try again.', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -161,7 +177,16 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, onPass
                         </View>
                     </View>
                 </ScrollView>
+
             </KeyboardAvoidingView>
+
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={handleAlertClose}
+            />
         </SafeAreaView>
     );
 };

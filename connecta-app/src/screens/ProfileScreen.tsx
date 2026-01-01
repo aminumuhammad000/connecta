@@ -240,50 +240,77 @@ export default function ProfileScreen({ navigation }: any) {
         {/* Content */}
         <View style={styles.sectionPad}>
           {activeTab === 'portfolio' ? (
-            profile?.portfolio?.length > 0 ? (
-              profile.portfolio.map((item: any, index: number) => (
-                <PortfolioCard
-                  key={index}
-                  title={item.title}
-                  category={item.description}
-                  image={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
-                />
-              ))
-            ) : (
-              <View style={{ alignItems: 'center', padding: 40 }}>
-                <MaterialIcons name="work-outline" size={48} color={c.subtext} style={{ marginBottom: 12 }} />
-                <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 20, fontSize: 16 }}>
-                  No portfolio items yet
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: c.primary,
-                    paddingHorizontal: 24,
-                    paddingVertical: 12,
-                    borderRadius: 8,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                  onPress={() => navigation.navigate('EditProfile')}
-                >
-                  <MaterialIcons name="add" size={20} color="white" />
-                  <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                    Create Portfolio
+            <View>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 12,
+                  backgroundColor: c.isDark ? '#2C2C2E' : '#F3F4F6',
+                  borderRadius: 12,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                  borderStyle: 'dashed'
+                }}
+                onPress={() => navigation.navigate('AddPortfolio')}
+              >
+                <MaterialIcons name="add" size={24} color={c.primary} />
+                <Text style={{ color: c.text, fontWeight: '600', marginLeft: 8 }}>Add New Project</Text>
+              </TouchableOpacity>
+
+              {profile?.portfolio?.length > 0 ? (
+                profile.portfolio.map((item: any, index: number) => {
+                  if (!item) return null;
+                  return (
+                    <PortfolioCard
+                      key={index}
+                      title={item.title || 'Untitled Project'}
+                      category={item.description || ''}
+                      image={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
+                    />
+                  );
+                })
+              ) : (
+                <View style={{ alignItems: 'center', padding: 40 }}>
+                  <MaterialIcons name="work-outline" size={48} color={c.subtext} style={{ marginBottom: 12 }} />
+                  <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 20, fontSize: 16 }}>
+                    No portfolio items yet
                   </Text>
-                </TouchableOpacity>
-              </View>
-            )
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: c.primary,
+                      paddingHorizontal: 24,
+                      paddingVertical: 12,
+                      borderRadius: 8,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                    onPress={() => navigation.navigate('EditProfile')}
+                  >
+                    <MaterialIcons name="add" size={20} color="white" />
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                      Create Portfolio
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           ) : (
             profile?.reviews?.length > 0 ? (
-              profile.reviews.map((review: any, index: number) => (
-                <ReviewCard
-                  key={index}
-                  author={review.author}
-                  rating={review.rating}
-                  comment={review.comment}
-                />
-              ))
+              profile.reviews.map((review: any, index: number) => {
+                if (!review) return null;
+                return (
+                  <ReviewCard
+                    key={index}
+                    author={review.author || 'Anonymous'}
+                    rating={review.rating || 0}
+                    comment={review.comment || ''}
+                  />
+                );
+              })
             ) : (
               <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No reviews yet</Text>
             )

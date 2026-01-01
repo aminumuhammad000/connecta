@@ -38,18 +38,22 @@ const ConversationSchema = new mongoose_1.Schema({
     clientId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
+        required: false,
     },
     freelancerId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
+        required: false,
     },
     projectId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Project',
-        required: true,
+        required: false,
     },
+    participants: [{
+            type: mongoose_1.Schema.Types.ObjectId,
+            ref: 'User',
+        }],
     lastMessage: {
         type: String,
     },

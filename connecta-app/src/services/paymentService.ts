@@ -21,20 +21,24 @@ export const initializePayment = async (paymentData: {
 /**
  * Initialize job verification payment
  */
-export const initializeJobVerification = async (paymentData: {
+export const initializeJobVerification = async (verificationData: {
     jobId: string;
     amount: number;
     description: string;
 }): Promise<{ reference: string; authorizationUrl: string }> => {
-    const response = await post(API_ENDPOINTS.INITIALIZE_JOB_VERIFICATION, paymentData);
+    const response = await post(API_ENDPOINTS.PAYMENT_JOB_VERIFICATION, verificationData);
     return response.data!;
 };
+
 
 /**
  * Verify a payment
  */
-export const verifyPayment = async (reference: string): Promise<Payment> => {
-    const response = await get<Payment>(API_ENDPOINTS.VERIFY_PAYMENT(reference));
+/**
+ * Verify a payment
+ */
+export const verifyPayment = async (reference: string, transactionId: string): Promise<any> => {
+    const response = await get<any>(`${API_ENDPOINTS.VERIFY_PAYMENT(reference)}?transaction_id=${transactionId}`);
     return response.data!;
 };
 
@@ -90,8 +94,30 @@ export const resolveBankAccount = async (accountNumber: string, bankCode: string
     return response.data!;
 };
 
+/**
+ * Save withdrawal settings
+ */
+export const saveWithdrawalSettings = async (settings: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+    bankCode: string;
+}): Promise<any> => {
+    const response = await post(API_ENDPOINTS.WITHDRAWAL_SETTINGS, settings);
+    return response.data!;
+};
+
+/**
+ * Release payment from escrow
+ */
+export const releasePayment = async (paymentId: string): Promise<Payment> => {
+    const response = await post(API_ENDPOINTS.RELEASE_PAYMENT(paymentId), {});
+    return response.data;
+};
+
 export default {
     initializePayment,
+    initializeJobVerification,
     verifyPayment,
     getPaymentHistory,
     getWalletBalance,
@@ -99,4 +125,6 @@ export default {
     requestWithdrawal,
     getBanks,
     resolveBankAccount,
+    saveWithdrawalSettings,
+    releasePayment,
 };

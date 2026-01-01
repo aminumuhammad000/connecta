@@ -248,11 +248,11 @@ const forgotPassword = async (req, res) => {
         });
         // Send OTP via email
         const { sendOTPEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
-        const emailSent = await sendOTPEmail(email, otp, user.firstName);
-        if (!emailSent) {
+        const result = await sendOTPEmail(email, otp, user.firstName);
+        if (!result.success) {
             return res.status(500).json({
                 success: false,
-                message: "Failed to send OTP email. Please try again."
+                message: `Failed to send OTP email: ${result.error || 'Unknown error'}`
             });
         }
         res.status(200).json({

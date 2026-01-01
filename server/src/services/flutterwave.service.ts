@@ -106,6 +106,74 @@ class FlutterwaveService {
             throw new Error(error.response?.data?.message || 'Failed to verify payment');
         }
     }
+    /**
+     * List all banks
+     */
+    async listBanks(): Promise<any> {
+        try {
+            const response = await axios.get(
+                `${FLUTTERWAVE_BASE_URL}/banks/NG`,
+                { headers: this.headers }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Flutterwave list banks error:', error.response?.data || error.message);
+            throw new Error('Failed to fetch banks');
+        }
+    }
+
+    /**
+     * Resolve account number
+     */
+    async resolveAccount(accountNumber: string, bankCode: string): Promise<any> {
+        try {
+            const response = await axios.post(
+                `${FLUTTERWAVE_BASE_URL}/accounts/resolve`,
+                {
+                    account_number: accountNumber,
+                    account_bank: bankCode,
+                },
+                { headers: this.headers }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Flutterwave account resolution error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to resolve account');
+        }
+    }
+
+    /**
+     * Initiate a transfer (withdrawal)
+     */
+    async initiateTransfer(
+        accountBank: string,
+        accountNumber: string,
+        amount: number,
+        narration?: string,
+        reference?: string
+    ): Promise<any> {
+        try {
+            const response = await axios.post(
+                `${FLUTTERWAVE_BASE_URL}/transfers`,
+                {
+                    account_bank: accountBank,
+                    account_number: accountNumber,
+                    amount,
+                    currency: 'NGN',
+                    narration: narration || 'Withdrawal from Connecta',
+                    reference,
+                },
+                { headers: this.headers }
+            );
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Flutterwave transfer error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to initiate transfer');
+        }
+    }
 }
 
 export default new FlutterwaveService();

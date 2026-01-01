@@ -12,6 +12,7 @@ import dashboardService from '../services/dashboardService';
 import jobService from '../services/jobService';
 import * as profileService from '../services/profileService';
 import { useFocusEffect } from '@react-navigation/native';
+import ProfileCompletionModal from '../components/ProfileCompletionModal';
 
 interface JobRec {
   id: string;
@@ -24,38 +25,7 @@ interface JobRec {
   postedAgo: string;
 }
 
-const JOBS: JobRec[] = [
-  {
-    id: 'j1',
-    title: 'Mobile App UI/UX Design',
-    company: 'Innovate Inc.',
-    budget: '$3,500',
-    status: 'Featured',
-    type: 'Fixed',
-    skills: ['Figma', 'Mobile Design', 'Prototyping'],
-    postedAgo: '2 hours ago',
-  },
-  {
-    id: 'j2',
-    title: 'Brand Identity Package',
-    company: 'Fintech Hub',
-    budget: '$1,800',
-    status: 'Hot',
-    type: 'Fixed',
-    skills: ['Branding', 'Logo Design', 'Style Guide'],
-    postedAgo: '5 hours ago',
-  },
-  {
-    id: 'j3',
-    title: 'Marketing Website Redesign',
-    company: 'Growth Labs',
-    budget: '$4,200',
-    status: 'New',
-    type: 'Fixed',
-    skills: ['Web Design', 'Responsive', 'Webflow'],
-    postedAgo: '1 day ago',
-  },
-];
+
 
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -64,18 +34,20 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [recommendedJobs, setRecommendedJobs] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [profileMissing, setProfileMissing] = React.useState(false);
 
-  React.useEffect(() => {
-    loadDashboardData();
-    checkProfileStatus();
-  }, []);
+  // Profile Completion Logic
+  const [profileModalVisible, setProfileModalVisible] = React.useState(false);
+  const [missingFields, setMissingFields] = React.useState<string[]>([]);
+
+  // Profile Completion Logic
+  const [profileModalVisible, setProfileModalVisible] = React.useState(false);
+  const [missingFields, setMissingFields] = React.useState<string[]>([]);
 
   useFocusEffect(
     React.useCallback(() => {
       loadDashboardData();
       checkProfileStatus();
-    }, [])
+    }, [user])
   );
 
   const loadDashboardData = async () => {
@@ -102,15 +74,39 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const checkProfileStatus = async () => {
     try {
-      await profileService.getMyProfile();
-      setProfileMissing(false);
+      const profile = await profileService.getMyProfile();
+
+      const missing: string[] = [];
+      if (!profile?.bio) missing.push('bio');
+      if (!profile?.skills || profile?.skills.length === 0) missing.push('skills');
+      if (!profile?.location) missing.push('location');
+      // if (!profile.avatar) missing.push('avatar'); // Optional
+
+      if (missing.length > 0) {
+        setMissingFields(missing);
+        setProfileModalVisible(true);
+      } else {
+        setProfileModalVisible(false);
+      }
+
     } catch (error: any) {
       if (error?.status === 404) {
-        setProfileMissing(true);
+        // Entire profile is missing
+        setMissingFields(['bio', 'skills', 'location']);
+        setProfileModalVisible(true);
       } else {
-        setProfileMissing(false);
+        console.error('Error checking profile status:', error);
       }
     }
+  };
+
+  const handleCompleteProfile = () => {
+    setProfileModalVisible(false); // Optionally keep it open or close it
+    navigation.navigate('EditProfile'); // Navigate to EditProfile
+  };
+
+  const handleSkipProfile = () => {
+    setProfileModalVisible(false);
   };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
@@ -218,24 +214,24 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => navigation.navigate('FreelancerProjects')}
+              >
+                <MaterialIcons name="work" size={24} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>My Jobs</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => navigation.navigate('Wallet')}
+              >
+                <MaterialIcons name="account-balance-wallet" size={24} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>My Wallet</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => navigation.navigate('FreelancerSavedGigs')}
               >
                 <MaterialIcons name="bookmark" size={24} color={c.primary} />
                 <Text style={[styles.quickActionText, { color: c.text }]}>Saved Jobs</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
-                onPress={() => navigation.navigate('Profile')}
-              >
-                <MaterialIcons name="person" size={24} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>My Profile</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
-                onPress={() => navigation.navigate('ManageSubscription')}
-              >
-                <MaterialIcons name="workspace-premium" size={24} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>Manage Premium</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -251,58 +247,61 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
             <View style={{ gap: 12 }}>
               {recommendedJobs.length > 0 ? (
-                recommendedJobs.map((job) => (
-                  <Card key={job._id} variant="elevated" padding={16}>
-                    <View style={styles.jobCard}>
-                      <View style={styles.jobHeader}>
-                        <View style={{ flex: 1 }}>
-                          <View style={styles.jobTitleRow}>
-                            <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
-                              {job.title}
-                            </Text>
-                            {/* <Badge label={job.status} variant={getStatusVariant(job.status)} size="small" /> */}
+                recommendedJobs.map((job) => {
+                  if (!job) return null;
+                  return (
+                    <Card key={job._id} variant="elevated" padding={16}>
+                      <View style={styles.jobCard}>
+                        <View style={styles.jobHeader}>
+                          <View style={{ flex: 1 }}>
+                            <View style={styles.jobTitleRow}>
+                              <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
+                                {job.title}
+                              </Text>
+                              {/* <Badge label={job.status} variant={getStatusVariant(job.status)} size="small" /> */}
+                            </View>
+                            <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
                           </View>
-                          <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
+                        </View>
+
+                        <View style={styles.jobMeta}>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.text }]}>${job.budget}</Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.subtext }]}>{new Date(job.createdAt).toLocaleDateString()}</Text>
+                          </View>
+                          <Badge label={job.jobType} variant="neutral" size="small" />
+                        </View>
+
+                        <View style={styles.skillsRow}>
+                          {job.skills.slice(0, 3).map((skill: string, idx: number) => (
+                            <Badge key={idx} label={skill} variant="info" size="small" />
+                          ))}
+                        </View>
+
+                        <View style={styles.jobActions}>
+                          <Button
+                            title="View Details"
+                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                            variant="outline"
+                            size="small"
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            title="Apply Now"
+                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                            variant="primary"
+                            size="small"
+                            style={{ flex: 1 }}
+                          />
                         </View>
                       </View>
-
-                      <View style={styles.jobMeta}>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.text }]}>${job.budget}</Text>
-                        </View>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.subtext }]}>{new Date(job.createdAt).toLocaleDateString()}</Text>
-                        </View>
-                        <Badge label={job.jobType} variant="neutral" size="small" />
-                      </View>
-
-                      <View style={styles.skillsRow}>
-                        {job.skills.slice(0, 3).map((skill: string, idx: number) => (
-                          <Badge key={idx} label={skill} variant="info" size="small" />
-                        ))}
-                      </View>
-
-                      <View style={styles.jobActions}>
-                        <Button
-                          title="View Details"
-                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                          variant="outline"
-                          size="small"
-                          style={{ flex: 1 }}
-                        />
-                        <Button
-                          title="Apply Now"
-                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                          variant="primary"
-                          size="small"
-                          style={{ flex: 1 }}
-                        />
-                      </View>
-                    </View>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               ) : (
                 <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>No recommended jobs found</Text>
               )}
@@ -310,18 +309,13 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
           </View>
         </ScrollView>
 
-        {profileMissing && (
-          <View style={styles.overlay}>
-            <View style={[styles.overlayCard, { backgroundColor: c.card, borderColor: c.border }]}>
-              <MaterialIcons name="person-outline" size={32} color={c.primary} />
-              <Text style={[styles.overlayTitle, { color: c.text }]}>Complete your profile</Text>
-              <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 8 }}>
-                Add your bio, skills, and location to get matched with jobs.
-              </Text>
-              <Button title="Complete Profile" onPress={() => navigation.navigate('EditProfile')} size="large" />
-            </View>
-          </View>
-        )}
+
+        <ProfileCompletionModal
+          visible={profileModalVisible}
+          missingFields={missingFields}
+          onComplete={handleCompleteProfile}
+          onSkip={handleSkipProfile}
+        />
       </View>
     </SafeAreaView>
   );

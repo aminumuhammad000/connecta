@@ -15,6 +15,7 @@ router.post('/:paymentId/refund', auth_middleware_1.authenticate, payment_contro
 router.get('/history', auth_middleware_1.authenticate, payment_controller_1.getPaymentHistory);
 // Wallet routes
 router.get('/wallet/balance', auth_middleware_1.authenticate, payment_controller_1.getWalletBalance);
+router.post('/wallet/settings', auth_middleware_1.authenticate, payment_controller_1.saveWithdrawalSettings);
 router.get('/transactions', auth_middleware_1.authenticate, payment_controller_1.getTransactionHistory);
 // Withdrawal routes
 router.post('/withdrawal/request', auth_middleware_1.authenticate, payment_controller_1.requestWithdrawal);

@@ -26,6 +26,7 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
     })
       .populate('clientId', 'firstName lastName email')
       .populate('freelancerId', 'firstName lastName email')
+      .populate('participants', 'firstName lastName email profileImage avatar isPremium')
       .populate('projectId', 'title');
 
     if (!conversation) {
@@ -69,14 +70,17 @@ export const getUserConversations = async (req: Request, res: Response) => {
     const { userId } = req.params;
 
     // Find conversations where user is either client or freelancer
+    // Find conversations where user is a participant
     const conversations = await Conversation.find({
       $or: [
         { clientId: userId },
         { freelancerId: userId },
+        { participants: userId }
       ],
     })
-      .populate('clientId', 'firstName lastName email')
-      .populate('freelancerId', 'firstName lastName email')
+      .populate('clientId', 'firstName lastName email profileImage avatar isPremium')
+      .populate('freelancerId', 'firstName lastName email profileImage avatar isPremium')
+      .populate('participants', 'firstName lastName email profileImage avatar isPremium')
       .populate('projectId', 'title')
       .sort({ lastMessageAt: -1 });
 
@@ -157,11 +161,32 @@ export const sendMessage = async (req: Request, res: Response) => {
     const { conversationId, senderId, receiverId, text, attachments } = req.body;
 
     // Validate required fields (text is optional if attachments exist)
-    if (!conversationId || !senderId || !receiverId) {
+    // Validate required fields
+    if ((!conversationId && (!senderId || !receiverId)) || (!senderId || !receiverId)) {
       return res.status(400).json({
         success: false,
-        message: 'Conversation ID, sender ID, and receiver ID are required',
+        message: 'Conversation ID (or sender+receiver ID) is required',
       });
+    }
+
+    let targetConversationId = conversationId;
+
+    // If no conversationId, find or create one
+    if (!targetConversationId) {
+      const existingConv = await Conversation.findOne({
+        participants: { $all: [senderId, receiverId], $size: 2 }
+      });
+
+      if (existingConv) {
+        targetConversationId = existingConv._id;
+      } else {
+        // Create new generic conversation
+        const newConv = await Conversation.create({
+          participants: [senderId, receiverId],
+          unreadCount: { [senderId]: 0, [receiverId]: 0 }
+        });
+        targetConversationId = newConv._id;
+      }
     }
 
     // Ensure either text or attachments are provided
@@ -177,7 +202,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     // Create message
     const message = await Message.create({
-      conversationId,
+      conversationId: targetConversationId,
       senderId,
       receiverId,
       text: messageText,
@@ -190,7 +215,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     await message.populate('receiverId', 'firstName lastName email');
 
     // Update conversation
-    await Conversation.findByIdAndUpdate(conversationId, {
+    await Conversation.findByIdAndUpdate(targetConversationId, {
       lastMessage: messageText,
       lastMessageAt: new Date(),
       $inc: {
@@ -199,10 +224,46 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     // Emit conversation update to both users
+    // Emit conversation update to both users
     const io = getIO();
     [senderId, receiverId].forEach((userId) => {
       io.to(userId).emit('conversation:update');
     });
+
+    // Create notification for receiver
+    const sender = await mongoose.model('User').findById(senderId).select('firstName lastName');
+    const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'Someone';
+
+    await mongoose.model('Notification').create({
+      userId: receiverId,
+      type: 'message_received',
+      title: 'New Message',
+      message: `${senderName} sent you a message`,
+      relatedId: targetConversationId,
+      relatedType: 'message',
+      actorId: senderId,
+      actorName: senderName,
+      isRead: false,
+    });
+
+    // Emit notification event to receiver
+    io.to(receiverId).emit('notification:new', {
+      title: 'New Message',
+      message: `${senderName} sent you a message`,
+      type: 'message_received'
+    });
+
+    // Send Push Notification
+    const notificationService = (await import('../services/notification.service')).default;
+    notificationService.sendPushNotification(
+      receiverId,
+      'New Message',
+      `${senderName}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`,
+      { conversationId: targetConversationId, type: 'message' }
+    );
+
+    // Emit message to receiver for real-time chat
+    io.to(receiverId).emit('message:receive', message);
 
     res.status(201).json({
       success: true,
@@ -276,7 +337,7 @@ export const getMessagesBetweenUsers = async (req: Request, res: Response) => {
 
     // Generate conversation ID from sorted user IDs
     const participants = [userId1, userId2].sort();
-    
+
     // Find conversation
     const conversation = await Conversation.findOne({
       participants: { $all: participants, $size: 2 },

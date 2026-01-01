@@ -30,14 +30,16 @@ const MyProposalsScreen: React.FC = () => {
   const loadProposals = async () => {
     try {
       setIsLoading(true);
+      if (!user?._id) return;
+
       // Fetch proposals for the current user (freelancer)
-      const data = await proposalService.getAllProposals().catch(() => []);
+      const data = await proposalService.getFreelancerProposals(user._id).catch(() => []);
 
       // Map API data to UI format
-      const mapped = data.map((p: any) => ({
+      const mapped = data.filter((p: any) => p).map((p: any) => ({
         id: p._id,
-        title: p.jobTitle || 'Untitled Job',
-        company: p.clientName || 'Unknown Client',
+        title: p.jobId?.title || p.title || 'Untitled Job',
+        company: p.jobId?.company || (p.clientId ? (p.clientId.firstName + ' ' + p.clientId.lastName) : 'Unknown Client'),
         status: p.status,
         submitted: `Submitted ${new Date(p.createdAt).toLocaleDateString()}`,
       }));

@@ -82,7 +82,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {/* Top App Bar */}
-        <View style={styles.appBar}> 
+        <View style={styles.appBar}>
           <Text style={[styles.h1, { color: c.text }]}>My Projects</Text>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Notifications" style={styles.iconBtn}>
             <MaterialIcons name="notifications" size={24} color={c.text} />
@@ -91,7 +91,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
 
         {/* Search */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <View style={[styles.searchWrap, { backgroundColor: c.card }]}> 
+          <View style={[styles.searchWrap, { backgroundColor: c.card }]}>
             <MaterialIcons name="search" size={22} color={c.subtext} style={{ marginLeft: 12 }} />
             <TextInput
               value={q}
@@ -124,7 +124,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
         </ScrollView>
 
         {/* List */}
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: 96 + insets.bottom, gap: 12 }}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
@@ -137,26 +137,38 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
               <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8 }}>Your projects will appear here</Text>
             </View>
           ) : (
-            filtered.map((p: any) => (
-              <TouchableOpacity key={p._id} activeOpacity={0.85} style={[styles.card, { backgroundColor: c.card }]}> 
-                <View style={styles.cardTop}> 
-                  <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                  <Text style={[styles.cardPrice, { color: c.primary }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
-                </View>
-                <View style={styles.cardMiddle}> 
-                  <Image source={{ uri: 'https://api.dicebear.com/7.x/avataaars/svg?seed=freelancer' }} style={styles.avatar} />
-                  <Text style={{ color: c.subtext, fontSize: 13 }}>Freelancer</Text>
-                </View>
-                <View style={styles.cardBottom}> 
-                  <View style={[styles.pill, pillStyle(mapProjectStatus(p.status))]}> 
-                    <Text style={[styles.pillText, { color: pillStyle(mapProjectStatus(p.status)).color }]}>
-                    {mapProjectStatus(p.status)}
-                  </Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={c.subtext} />
-              </View>
-            </TouchableOpacity>
-          )))}
+            filtered.map((p: any) => {
+              if (!p) return null;
+              return (
+                <TouchableOpacity
+                  key={p._id}
+                  activeOpacity={0.85}
+                  style={[styles.card, { backgroundColor: c.card }]}
+                  onPress={() => navigation.navigate('ProjectDetail', { id: p._id })}
+                >
+                  <View style={styles.cardTop}>
+                    <Text style={[styles.cardTitle, { color: c.text }]}>{p.title || 'Untitled Project'}</Text>
+                    <Text style={[styles.cardPrice, { color: c.primary }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
+                  </View>
+                  <View style={styles.cardMiddle}>
+                    <Image
+                      source={{ uri: p.freelancerId?.profileImage || `https://ui-avatars.com/api/?name=${p.freelancerId?.firstName}+${p.freelancerId?.lastName}&background=random` }}
+                      style={styles.avatar}
+                    />
+                    <Text style={{ color: c.subtext, fontSize: 13 }}>{p.freelancerId ? `${p.freelancerId.firstName} ${p.freelancerId.lastName}` : 'Freelancer'}</Text>
+                  </View>
+                  <View style={styles.cardBottom}>
+                    <View style={[styles.pill, pillStyle(mapProjectStatus(p.status))]}>
+                      <Text style={[styles.pillText, { color: pillStyle(mapProjectStatus(p.status)).color }]}>
+                        {mapProjectStatus(p.status)}
+                      </Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={22} color={c.subtext} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </ScrollView>
 
         {/* FAB */}
@@ -170,7 +182,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
         </TouchableOpacity>
 
         {/* Bottom Nav */}
-</View>
+      </View>
     </SafeAreaView>
   );
 };

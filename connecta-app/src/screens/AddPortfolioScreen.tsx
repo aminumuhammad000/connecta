@@ -1,228 +1,191 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import { post } from '../services/api';
 
-export default function AddPortfolioScreen({ navigation }: any) {
+const AddPortfolioScreen = () => {
     const c = useThemeColors();
-    const [formData, setFormData] = useState({
-        projectTitle: '',
-        yourRole: '',
-        projectDescription: '',
-        skillsAndDeliverables: ''
-    });
+    const navigation = useNavigation();
 
-    const handleInputChange = (name: string, value: string) => {
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [projectUrl, setProjectUrl] = useState('');
+    const [image, setImage] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 0.8,
+            // base64: true, // No longer need base64 for file upload
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setImage(result.assets[0].uri);
+        }
     };
 
-    const handleSaveAsDraft = () => {
-        Alert.alert('Draft Saved', 'Your portfolio item has been saved as a draft.');
-        navigation.goBack();
-    };
+    const handleSave = async () => {
+        if (!title || !description || !image) {
+            Alert.alert('Missing Info', 'Title, Description and Image are required.');
+            return;
+        }
 
-    const handlePreview = () => {
-        Alert.alert('Preview', 'Preview functionality coming soon.');
+        try {
+            setIsLoading(true);
+
+            // 1. Upload image if it's a local URI (not already a URL)
+            let finalImageUrl = image;
+            if (!image.startsWith('http')) {
+                // Determine file name and type from URI or default
+                // React Native ImagePicker results usually look like "file:///..."
+                const fileName = image.split('/').pop() || 'portfolio-image.jpg';
+                const fileType = 'image/jpeg'; // ImagePicker usually returns jpeg or png
+
+                const formData = new FormData();
+                formData.append('file', {
+                    uri: image,
+                    name: fileName,
+                    type: fileType,
+                } as any);
+
+                // Use the configured upload endpoint
+                const { uploadFile } = require('../services/api');
+                const { API_ENDPOINTS } = require('../utils/constants');
+
+                const uploadRes = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
+                if (uploadRes.data?.url) {
+                    finalImageUrl = uploadRes.data.url;
+                } else {
+                    throw new Error('Image upload failed');
+                }
+            }
+
+            // 2. Save portfolio item with the URL
+            await post('/api/portfolio', {
+                title,
+                description,
+                projectUrl,
+                imageUrl: finalImageUrl,
+                tags: []
+            });
+            Alert.alert('Success', 'Portfolio item added!');
+            navigation.goBack();
+        } catch (error: any) {
+            console.error('Add portfolio error:', error);
+            Alert.alert('Error', error.response?.data?.message || error.message || 'Failed to add item');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
             <View style={[styles.header, { borderBottomColor: c.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-                    <Ionicons name="close" size={24} color={c.text} />
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialIcons name="arrow-back" size={24} color={c.text} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text }]}>Add Portfolio</Text>
-                <View style={{ width: 24 }} />
+                <Text style={[styles.headerTitle, { color: c.text }]}>Add to Portfolio</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <Text style={[styles.pageTitle, { color: c.text }]}>Add a new portfolio project</Text>
-                <Text style={[styles.subtitle, { color: c.subtext }]}>
-                    Please complete all required fields unless marked as optional.
-                </Text>
-
-                <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Project title</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                            value={formData.projectTitle}
-                            onChangeText={(text) => handleInputChange('projectTitle', text)}
-                            placeholder="Add a clear, concise title"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Your role (optional)</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                            value={formData.yourRole}
-                            onChangeText={(text) => handleInputChange('yourRole', text)}
-                            placeholder="e.g UI/UX designer"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Project description</Text>
-                        <TextInput
-                            style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                            value={formData.projectDescription}
-                            onChangeText={(text) => handleInputChange('projectDescription', text)}
-                            multiline
-                            numberOfLines={4}
-                            placeholder="Summarize the project's objectives..."
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Skills and deliverables</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                            value={formData.skillsAndDeliverables}
-                            onChangeText={(text) => handleInputChange('skillsAndDeliverables', text)}
-                            placeholder="Type to add skills"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={styles.mediaSection}>
-                        <Text style={[styles.mediaTitle, { color: c.text }]}>Add content</Text>
-                        <View style={styles.mediaGrid}>
-                            {['image', 'videocam', 'text', 'link', 'document-text', 'musical-notes'].map((icon, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[styles.mediaButton, { backgroundColor: c.card, borderColor: c.border }]}
-                                >
-                                    <Ionicons name={icon as any} size={24} color={c.text} />
-                                </TouchableOpacity>
-                            ))}
+            <ScrollView contentContainerStyle={{ padding: 24 }}>
+                <TouchableOpacity onPress={pickImage} style={[styles.imagePicker, { backgroundColor: c.card, borderColor: c.border }]}>
+                    {image ? (
+                        <Image source={{ uri: image }} style={{ width: '100%', height: '100%', borderRadius: 12 }} resizeMode="cover" />
+                    ) : (
+                        <View style={{ alignItems: 'center' }}>
+                            <MaterialIcons name="add-photo-alternate" size={48} color={c.primary} />
+                            <Text style={{ color: c.subtext, marginTop: 8 }}>Add Cover Image</Text>
                         </View>
-                    </View>
-                </View>
+                    )}
+                </TouchableOpacity>
 
-                <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                        style={[styles.draftButton, { borderColor: c.border }]}
-                        onPress={handleSaveAsDraft}
-                    >
-                        <Text style={[styles.draftButtonText, { color: c.text }]}>Save as draft</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.previewButton, { backgroundColor: c.primary }]}
-                        onPress={handlePreview}
-                    >
-                        <Text style={styles.previewButtonText}>Preview</Text>
-                    </TouchableOpacity>
-                </View>
+                <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Project Title</Text>
+                <TextInput
+                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
+                    placeholder="e.g. E-commerce Website"
+                    placeholderTextColor={c.subtext}
+                    value={title}
+                    onChangeText={setTitle}
+                />
+
+                <Text style={[styles.label, { color: c.text, marginTop: 16 }]}>Description</Text>
+                <TextInput
+                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text, height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
+                    placeholder="Describe what you did..."
+                    placeholderTextColor={c.subtext}
+                    multiline
+                    value={description}
+                    onChangeText={setDescription}
+                />
+
+                <Text style={[styles.label, { color: c.text, marginTop: 16 }]}>Project URL (Optional)</Text>
+                <TextInput
+                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
+                    placeholder="https://..."
+                    placeholderTextColor={c.subtext}
+                    autoCapitalize="none"
+                    value={projectUrl}
+                    onChangeText={setProjectUrl}
+                />
+
+                <TouchableOpacity
+                    style={[styles.saveBtn, { backgroundColor: c.primary, marginTop: 40 }]}
+                    onPress={handleSave}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={styles.saveBtnText}>Save Project</Text>
+                    )}
+                </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
     );
-}
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         borderBottomWidth: 1,
     },
-    closeButton: {
-        padding: 4,
+    backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 18, fontWeight: '700' },
+    imagePicker: {
+        height: 200,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    content: {
-        padding: 24,
-    },
-    pageTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 16,
-        marginBottom: 32,
-    },
-    form: {
-        marginBottom: 32,
-    },
-    inputGroup: {
-        marginBottom: 24,
-    },
-    label: {
-        fontSize: 14,
-        marginBottom: 8,
-    },
+    label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
     input: {
-        height: 48,
-        borderRadius: 8,
+        height: 50,
+        borderRadius: 12,
         borderWidth: 1,
         paddingHorizontal: 16,
-    },
-    textArea: {
-        minHeight: 120,
-        borderRadius: 8,
-        borderWidth: 1,
-        padding: 16,
-        textAlignVertical: 'top',
-    },
-    mediaSection: {
-        marginTop: 8,
-    },
-    mediaTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 16,
     },
-    mediaGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-    },
-    mediaButton: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        gap: 16,
-    },
-    draftButton: {
-        flex: 1,
-        height: 56,
-        borderRadius: 12,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    draftButtonText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    previewButton: {
-        flex: 1,
-        height: 56,
+    saveBtn: {
+        height: 50,
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    previewButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
+    saveBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
 });
+
+export default AddPortfolioScreen;

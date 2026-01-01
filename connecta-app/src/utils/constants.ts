@@ -12,8 +12,7 @@ const deriveExpoHostBaseUrl = () => {
     if (!hostUri) return undefined;
     const host = hostUri.replace(/^https?:\/\//, '').split(':')[0];
     if (!host) return undefined;
-    // return `http://${host}:5000`;
-    return `https://api.myconnecta.ng`;
+    return `http://${host}:5000`;
 };
 
 const explicitBaseUrl =
@@ -22,9 +21,20 @@ const explicitBaseUrl =
     (Constants as any)?.manifest?.extra?.apiBaseUrl;
 
 const derivedHostBaseUrl = deriveExpoHostBaseUrl();
-const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+// const platformDefaultBaseUrl = Platform.OS === 'android' ? 'https://api.myconnecta.ng' : 'https://api.myconnecta.ng';
+const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://localhost:500' : 'http://localhost:5000';
 
-export const API_BASE_URL = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
+const getBaseUrl = () => {
+    let url = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
+
+    // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
+    if (Platform.OS === 'ios' && (url?.includes('10.0.2.2'))) {
+        return 'http://localhost:5000';
+    }
+    return url;
+};
+
+export const API_BASE_URL = getBaseUrl();
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {
@@ -61,10 +71,10 @@ export const API_ENDPOINTS = {
 
     // Proposals
     PROPOSALS: '/api/proposals',
-    PROPOSALS_BY_JOB: (jobId: string) => `/api/proposals/job/${jobId}`,
     ACCEPTED_PROPOSALS: '/api/proposals/client/accepted',
-    FREELANCER_PROPOSALS: (id: string) => `/api/proposals/freelancer/${id}`,
-    PROPOSAL_STATS: (id: string) => `/api/proposals/freelancer/${id}/stats`,
+    FREELANCER_PROPOSALS: (freelancerId: string) => `/api/proposals/freelancer/${freelancerId}`,
+    JOB_PROPOSALS: (jobId: string) => `/api/proposals/job/${jobId}`,
+    PROPOSAL_STATS: (freelancerId: string) => `/api/proposals/stats/${freelancerId}`,
     PROPOSAL_BY_ID: (id: string) => `/api/proposals/${id}`,
     APPROVE_PROPOSAL: (id: string) => `/api/proposals/${id}/approve`,
     REJECT_PROPOSAL: (id: string) => `/api/proposals/${id}/reject`,
@@ -94,14 +104,16 @@ export const API_ENDPOINTS = {
 
     // Payments
     INITIALIZE_PAYMENT: '/api/payments/initialize',
-    INITIALIZE_JOB_VERIFICATION: '/api/payments/job-verification',
+    PAYMENT_JOB_VERIFICATION: '/api/payments/job-verification',
     VERIFY_PAYMENT: (reference: string) => `/api/payments/verify/${reference}`,
     PAYMENT_HISTORY: '/api/payments/history',
     WALLET_BALANCE: '/api/payments/wallet/balance',
     TRANSACTIONS: '/api/payments/transactions',
     WITHDRAWAL_REQUEST: '/api/payments/withdrawal/request',
+    WITHDRAWAL_SETTINGS: '/api/payments/wallet/settings',
     BANKS: '/api/payments/banks',
     RESOLVE_BANK: '/api/payments/banks/resolve',
+    RELEASE_PAYMENT: (paymentId: string) => `/api/payments/${paymentId}/release`,
 
     // Notifications
     NOTIFICATIONS: '/api/notifications',

@@ -2,49 +2,14 @@
   "expo": {
     "name": "Connecta",
     "slug": "connecta",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/favicon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/favicon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "package": "com.connecta.app",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/favicon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "notification": {
-        "color": "#2563EB"
-      },
-      "usesCleartextTraffic": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-notifications"
-    ],
+    "scheme": "connecta",
     "extra": {
       "eas": {
         "projectId": "6726d9ba-7936-44be-988e-331265e60d7a"
       }
     },
-    "owner": "0x_mrcoder",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/6726d9ba-7936-44be-988e-331265e60d7a"
+    "android": {
+      "package": "com.connecta.app"
     }
   }
 }

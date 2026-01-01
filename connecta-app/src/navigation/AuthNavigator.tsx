@@ -64,17 +64,18 @@ function OTPVerificationWrapper({ navigation, route }: any) {
         <OTPVerificationScreen
             email={email}
             onBackToForgotPassword={() => navigation.goBack()}
-            onOTPVerified={() => navigation.navigate('ResetPassword', { email })}
+            onOTPVerified={(token: string) => navigation.navigate('ResetPassword', { email, resetToken: token })}
         />
     );
 }
 
 function ResetPasswordWrapper({ navigation, route }: any) {
-    const { email } = route.params || {};
+    const { email, resetToken } = route.params || {};
 
     return (
         <ResetPasswordScreen
             email={email}
+            resetToken={resetToken}
             onPasswordReset={() => navigation.navigate('Login')}
         />
     );

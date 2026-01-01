@@ -26,6 +26,7 @@ const review_routes_1 = __importDefault(require("./routes/review.routes"));
 const gigs_routes_1 = __importDefault(require("./routes/gigs.routes"));
 const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
 const insights_routes_1 = __importDefault(require("./routes/insights.routes"));
+const portfolio_routes_1 = __importDefault(require("./routes/portfolio.routes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -43,10 +44,16 @@ const io = new socket_io_1.Server(server, {
 (0, socketIO_1.setIO)(io);
 // Middleware
 app.use((0, cors_1.default)({
-    origin: "*",
+    origin: [
+        "http://102.68.84.56",
+        "http://localhost:5173",
+        "http://localhost:8081"
+    ],
+    credentials: true
 }));
 app.use(express_1.default.json());
-app.use('/uploads', express_1.default.static('uploads'));
+// Connect to Database
+(0, db_config_1.default)();
 // Routes
 app.use("/api/users", user_routes_1.default);
 app.use("/api/profiles", Profile_routes_1.default);
@@ -62,11 +69,12 @@ app.use("/api/payments", payment_routes_1.default);
 app.use("/api/reviews", review_routes_1.default);
 app.use("/api/gigs", gigs_routes_1.default);
 app.use("/api/notifications", notification_routes_1.default);
+app.use("/api/portfolio", portfolio_routes_1.default);
 const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
 app.use("/api/analytics", analytics_routes_1.default);
 const Subscription_routes_1 = __importDefault(require("./routes/Subscription.routes"));
 app.use("/api/subscriptions", Subscription_routes_1.default);
-app.use("/api/insights", insights_routes_1.default);
+app.use("/api/analytics", insights_routes_1.default);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });
@@ -136,19 +144,7 @@ io.on("connection", (socket) => {
     });
 });
 // Start Server
-const startServer = async () => {
-    try {
-        // Connect to Database first
-        await (0, db_config_1.default)();
-        // Then start the server
-        server.listen(PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${PORT}`);
-            console.log(`🔌 Socket.io ready for real-time messaging`);
-        });
-    }
-    catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
-    }
-};
-startServer();
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🔌 Socket.io ready for real-time messaging`);
+});

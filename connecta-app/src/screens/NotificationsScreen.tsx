@@ -73,18 +73,77 @@ export default function NotificationsScreen({ navigation }: Props) {
     loadNotifications();
   };
 
-  const handlePress = (item: Notification) => {
-    // Mark as read if needed, then navigate
+  const handlePress = async (item: Notification) => {
+    // 1. Mark as read immediately
+    if (!item.read && !item.isRead) {
+      try {
+        await notificationService.markAsRead(item._id);
+        // Optimistic update
+        setNotifications(prev => prev.map(n => n._id === item._id ? { ...n, read: true, isRead: true } : n));
+      } catch (e) {
+        console.error("Failed to mark read", e);
+      }
+    }
+
+    // 2. Navigate based on type/relatedType
+    const { type, relatedId, relatedType } = item;
+
+    // Project / Payment related -> Project Detail
+    if ((relatedType === 'project' || type === 'project_started' || type === 'payment_released' || type === 'proposal_accepted') && relatedId) {
+      // Ideally for proposal_accepted, relatedId is proposalId, but we might need projectId. 
+      // If relatedType is 'proposal', strict navigation might fail if we don't have projectId. 
+      // But assuming 'project_started' has relatedId = projectId.
+      // Let's try to navigate to ProjectDetail if we have an ID that looks like a project, or rely on fetching.
+      // For now, if type is proposal_accepted, usually relatedId is proposal._id. 
+      // We might need to fetch proposal to get projectId, or notification should have projectId.
+      navigation.navigate('ProjectDetail', { id: relatedId });
+      return;
+    }
+
+    if (relatedType === 'job' && relatedId) {
+      navigation.navigate('JobDetail', { id: relatedId });
+      return;
+    }
+
+    if (relatedType === 'proposal' && relatedId) {
+      // If client -> Proposal Detail (to see freelancer's proposal)
+      // If freelancer -> My Proposals or Proposal Detail
+      navigation.navigate('ProposalDetail', { id: relatedId });
+      return;
+    }
+
+    if (relatedType === 'message' || type === 'message_received') {
+      // relatedId is usually conversationId
+      if (relatedId) navigation.navigate('MessagesDetail', { conversationId: relatedId });
+      return;
+    }
+
+    // Fallback
     navigation.navigate('NotificationDetail', { notification: item });
   };
 
   const getIconName = (type: string) => {
     switch (type) {
-      case 'payment': return 'wallet-outline';
-      case 'message': return 'chatbubble-ellipses-outline';
-      case 'job': return 'briefcase-outline';
-      case 'proposal': return 'document-text-outline';
+      case 'payment':
+      case 'payment_received':
+      case 'payment_released':
+        return 'wallet-outline';
+      case 'message':
+      case 'message_received':
+        return 'chatbubble-ellipses-outline';
+      case 'job':
+      case 'project_started':
+      case 'project_completed':
+        return 'briefcase-outline';
+      case 'proposal':
+      case 'proposal_received':
+      case 'proposal_accepted':
+      case 'proposal_rejected':
+        return 'document-text-outline';
       case 'system': return 'information-circle-outline';
+      case 'success': return 'checkmark-circle-outline';
+      case 'error': return 'alert-circle-outline';
+      case 'warning': return 'warning-outline';
       default: return 'notifications-outline';
     }
   };
@@ -104,22 +163,25 @@ export default function NotificationsScreen({ navigation }: Props) {
     return date.toLocaleDateString();
   };
 
-  const renderItem = ({ item }: { item: Notification }) => (
-    <TouchableOpacity onPress={() => handlePress(item)} activeOpacity={0.8}>
-      <View style={[styles.item, { backgroundColor: item.read ? c.background : c.card, borderColor: c.border }]}>
-        <Ionicons name={getIconName(item.type) as any} size={24} color={c.primary} style={styles.icon} />
-        <View style={styles.itemContent}>
-          <View style={styles.itemHeader}>
-            <Text style={[styles.title, { color: c.text, fontWeight: item.read ? '400' : '700' }]}>{item.title}</Text>
-            <Text style={[styles.time, { color: c.subtext }]}>{formatTime(item.createdAt)}</Text>
+  const renderItem = ({ item }: { item: Notification }) => {
+    if (!item) return null;
+    return (
+      <TouchableOpacity onPress={() => handlePress(item)} activeOpacity={0.8}>
+        <View style={[styles.item, { backgroundColor: item.read ? c.background : c.card, borderColor: c.border }]}>
+          <Ionicons name={getIconName(item.type) as any} size={24} color={c.primary} style={styles.icon} />
+          <View style={styles.itemContent}>
+            <View style={styles.itemHeader}>
+              <Text style={[styles.title, { color: c.text, fontWeight: item.read ? '400' : '700' }]}>{item.title}</Text>
+              <Text style={[styles.time, { color: c.subtext }]}>{formatTime(item.createdAt)}</Text>
+            </View>
+            <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
+              {item.message}
+            </Text>
           </View>
-          <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
-            {item.message}
-          </Text>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>

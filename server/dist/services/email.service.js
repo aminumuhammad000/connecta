@@ -23,6 +23,7 @@ const transporter = nodemailer_1.default.createTransport({
 const sendOTPEmail = async (email, otp, userName) => {
     try {
         const mailOptions = {
+            // ... (keep headers)
             from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
             to: email,
             subject: 'Password Reset OTP - Connecta',
@@ -134,11 +135,11 @@ If you didn't request this password reset, please ignore this email.
         };
         const info = await transporter.sendMail(mailOptions);
         console.log('OTP email sent:', info.messageId);
-        return true;
+        return { success: true };
     }
     catch (error) {
         console.error('Error sending OTP email:', error);
-        return false;
+        return { success: false, error: error.message || error };
     }
 };
 exports.sendOTPEmail = sendOTPEmail;

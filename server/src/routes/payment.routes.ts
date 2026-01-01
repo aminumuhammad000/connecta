@@ -13,6 +13,7 @@ import {
   getTransactionHistory,
   getBanks,
   resolveAccount,
+  saveWithdrawalSettings,
 } from '../controllers/payment.controller';
 import { authenticate } from '../core/middleware/auth.middleware';
 
@@ -31,6 +32,7 @@ router.get('/history', authenticate, getPaymentHistory);
 
 // Wallet routes
 router.get('/wallet/balance', authenticate, getWalletBalance);
+router.post('/wallet/settings', authenticate, saveWithdrawalSettings);
 router.get('/transactions', authenticate, getTransactionHistory);
 
 // Withdrawal routes

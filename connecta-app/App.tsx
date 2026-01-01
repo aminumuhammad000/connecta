@@ -5,10 +5,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { RoleProvider, useRole } from './src/context/RoleContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { SocketProvider } from './src/context/SocketContext';
 import { useThemeColors } from './src/theme/theme';
 import * as Notifications from 'expo-notifications';
 import { configureNotifications, registerForPushNotificationsAsync } from './src/utils/notifications';
 import { InAppAlertProvider, useInAppAlert } from './src/components/InAppAlert';
+import authService from './src/services/authService';
+import EmailVerificationScreen from './src/screens/EmailVerificationScreen';
 
 // Navigators
 import AuthNavigator from './src/navigation/AuthNavigator';
@@ -23,9 +26,11 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <RoleProvider>
-            <InAppAlertProvider>
-              <AppContent />
-            </InAppAlertProvider>
+            <SocketProvider>
+              <InAppAlertProvider>
+                <AppContent />
+              </InAppAlertProvider>
+            </SocketProvider>
           </RoleProvider>
         </AuthProvider>
       </ThemeProvider>
@@ -43,8 +48,12 @@ function AppContent() {
       await configureNotifications();
       const { token, reason } = await registerForPushNotificationsAsync();
       if (token) {
-        // You can send this token to your backend
-        // console.log('Expo push token:', token);
+        // Send token to backend
+        try {
+          await authService.updatePushToken(token);
+        } catch (e) {
+          console.error('Failed to update push token', e);
+        }
       } else if (reason === 'expo-go') {
         showAlert({
           title: 'Push notifications limited in Expo Go',
@@ -106,6 +115,11 @@ function RootNavigation() {
   // Show auth screens if not authenticated
   if (!isAuthenticated || !user) {
     return <AuthNavigator />;
+  }
+
+  // Force email verification
+  if (!user.isVerified) {
+    return <EmailVerificationScreen />;
   }
 
   // Show role-based navigator

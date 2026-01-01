@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, BackHandler, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
-import { useInAppAlert } from '../components/InAppAlert';
+import CustomAlert, { AlertType } from '../components/CustomAlert';
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface LoginScreenProps {
   onSignedIn?: () => void;
@@ -15,33 +19,83 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgotPassword }) => {
   const c = useThemeColors();
-  const { login } = useAuth();
-  const { showAlert } = useInAppAlert();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Alert State
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType }>({
+    title: '',
+    message: '',
+    type: 'success'
+  });
+
+  const showCustomAlert = (title: string, message: string, type: AlertType = 'success') => {
+    setAlertConfig({ title, message, type });
+    setAlertVisible(true);
+  };
+
+  const handleAlertClose = () => {
+    setAlertVisible(false);
+  };
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => sub.remove();
   }, []);
 
+
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
+    iosClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
+    androidClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
+    redirectUri: 'https://auth.expo.io/@0x_mrcoder/connecta',
+  });
+
+  useEffect(() => {
+    if (request) {
+      console.log('👀 EXPECTED REDIRECT URI:', request.redirectUri);
+    }
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleLogin(id_token);
+    } else if (response?.type === 'error') {
+      console.error('Google Auth Error:', response.error);
+    }
+  }, [response, request]);
+
+  const handleGoogleLogin = async (token: string) => {
+    setIsLoading(true);
+    try {
+      await googleLogin(token);
+      showCustomAlert('Success', 'Logged in with Google!', 'success');
+      onSignedIn?.();
+    } catch (error: any) {
+      showCustomAlert('Google Login Failed', error.message || 'Failed to login with Google', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     // Validation
     if (!email.trim() || !password.trim()) {
-      showAlert({ title: 'Error', message: 'Please enter both email and password', type: 'error' });
+      showCustomAlert('Error', 'Please enter both email and password', 'error');
       return;
     }
 
     setIsLoading(true);
     try {
       await login({ email: email.trim(), password });
-      showAlert({ title: 'Success', message: 'Logged in successfully!', type: 'success' });
+      showCustomAlert('Success', 'Logged in successfully!', 'success');
       // Navigation will happen automatically via AuthContext
       onSignedIn?.();
     } catch (error: any) {
-      showAlert({ title: 'Login Failed', message: error.message || 'Invalid email or password', type: 'error' });
+      showCustomAlert('Login Failed', error.message || 'Invalid email or password', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +169,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
               <View style={[styles.divider, { borderColor: c.border }]} />
             </View>
 
-            <TouchableOpacity activeOpacity={0.9} style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.card }]}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.card }]}
+              onPress={() => promptAsync()}
+              disabled={!request}
+            >
               <MaterialCommunityIcons name="google" size={20} color={c.text} />
               <Text style={[styles.googleText, { color: c.text }]}>Continue with Google</Text>
             </TouchableOpacity>
@@ -128,7 +187,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
             </TouchableOpacity>
           </View>
         </ScrollView>
+
       </KeyboardAvoidingView>
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={handleAlertClose}
+      />
     </SafeAreaView>
   );
 };

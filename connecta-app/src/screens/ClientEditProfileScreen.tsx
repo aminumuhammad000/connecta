@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useThemeColors } from '../theme/theme';
 import { useInAppAlert } from '../components/InAppAlert';
-import { useAuth } from '../context/AuthContext';
 import * as profileService from '../services/profileService';
 import * as userService from '../services/userService';
-import * as uploadService from '../services/uploadService';
 
 export default function ClientEditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
     const { showAlert } = useInAppAlert();
-    const { user: authUser } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -25,7 +21,6 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         companyName: '',
         website: '',
         bio: '',
-        avatar: '',
     });
 
     useEffect(() => {
@@ -35,42 +30,24 @@ export default function ClientEditProfileScreen({ navigation }: any) {
     const loadProfileData = async () => {
         try {
             setLoading(true);
-
-            // Try to get user data from API, but use AuthContext as fallback
-            let user = null;
-            try {
-                user = await userService.getMe();
-            } catch (userError: any) {
-                console.warn('⚠️ User API not found, using auth context data:', userError?.message);
-                user = authUser; // Use the authenticated user from context
-            }
-
-            const profile = await profileService.getMyProfile();
-
-            // Prioritize data sources: API user > Auth context > Profile
-            const fullName = user 
-                ? `${user.firstName} ${user.lastName}`.trim()
-                : `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim();
+            console.log('🔄 Loading profile data...');
             
-            const email = user?.email || profile?.email || '';
+            const [user, profile] = await Promise.all([
+                userService.getMe(),
+                profileService.getMyProfile()
+            ]);
 
-            // Log the loaded data for debugging
-            console.log('📊 Loaded profile data:', { 
-                user: user ? { firstName: user.firstName, lastName: user.lastName, email: user.email } : 'null',
-                profile: profile ? { firstName: profile.firstName, lastName: profile.lastName, email: profile.email } : 'null',
-                fullName,
-                email
-            });
+            console.log('✅ User data loaded:', { firstName: user.firstName, lastName: user.lastName, email: user.email });
+            console.log('✅ Profile data loaded:', profile);
 
             setFormData({
-                fullName: fullName || '',
-                email: email || '',
+                fullName: `${user.firstName} ${user.lastName}`,
+                email: user.email,
                 phone: profile?.phoneNumber || '',
                 location: profile?.location || '',
                 companyName: profile?.companyName || '',
                 website: profile?.website || '',
                 bio: profile?.bio || '',
-                avatar: profile?.avatar || user?.profileImage || '',
             });
         } catch (error: any) {
             console.error('❌ Failed to load profile:', error);
@@ -88,65 +65,37 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const pickImage = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.8,
-        });
-
-        if (!result.canceled) {
-            setFormData(prev => ({ ...prev, avatar: result.assets[0].uri }));
-        }
-    };
-
     const handleSave = async () => {
         try {
             setSaving(true);
 
             // Validate required fields
-            const fullNameTrimmed = formData.fullName.trim();
-            const emailTrimmed = formData.email.trim();
-
-            if (!fullNameTrimmed || !emailTrimmed) {
+            if (!formData.fullName.trim() || !formData.email.trim()) {
                 showAlert({
-                    title: 'Required Fields',
-                    message: 'Please enter your full name and email to continue',
-                    type: 'warning',
+                    title: 'Validation Error',
+                    message: 'Full name and email are required',
+                    type: 'error',
                 });
                 setSaving(false);
                 return;
             }
 
-            // Upload image if changed (local URI)
-            let avatarUrl = formData.avatar;
-            if (formData.avatar && formData.avatar.startsWith('file://')) {
-                try {
-                    console.log('📤 Uploading avatar...');
-                    avatarUrl = await uploadService.uploadImage(formData.avatar);
-                    console.log('✅ Avatar uploaded:', avatarUrl);
-                } catch (uploadError) {
-                    console.error('❌ Avatar upload failed:', uploadError);
-                    showAlert({
-                        title: 'Upload Failed',
-                        message: 'Failed to upload profile image, but saving other data.',
-                        type: 'warning',
-                    });
-                    // Continue saving other data even if image upload fails
-                }
-            }
+            console.log('💾 Saving profile data...', formData);
 
+            // Split full name into first and last name
             const nameParts = formData.fullName.trim().split(' ');
             const firstName = nameParts[0];
             const lastName = nameParts.slice(1).join(' ') || firstName;
 
-            // Update user data
-            await userService.updateMe({
+            console.log('👤 Updating user:', { firstName, lastName });
+
+            // Update user data (firstName, lastName)
+            const updatedUser = await userService.updateMe({
                 firstName,
                 lastName,
-                profileImage: avatarUrl,
             });
+
+            console.log('✅ User updated:', updatedUser);
 
             // Update profile data
             const profileData = {
@@ -155,18 +104,23 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 companyName: formData.companyName.trim(),
                 website: formData.website.trim(),
                 bio: formData.bio.trim(),
-                avatar: avatarUrl,
             };
 
-            await profileService.updateMyProfile(profileData);
+            console.log('📝 Updating profile:', profileData);
 
+            const updatedProfile = await profileService.updateMyProfile(profileData);
+
+            console.log('✅ Profile updated:', updatedProfile);
+
+            // Show success message
             showAlert({
                 title: 'Success!',
-                message: 'Profile updated successfully',
+                message: 'Your profile has been updated successfully',
                 type: 'success',
                 durationMs: 2500,
             });
 
+            // Wait a moment for the success message to show, then go back
             setTimeout(() => {
                 navigation.goBack();
             }, 2500);
@@ -175,7 +129,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
             console.error('❌ Failed to save profile:', error);
             showAlert({
                 title: 'Update Failed',
-                message: error?.message || 'Failed to save profile.',
+                message: error?.message || 'Failed to save profile. Please try again.',
                 type: 'error',
             });
         } finally {
@@ -202,15 +156,12 @@ export default function ClientEditProfileScreen({ navigation }: any) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
+                {/* Profile Photo Section */}
                 <View style={styles.photoSection}>
-                    <TouchableOpacity onPress={pickImage} style={[styles.photoPlaceholder, { backgroundColor: c.card }]}>
-                        {formData.avatar ? (
-                            <Image source={{ uri: formData.avatar }} style={styles.avatarImage} />
-                        ) : (
-                            <Ionicons name="person" size={40} color={c.subtext} />
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={pickImage} style={[styles.editPhotoButton, { backgroundColor: c.primary }]}>
+                    <View style={[styles.photoPlaceholder, { backgroundColor: c.card }]}>
+                        <Ionicons name="person" size={40} color={c.subtext} />
+                    </View>
+                    <TouchableOpacity style={[styles.editPhotoButton, { backgroundColor: c.primary }]}>
                         <Ionicons name="pencil" size={16} color="white" />
                     </TouchableOpacity>
                 </View>
@@ -234,7 +185,6 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                             value={formData.email}
                             onChangeText={(text) => handleInputChange('email', text)}
                             keyboardType="email-address"
-                            editable={false} // Email usually shouldn't be editable easily
                         />
                     </View>
 
@@ -312,22 +262,92 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
-    backButton: { padding: 4 },
-    headerTitle: { fontSize: 18, fontWeight: 'bold' },
-    scrollContent: { padding: 24 },
-    photoSection: { alignItems: 'center', marginBottom: 32 },
-    photoPlaceholder: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-    avatarImage: { width: '100%', height: '100%' },
-    editPhotoButton: { position: 'absolute', bottom: 0, right: '35%', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white' },
-    section: { marginBottom: 32 },
-    sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-    inputGroup: { marginBottom: 16 },
-    label: { fontSize: 14, marginBottom: 8 },
-    input: { height: 48, borderRadius: 8, borderWidth: 1, paddingHorizontal: 16 },
-    textArea: { minHeight: 100, borderRadius: 8, borderWidth: 1, padding: 16, textAlignVertical: 'top' },
-    saveButton: { height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
-    saveButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+    container: {
+        flex: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderBottomWidth: 1,
+    },
+    backButton: {
+        padding: 4,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    scrollContent: {
+        padding: 24,
+    },
+    photoSection: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    photoPlaceholder: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    editPhotoButton: {
+        position: 'absolute',
+        bottom: 0,
+        right: '35%',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: 'white',
+    },
+    section: {
+        marginBottom: 32,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16,
+    },
+    inputGroup: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 14,
+        marginBottom: 8,
+    },
+    input: {
+        height: 48,
+        borderRadius: 8,
+        borderWidth: 1,
+        paddingHorizontal: 16,
+    },
+    textArea: {
+        minHeight: 100,
+        borderRadius: 8,
+        borderWidth: 1,
+        padding: 16,
+        textAlignVertical: 'top',
+    },
+    saveButton: {
+        height: 56,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 32,
+    },
+    saveButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });

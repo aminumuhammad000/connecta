@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.rejectProposal = exports.approveProposal = exports.getClientAcceptedProposals = exports.getProposalStats = exports.deleteProposal = exports.updateProposal = exports.updateProposalStatus = exports.createProposal = exports.getProposalById = exports.getAllProposals = exports.getProposalsByJobId = exports.getFreelancerProposals = void 0;
 const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
+const mongoose_1 = __importDefault(require("mongoose"));
 // Get all proposals for a freelancer
 const getFreelancerProposals = async (req, res) => {
     try {
@@ -107,7 +108,10 @@ const getProposalById = async (req, res) => {
         const proposal = await Proposal_model_1.default.findById(id)
             .populate('freelancerId', 'firstName lastName email')
             .populate('referredBy', 'firstName lastName')
-            .populate('jobId')
+            .populate({
+            path: 'jobId',
+            populate: { path: 'clientId', select: 'firstName lastName email location' }
+        })
             .populate('clientId', 'firstName lastName email');
         if (!proposal) {
             return res.status(404).json({
@@ -364,6 +368,13 @@ const approveProposal = async (req, res) => {
                 message: 'You are not authorized to approve this proposal',
             });
         }
+        // Check if already approved/accepted
+        if (proposal.status === 'accepted' || proposal.status === 'approved') {
+            return res.status(400).json({
+                success: false,
+                message: 'This proposal has already been accepted.',
+            });
+        }
         // Update proposal status to approved
         proposal.status = 'approved';
         await proposal.save();
@@ -437,8 +448,27 @@ const approveProposal = async (req, res) => {
                 proposal,
                 project,
                 payment: pendingPayment,
-                requiresPayment: true, // Frontend should redirect to payment
             },
+        });
+        // Notify Freelancer
+        const io = require('../core/utils/socketIO').getIO(); // Import here to avoid circular dependency issues if any
+        // Create notification record
+        await mongoose_1.default.model('Notification').create({
+            userId: actualFreelancerId,
+            type: 'proposal_accepted',
+            title: 'Proposal Accepted',
+            message: `Your proposal for "${proposal.title}" has been accepted!`,
+            relatedId: proposal._id,
+            relatedType: 'proposal',
+            actorId: actualClientId,
+            actorName: clientName,
+            isRead: false,
+        });
+        // Emit live event
+        io.to(actualFreelancerId.toString()).emit('notification:new', {
+            title: 'Proposal Accepted',
+            message: `Your proposal for "${proposal.title}" has been accepted!`,
+            type: 'proposal_accepted'
         });
     }
     catch (error) {

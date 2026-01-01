@@ -35,7 +35,7 @@ export const getFreelancerProposals = async (freelancerId: string): Promise<Prop
  * Get proposals for a specific job
  */
 export const getProposalsByJobId = async (jobId: string): Promise<Proposal[]> => {
-    const response = await get<Proposal[]>(API_ENDPOINTS.PROPOSALS_BY_JOB(jobId));
+    const response = await get<Proposal[]>(API_ENDPOINTS.JOB_PROPOSALS(jobId));
     return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 

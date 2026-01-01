@@ -6,21 +6,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import * as messageService from '../services/messageService';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { useFocusEffect } from '@react-navigation/native';
 
-interface ChatMessage {
-  _id: string;
-  senderId: any;
-  receiverId: any;
-  text: string;
-  createdAt: string;
-  isRead: boolean;
-}
+import { Message } from '../types';
+
+// Extend Message to support populated senderId if necessary
+type ChatMessage = Message & { senderId: any; receiverId: any };
 
 const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { socket, onlineUsers } = useSocket();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,19 +27,67 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
 
   const { conversationId, userName, userAvatar } = route?.params || {};
 
+  const receiverId = route?.params?.receiverId || route?.params?.otherUserId; // Extract explicitly
+  const isOnline = useMemo(() => onlineUsers.includes(receiverId), [onlineUsers, receiverId]);
+
   useFocusEffect(
     useCallback(() => {
       if (conversationId) {
         loadMessages();
+        markRead();
+      } else {
+        setIsLoading(false);
       }
     }, [conversationId])
   );
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceiveMessage = (newMessage: ChatMessage) => {
+      // Safely extract IDs (handling populated objects vs strings)
+      const msgSenderId = typeof newMessage.senderId === 'object' ? newMessage.senderId._id : newMessage.senderId;
+      const msgReceiverId = typeof newMessage.receiverId === 'object' ? newMessage.receiverId._id : newMessage.receiverId;
+
+      if (
+        (msgSenderId === receiverId && msgReceiverId === user?._id) ||
+        (msgSenderId === user?._id && msgReceiverId === receiverId)
+      ) {
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m._id === newMessage._id)) return prev;
+          return [...prev, newMessage];
+        });
+        // Scroll to bottom
+        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+        // Mark as read immediately if looking at screen
+        messageService.markMessagesAsRead(conversationId, user!._id);
+      }
+    };
+
+    socket.on('message:receive', handleReceiveMessage);
+    // Also listen for our own sent messages if echo is needed, but we optimistic update usually
+
+    return () => {
+      socket.off('message:receive', handleReceiveMessage);
+    };
+  }, [socket, conversationId, receiverId, user]);
+
+  const markRead = async () => {
+    try {
+      if (conversationId && user?._id) {
+        await messageService.markMessagesAsRead(conversationId, user._id);
+      }
+    } catch (e) {
+      console.log('Error marking read', e);
+    }
+  };
 
   const loadMessages = async () => {
     try {
       setIsLoading(true);
       const data = await messageService.getConversationMessages(conversationId);
-      setMessages(Array.isArray(data) ? data : []);
+      setMessages(Array.isArray(data) ? (data as unknown as ChatMessage[]) : []);
     } catch (error) {
       console.error('Error loading messages:', error);
       setMessages([]);
@@ -65,7 +111,16 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
           <View style={[styles.bubble, mine ? { backgroundColor: c.primary, borderTopRightRadius: 8 } : { backgroundColor: c.card, borderTopLeftRadius: 8 }]}>
             <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.text}</Text>
           </View>
-          <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+            <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
+            {mine && (
+              <MaterialIcons
+                name="done-all"
+                size={14}
+                color={item.isRead ? "#3b82f6" : c.subtext}
+              />
+            )}
+          </View>
         </View>
       </View>
     );
@@ -84,12 +139,14 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
 
       const newMessage = await messageService.sendMessage({
         conversationId,
-        receiverId,
-        content: messageText,
+        senderId: user?._id,
+        receiverId: receiverId || '',
+        text: messageText,
       });
 
       // Add message to list
-      setMessages(prev => [...prev, newMessage as any]);
+      const msgWithAny = newMessage as any;
+      setMessages(prev => [...prev, msgWithAny]);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -121,7 +178,9 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
           <Avatar uri={userAvatar || undefined} name={userName} size={28} />
           <View style={{ alignItems: 'flex-start' }}>
             <Text style={[styles.title, { color: c.text }]}>{userName || 'Chat'}</Text>
-            <Text style={[styles.subtitle, { color: c.subtext }]}>Online</Text>
+            <Text style={[styles.subtitle, { color: isOnline ? c.primary : c.subtext }]}>
+              {isOnline ? 'Online' : 'Offline'}
+            </Text>
           </View>
         </View>
         <TouchableOpacity style={styles.iconBtn}>

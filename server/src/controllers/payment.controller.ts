@@ -200,6 +200,11 @@ export const initializePayment = async (req: Request, res: Response) => {
 /**
  * Verify payment after Flutterwave callback
  */
+import paymentService from '../services/payment.service';
+
+/**
+ * Verify payment after Flutterwave callback
+ */
 export const verifyPayment = async (req: Request, res: Response) => {
   try {
     const { reference } = req.params;
@@ -208,111 +213,19 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Reference is required' });
     }
 
-    // Find payment by reference (which is the payment ID for Flutterwave)
-    const payment = await Payment.findById(reference);
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment not found' });
-    }
-
-    // Verify with Flutterwave using the transaction ID from query params
     const transactionId = req.query.transaction_id as string;
     if (!transactionId) {
       return res.status(400).json({ success: false, message: 'Transaction ID is required' });
     }
 
-    const verification = await flutterwaveService.verifyPayment(transactionId);
+    // Process payment via service
+    const payment = await paymentService.processSuccessfulPayment(reference, transactionId);
 
-    if (verification.data.status === 'successful' && verification.data.tx_ref === reference) {
-      // Update payment status
-      payment.status = 'completed';
-      payment.paidAt = new Date();
-      payment.gatewayResponse = verification.data;
-      await payment.save();
-
-      // Handle job verification payment differently
-      if (payment.paymentType === 'job_verification' && payment.jobId) {
-        // Update job as payment verified and activate it
-        await Job.findByIdAndUpdate(payment.jobId, {
-          paymentVerified: true,
-          paymentStatus: 'escrow',
-          paymentId: payment._id,
-          status: 'active', // Activate the job
-        });
-
-        return res.status(200).json({
-          success: true,
-          message: 'Job verification payment successful',
-          data: { payment, jobVerified: true },
-        });
-      }
-
-      // Regular project/milestone payment handling
-      // Update payment to held in escrow
-      payment.escrowStatus = 'held';
-      await payment.save();
-
-      // Get or create client wallet
-      let clientWallet = await Wallet.findOne({ userId: payment.payerId });
-      if (!clientWallet) {
-        clientWallet = new Wallet({ userId: payment.payerId });
-      }
-
-      // Update client wallet
-      clientWallet.totalSpent += payment.amount;
-      await clientWallet.save();
-
-      // Get or create freelancer wallet
-      let freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
-      if (!freelancerWallet) {
-        freelancerWallet = new Wallet({ userId: payment.payeeId });
-      }
-
-      // Add to escrow (money held until work is approved)
-      freelancerWallet.escrowBalance += payment.netAmount;
-      freelancerWallet.balance += payment.netAmount;
-      await freelancerWallet.save();
-
-      // Create transaction records
-      await Transaction.create({
-        userId: payment.payerId,
-        type: 'payment_sent',
-        amount: -payment.amount,
-        currency: payment.currency,
-        status: 'completed',
-        paymentId: payment._id,
-        projectId: payment.projectId,
-        balanceBefore: clientWallet.balance,
-        balanceAfter: clientWallet.balance,
-        description: `Payment sent for project`,
-      });
-
-      await Transaction.create({
-        userId: payment.payeeId,
-        type: 'payment_received',
-        amount: payment.netAmount,
-        currency: payment.currency,
-        status: 'completed',
-        paymentId: payment._id,
-        projectId: payment.projectId,
-        balanceBefore: freelancerWallet.balance - payment.netAmount,
-        balanceAfter: freelancerWallet.balance,
-        description: `Payment received (held in escrow)`,
-      });
-
-      return res.status(200).json({
-        success: true,
-        message: 'Payment verified successfully',
-        data: payment,
-      });
-    } else {
-      payment.status = 'failed';
-      await payment.save();
-
-      return res.status(400).json({
-        success: false,
-        message: 'Payment verification failed',
-      });
-    }
+    return res.status(200).json({
+      success: true,
+      message: 'Payment verified successfully',
+      data: payment,
+    });
   } catch (error: any) {
     console.error('Verify payment error:', error);
     return res.status(500).json({
@@ -667,28 +580,30 @@ export const processWithdrawal = async (req: Request, res: Response) => {
     withdrawal.processedAt = new Date();
     await withdrawal.save();
 
-    // Initiate Paystack transfer
+    // Initiate Flutterwave transfer
     try {
-      // Create recipient
-      const recipient = await paystackService.createTransferRecipient(
-        withdrawal.bankDetails.accountNumber,
+      // Initiate transfer directly (Flutterwave doesn't need separate recipient creation for simple transfers usually, or we use the bank code/account number directly)
+      const transfer = await flutterwaveService.initiateTransfer(
         withdrawal.bankDetails.bankCode,
-        withdrawal.bankDetails.accountName
-      );
-
-      // Initiate transfer
-      const transfer = await paystackService.initiateTransfer(
-        recipient.data.recipient_code,
+        withdrawal.bankDetails.accountNumber,
         withdrawal.netAmount,
-        withdrawal._id.toString(),
-        'Withdrawal from Connecta'
+        'Withdrawal from Connecta',
+        withdrawal._id.toString()
       );
 
-      withdrawal.gatewayReference = transfer.data.reference;
-      withdrawal.transferCode = transfer.data.transfer_code;
+      withdrawal.gatewayReference = transfer.data.id.toString(); // Flutterwave returns numeric ID
+      withdrawal.transferCode = transfer.data.id.toString(); // Use ID as code
       withdrawal.gatewayResponse = transfer.data;
-      withdrawal.status = 'completed';
-      withdrawal.completedAt = new Date();
+
+      // Flutterwave transfers are often async, status might be "NEW" or "SUCCESSFUL"
+      if (transfer.status === 'success' && transfer.data.status === 'SUCCESSFUL') {
+        withdrawal.status = 'completed';
+        withdrawal.completedAt = new Date();
+      } else {
+        // Keep as processing if pending
+        withdrawal.status = 'processing';
+      }
+
       await withdrawal.save();
 
       // Create transaction
@@ -697,8 +612,8 @@ export const processWithdrawal = async (req: Request, res: Response) => {
         type: 'withdrawal',
         amount: -withdrawal.amount,
         currency: withdrawal.currency,
-        status: 'completed',
-        gatewayReference: transfer.data.reference,
+        status: withdrawal.status === 'completed' ? 'completed' : 'pending',
+        gatewayReference: transfer.data.id.toString(),
         description: 'Withdrawal to bank account',
       });
 
@@ -708,6 +623,7 @@ export const processWithdrawal = async (req: Request, res: Response) => {
         data: withdrawal,
       });
     } catch (error: any) {
+      console.error('Flutterwave transfer error:', error);
       withdrawal.status = 'failed';
       withdrawal.failureReason = error.message;
       await withdrawal.save();
@@ -716,6 +632,7 @@ export const processWithdrawal = async (req: Request, res: Response) => {
       const wallet = await Wallet.findOne({ userId: withdrawal.userId });
       if (wallet) {
         wallet.balance += withdrawal.amount;
+        wallet.availableBalance = (wallet.balance || 0) - (wallet.escrowBalance || 0); // Re-calc available
         await wallet.save();
       }
 
@@ -771,9 +688,12 @@ export const getTransactionHistory = async (req: Request, res: Response) => {
 /**
  * Get list of banks
  */
+/**
+ * Get list of banks
+ */
 export const getBanks = async (req: Request, res: Response) => {
   try {
-    const banks = await paystackService.listBanks();
+    const banks = await flutterwaveService.listBanks();
     return res.status(200).json({
       success: true,
       data: banks.data,
@@ -801,7 +721,7 @@ export const resolveAccount = async (req: Request, res: Response) => {
       });
     }
 
-    const account = await paystackService.resolveAccountNumber(accountNumber, bankCode);
+    const account = await flutterwaveService.resolveAccount(accountNumber, bankCode);
 
     return res.status(200).json({
       success: true,
@@ -855,6 +775,62 @@ export const getAllPayments = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Failed to fetch payments',
+    });
+  }
+};
+
+/**
+ * Save withdrawal settings (bank details)
+ */
+export const saveWithdrawalSettings = async (req: Request, res: Response) => {
+  try {
+    const { accountName, accountNumber, bankName, bankCode } = req.body;
+    const userId = (req as any).user?._id || (req as any).user?.id || (req as any).user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    if (!accountName || !accountNumber || !bankName || !bankCode) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: accountName, accountNumber, bankName, bankCode',
+      });
+    }
+
+    // Find user's wallet
+    let wallet = await Wallet.findOne({ userId });
+
+    if (!wallet) {
+      // Create wallet if it doesn't exist
+      wallet = new Wallet({
+        userId,
+        balance: 0,
+        currency: 'NGN', // Default to NGN
+      });
+    }
+
+    // Update bank details
+    wallet.bankDetails = {
+      accountName,
+      accountNumber,
+      bankName,
+      bankCode,
+    };
+    wallet.isVerified = true; // Assume verified if they provided details (for now)
+
+    await wallet.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Withdrawal settings saved successfully',
+      data: wallet.bankDetails,
+    });
+  } catch (error: any) {
+    console.error('Save withdrawal settings error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to save withdrawal settings',
     });
   }
 };

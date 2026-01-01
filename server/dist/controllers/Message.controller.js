@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.summarizeConversation = exports.deleteMessage = exports.getMessagesBetweenUsers = exports.markMessagesAsRead = exports.sendMessage = exports.getConversationMessages = exports.getUserConversations = exports.getOrCreateConversation = void 0;
 const Message_model_1 = __importDefault(require("../models/Message.model"));
 const Conversation_model_1 = __importDefault(require("../models/Conversation.model"));
+const mongoose_1 = __importDefault(require("mongoose"));
 // Import io from app (singleton pattern)
 const socketIO_1 = require("../core/utils/socketIO");
 // Get or create conversation between two users
@@ -27,6 +28,7 @@ const getOrCreateConversation = async (req, res) => {
         })
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
+            .populate('participants', 'firstName lastName email profileImage avatar isPremium')
             .populate('projectId', 'title');
         if (!conversation) {
             // Create new conversation
@@ -69,14 +71,17 @@ const getUserConversations = async (req, res) => {
     try {
         const { userId } = req.params;
         // Find conversations where user is either client or freelancer
+        // Find conversations where user is a participant
         const conversations = await Conversation_model_1.default.find({
             $or: [
                 { clientId: userId },
                 { freelancerId: userId },
+                { participants: userId }
             ],
         })
-            .populate('clientId', 'firstName lastName email')
-            .populate('freelancerId', 'firstName lastName email')
+            .populate('clientId', 'firstName lastName email profileImage avatar isPremium')
+            .populate('freelancerId', 'firstName lastName email profileImage avatar isPremium')
+            .populate('participants', 'firstName lastName email profileImage avatar isPremium')
             .populate('projectId', 'title')
             .sort({ lastMessageAt: -1 });
         // For each conversation, get the last message if not populated
@@ -149,11 +154,30 @@ const sendMessage = async (req, res) => {
     try {
         const { conversationId, senderId, receiverId, text, attachments } = req.body;
         // Validate required fields (text is optional if attachments exist)
-        if (!conversationId || !senderId || !receiverId) {
+        // Validate required fields
+        if ((!conversationId && (!senderId || !receiverId)) || (!senderId || !receiverId)) {
             return res.status(400).json({
                 success: false,
-                message: 'Conversation ID, sender ID, and receiver ID are required',
+                message: 'Conversation ID (or sender+receiver ID) is required',
             });
+        }
+        let targetConversationId = conversationId;
+        // If no conversationId, find or create one
+        if (!targetConversationId) {
+            const existingConv = await Conversation_model_1.default.findOne({
+                participants: { $all: [senderId, receiverId], $size: 2 }
+            });
+            if (existingConv) {
+                targetConversationId = existingConv._id;
+            }
+            else {
+                // Create new generic conversation
+                const newConv = await Conversation_model_1.default.create({
+                    participants: [senderId, receiverId],
+                    unreadCount: { [senderId]: 0, [receiverId]: 0 }
+                });
+                targetConversationId = newConv._id;
+            }
         }
         // Ensure either text or attachments are provided
         if (!text && (!attachments || attachments.length === 0)) {
@@ -166,7 +190,7 @@ const sendMessage = async (req, res) => {
         const messageText = text || '📎 Attachment';
         // Create message
         const message = await Message_model_1.default.create({
-            conversationId,
+            conversationId: targetConversationId,
             senderId,
             receiverId,
             text: messageText,
@@ -177,7 +201,7 @@ const sendMessage = async (req, res) => {
         await message.populate('senderId', 'firstName lastName email');
         await message.populate('receiverId', 'firstName lastName email');
         // Update conversation
-        await Conversation_model_1.default.findByIdAndUpdate(conversationId, {
+        await Conversation_model_1.default.findByIdAndUpdate(targetConversationId, {
             lastMessage: messageText,
             lastMessageAt: new Date(),
             $inc: {
@@ -185,9 +209,30 @@ const sendMessage = async (req, res) => {
             },
         });
         // Emit conversation update to both users
+        // Emit conversation update to both users
         const io = (0, socketIO_1.getIO)();
         [senderId, receiverId].forEach((userId) => {
             io.to(userId).emit('conversation:update');
+        });
+        // Create notification for receiver
+        const sender = await mongoose_1.default.model('User').findById(senderId).select('firstName lastName');
+        const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'Someone';
+        await mongoose_1.default.model('Notification').create({
+            userId: receiverId,
+            type: 'message_received',
+            title: 'New Message',
+            message: `${senderName} sent you a message`,
+            relatedId: targetConversationId,
+            relatedType: 'message',
+            actorId: senderId,
+            actorName: senderName,
+            isRead: false,
+        });
+        // Emit notification event to receiver
+        io.to(receiverId).emit('notification:new', {
+            title: 'New Message',
+            message: `${senderName} sent you a message`,
+            type: 'message_received'
         });
         res.status(201).json({
             success: true,

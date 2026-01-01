@@ -7,7 +7,6 @@ export interface User {
     lastName: string;
     email: string;
     userType: 'client' | 'freelancer';
-    profileImage?: string;
     createdAt?: string;
     updatedAt?: string;
 }

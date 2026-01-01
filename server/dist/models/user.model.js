@@ -59,6 +59,7 @@ const UserSchema = new mongoose_1.Schema({
     premiumExpiryDate: {
         type: Date,
     },
+    savedJobs: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "Job" }],
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },

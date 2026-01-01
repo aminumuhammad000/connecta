@@ -2,9 +2,10 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 
 export interface IConversation extends Document {
-  clientId: mongoose.Types.ObjectId;
-  freelancerId: mongoose.Types.ObjectId;
-  projectId: mongoose.Types.ObjectId;
+  clientId?: mongoose.Types.ObjectId;
+  freelancerId?: mongoose.Types.ObjectId;
+  projectId?: mongoose.Types.ObjectId;
+  participants: mongoose.Types.ObjectId[];
   lastMessage?: string;
   lastMessageAt: Date;
   unreadCount: {
@@ -20,18 +21,22 @@ const ConversationSchema: Schema = new Schema(
     clientId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
     freelancerId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
     },
     projectId: {
       type: Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
+      required: false,
     },
+    participants: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    }],
     lastMessage: {
       type: String,
     },

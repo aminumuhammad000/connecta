@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
 
+WebBrowser.maybeCompleteAuthSession();
+
 const SignupScreen: React.FC = () => {
   const c = useThemeColors();
   const navigation = useNavigation();
-  const { signup } = useAuth();
+  const { signup, googleSignup } = useAuth();
   const { showAlert } = useInAppAlert();
   const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer'>('client');
   const [name, setName] = useState('');
@@ -19,6 +23,33 @@ const SignupScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
+    iosClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com', // Using web client ID as placeholder if specific iOS ID not provided
+    androidClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
+    redirectUri: 'https://auth.expo.io/@0x_mrcoder/connecta',
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      handleGoogleSignup(id_token);
+    }
+  }, [response]);
+
+  const handleGoogleSignup = async (token: string) => {
+    setIsLoading(true);
+    try {
+      await googleSignup(token, selectedRole);
+      showAlert({ title: 'Success', message: 'Account created with Google!', type: 'success' });
+      // Navigation happens automatically
+    } catch (error: any) {
+      showAlert({ title: 'Google Signup Failed', message: error.message || 'Failed to sign up with Google', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCreateAccount = async () => {
     // Validation
@@ -223,16 +254,33 @@ const SignupScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.footerRow}>
-              <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => (navigation as any).navigate('Login')} accessibilityRole="button" accessibilityLabel="Go to Login">
-                <Text style={[styles.footerLink, { color: c.primary }]}>Log in</Text>
-              </TouchableOpacity>
+            <View style={styles.dividerRow}>
+              <View style={[styles.divider, { borderColor: c.border }]} />
+              <Text style={[styles.orText, { color: c.subtext }]}>OR</Text>
+              <View style={[styles.divider, { borderColor: c.border }]} />
             </View>
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
+              onPress={() => promptAsync()}
+              disabled={!request}
+            >
+              <MaterialCommunityIcons name="google" size={20} color={c.text} />
+              <Text style={[styles.googleText, { color: c.text }]}>Sign up with Google</Text>
+            </TouchableOpacity>
           </View>
+
+          <View style={styles.footerRow}>
+            <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => (navigation as any).navigate('Login')} accessibilityRole="button" accessibilityLabel="Go to Login">
+              <Text style={[styles.footerLink, { color: c.primary }]}>Log in</Text>
+            </TouchableOpacity>
+          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
@@ -358,6 +406,36 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: 13,
+    fontWeight: '600',
+  },
+  dividerRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 14,
+  },
+  divider: {
+    flex: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  orText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  googleBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  googleText: {
+    fontSize: 15,
     fontWeight: '600',
   },
 });

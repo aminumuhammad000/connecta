@@ -13,6 +13,7 @@ import * as notificationService from '../services/notificationService';
 import * as profileService from '../services/profileService';
 import { DashboardStats, User } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
+import EmailVerificationModal from '../components/EmailVerificationModal';
 
 const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -23,10 +24,12 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileMissing, setProfileMissing] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = React.useState(false);
 
   useEffect(() => {
     loadDashboardData();
     checkProfileStatus();
+    checkAuthStatus();
   }, []);
 
   useFocusEffect(
@@ -34,8 +37,22 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
       // Refresh data whenever the dashboard regains focus (e.g., after editing profile)
       loadDashboardData();
       checkProfileStatus();
-    }, [])
+      checkAuthStatus();
+    }, [user])
   );
+
+  const checkAuthStatus = () => {
+    if (user && !user.isVerified) {
+      setAuthModalVisible(true);
+    } else {
+      setAuthModalVisible(false);
+    }
+  };
+
+  const handleEmailVerified = () => {
+    setAuthModalVisible(false);
+    checkProfileStatus();
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -276,6 +293,10 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
             </View>
           </View>
         )}
+        <EmailVerificationModal
+          visible={authModalVisible}
+          onSuccess={handleEmailVerified}
+        />
       </View>
     </SafeAreaView>
   );

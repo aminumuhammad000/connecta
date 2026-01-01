@@ -10,6 +10,8 @@ interface AuthContextValue {
     isLoading: boolean;
     login: (credentials: LoginCredentials) => Promise<void>;
     signup: (data: SignupData) => Promise<void>;
+    googleLogin: (tokenId: string) => Promise<void>;
+    googleSignup: (tokenId: string, userType: UserType) => Promise<void>;
     logout: () => Promise<void>;
     updateUser: (user: User) => void;
 }
@@ -78,6 +80,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const googleSignup = async (tokenId: string, userType: UserType) => {
+        try {
+            const response = await authService.googleSignup(tokenId, userType);
+            await storage.saveToken(response.token);
+            await storage.saveUserData(response.user);
+            await storage.saveUserRole(response.user.userType);
+            setToken(response.token);
+            setUser(response.user);
+        } catch (error) {
+            console.error('Google signup error:', error);
+            throw error;
+        }
+    };
+
+    const googleLogin = async (tokenId: string) => {
+        try {
+            const response = await authService.googleSignin(tokenId);
+            await storage.saveToken(response.token);
+            await storage.saveUserData(response.user);
+            await storage.saveUserRole(response.user.userType);
+            setToken(response.token);
+            setUser(response.user);
+        } catch (error) {
+            console.error('Google login error:', error);
+            throw error;
+        }
+    };
+
     const logout = async () => {
         try {
             // Clear all stored data
@@ -104,6 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isLoading,
             login,
             signup,
+            googleLogin,
+            googleSignup,
             logout,
             updateUser,
         }),

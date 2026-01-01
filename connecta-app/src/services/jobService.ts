@@ -1,4 +1,4 @@
-import { get, post, put } from './api';
+import { get, post, put, del } from './api';
 import { API_ENDPOINTS } from '../utils/constants';
 import { Job } from '../types';
 
@@ -69,6 +69,28 @@ export const updateJob = async (id: string, jobData: Partial<Job>): Promise<Job>
     return (response as any)?.data || response;
 };
 
+/**
+ * Get Saved Jobs
+ */
+export const getSavedJobs = async (): Promise<Job[]> => {
+    const response = await get<Job[]>(`${API_ENDPOINTS.JOBS}/saved`);
+    return Array.isArray(response) ? response : (response as any)?.data || [];
+};
+
+/**
+ * Save Job
+ */
+export const saveJob = async (id: string): Promise<any> => {
+    return await post(`${API_ENDPOINTS.JOBS}/${id}/save`, {});
+};
+
+/**
+ * Unsave Job
+ */
+export const unsaveJob = async (id: string): Promise<any> => {
+    return await del(`${API_ENDPOINTS.JOBS}/${id}/save`);
+};
+
 export default {
     getAllJobs,
     getMyJobs,
@@ -77,4 +99,7 @@ export default {
     getJobById,
     createJob,
     updateJob,
+    getSavedJobs, // Export new method
+    saveJob,      // Export new method
+    unsaveJob,    // Export new method
 };
