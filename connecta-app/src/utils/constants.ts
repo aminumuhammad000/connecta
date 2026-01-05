@@ -22,7 +22,7 @@ const explicitBaseUrl =
     (Constants as any)?.manifest?.extra?.apiBaseUrl;
 
 const derivedHostBaseUrl = deriveExpoHostBaseUrl();
-const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const platformDefaultBaseUrl = Platform.OS === 'android' ? 'https://api.myconnecta.ng' : 'https://api.myconnecta.ng';
 
 export const API_BASE_URL = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
 

@@ -47,18 +47,18 @@ export const getRecentMessages = async (): Promise<Message[]> => {
     return unwrap<Message[]>(response, []);
 };
 
-export default {
-    getClientStats,
-    getFreelancerStats,
-    getRecommendedFreelancers,
-    getRecentMessages,
-    testConnection,
-};
-
 /**
  * Test backend connection
  */
 export const testConnection = async (): Promise<{ message: string }> => {
     const response = await get<{ message: string }>('/');
     return unwrap<{ message: string }>(response, { message: 'Connection failed' });
+};
+
+export default {
+    getClientStats,
+    getFreelancerStats,
+    getRecommendedFreelancers,
+    getRecentMessages,
+    testConnection,
 };

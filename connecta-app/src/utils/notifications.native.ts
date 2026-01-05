@@ -12,6 +12,12 @@ export type PushRegistrationResult = {
 let hasLoggedExpoGoWarning = false;
 
 export async function configureNotifications() {
+  // Skip notification setup on web - not fully supported
+  if (Platform.OS === 'web') {
+    console.log('[Notifications] Skipping configuration on web platform');
+    return;
+  }
+
   // Foreground presentation options
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -35,6 +41,12 @@ export async function configureNotifications() {
 }
 
 export async function registerForPushNotificationsAsync(): Promise<PushRegistrationResult> {
+  // Skip on web - push notifications not fully supported
+  if (Platform.OS === 'web') {
+    console.log('[Notifications] Push notifications not available on web platform');
+    return { token: null, reason: 'error' };
+  }
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   if (existingStatus !== 'granted') {

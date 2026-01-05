@@ -1,12 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { useColorScheme, ActivityIndicator, View } from 'react-native';
+import { useColorScheme, ActivityIndicator, View, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { RoleProvider, useRole } from './src/context/RoleContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { useThemeColors } from './src/theme/theme';
-import * as Notifications from 'expo-notifications';
 import { configureNotifications, registerForPushNotificationsAsync } from './src/utils/notifications';
 import { InAppAlertProvider, useInAppAlert } from './src/components/InAppAlert';
 
@@ -39,7 +38,19 @@ function AppContent() {
   const { showAlert } = useInAppAlert();
 
   useEffect(() => {
+    // Skip notification setup on web - not fully supported
+    if (Platform.OS === 'web') {
+      console.log('[App] Skipping notification setup on web platform');
+      return;
+    }
+
+    // Dynamically import expo-notifications only on native platforms
+    let receivedSub: any;
+    let responseSub: any;
+
     (async () => {
+      const Notifications = await import('expo-notifications');
+
       await configureNotifications();
       const { token, reason } = await registerForPushNotificationsAsync();
       if (token) {
@@ -54,21 +65,21 @@ function AppContent() {
       } else {
         showAlert({ title: 'Notifications disabled', message: 'Enable permissions to receive alerts.', type: 'info' });
       }
+
+      receivedSub = Notifications.addNotificationReceivedListener((notification: any) => {
+        const title = notification.request.content.title ?? 'Notification';
+        const body = notification.request.content.body ?? '';
+        showAlert({ title, message: body, type: 'info' });
+      });
+
+      responseSub = Notifications.addNotificationResponseReceivedListener(() => {
+        // Handle taps if needed
+      });
     })();
 
-    const receivedSub = Notifications.addNotificationReceivedListener((notification: Notifications.Notification) => {
-      const title = notification.request.content.title ?? 'Notification';
-      const body = notification.request.content.body ?? '';
-      showAlert({ title, message: body, type: 'info' });
-    });
-
-    const responseSub = Notifications.addNotificationResponseReceivedListener(() => {
-      // Handle taps if needed
-    });
-
     return () => {
-      receivedSub.remove();
-      responseSub.remove();
+      receivedSub?.remove();
+      responseSub?.remove();
     };
   }, [showAlert]);
 
