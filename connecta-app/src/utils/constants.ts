@@ -42,6 +42,7 @@ export const STORAGE_KEYS = {
     USER_DATA: '@connecta/user_data',
     USER_ROLE: '@connecta/user_role',
     THEME_MODE: '@connecta/theme_mode',
+    BIOMETRIC_ENABLED: '@connecta/biometric_enabled',
 } as const;
 
 // API Endpoints

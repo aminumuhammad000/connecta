@@ -89,22 +89,41 @@ function AppContent() {
   );
 }
 
+import GettingStartedGuideScreen from './src/screens/GettingStartedGuideScreen';
+import * as storage from './src/utils/storage';
+
 function RootNavigation() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { setRole } = useRole();
   const c = useThemeColors();
+  const [hasSeenGuide, setHasSeenGuide] = React.useState<boolean | null>(null);
 
   // Sync user type with role context
   useEffect(() => {
     if (user) {
       setRole(user.userType);
+      checkGuideStatus();
     } else {
       setRole(null);
+      setHasSeenGuide(null); // Reset on logout
     }
   }, [user, setRole]);
 
+  const checkGuideStatus = async () => {
+    if (!user) return;
+    const seen = await storage.getItem(`@connecta/walkthrough_completed_${user._id}`);
+    setHasSeenGuide(seen === 'true');
+  };
+
+  const handleGuideFinish = async () => {
+    if (user) {
+      await storage.setItem(`@connecta/walkthrough_completed_${user._id}`, 'true');
+      setHasSeenGuide(true);
+    }
+  };
+
   // Show loading screen while checking auth status
-  if (isLoading) {
+  if (isLoading || (isAuthenticated && hasSeenGuide === null)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background }}>
         <ActivityIndicator size="large" color={c.primary} />
@@ -120,6 +139,11 @@ function RootNavigation() {
   // Force email verification
   if (!user.isVerified) {
     return <EmailVerificationScreen />;
+  }
+
+  // Show Onboarding Guide if not seen
+  if (hasSeenGuide === false) {
+    return <GettingStartedGuideScreen onFinish={handleGuideFinish} />;
   }
 
   // Show role-based navigator

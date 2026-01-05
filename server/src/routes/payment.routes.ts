@@ -14,6 +14,7 @@ import {
   getBanks,
   resolveAccount,
   saveWithdrawalSettings,
+  getPendingWithdrawals,
 } from '../controllers/payment.controller';
 import { authenticate } from '../core/middleware/auth.middleware';
 
@@ -21,6 +22,7 @@ const router = Router();
 
 // Admin route - Get all payments (no auth)
 router.get('/admin/all', getAllPayments);
+router.get('/admin/withdrawals', authenticate, getPendingWithdrawals);
 
 // Payment routes
 router.post('/initialize', authenticate, initializePayment);

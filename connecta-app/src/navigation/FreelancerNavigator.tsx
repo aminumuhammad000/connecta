@@ -86,6 +86,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="FreelancerProjects" component={require('../screens/FreelancerProjectsScreen').default} />
             <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
             <Stack.Screen name="WithdrawalSetup" component={require('../screens/WithdrawalSetupScreen').default} />
+            <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
         </Stack.Navigator>
     );
 }

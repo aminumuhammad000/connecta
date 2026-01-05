@@ -115,6 +115,22 @@ export const releasePayment = async (paymentId: string): Promise<Payment> => {
     return response.data;
 };
 
+/**
+ * Admin: Get pending withdrawals
+ */
+export const getPendingWithdrawals = async (): Promise<any[]> => {
+    const response = await get<any[]>('/api/payments/admin/withdrawals');
+    return Array.isArray(response) ? response : (response as any)?.data || [];
+};
+
+/**
+ * Admin: Process withdrawal
+ */
+export const processWithdrawal = async (withdrawalId: string): Promise<any> => {
+    const response = await post(`/api/payments/withdrawal/${withdrawalId}/process`, {});
+    return response.data;
+};
+
 export default {
     initializePayment,
     initializeJobVerification,
@@ -127,4 +143,6 @@ export default {
     resolveBankAccount,
     saveWithdrawalSettings,
     releasePayment,
+    getPendingWithdrawals,
+    processWithdrawal,
 };

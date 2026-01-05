@@ -190,11 +190,16 @@ const ProposalDetailScreen: React.FC = () => {
                 <TouchableOpacity
                     style={[styles.primaryBtn, { backgroundColor: c.primary }]}
                     onPress={() => {
-                        if (clientSource?._id) {
+                        const targetClientId = typeof clientSource === 'object' ? clientSource?._id : clientSource;
+                        const targetProjectId = typeof jobId === 'object' ? jobId?._id : jobId;
+
+                        if (targetClientId) {
                             (navigation as any).navigate('MessagesDetail', {
-                                receiverId: clientSource._id,
+                                receiverId: targetClientId,
                                 userName: clientName,
-                                userAvatar: clientAvatar
+                                userAvatar: clientAvatar,
+                                projectId: targetProjectId || id, // Fallback to proposal ID if job ID missing (shouldn't happen)
+                                clientId: targetClientId,
                             });
                         }
                     }}

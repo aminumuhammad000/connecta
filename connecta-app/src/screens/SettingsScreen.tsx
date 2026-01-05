@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,14 +8,51 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { scheduleLocalNotification } from '../utils/notifications';
 import { useInAppAlert } from '../components/InAppAlert';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as storage from '../utils/storage';
+import { STORAGE_KEYS } from '../utils/constants';
 
 export default function SettingsScreen({ navigation }: any) {
     const c = useThemeColors();
     const { setRole } = useRole();
     const { isDark, toggleTheme } = useTheme();
-    const { logout } = useAuth();
-    const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
+    const { logout, user } = useAuth();
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [biometricEnabled, setBiometricEnabled] = useState(false);
     const { showAlert } = useInAppAlert();
+
+    useEffect(() => {
+        loadBiometricSettings();
+    }, []);
+
+    const loadBiometricSettings = async () => {
+        const enabled = await storage.getItem(STORAGE_KEYS.BIOMETRIC_ENABLED);
+        setBiometricEnabled(enabled === 'true');
+    };
+
+    const handleBiometricToggle = async (value: boolean) => {
+        if (value) {
+            const compatible = await LocalAuthentication.hasHardwareAsync();
+            if (!compatible) {
+                showAlert({ title: 'Not Supported', message: 'Biometric authentication is not supported on this device', type: 'error' });
+                return;
+            }
+            const enrolled = await LocalAuthentication.isEnrolledAsync();
+            if (!enrolled) {
+                showAlert({ title: 'Not Enrolled', message: 'No biometrics enrolled on this device', type: 'error' });
+                return;
+            }
+        }
+
+        await storage.setItem(STORAGE_KEYS.BIOMETRIC_ENABLED, String(value));
+        setBiometricEnabled(value);
+
+        // If disabling, clear secure creds 
+        if (!value) {
+            await storage.removeSecureItem('connecta_secure_email');
+            await storage.removeSecureItem('connecta_secure_pass');
+        }
+    };
 
     const handleThemeToggle = () => {
         toggleTheme();
@@ -76,6 +113,19 @@ export default function SettingsScreen({ navigation }: any) {
                             thumbColor={'#ffffff'}
                         />
                     </View>
+
+                    <View style={[styles.row, { borderBottomColor: c.border }]}>
+                        <View style={styles.rowLeft}>
+                            <Ionicons name="finger-print-outline" size={22} color={c.text} />
+                            <Text style={[styles.rowLabel, { color: c.text }]}>Biometric Login</Text>
+                        </View>
+                        <Switch
+                            value={biometricEnabled}
+                            onValueChange={handleBiometricToggle}
+                            trackColor={{ false: '#767577', true: c.primary }}
+                            thumbColor={'#ffffff'}
+                        />
+                    </View>
                 </View>
 
                 <View style={styles.section}>
@@ -128,7 +178,21 @@ export default function SettingsScreen({ navigation }: any) {
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
 
-                <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0</Text>
+                {/* Admin Panel (Hidden) */}
+                {user?.email === 'admin@connecta.com' && (
+                    <TouchableOpacity
+                        style={[styles.row, { borderBottomColor: c.border, marginTop: 24 }]}
+                        onPress={() => navigation.navigate('AdminWithdrawals')}
+                    >
+                        <View style={styles.rowLeft}>
+                            <Ionicons name="shield-checkmark" size={22} color={c.primary} />
+                            <Text style={[styles.rowLabel, { color: c.primary, fontWeight: '700' }]}>Admin Panel</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color={c.primary} />
+                    </TouchableOpacity>
+                )}
+
+                <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0(2)</Text>
             </ScrollView>
         </SafeAreaView>
     );

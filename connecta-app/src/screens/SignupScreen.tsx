@@ -80,8 +80,9 @@ const SignupScreen: React.FC = () => {
         lastName,
         userType: selectedRole,
       });
-      showAlert({ title: 'Success', message: 'Account created successfully!', type: 'success' });
-      // Navigation will happen automatically via AuthContext
+      showAlert({ title: 'Success', message: 'Account created! Please verify your email.', type: 'success' });
+      // Navigate to OTP screen with role
+      (navigation as any).navigate('OTPVerification', { email: email.trim(), mode: 'signup', role: selectedRole });
     } catch (error: any) {
       showAlert({ title: 'Signup Failed', message: error.message || 'Failed to create account', type: 'error' });
     } finally {
@@ -140,10 +141,10 @@ const SignupScreen: React.FC = () => {
                         styles.roleTitle,
                         { color: selectedRole === 'client' ? c.primary : c.text }
                       ]}>
-                        Hire Talent
+                        I am a Client
                       </Text>
                       <Text style={[styles.roleDesc, { color: c.subtext }]}>
-                        Post jobs & find freelancers
+                        I want to hire talent for my projects
                       </Text>
                     </View>
                     <MaterialIcons
@@ -181,10 +182,10 @@ const SignupScreen: React.FC = () => {
                         styles.roleTitle,
                         { color: selectedRole === 'freelancer' ? c.primary : c.text }
                       ]}>
-                        Find Work
+                        I am a Freelancer
                       </Text>
                       <Text style={[styles.roleDesc, { color: c.subtext }]}>
-                        Browse jobs & get hired
+                        I want to find work & offer services
                       </Text>
                     </View>
                     <MaterialIcons

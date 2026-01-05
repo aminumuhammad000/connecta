@@ -45,14 +45,14 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
     };
 
     const { user } = useAuth();
-    const isClient = user?.role === 'client' || user?.userType === 'client';
+    const isClient = user?.userType === 'client';
 
     // Determine ownership
     const isProjectOwner = React.useMemo(() => {
         if (!project || !user) return false;
         // Project.clientId can be object or string
         const projectClientId = project.clientId?._id || project.clientId;
-        return projectClientId === user._id || projectClientId === user.id;
+        return projectClientId === user._id;
     }, [project, user]);
 
     const handleChat = () => {
@@ -63,7 +63,10 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 userName: project.freelancerId?.firstName
                     ? `${project.freelancerId.firstName} ${project.freelancerId.lastName}`
                     : (project.freelancerName || 'Freelancer'),
-                userAvatar: project.freelancerAvatar // Optional
+                userAvatar: project.freelancerAvatar, // Optional
+                projectId: project._id,
+                clientId: project.clientId?._id || project.clientId,
+                freelancerId: project.freelancerId?._id || project.freelancerId
             });
         } else {
             // Freelancer chatting with Client
@@ -72,7 +75,10 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 userName: project.clientId?.firstName
                     ? `${project.clientId.firstName} ${project.clientId.lastName}`
                     : (project.clientName || 'Client'),
-                userAvatar: project.clientAvatar // Optional
+                userAvatar: project.clientAvatar, // Optional
+                projectId: project._id,
+                clientId: project.clientId?._id || project.clientId,
+                freelancerId: project.freelancerId?._id || project.freelancerId
             });
         }
     };

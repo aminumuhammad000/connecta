@@ -553,6 +553,31 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
   }
 };
 
+
+
+/**
+ * Get pending withdrawals (Admin only)
+ */
+export const getPendingWithdrawals = async (req: Request, res: Response) => {
+  try {
+    const withdrawals = await Withdrawal.find({ status: { $in: ['pending', 'processing'] } })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'firstName lastName email'); // Ensure User model is populated
+
+    return res.status(200).json({
+      success: true,
+      count: withdrawals.length,
+      data: withdrawals,
+    });
+  } catch (error: any) {
+    console.error('Get pending withdrawals error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch pending withdrawals',
+    });
+  }
+};
+
 /**
  * Process withdrawal (Admin only)
  */

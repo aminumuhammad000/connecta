@@ -1342,4 +1342,27 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
     },
+    skillChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    skillChipText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    skillInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingRight: 8,
+    },
+    skillInput: {
+        flex: 1,
+        height: 48,
+        paddingHorizontal: 16,
+    },
 });

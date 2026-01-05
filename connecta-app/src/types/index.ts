@@ -14,6 +14,7 @@ export interface User {
     subscriptionStatus?: 'active' | 'expired' | 'cancelled';
     premiumExpiryDate?: string;
     isVerified?: boolean;
+    savedJobs?: string[];
     createdAt: string;
     updatedAt: string;
 }

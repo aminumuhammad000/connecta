@@ -10,8 +10,13 @@ import { Message, Conversation } from '../types';
 /**
  * Get or create a conversation
  */
-export const getOrCreateConversation = async (participantIds: string[]): Promise<Conversation> => {
-    const response = await post<Conversation>(API_ENDPOINTS.CONVERSATIONS, { participants: participantIds });
+export const getOrCreateConversation = async (payload: {
+    participants?: string[];
+    clientId?: string;
+    freelancerId?: string;
+    projectId?: string;
+}): Promise<Conversation> => {
+    const response = await post<Conversation>(API_ENDPOINTS.CONVERSATIONS, payload);
     return (response as any)?.data || response;
 };
 

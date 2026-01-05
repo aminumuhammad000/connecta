@@ -39,9 +39,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [profileModalVisible, setProfileModalVisible] = React.useState(false);
   const [missingFields, setMissingFields] = React.useState<string[]>([]);
 
-  // Profile Completion Logic
-  const [profileModalVisible, setProfileModalVisible] = React.useState(false);
-  const [missingFields, setMissingFields] = React.useState<string[]>([]);
+
 
   useFocusEffect(
     React.useCallback(() => {

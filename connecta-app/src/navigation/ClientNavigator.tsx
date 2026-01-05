@@ -92,6 +92,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="ClientEditProfile" component={ClientEditProfileScreen} />
             <Stack.Screen name="Proposals" component={ProposalsScreen} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
+            <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
         </Stack.Navigator>
     );
 }

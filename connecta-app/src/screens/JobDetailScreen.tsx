@@ -38,7 +38,7 @@ const JobDetailScreen: React.FC = () => {
   }, [id]);
   // Client-specific state
   const [proposals, setProposals] = React.useState<any[]>([]);
-  const isClient = user?.role === 'client';
+  const isClient = user?.userType === 'client';
 
   // Check if current user is the owner of this job
   const isJobOwner = React.useMemo(() => {
@@ -52,8 +52,13 @@ const JobDetailScreen: React.FC = () => {
       setIsLoading(true);
       const data = await jobService.getJobById(id).catch(() => null);
       setJob(data);
-      // Check if saved status is available in data or requires separate call
-      if (data?.saved) setIsSaved(true);
+
+      // Check if saved status is available in user profile
+      if (user?.savedJobs && user.savedJobs.includes(id)) {
+        setIsSaved(true);
+      } else if ((data as any)?.saved) {
+        setIsSaved(true);
+      }
     } catch (error) {
       console.error('Error loading job details:', error);
     } finally {
@@ -118,7 +123,24 @@ const JobDetailScreen: React.FC = () => {
       navigation.goBack();
     } catch (error: any) {
       console.error('Error accepting proposal:', error);
-      alert(error?.message || 'Failed to accept proposal.');
+      // Enhanced error for debugging 403
+      if (error?.status === 403 || error?.message?.includes('authorized')) {
+        const jobOwnerId = job.clientId?._id || job.clientId;
+        alert(`Permission Denied (403)!
+
+This error comes from the Backend Server.
+It means the server thinks you are NOT the owner of the Job associated with this proposal.
+
+Debug Info:
+Logged In User ID: ${user?._id}
+Job's Client ID: ${jobOwnerId}
+Job Status: ${job.status}
+Proposal ID: ${proposalId}
+
+Please verify in your Database that the Job's 'clientId' matches your User ID exactly.`);
+      } else {
+        alert(error?.message || 'Failed to accept proposal.');
+      }
     } finally {
       setActionLoading(null);
     }
@@ -133,6 +155,31 @@ const JobDetailScreen: React.FC = () => {
       alert('Failed to reject proposal.');
     }
   };
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: c.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  if (!job) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
+        <View style={[styles.appBar, { borderBottomColor: c.border }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+            <MaterialIcons name="arrow-back" size={22} color={c.text} />
+          </TouchableOpacity>
+          <Text style={[styles.appBarTitle, { color: c.text }]}>Job Details</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <Text style={{ color: c.subtext, fontSize: 16 }}>Job not found or failed to load.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -288,7 +335,7 @@ const JobDetailScreen: React.FC = () => {
                           borderWidth: isPremium ? 1.5 : StyleSheet.hairlineWidth,
                           borderColor: isPremium ? '#F59E0B' : c.border
                         }}
-                        onPress={() => navigation.navigate('ProposalDetail', { id: p._id })}
+                        onPress={() => (navigation as any).navigate('ProposalDetail', { id: p._id })}
                       >
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -335,10 +382,15 @@ const JobDetailScreen: React.FC = () => {
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}
-                            onPress={() => navigation.navigate('MessagesDetail', {
-                              receiverId: p.freelancerId._id,
-                              userName: `${p.freelancerId.firstName} ${p.freelancerId.lastName}`,
-                              userAvatar: p.freelancerId.profileImage
+                            onPress={() => (navigation as any).navigate('MessagesDetail', {
+                              receiverId: p.freelancerId?._id || p.freelancerId,
+                              userName: p.freelancerId?.firstName
+                                ? `${p.freelancerId.firstName} ${p.freelancerId.lastName}`
+                                : 'Freelancer',
+                              userAvatar: p.freelancerId?.profileImage,
+                              projectId: job._id,
+                              clientId: user?._id,
+                              freelancerId: p.freelancerId?._id || p.freelancerId
                             })}
                           >
                             <MaterialIcons name="chat" size={20} color={c.subtext} />
@@ -376,7 +428,7 @@ const JobDetailScreen: React.FC = () => {
           <TouchableOpacity
             style={[styles.applyBtn, { backgroundColor: hasApplied ? (c.isDark ? '#374151' : '#E5E7EB') : c.primary }]}
             disabled={hasApplied}
-            onPress={() => navigation.navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget })}
+            onPress={() => (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget })}
           >
             <Text style={[styles.applyText, hasApplied && { color: c.subtext }]}>
               {hasApplied ? 'Applied' : 'Apply Now'}

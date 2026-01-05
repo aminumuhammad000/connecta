@@ -19,30 +19,90 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { socket, onlineUsers } = useSocket();
+  /* State */
+  const { conversationId: paramConversationId, userName, userAvatar } = route?.params || {};
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(paramConversationId || null);
+
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const { conversationId, userName, userAvatar } = route?.params || {};
-
   const receiverId = route?.params?.receiverId || route?.params?.otherUserId; // Extract explicitly
   const isOnline = useMemo(() => onlineUsers.includes(receiverId), [onlineUsers, receiverId]);
 
+  /* Effects */
   useFocusEffect(
     useCallback(() => {
-      if (conversationId) {
-        loadMessages();
-        markRead();
-      } else {
-        setIsLoading(false);
-      }
-    }, [conversationId])
+      let isMounted = true;
+
+      const initConversation = async () => {
+        if (!user?._id) return;
+
+        // If we already have an ID, load messages
+        if (activeConversationId) {
+          loadMessages(activeConversationId);
+          markRead(activeConversationId);
+          return;
+        }
+
+        // If no ID but we have a receiver, fetch/create one
+        if (receiverId) {
+          try {
+            setIsLoading(true);
+
+            const payload: any = {
+              participants: [user._id, receiverId],
+              projectId: route.params?.projectId
+            };
+
+            // Determine Client/Freelancer IDs
+            if (route.params?.clientId) {
+              payload.clientId = route.params.clientId;
+            } else if (user.userType === 'client') {
+              payload.clientId = user._id;
+            } else {
+              payload.clientId = receiverId;
+            }
+
+            if (route.params?.freelancerId) {
+              payload.freelancerId = route.params.freelancerId;
+            } else if (user.userType === 'freelancer') {
+              payload.freelancerId = user._id;
+            } else {
+              payload.freelancerId = receiverId;
+            }
+
+            const conv = await messageService.getOrCreateConversation(payload);
+            if (isMounted && conv?._id) {
+              setActiveConversationId(conv._id);
+              // After getting ID, load messages
+              const msgs = await messageService.getConversationMessages(conv._id);
+              setMessages(Array.isArray(msgs) ? (msgs as unknown as ChatMessage[]) : []);
+            }
+          } catch (error) {
+            console.error('Error initializing conversation:', error);
+          } finally {
+            if (isMounted) setIsLoading(false);
+          }
+        } else {
+          if (isMounted) setIsLoading(false);
+        }
+      };
+
+      initConversation();
+
+      return () => { isMounted = false; };
+    }, [activeConversationId, receiverId, user])
   );
 
+  // Typing state
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !activeConversationId) return;
 
     const handleReceiveMessage = (newMessage: ChatMessage) => {
       // Safely extract IDs (handling populated objects vs strings)
@@ -61,32 +121,73 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
         // Scroll to bottom
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
         // Mark as read immediately if looking at screen
-        messageService.markMessagesAsRead(conversationId, user!._id);
+        messageService.markMessagesAsRead(activeConversationId, user!._id);
+
+        // Hide typing when message received
+        setOtherUserTyping(false);
+      }
+    };
+
+    const handleTypingShow = (data: { conversationId: string; userId: string }) => {
+      if (data.conversationId === activeConversationId && data.userId === receiverId) {
+        setOtherUserTyping(true);
+      }
+    };
+
+    const handleTypingHide = (data: { conversationId: string; userId: string }) => {
+      if (data.conversationId === activeConversationId && data.userId === receiverId) {
+        setOtherUserTyping(false);
       }
     };
 
     socket.on('message:receive', handleReceiveMessage);
-    // Also listen for our own sent messages if echo is needed, but we optimistic update usually
+    socket.on('typing:show', handleTypingShow);
+    socket.on('typing:hide', handleTypingHide);
 
     return () => {
       socket.off('message:receive', handleReceiveMessage);
+      socket.off('typing:show', handleTypingShow);
+      socket.off('typing:hide', handleTypingHide);
     };
-  }, [socket, conversationId, receiverId, user]);
+  }, [socket, activeConversationId, receiverId, user]);
 
-  const markRead = async () => {
+  const handleInputChange = (text: string) => {
+    setInput(text);
+
+    if (!socket || !user || !activeConversationId) return;
+
+    // Emit start typing
+    socket.emit("typing:start", {
+      conversationId: activeConversationId,
+      userId: user._id,
+      receiverId
+    });
+
+    // Debounce stop typing
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("typing:stop", {
+        conversationId: activeConversationId,
+        userId: user._id,
+        receiverId
+      });
+    }, 2000);
+  };
+
+  const markRead = async (convId: string) => {
     try {
-      if (conversationId && user?._id) {
-        await messageService.markMessagesAsRead(conversationId, user._id);
+      if (convId && user?._id) {
+        await messageService.markMessagesAsRead(convId, user._id);
       }
     } catch (e) {
       console.log('Error marking read', e);
     }
   };
 
-  const loadMessages = async () => {
+  const loadMessages = async (convId: string) => {
     try {
       setIsLoading(true);
-      const data = await messageService.getConversationMessages(conversationId);
+      const data = await messageService.getConversationMessages(convId);
       setMessages(Array.isArray(data) ? (data as unknown as ChatMessage[]) : []);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -129,18 +230,56 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const onSend = async () => {
     if (!input.trim() || isSending) return;
 
+    if (!user?._id) {
+      console.error("Cannot send message: User not logged in");
+      return;
+    }
+
+    // Must have a valid conversation ID now (or we fetch it first)
+    // For simplicity, ensure activeConversationId is set.
+    // However, if logic below relies on it, we must ensure it.
+
+    // Safety check for receiver
+    const targetReceiverId = route.params?.receiverId || route.params?.otherUserId;
+    if (!targetReceiverId) {
+      console.error("Cannot send message: No receiver ID found");
+      return;
+    }
+
     const messageText = input.trim();
     setInput('');
     setIsSending(true);
 
     try {
-      // Get receiver ID from route params or determine from conversation
-      const receiverId = route.params?.receiverId || route.params?.otherUserId;
+      // If we somehow still don't have an ID, try one last time to create it
+      let finalConvId = activeConversationId;
+      if (!finalConvId) {
+        const payload: any = {
+          participants: [user._id, targetReceiverId],
+          projectId: route.params?.projectId
+        };
+
+        if (route.params?.clientId) payload.clientId = route.params.clientId;
+        else if (user.userType === 'client') payload.clientId = user._id;
+        else payload.clientId = targetReceiverId;
+
+        if (route.params?.freelancerId) payload.freelancerId = route.params.freelancerId;
+        else if (user.userType === 'freelancer') payload.freelancerId = user._id;
+        else payload.freelancerId = targetReceiverId;
+
+        const conv = await messageService.getOrCreateConversation(payload);
+        if (conv?._id) {
+          finalConvId = conv._id;
+          setActiveConversationId(conv._id);
+        } else {
+          throw new Error("Could not establish conversation ID");
+        }
+      }
 
       const newMessage = await messageService.sendMessage({
-        conversationId,
-        senderId: user?._id,
-        receiverId: receiverId || '',
+        conversationId: finalConvId,
+        senderId: user._id,
+        receiverId: targetReceiverId,
         text: messageText,
       });
 
@@ -210,13 +349,20 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
 
         {/* Composer */}
         <View style={[styles.composerWrap, { borderTopColor: c.border, backgroundColor: c.background, paddingBottom: insets.bottom }]}>
+          {otherUserTyping && (
+            <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+              <Text style={{ fontSize: 12, color: c.subtext, fontStyle: 'italic' }}>
+                {userName.split(' ')[0]} is typing...
+              </Text>
+            </View>
+          )}
           <View style={[styles.composer, { backgroundColor: c.card }]}>
             <TouchableOpacity style={styles.addBtn}>
               <MaterialIcons name="add-circle" size={22} color={c.subtext} />
             </TouchableOpacity>
             <TextInput
               value={input}
-              onChangeText={setInput}
+              onChangeText={handleInputChange}
               placeholder="Type a message..."
               placeholderTextColor={c.subtext}
               style={[styles.input, { color: c.text }]}
