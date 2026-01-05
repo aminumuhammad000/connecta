@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import Logo from '../components/Logo';
+import { verifyOTP, sendPasswordResetOTP } from '../services/authService';
+import CustomAlert, { AlertType } from '../components/CustomAlert';
 
 interface OTPVerificationScreenProps {
     email: string;
     onBackToForgotPassword?: () => void;
-    onOTPVerified?: () => void;
+    onOTPVerified?: (token: string) => void;
 }
 
 const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
@@ -22,9 +23,32 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
     const [resendTimer, setResendTimer] = useState(60);
     const inputRefs = useRef<(TextInput | null)[]>([]);
 
+    // Alert State
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType; onOk?: () => void }>({
+        title: '',
+        message: '',
+        type: 'success'
+    });
+
+    const showAlert = (title: string, message: string, type: AlertType = 'success', onOk?: () => void) => {
+        setAlertConfig({ title, message, type, onOk });
+        setAlertVisible(true);
+    };
+
+    const handleAlertClose = () => {
+        setAlertVisible(false);
+        if (alertConfig.onOk) {
+            alertConfig.onOk();
+        }
+    };
+
+    // ... (useEffect remains same) ...
     useEffect(() => {
         // Auto-focus first input
-        inputRefs.current[0]?.focus();
+        if (inputRefs.current[0]) {
+            inputRefs.current[0].focus();
+        }
 
         // Start countdown timer
         const interval = setInterval(() => {
@@ -69,23 +93,23 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
         const code = otpCode || otp.join('');
 
         if (code.length !== 4) {
-            Alert.alert('Error', 'Please enter the complete 4-digit code');
+            showAlert('Error', 'Please enter the complete 4-digit code', 'error');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            // TODO: Replace with actual API call
-            // const response = await api.verifyPasswordResetOTP(email, code);
+            const response = await verifyOTP(email, code);
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // For demo purposes, accept any 4-digit code
-            onOTPVerified?.();
-        } catch (error) {
-            Alert.alert('Error', 'Invalid verification code. Please try again.');
+            if (response.resetToken) {
+                onOTPVerified?.(response.resetToken);
+            } else {
+                throw new Error('No reset token received');
+            }
+        } catch (error: any) {
+            console.error('Verify OTP Error:', error);
+            showAlert('Error', error.response?.data?.message || 'Invalid verification code. Please try again.', 'error');
             setOtp(['', '', '', '']);
             inputRefs.current[0]?.focus();
         } finally {
@@ -97,18 +121,14 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
         if (resendTimer > 0) return;
 
         try {
-            // TODO: Replace with actual API call
-            // await api.sendPasswordResetOTP(email);
+            await sendPasswordResetOTP(email);
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            Alert.alert('Success', 'A new verification code has been sent to your email.');
+            showAlert('Success', 'A new verification code has been sent to your email.', 'success');
             setResendTimer(60);
             setOtp(['', '', '', '']);
             inputRefs.current[0]?.focus();
-        } catch (error) {
-            Alert.alert('Error', 'Failed to resend code. Please try again.');
+        } catch (error: any) {
+            showAlert('Error', error.response?.data?.message || 'Failed to resend code. Please try again.', 'error');
         }
     };
 
@@ -194,7 +214,16 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
                         </View>
                     </View>
                 </ScrollView>
+
             </KeyboardAvoidingView>
+
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={handleAlertClose}
+            />
         </SafeAreaView>
     );
 };

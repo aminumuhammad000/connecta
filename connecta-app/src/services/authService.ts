@@ -1,18 +1,30 @@
 import { post } from './api';
 import { API_ENDPOINTS } from '../utils/constants';
-import { AuthResponse, LoginCredentials, SignupData, ApiResponse } from '../types';
+import { AuthResponse, LoginCredentials, SignupData, ApiResponse, UserType } from '../types';
 
 /**
  * Authentication Service
  * Handles user authentication operations
+ * Updated: Force Reload
  */
+console.log('AuthService Module Loaded');
 
 /**
  * Sign up a new user
  */
 export const signup = async (data: SignupData): Promise<AuthResponse> => {
     const response = await post<AuthResponse>(API_ENDPOINTS.SIGNUP, data);
-    return response as AuthResponse;
+    return response;
+};
+
+export const googleSignup = async (tokenId: string, userType: UserType): Promise<AuthResponse> => {
+    const response = await post<AuthResponse>(API_ENDPOINTS.GOOGLE_SIGNUP, { tokenId, userType });
+    return response;
+};
+
+export const googleSignin = async (tokenId: string): Promise<AuthResponse> => {
+    const response = await post<AuthResponse>(API_ENDPOINTS.GOOGLE_SIGNIN, { tokenId });
+    return response;
 };
 
 /**
@@ -23,30 +35,55 @@ export const signin = async (credentials: LoginCredentials): Promise<AuthRespons
     return response as AuthResponse;
 };
 
+
+
+
+
 /**
- * Sign up with Google
+ * Forgot Password - Send OTP
  */
-export const googleSignup = async (googleToken: string, userType: 'client' | 'freelancer'): Promise<AuthResponse> => {
-    const response = await post<AuthResponse>(API_ENDPOINTS.GOOGLE_SIGNUP, {
-        token: googleToken,
-        userType,
-    });
-    return response as AuthResponse;
+export const sendPasswordResetOTP = async (email: string): Promise<ApiResponse> => {
+    console.log('Sending Password Reset OTP (Hardcoded URL)');
+    const response = await post<ApiResponse>('/api/users/forgot-password', { email });
+    return response;
 };
 
 /**
- * Sign in with Google
+ * Verify OTP
  */
-export const googleSignin = async (googleToken: string): Promise<AuthResponse> => {
-    const response = await post<AuthResponse>(API_ENDPOINTS.GOOGLE_SIGNIN, {
-        token: googleToken,
-    });
-    return response as AuthResponse;
+export const verifyOTP = async (email: string, otp: string): Promise<any> => {
+    const response = await post<any>('/api/users/verify-otp', { email, otp });
+    return response;
+};
+
+export const resetPassword = async (resetToken: string, newPassword: string): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/reset-password', { resetToken, newPassword });
+    return response;
+};
+
+export const verifyEmail = async (otp: string): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/verify-email', { otp });
+    return response;
+};
+
+export const resendVerification = async (): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/resend-verification', {});
+    return response;
+};
+
+export const updatePushToken = async (pushToken: string): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/push-token', { pushToken });
+    return response;
 };
 
 export default {
     signup,
     signin,
-    googleSignup,
     googleSignin,
+    sendPasswordResetOTP,
+    verifyOTP,
+    resetPassword,
+    verifyEmail,
+    resendVerification,
+    updatePushToken,
 };

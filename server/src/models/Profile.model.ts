@@ -37,7 +37,7 @@ export interface IProfile extends Document {
   location?: string;
   resume?: string; // Could be a URL to uploaded file
   skills?: string[]; // Array of skills
-
+  
   // Client-specific fields
   companyName?: string;
   website?: string;
@@ -46,8 +46,8 @@ export interface IProfile extends Document {
 
   education?: IEducation[];
   languages?: ILanguage[];
-  portfolio?: IPortfolio[];
   employment?: IEmployment[];
+  portfolio?: IPortfolio[];
 
   createdAt: Date;
   updatedAt: Date;

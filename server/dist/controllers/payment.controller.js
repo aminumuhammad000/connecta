@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
+exports.saveWithdrawalSettings = exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
 const Payment_model_1 = __importDefault(require("../models/Payment.model"));
 const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
 const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
@@ -12,7 +12,6 @@ const Project_model_1 = __importDefault(require("../models/Project.model"));
 const Job_model_1 = __importDefault(require("../models/Job.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 const flutterwave_service_1 = __importDefault(require("../services/flutterwave.service"));
-const paystack_service_1 = __importDefault(require("../services/paystack.service"));
 // Platform fee percentage (e.g., 10%)
 const PLATFORM_FEE_PERCENTAGE = 10;
 /**
@@ -597,17 +596,22 @@ const processWithdrawal = async (req, res) => {
         withdrawal.approvedAt = new Date();
         withdrawal.processedAt = new Date();
         await withdrawal.save();
-        // Initiate Paystack transfer
+        // Initiate Flutterwave transfer
         try {
-            // Create recipient
-            const recipient = await paystack_service_1.default.createTransferRecipient(withdrawal.bankDetails.accountNumber, withdrawal.bankDetails.bankCode, withdrawal.bankDetails.accountName);
-            // Initiate transfer
-            const transfer = await paystack_service_1.default.initiateTransfer(recipient.data.recipient_code, withdrawal.netAmount, withdrawal._id.toString(), 'Withdrawal from Connecta');
-            withdrawal.gatewayReference = transfer.data.reference;
-            withdrawal.transferCode = transfer.data.transfer_code;
+            // Initiate transfer directly (Flutterwave doesn't need separate recipient creation for simple transfers usually, or we use the bank code/account number directly)
+            const transfer = await flutterwave_service_1.default.initiateTransfer(withdrawal.bankDetails.bankCode, withdrawal.bankDetails.accountNumber, withdrawal.netAmount, 'Withdrawal from Connecta', withdrawal._id.toString());
+            withdrawal.gatewayReference = transfer.data.id.toString(); // Flutterwave returns numeric ID
+            withdrawal.transferCode = transfer.data.id.toString(); // Use ID as code
             withdrawal.gatewayResponse = transfer.data;
-            withdrawal.status = 'completed';
-            withdrawal.completedAt = new Date();
+            // Flutterwave transfers are often async, status might be "NEW" or "SUCCESSFUL"
+            if (transfer.status === 'success' && transfer.data.status === 'SUCCESSFUL') {
+                withdrawal.status = 'completed';
+                withdrawal.completedAt = new Date();
+            }
+            else {
+                // Keep as processing if pending
+                withdrawal.status = 'processing';
+            }
             await withdrawal.save();
             // Create transaction
             await Transaction_model_1.default.create({
@@ -615,8 +619,8 @@ const processWithdrawal = async (req, res) => {
                 type: 'withdrawal',
                 amount: -withdrawal.amount,
                 currency: withdrawal.currency,
-                status: 'completed',
-                gatewayReference: transfer.data.reference,
+                status: withdrawal.status === 'completed' ? 'completed' : 'pending',
+                gatewayReference: transfer.data.id.toString(),
                 description: 'Withdrawal to bank account',
             });
             return res.status(200).json({
@@ -626,6 +630,7 @@ const processWithdrawal = async (req, res) => {
             });
         }
         catch (error) {
+            console.error('Flutterwave transfer error:', error);
             withdrawal.status = 'failed';
             withdrawal.failureReason = error.message;
             await withdrawal.save();
@@ -633,6 +638,7 @@ const processWithdrawal = async (req, res) => {
             const wallet = await Wallet_model_1.default.findOne({ userId: withdrawal.userId });
             if (wallet) {
                 wallet.balance += withdrawal.amount;
+                wallet.availableBalance = (wallet.balance || 0) - (wallet.escrowBalance || 0); // Re-calc available
                 await wallet.save();
             }
             throw error;
@@ -686,9 +692,12 @@ exports.getTransactionHistory = getTransactionHistory;
 /**
  * Get list of banks
  */
+/**
+ * Get list of banks
+ */
 const getBanks = async (req, res) => {
     try {
-        const banks = await paystack_service_1.default.listBanks();
+        const banks = await flutterwave_service_1.default.listBanks();
         return res.status(200).json({
             success: true,
             data: banks.data,
@@ -715,7 +724,7 @@ const resolveAccount = async (req, res) => {
                 message: 'Account number and bank code are required',
             });
         }
-        const account = await paystack_service_1.default.resolveAccountNumber(accountNumber, bankCode);
+        const account = await flutterwave_service_1.default.resolveAccount(accountNumber, bankCode);
         return res.status(200).json({
             success: true,
             data: account.data,
@@ -770,3 +779,53 @@ const getAllPayments = async (req, res) => {
     }
 };
 exports.getAllPayments = getAllPayments;
+/**
+ * Save withdrawal settings (bank details)
+ */
+const saveWithdrawalSettings = async (req, res) => {
+    try {
+        const { accountName, accountNumber, bankName, bankCode } = req.body;
+        const userId = req.user?._id || req.user?.id || req.user?.userId;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+        if (!accountName || !accountNumber || !bankName || !bankCode) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required fields: accountName, accountNumber, bankName, bankCode',
+            });
+        }
+        // Find user's wallet
+        let wallet = await Wallet_model_1.default.findOne({ userId });
+        if (!wallet) {
+            // Create wallet if it doesn't exist
+            wallet = new Wallet_model_1.default({
+                userId,
+                balance: 0,
+                currency: 'NGN', // Default to NGN
+            });
+        }
+        // Update bank details
+        wallet.bankDetails = {
+            accountName,
+            accountNumber,
+            bankName,
+            bankCode,
+        };
+        wallet.isVerified = true; // Assume verified if they provided details (for now)
+        await wallet.save();
+        return res.status(200).json({
+            success: true,
+            message: 'Withdrawal settings saved successfully',
+            data: wallet.bankDetails,
+        });
+    }
+    catch (error) {
+        console.error('Save withdrawal settings error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to save withdrawal settings',
+        });
+    }
+};
+exports.saveWithdrawalSettings = saveWithdrawalSettings;

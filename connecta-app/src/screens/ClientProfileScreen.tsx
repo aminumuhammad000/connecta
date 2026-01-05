@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRoQQ-xxcLo9YcmbA5AWwLA-FKTuhoFyvCtoj3YzgnBUHc3Bck-0K5CDGhw26GGSiL4TVmx-echTOzkIszt19LuAJSmxtNX4gLR84lGhbyBU_ylBR9UPjYUsGq-sCWYMZU8YMxAwFk3vUMj8iG1B-JkvTnZ33PaK6gy8KAqR6GAF4C1IoRLxDv3FB7Jl0FhWIXIXurfNORMKY7rKh4LRJjYzPXNlfWTAvV548j73C9tUL04WQzqGCFCWqIVMqtsa2VztnMJKvY5rM';
 
-export default function ClientProfileScreen({ navigation }: any) {
+export default function ClientProfileScreen({ navigation, route }: any) {
   const c = useThemeColors();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'history' | 'reviews'>('history');
@@ -17,29 +17,40 @@ export default function ClientProfileScreen({ navigation }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // If userId is passed in params, we are viewing another user's profile
+  const viewingUserId = route?.params?.userId;
+  const isOwnProfile = !viewingUserId || viewingUserId === user?._id;
+
   useFocusEffect(
     useCallback(() => {
       loadProfile();
-    }, [])
+    }, [viewingUserId])
   );
 
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const data = await profileService.getMyProfile();
+      let data;
 
-      // Extract user data from populated field or use auth context
-      const userData = data?.user || user;
+      if (viewingUserId) {
+        data = await profileService.getProfileById(viewingUserId);
+      } else {
+        data = await profileService.getMyProfile();
+      }
+
+      // If viewing another user, strict profile data usage
+      // If own profile, fallback to auth user context
+      const userData = data?.user || (isOwnProfile ? user : null);
 
       const merged = {
         // User basic info
-        firstName: userData?.firstName || user?.firstName,
-        lastName: userData?.lastName || user?.lastName,
-        email: userData?.email || user?.email,
-        isPremium: userData?.isPremium || user?.isPremium,
+        firstName: userData?.firstName || (isOwnProfile ? user?.firstName : ''),
+        lastName: userData?.lastName || (isOwnProfile ? user?.lastName : ''),
+        email: userData?.email || (isOwnProfile ? user?.email : ''),
+        isPremium: userData?.isPremium || (isOwnProfile ? user?.isPremium : false),
 
-        // Profile image - prioritize avatar from profile, then profileImage from user
-        avatar: data?.avatar || userData?.profileImage || user?.profileImage,
+        // Profile image
+        avatar: data?.avatar || userData?.profileImage || (isOwnProfile ? user?.profileImage : null),
 
         // Spread all profile data
         ...data,
@@ -47,7 +58,7 @@ export default function ClientProfileScreen({ navigation }: any) {
 
       console.log('📊 Loaded profile data:', merged);
       setProfile(merged);
-      setErrorMessage(data ? null : 'Profile not found. Create your profile to get started.');
+      setErrorMessage(data ? null : 'Profile not found.');
     } catch (error) {
       console.error('Error loading profile:', error);
       setErrorMessage('Unable to load profile. Pull to refresh to try again.');
@@ -138,27 +149,29 @@ export default function ClientProfileScreen({ navigation }: any) {
             </View>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: c.primary }]}
-              onPress={() => navigation.navigate('ClientEditProfile')}
-            >
-              <Text style={[styles.btnText, { color: 'white' }]}>Edit Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
-              onPress={() => navigation.navigate('ManageSubscription')}
-            >
-              <MaterialIcons
-                name={profile?.isPremium ? "settings" : "workspace-premium"}
-                size={16}
-                color={c.primary}
-              />
-              <Text style={[styles.btnText, { color: c.text, marginLeft: 4 }]}>
-                {profile?.isPremium ? 'Manage Premium' : 'Upgrade'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {isOwnProfile && (
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: c.primary }]}
+                onPress={() => navigation.navigate('ClientEditProfile')}
+              >
+                <Text style={[styles.btnText, { color: 'white' }]}>Edit Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
+                onPress={() => navigation.navigate('ManageSubscription')}
+              >
+                <MaterialIcons
+                  name={profile?.isPremium ? "settings" : "workspace-premium"}
+                  size={16}
+                  color={c.primary}
+                />
+                <Text style={[styles.btnText, { color: c.text, marginLeft: 4 }]}>
+                  {profile?.isPremium ? 'Manage Premium' : 'Upgrade'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Stats */}
@@ -180,9 +193,11 @@ export default function ClientProfileScreen({ navigation }: any) {
         {/* About */}
         <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
           <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>About</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('ClientEditProfile')}>
-            <MaterialIcons name="edit" size={20} color={c.primary} />
-          </TouchableOpacity>
+          {isOwnProfile && (
+            <TouchableOpacity onPress={() => navigation.navigate('ClientEditProfile')}>
+              <MaterialIcons name="edit" size={20} color={c.primary} />
+            </TouchableOpacity>
+          )}
         </View>
         <Text style={[styles.about, { color: c.subtext }]}>{profile?.bio || 'No bio added yet.'}</Text>
 

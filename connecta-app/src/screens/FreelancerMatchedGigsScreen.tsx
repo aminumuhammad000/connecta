@@ -66,6 +66,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
 
   // Filter jobs based on selected filter and search query
   const filteredJobs = jobs.filter(job => {
+    if (!job) return false;
     // Filter by type
     if (selectedFilter === 'fixed' && job.budgetType !== 'fixed') return false;
     if (selectedFilter === 'hourly' && job.budgetType !== 'hourly') return false;
@@ -190,81 +191,84 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
 
             <View style={{ gap: 12, marginTop: 12 }}>
               {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => (
-                  <Card key={job._id} variant="elevated" padding={16}>
-                    <View style={styles.gigCard}>
-                      <View style={styles.gigHeader}>
-                        <View style={{ flex: 1 }}>
-                          <View style={styles.titleRow}>
-                            <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
-                              {job.title}
-                            </Text>
-                            {job.status === 'active' && (
-                              <Badge label="Active" variant="success" size="small" />
-                            )}
+                filteredJobs.map(job => {
+                  if (!job) return null;
+                  return (
+                    <Card key={job._id} variant="elevated" padding={16}>
+                      <View style={styles.gigCard}>
+                        <View style={styles.gigHeader}>
+                          <View style={{ flex: 1 }}>
+                            <View style={styles.titleRow}>
+                              <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
+                                {job.title}
+                              </Text>
+                              {job.status === 'active' && (
+                                <Badge label="Active" variant="success" size="small" />
+                              )}
+                            </View>
+                            <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
                           </View>
-                          <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
+                          <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
+                            <MaterialIcons
+                              name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
+                              size={24}
+                              color={savedGigs.has(job._id) ? c.primary : c.subtext}
+                            />
+                          </TouchableOpacity>
                         </View>
-                        <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
-                          <MaterialIcons
-                            name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
-                            size={24}
-                            color={savedGigs.has(job._id) ? c.primary : c.subtext}
-                          />
-                        </TouchableOpacity>
-                      </View>
 
-                      <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
-                        {job.description || job.summary || 'No description available'}
-                      </Text>
+                        <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
+                          {job.description || job.summary || 'No description available'}
+                        </Text>
 
-                      <View style={styles.gigMeta}>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.text }]}>{job.budget || 'N/A'}</Text>
+                        <View style={styles.gigMeta}>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.text }]}>{job.budget || 'N/A'}</Text>
+                          </View>
+                          <View style={styles.metaItem}>
+                            <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                            <Text style={[styles.metaText, { color: c.subtext }]}>
+                              {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
+                            </Text>
+                          </View>
+                          {job.budgetType && (
+                            <Badge
+                              label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
+                              variant="neutral"
+                              size="small"
+                            />
+                          )}
                         </View>
-                        <View style={styles.metaItem}>
-                          <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                          <Text style={[styles.metaText, { color: c.subtext }]}>
-                            {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
-                          </Text>
-                        </View>
-                        {job.budgetType && (
-                          <Badge
-                            label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
-                            variant="neutral"
-                            size="small"
-                          />
+
+                        {job.skills && job.skills.length > 0 && (
+                          <View style={styles.skillsRow}>
+                            {job.skills.slice(0, 5).map((skill, idx) => (
+                              <Badge key={idx} label={skill} variant="info" size="small" />
+                            ))}
+                          </View>
                         )}
-                      </View>
 
-                      {job.skills && job.skills.length > 0 && (
-                        <View style={styles.skillsRow}>
-                          {job.skills.slice(0, 5).map((skill, idx) => (
-                            <Badge key={idx} label={skill} variant="info" size="small" />
-                          ))}
+                        <View style={styles.gigActions}>
+                          <Button
+                            title="View Details"
+                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                            variant="outline"
+                            size="small"
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            title="Apply Now"
+                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                            variant="primary"
+                            size="small"
+                            style={{ flex: 1 }}
+                          />
                         </View>
-                      )}
-
-                      <View style={styles.gigActions}>
-                        <Button
-                          title="View Details"
-                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                          variant="outline"
-                          size="small"
-                          style={{ flex: 1 }}
-                        />
-                        <Button
-                          title="Apply Now"
-                          onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                          variant="primary"
-                          size="small"
-                          style={{ flex: 1 }}
-                        />
                       </View>
-                    </View>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               ) : (
                 <View style={{ padding: 40, alignItems: 'center' }}>
                   <MaterialIcons name="work-outline" size={48} color={c.subtext} />

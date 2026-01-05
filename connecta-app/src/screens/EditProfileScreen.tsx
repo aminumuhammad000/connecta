@@ -529,14 +529,76 @@ export default function EditProfileScreen({ navigation }: any) {
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: c.text }]}>Skills</Text>
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Your Skills (comma separated)</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                value={formData.skillsText}
-                                onChangeText={(text) => handleInputChange('skillsText', text)}
-                                placeholder="e.g. React, Node.js, Design"
-                                placeholderTextColor={c.subtext}
-                            />
+                            <Text style={[styles.label, { color: c.subtext }]}>Your Skills</Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                                {formData.skills.map((skill, index) => (
+                                    <View key={index} style={[styles.skillChip, { backgroundColor: c.primary + '20' }]}>
+                                        <Text style={[styles.skillChipText, { color: c.primary }]}>{skill}</Text>
+                                        <TouchableOpacity onPress={() => {
+                                            const newSkills = [...formData.skills];
+                                            newSkills.splice(index, 1);
+                                            setFormData(prev => ({ ...prev, skills: newSkills, skillsText: newSkills.join(', ') }));
+                                        }}>
+                                            <Ionicons name="close-circle" size={16} color={c.primary} style={{ marginLeft: 4 }} />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                            <View style={[styles.skillInputContainer, { backgroundColor: c.card, borderColor: c.border }]}>
+                                <TextInput
+                                    style={[styles.skillInput, { color: c.text }]}
+                                    value={formData.skillsText}
+                                    onChangeText={(text) => {
+                                        // If ends with comma, add as chip
+                                        if (text.endsWith(',')) {
+                                            const newSkill = text.slice(0, -1).trim();
+                                            if (newSkill && !formData.skills.includes(newSkill)) {
+                                                const newSkills = [...formData.skills, newSkill];
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    skills: newSkills,
+                                                    skillsText: '' // Clear input
+                                                }));
+                                            } else {
+                                                setFormData(prev => ({ ...prev, skillsText: '' })); // Just clear if empty or duplicate
+                                            }
+                                        } else {
+                                            setFormData(prev => ({ ...prev, skillsText: text }));
+                                        }
+                                    }}
+                                    onSubmitEditing={({ nativeEvent: { text } }) => {
+                                        const newSkill = text.trim();
+                                        if (newSkill && !formData.skills.includes(newSkill)) {
+                                            const newSkills = [...formData.skills, newSkill];
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                skills: newSkills,
+                                                skillsText: ''
+                                            }));
+                                        }
+                                    }}
+                                    placeholder="Type a skill and press comma or enter..."
+                                    placeholderTextColor={c.subtext}
+                                    blurOnSubmit={false}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        const text = formData.skillsText;
+                                        const newSkill = text.trim();
+                                        if (newSkill && !formData.skills.includes(newSkill)) {
+                                            const newSkills = [...formData.skills, newSkill];
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                skills: newSkills,
+                                                skillsText: ''
+                                            }));
+                                        }
+                                    }}
+                                    style={{ padding: 8 }}
+                                >
+                                    <Ionicons name="add-circle" size={24} color={c.primary} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
 
@@ -1279,5 +1341,28 @@ const styles = StyleSheet.create({
     portfolioTags: {
         fontSize: 12,
         marginTop: 4,
+    },
+    skillChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+    },
+    skillChipText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    skillInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingRight: 8,
+    },
+    skillInput: {
+        flex: 1,
+        height: 48,
+        paddingHorizontal: 16,
     },
 });

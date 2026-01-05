@@ -56,5 +56,54 @@ class FlutterwaveService {
             throw new Error(error.response?.data?.message || 'Failed to verify payment');
         }
     }
+    /**
+     * List all banks
+     */
+    async listBanks() {
+        try {
+            const response = await axios_1.default.get(`${FLUTTERWAVE_BASE_URL}/banks/NG`, { headers: this.headers });
+            return response.data;
+        }
+        catch (error) {
+            console.error('Flutterwave list banks error:', error.response?.data || error.message);
+            throw new Error('Failed to fetch banks');
+        }
+    }
+    /**
+     * Resolve account number
+     */
+    async resolveAccount(accountNumber, bankCode) {
+        try {
+            const response = await axios_1.default.post(`${FLUTTERWAVE_BASE_URL}/accounts/resolve`, {
+                account_number: accountNumber,
+                account_bank: bankCode,
+            }, { headers: this.headers });
+            return response.data;
+        }
+        catch (error) {
+            console.error('Flutterwave account resolution error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to resolve account');
+        }
+    }
+    /**
+     * Initiate a transfer (withdrawal)
+     */
+    async initiateTransfer(accountBank, accountNumber, amount, narration, reference) {
+        try {
+            const response = await axios_1.default.post(`${FLUTTERWAVE_BASE_URL}/transfers`, {
+                account_bank: accountBank,
+                account_number: accountNumber,
+                amount,
+                currency: 'NGN',
+                narration: narration || 'Withdrawal from Connecta',
+                reference,
+            }, { headers: this.headers });
+            return response.data;
+        }
+        catch (error) {
+            console.error('Flutterwave transfer error:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to initiate transfer');
+        }
+    }
 }
 exports.default = new FlutterwaveService();

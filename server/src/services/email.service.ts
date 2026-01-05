@@ -37,19 +37,31 @@ const getTransporter = async () => {
 /**
  * Send OTP email to user
  */
-export const sendOTPEmail = async (email: string, otp: string, userName?: string): Promise<boolean> => {
+export const sendOTPEmail = async (
+  email: string,
+  otp: string,
+  userName?: string,
+  type: 'PASSWORD_RESET' | 'EMAIL_VERIFICATION' = 'PASSWORD_RESET'
+): Promise<{ success: boolean; error?: any }> => {
   try {
     const transporter = await getTransporter();
-    if (!transporter) return false;
+    if (!transporter) return { success: false, error: 'Transporter not available' };
 
     const settings = await SystemSettings.findOne();
     const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
+    const isVerification = type === 'EMAIL_VERIFICATION';
+    const subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
+    const title = isVerification ? 'Verify Your Email' : 'Password Reset Request';
+    const message = isVerification
+      ? 'Welcome to Connecta! Please use the verification code below to verify your email address:'
+      : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
+
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to: email,
-      subject: 'Password Reset OTP - Connecta',
+      subject: subject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -115,24 +127,24 @@ export const sendOTPEmail = async (email: string, otp: string, userName?: string
           <div class="container">
             <div class="header">
               <div class="logo">Connecta</div>
-              <h2 style="margin: 0; color: #1f2937;">Password Reset Request</h2>
+              <h2 style="margin: 0; color: #1f2937;">${title}</h2>
             </div>
             
             <p>Hi ${userName || 'there'},</p>
             
-            <p>We received a request to reset your password. Use the OTP code below to proceed with resetting your password:</p>
+            <p>${message}</p>
             
             <div class="otp-box">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">Your OTP Code</p>
+              <p style="margin: 0; color: #6b7280; font-size: 14px;">Your Verification Code</p>
               <div class="otp-code">${otp}</div>
               <p style="margin: 0; color: #6b7280; font-size: 14px;">Valid for 10 minutes</p>
             </div>
             
             <div class="warning">
-              <strong>⚠️ Security Notice:</strong> If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+              <strong>⚠️ Security Notice:</strong> If you didn't request this code, please ignore this email.
             </div>
             
-            <p>For security reasons, this OTP will expire in 10 minutes.</p>
+            <p>For security reasons, this code will expire in 10 minutes.</p>
             
             <div class="footer">
               <p>This is an automated email, please do not reply.</p>
@@ -145,13 +157,15 @@ export const sendOTPEmail = async (email: string, otp: string, userName?: string
       text: `
 Hi ${userName || 'there'},
 
-We received a request to reset your password.
+${title}
 
-Your OTP Code: ${otp}
+${message}
+
+Your Code: ${otp}
 
 This code is valid for 10 minutes.
 
-If you didn't request this password reset, please ignore this email.
+If you didn't request this, please ignore this email.
 
 - Connecta Team
       `,
@@ -159,36 +173,88 @@ If you didn't request this password reset, please ignore this email.
 
     const info = await transporter.sendMail(mailOptions);
     console.log('OTP email sent:', info.messageId);
-    return true;
-  } catch (error) {
+    return { success: true };
+  } catch (error: any) {
     console.error('Error sending OTP email:', error);
-    return false;
+    return { success: false, error: error.message || error };
   }
 };
 
 /**
  * Send generic email
  */
-export const sendEmail = async (to: string, subject: string, html: string): Promise<boolean> => {
+export const sendEmail = async (
+  to: string,
+  subject: string,
+  html: string,
+  text?: string
+): Promise<{ success: boolean; error?: any }> => {
   try {
     const transporter = await getTransporter();
-    if (!transporter) return false;
+    if (!transporter) return { success: false, error: 'Transporter not available' };
 
     const settings = await SystemSettings.findOne();
     const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
-    await transporter.sendMail({
+    const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
-      html
-    });
-    return true;
-  } catch (error) {
+      html,
+      text,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+    return { success: true };
+  } catch (error: any) {
     console.error('Error sending email:', error);
-    return false;
+    return { success: false, error: error.message || error };
   }
+};
+
+/**
+ * Send Proposal Accepted Email
+ */
+export const sendProposalAcceptedEmail = async (
+  email: string,
+  freelancerName: string,
+  projectName: string,
+  clientName: string,
+  projectLink: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `Congratulations! You've been hired for ${projectName}`;
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>You've been hired! 🎉</h2>
+            <p>Hi ${freelancerName},</p>
+            <p>Great news! <strong>${clientName}</strong> has accepted your proposal for the project <strong>${projectName}</strong>.</p>
+            <p>The project workspace is now active. You can communicate with the client and start working immediately.</p>
+            
+            <a href="${projectLink}" class="btn">Go to Project Workspace</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                ${projectLink}
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${freelancerName}, Great news! ${clientName} has accepted your proposal for ${projectName}. Go to your dashboard to start working.`;
+
+  return sendEmail(email, subject, html, text);
 };
 
 /**

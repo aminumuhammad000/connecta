@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import * as paymentService from '../services/paymentService';
+import { CommonActions } from '@react-navigation/native';
 
 export default function PaymentCallbackScreen({ navigation, route }: any) {
     const c = useThemeColors();
@@ -16,19 +18,32 @@ export default function PaymentCallbackScreen({ navigation, route }: any) {
     }, []);
 
     const verifyPayment = async () => {
-        // Simulate verification
-        setTimeout(() => {
-            if (Math.random() > 0.1) { // 90% success chance
-                setStatus('success');
-            } else {
-                setStatus('failed');
-            }
-        }, 2000);
+        // transaction_id might come as transaction_id or transactionId depending on the provider/redirect
+        const txId = (route.params as any)?.transaction_id || (route.params as any)?.transactionId || reference;
+
+        if (!reference) {
+            setStatus('failed');
+            return;
+        }
+
+        try {
+            // Call the real backend verification
+            // If txId is missing, we might use reference as fallback if allowed, but backend said it's required.
+            // Using reference as fallback for txId just in case
+            await paymentService.verifyPayment(reference, txId);
+            setStatus('success');
+        } catch (error) {
+            console.error('Payment verification failed:', error);
+            setStatus('failed');
+        }
     };
 
     const handleContinue = () => {
-        // Navigate to dashboard or projects
-        navigation.navigate('ClientDashboard');
+        // Navigate to dashboard or jobs
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'ClientDashboard' }],
+        });
     };
 
     return (

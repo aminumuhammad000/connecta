@@ -1,82 +1,232 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
-import { API_BASE_URL } from '../utils/constants';
-
-const API_URL = `${API_BASE_URL}/api`;
+import projectService from '../services/projectService';
+import paymentService from '../services/paymentService';
+import { useAuth } from '../context/AuthContext';
+import * as DocumentPicker from 'expo-document-picker';
+import { uploadFile } from '../services/api';
+import { API_ENDPOINTS } from '../utils/constants';
+import { useInAppAlert } from '../components/InAppAlert';
 
 export default function ProjectDetailScreen({ navigation, route }: any) {
     const c = useThemeColors();
-    const { projectId } = route.params || { projectId: 'mock-id' };
+    const { showAlert } = useInAppAlert();
+    // Support both id and projectId params
+    const projectId = route.params?.id || route.params?.projectId;
     const [project, setProject] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchProjectDetails();
+        if (projectId) {
+            fetchProjectDetails();
+        } else {
+            setError("No project ID provided");
+            setLoading(false);
+        }
     }, [projectId]);
 
     const fetchProjectDetails = async () => {
         try {
             setLoading(true);
-            // Simulate fetch
-            setTimeout(() => {
-                setProject({
-                    _id: projectId,
-                    title: 'E-commerce Website Redesign',
-                    status: 'ongoing',
-                    statusLabel: 'Ongoing',
-                    clientName: 'John Doe',
-                    clientVerified: true,
-                    budget: { amount: 5000, currency: 'USD', type: 'fixed' },
-                    summary: 'Redesign the homepage and product pages for better conversion.',
-                    description: 'We need a modern look and feel...',
-                    dateRange: { endDate: '2025-12-31' },
-                    deliverables: ['Figma Designs', 'React Code', 'Documentation'],
-                    activity: [
-                        { date: '2025-11-01', description: 'Project started' }
-                    ],
-                    uploads: []
-                });
-                setLoading(false);
-            }, 1000);
-
-            // Real fetch would be:
-            // const response = await fetch(`${API_URL}/projects/${projectId}`);
-            // const data = await response.json();
-            // if (data.success) setProject(data.data);
+            setError(null);
+            const data = await projectService.getProjectById(projectId);
+            setProject(data);
         } catch (error) {
             console.error(error);
+            setError("Failed to load project details");
+        } finally {
             setLoading(false);
         }
     };
 
-    const handleChatClient = () => {
-        navigation.navigate('Messages', {
-            userName: project?.clientName
-        });
+    const { user } = useAuth();
+    const isClient = user?.userType === 'client';
+
+    // Determine ownership
+    const isProjectOwner = React.useMemo(() => {
+        if (!project || !user) return false;
+        // Project.clientId can be object or string
+        const projectClientId = project.clientId?._id || project.clientId;
+        return projectClientId === user._id;
+    }, [project, user]);
+
+    const handleChat = () => {
+        if (isProjectOwner) {
+            // Client chatting with Freelancer
+            navigation.navigate('MessagesDetail', {
+                receiverId: project.freelancerId?._id || project.freelancerId,
+                userName: project.freelancerId?.firstName
+                    ? `${project.freelancerId.firstName} ${project.freelancerId.lastName}`
+                    : (project.freelancerName || 'Freelancer'),
+                userAvatar: project.freelancerAvatar, // Optional
+                projectId: project._id,
+                clientId: project.clientId?._id || project.clientId,
+                freelancerId: project.freelancerId?._id || project.freelancerId
+            });
+        } else {
+            // Freelancer chatting with Client
+            navigation.navigate('MessagesDetail', {
+                receiverId: project.clientId?._id || project.clientId,
+                userName: project.clientId?.firstName
+                    ? `${project.clientId.firstName} ${project.clientId.lastName}`
+                    : (project.clientName || 'Client'),
+                userAvatar: project.clientAvatar, // Optional
+                projectId: project._id,
+                clientId: project.clientId?._id || project.clientId,
+                freelancerId: project.freelancerId?._id || project.freelancerId
+            });
+        }
     };
 
-    const handleUpload = () => {
-        Alert.alert('Upload', 'File upload functionality would open here.');
+    const handleReleasePayment = async () => {
+        if (!project?.payment) {
+            showAlert({ title: 'Error', message: 'Payment record not found.', type: 'error' });
+            return;
+        }
+
+        if (project.payment.escrowStatus !== 'held') {
+            showAlert({ title: 'Info', message: 'Funds are not currently held in escrow.', type: 'info' });
+            return;
+        }
+
+        Alert.alert('Release Payment', 'Are you sure you want to release the funds to the freelancer? This cannot be undone.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Release Funds',
+                onPress: async () => {
+                    try {
+                        setActionLoading(true);
+                        await paymentService.releasePayment(project.payment._id);
+                        showAlert({ title: 'Success', message: 'Funds released successfully!', type: 'success' });
+                        fetchProjectDetails(); // Refresh
+                    } catch (err: any) {
+                        showAlert({ title: 'Error', message: err.message || 'Failed to release funds', type: 'error' });
+                    } finally {
+                        setActionLoading(false);
+                    }
+                }
+            }
+        ]);
     };
+
+    const handleEndContract = () => {
+        Alert.alert('End Contract', 'Are you sure you want to end this contract? This action cannot be undone.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'End Contract',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        setActionLoading(true);
+                        await projectService.updateProjectStatus(project._id, 'completed');
+                        showAlert({ title: 'Success', message: 'Contract ended.', type: 'success' });
+                        // Optionally navigate to review screen
+                        navigation.navigate('ClientWriteReview', {
+                            projectId: project._id,
+                            revieweeId: project.freelancerId?._id || project.freelancerId,
+                            projectTitle: project.title,
+                            freelancerName: project.freelancerName || (project.freelancerId?.firstName ? `${project.freelancerId.firstName} ${project.freelancerId.lastName}` : 'Freelancer'),
+                            freelancerAvatar: project.freelancerAvatar || project.freelancerId?.profileImage
+                        });
+                    } catch (err: any) {
+                        showAlert({ title: 'Error', message: err.message || 'Failed to end contract', type: 'error' });
+                    } finally {
+                        setActionLoading(false);
+                        fetchProjectDetails();
+                    }
+                }
+            }
+        ]);
+    };
+
+    const handleUpload = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: '*/*',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled) return;
+
+            const asset = result.assets[0];
+            if (!asset) return;
+
+            setActionLoading(true);
+
+            // 1. Upload file
+            const formData = new FormData();
+            formData.append('file', {
+                uri: asset.uri,
+                name: asset.name,
+                type: asset.mimeType || 'application/octet-stream',
+            } as any);
+
+            const uploadResponse = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
+            const fileUrl = uploadResponse.data?.url;
+
+            if (!fileUrl) throw new Error("File upload failed to return URL");
+
+            if (!user) return;
+
+            // 2. Attach to project
+            await projectService.uploadProjectFile(project._id, {
+                fileName: asset.name,
+                fileUrl: fileUrl,
+                fileType: asset.mimeType || 'unknown',
+                uploadedBy: user._id
+            });
+
+            showAlert({ title: 'Success', message: 'Deliverables uploaded successfully!', type: 'success' });
+            fetchProjectDetails();
+        } catch (err: any) {
+            console.error(err);
+            showAlert({ title: 'Error', message: err.message || 'Upload failed', type: 'error' });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Check if funds are in escrow
+    const fundsInEscrow = project?.payment?.escrowStatus === 'held';
+    const canRelease = fundsInEscrow && isProjectOwner;
 
     if (loading) {
         return (
-            <View style={[styles.loadingContainer, { backgroundColor: c.background }]}>
+            <SafeAreaView style={[styles.loadingContainer, { backgroundColor: c.background }]}>
                 <ActivityIndicator size="large" color={c.primary} />
-            </View>
+            </SafeAreaView>
         );
     }
 
-    if (!project) {
+    if (error || !project) {
         return (
-            <View style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: c.text }}>Project not found</Text>
-            </View>
+            <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: c.text, marginBottom: 12 }}>{error || 'Project not found'}</Text>
+                <TouchableOpacity onPress={fetchProjectDetails} style={[styles.retryBtn, { backgroundColor: c.primary }]}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+                    <Text style={{ color: c.primary }}>Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
         );
     }
+
+    // Safely access properties as they might vary
+    const budgetAmount = project.budget?.amount || project.budget || 0;
+    const budgetCurrency = project.budget?.currency || '$';
+    const budgetType = project.budget?.type || 'fixed';
+
+    // Format dates
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString();
+    };
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
@@ -92,30 +242,47 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 <Text style={[styles.projectTitle, { color: c.text }]}>{project.title}</Text>
 
                 <View style={styles.statusContainer}>
-                    <View style={[styles.statusBadge, { backgroundColor: project.status === 'ongoing' ? '#e6f7ff' : '#f6ffed' }]}>
-                        <Text style={[styles.statusText, { color: project.status === 'ongoing' ? '#1890ff' : '#52c41a' }]}>
-                            {project.statusLabel}
+                    <View style={[styles.statusBadge, { backgroundColor: project.status === 'ongoing' ? '#e6f7ff' : (project.status === 'completed' ? '#f6ffed' : '#fff1f0') }]}>
+                        <Text style={[styles.statusText, { color: project.status === 'ongoing' ? '#1890ff' : (project.status === 'completed' ? '#52c41a' : '#f5222d') }]}>
+                            {project.statusLabel || project.status?.toUpperCase()}
                         </Text>
                     </View>
                 </View>
 
                 <View style={[styles.infoCard, { backgroundColor: c.card, borderColor: c.border }]}>
                     <View style={styles.infoRow}>
-                        <Text style={[styles.infoLabel, { color: c.subtext }]}>Client:</Text>
+                        <Text style={[styles.infoLabel, { color: c.subtext }]}>{isProjectOwner ? 'Freelancer:' : 'Client:'}</Text>
                         <View style={styles.clientInfo}>
-                            <Text style={[styles.infoValue, { color: c.text }]}>{project.clientName}</Text>
-                            {project.clientVerified && <Ionicons name="checkmark-circle" size={16} color={c.primary} style={{ marginLeft: 4 }} />}
+                            <Text style={[styles.infoValue, { color: c.text }]}>{isProjectOwner ? (project.freelancerName || 'Freelancer') : project.clientName}</Text>
+                            {project.clientVerified && !isProjectOwner && <Ionicons name="checkmark-circle" size={16} color={c.primary} style={{ marginLeft: 4 }} />}
                         </View>
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={[styles.infoLabel, { color: c.subtext }]}>Budget:</Text>
                         <Text style={[styles.infoValue, { color: c.text }]}>
-                            ${project.budget.amount} {project.budget.currency} ({project.budget.type})
+                            {budgetCurrency}{budgetAmount} ({budgetType})
                         </Text>
                     </View>
                     <View style={styles.infoRow}>
+                        <Text style={[styles.infoLabel, { color: c.subtext }]}>Payment Status:</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Ionicons
+                                name={project.payment?.escrowStatus === 'held' ? "lock-closed" : "ellipse"}
+                                size={14}
+                                color={project.payment?.escrowStatus === 'held' ? "#10B981" : (project.payment?.status === 'completed' ? "#10B981" : "#F59E0B")}
+                            />
+                            <Text style={[styles.infoValue, { color: c.text }]}>
+                                {project.payment?.escrowStatus === 'held' ? 'Escrow Funded' : (project.payment?.status === 'completed' ? 'Paid' : 'Pending')}
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Text style={[styles.infoLabel, { color: c.subtext }]}>Start Date:</Text>
+                        <Text style={[styles.infoValue, { color: c.text }]}>{formatDate(project.dateRange?.startDate)}</Text>
+                    </View>
+                    <View style={styles.infoRow}>
                         <Text style={[styles.infoLabel, { color: c.subtext }]}>Deadline:</Text>
-                        <Text style={[styles.infoValue, { color: c.text }]}>{project.dateRange.endDate}</Text>
+                        <Text style={[styles.infoValue, { color: c.text }]}>{formatDate(project.dateRange?.endDate)}</Text>
                     </View>
                 </View>
 
@@ -127,28 +294,33 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                     )}
                 </View>
 
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Deliverables</Text>
-                    {project.deliverables.map((item: string, index: number) => (
-                        <View key={index} style={styles.listItem}>
-                            <Ionicons name="ellipse" size={8} color={c.primary} style={{ marginTop: 6, marginRight: 8 }} />
-                            <Text style={[styles.listText, { color: c.text }]}>{item}</Text>
-                        </View>
-                    ))}
-                </View>
+                {project.deliverables && project.deliverables.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: c.text }]}>Deliverables</Text>
+                        {project.deliverables.map((item: string, index: number) => (
+                            <View key={index} style={styles.listItem}>
+                                <Ionicons name="ellipse" size={8} color={c.primary} style={{ marginTop: 6, marginRight: 8 }} />
+                                <Text style={[styles.listText, { color: c.text }]}>{item}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
 
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Activity</Text>
-                    {project.activity.map((item: any, index: number) => (
-                        <View key={index} style={styles.listItem}>
-                            <Text style={[styles.listText, { color: c.text }]}>
-                                <Text style={{ fontWeight: 'bold' }}>{item.date}:</Text> {item.description}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
+                {project.activity && project.activity.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: c.text }]}>Activity</Text>
+                        {project.activity.map((item: any, index: number) => (
+                            <View key={index} style={styles.listItem}>
+                                <Text style={[styles.listText, { color: c.text }]}>
+                                    <Text style={{ fontWeight: 'bold' }}>{formatDate(item.date)}:</Text> {item.description}
+                                </Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
 
-                {project.status === 'ongoing' && (
+                {/* Freelancer Actions: Upload */}
+                {!isProjectOwner && project.status === 'ongoing' && (
                     <TouchableOpacity
                         style={[styles.uploadButton, { borderColor: c.primary, borderStyle: 'dashed' }]}
                         onPress={handleUpload}
@@ -158,12 +330,37 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                     </TouchableOpacity>
                 )}
 
+                {/* Client Actions: Payment & End Contract */}
+                {isProjectOwner && project.status === 'ongoing' && (
+                    <View style={{ gap: 12, marginBottom: 16 }}>
+                        {canRelease && (
+                            <TouchableOpacity
+                                style={[styles.chatButton, { backgroundColor: '#10B981', opacity: actionLoading ? 0.7 : 1 }]}
+                                onPress={handleReleasePayment}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="cash-outline" size={20} color="white" style={{ marginRight: 8 }} />}
+                                <Text style={styles.chatButtonText}>{actionLoading ? 'Processing...' : 'Release Payment'}</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity
+                            style={[styles.chatButton, { backgroundColor: '#EF4444', opacity: actionLoading ? 0.7 : 1 }]}
+                            onPress={handleEndContract}
+                            disabled={actionLoading}
+                        >
+                            {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="close-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />}
+                            <Text style={styles.chatButtonText}>{actionLoading ? 'Processing...' : 'End Contract'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 <TouchableOpacity
                     style={[styles.chatButton, { backgroundColor: c.primary }]}
-                    onPress={handleChatClient}
+                    onPress={handleChat}
                 >
                     <Ionicons name="chatbubble-ellipses-outline" size={20} color="white" style={{ marginRight: 8 }} />
-                    <Text style={styles.chatButtonText}>Chat with Client</Text>
+                    <Text style={styles.chatButtonText}>{isProjectOwner ? 'Chat with Freelancer' : 'Chat with Client'}</Text>
                 </TouchableOpacity>
 
             </ScrollView>
@@ -196,6 +393,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 24,
+        paddingBottom: 40,
     },
     projectTitle: {
         fontSize: 24,
@@ -283,4 +481,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
+    retryBtn: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    }
 });

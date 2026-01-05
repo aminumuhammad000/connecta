@@ -10,6 +10,12 @@ const auth_middleware_1 = require("../core/middleware/auth.middleware");
 const router = express_1.default.Router();
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", auth_middleware_1.authenticate, Job_controller_1.getClientJobs);
+// Get saved jobs (protected)
+router.get("/saved", auth_middleware_1.authenticate, Job_controller_1.getSavedJobs);
+// Save a job (protected)
+router.post("/:id/save", auth_middleware_1.authenticate, Job_controller_1.saveJob);
+// Unsave a job (protected)
+router.delete("/:id/save", auth_middleware_1.authenticate, Job_controller_1.unsaveJob);
 // Get all jobs with filters
 router.get("/", Job_controller_1.getAllJobs);
 // Get recommended jobs (Jobs You May Like)

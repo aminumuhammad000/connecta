@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Proposal from '../models/Proposal.model';
+import mongoose from 'mongoose';
 
 // Get all proposals for a freelancer
 export const getFreelancerProposals = async (req: Request, res: Response) => {
@@ -43,7 +44,7 @@ export const getProposalsByJobId = async (req: Request, res: Response) => {
     const { jobId } = req.params;
 
     const proposals = await Proposal.find({ jobId })
-      .populate('freelancerId', 'firstName lastName email profileImage')
+      .populate('freelancerId', 'firstName lastName email profileImage isPremium subscriptionTier')
       .populate('referredBy', 'firstName lastName')
       .populate('clientId', 'firstName lastName')
       .sort({ createdAt: -1 });
@@ -115,7 +116,10 @@ export const getProposalById = async (req: Request, res: Response) => {
     const proposal = await Proposal.findById(id)
       .populate('freelancerId', 'firstName lastName email')
       .populate('referredBy', 'firstName lastName')
-      .populate('jobId')
+      .populate({
+        path: 'jobId',
+        populate: { path: 'clientId', select: 'firstName lastName email location' }
+      })
       .populate('clientId', 'firstName lastName email');
 
     if (!proposal) {
@@ -395,6 +399,14 @@ export const approveProposal = async (req: Request, res: Response) => {
       });
     }
 
+    // Check if already approved/accepted
+    if (proposal.status === 'accepted' || proposal.status === 'approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'This proposal has already been accepted.',
+      });
+    }
+
     // Update proposal status to approved
     proposal.status = 'approved' as any;
     await proposal.save();
@@ -451,7 +463,28 @@ export const approveProposal = async (req: Request, res: Response) => {
       milestones: [],
     });
 
-    // Create a pending payment record for the freelancer wallet to show
+    // Check if job was prepaid (payment in escrow)
+    let paymentStatus = 'pending';
+    let paymentEscrowStatus = 'none';
+    let paymentVerified = false;
+    let paymentReference = '';
+
+    if (proposal.jobId) {
+      const Job = require('../models/Job.model').default;
+      const job = await Job.findById(proposal.jobId);
+      if (job && job.paymentVerified && job.paymentStatus === 'escrow') {
+        paymentStatus = 'completed'; // Payment is already collected
+        paymentEscrowStatus = 'held'; // Funds are held in escrow for this project
+        paymentVerified = true;
+        paymentReference = job.paymentReference || '';
+
+        // Mark job as 'closed' or 'in-progress' if needed, or keeping 'active' is fine if multiple hires allowed. 
+        // For now, let's assume one hire per job or multiple. 
+        // If we want to decrement budget we'd need more logic, but for now we assume the job budget covers this one hire.
+      }
+    }
+
+    // Create a payment record for the project
     const Payment = require('../models/Payment.model').default;
     const pendingPayment = await Payment.create({
       projectId: project._id,
@@ -463,10 +496,26 @@ export const approveProposal = async (req: Request, res: Response) => {
       currency: proposal.budget.currency || 'NGN',
       paymentType: 'full_payment',
       description: `Payment for project: ${proposal.title}`,
-      status: 'pending',
-      escrowStatus: 'none',
-      paymentMethod: 'paystack',
+      status: paymentStatus,
+      escrowStatus: paymentEscrowStatus,
+      paymentMethod: 'paystack', // or whatever
+      gatewayReference: paymentReference, // Link to original payment if exists
+      paidAt: paymentVerified ? new Date() : undefined
     });
+
+    // If payment is already held in escrow, we should update the Freelancer's wallet escrow balance immediately
+    if (paymentEscrowStatus === 'held') {
+      const Wallet = require('../models/Wallet.model').default;
+      let freelancerWallet = await Wallet.findOne({ userId: actualFreelancerId });
+      if (!freelancerWallet) {
+        freelancerWallet = await Wallet.create({ userId: actualFreelancerId });
+      }
+      freelancerWallet.escrowBalance += pendingPayment.netAmount;
+      // We add to balance as well because Total Balance = Available + Escrow usually? 
+      // Or usually Balance is total. Let's assume Balance includes Escrow.
+      freelancerWallet.balance += pendingPayment.netAmount;
+      await freelancerWallet.save();
+    }
 
     res.status(200).json({
       success: true,
@@ -475,9 +524,54 @@ export const approveProposal = async (req: Request, res: Response) => {
         proposal,
         project,
         payment: pendingPayment,
-        requiresPayment: true, // Frontend should redirect to payment
       },
     });
+
+    // Notify Freelancer
+    const io = require('../core/utils/socketIO').getIO(); // Import here to avoid circular dependency issues if any
+
+    // Create notification record
+    await mongoose.model('Notification').create({
+      userId: actualFreelancerId,
+      type: 'proposal_accepted',
+      title: 'Proposal Accepted',
+      message: `Your proposal for "${proposal.title}" has been accepted!`,
+      relatedId: project._id,
+      relatedType: 'project',
+      actorId: actualClientId,
+      actorName: clientName,
+      isRead: false,
+    });
+
+    // Emit live event
+    io.to(actualFreelancerId.toString()).emit('notification:new', {
+      title: 'Proposal Accepted',
+      message: `Your proposal for "${proposal.title}" has been accepted!`,
+      type: 'proposal_accepted'
+    });
+
+    // Send Email to Freelancer
+    try {
+      const User = require('../models/user.model').default;
+      const freelancerUser = await User.findById(actualFreelancerId);
+
+      if (freelancerUser && freelancerUser.email) {
+        const emailService = require('../services/email.service');
+        const projectLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
+
+        await emailService.sendProposalAcceptedEmail(
+          freelancerUser.email,
+          freelancerUser.firstName || 'Freelancer',
+          project.title,
+          clientName,
+          projectLink
+        );
+      }
+    } catch (emailError) {
+      console.error('Failed to send acceptance email:', emailError);
+      // Don't fail the request if email fails
+    }
+
   } catch (error: any) {
     console.error('Error approving proposal:', error);
     res.status(500).json({

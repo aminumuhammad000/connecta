@@ -27,7 +27,7 @@ export const getClientStats = async (): Promise<DashboardStats> => {
  * Get freelancer dashboard statistics
  */
 export const getFreelancerStats = async (): Promise<DashboardStats> => {
-    const response = await get<DashboardStats>('/dashboard/freelancer/stats');
+    const response = await get<DashboardStats>('/api/dashboard/freelancer/stats');
     return unwrap<DashboardStats>(response, {} as DashboardStats);
 };
 

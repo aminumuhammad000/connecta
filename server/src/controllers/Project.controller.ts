@@ -38,9 +38,9 @@ export const getMyProjects = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
 
     if (!userId) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Unauthorized' 
+        message: 'Unauthorized'
       });
     }
 
@@ -175,9 +175,16 @@ export const getProjectById = async (req: Request, res: Response) => {
       });
     }
 
+    // Fetch payment info
+    const Payment = require('../models/Payment.model').default;
+    const payment = await Payment.findOne({ projectId: id });
+
     res.status(200).json({
       success: true,
-      data: project,
+      data: {
+        ...project.toObject(),
+        payment: payment ? payment : null
+      },
     });
   } catch (error: any) {
     res.status(500).json({

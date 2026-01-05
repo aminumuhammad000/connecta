@@ -1,4 +1,4 @@
-import { get, post, patch } from './api';
+import { get, post, patch, uploadFile } from './api';
 import { API_ENDPOINTS } from '../utils/constants';
 import { Project } from '../types';
 
@@ -63,6 +63,9 @@ export const updateProjectStatus = async (id: string, status: string): Promise<P
     return (response as any)?.data || response;
 };
 
+/**
+ * Add file upload to project
+ */
 /**
  * Add file upload to project
  */

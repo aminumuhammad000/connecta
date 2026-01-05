@@ -7,12 +7,15 @@ export interface IUser extends Document {
   subscriptionTier?: "free" | "premium" | "enterprise";
   subscriptionStatus?: "active" | "expired" | "cancelled";
   premiumExpiryDate?: Date;
+  savedJobs?: any[];
   firstName: string;
   lastName: string;
   email: string;
   password: string;
   profileImage?: string;
   isActive?: boolean;
+  isVerified?: boolean;
+  pushToken?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,12 +45,15 @@ const UserSchema: Schema<IUser> = new Schema(
     premiumExpiryDate: {
       type: Date,
     },
+    savedJobs: [{ type: Schema.Types.ObjectId, ref: "Job" }],
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     profileImage: { type: String, required: false },
     isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    pushToken: { type: String, required: false },
   },
   { timestamps: true }
 );

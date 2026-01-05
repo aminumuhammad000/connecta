@@ -22,6 +22,7 @@ import reviewRoutes from "./routes/review.routes";
 import gigsRoutes from "./routes/gigs.routes";
 import notificationRoutes from "./routes/notification.routes";
 import insightsRoutes from "./routes/insights.routes";
+import portfolioRoutes from "./routes/portfolio.routes";
 dotenv.config();
 
 const app = express();
@@ -42,14 +43,18 @@ const io = new Server(server, {
 setIO(io);
 
 // Middleware
-app.use(
-  cors({
-    origin: "*",
-  })
-);
-
+app.use(cors({
+  origin: [
+    "http://102.68.84.56",
+    "http://localhost:5173",
+    "http://localhost:8081"
+  ],
+  credentials: true
+}));
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+
+// Connect to Database
+connectDB();
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -66,11 +71,15 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/gigs", gigsRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/portfolio", portfolioRoutes);
 import analyticsRoutes from "./routes/analytics.routes";
 app.use("/api/analytics", analyticsRoutes);
 import subscriptionRoutes from "./routes/Subscription.routes";
 app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/insights", insightsRoutes);
+app.use("/api/analytics", insightsRoutes);
+
+import webhookRoutes from "./webhooks/routes/webhook";
+app.use("/api/webhooks", webhookRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
@@ -159,20 +168,8 @@ io.on("connection", (socket) => {
 });
 
 // Start Server
-const startServer = async () => {
-  try {
-    // Connect to Database first
-    await connectDB();
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🔌 Socket.io ready for real-time messaging`);
+});
 
-    // Then start the server
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`🔌 Socket.io ready for real-time messaging`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();

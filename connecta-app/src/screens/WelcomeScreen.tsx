@@ -1,37 +1,60 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import Logo from '../components/Logo';
+import Button from '../components/Button';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface WelcomeScreenProps {
-  onGetStarted?: () => void;
   onLogin?: () => void;
+  onSignup?: () => void;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGetStarted, onLogin }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onSignup }) => {
   const c = useThemeColors();
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.center}>
-          <Logo size={64} style={styles.logo} />
+      <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
+
+      {/* Background Decor */}
+      <View style={[styles.circle, { backgroundColor: c.primary + '10', top: -100, left: -50 }]} />
+      <View style={[styles.circle, { backgroundColor: c.primary + '10', bottom: -50, right: -50, width: 300, height: 300 }]} />
+
+      <View style={styles.content}>
+        <View style={styles.logoSection}>
+          <View style={[styles.logoContainer, { backgroundColor: c.card, shadowColor: c.primary }]}>
+            <Logo size={64} />
+          </View>
           <Text style={[styles.title, { color: c.text }]}>Connecta</Text>
-          <Text style={[styles.subtitle, { color: c.subtext }]}>The platform to connect with talented freelancers and find your next project.</Text>
+          <Text style={[styles.tagline, { color: c.subtext }]}>The #1 Freelance Marketplace</Text>
         </View>
 
-        <View style={styles.footer}>
-          <TouchableOpacity onPress={onGetStarted} activeOpacity={0.9} style={[styles.cta, { backgroundColor: c.primary }]}>
-            <Text style={styles.ctaText}>Get Started</Text>
-          </TouchableOpacity>
-          <View style={styles.loginRow}>
-            <Text style={[styles.loginText, { color: c.subtext }]}>Already have an account?</Text>
-            <TouchableOpacity onPress={onLogin}>
-              <Text style={[styles.loginLink, { color: c.primary }]}>Log In</Text>
-            </TouchableOpacity>
+        <View style={styles.actionSection}>
+          <View style={styles.infoBox}>
+            <Text style={[styles.welcomeText, { color: c.text }]}>Welcome!</Text>
+            <Text style={[styles.description, { color: c.subtext }]}>Log in to your account or sign up to get started.</Text>
+          </View>
+
+          <View style={styles.buttonGroup}>
+            <Button
+              title="Log In"
+              onPress={onLogin || (() => { })}
+              variant="primary"
+              size="large"
+              style={styles.btn}
+            />
+            <Button
+              title="Create Account"
+              onPress={onSignup || (() => { })}
+              variant="outline"
+              size="large"
+              style={styles.btn}
+            />
           </View>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -40,65 +63,63 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  center: {
+  circle: {
+    position: 'absolute',
+    width: 400,
+    height: 400,
+    borderRadius: 999,
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'space-between',
+  },
+  logoSection: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    gap: 16,
   },
-  logo: {
-    width: 64,
-    height: 64,
-    marginBottom: 16,
-    borderRadius: 12,
+  logoContainer: {
+    padding: 24,
+    borderRadius: 32,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: -1,
   },
-  subtitle: {
-    marginTop: 12,
-    maxWidth: 480,
-    textAlign: 'center',
-    fontSize: 16,
-    lineHeight: 22,
+  tagline: {
+    fontSize: 18,
     fontWeight: '500',
   },
-  footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    paddingTop: 16,
+  actionSection: {
+    gap: 32,
+    marginBottom: 24,
   },
-  cta: {
-    width: '100%',
-    borderRadius: 16,
-    paddingVertical: 14,
+  infoBox: {
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    gap: 8,
   },
-  ctaText: {
-    color: '#fff',
-    fontSize: 18,
+  welcomeText: {
+    fontSize: 24,
     fontWeight: '700',
   },
-  loginRow: {
-    marginTop: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  description: {
+    textAlign: 'center',
+    fontSize: 16,
+    maxWidth: 300,
   },
-  loginText: {
-    fontSize: 14,
+  buttonGroup: {
+    gap: 16,
   },
-  loginLink: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginLeft: 6,
+  btn: {
+    shadowOpacity: 0.1,
+    elevation: 2,
   },
 });
 

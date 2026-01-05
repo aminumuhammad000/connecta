@@ -14,7 +14,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
 import ProjectDetailScreen from '../screens/ProjectDetailScreen';
 import FreelancerSavedGigsScreen from '../screens/FreelancerSavedGigsScreen';
-import FreelancerApplicationsScreen from '../screens/FreelancerApplicationsScreen';
+
 import CompleteProfileScreen from '../screens/CompleteProfileScreen';
 import AddPortfolioScreen from '../screens/AddPortfolioScreen';
 import ConnectaAIScreen from '../screens/ConnectaAIScreen';
@@ -67,11 +67,11 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="FreelancerTabs" component={FreelancerTabs} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
+            <Stack.Screen name="ApplyJob" component={require('../screens/ApplyJobScreen').default} />
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
             <Stack.Screen name="FreelancerSavedGigs" component={FreelancerSavedGigsScreen} />
-            <Stack.Screen name="FreelancerApplications" component={FreelancerApplicationsScreen} />
             <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
-            <Stack.Screen name="AddPortfolio" component={AddPortfolioScreen} />
+            <Stack.Screen name="AddPortfolio" component={require('../screens/AddPortfolioScreen').default} />
             <Stack.Screen name="ConnectaAI" component={ConnectaAIScreen} />
             <Stack.Screen name="MessagesDetail" component={MessagesScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
@@ -81,7 +81,12 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="HelpSupport" component={require('../screens/HelpSupportScreen').default} />
             <Stack.Screen name="ContactSupport" component={require('../screens/ContactSupportScreen').default} />
             <Stack.Screen name="ProposalDetail" component={require('../screens/ProposalDetailScreen').default} />
+            <Stack.Screen name="ClientProfile" component={require('../screens/ClientProfileScreen').default} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
+            <Stack.Screen name="FreelancerProjects" component={require('../screens/FreelancerProjectsScreen').default} />
+            <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
+            <Stack.Screen name="WithdrawalSetup" component={require('../screens/WithdrawalSetupScreen').default} />
+            <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
         </Stack.Navigator>
     );
 }

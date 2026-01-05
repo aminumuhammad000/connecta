@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import * as storage from '../utils/storage';
+import { STORAGE_KEYS } from '../utils/constants';
 
 const STEPS = [
   {
@@ -37,16 +39,35 @@ const STEPS = [
   },
 ];
 
-const GettingStartedGuideScreen: React.FC<any> = ({ navigation }) => {
+interface GuideProps {
+  onFinish?: () => void;
+  navigation?: any;
+}
+
+const GettingStartedGuideScreen: React.FC<GuideProps> = ({ navigation, onFinish }) => {
   const c = useThemeColors();
   const completed = STEPS.filter(s => s.status === 'completed').length;
   const total = STEPS.length;
   const pct = Math.round((completed / total) * 100);
 
+  const handleFinish = async () => {
+    // Save to storage that user has seen this
+    // Logic handled by parent or here? 
+    // Parent usually handles stage, but we can do it here too if independent.
+    // But RootNavigation needs to know.
+    // onFinish callback will handle state update in App.tsx
+    if (onFinish) {
+      onFinish();
+    } else {
+      // If navigated normally (e.g. from Help menu), just go back
+      navigation?.goBack();
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        {/* Top App Bar */}
+        {/* ... existing header ... */}
         <View style={{ paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ width: 48, height: 48 }} />
           <Text style={{ color: c.text, fontSize: 18, fontWeight: '800' }}>Getting Started</Text>
@@ -54,10 +75,7 @@ const GettingStartedGuideScreen: React.FC<any> = ({ navigation }) => {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 96 }}>
-          {/* Headline */}
-          <Text style={{ color: c.text, fontSize: 32, fontWeight: '800', paddingTop: 8 }}>Welcome! Let's get you set up.</Text>
-
-          {/* Progress */}
+          {/* ... existing content ... */}
           <View style={{ gap: 8, paddingVertical: 12 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
               <Text style={{ color: c.text, fontSize: 16, fontWeight: '700' }}>Your Progress</Text>
@@ -68,13 +86,15 @@ const GettingStartedGuideScreen: React.FC<any> = ({ navigation }) => {
             </View>
           </View>
 
+          <Text style={{ color: c.text, fontSize: 32, fontWeight: '800', paddingTop: 8 }}>Welcome! Let's get you set up.</Text>
+
           {/* Steps */}
-          <View style={{ gap: 10, paddingTop: 8 }}>
+          <View style={{ gap: 10, paddingTop: 24 }}>
             {STEPS.map(step => {
               const isCompleted = step.status === 'completed';
               const isActive = step.status === 'active';
               return (
-                <TouchableOpacity key={step.id} style={[
+                <View key={step.id} style={[
                   styles.item,
                   { borderColor: c.border, backgroundColor: c.card },
                   isActive && { borderWidth: 2, borderColor: c.primary },
@@ -92,15 +112,26 @@ const GettingStartedGuideScreen: React.FC<any> = ({ navigation }) => {
                       <Text style={{ color: c.subtext, fontSize: 13 }} numberOfLines={2}>{step.desc}</Text>
                     </View>
                   </View>
-                  <View style={{ width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="arrow-forward-ios" size={18} color={c.subtext} />
-                  </View>
-                </TouchableOpacity>
+                </View>
               );
             })}
           </View>
+
+          <Text style={{ color: c.subtext, marginTop: 24, textAlign: 'center', lineHeight: 22 }}>
+            Explore these steps to make the most out of your experience. You can always revisit this guide in Help & Support.
+          </Text>
         </ScrollView>
 
+        {/* Footer Button */}
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, backgroundColor: c.background, borderTopWidth: 1, borderTopColor: c.border }}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={handleFinish}
+            style={{ backgroundColor: c.primary, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', shadowColor: c.primary, shadowOffset: { height: 4, width: 0 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }}
+          >
+            <Text style={{ color: 'white', fontSize: 18, fontWeight: '700' }}>Get Started</Text>
+          </TouchableOpacity>
+        </View>
 
       </View>
     </SafeAreaView>

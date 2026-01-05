@@ -3,8 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
+exports.getSavedJobs = exports.unsaveJob = exports.saveJob = exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
 const Job_model_1 = __importDefault(require("../models/Job.model"));
+const user_model_1 = __importDefault(require("../models/user.model"));
+// ===================
+// Get Jobs for Current Client
+// ===================
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -16,7 +20,17 @@ const getClientJobs = async (req, res) => {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
         const jobs = await Job_model_1.default.find({ clientId }).sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: jobs });
+        // Calculate proposal counts for each job
+        // Dynamically import Proposal to avoid circular dependency issues if any
+        const Proposal = require("../models/Proposal.model").default;
+        const jobsWithCounts = await Promise.all(jobs.map(async (job) => {
+            const count = await Proposal.countDocuments({ jobId: job._id });
+            return {
+                ...job.toObject(),
+                proposalsCount: count
+            };
+        }));
+        res.status(200).json({ success: true, data: jobsWithCounts });
     }
     catch (err) {
         res.status(500).json({ success: false, message: "Server error", error: err });
@@ -100,12 +114,7 @@ const createJob = async (req, res) => {
         });
     }
     catch (err) {
-        console.error("Error creating job:", err);
-        res.status(500).json({
-            success: false,
-            message: err.message || "Server error",
-            error: err
-        });
+        res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
 exports.createJob = createJob;
@@ -216,3 +225,83 @@ const searchJobs = async (req, res) => {
     }
 };
 exports.searchJobs = searchJobs;
+// ===================
+// Save Job
+// ===================
+const saveJob = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // @ts-ignore
+        const userId = req.user?._id || req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const user = await user_model_1.default.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        // Check if already saved
+        if (user.savedJobs?.includes(id)) {
+            return res.status(400).json({ success: false, message: "Job already saved" });
+        }
+        // Initialize array if undefined
+        if (!user.savedJobs) {
+            user.savedJobs = [];
+        }
+        user.savedJobs.push(id);
+        await user.save();
+        res.status(200).json({ success: true, message: "Job saved successfully" });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};
+exports.saveJob = saveJob;
+// ===================
+// Unsave Job
+// ===================
+const unsaveJob = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // @ts-ignore
+        const userId = req.user?._id || req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const user = await user_model_1.default.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        user.savedJobs = user.savedJobs?.filter((jobId) => jobId.toString() !== id);
+        await user.save();
+        res.status(200).json({ success: true, message: "Job removed from saved" });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};
+exports.unsaveJob = unsaveJob;
+// ===================
+// Get Saved Jobs
+// ===================
+const getSavedJobs = async (req, res) => {
+    try {
+        // @ts-ignore
+        const userId = req.user?._id || req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const user = await user_model_1.default.findById(userId).populate({
+            path: "savedJobs",
+            populate: { path: "clientId", select: "firstName lastName email" }
+        });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        res.status(200).json({ success: true, data: user.savedJobs || [] });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};
+exports.getSavedJobs = getSavedJobs;

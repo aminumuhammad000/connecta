@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
+import { sendPasswordResetOTP } from '../services/authService';
+import CustomAlert, { AlertType } from '../components/CustomAlert';
 
 interface ForgotPasswordScreenProps {
     onBackToLogin?: () => void;
@@ -15,40 +17,54 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBackToLog
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // Alert State
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType; onOk?: () => void }>({
+        title: '',
+        message: '',
+        type: 'success'
+    });
+
+    const showAlert = (title: string, message: string, type: AlertType = 'success', onOk?: () => void) => {
+        setAlertConfig({ title, message, type, onOk });
+        setAlertVisible(true);
+    };
+
+    const handleAlertClose = () => {
+        setAlertVisible(false);
+        if (alertConfig.onOk) {
+            alertConfig.onOk();
+        }
+    };
+
     const handleSendOTP = async () => {
         if (!email.trim()) {
-            Alert.alert('Error', 'Please enter your email address');
+            showAlert('Error', 'Please enter your email address', 'error');
             return;
         }
 
         // Basic email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            Alert.alert('Error', 'Please enter a valid email address');
+            showAlert('Error', 'Please enter a valid email address', 'error');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            // TODO: Replace with actual API call
-            // const response = await api.sendPasswordResetOTP(email);
+            await sendPasswordResetOTP(email);
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            Alert.alert(
+            showAlert(
                 'OTP Sent',
                 'A 4-digit verification code has been sent to your email.',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => onOTPSent?.(email)
-                    }
-                ]
+                'success',
+                () => onOTPSent?.(email)
             );
-        } catch (error) {
-            Alert.alert('Error', 'Failed to send OTP. Please try again.');
+        } catch (error: any) {
+            console.error('Forgot Password Error:', error);
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to send OTP. Please try again.';
+            showAlert('Error', errorMessage, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -111,7 +127,16 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBackToLog
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
+
             </KeyboardAvoidingView>
+
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={handleAlertClose}
+            />
         </SafeAreaView>
     );
 };

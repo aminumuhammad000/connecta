@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import Job from "../models/Job.model";
+import User from "../models/user.model";
 
+// ===================
+// Get Jobs for Current Client
+// ===================
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -12,7 +16,20 @@ export const getClientJobs = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
     const jobs = await Job.find({ clientId }).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: jobs });
+
+    // Calculate proposal counts for each job
+    // Dynamically import Proposal to avoid circular dependency issues if any
+    const Proposal = require("../models/Proposal.model").default;
+
+    const jobsWithCounts = await Promise.all(jobs.map(async (job) => {
+      const count = await Proposal.countDocuments({ jobId: job._id });
+      return {
+        ...job.toObject(),
+        proposalsCount: count
+      };
+    }));
+
+    res.status(200).json({ success: true, data: jobsWithCounts });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }
@@ -103,13 +120,8 @@ export const createJob = async (req: Request, res: Response) => {
       message: "Job created successfully",
       data: newJob,
     });
-  } catch (err: any) {
-    console.error("Error creating job:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message || "Server error",
-      error: err
-    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
   }
 };
 
@@ -225,6 +237,97 @@ export const searchJobs = async (req: Request, res: Response) => {
         pages: Math.ceil(total / Number(limit)),
       },
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Save Job
+// ===================
+export const saveJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // @ts-ignore
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Check if already saved
+    if (user.savedJobs?.includes(id as any)) {
+      return res.status(400).json({ success: false, message: "Job already saved" });
+    }
+
+    // Initialize array if undefined
+    if (!user.savedJobs) {
+      user.savedJobs = [];
+    }
+
+    user.savedJobs.push(id as any);
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Job saved successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Unsave Job
+// ===================
+export const unsaveJob = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // @ts-ignore
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.savedJobs = user.savedJobs?.filter((jobId: any) => jobId.toString() !== id);
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Job removed from saved" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Get Saved Jobs
+// ===================
+export const getSavedJobs = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId).populate({
+      path: "savedJobs",
+      populate: { path: "clientId", select: "firstName lastName email" }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, data: user.savedJobs || [] });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }

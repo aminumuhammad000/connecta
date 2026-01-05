@@ -13,6 +13,8 @@ export interface User {
     subscriptionTier?: 'free' | 'premium' | 'enterprise';
     subscriptionStatus?: 'active' | 'expired' | 'cancelled';
     premiumExpiryDate?: string;
+    isVerified?: boolean;
+    savedJobs?: string[];
     createdAt: string;
     updatedAt: string;
 }
@@ -186,8 +188,8 @@ export interface Message {
     conversationId: string;
     senderId: string;
     receiverId: string;
-    content: string;
-    read: boolean;
+    text: string;
+    isRead: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -240,7 +242,23 @@ export interface Bank {
 }
 
 // Notification Types
-export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+export type NotificationType =
+    | 'proposal_received'
+    | 'proposal_accepted'
+    | 'proposal_rejected'
+    | 'project_started'
+    | 'project_completed'
+    | 'milestone_completed'
+    | 'payment_received'
+    | 'payment_released'
+    | 'message_received'
+    | 'review_received'
+    | 'deadline_approaching'
+    | 'system'
+    | 'info'
+    | 'success'
+    | 'warning'
+    | 'error';
 
 export interface Notification {
     _id: string;
@@ -249,7 +267,11 @@ export interface Notification {
     title: string;
     message: string;
     read: boolean;
-    actionUrl?: string;
+    isRead?: boolean; // Backend uses isRead
+    relatedId?: string;
+    relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment';
+    link?: string;
+    actionUrl?: string; // Legacy support
     createdAt: string;
 }
 

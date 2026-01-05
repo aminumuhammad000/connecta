@@ -1,14 +1,80 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const ProposalDetailScreen: React.FC = () => {
     const c = useThemeColors();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
+    const route = useRoute();
+    const { id } = route.params as { id: string };
+    const [proposal, setProposal] = React.useState<any>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        loadProposalDetails();
+    }, [id]);
+
+    const loadProposalDetails = async () => {
+        try {
+            setIsLoading(true);
+            const data = await import('../services/proposalService').then(m => m.default.getProposalById(id));
+            setProposal(data);
+        } catch (error) {
+            console.error('Error loading proposal details:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={c.primary} />
+            </SafeAreaView>
+        );
+    }
+
+    if (!proposal) {
+        return (
+            <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: c.text }}>Proposal not found</Text>
+            </SafeAreaView>
+        );
+    }
+
+    // Destructure properties
+    const { jobId, clientId, budget, dateRange, coverLetter, description, createdAt, status } = proposal;
+
+    // Fallbacks for missing populated data
+    const jobTitle = jobId?.title || proposal.title || 'Untitled Job';
+
+    // Client Info strategy: 
+    // 1. Direct clientId (if proposal has it)
+    // 2. jobId.clientId (deep populated)
+    const clientSource = clientId || jobId?.clientId;
+    const clientName = clientSource ? `${clientSource.firstName} ${clientSource.lastName}` : 'Unknown Client';
+    const clientLocation = clientSource?.location || 'Location not specified';
+    const clientAvatar = clientSource?.profileImage;
+
+    // Budget & Duration
+    const displayRate = budget?.amount ? budget.amount : (proposal.proposedRate || 0);
+    const displayDuration = dateRange
+        ? Math.ceil((new Date(dateRange.endDate).getTime() - new Date(dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7)) + ' weeks'
+        : (proposal.estimatedDuration || 'N/A');
+    const displayCoverLetter = description || coverLetter || 'No cover letter provided.';
+
+    const statusColors = {
+        accepted: { bg: 'rgba(34,197,94,0.15)', text: '#22C55E' },
+        pending: { bg: 'rgba(253,103,48,0.25)', text: '#FD6730' },
+        rejected: { bg: 'rgba(239,68,68,0.15)', text: '#EF4444' },
+        withdrawn: { bg: 'rgba(107,114,128,0.15)', text: '#6B7280' },
+    };
+
+    const statusStyle = statusColors[status as keyof typeof statusColors] || statusColors.pending;
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -27,28 +93,57 @@ const ProposalDetailScreen: React.FC = () => {
                 <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
                     {/* Status Badge */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                        <View style={[styles.statusBadge, { backgroundColor: 'rgba(245,158,11,0.2)' }]}>
-                            <Text style={[styles.statusText, { color: '#F59E0B' }]}>Pending</Text>
+                        <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                            <Text style={[styles.statusText, { color: statusStyle.text }]}>{status.charAt(0).toUpperCase() + status.slice(1)}</Text>
                         </View>
-                        <Text style={{ color: c.subtext, fontSize: 12 }}>Submitted on Oct 26, 2024</Text>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>Submitted on {new Date(createdAt).toLocaleDateString()}</Text>
                     </View>
 
                     {/* Job Title */}
-                    <Text style={[styles.title, { color: c.text }]}>UI/UX Designer for Mobile App</Text>
+                    <Text style={[styles.title, { color: c.text }]}>{jobTitle}</Text>
 
                     {/* Client Info */}
-                    <View style={[styles.clientCard, { borderColor: c.border, backgroundColor: c.card }]}>
-                        <Image
-                            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQuTpi8W0GMXLNYIGw2ZoGXa07wgvbTBZNSK0mijj-45lyvzpyzjkfddIq7Fl0amYxo3MjGAbO_JDTxRidyV-EivrF42jj79Rdv21Nk7z8zdvbG9lYZpH6LB6McTPNXJDOT0nUBC8uXj3DrZ5757YV9cMe9_EPNa2ONasmmtCdXmRBbCW_qQu04cjzghMg7k_C-jAv-HRSzJBVb9fEFrDTjl9b7sCe0zptaj8_pi_FEkhiorrI0DU2DCi8W9nwlIuVp3-l5S8hyFk' }}
-                            style={styles.avatar}
-                        />
+                    <TouchableOpacity
+                        style={[styles.clientCard, { borderColor: c.border, backgroundColor: c.card }]}
+                        onPress={() => {
+                            if (clientSource?._id) {
+                                (navigation as any).navigate('ClientProfile', {
+                                    userId: clientSource._id,
+                                    initialUser: {
+                                        name: clientName,
+                                        avatar: clientAvatar,
+                                        location: clientLocation,
+                                        isPremium: clientSource?.isPremium,
+                                        paymentVerified: clientSource?.paymentVerified
+                                    }
+                                });
+                            }
+                        }}
+                    >
+                        {clientAvatar ? (
+                            <Image source={{ uri: clientAvatar }} style={styles.avatar} />
+                        ) : (
+                            <View style={[styles.avatar, { backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }]}>
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{clientName.charAt(0)}</Text>
+                            </View>
+                        )}
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.clientName, { color: c.text }]}>Laura Williams</Text>
-                            <Text style={{ color: c.subtext, fontSize: 11 }}>San Francisco, CA</Text>
-                            <Text style={{ color: c.subtext, fontSize: 10, marginTop: 4 }}>12 Jobs Posted • Member Since 2023</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Text style={[styles.clientName, { color: c.text }]}>{clientName}</Text>
+                                {clientSource?.isPremium && (
+                                    <MaterialIcons name="verified" size={16} color="#F59E0B" />
+                                )}
+                            </View>
+                            <Text style={{ color: c.subtext, fontSize: 11 }}>{clientLocation}</Text>
+                            {clientSource?.paymentVerified && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
+                                    <MaterialIcons name="verified-user" size={12} color="#22C55E" />
+                                    <Text style={{ color: '#22C55E', fontSize: 10, fontWeight: '600' }}>Payment Verified</Text>
+                                </View>
+                            )}
                         </View>
                         <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-                    </View>
+                    </TouchableOpacity>
 
                     {/* Proposal Details */}
                     <View style={{ marginTop: 16 }}>
@@ -58,11 +153,11 @@ const ProposalDetailScreen: React.FC = () => {
                         <View style={[styles.infoGrid, { borderTopColor: c.border, borderBottomColor: c.border }]}>
                             <View style={styles.infoItem}>
                                 <Text style={[styles.infoLabel, { color: c.subtext }]}>Your Bid</Text>
-                                <Text style={[styles.infoValue, { color: c.text }]}>$3,500</Text>
+                                <Text style={[styles.infoValue, { color: c.text }]}>${displayRate}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Text style={[styles.infoLabel, { color: c.subtext }]}>Timeline</Text>
-                                <Text style={[styles.infoValue, { color: c.text }]}>2 weeks</Text>
+                                <Text style={[styles.infoValue, { color: c.text }]}>{displayDuration}</Text>
                             </View>
                         </View>
 
@@ -70,44 +165,61 @@ const ProposalDetailScreen: React.FC = () => {
                         <View style={{ marginTop: 16 }}>
                             <Text style={[styles.sectionTitle, { color: c.text }]}>Cover Letter</Text>
                             <Text style={{ color: c.subtext, lineHeight: 20, fontSize: 13, marginTop: 8 }}>
-                                Hello! I'm excited to apply for this UI/UX Designer position. With over 5 years of experience in mobile app design, I've successfully delivered numerous projects for startups and established companies.
-                                {'\n\n'}
-                                I specialize in creating intuitive, user-centered designs that not only look great but also provide excellent user experiences. My approach involves thorough user research, wireframing, prototyping, and iterative testing to ensure the final product meets both user needs and business goals.
-                                {'\n\n'}
-                                I'm confident I can deliver high-quality designs within your timeline. I look forward to discussing this project further!
+                                {displayCoverLetter}
                             </Text>
                         </View>
 
-                        {/* Attachments */}
+                        {/* Attachments (Placeholder if we had them) */}
+                        {/* 
                         <View style={{ marginTop: 16 }}>
                             <Text style={[styles.sectionTitle, { color: c.text }]}>Attachments</Text>
-                            <View style={{ gap: 8, marginTop: 8 }}>
-                                <View style={[styles.attachment, { borderColor: c.border }]}>
-                                    <MaterialIcons name="description" size={20} color={c.primary} />
-                                    <Text style={[styles.attachmentLabel, { color: c.text }]}>Portfolio_2024.pdf</Text>
-                                    <MaterialIcons name="download" size={20} color={c.subtext} />
-                                </View>
-                                <View style={[styles.attachment, { borderColor: c.border }]}>
-                                    <MaterialIcons name="image" size={20} color={c.primary} />
-                                    <Text style={[styles.attachmentLabel, { color: c.text }]}>Sample_Designs.png</Text>
-                                    <MaterialIcons name="download" size={20} color={c.subtext} />
-                                </View>
-                            </View>
-                        </View>
+                             ... 
+                        </View> 
+                        */}
                     </View>
                 </View>
             </ScrollView>
 
             {/* Fixed CTA */}
             <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
-                <TouchableOpacity style={[styles.secondaryBtn, { borderColor: c.border }]}>
-                    <Text style={[styles.secondaryBtnText, { color: c.text }]}>Edit Proposal</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: c.primary }]}>
+                {status === 'pending' && (
+                    <TouchableOpacity style={[styles.secondaryBtn, { borderColor: c.border }]}>
+                        <Text style={[styles.secondaryBtnText, { color: c.text }]}>Edit Proposal</Text>
+                    </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                    style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+                    onPress={() => {
+                        const targetClientId = typeof clientSource === 'object' ? clientSource?._id : clientSource;
+                        const targetProjectId = typeof jobId === 'object' ? jobId?._id : jobId;
+
+                        if (targetClientId) {
+                            (navigation as any).navigate('MessagesDetail', {
+                                receiverId: targetClientId,
+                                userName: clientName,
+                                userAvatar: clientAvatar,
+                                projectId: targetProjectId || id, // Fallback to proposal ID if job ID missing (shouldn't happen)
+                                clientId: targetClientId,
+                            });
+                        }
+                    }}
+                >
                     <Text style={styles.primaryBtnText}>Message Client</Text>
                 </TouchableOpacity>
             </View>
-        </SafeAreaView>
+            {(status === 'accepted' || status === 'approved') && (
+                <View style={{ position: 'absolute', bottom: 80, left: 16, right: 16 }}>
+                    <TouchableOpacity
+                        style={[styles.primaryBtn, { backgroundColor: c.text, height: 48 }]}
+                        onPress={() => (navigation as any).navigate('ProjectDetail', { id: jobId?._id || jobId })}
+                    >
+                        <MaterialIcons name="work" size={20} color={c.background} style={{ marginRight: 8 }} />
+                        <Text style={[styles.primaryBtnText, { color: c.background }]}>Go to Project Workspace</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+        </SafeAreaView >
     );
 };
 

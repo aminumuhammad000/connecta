@@ -8,7 +8,10 @@ import {
   deleteJob,
   getRecommendedJobs,
   searchJobs,
-  getClientJobs
+  getClientJobs,
+  saveJob,
+  unsaveJob,
+  getSavedJobs
 } from "../controllers/Job.controller";
 import { authenticate } from "../core/middleware/auth.middleware";
 
@@ -16,6 +19,15 @@ const router = express.Router();
 
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", authenticate, getClientJobs);
+
+// Get saved jobs (protected)
+router.get("/saved", authenticate, getSavedJobs);
+
+// Save a job (protected)
+router.post("/:id/save", authenticate, saveJob);
+
+// Unsave a job (protected)
+router.delete("/:id/save", authenticate, unsaveJob);
 
 // Get all jobs with filters
 router.get("/", getAllJobs);
