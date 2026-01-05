@@ -5,20 +5,22 @@ import HowItWorks from "./layout/HowItWorks"
 import Features from "./layout/Features"
 import AiSearch from "./layout/AiSearch"
 import Pricing from "./layout/Pricing"
+import MobileApp from "./layout/MobileApp"
 import FeedBack from "./layout/FeedBack"
 import Footer from "./layout/Footer"
 
 const LandingPage = () => {
   return (
     <div className={styles.LandingPage}>
-        <Nav />
-        <Hero />
-        <HowItWorks />
-        <Features />
-        <AiSearch />
-        <Pricing />
-        <FeedBack />
-        <Footer />
+      <Nav />
+      <Hero />
+      <HowItWorks />
+      <Features />
+      <AiSearch />
+      <Pricing />
+      <MobileApp />
+      <FeedBack />
+      <Footer />
     </div>
   )
 }

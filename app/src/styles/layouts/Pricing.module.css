@@ -1,88 +1,169 @@
-.Pricing{
-    overflow-x: hidden;
-    width: 100%;
-    margin-inline: auto;
-    margin-top: 30px
-}
-.mainTitle{
-    text-align: center;
-    font-size: 15px;
-}
-.subTitle{
-    text-align: center;
-    font-size: 14px;
-}
-.description{
-    text-align: center;
-    font-size: 10px;
-}
-.priceContainer{
-    display: flex;
-    width: 100%;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 0px 10px;
-    scroll-behavior: smooth;
+.Pricing {
+    max-width: 1200px;
+    width: 90%;
+    margin: 80px auto;
+    padding: 60px 20px;
 }
 
-.priceContainer::-webkit-scrollbar {
-  display: none;
+.mainTitle {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #1a1a1a;
+}
+
+.subTitle {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.description {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 50px;
 }
 
 .priceContainer {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 30px;
+    width: 100%;
+    margin-top: 40px;
 }
-.card{
+
+.card {
     position: relative;
-    min-width: 250px;
-    min-height: 289px;
+    width: 100%;
+    min-height: 400px;
     display: flex;
     flex-direction: column;
-    /* justify-content: center; */
     background-color: #fff;
-    border: 0.2px solid #FF8A5E;
-    border-radius: 20px;
-    padding: 10px;
+    border: 2px solid #FF8A5E;
+    border-radius: 25px;
+    padding: 35px 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.title{
-    font-size: 12px;
-    opacity: 0.9;
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
-.price{
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+}
+
+.price {
+    font-size: 32px;
+    font-weight: 700;
+    color: #FD6730;
+    margin: 15px 0;
+}
+
+.description {
     font-size: 15px;
-    font-weight: 500;
-}
-.description{
-    font-size: 10px;
     font-weight: 400;
-    opacity: 0.8;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 25px;
 }
-.navList{
-     width: 100%;
-     display: flex;
-     flex-direction: column;
-     gap: 10px;
+
+.navList {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0;
+    margin-bottom: 30px;
 }
-.navList li{
-    font-size: 9px;
-    width: 70%;
+
+.navList li {
+    font-size: 15px;
     list-style: none;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
-.button{
-    width: 152px;
-    height: 35px;
+
+.button {
+    width: 100%;
+    max-width: 250px;
+    height: 50px;
     background-color: #FF8A5E;
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
     border: none;
     color: #fff;
-    border-radius: 10px;
-    margin-top: 20px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: auto;
 }
-.icon{
-    font-size: 12px;
+
+.button:hover {
+    background-color: #FD6730;
+    transform: scale(1.05);
+}
+
+.icon {
+    font-size: 16px;
     color: #FF8A5E;
-    margin-right: 5px;
+}
+
+/* Responsive for tablets */
+@media (max-width: 768px) {
+    .Pricing {
+        margin: 50px auto;
+        padding: 40px 15px;
+    }
+
+    .mainTitle {
+        font-size: 28px;
+    }
+
+    .subTitle {
+        font-size: 20px;
+    }
+
+    .description {
+        font-size: 14px;
+    }
+
+    .priceContainer {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .card {
+        min-height: 350px;
+        padding: 25px 20px;
+    }
+
+    .title {
+        font-size: 18px;
+    }
+
+    .price {
+        font-size: 28px;
+    }
+
+    .navList li {
+        font-size: 14px;
+    }
+
+    .button {
+        height: 45px;
+        font-size: 15px;
+    }
 }

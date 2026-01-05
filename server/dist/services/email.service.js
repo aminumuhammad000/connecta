@@ -3,27 +3,51 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyEmailConfig = exports.sendOTPEmail = void 0;
+exports.verifyEmailConfig = exports.sendEmail = exports.sendOTPEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const SystemSettings_model_1 = __importDefault(require("../models/SystemSettings.model"));
 dotenv_1.default.config();
-// Create reusable transporter
-const transporter = nodemailer_1.default.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
+// Helper to get transporter with latest settings
+const getTransporter = async () => {
+    try {
+        // Try to get settings from DB
+        const settings = await SystemSettings_model_1.default.findOne();
+        // Use DB settings if available and complete, otherwise fallback to env
+        const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
+        const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
+        const user = settings?.smtp?.user || process.env.SMTP_USER;
+        const pass = settings?.smtp?.pass || process.env.SMTP_PASS;
+        const secure = settings?.smtp?.secure ?? false;
+        if (!user || !pass) {
+            console.warn('SMTP credentials missing');
+            return null;
+        }
+        return nodemailer_1.default.createTransport({
+            host,
+            port,
+            secure,
+            auth: { user, pass },
+        });
+    }
+    catch (error) {
+        console.error('Error creating transporter:', error);
+        return null;
+    }
+};
 /**
  * Send OTP email to user
  */
 const sendOTPEmail = async (email, otp, userName) => {
     try {
+        const transporter = await getTransporter();
+        if (!transporter)
+            return false;
+        const settings = await SystemSettings_model_1.default.findOne();
+        const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+        const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
         const mailOptions = {
-            from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+            from: `"${fromName}" <${fromEmail}>`,
             to: email,
             subject: 'Password Reset OTP - Connecta',
             html: `
@@ -143,10 +167,38 @@ If you didn't request this password reset, please ignore this email.
 };
 exports.sendOTPEmail = sendOTPEmail;
 /**
+ * Send generic email
+ */
+const sendEmail = async (to, subject, html) => {
+    try {
+        const transporter = await getTransporter();
+        if (!transporter)
+            return false;
+        const settings = await SystemSettings_model_1.default.findOne();
+        const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+        const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+        await transporter.sendMail({
+            from: `"${fromName}" <${fromEmail}>`,
+            to,
+            subject,
+            html
+        });
+        return true;
+    }
+    catch (error) {
+        console.error('Error sending email:', error);
+        return false;
+    }
+};
+exports.sendEmail = sendEmail;
+/**
  * Verify email configuration
  */
 const verifyEmailConfig = async () => {
     try {
+        const transporter = await getTransporter();
+        if (!transporter)
+            return false;
         await transporter.verify();
         console.log('Email server is ready to send messages');
         return true;

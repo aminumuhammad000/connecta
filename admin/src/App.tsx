@@ -15,6 +15,7 @@ import Analytics from './pages/Analytics'
 import Subscriptions from './pages/Subscriptions'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
+import EmailBroadcast from './pages/EmailBroadcast'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
@@ -41,6 +42,7 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/broadcast" element={<EmailBroadcast />} />
         </Route>
       </Route>
 

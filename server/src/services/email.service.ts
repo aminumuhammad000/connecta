@@ -1,29 +1,56 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import SystemSettings from '../models/SystemSettings.model';
 
 dotenv.config();
 
-// Create reusable transporter
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
+// Helper to get transporter with latest settings
+const getTransporter = async () => {
+  try {
+    // Try to get settings from DB
+    const settings = await SystemSettings.findOne();
+
+    // Use DB settings if available and complete, otherwise fallback to env
+    const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
+    const user = settings?.smtp?.user || process.env.SMTP_USER;
+    const pass = settings?.smtp?.pass || process.env.SMTP_PASS;
+    const secure = settings?.smtp?.secure ?? false;
+
+    if (!user || !pass) {
+      console.warn('SMTP credentials missing');
+      return null;
+    }
+
+    return nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    });
+  } catch (error) {
+    console.error('Error creating transporter:', error);
+    return null;
+  }
+};
 
 /**
  * Send OTP email to user
  */
 export const sendOTPEmail = async (email: string, otp: string, userName?: string): Promise<boolean> => {
-    try {
-        const mailOptions = {
-            from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
-            to: email,
-            subject: 'Password Reset OTP - Connecta',
-            html: `
+  try {
+    const transporter = await getTransporter();
+    if (!transporter) return false;
+
+    const settings = await SystemSettings.findOne();
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to: email,
+      subject: 'Password Reset OTP - Connecta',
+      html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -115,7 +142,7 @@ export const sendOTPEmail = async (email: string, otp: string, userName?: string
         </body>
         </html>
       `,
-            text: `
+      text: `
 Hi ${userName || 'there'},
 
 We received a request to reset your password.
@@ -128,27 +155,55 @@ If you didn't request this password reset, please ignore this email.
 
 - Connecta Team
       `,
-        };
+    };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log('OTP email sent:', info.messageId);
-        return true;
-    } catch (error) {
-        console.error('Error sending OTP email:', error);
-        return false;
-    }
+    const info = await transporter.sendMail(mailOptions);
+    console.log('OTP email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error sending OTP email:', error);
+    return false;
+  }
+};
+
+/**
+ * Send generic email
+ */
+export const sendEmail = async (to: string, subject: string, html: string): Promise<boolean> => {
+  try {
+    const transporter = await getTransporter();
+    if (!transporter) return false;
+
+    const settings = await SystemSettings.findOne();
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to,
+      subject,
+      html
+    });
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
 };
 
 /**
  * Verify email configuration
  */
 export const verifyEmailConfig = async (): Promise<boolean> => {
-    try {
-        await transporter.verify();
-        console.log('Email server is ready to send messages');
-        return true;
-    } catch (error) {
-        console.error('Email configuration error:', error);
-        return false;
-    }
+  try {
+    const transporter = await getTransporter();
+    if (!transporter) return false;
+
+    await transporter.verify();
+    console.log('Email server is ready to send messages');
+    return true;
+  } catch (error) {
+    console.error('Email configuration error:', error);
+    return false;
+  }
 };

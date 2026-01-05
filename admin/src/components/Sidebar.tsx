@@ -13,27 +13,24 @@ interface NavItemProps {
 function NavItem({ to, icon, label, collapsed, badge }: NavItemProps) {
   const { pathname } = useLocation()
   const active = pathname === to
-  
+
   return (
     <Link
       to={to}
-      className={`group relative flex items-center rounded-xl transition-all duration-300 ${
-        active
+      className={`group relative flex items-center rounded-xl transition-all duration-300 ${active
           ? 'bg-gradient-to-r from-primary to-amber-500 text-white shadow-lg shadow-primary/25'
           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:shadow-md'
-      } ${collapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 gap-3'}`}
+        } ${collapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 gap-3'}`}
       title={collapsed ? label : undefined}
     >
       <Icon
         name={icon}
         size={22}
-        className={`shrink-0 transition-transform duration-200 ${
-          active ? 'text-white scale-110' : 'text-slate-600 dark:text-slate-400 group-hover:scale-105'
-        }`}
+        className={`shrink-0 transition-transform duration-200 ${active ? 'text-white scale-110' : 'text-slate-600 dark:text-slate-400 group-hover:scale-105'
+          }`}
       />
-      <span className={`text-sm font-semibold tracking-wide text-left transition-all duration-300 ${
-        collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100 flex-1'
-      }`}>
+      <span className={`text-sm font-semibold tracking-wide text-left transition-all duration-300 ${collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100 flex-1'
+        }`}>
         {label}
       </span>
       {badge !== undefined && badge > 0 && (
@@ -74,14 +71,12 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`flex h-screen flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl transition-all duration-300 ease-in-out shrink-0 ${
-        isMobile ? 'fixed inset-y-0 left-0 z-50 w-72 md:hidden' : `sticky top-0 hidden md:flex ${isCollapsed ? 'w-20' : 'w-72'}`
-      }`}
+      className={`flex h-screen flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl transition-all duration-300 ease-in-out shrink-0 ${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72 md:hidden' : `sticky top-0 hidden md:flex ${isCollapsed ? 'w-20' : 'w-72'}`
+        }`}
     >
       {/* Header */}
-      <div className={`flex items-center border-b border-slate-200 dark:border-slate-700 transition-all duration-300 ${
-        isCollapsed ? 'justify-center px-2 py-5' : 'justify-between px-4 py-5 gap-3'
-      }`}>
+      <div className={`flex items-center border-b border-slate-200 dark:border-slate-700 transition-all duration-300 ${isCollapsed ? 'justify-center px-2 py-5' : 'justify-between px-4 py-5 gap-3'
+        }`}>
         {!isCollapsed && (
           <Link to="/dashboard" className="flex items-center gap-3 group">
             <div className="relative">
@@ -96,7 +91,7 @@ export default function Sidebar({
             </div>
           </Link>
         )}
-        
+
         {isCollapsed && (
           <Link to="/dashboard" className="flex items-center justify-center group">
             <div className="relative">
@@ -130,6 +125,7 @@ export default function Sidebar({
         <NavItem to="/reviews" icon="star" label="Reviews" collapsed={isCollapsed} />
         <NavItem to="/analytics" icon="bar_chart" label="Analytics" collapsed={isCollapsed} />
         <NavItem to="/notifications" icon="notifications" label="Notifications" collapsed={isCollapsed} badge={3} />
+        <NavItem to="/broadcast" icon="send" label="Email Broadcast" collapsed={isCollapsed} />
         <NavItem to="/settings" icon="settings" label="Settings" collapsed={isCollapsed} />
       </div>
 
@@ -139,9 +135,8 @@ export default function Sidebar({
         {!isMobile && (
           <button
             onClick={toggleCollapse}
-            className={`w-full flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 group ${
-              isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5'
-            }`}
+            className={`w-full flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 group ${isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5'
+              }`}
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             <Icon
@@ -149,9 +144,8 @@ export default function Sidebar({
               size={20}
               className="text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors"
             />
-            <span className={`text-sm font-medium text-slate-700 dark:text-slate-300 transition-all duration-300 whitespace-nowrap ${
-              isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
-            }`}>
+            <span className={`text-sm font-medium text-slate-700 dark:text-slate-300 transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+              }`}>
               Collapse Menu
             </span>
           </button>
