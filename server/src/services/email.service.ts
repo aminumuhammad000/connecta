@@ -1,22 +1,49 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import SystemSettings from '../models/SystemSettings.model';
 
 dotenv.config();
 
-// Create reusable transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Helper to get transporter with latest settings
+const getTransporter = async () => {
+  try {
+    // Try to get settings from DB
+    const settings = await SystemSettings.findOne();
 
-/**
- * Send OTP email to user
- */
+    // Use DB settings if available and complete, otherwise fallback to env
+    const provider = settings?.smtp?.provider || 'other';
+    const user = settings?.smtp?.user || process.env.SMTP_USER;
+    const pass = settings?.smtp?.pass || process.env.SMTP_PASS;
+
+    if (!user || !pass) {
+      console.warn('SMTP credentials missing');
+      return null;
+    }
+
+    if (provider === 'gmail') {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+      });
+    }
+
+    // Fallback to 'other' provider logic
+    const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
+    const secure = settings?.smtp?.secure ?? false;
+
+    return nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass },
+    });
+  } catch (error) {
+    console.error('Error creating transporter:', error);
+    return null;
+  }
+};
+
 /**
  * Send OTP email to user
  */
@@ -27,6 +54,13 @@ export const sendOTPEmail = async (
   type: 'PASSWORD_RESET' | 'EMAIL_VERIFICATION' = 'PASSWORD_RESET'
 ): Promise<{ success: boolean; error?: any }> => {
   try {
+    const transporter = await getTransporter();
+    if (!transporter) return { success: false, error: 'Transporter not available' };
+
+    const settings = await SystemSettings.findOne();
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
     const isVerification = type === 'EMAIL_VERIFICATION';
     const subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
     const title = isVerification ? 'Verify Your Email' : 'Password Reset Request';
@@ -35,7 +69,7 @@ export const sendOTPEmail = async (
       : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
 
     const mailOptions = {
-      from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to: email,
       subject: subject,
       html: `
@@ -156,7 +190,6 @@ If you didn't request this, please ignore this email.
   }
 };
 
-
 /**
  * Send generic email
  */
@@ -167,8 +200,15 @@ export const sendEmail = async (
   text?: string
 ): Promise<{ success: boolean; error?: any }> => {
   try {
+    const transporter = await getTransporter();
+    if (!transporter) return { success: false, error: 'Transporter not available' };
+
+    const settings = await SystemSettings.findOne();
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
     const mailOptions = {
-      from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
       html,
@@ -232,6 +272,9 @@ export const sendProposalAcceptedEmail = async (
  */
 export const verifyEmailConfig = async (): Promise<boolean> => {
   try {
+    const transporter = await getTransporter();
+    if (!transporter) return false;
+
     await transporter.verify();
     console.log('Email server is ready to send messages');
     return true;

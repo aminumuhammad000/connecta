@@ -28,7 +28,7 @@ const prices = [
 
 const Pricing = () => {
   return (
-    <div className={styles.Pricing}>
+    <div className={styles.Pricing} id="pricing">
       <h2 className={styles.mainTitle}>Pricing</h2>
       <p className={styles.subTitle}>Choose Your Premium Plan</p>
       <p className={styles.description}>
@@ -43,7 +43,7 @@ const Pricing = () => {
             <p className={styles.description}>{price.description}</p>
             <ul className={styles.navList}>
               {price.features.map((feature, idx) => (
-                <li key={idx}><Icon icon="fluent-mdl2:check-mark" className={styles.icon}/>{feature}</li>
+                <li key={idx}><Icon icon="fluent-mdl2:check-mark" className={styles.icon} />{feature}</li>
               ))}
             </ul>
             <button className={styles.button}>{price.button}</button>

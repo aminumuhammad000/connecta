@@ -44,6 +44,13 @@ import {
   MdBolt,
   MdAutorenew,
   MdVerified,
+  MdSend,
+  MdPerson,
+  MdBusiness,
+  MdCheckCircle,
+  MdBlock,
+  MdAccountCircle,
+  MdAccountBalanceWallet,
 } from 'react-icons/md'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number; color?: string }>> = {
@@ -91,6 +98,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string; size?: n
   bolt: MdBolt,
   progress_activity: MdAutorenew,
   verified: MdVerified,
+  send: MdSend,
+  person: MdPerson,
+  business: MdBusiness,
+  check_circle: MdCheckCircle,
+  block: MdBlock,
+  account_circle: MdAccountCircle,
+  account_balance_wallet: MdAccountBalanceWallet,
 }
 
 export default function Icon({ name, className, size, color }: { name: string; className?: string; size?: number; color?: string }) {

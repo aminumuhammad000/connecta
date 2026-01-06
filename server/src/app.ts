@@ -78,6 +78,9 @@ import subscriptionRoutes from "./routes/Subscription.routes";
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/analytics", insightsRoutes);
 
+import settingsRoutes from "./routes/settings.routes";
+app.use("/api/settings", settingsRoutes);
+
 import webhookRoutes from "./webhooks/routes/webhook";
 app.use("/api/webhooks", webhookRoutes);
 
