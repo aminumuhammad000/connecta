@@ -41,7 +41,15 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const google_auth_library_1 = require("google-auth-library");
 const user_model_1 = __importDefault(require("../models/user.model"));
-const client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const apiKeys_service_1 = require("../services/apiKeys.service");
+let googleClient = null;
+const getGoogleClient = async () => {
+    if (!googleClient) {
+        const apiKeys = await (0, apiKeys_service_1.getApiKeys)();
+        googleClient = new google_auth_library_1.OAuth2Client(apiKeys.google.clientId);
+    }
+    return googleClient;
+};
 // ===================
 // Get All Users / Search Users
 // ===================
@@ -172,9 +180,11 @@ exports.signin = signin;
 const googleSignup = async (req, res) => {
     try {
         const { tokenId, userType } = req.body;
+        const client = await getGoogleClient();
+        const apiKeys = await (0, apiKeys_service_1.getApiKeys)();
         const ticket = await client.verifyIdToken({
             idToken: tokenId,
-            audience: process.env.GOOGLE_CLIENT_ID,
+            audience: apiKeys.google.clientId,
         });
         const payload = ticket.getPayload();
         if (!payload)
@@ -298,9 +308,11 @@ exports.updatePushToken = updatePushToken;
 const googleSignin = async (req, res) => {
     try {
         const { tokenId } = req.body;
+        const client = await getGoogleClient();
+        const apiKeys = await (0, apiKeys_service_1.getApiKeys)();
         const ticket = await client.verifyIdToken({
             idToken: tokenId,
-            audience: process.env.GOOGLE_CLIENT_ID,
+            audience: apiKeys.google.clientId,
         });
         const payload = ticket.getPayload();
         if (!payload)

@@ -25,7 +25,7 @@ class OpenRouterClient {
                     }
                 ]
             }, {
-                headers: (0, openrouter_1.getOpenRouterHeaders)()
+                headers: await (0, openrouter_1.getOpenRouterHeaders)()
             });
             return response.data.choices[0].message.content;
         }

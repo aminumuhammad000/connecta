@@ -9,4 +9,5 @@ const router = (0, express_1.Router)();
 // router.use(authorize('admin'));
 router.get('/', settings_controller_1.getSettings);
 router.put('/smtp', settings_controller_1.updateSmtpSettings);
+router.put('/api-keys', settings_controller_1.updateApiKeys);
 exports.default = router;

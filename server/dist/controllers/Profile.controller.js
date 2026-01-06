@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMyProfile = exports.deleteProfile = exports.updateProfile = exports.getProfileById = exports.getMyProfile = exports.getAllProfiles = exports.createProfile = void 0;
+exports.updateMyProfile = exports.deleteProfile = exports.updateProfile = exports.getProfileByUserId = exports.getProfileById = exports.getMyProfile = exports.getAllProfiles = exports.createProfile = void 0;
 const Profile_model_1 = __importDefault(require("../models/Profile.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
 /**
@@ -151,6 +151,23 @@ const getProfileById = async (req, res) => {
     }
 };
 exports.getProfileById = getProfileById;
+/**
+ * @desc Get profile by User ID
+ * @route GET /api/profiles/user/:userId
+ */
+const getProfileByUserId = async (req, res) => {
+    try {
+        const profile = await Profile_model_1.default.findOne({ user: req.params.userId }).populate("user", "firstName lastName email userType");
+        if (!profile) {
+            return res.status(404).json({ message: "Profile not found" });
+        }
+        res.status(200).json(profile);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getProfileByUserId = getProfileByUserId;
 /**
  * @desc Update profile
  * @route PUT /api/profiles/:id

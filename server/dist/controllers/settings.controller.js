@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateSmtpSettings = exports.getSettings = void 0;
+exports.updateApiKeys = exports.updateSmtpSettings = exports.getSettings = void 0;
 const SystemSettings_model_1 = __importDefault(require("../models/SystemSettings.model"));
 const email_service_1 = require("../services/email.service");
 /**
@@ -62,3 +62,35 @@ const updateSmtpSettings = async (req, res) => {
     }
 };
 exports.updateSmtpSettings = updateSmtpSettings;
+/**
+ * Update API keys settings
+ */
+const updateApiKeys = async (req, res) => {
+    try {
+        const { openrouter, huggingface, google } = req.body;
+        const settings = await SystemSettings_model_1.default.getSettings();
+        settings.apiKeys = {
+            openrouter: openrouter || settings.apiKeys?.openrouter || '',
+            huggingface: huggingface || settings.apiKeys?.huggingface || '',
+            google: {
+                clientId: google?.clientId || settings.apiKeys?.google?.clientId || '',
+                clientSecret: google?.clientSecret || settings.apiKeys?.google?.clientSecret || '',
+                callbackUrl: google?.callbackUrl || settings.apiKeys?.google?.callbackUrl || ''
+            }
+        };
+        await settings.save();
+        res.json({
+            success: true,
+            message: 'API keys updated successfully',
+            data: settings
+        });
+    }
+    catch (error) {
+        console.error('Error updating API keys:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update API keys'
+        });
+    }
+};
+exports.updateApiKeys = updateApiKeys;

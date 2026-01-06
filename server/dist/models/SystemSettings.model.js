@@ -44,6 +44,15 @@ const SystemSettingsSchema = new mongoose_1.Schema({
         secure: { type: Boolean, default: false },
         fromEmail: { type: String, default: '' },
         fromName: { type: String, default: 'Connecta' }
+    },
+    apiKeys: {
+        openrouter: { type: String, default: '' },
+        huggingface: { type: String, default: '' },
+        google: {
+            clientId: { type: String, default: '' },
+            clientSecret: { type: String, default: '' },
+            callbackUrl: { type: String, default: '' }
+        }
     }
 }, {
     timestamps: true

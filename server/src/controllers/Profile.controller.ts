@@ -168,6 +168,24 @@ export const getProfileById = async (req: Request, res: Response) => {
 };
 
 /**
+ * @desc Get profile by User ID
+ * @route GET /api/profiles/user/:userId
+ */
+export const getProfileByUserId = async (req: Request, res: Response) => {
+  try {
+    const profile = await Profile.findOne({ user: req.params.userId }).populate("user", "firstName lastName email userType");
+
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    res.status(200).json(profile);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
  * @desc Update profile
  * @route PUT /api/profiles/:id
  */
