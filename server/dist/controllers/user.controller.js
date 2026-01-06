@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMe = exports.getMe = exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
+exports.updateMe = exports.getMe = exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.updatePushToken = exports.verifyEmail = exports.resendVerificationOTP = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const google_auth_library_1 = require("google-auth-library");
@@ -126,7 +126,17 @@ const signup = async (req, res) => {
             email,
             password: hashedPassword,
             userType,
+            isVerified: false,
         });
+        // Generate Verification OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        await OTP.create({ userId: newUser._id, otp, expiresAt });
+        // Send Verification Email
+        const { sendOTPEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+        // Note: async send to not block response too long, or await if critical
+        sendOTPEmail(email, otp, firstName, 'EMAIL_VERIFICATION').catch(err => console.error('Failed to send signup verification email:', err));
         const token = jsonwebtoken_1.default.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({ user: newUser, token });
     }
@@ -179,6 +189,7 @@ const googleSignup = async (req, res) => {
             email,
             userType,
             password: "", // no password needed for Google accounts
+            isVerified: true, // Google accounts are verified by default
         });
         const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({ user, token });
@@ -188,6 +199,99 @@ const googleSignup = async (req, res) => {
     }
 };
 exports.googleSignup = googleSignup;
+// ===================
+// Resend Verification OTP
+// ===================
+const resendVerificationOTP = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId)
+            return res.status(401).json({ message: "Unauthorized" });
+        const user = await user_model_1.default.findById(userId);
+        if (!user)
+            return res.status(404).json({ message: "User not found" });
+        if (user.isVerified) {
+            return res.status(400).json({ message: "Email is already verified" });
+        }
+        // Generate 4-digit OTP
+        const otp = Math.floor(1000 + Math.random() * 9000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+        // Manage OTP record
+        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        await OTP.deleteMany({ userId: user._id });
+        await OTP.create({ userId: user._id, otp, expiresAt });
+        // Send OTP email
+        const { sendOTPEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+        const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION');
+        if (!result.success) {
+            return res.status(500).json({ message: "Failed to send verification email" });
+        }
+        res.status(200).json({ success: true, message: "Verification code sent" });
+    }
+    catch (err) {
+        console.error('Resend OTP error:', err);
+        res.status(500).json({ message: "Server error", error: err });
+    }
+};
+exports.resendVerificationOTP = resendVerificationOTP;
+// ===================
+// Verify Email OTP
+// ===================
+const verifyEmail = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const { otp } = req.body;
+        if (!userId)
+            return res.status(401).json({ message: "Unauthorized" });
+        if (!otp)
+            return res.status(400).json({ message: "OTP is required" });
+        const user = await user_model_1.default.findById(userId);
+        if (!user)
+            return res.status(404).json({ message: "User not found" });
+        if (user.isVerified) {
+            return res.status(200).json({ success: true, message: "Email already verified" });
+        }
+        // Verify OTP
+        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        const otpRecord = await OTP.findOne({ userId: user._id, otp, verified: false });
+        if (!otpRecord)
+            return res.status(400).json({ message: "Invalid OTP" });
+        if (new Date() > otpRecord.expiresAt) {
+            await OTP.deleteOne({ _id: otpRecord._id });
+            return res.status(400).json({ message: "OTP expired" });
+        }
+        // Mark user as verified
+        user.isVerified = true;
+        await user.save();
+        // Clean up OTP
+        await OTP.deleteOne({ _id: otpRecord._id });
+        // Return updated user
+        res.status(200).json({ success: true, message: "Email verified successfully", user });
+    }
+    catch (err) {
+        console.error('Verify Email error:', err);
+        res.status(500).json({ message: "Server error", error: err });
+    }
+};
+exports.verifyEmail = verifyEmail;
+// ===================
+// Update Push Token
+// ===================
+const updatePushToken = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const { pushToken } = req.body;
+        if (!pushToken) {
+            return res.status(400).json({ message: "Push token is required" });
+        }
+        await user_model_1.default.findByIdAndUpdate(userId, { pushToken });
+        res.status(200).json({ success: true, message: "Push token updated" });
+    }
+    catch (err) {
+        res.status(500).json({ message: "Server error", error: err });
+    }
+};
+exports.updatePushToken = updatePushToken;
 // ===================
 // Google Sign In
 // ===================

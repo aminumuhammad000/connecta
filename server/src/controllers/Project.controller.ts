@@ -162,7 +162,16 @@ export const getAllProjects = async (req: Request, res: Response) => {
 export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    console.log('🔍 [getProjectById] Requesting ID:', id);
 
+    // DEBUG: Check if ID is valid ObjectId
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.error('❌ [getProjectById] Invalid ObjectId:', id);
+      return res.status(400).json({ success: false, message: 'Invalid Project ID format' });
+    }
+
+    const start = Date.now();
     const project = await Project.findById(id)
       .populate('clientId', 'firstName lastName email')
       .populate('freelancerId', 'firstName lastName email')
@@ -255,10 +264,10 @@ export const updateProjectStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status, statusLabel } = req.body;
 
-    if (!['ongoing', 'completed', 'cancelled'].includes(status)) {
+    if (!['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid status. Must be ongoing, completed, or cancelled',
+        message: 'Invalid status',
       });
     }
 
@@ -284,6 +293,75 @@ export const updateProjectStatus = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error updating project status',
+      error: error.message,
+    });
+  }
+};
+
+// Submit project for review (Freelancer)
+export const submitProject = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id || (req as any).user?._id;
+
+    const project = await Project.findById(id);
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    // Verify freelancer
+    if (project.freelancerId.toString() !== userId) {
+      return res.status(403).json({ success: false, message: 'Only the freelancer can submit this project' });
+    }
+
+    if (project.status === 'completed' || project.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'Project is already closed' });
+    }
+
+    project.status = 'submitted';
+    project.statusLabel = 'Under Review';
+    project.activity.push({
+      date: new Date(),
+      description: 'Project submitted for client review',
+    });
+
+    await project.save();
+
+    // Notify Client
+    try {
+      const io = require('../core/utils/socketIO').getIO();
+      const mongoose = require('mongoose');
+
+      await mongoose.model('Notification').create({
+        userId: project.clientId,
+        type: 'project_submitted',
+        title: 'Project Submitted',
+        message: `Freelancer has submitted work for "${project.title}". Please review.`,
+        relatedId: project._id,
+        relatedType: 'project',
+        actorId: userId,
+        actorName: 'Freelancer', // Could fetch name
+        isRead: false,
+      });
+
+      io.to(project.clientId.toString()).emit('notification:new', {
+        title: 'Project Submitted',
+        message: `Freelancer has submitted work for "${project.title}". Please review.`,
+        type: 'project_submitted'
+      });
+    } catch (e) {
+      console.warn('Notification failed', e);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Project submitted for review',
+      data: project,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting project',
       error: error.message,
     });
   }

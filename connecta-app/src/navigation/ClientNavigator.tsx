@@ -14,6 +14,7 @@ import ChatsScreen from '../screens/ChatsScreen';
 import PostJobScreen from '../screens/PostJobScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
 import ProjectDetailScreen from '../screens/ProjectDetailScreen';
+import ProjectWorkspaceScreen from '../screens/ProjectWorkspaceScreen';
 import ClientRecommendedFreelancersScreen from '../screens/ClientRecommendedFreelancersScreen';
 import ClientPaymentsScreen from '../screens/ClientPaymentsScreen';
 import PaymentScreen from '../screens/PaymentScreen';
@@ -75,6 +76,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="PostJob" component={PostJobScreen} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
+            <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />
             <Stack.Screen name="ClientPayments" component={ClientPaymentsScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />

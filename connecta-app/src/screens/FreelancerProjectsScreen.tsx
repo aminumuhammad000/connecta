@@ -147,7 +147,7 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
                                     key={p._id}
                                     activeOpacity={0.85}
                                     style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-                                    onPress={() => navigation.navigate('ProjectDetail', { id: p._id })}
+                                    onPress={() => navigation.navigate('ProjectWorkspace', { id: p._id })}
                                 >
                                     <View style={styles.cardTop}>
                                         <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{p.title}</Text>

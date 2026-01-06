@@ -14,6 +14,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
 import ProjectDetailScreen from '../screens/ProjectDetailScreen';
 import FreelancerSavedGigsScreen from '../screens/FreelancerSavedGigsScreen';
+import ProjectWorkspaceScreen from '../screens/ProjectWorkspaceScreen';
 
 import CompleteProfileScreen from '../screens/CompleteProfileScreen';
 import AddPortfolioScreen from '../screens/AddPortfolioScreen';
@@ -69,6 +70,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
             <Stack.Screen name="ApplyJob" component={require('../screens/ApplyJobScreen').default} />
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
+            <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="FreelancerSavedGigs" component={FreelancerSavedGigsScreen} />
             <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
             <Stack.Screen name="AddPortfolio" component={require('../screens/AddPortfolioScreen').default} />

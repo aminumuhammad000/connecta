@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProjectStats = exports.deleteProject = exports.addProjectActivity = exports.addProjectUpload = exports.updateProjectStatus = exports.updateProject = exports.createProject = exports.getProjectById = exports.getAllProjects = exports.getClientProjects = exports.getMyProjects = exports.getFreelancerProjects = void 0;
+exports.getProjectStats = exports.deleteProject = exports.addProjectActivity = exports.addProjectUpload = exports.submitProject = exports.updateProjectStatus = exports.updateProject = exports.createProject = exports.getProjectById = exports.getAllProjects = exports.getClientProjects = exports.getMyProjects = exports.getFreelancerProjects = void 0;
 const Project_model_1 = __importDefault(require("../models/Project.model"));
 // Get all projects for a freelancer
 const getFreelancerProjects = async (req, res) => {
@@ -151,6 +151,14 @@ exports.getAllProjects = getAllProjects;
 const getProjectById = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('🔍 [getProjectById] Requesting ID:', id);
+        // DEBUG: Check if ID is valid ObjectId
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            console.error('❌ [getProjectById] Invalid ObjectId:', id);
+            return res.status(400).json({ success: false, message: 'Invalid Project ID format' });
+        }
+        const start = Date.now();
         const project = await Project_model_1.default.findById(id)
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
@@ -161,9 +169,15 @@ const getProjectById = async (req, res) => {
                 message: 'Project not found',
             });
         }
+        // Fetch payment info
+        const Payment = require('../models/Payment.model').default;
+        const payment = await Payment.findOne({ projectId: id });
         res.status(200).json({
             success: true,
-            data: project,
+            data: {
+                ...project.toObject(),
+                payment: payment ? payment : null
+            },
         });
     }
     catch (error) {
@@ -227,10 +241,10 @@ const updateProjectStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status, statusLabel } = req.body;
-        if (!['ongoing', 'completed', 'cancelled'].includes(status)) {
+        if (!['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration'].includes(status)) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid status. Must be ongoing, completed, or cancelled',
+                message: 'Invalid status',
             });
         }
         const project = await Project_model_1.default.findByIdAndUpdate(id, { status, statusLabel: statusLabel || (status === 'ongoing' ? 'Active' : 'Completed') }, { new: true, runValidators: true });
@@ -255,6 +269,68 @@ const updateProjectStatus = async (req, res) => {
     }
 };
 exports.updateProjectStatus = updateProjectStatus;
+// Submit project for review (Freelancer)
+const submitProject = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user?.id || req.user?._id;
+        const project = await Project_model_1.default.findById(id);
+        if (!project) {
+            return res.status(404).json({ success: false, message: 'Project not found' });
+        }
+        // Verify freelancer
+        if (project.freelancerId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Only the freelancer can submit this project' });
+        }
+        if (project.status === 'completed' || project.status === 'cancelled') {
+            return res.status(400).json({ success: false, message: 'Project is already closed' });
+        }
+        project.status = 'submitted';
+        project.statusLabel = 'Under Review';
+        project.activity.push({
+            date: new Date(),
+            description: 'Project submitted for client review',
+        });
+        await project.save();
+        // Notify Client
+        try {
+            const io = require('../core/utils/socketIO').getIO();
+            const mongoose = require('mongoose');
+            await mongoose.model('Notification').create({
+                userId: project.clientId,
+                type: 'project_submitted',
+                title: 'Project Submitted',
+                message: `Freelancer has submitted work for "${project.title}". Please review.`,
+                relatedId: project._id,
+                relatedType: 'project',
+                actorId: userId,
+                actorName: 'Freelancer', // Could fetch name
+                isRead: false,
+            });
+            io.to(project.clientId.toString()).emit('notification:new', {
+                title: 'Project Submitted',
+                message: `Freelancer has submitted work for "${project.title}". Please review.`,
+                type: 'project_submitted'
+            });
+        }
+        catch (e) {
+            console.warn('Notification failed', e);
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Project submitted for review',
+            data: project,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error submitting project',
+            error: error.message,
+        });
+    }
+};
+exports.submitProject = submitProject;
 // Add file upload to project
 const addProjectUpload = async (req, res) => {
     try {

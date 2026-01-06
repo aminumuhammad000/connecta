@@ -8,7 +8,7 @@ export interface IProject extends Document {
     startDate: Date;
     endDate: Date;
   };
-  status: 'ongoing' | 'completed' | 'cancelled';
+  status: 'ongoing' | 'submitted' | 'completed' | 'cancelled' | 'arbitration';
   statusLabel: string;
   clientId: mongoose.Types.ObjectId;
   clientName: string;
@@ -69,7 +69,7 @@ const ProjectSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['ongoing', 'completed', 'cancelled'],
+      enum: ['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration'],
       default: 'ongoing',
     },
     statusLabel: {

@@ -6,6 +6,7 @@ const auth_middleware_1 = require("../core/middleware/auth.middleware");
 const router = (0, express_1.Router)();
 // Admin route - Get all payments (no auth)
 router.get('/admin/all', payment_controller_1.getAllPayments);
+router.get('/admin/withdrawals', auth_middleware_1.authenticate, payment_controller_1.getPendingWithdrawals);
 // Payment routes
 router.post('/initialize', auth_middleware_1.authenticate, payment_controller_1.initializePayment);
 router.post('/job-verification', auth_middleware_1.authenticate, payment_controller_1.initializeJobVerification);

@@ -9,6 +9,7 @@ interface SuccessModalProps {
     message?: string;
     onClose: () => void;
     buttonText?: string;
+    onAction?: () => void;
 }
 
 const SuccessModal: React.FC<SuccessModalProps> = ({
@@ -16,7 +17,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
     title = 'Success!',
     message = 'Operation completed successfully.',
     onClose,
-    buttonText = 'Continue'
+    buttonText = 'Continue',
+    onAction
 }) => {
     const c = useThemeColors();
     const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -71,7 +73,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 
                     <TouchableOpacity
                         style={[styles.button, { backgroundColor: c.primary }]}
-                        onPress={onClose}
+                        onPress={onAction || onClose}
                     >
                         <Text style={styles.buttonText}>{buttonText}</Text>
                     </TouchableOpacity>

@@ -22,6 +22,8 @@ router.post('/', Project_controller_1.createProject);
 router.put('/:id', Project_controller_1.updateProject);
 // Update project status
 router.patch('/:id/status', Project_controller_1.updateProjectStatus);
+// Submit project
+router.post('/:id/submit', auth_middleware_1.authenticate, Project_controller_1.submitProject);
 // Add file upload to project
 router.post('/:id/upload', Project_controller_1.addProjectUpload);
 // Add activity to project

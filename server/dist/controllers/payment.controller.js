@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveWithdrawalSettings = exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
+exports.saveWithdrawalSettings = exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.getPendingWithdrawals = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
 const Payment_model_1 = __importDefault(require("../models/Payment.model"));
 const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
 const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
@@ -175,104 +175,27 @@ exports.initializePayment = initializePayment;
 /**
  * Verify payment after Flutterwave callback
  */
+const payment_service_1 = __importDefault(require("../services/payment.service"));
+/**
+ * Verify payment after Flutterwave callback
+ */
 const verifyPayment = async (req, res) => {
     try {
         const { reference } = req.params;
         if (!reference) {
             return res.status(400).json({ success: false, message: 'Reference is required' });
         }
-        // Find payment by reference (which is the payment ID for Flutterwave)
-        const payment = await Payment_model_1.default.findById(reference);
-        if (!payment) {
-            return res.status(404).json({ success: false, message: 'Payment not found' });
-        }
-        // Verify with Flutterwave using the transaction ID from query params
         const transactionId = req.query.transaction_id;
         if (!transactionId) {
             return res.status(400).json({ success: false, message: 'Transaction ID is required' });
         }
-        const verification = await flutterwave_service_1.default.verifyPayment(transactionId);
-        if (verification.data.status === 'successful' && verification.data.tx_ref === reference) {
-            // Update payment status
-            payment.status = 'completed';
-            payment.paidAt = new Date();
-            payment.gatewayResponse = verification.data;
-            await payment.save();
-            // Handle job verification payment differently
-            if (payment.paymentType === 'job_verification' && payment.jobId) {
-                // Update job as payment verified and activate it
-                await Job_model_1.default.findByIdAndUpdate(payment.jobId, {
-                    paymentVerified: true,
-                    paymentStatus: 'escrow',
-                    paymentId: payment._id,
-                    status: 'active', // Activate the job
-                });
-                return res.status(200).json({
-                    success: true,
-                    message: 'Job verification payment successful',
-                    data: { payment, jobVerified: true },
-                });
-            }
-            // Regular project/milestone payment handling
-            // Update payment to held in escrow
-            payment.escrowStatus = 'held';
-            await payment.save();
-            // Get or create client wallet
-            let clientWallet = await Wallet_model_1.default.findOne({ userId: payment.payerId });
-            if (!clientWallet) {
-                clientWallet = new Wallet_model_1.default({ userId: payment.payerId });
-            }
-            // Update client wallet
-            clientWallet.totalSpent += payment.amount;
-            await clientWallet.save();
-            // Get or create freelancer wallet
-            let freelancerWallet = await Wallet_model_1.default.findOne({ userId: payment.payeeId });
-            if (!freelancerWallet) {
-                freelancerWallet = new Wallet_model_1.default({ userId: payment.payeeId });
-            }
-            // Add to escrow (money held until work is approved)
-            freelancerWallet.escrowBalance += payment.netAmount;
-            freelancerWallet.balance += payment.netAmount;
-            await freelancerWallet.save();
-            // Create transaction records
-            await Transaction_model_1.default.create({
-                userId: payment.payerId,
-                type: 'payment_sent',
-                amount: -payment.amount,
-                currency: payment.currency,
-                status: 'completed',
-                paymentId: payment._id,
-                projectId: payment.projectId,
-                balanceBefore: clientWallet.balance,
-                balanceAfter: clientWallet.balance,
-                description: `Payment sent for project`,
-            });
-            await Transaction_model_1.default.create({
-                userId: payment.payeeId,
-                type: 'payment_received',
-                amount: payment.netAmount,
-                currency: payment.currency,
-                status: 'completed',
-                paymentId: payment._id,
-                projectId: payment.projectId,
-                balanceBefore: freelancerWallet.balance - payment.netAmount,
-                balanceAfter: freelancerWallet.balance,
-                description: `Payment received (held in escrow)`,
-            });
-            return res.status(200).json({
-                success: true,
-                message: 'Payment verified successfully',
-                data: payment,
-            });
-        }
-        else {
-            payment.status = 'failed';
-            await payment.save();
-            return res.status(400).json({
-                success: false,
-                message: 'Payment verification failed',
-            });
-        }
+        // Process payment via service
+        const payment = await payment_service_1.default.processSuccessfulPayment(reference, transactionId);
+        return res.status(200).json({
+            success: true,
+            message: 'Payment verified successfully',
+            data: payment,
+        });
     }
     catch (error) {
         console.error('Verify payment error:', error);
@@ -573,6 +496,29 @@ const requestWithdrawal = async (req, res) => {
     }
 };
 exports.requestWithdrawal = requestWithdrawal;
+/**
+ * Get pending withdrawals (Admin only)
+ */
+const getPendingWithdrawals = async (req, res) => {
+    try {
+        const withdrawals = await Withdrawal_model_1.default.find({ status: { $in: ['pending', 'processing'] } })
+            .sort({ createdAt: -1 })
+            .populate('userId', 'firstName lastName email'); // Ensure User model is populated
+        return res.status(200).json({
+            success: true,
+            count: withdrawals.length,
+            data: withdrawals,
+        });
+    }
+    catch (error) {
+        console.error('Get pending withdrawals error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to fetch pending withdrawals',
+        });
+    }
+};
+exports.getPendingWithdrawals = getPendingWithdrawals;
 /**
  * Process withdrawal (Admin only)
  */

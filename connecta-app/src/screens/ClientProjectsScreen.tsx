@@ -144,7 +144,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                   key={p._id}
                   activeOpacity={0.85}
                   style={[styles.card, { backgroundColor: c.card }]}
-                  onPress={() => navigation.navigate('ProjectDetail', { id: p._id })}
+                  onPress={() => navigation.navigate('ProjectWorkspace', { id: p._id })}
                 >
                   <View style={styles.cardTop}>
                     <Text style={[styles.cardTitle, { color: c.text }]}>{p.title || 'Untitled Project'}</Text>

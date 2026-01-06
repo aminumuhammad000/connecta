@@ -82,6 +82,14 @@ export const addProjectActivity = async (id: string, activityData: any): Promise
     return (response as any)?.data || response;
 };
 
+/**
+ * Submit project for review
+ */
+export const submitProject = async (id: string): Promise<any> => {
+    const response = await post(`${API_ENDPOINTS.PROJECT_BY_ID(id)}/submit`, {});
+    return (response as any)?.data || response;
+};
+
 export default {
     getMyProjects,
     getFreelancerProjects,
@@ -92,4 +100,5 @@ export default {
     updateProjectStatus,
     uploadProjectFile,
     addProjectActivity,
+    submitProject,
 };

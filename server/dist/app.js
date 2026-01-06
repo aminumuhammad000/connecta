@@ -75,6 +75,8 @@ app.use("/api/analytics", analytics_routes_1.default);
 const Subscription_routes_1 = __importDefault(require("./routes/Subscription.routes"));
 app.use("/api/subscriptions", Subscription_routes_1.default);
 app.use("/api/analytics", insights_routes_1.default);
+const webhook_1 = __importDefault(require("./webhooks/routes/webhook"));
+app.use("/api/webhooks", webhook_1.default);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyEmailConfig = exports.sendOTPEmail = void 0;
+exports.verifyEmailConfig = exports.sendProposalAcceptedEmail = exports.sendEmail = exports.sendOTPEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
@@ -20,13 +20,21 @@ const transporter = nodemailer_1.default.createTransport({
 /**
  * Send OTP email to user
  */
-const sendOTPEmail = async (email, otp, userName) => {
+/**
+ * Send OTP email to user
+ */
+const sendOTPEmail = async (email, otp, userName, type = 'PASSWORD_RESET') => {
     try {
+        const isVerification = type === 'EMAIL_VERIFICATION';
+        const subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
+        const title = isVerification ? 'Verify Your Email' : 'Password Reset Request';
+        const message = isVerification
+            ? 'Welcome to Connecta! Please use the verification code below to verify your email address:'
+            : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
         const mailOptions = {
-            // ... (keep headers)
             from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
             to: email,
-            subject: 'Password Reset OTP - Connecta',
+            subject: subject,
             html: `
         <!DOCTYPE html>
         <html>
@@ -92,24 +100,24 @@ const sendOTPEmail = async (email, otp, userName) => {
           <div class="container">
             <div class="header">
               <div class="logo">Connecta</div>
-              <h2 style="margin: 0; color: #1f2937;">Password Reset Request</h2>
+              <h2 style="margin: 0; color: #1f2937;">${title}</h2>
             </div>
             
             <p>Hi ${userName || 'there'},</p>
             
-            <p>We received a request to reset your password. Use the OTP code below to proceed with resetting your password:</p>
+            <p>${message}</p>
             
             <div class="otp-box">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">Your OTP Code</p>
+              <p style="margin: 0; color: #6b7280; font-size: 14px;">Your Verification Code</p>
               <div class="otp-code">${otp}</div>
               <p style="margin: 0; color: #6b7280; font-size: 14px;">Valid for 10 minutes</p>
             </div>
             
             <div class="warning">
-              <strong>⚠️ Security Notice:</strong> If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+              <strong>⚠️ Security Notice:</strong> If you didn't request this code, please ignore this email.
             </div>
             
-            <p>For security reasons, this OTP will expire in 10 minutes.</p>
+            <p>For security reasons, this code will expire in 10 minutes.</p>
             
             <div class="footer">
               <p>This is an automated email, please do not reply.</p>
@@ -122,13 +130,15 @@ const sendOTPEmail = async (email, otp, userName) => {
             text: `
 Hi ${userName || 'there'},
 
-We received a request to reset your password.
+${title}
 
-Your OTP Code: ${otp}
+${message}
+
+Your Code: ${otp}
 
 This code is valid for 10 minutes.
 
-If you didn't request this password reset, please ignore this email.
+If you didn't request this, please ignore this email.
 
 - Connecta Team
       `,
@@ -143,6 +153,64 @@ If you didn't request this password reset, please ignore this email.
     }
 };
 exports.sendOTPEmail = sendOTPEmail;
+/**
+ * Send generic email
+ */
+const sendEmail = async (to, subject, html, text) => {
+    try {
+        const mailOptions = {
+            from: `"${process.env.FROM_NAME || 'Connecta'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+            to,
+            subject,
+            html,
+            text,
+        };
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent:', info.messageId);
+        return { success: true };
+    }
+    catch (error) {
+        console.error('Error sending email:', error);
+        return { success: false, error: error.message || error };
+    }
+};
+exports.sendEmail = sendEmail;
+/**
+ * Send Proposal Accepted Email
+ */
+const sendProposalAcceptedEmail = async (email, freelancerName, projectName, clientName, projectLink) => {
+    const subject = `Congratulations! You've been hired for ${projectName}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>You've been hired! 🎉</h2>
+            <p>Hi ${freelancerName},</p>
+            <p>Great news! <strong>${clientName}</strong> has accepted your proposal for the project <strong>${projectName}</strong>.</p>
+            <p>The project workspace is now active. You can communicate with the client and start working immediately.</p>
+            
+            <a href="${projectLink}" class="btn">Go to Project Workspace</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                ${projectLink}
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+    const text = `Hi ${freelancerName}, Great news! ${clientName} has accepted your proposal for ${projectName}. Go to your dashboard to start working.`;
+    return (0, exports.sendEmail)(email, subject, html, text);
+};
+exports.sendProposalAcceptedEmail = sendProposalAcceptedEmail;
 /**
  * Verify email configuration
  */

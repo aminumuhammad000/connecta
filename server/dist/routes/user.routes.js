@@ -19,6 +19,9 @@ router.post("/reset-password", user_controller_1.resetPassword);
 // Current user routes (protected)
 router.get("/me", auth_middleware_1.authenticate, user_controller_1.getMe); // GET /api/users/me
 router.put("/me", auth_middleware_1.authenticate, user_controller_1.updateMe); // PUT /api/users/me
+router.post("/verify-email", auth_middleware_1.authenticate, user_controller_1.verifyEmail); // POST /api/users/verify-email
+router.post("/resend-verification", auth_middleware_1.authenticate, user_controller_1.resendVerificationOTP); // POST /api/users/resend-verification
+router.post("/push-token", auth_middleware_1.authenticate, user_controller_1.updatePushToken); // POST /api/users/push-token
 // User data routes
 router.get("/", user_controller_1.getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20
 router.get("/:id", user_controller_1.getUserById); // GET /api/users/:id

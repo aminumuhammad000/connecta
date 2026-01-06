@@ -10,6 +10,7 @@ import {
   updateProjectStatus,
   addProjectUpload,
   addProjectActivity,
+  submitProject,
   deleteProject,
   getProjectStats,
 } from '../controllers/Project.controller';
@@ -43,6 +44,9 @@ router.put('/:id', updateProject);
 
 // Update project status
 router.patch('/:id/status', updateProjectStatus);
+
+// Submit project
+router.post('/:id/submit', authenticate, submitProject);
 
 // Add file upload to project
 router.post('/:id/upload', addProjectUpload);

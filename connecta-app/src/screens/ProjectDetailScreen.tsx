@@ -83,29 +83,72 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
         }
     };
 
-    const handleReleasePayment = async () => {
+    const handleApproveWork = async () => {
         if (!project?.payment) {
             showAlert({ title: 'Error', message: 'Payment record not found.', type: 'error' });
             return;
         }
 
-        if (project.payment.escrowStatus !== 'held') {
-            showAlert({ title: 'Info', message: 'Funds are not currently held in escrow.', type: 'info' });
-            return;
-        }
-
-        Alert.alert('Release Payment', 'Are you sure you want to release the funds to the freelancer? This cannot be undone.', [
+        Alert.alert('Approve Work', 'Are you satisfied with the work? This will release funds to the freelancer and mark the project as completed.', [
             { text: 'Cancel', style: 'cancel' },
             {
-                text: 'Release Funds',
+                text: 'Yes, Approve & Release',
                 onPress: async () => {
                     try {
                         setActionLoading(true);
-                        await paymentService.releasePayment(project.payment._id);
-                        showAlert({ title: 'Success', message: 'Funds released successfully!', type: 'success' });
+                        // Release funds
+                        if (project.payment.escrowStatus === 'held') {
+                            await paymentService.releasePayment(project.payment._id);
+                        }
+                        // Mark as completed
+                        await projectService.updateProjectStatus(project._id, 'completed');
+
+                        showAlert({ title: 'Success', message: 'Work approved! Funds released.', type: 'success' });
                         fetchProjectDetails(); // Refresh
                     } catch (err: any) {
-                        showAlert({ title: 'Error', message: err.message || 'Failed to release funds', type: 'error' });
+                        showAlert({ title: 'Error', message: err.message || 'Failed to approve work', type: 'error' });
+                    } finally {
+                        setActionLoading(false);
+                    }
+                }
+            }
+        ]);
+    };
+
+    const handleSubmitWork = async () => {
+        Alert.alert('Submit Work', 'Are you sure you want to submit this work for review? The client will be notified.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Submit',
+                onPress: async () => {
+                    try {
+                        setActionLoading(true);
+                        await projectService.submitProject(project._id);
+                        showAlert({ title: 'Success', message: 'Work submitted for review!', type: 'success' });
+                        fetchProjectDetails();
+                    } catch (err: any) {
+                        showAlert({ title: 'Error', message: err.message || 'Failed to submit work', type: 'error' });
+                    } finally {
+                        setActionLoading(false);
+                    }
+                }
+            }
+        ]);
+    };
+
+    const handleRequestRevision = async () => {
+        Alert.alert('Request Revision', 'Ask freelancer to make changes? Status will be set to Ongoing.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Request Revision',
+                onPress: async () => {
+                    try {
+                        setActionLoading(true);
+                        await projectService.updateProjectStatus(project._id, 'ongoing');
+                        showAlert({ title: 'Success', message: 'Revision requested.', type: 'success' });
+                        fetchProjectDetails();
+                    } catch (err: any) {
+                        showAlert({ title: 'Error', message: err.message || 'Failed to request revision', type: 'error' });
                     } finally {
                         setActionLoading(false);
                     }
@@ -319,39 +362,88 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                     </View>
                 )}
 
-                {/* Freelancer Actions: Upload */}
-                {!isProjectOwner && project.status === 'ongoing' && (
-                    <TouchableOpacity
-                        style={[styles.uploadButton, { borderColor: c.primary, borderStyle: 'dashed' }]}
-                        onPress={handleUpload}
-                    >
-                        <Ionicons name="cloud-upload-outline" size={24} color={c.primary} />
-                        <Text style={[styles.uploadButtonText, { color: c.primary }]}>Upload Deliverables</Text>
-                    </TouchableOpacity>
+                {/* Freelancer Actions: Upload & Submit */}
+                {!isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted') && (
+                    <View style={{ gap: 12, marginBottom: 16 }}>
+                        {project.status === 'ongoing' && (
+                            <>
+                                <TouchableOpacity
+                                    style={[styles.uploadButton, { borderColor: c.primary, borderStyle: 'dashed', marginBottom: 0 }]}
+                                    onPress={handleUpload}
+                                >
+                                    <Ionicons name="cloud-upload-outline" size={24} color={c.primary} />
+                                    <Text style={[styles.uploadButtonText, { color: c.primary }]}>Upload Deliverables</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.chatButton, { backgroundColor: c.primary, opacity: actionLoading ? 0.7 : 1 }]}
+                                    onPress={handleSubmitWork}
+                                    disabled={actionLoading}
+                                >
+                                    {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="send" size={20} color="white" style={{ marginRight: 8 }} />}
+                                    <Text style={styles.chatButtonText}>Submit Work</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                        {project.status === 'submitted' && (
+                            <View style={{ padding: 16, backgroundColor: '#FFFBEB', borderRadius: 8, alignItems: 'center' }}>
+                                <Text style={{ color: '#D97706', fontWeight: '600' }}>Work submitted for review.</Text>
+                                <Text style={{ color: '#D97706', fontSize: 12 }}>Waiting for client approval.</Text>
+                            </View>
+                        )}
+                    </View>
                 )}
 
                 {/* Client Actions: Payment & End Contract */}
-                {isProjectOwner && project.status === 'ongoing' && (
+                {isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted') && (
                     <View style={{ gap: 12, marginBottom: 16 }}>
-                        {canRelease && (
-                            <TouchableOpacity
-                                style={[styles.chatButton, { backgroundColor: '#10B981', opacity: actionLoading ? 0.7 : 1 }]}
-                                onPress={handleReleasePayment}
-                                disabled={actionLoading}
-                            >
-                                {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="cash-outline" size={20} color="white" style={{ marginRight: 8 }} />}
-                                <Text style={styles.chatButtonText}>{actionLoading ? 'Processing...' : 'Release Payment'}</Text>
-                            </TouchableOpacity>
+                        {/* If Submitted, show Approve/Reject */}
+                        {project.status === 'submitted' && (
+                            <>
+                                <View style={{ padding: 12, backgroundColor: '#EFF6FF', borderRadius: 8, marginBottom: 8 }}>
+                                    <Text style={{ color: '#1E40AF', fontSize: 14 }}>Freelancer has submitted work. Please review and approve.</Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={[styles.chatButton, { backgroundColor: '#10B981', opacity: actionLoading ? 0.7 : 1 }]}
+                                    onPress={handleApproveWork}
+                                    disabled={actionLoading}
+                                >
+                                    {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="checkmark-circle" size={20} color="white" style={{ marginRight: 8 }} />}
+                                    <Text style={styles.chatButtonText}>Satisfied (Approve & Release)</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.chatButton, { backgroundColor: '#F59E0B', opacity: actionLoading ? 0.7 : 1 }]}
+                                    onPress={handleRequestRevision}
+                                    disabled={actionLoading}
+                                >
+                                    {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="refresh" size={20} color="white" style={{ marginRight: 8 }} />}
+                                    <Text style={styles.chatButtonText}>Request Revision</Text>
+                                </TouchableOpacity>
+                            </>
                         )}
 
-                        <TouchableOpacity
-                            style={[styles.chatButton, { backgroundColor: '#EF4444', opacity: actionLoading ? 0.7 : 1 }]}
-                            onPress={handleEndContract}
-                            disabled={actionLoading}
-                        >
-                            {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="close-circle-outline" size={20} color="white" style={{ marginRight: 8 }} />}
-                            <Text style={styles.chatButtonText}>{actionLoading ? 'Processing...' : 'End Contract'}</Text>
-                        </TouchableOpacity>
+                        {/* If Ongoing, allow manual release or end */}
+                        {project.status === 'ongoing' && (
+                            <>
+                                {canRelease && (
+                                    <TouchableOpacity
+                                        style={[styles.chatButton, { backgroundColor: '#059669', opacity: actionLoading ? 0.7 : 1 }]}
+                                        onPress={handleApproveWork}
+                                        disabled={actionLoading}
+                                    >
+                                        <Text style={styles.chatButtonText}>Release Payment</Text>
+                                    </TouchableOpacity>
+                                )}
+                                <TouchableOpacity
+                                    style={[styles.chatButton, { backgroundColor: '#EF4444', opacity: actionLoading ? 0.7 : 1 }]}
+                                    onPress={handleEndContract}
+                                    disabled={actionLoading}
+                                >
+                                    <Text style={styles.chatButtonText}>End Contract</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 )}
 

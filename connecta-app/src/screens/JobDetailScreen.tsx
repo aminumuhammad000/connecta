@@ -7,6 +7,7 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import jobService from '../services/jobService';
 import proposalService from '../services/proposalService';
 import { useAuth } from '../context/AuthContext';
+import SuccessModal from '../components/SuccessModal';
 
 const JobDetailScreen: React.FC = () => {
   const c = useThemeColors();
@@ -21,6 +22,7 @@ const JobDetailScreen: React.FC = () => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasApplied, setHasApplied] = React.useState(false);
+  const [successModal, setSuccessModal] = React.useState({ visible: false, title: '', message: '' });
 
   // Use useFocusEffect to re-check when returning from ApplyJobScreen
   useFocusEffect(
@@ -118,29 +120,22 @@ const JobDetailScreen: React.FC = () => {
   const handleAcceptProposal = async (proposalId: string) => {
     try {
       setActionLoading(proposalId);
-      await proposalService.approveProposal(proposalId);
-      alert('Proposal accepted! Project created.');
-      navigation.goBack();
+      const response = await proposalService.approveProposal(proposalId);
+
+      // Update local state and show SuccessModal
+      setProposals(prev => prev.map(p => p._id === proposalId ? { ...p, status: 'approved' } : p));
+
+      const projectId = (response as any)?.data?.project?._id || (response as any)?.project?._id;
+
+      setSuccessModal({
+        visible: true,
+        title: 'Freelancer Hired!',
+        message: 'Proposal accepted and project created. You can now start working.',
+        data: { projectId } // Pass projectId to modal
+      } as any);
     } catch (error: any) {
       console.error('Error accepting proposal:', error);
-      // Enhanced error for debugging 403
-      if (error?.status === 403 || error?.message?.includes('authorized')) {
-        const jobOwnerId = job.clientId?._id || job.clientId;
-        alert(`Permission Denied (403)!
-
-This error comes from the Backend Server.
-It means the server thinks you are NOT the owner of the Job associated with this proposal.
-
-Debug Info:
-Logged In User ID: ${user?._id}
-Job's Client ID: ${jobOwnerId}
-Job Status: ${job.status}
-Proposal ID: ${proposalId}
-
-Please verify in your Database that the Job's 'clientId' matches your User ID exactly.`);
-      } else {
-        alert(error?.message || 'Failed to accept proposal.');
-      }
+      alert(error?.message || 'Failed to accept proposal.');
     } finally {
       setActionLoading(null);
     }
@@ -149,7 +144,7 @@ Please verify in your Database that the Job's 'clientId' matches your User ID ex
   const handleRejectProposal = async (proposalId: string) => {
     try {
       await proposalService.rejectProposal(proposalId);
-      loadProposals(); // Refresh list
+      setProposals(prev => prev.map(p => p._id === proposalId ? { ...p, status: 'declined' } : p));
     } catch (error) {
       console.error('Error rejecting proposal:', error);
       alert('Failed to reject proposal.');
@@ -344,12 +339,14 @@ Please verify in your Database that the Job's 'clientId' matches your User ID ex
                                 source={{ uri: p.freelancerId?.profileImage || `https://ui-avatars.com/api/?name=${p.freelancerId?.firstName}+${p.freelancerId?.lastName}` }}
                                 style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#ddd' }}
                               />
-                              {isPremium && (
-                                <View style={{ position: 'absolute', bottom: -2, right: -2, backgroundColor: '#F59E0B', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#FFF' }}>
-                                  <MaterialIcons name="star" size={10} color="#FFF" />
-                                </View>
-                              )}
-                            </View>
+                              {
+                                isPremium && (
+                                  <View style={{ position: 'absolute', bottom: -2, right: -2, backgroundColor: '#F59E0B', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#FFF' }}>
+                                    <MaterialIcons name="star" size={10} color="#FFF" />
+                                  </View>
+                                )
+                              }
+                            </View >
                             <View>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                 <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
@@ -359,27 +356,45 @@ Please verify in your Database that the Job's 'clientId' matches your User ID ex
                               </View>
                               <Text style={{ fontSize: 12, color: c.subtext }}>{p.freelancerId?.title || 'Freelancer'}</Text>
                             </View>
-                          </View>
+                          </View >
                           <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>${p.budget?.amount}</Text>
-                        </View>
+                        </View >
 
                         <Text style={{ marginTop: 12, fontSize: 14, color: c.text, lineHeight: 20 }}>
                           {p.description}
                         </Text>
 
                         <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
-                          <TouchableOpacity
-                            style={{ flex: 1, height: 40, borderRadius: 8, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}
-                            onPress={() => handleAcceptProposal(p._id)}
-                          >
-                            <Text style={{ color: '#fff', fontWeight: '600' }}>Hire</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={{ flex: 1, height: 40, borderRadius: 8, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}
-                            onPress={() => handleRejectProposal(p._id)}
-                          >
-                            <Text style={{ color: c.text, fontWeight: '600' }}>Decline</Text>
-                          </TouchableOpacity>
+                          {(p.status === 'accepted' || p.status === 'approved') ? (
+                            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#dcfce7', height: 40, borderRadius: 8 }}>
+                              <MaterialIcons name="check-circle" size={20} color="#166534" />
+                              <Text style={{ color: '#166534', fontWeight: 'bold' }}>Hired</Text>
+                            </View>
+                          ) : (p.status === 'declined' || p.status === 'rejected') ? (
+                            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fee2e2', height: 40, borderRadius: 8 }}>
+                              <Text style={{ color: '#991b1b', fontWeight: 'bold' }}>Declined</Text>
+                            </View>
+                          ) : (
+                            <>
+                              <TouchableOpacity
+                                style={{ flex: 1, height: 40, borderRadius: 8, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}
+                                onPress={() => handleAcceptProposal(p._id)}
+                              >
+                                {actionLoading === p._id ? (
+                                  <ActivityIndicator color="#fff" size="small" />
+                                ) : (
+                                  <Text style={{ color: '#fff', fontWeight: '600' }}>Hire</Text>
+                                )}
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={{ flex: 1, height: 40, borderRadius: 8, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}
+                                onPress={() => handleRejectProposal(p._id)}
+                              >
+                                <Text style={{ color: c.text, fontWeight: '600' }}>Decline</Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
+
                           <TouchableOpacity
                             style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: c.border, alignItems: 'center', justifyContent: 'center' }}
                             onPress={() => (navigation as any).navigate('MessagesDetail', {
@@ -396,47 +411,68 @@ Please verify in your Database that the Job's 'clientId' matches your User ID ex
                             <MaterialIcons name="chat" size={20} color={c.subtext} />
                           </TouchableOpacity>
                         </View>
-                      </TouchableOpacity>
+                      </TouchableOpacity >
                     );
                   })}
-                </View>
+                </View >
               )}
-            </View>
+            </View >
           )}
 
           {/* Attachments */}
-          {job.attachments?.length > 0 && (
-            <View style={{ marginTop: 16, marginBottom: 16 }}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Attachments</Text>
-              <View style={{ gap: 8 }}>
-                {job.attachments.map((att: any, index: number) => (
-                  <View key={index} style={[styles.attachment, { borderColor: c.border }]}>
-                    <MaterialIcons name="description" size={20} color={c.primary} />
-                    <Text style={[styles.attachmentLabel, { color: c.text }]}>{att.name}</Text>
-                    <MaterialIcons name="download" size={20} color={c.subtext} />
-                  </View>
-                ))}
+          {
+            job.attachments?.length > 0 && (
+              <View style={{ marginTop: 16, marginBottom: 16 }}>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>Attachments</Text>
+                <View style={{ gap: 8 }}>
+                  {job.attachments.map((att: any, index: number) => (
+                    <View key={index} style={[styles.attachment, { borderColor: c.border }]}>
+                      <MaterialIcons name="description" size={20} color={c.primary} />
+                      <Text style={[styles.attachmentLabel, { color: c.text }]}>{att.name}</Text>
+                      <MaterialIcons name="download" size={20} color={c.subtext} />
+                    </View>
+                  ))}
+                </View>
               </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+            )
+          }
+        </View >
+      </ScrollView >
 
       {/* Fixed CTA (Hide 'Apply Now' for Job Owner) */}
-      {!isJobOwner && (
-        <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
-          <TouchableOpacity
-            style={[styles.applyBtn, { backgroundColor: hasApplied ? (c.isDark ? '#374151' : '#E5E7EB') : c.primary }]}
-            disabled={hasApplied}
-            onPress={() => (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget })}
-          >
-            <Text style={[styles.applyText, hasApplied && { color: c.subtext }]}>
-              {hasApplied ? 'Applied' : 'Apply Now'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </SafeAreaView>
+      {
+        !isJobOwner && (
+          <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
+            <TouchableOpacity
+              style={[styles.applyBtn, { backgroundColor: hasApplied ? (c.isDark ? '#374151' : '#E5E7EB') : c.primary }]}
+              disabled={hasApplied}
+              onPress={() => (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget })}
+            >
+              <Text style={[styles.applyText, hasApplied && { color: c.subtext }]}>
+                {hasApplied ? 'Applied' : 'Apply Now'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )
+      }
+      <SuccessModal
+        visible={successModal.visible}
+        title={successModal.title}
+        message={successModal.message}
+        onClose={() => setSuccessModal({ ...successModal, visible: false })}
+        buttonText="View Project"
+        onAction={() => {
+          setSuccessModal({ ...successModal, visible: false });
+          if ((successModal as any).data?.projectId) {
+            // Navigate to the project workspace using the ID
+            (navigation as any).navigate('ProjectWorkspace', { id: (successModal as any).data.projectId });
+          } else {
+            // Fallback if no ID is present
+            (navigation as any).navigate('ClientProjects');
+          }
+        }}
+      />
+    </SafeAreaView >
   );
 
 
