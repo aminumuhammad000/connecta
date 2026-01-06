@@ -73,6 +73,14 @@ const getAllProposals = async (req, res) => {
         if (status) {
             query.status = status;
         }
+        const { userId } = req.query;
+        if (userId) {
+            query.$or = [
+                { freelancerId: userId },
+                { clientId: userId },
+                { referredBy: userId }
+            ];
+        }
         const skip = (Number(page) - 1) * Number(limit);
         const proposals = await Proposal_model_1.default.find(query)
             .populate('freelancerId', 'firstName lastName email')

@@ -79,6 +79,8 @@ const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
 app.use("/api/settings", settings_routes_1.default);
 const webhook_1 = __importDefault(require("./webhooks/routes/webhook"));
 app.use("/api/webhooks", webhook_1.default);
+const broadcast_routes_1 = __importDefault(require("./routes/broadcast.routes"));
+app.use("/api/broadcast", broadcast_routes_1.default);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });

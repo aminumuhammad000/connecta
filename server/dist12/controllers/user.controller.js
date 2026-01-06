@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMe = exports.getMe = exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.updatePushToken = exports.verifyEmail = exports.resendVerificationOTP = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
+exports.deleteUser = exports.updateMe = exports.getMe = exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.updatePushToken = exports.verifyEmail = exports.resendVerificationOTP = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const google_auth_library_1 = require("google-auth-library");
@@ -662,3 +662,32 @@ const updateMe = async (req, res) => {
     }
 };
 exports.updateMe = updateMe;
+// ===================
+// Delete User
+// ===================
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await user_model_1.default.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        await user_model_1.default.findByIdAndDelete(id);
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully"
+        });
+    }
+    catch (err) {
+        console.error('Delete user error:', err);
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: err
+        });
+    }
+};
+exports.deleteUser = deleteUser;

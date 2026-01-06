@@ -28,4 +28,5 @@ router.get("/:id", user_controller_1.getUserById); // GET /api/users/:id
 // User management routes
 router.put("/:id/ban", user_controller_1.banUser); // PUT /api/users/:id/ban
 router.put("/:id/unban", user_controller_1.unbanUser); // PUT /api/users/:id/unban
+router.delete("/:id", user_controller_1.deleteUser); // DELETE /api/users/:id
 exports.default = router;

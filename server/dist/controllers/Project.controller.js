@@ -121,6 +121,13 @@ const getAllProjects = async (req, res) => {
         if (status) {
             query.status = status;
         }
+        const { userId } = req.query;
+        if (userId) {
+            query.$or = [
+                { clientId: userId },
+                { freelancerId: userId }
+            ];
+        }
         const skip = (Number(page) - 1) * Number(limit);
         const projects = await Project_model_1.default.find(query)
             .populate('clientId', 'firstName lastName email')
