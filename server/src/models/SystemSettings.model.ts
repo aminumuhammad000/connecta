@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ISystemSettings extends Document {
     smtp: {
+        provider: 'gmail' | 'other';
         host: string;
         port: number;
         user: string;
@@ -19,6 +20,7 @@ interface ISystemSettingsModel extends Model<ISystemSettings> {
 
 const SystemSettingsSchema: Schema = new Schema({
     smtp: {
+        provider: { type: String, enum: ['gmail', 'other'], default: 'other' },
         host: { type: String, default: '' },
         port: { type: Number, default: 587 },
         user: { type: String, default: '' },

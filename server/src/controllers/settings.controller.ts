@@ -26,11 +26,12 @@ export const getSettings = async (req: Request, res: Response) => {
  */
 export const updateSmtpSettings = async (req: Request, res: Response) => {
     try {
-        const { host, port, user, pass, secure, fromEmail, fromName } = req.body;
+        const { host, port, user, pass, secure, fromEmail, fromName, provider } = req.body;
 
         const settings = await SystemSettings.getSettings();
 
         settings.smtp = {
+            provider: provider || 'other',
             host,
             port,
             user,

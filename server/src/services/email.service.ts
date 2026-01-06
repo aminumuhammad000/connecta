@@ -11,16 +11,26 @@ const getTransporter = async () => {
     const settings = await SystemSettings.findOne();
 
     // Use DB settings if available and complete, otherwise fallback to env
-    const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
+    const provider = settings?.smtp?.provider || 'other';
     const user = settings?.smtp?.user || process.env.SMTP_USER;
     const pass = settings?.smtp?.pass || process.env.SMTP_PASS;
-    const secure = settings?.smtp?.secure ?? false;
 
     if (!user || !pass) {
       console.warn('SMTP credentials missing');
       return null;
     }
+
+    if (provider === 'gmail') {
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+      });
+    }
+
+    // Fallback to 'other' provider logic
+    const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
+    const secure = settings?.smtp?.secure ?? false;
 
     return nodemailer.createTransport({
       host,
