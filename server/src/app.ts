@@ -51,6 +51,7 @@ app.use(cors({
     "https://myconnecta.ng",
     "https://www.myconnecta.ng",
     "https://admin.myconnecta.ng",
+    "https://app.myconnecta.ng",
     "https://api.myconnecta.ng"
   ],
   credentials: true
