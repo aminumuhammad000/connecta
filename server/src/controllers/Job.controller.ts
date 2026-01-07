@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Job from "../models/Job.model";
 import User from "../models/user.model";
+import { RecommendationService } from "../services/recommendation.service";
 
 // ===================
 // Get Jobs for Current Client
@@ -180,12 +181,19 @@ export const deleteJob = async (req: Request, res: Response) => {
 export const getRecommendedJobs = async (req: Request, res: Response) => {
   try {
     const { limit = 6 } = req.query;
+    const userId = (req as any).user?._id || (req as any).user?.id;
 
-    // Get active jobs, sorted by posted date
-    const jobs = await Job.find({ status: "active" })
-      .sort({ posted: -1 })
-      .limit(Number(limit))
-      .populate("clientId", "firstName lastName email");
+    if (!userId) {
+      // Fallback to existing logic if no user logged in
+      const jobs = await Job.find({ status: "active" })
+        .sort({ posted: -1 })
+        .limit(Number(limit))
+        .populate("clientId", "firstName lastName email");
+      return res.status(200).json({ success: true, data: jobs });
+    }
+
+    const recommendationService = new RecommendationService();
+    const jobs = await recommendationService.getRecommendationsForUser(userId, Number(limit));
 
     res.status(200).json({
       success: true,

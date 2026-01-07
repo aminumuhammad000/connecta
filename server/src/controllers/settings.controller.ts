@@ -60,3 +60,38 @@ export const updateSmtpSettings = async (req: Request, res: Response) => {
         });
     }
 };
+
+/**
+ * Update API keys settings
+ */
+export const updateApiKeys = async (req: Request, res: Response) => {
+    try {
+        const { openrouter, huggingface, google } = req.body;
+
+        const settings = await SystemSettings.getSettings();
+
+        settings.apiKeys = {
+            openrouter: openrouter || settings.apiKeys?.openrouter || '',
+            huggingface: huggingface || settings.apiKeys?.huggingface || '',
+            google: {
+                clientId: google?.clientId || settings.apiKeys?.google?.clientId || '',
+                clientSecret: google?.clientSecret || settings.apiKeys?.google?.clientSecret || '',
+                callbackUrl: google?.callbackUrl || settings.apiKeys?.google?.callbackUrl || ''
+            }
+        };
+
+        await settings.save();
+
+        res.json({
+            success: true,
+            message: 'API keys updated successfully',
+            data: settings
+        });
+    } catch (error) {
+        console.error('Error updating API keys:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update API keys'
+        });
+    }
+};

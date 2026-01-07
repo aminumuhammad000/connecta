@@ -32,8 +32,8 @@ export const getMyJobs = async (): Promise<Job[]> => {
 /**
  * Get recommended jobs
  */
-export const getRecommendedJobs = async (): Promise<Job[]> => {
-    const response = await get<Job[]>(API_ENDPOINTS.RECOMMENDED_JOBS);
+export const getRecommendedJobs = async (limit: number = 10): Promise<Job[]> => {
+    const response = await get<Job[]>(`${API_ENDPOINTS.RECOMMENDED_JOBS}?limit=${limit}`);
     return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 

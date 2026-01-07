@@ -2,6 +2,7 @@
 import { Router, Request, Response } from "express";
 import { loadTools } from "../core/ai/connecta-agent/tools";
 import { ConnectaAgent } from "../core/ai/connecta-agent/agent";
+import { getApiKeys } from "../services/apiKeys.service";
 
 const router = Router();
 
@@ -26,10 +27,11 @@ interface AgentRequest {
 async function createAgent(userId: string, authToken?: string, userType?: string) {
   await ensureToolsLoaded(); // ensure tools are ready before creating agent
 
+  const apiKeys = await getApiKeys();
   const agent = new ConnectaAgent({
     apiBaseUrl: "https://api.myconnecta.ng",
     authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
-    openaiApiKey: process.env.OPENROUTER_API_KEY || "fallback-api-key",
+    openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback-api-key",
     mockMode: false,
     userId,
   });

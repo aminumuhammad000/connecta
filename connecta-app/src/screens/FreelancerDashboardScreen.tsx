@@ -171,7 +171,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
           <View style={styles.statsContainer}>
             <Card variant="elevated" padding={16} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: c.primary + '22' }]}>
-                <MaterialIcons name="description" size={24} color={c.primary} />
+                <MaterialIcons name="description" size={20} color={c.primary} />
               </View>
               <Text style={[styles.statValue, { color: c.text }]}>{stats?.activeProposals || 0}</Text>
               <Text style={[styles.statLabel, { color: c.subtext }]}>Active Proposals</Text>
@@ -179,7 +179,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
             <Card variant="elevated" padding={16} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#F59E0B22' }]}>
-                <MaterialIcons name="mail" size={24} color="#F59E0B" />
+                <MaterialIcons name="mail" size={20} color="#F59E0B" />
               </View>
               <Text style={[styles.statValue, { color: c.text }]}>{stats?.newMessages || 0}</Text>
               <Text style={[styles.statLabel, { color: c.subtext }]}>New Messages</Text>
@@ -187,7 +187,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
             <Card variant="elevated" padding={16} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#10B98122' }]}>
-                <MaterialIcons name="attach-money" size={24} color="#10B981" />
+                <MaterialIcons name="attach-money" size={20} color="#10B981" />
               </View>
               <Text style={[styles.statValue, { color: c.text }]}>${stats?.totalEarnings || '0'}</Text>
               <Text style={[styles.statLabel, { color: c.subtext }]}>Total Earnings</Text>
@@ -207,28 +207,28 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => navigation.navigate('Proposals')}
               >
-                <MaterialIcons name="description" size={24} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>My Proposals</Text>
+                <MaterialIcons name="description" size={20} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>Proposals</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => navigation.navigate('FreelancerProjects')}
               >
-                <MaterialIcons name="work" size={24} color={c.primary} />
+                <MaterialIcons name="work" size={20} color={c.primary} />
                 <Text style={[styles.quickActionText, { color: c.text }]}>My Jobs</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => navigation.navigate('Wallet')}
               >
-                <MaterialIcons name="account-balance-wallet" size={24} color={c.primary} />
+                <MaterialIcons name="account-balance-wallet" size={20} color={c.primary} />
                 <Text style={[styles.quickActionText, { color: c.text }]}>My Wallet</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => navigation.navigate('FreelancerSavedGigs')}
               >
-                <MaterialIcons name="bookmark" size={24} color={c.primary} />
+                <MaterialIcons name="bookmark" size={20} color={c.primary} />
                 <Text style={[styles.quickActionText, { color: c.text }]}>Saved Jobs</Text>
               </TouchableOpacity>
             </View>
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 32,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerTop: {
     flexDirection: 'row',
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   name: {
-    fontSize: 24,
+    fontSize: 20,
     color: '#fff',
     fontWeight: '700',
     marginTop: 4,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 16,
-    marginTop: 24,
+    marginTop: 20,
   },
   quickActions: {
     flexDirection: 'row',

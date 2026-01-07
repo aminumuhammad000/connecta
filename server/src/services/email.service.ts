@@ -268,6 +268,130 @@ export const sendProposalAcceptedEmail = async (
 };
 
 /**
+ * Send Broadcast Email to Multiple Recipients
+ */
+export const sendBroadcastEmail = async (
+  recipients: string[],
+  subject: string,
+  body: string
+): Promise<{ success: boolean; sent: number; failed: number; errors?: any[] }> => {
+  try {
+    const transporter = await getTransporter();
+    if (!transporter) {
+      return { success: false, sent: 0, failed: recipients.length, errors: ['Transporter not available'] };
+    }
+
+    const settings = await SystemSettings.findOne();
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    let sent = 0;
+    let failed = 0;
+    const errors: any[] = [];
+
+    // Send emails to all recipients
+    for (const recipient of recipients) {
+      try {
+        const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .container {
+                background: #ffffff;
+                border-radius: 12px;
+                padding: 40px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+              }
+              .header {
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #6366f1;
+                padding-bottom: 20px;
+              }
+              .logo {
+                font-size: 32px;
+                font-weight: 800;
+                color: #6366f1;
+                margin-bottom: 10px;
+              }
+              .content {
+                margin: 30px 0;
+                white-space: pre-wrap;
+              }
+              .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #e5e7eb;
+                color: #6b7280;
+                font-size: 14px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="logo">Connecta</div>
+              </div>
+              
+              <div class="content">
+                ${body.replace(/\n/g, '<br>')}
+              </div>
+              
+              <div class="footer">
+                <p>This is an automated email from Connecta.</p>
+                <p>&copy; ${new Date().getFullYear()} Connecta. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const mailOptions = {
+          from: `"${fromName}" <${fromEmail}>`,
+          to: recipient,
+          subject,
+          html,
+          text: body,
+        };
+
+        await transporter.sendMail(mailOptions);
+        sent++;
+        console.log(`Broadcast email sent to: ${recipient}`);
+      } catch (error: any) {
+        failed++;
+        errors.push({ recipient, error: error.message || error });
+        console.error(`Failed to send email to ${recipient}:`, error);
+      }
+    }
+
+    return {
+      success: sent > 0,
+      sent,
+      failed,
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  } catch (error: any) {
+    console.error('Error sending broadcast email:', error);
+    return {
+      success: false,
+      sent: 0,
+      failed: recipients.length,
+      errors: [error.message || error],
+    };
+  }
+};
+
+/**
  * Verify email configuration
  */
 export const verifyEmailConfig = async (): Promise<boolean> => {

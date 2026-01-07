@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken } from "../controllers/user.controller";
+import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken } from "../controllers/user.controller";
 import { authenticate } from "../core/middleware/auth.middleware";
 
 const router = express.Router();
@@ -29,5 +29,6 @@ router.get("/:id", getUserById); // GET /api/users/:id
 // User management routes
 router.put("/:id/ban", banUser); // PUT /api/users/:id/ban
 router.put("/:id/unban", unbanUser); // PUT /api/users/:id/unban
+router.delete("/:id", deleteUser); // DELETE /api/users/:id
 
 export default router;

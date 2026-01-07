@@ -24,7 +24,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   const loadJobs = async () => {
     try {
       setIsLoading(true);
-      const jobsData = await jobService.getAllJobs({ limit: 50 });
+      const jobsData = await jobService.getRecommendedJobs(50);
       setJobs(jobsData);
     } catch (error) {
       console.error('Error loading jobs:', error);

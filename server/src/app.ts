@@ -47,7 +47,12 @@ app.use(cors({
   origin: [
     "http://102.68.84.56",
     "http://localhost:5173",
-    "http://localhost:8081"
+    "http://localhost:8081",
+    "https://myconnecta.ng",
+    "https://www.myconnecta.ng",
+    "https://admin.myconnecta.ng",
+    "https://app.myconnecta.ng",
+    "https://api.myconnecta.ng"
   ],
   credentials: true
 }));
@@ -83,6 +88,9 @@ app.use("/api/settings", settingsRoutes);
 
 import webhookRoutes from "./webhooks/routes/webhook";
 app.use("/api/webhooks", webhookRoutes);
+
+import broadcastRoutes from "./routes/broadcast.routes";
+app.use("/api/broadcast", broadcastRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");

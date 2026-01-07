@@ -352,20 +352,21 @@ export default function EditProfileScreen({ navigation }: any) {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Convert skills text to array
-            const skillsArray = formData.skillsText
-                .split(',')
-                .map(s => s.trim())
-                .filter(s => s.length > 0);
+            // Combine existing chips with any pending text in the input
+            const pendingSkill = formData.skillsText.trim();
+            let finalSkills = [...formData.skills];
+            if (pendingSkill && !finalSkills.includes(pendingSkill)) {
+                finalSkills.push(pendingSkill);
+            }
 
             // Update profile
             const savedProfile = await profileService.updateMyProfile({
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                phone: formData.phone,
+                phoneNumber: formData.phone, // Map phone to phoneNumber
                 location: formData.location,
                 bio: formData.bio,
-                skills: skillsArray,
+                skills: finalSkills,
                 avatar: profileImage || undefined,
                 portfolio: portfolio,
                 education: education,
@@ -489,17 +490,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             />
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Phone</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                value={formData.phone}
-                                onChangeText={(text) => handleInputChange('phone', text)}
-                                keyboardType="phone-pad"
-                                placeholder="+1234567890"
-                                placeholderTextColor={c.subtext}
-                            />
-                        </View>
+
 
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: c.subtext }]}>Location</Text>

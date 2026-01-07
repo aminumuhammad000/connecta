@@ -773,6 +773,14 @@ export const getAllPayments = async (req: Request, res: Response) => {
       query.status = status;
     }
 
+    const { userId } = req.query;
+    if (userId) {
+      query.$or = [
+        { payerId: userId },
+        { payeeId: userId }
+      ];
+    }
+
     const payments = await Payment.find(query)
       .sort({ createdAt: -1 })
       .limit(Number(limit))

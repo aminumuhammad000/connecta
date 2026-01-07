@@ -78,6 +78,15 @@ export const getAllProposals = async (req: Request, res: Response) => {
       query.status = status;
     }
 
+    const { userId } = req.query;
+    if (userId) {
+      query.$or = [
+        { freelancerId: userId },
+        { clientId: userId },
+        { referredBy: userId }
+      ];
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
 
     const proposals = await Proposal.find(query)

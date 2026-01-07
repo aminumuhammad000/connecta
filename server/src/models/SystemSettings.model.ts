@@ -11,6 +11,15 @@ export interface ISystemSettings extends Document {
         fromEmail: string;
         fromName: string;
     };
+    apiKeys: {
+        openrouter: string;
+        huggingface: string;
+        google: {
+            clientId: string;
+            clientSecret: string;
+            callbackUrl: string;
+        };
+    };
     updatedAt: Date;
 }
 
@@ -28,6 +37,15 @@ const SystemSettingsSchema: Schema = new Schema({
         secure: { type: Boolean, default: false },
         fromEmail: { type: String, default: '' },
         fromName: { type: String, default: 'Connecta' }
+    },
+    apiKeys: {
+        openrouter: { type: String, default: '' },
+        huggingface: { type: String, default: '' },
+        google: {
+            clientId: { type: String, default: '' },
+            clientSecret: { type: String, default: '' },
+            callbackUrl: { type: String, default: '' }
+        }
     }
 }, {
     timestamps: true

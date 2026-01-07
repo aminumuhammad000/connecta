@@ -18,8 +18,8 @@ function NavItem({ to, icon, label, collapsed, badge }: NavItemProps) {
     <Link
       to={to}
       className={`group relative flex items-center rounded-xl transition-all duration-300 ${active
-          ? 'bg-gradient-to-r from-primary to-amber-500 text-white shadow-lg shadow-primary/25'
-          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:shadow-md'
+        ? 'bg-gradient-to-r from-primary to-amber-500 text-white shadow-lg shadow-primary/25'
+        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:shadow-md'
         } ${collapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 gap-3'}`}
       title={collapsed ? label : undefined}
     >
@@ -117,14 +117,14 @@ export default function Sidebar({
         <NavItem to="/dashboard" icon="dashboard" label="Dashboard" collapsed={isCollapsed} />
         <NavItem to="/users" icon="group" label="Users" collapsed={isCollapsed} />
         <NavItem to="/projects" icon="work" label="Projects" collapsed={isCollapsed} />
-        <NavItem to="/applications" icon="assignment" label="Gig Applications" collapsed={isCollapsed} badge={5} />
+        <NavItem to="/applications" icon="assignment" label="Gig Applications" collapsed={isCollapsed} />
         <NavItem to="/contracts" icon="description" label="Contracts" collapsed={isCollapsed} />
         <NavItem to="/payments" icon="payments" label="Payments" collapsed={isCollapsed} />
         <NavItem to="/subscriptions" icon="verified" label="Subscriptions" collapsed={isCollapsed} />
-        <NavItem to="/proposals" icon="mail" label="Proposals" collapsed={isCollapsed} badge={12} />
+        <NavItem to="/proposals" icon="mail" label="Proposals" collapsed={isCollapsed} />
         <NavItem to="/reviews" icon="star" label="Reviews" collapsed={isCollapsed} />
         <NavItem to="/analytics" icon="bar_chart" label="Analytics" collapsed={isCollapsed} />
-        <NavItem to="/notifications" icon="notifications" label="Notifications" collapsed={isCollapsed} badge={3} />
+        <NavItem to="/notifications" icon="notifications" label="Notifications" collapsed={isCollapsed} />
         <NavItem to="/broadcast" icon="send" label="Email Broadcast" collapsed={isCollapsed} />
         <NavItem to="/settings" icon="settings" label="Settings" collapsed={isCollapsed} />
       </div>

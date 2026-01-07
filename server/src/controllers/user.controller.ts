@@ -3,8 +3,17 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import User from "../models/user.model";
+import { getApiKeys } from "../services/apiKeys.service";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
+let googleClient: OAuth2Client | null = null;
+
+const getGoogleClient = async () => {
+  if (!googleClient) {
+    const apiKeys = await getApiKeys();
+    googleClient = new OAuth2Client(apiKeys.google.clientId);
+  }
+  return googleClient;
+};
 
 // ===================
 // Get All Users / Search Users
@@ -147,9 +156,11 @@ export const signin = async (req: Request, res: Response) => {
 export const googleSignup = async (req: Request, res: Response) => {
   try {
     const { tokenId, userType } = req.body;
+    const client = await getGoogleClient();
+    const apiKeys = await getApiKeys();
     const ticket = await client.verifyIdToken({
       idToken: tokenId,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: apiKeys.google.clientId,
     });
     const payload = ticket.getPayload();
 
@@ -284,9 +295,11 @@ export const updatePushToken = async (req: Request, res: Response) => {
 export const googleSignin = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.body;
+    const client = await getGoogleClient();
+    const apiKeys = await getApiKeys();
     const ticket = await client.verifyIdToken({
       idToken: tokenId,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: apiKeys.google.clientId,
     });
     const payload = ticket.getPayload();
 
@@ -670,6 +683,37 @@ export const updateMe = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error('Update current user error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err
+    });
+  }
+};
+
+// ===================
+// Delete User
+// ===================
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully"
+    });
+  } catch (err) {
+    console.error('Delete user error:', err);
     res.status(500).json({
       success: false,
       message: "Server error",

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
+import { settingsAPI } from '../services/api'
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'email' | 'security' | 'database'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'email' | 'apikeys' | 'security'>('general')
   const [settings, setSettings] = useState({
     platformName: 'Connecta',
     commissionRate: 15,
@@ -12,11 +13,90 @@ export default function Settings() {
     emailNotifications: true,
     maintenanceMode: false,
     allowNewRegistrations: true,
+    smtpProvider: 'other',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPass: '',
+    smtpSecure: false,
+    smtpFromEmail: '',
+    smtpFromName: 'Connecta',
+    // API Keys
+    openrouterApiKey: '',
+    huggingfaceApiKey: '',
+    googleClientId: '',
+    googleClientSecret: '',
+    googleCallbackUrl: '',
   })
 
-  const handleSave = () => {
-    // Save settings logic
-    toast.success('Settings saved successfully!')
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await settingsAPI.get();
+      if (response.success && response.data) {
+        const s = response.data.smtp;
+        const a = response.data.apiKeys;
+        setSettings(prev => ({
+          ...prev,
+          smtpProvider: s.provider || 'other',
+          smtpHost: s.host || '',
+          smtpPort: s.port || 587,
+          smtpUser: s.user || '',
+          smtpPass: s.pass || '',
+          smtpSecure: s.secure || false,
+          smtpFromEmail: s.fromEmail || '',
+          smtpFromName: s.fromName || 'Connecta',
+          openrouterApiKey: a?.openrouter || '',
+          huggingfaceApiKey: a?.huggingface || '',
+          googleClientId: a?.google?.clientId || '',
+          googleClientSecret: a?.google?.clientSecret || '',
+          googleCallbackUrl: a?.google?.callbackUrl || '',
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+      toast.error('Failed to load settings');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (activeTab === 'email') {
+        const smtpData = {
+          provider: settings.smtpProvider,
+          host: settings.smtpHost,
+          port: settings.smtpPort,
+          user: settings.smtpUser,
+          pass: settings.smtpPass,
+          secure: settings.smtpSecure,
+          fromEmail: settings.smtpFromEmail,
+          fromName: settings.smtpFromName,
+        };
+        await settingsAPI.updateSmtp(smtpData);
+        toast.success('Email settings saved successfully!');
+      } else if (activeTab === 'apikeys') {
+        const apiKeysData = {
+          openrouter: settings.openrouterApiKey,
+          huggingface: settings.huggingfaceApiKey,
+          google: {
+            clientId: settings.googleClientId,
+            clientSecret: settings.googleClientSecret,
+            callbackUrl: settings.googleCallbackUrl,
+          },
+        };
+        await settingsAPI.updateApiKeys(apiKeysData);
+        toast.success('API keys saved successfully!');
+      } else {
+        // Save other settings logic (placeholder)
+        toast.success('Settings saved successfully!');
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to save settings');
+    }
   }
 
   const handleReset = () => {
@@ -24,91 +104,86 @@ export default function Settings() {
   }
 
   return (
-          <div className="flex-1 p-4 md:p-6 lg:p-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-text-light-primary dark:text-dark-primary">
-              Platform Settings
-            </h1>
-            <p className="text-text-light-secondary dark:text-dark-secondary mt-1">
-              Configure global platform settings and preferences
-            </p>
+    <div className="flex-1 p-4 md:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-text-light-primary dark:text-dark-primary">
+            Platform Settings
+          </h1>
+          <p className="text-text-light-secondary dark:text-dark-secondary mt-1">
+            Configure global platform settings and preferences
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Settings Navigation */}
+          <div className="lg:col-span-1">
+            <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 sticky top-4">
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('general')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'general'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
+                    }`}
+                >
+                  <Icon name="tune" size={20} />
+                  <span className="text-sm font-medium">General</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('payments')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'payments'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
+                    }`}
+                >
+                  <Icon name="payments" size={20} />
+                  <span className="text-sm font-medium">Payments</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('email')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'email'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
+                    }`}
+                >
+                  <Icon name="mail" size={20} />
+                  <span className="text-sm font-medium">Email & Notifications</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('apikeys')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'apikeys'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
+                    }`}
+                >
+                  <Icon name="key" size={20} />
+                  <span className="text-sm font-medium">API Keys</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('security')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'security'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
+                    }`}
+                >
+                  <Icon name="security" size={20} />
+                  <span className="text-sm font-medium">Security</span>
+                </button>
+              </nav>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Settings Navigation */}
-            <div className="lg:col-span-1">
-              <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 sticky top-4">
-                <nav className="space-y-1">
-                  <button 
-                    onClick={() => setActiveTab('general')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === 'general' 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
-                    }`}
-                  >
-                    <Icon name="tune" size={20} />
-                    <span className="text-sm font-medium">General</span>
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('payments')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === 'payments' 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
-                    }`}
-                  >
-                    <Icon name="payments" size={20} />
-                    <span className="text-sm font-medium">Payments</span>
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('email')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === 'email' 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
-                    }`}
-                  >
-                    <Icon name="mail" size={20} />
-                    <span className="text-sm font-medium">Email & Notifications</span>
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('security')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === 'security' 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
-                    }`}
-                  >
-                    <Icon name="security" size={20} />
-                    <span className="text-sm font-medium">Security</span>
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('database')}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === 'database' 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
-                    }`}
-                  >
-                    <Icon name="storage" size={20} />
-                    <span className="text-sm font-medium">Database</span>
-                  </button>
-                </nav>
-              </div>
-            </div>
-
-            {/* Settings Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* General Settings */}
-              {activeTab === 'general' && (
+          {/* Settings Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* General Settings */}
+            {activeTab === 'general' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                   General Settings
                 </h2>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
@@ -117,7 +192,7 @@ export default function Settings() {
                     <input
                       type="text"
                       value={settings.platformName}
-                      onChange={(e) => setSettings({...settings, platformName: e.target.value})}
+                      onChange={(e) => setSettings({ ...settings, platformName: e.target.value })}
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
@@ -129,7 +204,7 @@ export default function Settings() {
                     <input
                       type="number"
                       value={settings.commissionRate}
-                      onChange={(e) => setSettings({...settings, commissionRate: Number(e.target.value)})}
+                      onChange={(e) => setSettings({ ...settings, commissionRate: Number(e.target.value) })}
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
@@ -144,16 +219,16 @@ export default function Settings() {
                     <input
                       type="number"
                       value={settings.minWithdrawal}
-                      onChange={(e) => setSettings({...settings, minWithdrawal: Number(e.target.value)})}
+                      onChange={(e) => setSettings({ ...settings, minWithdrawal: Number(e.target.value) })}
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* Payments Settings */}
-              {activeTab === 'payments' && (
+            {/* Payments Settings */}
+            {activeTab === 'payments' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                   Payment Settings
@@ -191,10 +266,10 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* Email & Notifications */}
-              {activeTab === 'email' && (
+            {/* Email & Notifications */}
+            {activeTab === 'email' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                   Email & Notification Settings
@@ -202,40 +277,123 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
-                      SMTP Host
+                      Email Provider
+                    </label>
+                    <select
+                      value={settings.smtpProvider}
+                      onChange={(e) => setSettings({ ...settings, smtpProvider: e.target.value })}
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="other">Other (Custom SMTP)</option>
+                      <option value="gmail">Gmail</option>
+                    </select>
+                  </div>
+
+                  {settings.smtpProvider === 'other' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          SMTP Host
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.smtpHost}
+                          onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                          placeholder="smtp.example.com"
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          SMTP Port
+                        </label>
+                        <input
+                          type="number"
+                          value={settings.smtpPort}
+                          onChange={(e) => setSettings({ ...settings, smtpPort: Number(e.target.value) })}
+                          placeholder="587"
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">
+                            Secure Connection (SSL/TLS)
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settings.smtpSecure}
+                            onChange={(e) => setSettings({ ...settings, smtpSecure: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      {settings.smtpProvider === 'gmail' ? 'Gmail Address' : 'SMTP Username'}
                     </label>
                     <input
                       type="text"
-                      placeholder="smtp.gmail.com"
+                      value={settings.smtpUser}
+                      onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                      placeholder={settings.smtpProvider === 'gmail' ? 'yourapp@gmail.com' : 'user@example.com'}
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
-                      SMTP Port
+                      {settings.smtpProvider === 'gmail' ? 'App Password' : 'SMTP Password'}
                     </label>
                     <input
-                      type="text"
-                      placeholder="587"
+                      type="password"
+                      value={settings.smtpPass}
+                      onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
+                      placeholder="••••••••"
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
+                    {settings.smtpProvider === 'gmail' && (
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                        Use an App Password, not your regular Gmail password.
+                      </p>
+                    )}
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                       From Email
                     </label>
                     <input
                       type="email"
+                      value={settings.smtpFromEmail}
+                      onChange={(e) => setSettings({ ...settings, smtpFromEmail: e.target.value })}
                       placeholder="noreply@connecta.com"
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      From Name
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.smtpFromName}
+                      onChange={(e) => setSettings({ ...settings, smtpFromName: e.target.value })}
+                      placeholder="Connecta"
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* Security Settings */}
-              {activeTab === 'security' && (
+            {/* Security Settings */}
+            {activeTab === 'security' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                   Security Settings
@@ -277,59 +435,113 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* Database Settings */}
-              {activeTab === 'database' && (
+            {/* API Keys Settings */}
+            {activeTab === 'apikeys' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
-                  Database Management
+                  API Keys Configuration
                 </h2>
                 <div className="space-y-4">
-                  <div className="p-4 bg-background-light dark:bg-background-dark rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Total Users</span>
-                      <span className="text-sm font-bold text-primary">11</span>
-                    </div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Total Projects</span>
-                      <span className="text-sm font-bold text-primary">5</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Database Size</span>
-                      <span className="text-sm font-bold text-primary">12.5 MB</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg bg-blue-500 text-white font-medium hover:opacity-90">
-                      <Icon name="backup" size={20} />
-                      Create Backup
-                    </button>
-                    <button className="flex-1 flex items-center justify-center gap-2 h-11 rounded-lg border border-border-light dark:border-border-dark text-text-light-primary dark:text-dark-primary font-medium hover:bg-background-light dark:hover:bg-background-dark">
-                      <Icon name="restore" size={20} />
-                      Restore
-                    </button>
-                  </div>
-                  <div className="pt-4 border-t border-border-light dark:border-border-dark">
-                    <button className="w-full flex items-center justify-center gap-2 h-11 rounded-lg bg-red-500 text-white font-medium hover:opacity-90">
-                      <Icon name="delete_forever" size={20} />
-                      Clear All Data
-                    </button>
-                    <p className="text-xs text-text-light-secondary dark:text-dark-secondary text-center mt-2">
-                      Warning: This action cannot be undone
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg mb-4">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      🔐 <strong>Security Note:</strong> These API keys are sensitive. Handle them with care and never share them publicly.
                     </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      OpenRouter API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={settings.openrouterApiKey}
+                      onChange={(e) => setSettings({ ...settings, openrouterApiKey: e.target.value })}
+                      placeholder="sk-or-v1-..."
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                      Used for AI agent functionality
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      Hugging Face API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={settings.huggingfaceApiKey}
+                      onChange={(e) => setSettings({ ...settings, huggingfaceApiKey: e.target.value })}
+                      placeholder="hf_..."
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                      Used for ML model integrations
+                    </p>
+                  </div>
+
+                  <div className="border-t border-border-light dark:border-border-dark pt-4 mt-4">
+                    <h3 className="text-lg font-semibold text-text-light-primary dark:text-dark-primary mb-3">
+                      Google OAuth Configuration
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          Client ID
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.googleClientId}
+                          onChange={(e) => setSettings({ ...settings, googleClientId: e.target.value })}
+                          placeholder="855950020031-..."
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          Client Secret
+                        </label>
+                        <input
+                          type="password"
+                          value={settings.googleClientSecret}
+                          onChange={(e) => setSettings({ ...settings, googleClientSecret: e.target.value })}
+                          placeholder="GOCSPX-..."
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          Callback URL
+                        </label>
+                        <input
+                          type="text"
+                          value={settings.googleCallbackUrl}
+                          onChange={(e) => setSettings({ ...settings, googleCallbackUrl: e.target.value })}
+                          placeholder="http://localhost:5000/auth/google/callback"
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                        <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                          Google OAuth redirect URI
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* Feature Toggles - Show only on General tab */}
-              {activeTab === 'general' && (
+            {/* Feature Toggles - Show only on General tab */}
+            {activeTab === 'general' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                   Feature Toggles
                 </h2>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -344,7 +556,7 @@ export default function Settings() {
                       <input
                         type="checkbox"
                         checked={settings.autoApproveProjects}
-                        onChange={(e) => setSettings({...settings, autoApproveProjects: e.target.checked})}
+                        onChange={(e) => setSettings({ ...settings, autoApproveProjects: e.target.checked })}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
@@ -364,7 +576,7 @@ export default function Settings() {
                       <input
                         type="checkbox"
                         checked={settings.emailNotifications}
-                        onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
+                        onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
@@ -384,7 +596,7 @@ export default function Settings() {
                       <input
                         type="checkbox"
                         checked={settings.allowNewRegistrations}
-                        onChange={(e) => setSettings({...settings, allowNewRegistrations: e.target.checked})}
+                        onChange={(e) => setSettings({ ...settings, allowNewRegistrations: e.target.checked })}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
@@ -404,7 +616,7 @@ export default function Settings() {
                       <input
                         type="checkbox"
                         checked={settings.maintenanceMode}
-                        onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
+                        onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300/20 dark:peer-focus:ring-red-300/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-red-600"></div>
@@ -412,15 +624,15 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* System Information - Show only on General tab */}
-              {activeTab === 'general' && (
+            {/* System Information - Show only on General tab */}
+            {activeTab === 'general' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                   System Information
                 </h2>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary mb-1">Version</p>
@@ -440,28 +652,28 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              )}
+            )}
 
-              {/* Actions */}
-              <div className="flex items-center justify-between gap-4">
-                <button
-                  onClick={handleReset}
-                  className="flex items-center gap-2 h-11 rounded-lg border border-border-light dark:border-border-dark text-text-light-primary dark:text-dark-primary px-6 font-medium hover:bg-background-light dark:hover:bg-background-dark"
-                >
-                  <Icon name="refresh" size={20} />
-                  Reset to Defaults
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="flex items-center gap-2 h-11 rounded-lg bg-primary text-white px-6 font-medium hover:opacity-90"
-                >
-                  <Icon name="save" size={20} />
-                  Save Changes
-                </button>
-              </div>
+            {/* Actions */}
+            <div className="flex items-center justify-between gap-4">
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-2 h-11 rounded-lg border border-border-light dark:border-border-dark text-text-light-primary dark:text-dark-primary px-6 font-medium hover:bg-background-light dark:hover:bg-background-dark"
+              >
+                <Icon name="refresh" size={20} />
+                Reset to Defaults
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 h-11 rounded-lg bg-primary text-white px-6 font-medium hover:opacity-90"
+              >
+                <Icon name="save" size={20} />
+                Save Changes
+              </button>
             </div>
           </div>
         </div>
       </div>
+    </div>
   )
 }

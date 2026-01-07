@@ -463,6 +463,10 @@ export const profilesAPI = {
     const { data } = await api.get(`/api/profiles/${id}`)
     return data
   },
+  getByUserId: async (userId: string) => {
+    const { data } = await api.get(`/api/profiles/user/${userId}`)
+    return data
+  },
   update: async (id: string, profileData: any) => {
     const { data } = await api.put(`/api/profiles/${id}`, profileData)
     return data
@@ -485,6 +489,40 @@ export const uploadsAPI = {
         'Content-Type': 'multipart/form-data',
       },
     })
+    return data
+  },
+}
+
+// ============================================
+// SETTINGS
+// ============================================
+export const settingsAPI = {
+  get: async () => {
+    const { data } = await api.get('/api/settings')
+    return data
+  },
+  updateSmtp: async (smtpData: any) => {
+    const { data } = await api.put('/api/settings/smtp', smtpData)
+    return data
+  },
+  updateApiKeys: async (apiKeysData: any) => {
+    const { data } = await api.put('/api/settings/api-keys', apiKeysData)
+    return data
+  },
+}
+
+// ============================================
+// BROADCAST
+// ============================================
+export const broadcastAPI = {
+  sendEmail: async (broadcastData: {
+    recipientType: 'all' | 'selected' | 'individual'
+    subject: string
+    body: string
+    selectedUserIds?: string[]
+    individualEmail?: string
+  }) => {
+    const { data } = await api.post('/api/broadcast/email', broadcastData)
     return data
   },
 }

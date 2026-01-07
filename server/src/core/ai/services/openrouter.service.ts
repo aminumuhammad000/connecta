@@ -4,7 +4,7 @@ import { OPENROUTER_CONFIG, getOpenRouterHeaders } from '../config/openrouter';
 export class OpenRouterClient {
   private static instance: OpenRouterClient;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): OpenRouterClient {
     if (!OpenRouterClient.instance) {
@@ -27,7 +27,7 @@ export class OpenRouterClient {
           ]
         },
         {
-          headers: getOpenRouterHeaders()
+          headers: await getOpenRouterHeaders()
         }
       );
 

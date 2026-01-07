@@ -130,6 +130,14 @@ export const getAllProjects = async (req: Request, res: Response) => {
       query.status = status;
     }
 
+    const { userId } = req.query;
+    if (userId) {
+      query.$or = [
+        { clientId: userId },
+        { freelancerId: userId }
+      ];
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
 
     const projects = await Project.find(query)

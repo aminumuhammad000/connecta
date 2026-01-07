@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
-import { usersAPI } from '../services/api'
+import { usersAPI, broadcastAPI } from '../services/api'
 
 interface User {
     _id: string
@@ -114,27 +114,37 @@ export default function EmailBroadcast() {
         try {
             setSending(true)
 
-            // Mock API call or actual implementation if endpoint exists
-            // await api.post('/admin/broadcast', { ... })
+            // Prepare broadcast data
+            const broadcastData = {
+                recipientType,
+                subject,
+                body,
+                selectedUserIds: recipientType === 'selected' ? selectedUsers : undefined,
+                individualEmail: recipientType === 'individual' ? individualUser?.email : undefined,
+            }
 
-            // Simulating API call
-            await new Promise(resolve => setTimeout(resolve, 1500))
+            console.log('Sending broadcast data:', broadcastData)
 
-            toast.success(`Email broadcast sent successfully to ${recipientType === 'all' ? 'all users' :
-                    recipientType === 'selected' ? `${selectedUsers.length} users` :
-                        individualUser?.email
-                }`)
+            // Call the real API
+            const response = await broadcastAPI.sendEmail(broadcastData)
 
-            // Reset form
-            setSubject('')
-            setBody('')
-            setSelectedUsers([])
-            setIndividualUser(null)
-            setSearchQuery('')
-            setRecipientType('all')
+            if (response.success) {
+                toast.success(response.message || `Email broadcast sent successfully!`)
 
-        } catch (error) {
-            toast.error('Failed to send broadcast')
+                // Reset form
+                setSubject('')
+                setBody('')
+                setSelectedUsers([])
+                setIndividualUser(null)
+                setSearchQuery('')
+                setRecipientType('all')
+            } else {
+                toast.error(response.message || 'Failed to send broadcast email')
+            }
+
+        } catch (error: any) {
+            console.error('Broadcast error:', error)
+            toast.error(error?.response?.data?.message || 'Failed to send broadcast email')
         } finally {
             setSending(false)
         }
@@ -388,8 +398,8 @@ export default function EmailBroadcast() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize ${user.userType === 'client'
-                                                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                                                            : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                                                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                                        : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                                                         }`}>
                                                         {user.userType}
                                                     </span>
