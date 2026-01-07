@@ -416,9 +416,8 @@ export const approveProposal = async (req: Request, res: Response) => {
       });
     }
 
-    // Update proposal status to approved
-    proposal.status = 'approved' as any;
-    await proposal.save();
+    // Status update moved to end to ensure atomicity
+
 
     // Create a project
     const Project = require('../models/Project.model').default;
@@ -500,13 +499,13 @@ export const approveProposal = async (req: Request, res: Response) => {
       amount: proposal.budget.amount,
       platformFee: (proposal.budget.amount * 10) / 100, // 10% fee
       netAmount: proposal.budget.amount - ((proposal.budget.amount * 10) / 100),
-      currency: proposal.budget.currency || 'NGN',
+      currency: (proposal.budget.currency === '$' ? 'USD' : proposal.budget.currency) || 'NGN',
       paymentType: 'full_payment',
       description: `Payment for project: ${proposal.title}`,
       status: paymentStatus,
       escrowStatus: paymentEscrowStatus,
       paymentMethod: 'paystack', // or whatever
-      gatewayReference: paymentReference, // Link to original payment if exists
+      gatewayReference: paymentReference || undefined, // undefined to avoid unique constraint if sparse
       paidAt: paymentVerified ? new Date() : undefined
     });
 
@@ -523,6 +522,10 @@ export const approveProposal = async (req: Request, res: Response) => {
       freelancerWallet.balance += pendingPayment.netAmount;
       await freelancerWallet.save();
     }
+
+    // Update proposal status to approved (Moved here)
+    proposal.status = 'approved' as any;
+    await proposal.save();
 
     res.status(200).json({
       success: true,
