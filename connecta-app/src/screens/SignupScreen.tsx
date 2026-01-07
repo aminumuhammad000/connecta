@@ -111,7 +111,6 @@ const SignupScreen: React.FC = () => {
             <View style={styles.form}>
               {/* Role Selection */}
               <View style={styles.roleSection}>
-                <Text style={[styles.roleLabel, { color: c.text }]}>I want to:</Text>
                 <View style={styles.roleOptions}>
                   <TouchableOpacity
                     style={[

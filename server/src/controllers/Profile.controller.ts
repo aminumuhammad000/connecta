@@ -137,7 +137,6 @@ export const getMyProfile = async (
     console.log('📤 Profile fields:', {
       phoneNumber: responseData.phoneNumber,
       location: responseData.location,
-      companyName: responseData.companyName,
       bio: responseData.bio,
       avatar: responseData.avatar
     });
@@ -241,13 +240,12 @@ export const updateMyProfile = async (
 
     const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume, portfolio } = req.body;
 
-    console.log('📝 Update profile request:', { phoneNumber, location, companyName, website, bio, avatar, portfolio });
+    console.log('📝 Update profile request:', { phoneNumber, location, website, bio, avatar, portfolio });
 
     // Prepare update data
     const updateData: any = {};
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
     if (location !== undefined) updateData.location = location;
-    if (companyName !== undefined) updateData.companyName = companyName;
     if (website !== undefined) updateData.website = website;
     if (bio !== undefined) updateData.bio = bio;
     if (avatar !== undefined) updateData.avatar = avatar;

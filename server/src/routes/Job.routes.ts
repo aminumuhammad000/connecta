@@ -33,7 +33,7 @@ router.delete("/:id/save", authenticate, unsaveJob);
 router.get("/", getAllJobs);
 
 // Get recommended jobs (Jobs You May Like)
-router.get("/recommended", getRecommendedJobs);
+router.get("/recommended", authenticate, getRecommendedJobs);
 
 // Search jobs
 router.get("/search", searchJobs);

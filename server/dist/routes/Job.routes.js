@@ -19,7 +19,7 @@ router.delete("/:id/save", auth_middleware_1.authenticate, Job_controller_1.unsa
 // Get all jobs with filters
 router.get("/", Job_controller_1.getAllJobs);
 // Get recommended jobs (Jobs You May Like)
-router.get("/recommended", Job_controller_1.getRecommendedJobs);
+router.get("/recommended", auth_middleware_1.authenticate, Job_controller_1.getRecommendedJobs);
 // Search jobs
 router.get("/search", Job_controller_1.searchJobs);
 // Get job by ID
