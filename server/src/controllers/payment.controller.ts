@@ -453,7 +453,6 @@ export const getWalletBalance = async (req: Request, res: Response) => {
     // Calculate actual escrow balance from payments
     const escrowPayments = await Payment.find({
       payeeId: userId,
-      status: 'completed',
       escrowStatus: 'held',
     }).catch(() => []);
 
