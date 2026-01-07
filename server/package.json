@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node src/app.ts",
-    "dev": "npm run build && nodemon dist/app.js",
+    "dev": "nodemon --exec ts-node --transpile-only src/app.ts",
     "seed:jobs": "ts-node scripts/seedJobs.ts",
     "seed:proposals": "ts-node scripts/seedProposals.ts",
     "seed:projects": "ts-node scripts/seedProjects.ts",
@@ -36,6 +36,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@swc/core": "^1.15.8",
+    "@swc/helpers": "^0.5.18",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.4",
@@ -44,6 +46,7 @@
     "@types/node": "^24.8.1",
     "@types/nodemailer": "^7.0.4",
     "nodemon": "^3.1.10",
+    "regenerator-runtime": "^0.14.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
   }

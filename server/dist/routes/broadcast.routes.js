@@ -43,8 +43,35 @@ router.post('/email', async (req, res) => {
                     message: 'No users selected',
                 });
             }
+            console.log('Selected User IDs received:', selectedUserIds);
+            // First check if users exist at all
+            const allUsers = await user_model_1.default.find({ _id: { $in: selectedUserIds } }, 'email isBanned');
+            console.log('Total users found (including banned):', allUsers.length);
+            console.log('Users details:', allUsers.map(u => ({ id: u._id, email: u.email, isBanned: u.isBanned })));
+            // Then filter to non-banned users with emails
             const users = await user_model_1.default.find({ _id: { $in: selectedUserIds }, isBanned: false }, 'email');
+            console.log('Non-banned users found:', users.length);
+            console.log('User emails:', users.map(u => u.email));
             recipients = users.map(u => u.email).filter(Boolean);
+            // Provide detailed error if no recipients
+            if (recipients.length === 0) {
+                const bannedCount = allUsers.filter(u => u.isBanned).length;
+                const noEmailCount = allUsers.filter(u => !u.email).length;
+                let detailedMessage = 'No valid recipients found. ';
+                if (allUsers.length === 0) {
+                    detailedMessage += `None of the selected user IDs exist in the database.`;
+                }
+                else if (bannedCount > 0) {
+                    detailedMessage += `${bannedCount} user(s) are banned. `;
+                }
+                if (noEmailCount > 0) {
+                    detailedMessage += `${noEmailCount} user(s) have no email address.`;
+                }
+                return res.status(400).json({
+                    success: false,
+                    message: detailedMessage,
+                });
+            }
         }
         else if (recipientType === 'individual') {
             // Use individual email

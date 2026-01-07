@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
-import { usersAPI, projectsAPI, paymentsAPI, proposalsAPI } from '../services/api'
+import { usersAPI, projectsAPI, paymentsAPI, proposalsAPI, profilesAPI } from '../services/api'
 
 interface User {
   _id: string
@@ -47,6 +47,20 @@ export default function Users() {
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const usersPerPage = 10
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: 'danger' | 'warning' | 'info'
+    onConfirm: () => Promise<void>
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    onConfirm: async () => { },
+  })
 
   useEffect(() => {
     fetchUsers()
@@ -108,8 +122,8 @@ export default function Users() {
       console.log('User response:', userResponse)
       const user = userResponse.data || userResponse
 
-      // Fetch related data in parallel (profile fetch may fail if endpoint doesn't exist)
-      const [projectsRes, paymentsRes, proposalsRes] = await Promise.allSettled([
+      // Fetch related data in parallel
+      const [projectsRes, paymentsRes, proposalsRes, profileRes] = await Promise.allSettled([
         projectsAPI.getAll({ userId }).catch((err) => {
           console.log('Projects error:', err)
           return { data: [] }
@@ -122,12 +136,16 @@ export default function Users() {
           console.log('Proposals error:', err)
           return { data: [] }
         }),
+        profilesAPI.getByUserId(userId).catch((err) => {
+          console.log('Profile error:', err)
+          return null
+        })
       ])
 
-      const profile = null // Profile data not available yet
       const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value?.data || []) : []
       const payments = paymentsRes.status === 'fulfilled' ? (paymentsRes.value?.data || []) : []
       const proposals = proposalsRes.status === 'fulfilled' ? (proposalsRes.value?.data || []) : []
+      const profile = profileRes.status === 'fulfilled' ? profileRes.value : null
 
       // Calculate stats
       const totalEarnings = payments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
@@ -161,45 +179,65 @@ export default function Users() {
     fetchUserDetails(userId)
   }
 
-  const handleBanUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to ban this user?')) return
-
-    try {
-      await usersAPI.ban(userId)
-      toast.success('User banned successfully')
-      fetchUsers()
-      if (showDetailModal && selectedUserId === userId) {
-        fetchUserDetails(userId)
+  const handleBanUser = (userId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Ban User',
+      message: 'Are you sure you want to ban this user? They will not be able to log in.',
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          await usersAPI.ban(userId)
+          toast.success('User banned successfully')
+          fetchUsers()
+          if (showDetailModal && selectedUserId === userId) {
+            fetchUserDetails(userId)
+          }
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Failed to ban user')
+        }
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to ban user')
-    }
+    })
   }
 
-  const handleUnbanUser = async (userId: string) => {
-    try {
-      await usersAPI.unban(userId)
-      toast.success('User unbanned successfully')
-      fetchUsers()
-      if (showDetailModal && selectedUserId === userId) {
-        fetchUserDetails(userId)
+  const handleUnbanUser = (userId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Unban User',
+      message: 'Are you sure you want to unban this user? They will regain access to the platform.',
+      type: 'info',
+      onConfirm: async () => {
+        try {
+          await usersAPI.unban(userId)
+          toast.success('User unbanned successfully')
+          fetchUsers()
+          if (showDetailModal && selectedUserId === userId) {
+            fetchUserDetails(userId)
+          }
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Failed to unban user')
+        }
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to unban user')
-    }
+    })
   }
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
-
-    try {
-      await usersAPI.delete(userId)
-      toast.success('User deleted successfully')
-      fetchUsers()
-      setShowDetailModal(false)
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete user')
-    }
+  const handleDeleteUser = (userId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone and will remove all associated data.',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await usersAPI.delete(userId)
+          toast.success('User deleted successfully')
+          fetchUsers()
+          setShowDetailModal(false)
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Failed to delete user')
+        }
+      }
+    })
   }
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -725,7 +763,7 @@ export default function Users() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">Status: {project.status}</p>
                               </div>
                               <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                {formatCurrency(project.budget || 0)}
+                                {formatCurrency(project.budget?.amount || 0)}
                               </span>
                             </div>
                           ))}
@@ -828,6 +866,54 @@ export default function Users() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center gap-4 mb-4">
+              <div className={`p-3 rounded-full ${confirmModal.type === 'danger' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' :
+                  confirmModal.type === 'warning' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' :
+                    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                }`}>
+                <Icon name={
+                  confirmModal.type === 'danger' ? 'warning' :
+                    confirmModal.type === 'warning' ? 'report_problem' :
+                      'info'
+                } size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                {confirmModal.title}
+              </h3>
+            </div>
+
+            <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+              {confirmModal.message}
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await confirmModal.onConfirm()
+                  setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                }}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm ${confirmModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700' :
+                    confirmModal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
+                      'bg-blue-600 hover:bg-blue-700'
+                  }`}
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </div>

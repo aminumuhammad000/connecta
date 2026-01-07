@@ -31,8 +31,8 @@ router.post('/email', async (req, res) => {
 
         // Determine recipients based on type
         if (recipientType === 'all') {
-            // Get all user emails
-            const users = await User.find({ isBanned: false }, 'email');
+            // Get all active user emails
+            const users = await User.find({ isActive: true }, 'email');
             recipients = users.map(u => u.email).filter(Boolean);
         } else if (recipientType === 'selected') {
             // Get selected user emails
@@ -42,8 +42,38 @@ router.post('/email', async (req, res) => {
                     message: 'No users selected',
                 });
             }
-            const users = await User.find({ _id: { $in: selectedUserIds }, isBanned: false }, 'email');
+            console.log('Selected User IDs received:', selectedUserIds);
+
+            // First check if users exist at all
+            const allUsers = await User.find({ _id: { $in: selectedUserIds } }, 'email isActive');
+            console.log('Total users found (including inactive):', allUsers.length);
+            console.log('Users details:', allUsers.map(u => ({ id: u._id, email: u.email, isActive: u.isActive })));
+
+            // Then filter to active users with emails
+            const users = await User.find({ _id: { $in: selectedUserIds }, isActive: true }, 'email');
+            console.log('Active users found:', users.length);
+            console.log('User emails:', users.map(u => u.email));
             recipients = users.map(u => u.email).filter(Boolean);
+
+            // Provide detailed error if no recipients
+            if (recipients.length === 0) {
+                const inactiveCount = allUsers.filter(u => !u.isActive).length;
+                const noEmailCount = allUsers.filter(u => !u.email).length;
+                let detailedMessage = 'No valid recipients found. ';
+                if (allUsers.length === 0) {
+                    detailedMessage += `None of the selected user IDs exist in the database.`;
+                } else if (inactiveCount > 0) {
+                    detailedMessage += `${inactiveCount} user(s) are inactive. `;
+                }
+                if (noEmailCount > 0) {
+                    detailedMessage += `${noEmailCount} user(s) have no email address.`;
+                }
+
+                return res.status(400).json({
+                    success: false,
+                    message: detailedMessage,
+                });
+            }
         } else if (recipientType === 'individual') {
             // Use individual email
             if (!individualEmail) {
