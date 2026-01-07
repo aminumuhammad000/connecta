@@ -47,7 +47,11 @@ app.use(cors({
   origin: [
     "http://102.68.84.56",
     "http://localhost:5173",
-    "http://localhost:8081"
+    "http://localhost:8081",
+    "https://myconnecta.ng",
+    "https://www.myconnecta.ng",
+    "https://admin.myconnecta.ng",
+    "https://api.myconnecta.ng"
   ],
   credentials: true
 }));
