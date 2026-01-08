@@ -54,6 +54,11 @@ export class WeWorkRemotelyScraper extends BaseScraper {
 
                     const fullUrl = link.startsWith("http") ? link : `https://weworkremotely.com${link}`;
 
+                    // Default deadline to 2 weeks from now
+                    const twoWeeksFromNow = new Date();
+                    twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+                    const deadline = twoWeeksFromNow.toISOString();
+
                     gigs.push({
                         external_id: this.generateId(fullUrl),
                         source: this.name,
@@ -66,6 +71,7 @@ export class WeWorkRemotelyScraper extends BaseScraper {
                         posted_at: new Date().toISOString(),
                         skills: [],
                         category: "Remote",
+                        deadline: deadline
                     });
 
                 } catch (error: any) {

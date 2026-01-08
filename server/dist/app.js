@@ -11,6 +11,7 @@ const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 const db_config_1 = __importDefault(require("./config/db.config"));
 const agentRoute_1 = __importDefault(require("./routes/agentRoute"));
+const cron_service_1 = require("./services/cron.service");
 // routes 
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const Profile_routes_1 = __importDefault(require("./routes/Profile.routes"));
@@ -86,6 +87,8 @@ const webhook_1 = __importDefault(require("./webhooks/routes/webhook"));
 app.use("/api/webhooks", webhook_1.default);
 const broadcast_routes_1 = __importDefault(require("./routes/broadcast.routes"));
 app.use("/api/broadcast", broadcast_routes_1.default);
+const external_gigs_routes_1 = __importDefault(require("./routes/external-gigs.routes"));
+app.use("/api/external-gigs", external_gigs_routes_1.default);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });
@@ -158,4 +161,6 @@ io.on("connection", (socket) => {
 server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`🔌 Socket.io ready for real-time messaging`);
+    // Initialize cron jobs
+    (0, cron_service_1.initCronJobs)();
 });

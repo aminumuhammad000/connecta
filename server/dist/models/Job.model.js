@@ -85,6 +85,11 @@ const JobSchema = new mongoose_1.Schema({
     },
     paymentReference: { type: String },
     paymentId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Payment" },
+    // External gig fields
+    isExternal: { type: Boolean, default: false },
+    externalId: { type: String },
+    source: { type: String },
+    applyUrl: { type: String },
 }, { timestamps: true });
 const Job = mongoose_1.default.model("Job", JobSchema);
 exports.default = Job;

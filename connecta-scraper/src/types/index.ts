@@ -12,6 +12,7 @@ export interface ExternalGig {
     posted_at: string;
     skills?: string[];
     category?: string;
+    deadline?: string; // ISO date string or "Open"
 }
 
 export interface ScraperResult {

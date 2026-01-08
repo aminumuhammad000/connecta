@@ -292,7 +292,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
       // Push Notification
       const notificationService = (await import('../services/notification.service')).default;
       notificationService.sendPushNotification(
-        user._id,
+        user._id.toString(),
         'Welcome to Connecta! 🚀',
         'Your account has been verified. You can now access all features.',
         { type: 'system' }

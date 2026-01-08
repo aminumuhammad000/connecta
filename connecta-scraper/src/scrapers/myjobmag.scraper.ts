@@ -10,7 +10,8 @@ export class MyJobMagScraper extends BaseScraper {
     async scrape(): Promise<ExternalGig[]> {
         const gigs: ExternalGig[] = [];
         const browser = await chromium.launch({ headless: true });
-        const page = await browser.newPage();
+        const context = await browser.newContext();
+        const page = await context.newPage();
 
         try {
             logger.info(`🌐 Loading MyJobMag jobs page...`);
@@ -21,55 +22,99 @@ export class MyJobMagScraper extends BaseScraper {
                 logger.warn("⚠️ Job listings selector not found");
             });
 
-            // Select job items
-            const jobElements = await page.$$("li.job-list-li");
+            // Get all job links first
+            const jobLinks = await page.$$eval("li.job-list-li h2 a", (elements) =>
+                elements.map(el => el.getAttribute("href")).filter(href => href !== null) as string[]
+            );
 
-            logger.info(`📋 Found ${jobElements.length} potential job listings`);
+            logger.info(`📋 Found ${jobLinks.length} potential job listings. Visiting details pages...`);
 
-            for (const element of jobElements) {
+            // Limit to first 20 to avoid timeouts/blocking for now, or scrape all if robust
+            // For now, let's try to scrape all but sequentially
+            for (const link of jobLinks) {
                 try {
-                    // Extract details
-                    const titleElement = await element.$("h2 a");
-                    if (!titleElement) continue;
-
-                    const title = await titleElement.textContent();
-                    const link = await titleElement.getAttribute("href");
-
-                    if (!title || !link) continue;
-
                     const fullUrl = link.startsWith("http") ? link : `https://www.myjobmag.com${link}`;
 
-                    // Company often in a separate element or part of text
-                    // Structure varies, usually: <h2>...</h2> ... <li class="job-company">Company</li>
-                    const company = await element.$eval(".job-company", el => el.textContent?.trim()).catch(() => "Unknown");
+                    // Navigate to details page
+                    await page.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
 
-                    // Location
-                    // Often in <li class="job-location">...</li>
-                    const location = await element.$eval(".job-location", el => el.textContent?.trim()).catch(() => "Nigeria");
+                    const title = await page.$eval("h1", el => el.textContent?.trim()).catch(() => "Untitled");
 
-                    // Description/Summary
-                    const description = await element.$eval(".job-desc", el => el.textContent?.trim()).catch(() => title);
+                    // Extract Company
+                    const company = await page.$eval(".job-key-info a[href*='/jobs-at/']", el => el.textContent?.trim())
+                        .catch(() =>
+                            page.$eval(".job-key-info", el => el.textContent?.split("-")[0]?.trim())
+                                .catch(() => "Unknown")
+                        );
+
+                    // Extract Location
+                    const location = await page.$eval(".job-key-info span", el => el.textContent?.trim()).catch(() => "Nigeria");
+
+                    // Extract Description
+                    const description = await page.$eval(".job-details", el => el.innerHTML).catch(() => title);
+
+                    // Extract Deadline
+                    // Look for "Deadline" or "Application Deadline"
+                    const deadlineText = await page.evaluate(() => {
+                        // @ts-ignore
+                        const items = Array.from(document.querySelectorAll('li, p, span, div'));
+                        for (const item of items) {
+                            // @ts-ignore
+                            const text = item.textContent || "";
+                            if (text.includes("Deadline:") || text.includes("Application Deadline:")) {
+                                return text.replace(/.*Deadline:/i, "").trim();
+                            }
+                        }
+                        return null;
+                    });
+
+                    // Parse deadline and check if expired
+                    let deadline: string | undefined;
+                    if (deadlineText) {
+                        // Try to parse date. Format usually "Jan 01, 2026"
+                        const parsedDate = new Date(deadlineText);
+                        if (!isNaN(parsedDate.getTime())) {
+                            deadline = parsedDate.toISOString();
+
+                            // Check if expired
+                            if (parsedDate < new Date()) {
+                                logger.info(`⚠️ Skipping expired job: ${title} (Deadline: ${deadlineText})`);
+                                continue;
+                            }
+                        }
+                    }
+
+                    // If no deadline found, set default to 2 weeks from now
+                    if (!deadline) {
+                        const twoWeeksFromNow = new Date();
+                        twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+                        deadline = twoWeeksFromNow.toISOString();
+                    }
 
                     gigs.push({
                         external_id: this.generateId(fullUrl),
                         source: this.name,
-                        title: title?.trim() || "Untitled",
+                        title: title || "Untitled",
                         company: company || "Unknown",
                         location: location || "Nigeria",
-                        job_type: "full-time", // Default, as it's not always clear on list page
-                        description: this.cleanDescription(description || title),
+                        job_type: "full-time",
+                        description: this.cleanDescription(description || title), // Clean HTML tags if needed, or keep HTML
                         apply_url: fullUrl,
-                        posted_at: new Date().toISOString(),
-                        skills: [], // Hard to extract from list view
+                        posted_at: new Date().toISOString(), // We could also extract posted date
+                        skills: [],
                         category: "General",
+                        deadline: deadline
                     });
 
+                    // Small delay to be polite
+                    await page.waitForTimeout(500);
+
                 } catch (error: any) {
-                    // logger.debug(`Skipping job element: ${error.message}`);
+                    logger.error(`❌ Error scraping job details: ${error.message}`);
                 }
             }
 
-            logger.info(`✅ Scraped ${gigs.length} jobs from MyJobMag`);
+            logger.info(`✅ Scraped ${gigs.length} active jobs from MyJobMag`);
 
         } catch (error: any) {
             logger.error(`❌ Error scraping MyJobMag: ${error.message}`);
