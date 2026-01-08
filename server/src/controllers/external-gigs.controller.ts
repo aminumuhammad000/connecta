@@ -30,9 +30,34 @@ export const createOrUpdateExternalGig = async (req: Request, res: Response) => 
             });
         }
 
-        // Create a system user ID for external gigs (or use a dedicated external system account)
-        // For now, we'll use a fixed ObjectId - you should create a dedicated "System" user
-        const systemUserId = new mongoose.Types.ObjectId("000000000000000000000000");
+        // Find a system user or admin to assign these gigs to
+        // This prevents 500 errors due to missing user reference
+        let systemUserId = new mongoose.Types.ObjectId("000000000000000000000000");
+
+        // Try to find an existing admin or system user
+        const User = mongoose.model("User");
+        const systemUser = await User.findOne({
+            $or: [{ email: "system@connecta.ng" }, { userType: "admin" }]
+        });
+
+        if (systemUser) {
+            systemUserId = systemUser._id;
+        } else {
+            // Create a system user if none exists (rare case)
+            try {
+                const newSystemUser = await User.create({
+                    firstName: "System",
+                    lastName: "Scraper",
+                    email: "system@connecta.ng",
+                    password: "system_password_secure_hash", // Placeholder
+                    userType: "admin",
+                    isVerified: true
+                });
+                systemUserId = newSystemUser._id;
+            } catch (e) {
+                console.warn("Could not create system user, using default ID");
+            }
+        }
 
         // Check if external gig already exists
         const existingGig = await Job.findOne({
