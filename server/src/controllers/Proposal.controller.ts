@@ -176,6 +176,59 @@ export const createProposal = async (req: Request, res: Response) => {
       }
     }
     const proposal = await Proposal.create(proposalData);
+
+    // Notify Client of new proposal
+    try {
+      if (proposalData.jobId) {
+        const Job = require('../models/Job.model').default;
+        const User = require('../models/user.model').default;
+        const emailService = require('../services/email.service');
+
+        const job = await Job.findById(proposalData.jobId);
+        if (job && job.clientId) {
+          const client = await User.findById(job.clientId);
+          const freelancer = (req as any).user;
+
+          if (client && client.email) {
+            const freelancerName = freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'A freelancer';
+            const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/jobs/${job._id}`;
+
+            await emailService.sendNewProposalNotificationToClient(
+              client.email,
+              client.firstName || 'Client',
+              freelancerName,
+              job.title,
+              link
+            );
+          }
+
+          // Also send Socket Notification to Client
+          const io = require('../core/utils/socketIO').getIO();
+          const mongoose = require('mongoose');
+
+          await mongoose.model('Notification').create({
+            userId: job.clientId,
+            type: 'proposal_new',
+            title: 'New Proposal Received',
+            message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
+            relatedId: proposal._id,
+            relatedType: 'proposal',
+            actorId: freelancer?._id || freelancer?.id,
+            actorName: freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'Freelancer',
+            isRead: false,
+          });
+
+          io.to(job.clientId.toString()).emit('notification:new', {
+            title: 'New Proposal Received',
+            message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
+            type: 'proposal_new'
+          });
+        }
+      }
+    } catch (notifyError) {
+      console.warn('Error sending new proposal notification:', notifyError);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Proposal created successfully',

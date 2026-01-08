@@ -306,6 +306,48 @@ export const sendProposalRejectedEmail = async (
 };
 
 /**
+ * Send New Proposal Notification to Client
+ */
+export const sendNewProposalNotificationToClient = async (
+  email: string,
+  clientName: string,
+  freelancerName: string,
+  jobTitle: string,
+  proposalLink: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `New Proposal for ${jobTitle}`;
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>New Proposal Received! 📄</h2>
+            <p>Hi ${clientName},</p>
+            <p><strong>${freelancerName}</strong> has just submitted a proposal for your project <strong>${jobTitle}</strong>.</p>
+            <p>Review their proposal to see if they are a good fit for your project.</p>
+            
+            <a href="${proposalLink}" class="btn">View Proposal</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If you can't click the button, view your job entries on the Connecta app.
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${clientName}, ${freelancerName} has submitted a proposal for ${jobTitle}. Check your dashboard to review it.`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
  * Send Broadcast Email to Multiple Recipients
  */
 export const sendBroadcastEmail = async (
