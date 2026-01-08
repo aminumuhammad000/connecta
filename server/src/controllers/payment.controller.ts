@@ -273,6 +273,50 @@ export const releasePayment = async (req: Request, res: Response) => {
       await freelancerWallet.save();
     }
 
+    // Notify Freelancer
+    try {
+      const User = require('../models/user.model').default;
+      const Project = require('../models/Project.model').default;
+      const emailService = require('../services/email.service');
+      const io = require('../core/utils/socketIO').getIO();
+      const mongoose = require('mongoose');
+
+      const freelancer = await User.findById(payment.payeeId);
+      const project = payment.projectId ? await Project.findById(payment.projectId) : null;
+
+      const projectName = project ? project.title : 'Project';
+      const amountStr = `${payment.currency} ${payment.amount}`;
+
+      // Socket Notification
+      await mongoose.model('Notification').create({
+        userId: payment.payeeId,
+        type: 'payment_released',
+        title: 'Funds Released',
+        message: `Payment of ${amountStr} for "${projectName}" has been released.`,
+        relatedId: payment._id,
+        relatedType: 'payment',
+        actorId: userId,
+        actorName: 'Client',
+        isRead: false
+      });
+
+      io.to(payment.payeeId.toString()).emit('notification:new', {
+        title: 'Funds Released',
+        message: `Payment of ${amountStr} for "${projectName}" has been released.`,
+        type: 'payment_released'
+      });
+
+      // Email Notification
+      if (freelancer && freelancer.email) {
+        await emailService.sendPaymentReleasedEmail(
+          freelancer.email,
+          freelancer.firstName || 'Freelancer',
+          projectName,
+          amountStr
+        );
+      }
+    } catch (e) { console.warn('Notify failed', e); }
+
     return res.status(200).json({
       success: true,
       message: 'Payment released successfully',

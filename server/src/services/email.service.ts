@@ -306,6 +306,81 @@ export const sendProposalRejectedEmail = async (
 };
 
 /**
+ * Send Payment Released Email
+ */
+export const sendPaymentReleasedEmail = async (
+  email: string,
+  freelancerName: string,
+  projectName: string,
+  amount: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `Payment Released for ${projectName}`;
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Payment Released! 💰</h2>
+            <p>Hi ${freelancerName},</p>
+            <p>Great job! The client has approved your work for <strong>${projectName}</strong> and released the payment.</p>
+            <p><strong>Amount: ${amount}</strong></p>
+            <p>The funds effectively moved from Escrow to your Available Balance. You can withdraw them now.</p>
+            
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/wallet" class="btn">Go to Wallet</a>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${freelancerName}, Payment of ${amount} for ${projectName} has been released to your wallet. You can withdraw it now.`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
+ * Send Work Submitted Email
+ */
+export const sendWorkSubmittedEmail = async (
+  email: string,
+  clientName: string,
+  freelancerName: string,
+  projectName: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `Work Submitted for ${projectName}`;
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Work Submitted 📝</h2>
+            <p>Hi ${clientName},</p>
+            <p><strong>${freelancerName}</strong> has submitted their work for the project <strong>${projectName}</strong>.</p>
+            <p>Please review the deliverables and approve the project to release the funds if everything looks good.</p>
+            
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/projects" class="btn">Review Project</a>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${clientName}, ${freelancerName} has submitted work for ${projectName}. Please review and approve.`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
  * Send New Proposal Notification to Client
  */
 export const sendNewProposalNotificationToClient = async (
