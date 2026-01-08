@@ -582,6 +582,39 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
     wallet.balance -= amount;
     await wallet.save();
 
+    // Notify User
+    try {
+      const User = require('../models/user.model').default;
+      const { sendWithdrawalRequestEmail } = require('../services/email.service');
+      const mongoose = require('mongoose');
+
+      const user = await User.findById(userId);
+      if (user && user.email) {
+        await sendWithdrawalRequestEmail(user.email, user.firstName, `${wallet.currency} ${amount}`);
+      }
+
+      // Notification
+      await mongoose.model('Notification').create({
+        userId: userId,
+        type: 'system',
+        title: 'Withdrawal Requested',
+        message: `Withdrawal of ${wallet.currency} ${amount} initiated.`,
+        relatedId: withdrawal._id,
+        relatedType: 'withdrawal',
+        actorId: userId,
+        actorName: 'System',
+        isRead: false,
+      });
+
+      const ioInstance = require('../core/utils/socketIO').getIO();
+      ioInstance.to(userId.toString()).emit('notification:new', {
+        title: 'Withdrawal Requested',
+        message: `Withdrawal initiated.`,
+        type: 'system'
+      });
+
+    } catch (e) { console.warn('Withdrawal notify error', e); }
+
     return res.status(200).json({
       success: true,
       message: 'Withdrawal request submitted successfully',

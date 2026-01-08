@@ -119,6 +119,42 @@ export const createJob = async (req: Request, res: Response) => {
     jobData.clientId = clientId;
     const newJob = await Job.create(jobData);
 
+    // Notify Client (Job Owner)
+    (async () => {
+      try {
+        const user = (req as any).user;
+        const jobLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/gigs/${newJob._id}`;
+
+        // Email
+        const { sendJobPostedEmail } = require("../services/email.service");
+        await sendJobPostedEmail(user.email, user.firstName, newJob.title, jobLink);
+
+        // Notification
+        const mongoose = require('mongoose');
+        const io = require('../core/utils/socketIO').getIO();
+
+        await mongoose.model('Notification').create({
+          userId: user._id,
+          type: 'system',
+          title: 'Job Posted',
+          message: `Your job "${newJob.title}" is now live.`,
+          relatedId: newJob._id,
+          relatedType: 'job',
+          actorId: user._id,
+          actorName: 'System',
+          isRead: false,
+        });
+
+        io.to(user._id.toString()).emit('notification:new', {
+          title: 'Job Posted',
+          message: `Your job "${newJob.title}" is now live.`,
+          type: 'system'
+        });
+      } catch (e) {
+        console.error("Error sending job posted notification:", e);
+      }
+    })();
+
     // Send notifications to matching freelancers
     // We do this asynchronously so we don't block the response
     (async () => {
