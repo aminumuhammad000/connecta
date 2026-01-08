@@ -103,6 +103,61 @@ class PaymentService {
             description: `Payment received (held in escrow)`,
         });
 
+        // Notify Client (Receipt)
+        try {
+            const User = require('../models/user.model').default;
+            const { sendPaymentReceiptEmail } = require('../services/email.service');
+            const io = require('../core/utils/socketIO').getIO();
+            const mongoose = require('mongoose');
+
+            const client = await User.findById(payment.payerId);
+            // Project might be null if job_verification
+            let projectTitle = 'Project';
+            if (payment.projectId) {
+                try {
+                    const Project = require('../models/Project.model').default;
+                    const proj = await Project.findById(payment.projectId);
+                    if (proj) projectTitle = proj.title;
+                } catch (e) { }
+            } else if (payment.jobId) {
+                try {
+                    const job = await Job.findById(payment.jobId);
+                    if (job) projectTitle = job.title;
+                } catch (e) { }
+            }
+
+            if (client && client.email) {
+                await sendPaymentReceiptEmail(client.email, client.firstName, `${payment.currency} ${payment.amount}`, projectTitle);
+
+                await mongoose.model('Notification').create({
+                    userId: payment.payerId,
+                    type: 'payment_sent',
+                    title: 'Payment Successful',
+                    message: `You paid ${payment.currency} ${payment.amount} for "${projectTitle}"`,
+                    relatedId: payment._id,
+                    relatedType: 'payment',
+                    actorId: payment.payerId,
+                    actorName: 'System',
+                    isRead: false
+                });
+
+                io.to(payment.payerId.toString()).emit('notification:new', {
+                    title: 'Payment Successful',
+                    message: `You paid ${payment.currency} ${payment.amount}`,
+                    type: 'payment_sent'
+                });
+
+                // Push Notification
+                const notificationService = require('../services/notification.service').default;
+                notificationService.sendPushNotification(
+                    payment.payerId,
+                    'Payment Successful ✅',
+                    `You paid ${payment.currency} ${payment.amount} for "${projectTitle}"`,
+                    { paymentId: payment._id, type: 'payment' }
+                );
+            }
+        } catch (e) { console.error('Payment receipt error', e); }
+
         return payment;
     }
 }

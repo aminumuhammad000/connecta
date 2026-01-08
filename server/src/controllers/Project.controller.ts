@@ -357,6 +357,22 @@ export const submitProject = async (req: Request, res: Response) => {
         message: `Freelancer has submitted work for "${project.title}". Please review.`,
         type: 'project_submitted'
       });
+
+      // Email Notification
+      const User = require('../models/user.model').default;
+      const emailService = require('../services/email.service');
+      const client = await User.findById(project.clientId);
+      if (client && client.email) {
+        const clientName = client.firstName || 'Client';
+        const freelancerName = (req as any).user?.firstName ? `${(req as any).user.firstName} ${(req as any).user.lastName}` : 'Freelancer';
+
+        await emailService.sendWorkSubmittedEmail(
+          client.email,
+          clientName,
+          freelancerName,
+          project.title
+        );
+      }
     } catch (e) {
       console.warn('Notification failed', e);
     }
