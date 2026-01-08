@@ -146,6 +146,15 @@ class PaymentService {
                     message: `You paid ${payment.currency} ${payment.amount}`,
                     type: 'payment_sent'
                 });
+
+                // Push Notification
+                const notificationService = require('../services/notification.service').default;
+                notificationService.sendPushNotification(
+                    payment.payerId,
+                    'Payment Successful ✅',
+                    `You paid ${payment.currency} ${payment.amount} for "${projectTitle}"`,
+                    { paymentId: payment._id, type: 'payment' }
+                );
             }
         } catch (e) { console.error('Payment receipt error', e); }
 

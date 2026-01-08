@@ -613,6 +613,15 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
         type: 'system'
       });
 
+      // Push Notification
+      const notificationService = require('../services/notification.service').default;
+      notificationService.sendPushNotification(
+        userId,
+        'Withdrawal Requested 🏦',
+        `Withdrawal of ${wallet.currency} ${amount} initiated.`,
+        { withdrawalId: withdrawal._id, type: 'withdrawal' }
+      );
+
     } catch (e) { console.warn('Withdrawal notify error', e); }
 
     return res.status(200).json({

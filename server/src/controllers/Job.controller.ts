@@ -150,6 +150,16 @@ export const createJob = async (req: Request, res: Response) => {
           message: `Your job "${newJob.title}" is now live.`,
           type: 'system'
         });
+
+        // Push Notification
+        const notificationService = require('../services/notification.service').default;
+        notificationService.sendPushNotification(
+          user._id,
+          'Job Posted 📢',
+          `Your job "${newJob.title}" is now live.`,
+          { jobId: newJob._id, type: 'job' }
+        );
+
       } catch (e) {
         console.error("Error sending job posted notification:", e);
       }

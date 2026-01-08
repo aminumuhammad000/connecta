@@ -288,6 +288,16 @@ export const verifyEmail = async (req: Request, res: Response) => {
         message: 'Your account has been verified.',
         type: 'system'
       });
+
+      // Push Notification
+      const notificationService = (await import('../services/notification.service')).default;
+      notificationService.sendPushNotification(
+        user._id,
+        'Welcome to Connecta! 🚀',
+        'Your account has been verified. You can now access all features.',
+        { type: 'system' }
+      );
+
     } catch (e) { console.warn('Welcome notification error', e); }
 
     // Return updated user
