@@ -407,3 +407,59 @@ export const verifyEmailConfig = async (): Promise<boolean> => {
     return false;
   }
 };
+
+/**
+ * Send Gig Notification Email
+ */
+export const sendGigNotificationEmail = async (
+  email: string,
+  userName: string,
+  jobTitle: string,
+  jobLink: string,
+  skills: string[]
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `New Gig Alert: ${jobTitle}`;
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+            .skills { margin-top: 10px; }
+            .skill-tag { background-color: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>New Gig Alert! 🚀</h2>
+            <p>Hi ${userName},</p>
+            <p>A new gig matching your skills has just been posted:</p>
+            <h3>${jobTitle}</h3>
+            
+            <div class="skills">
+              ${skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+            </div>
+
+            <p>Check it out and apply now if you're interested!</p>
+            
+            <a href="${jobLink}" class="btn">View Gig</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                ${jobLink}
+            </p>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+              You received this email because you are subscribed to gig notifications. 
+              To unsubscribe, update your notification settings in your profile.
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
+
+  return sendEmail(email, subject, html, text);
+};

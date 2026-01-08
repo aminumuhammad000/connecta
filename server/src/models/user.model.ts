@@ -16,6 +16,7 @@ export interface IUser extends Document {
   isActive?: boolean;
   isVerified?: boolean;
   pushToken?: string;
+  isSubscribedToGigs?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +55,7 @@ const UserSchema: Schema<IUser> = new Schema(
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     pushToken: { type: String, required: false },
+    isSubscribedToGigs: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import Job from "../models/Job.model";
 import User from "../models/user.model";
+import Profile from "../models/Profile.model";
 import { RecommendationService } from "../services/recommendation.service";
+import { sendGigNotificationEmail } from "../services/email.service";
 
 // ===================
 // Get Jobs for Current Client
@@ -116,6 +118,50 @@ export const createJob = async (req: Request, res: Response) => {
     }
     jobData.clientId = clientId;
     const newJob = await Job.create(jobData);
+
+    // Send notifications to matching freelancers
+    // We do this asynchronously so we don't block the response
+    (async () => {
+      try {
+        if (!newJob.skills || newJob.skills.length === 0) return;
+
+        // Find profiles that have at least one matching skill
+        const matchingProfiles = await Profile.find({
+          skills: { $in: newJob.skills }
+        }).populate("user");
+
+        const notifiedUserIds = new Set();
+
+        for (const profile of matchingProfiles) {
+          const user = profile.user as any;
+
+          // Check if user exists, is a freelancer, is subscribed, and hasn't been notified yet
+          if (
+            user &&
+            user.userType === "freelancer" &&
+            user.isSubscribedToGigs !== false && // Default is true if undefined
+            !notifiedUserIds.has(user._id.toString())
+          ) {
+            notifiedUserIds.add(user._id.toString());
+
+            // Construct job link (adjust base URL as needed)
+            const jobLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/gigs/${newJob._id}`;
+
+            await sendGigNotificationEmail(
+              user.email,
+              user.firstName,
+              newJob.title,
+              jobLink,
+              newJob.skills
+            );
+            console.log(`Gig notification email sent to ${user.email}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error sending gig notifications:", error);
+      }
+    })();
+
     res.status(201).json({
       success: true,
       message: "Job created successfully",
