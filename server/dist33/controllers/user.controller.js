@@ -274,7 +274,38 @@ const verifyEmail = async (req, res) => {
         user.isVerified = true;
         await user.save();
         // Clean up OTP
+        // Clean up OTP
         await OTP.deleteOne({ _id: otpRecord._id });
+        // Send Welcome Email
+        const { sendWelcomeEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+        sendWelcomeEmail(user.email, user.firstName).catch(console.error);
+        // Send Welcome Notification
+        try {
+            const mongoose = require('mongoose');
+            const io = require('../core/utils/socketIO').getIO();
+            await mongoose.model('Notification').create({
+                userId: user._id,
+                type: 'system',
+                title: 'Welcome to Connecta!',
+                message: 'Your account has been verified. You can now access all features.',
+                relatedId: user._id,
+                relatedType: 'user',
+                actorId: null,
+                actorName: 'System',
+                isRead: false,
+            });
+            io.to(user._id.toString()).emit('notification:new', {
+                title: 'Welcome to Connecta!',
+                message: 'Your account has been verified.',
+                type: 'system'
+            });
+            // Push Notification
+            const notificationService = (await Promise.resolve().then(() => __importStar(require('../services/notification.service')))).default;
+            notificationService.sendPushNotification(user._id.toString(), 'Welcome to Connecta! 🚀', 'Your account has been verified. You can now access all features.', { type: 'system' });
+        }
+        catch (e) {
+            console.warn('Welcome notification error', e);
+        }
         // Return updated user
         res.status(200).json({ success: true, message: "Email verified successfully", user });
     }

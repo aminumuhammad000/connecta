@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSavedJobs = exports.unsaveJob = exports.saveJob = exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
 const Job_model_1 = __importDefault(require("../models/Job.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
+const Profile_model_1 = __importDefault(require("../models/Profile.model"));
 const recommendation_service_1 = require("../services/recommendation.service");
+const email_service_1 = require("../services/email.service");
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -108,6 +110,71 @@ const createJob = async (req, res) => {
         }
         jobData.clientId = clientId;
         const newJob = await Job_model_1.default.create(jobData);
+        // Notify Client (Job Owner)
+        (async () => {
+            try {
+                const user = req.user;
+                const jobLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/gigs/${newJob._id}`;
+                // Email
+                const { sendJobPostedEmail } = require("../services/email.service");
+                await sendJobPostedEmail(user.email, user.firstName, newJob.title, jobLink);
+                // Notification
+                const mongoose = require('mongoose');
+                const io = require('../core/utils/socketIO').getIO();
+                await mongoose.model('Notification').create({
+                    userId: user._id,
+                    type: 'system',
+                    title: 'Job Posted',
+                    message: `Your job "${newJob.title}" is now live.`,
+                    relatedId: newJob._id,
+                    relatedType: 'job',
+                    actorId: user._id,
+                    actorName: 'System',
+                    isRead: false,
+                });
+                io.to(user._id.toString()).emit('notification:new', {
+                    title: 'Job Posted',
+                    message: `Your job "${newJob.title}" is now live.`,
+                    type: 'system'
+                });
+                // Push Notification
+                const notificationService = require('../services/notification.service').default;
+                notificationService.sendPushNotification(user._id, 'Job Posted 📢', `Your job "${newJob.title}" is now live.`, { jobId: newJob._id, type: 'job' });
+            }
+            catch (e) {
+                console.error("Error sending job posted notification:", e);
+            }
+        })();
+        // Send notifications to matching freelancers
+        // We do this asynchronously so we don't block the response
+        (async () => {
+            try {
+                if (!newJob.skills || newJob.skills.length === 0)
+                    return;
+                // Find profiles that have at least one matching skill
+                const matchingProfiles = await Profile_model_1.default.find({
+                    skills: { $in: newJob.skills }
+                }).populate("user");
+                const notifiedUserIds = new Set();
+                for (const profile of matchingProfiles) {
+                    const user = profile.user;
+                    // Check if user exists, is a freelancer, is subscribed, and hasn't been notified yet
+                    if (user &&
+                        user.userType === "freelancer" &&
+                        user.isSubscribedToGigs !== false && // Default is true if undefined
+                        !notifiedUserIds.has(user._id.toString())) {
+                        notifiedUserIds.add(user._id.toString());
+                        // Construct job link (adjust base URL as needed)
+                        const jobLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/gigs/${newJob._id}`;
+                        await (0, email_service_1.sendGigNotificationEmail)(user.email, user.firstName, newJob.title, jobLink, newJob.skills);
+                        console.log(`Gig notification email sent to ${user.email}`);
+                    }
+                }
+            }
+            catch (error) {
+                console.error("Error sending gig notifications:", error);
+            }
+        })();
         res.status(201).json({
             success: true,
             message: "Job created successfully",

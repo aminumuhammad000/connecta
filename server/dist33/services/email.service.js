@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyEmailConfig = exports.sendBroadcastEmail = exports.sendProposalAcceptedEmail = exports.sendEmail = exports.sendOTPEmail = void 0;
+exports.sendGigNotificationEmail = exports.verifyEmailConfig = exports.sendBroadcastEmail = exports.sendNewProposalNotificationToClient = exports.sendWithdrawalRequestEmail = exports.sendPaymentReceiptEmail = exports.sendJobPostedEmail = exports.sendWelcomeEmail = exports.sendWorkSubmittedEmail = exports.sendPaymentReleasedEmail = exports.sendProposalRejectedEmail = exports.sendProposalAcceptedEmail = exports.sendEmail = exports.sendOTPEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const SystemSettings_model_1 = __importDefault(require("../models/SystemSettings.model"));
@@ -247,6 +247,248 @@ const sendProposalAcceptedEmail = async (email, freelancerName, projectName, cli
 };
 exports.sendProposalAcceptedEmail = sendProposalAcceptedEmail;
 /**
+ * Send Proposal Rejected Email
+ */
+const sendProposalRejectedEmail = async (email, freelancerName, clientName, proposalTitle) => {
+    const subject = `Update on your proposal for ${proposalTitle}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Proposal Update</h2>
+            <p>Hi ${freelancerName},</p>
+            <p>Thank you for submitting your proposal for <strong>${proposalTitle}</strong>.</p>
+            <p>Unfortunately, <strong>${clientName}</strong> has decided not to move forward with your proposal at this time.</p>
+            <p>Don't be discouraged! There are many other opportunities waiting for you on Connecta.</p>
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                Best regards,<br>The Connecta Team
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+    const text = `Hi ${freelancerName}, Unfortunately, ${clientName} has decided not to move forward with your proposal for ${proposalTitle}. Keep applying to other jobs!`;
+    return (0, exports.sendEmail)(email, subject, html, text);
+};
+exports.sendProposalRejectedEmail = sendProposalRejectedEmail;
+/**
+ * Send Payment Released Email
+ */
+const sendPaymentReleasedEmail = async (email, freelancerName, projectName, amount) => {
+    const subject = `Payment Released for ${projectName}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Payment Released! 💰</h2>
+            <p>Hi ${freelancerName},</p>
+            <p>Great job! The client has approved your work for <strong>${projectName}</strong> and released the payment.</p>
+            <p><strong>Amount: ${amount}</strong></p>
+            <p>The funds effectively moved from Escrow to your Available Balance. You can withdraw them now.</p>
+            
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/wallet" class="btn">Go to Wallet</a>
+          </div>
+        </body>
+        </html>
+    `;
+    const text = `Hi ${freelancerName}, Payment of ${amount} for ${projectName} has been released to your wallet. You can withdraw it now.`;
+    return (0, exports.sendEmail)(email, subject, html, text);
+};
+exports.sendPaymentReleasedEmail = sendPaymentReleasedEmail;
+/**
+ * Send Work Submitted Email
+ */
+const sendWorkSubmittedEmail = async (email, clientName, freelancerName, projectName) => {
+    const subject = `Work Submitted for ${projectName}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Work Submitted 📝</h2>
+            <p>Hi ${clientName},</p>
+            <p><strong>${freelancerName}</strong> has submitted their work for the project <strong>${projectName}</strong>.</p>
+            <p>Please review the deliverables and approve the project to release the funds if everything looks good.</p>
+            
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/projects" class="btn">Review Project</a>
+          </div>
+        </body>
+        </html>
+    `;
+    const text = `Hi ${clientName}, ${freelancerName} has submitted work for ${projectName}. Please review and approve.`;
+    return (0, exports.sendEmail)(email, subject, html, text);
+};
+exports.sendWorkSubmittedEmail = sendWorkSubmittedEmail;
+/**
+ * Send Welcome Email
+ */
+const sendWelcomeEmail = async (email, name) => {
+    const subject = `Welcome to Connecta! 🚀`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+             body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Welcome to Connecta, ${name}!</h2>
+            <p>We are thrilled to have you on board. Your account has been successfully verified.</p>
+            <p>Start exploring jobs or posting projects today.</p>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/home" class="btn">Get Started</a>
+          </div>
+        </body>
+        </html>
+    `;
+    return (0, exports.sendEmail)(email, subject, html, `Welcome to Connecta, ${name}! Your account is verified.`);
+};
+exports.sendWelcomeEmail = sendWelcomeEmail;
+/**
+ * Send Job Posted Email
+ */
+const sendJobPostedEmail = async (email, name, jobTitle, jobLink) => {
+    const subject = `Job Posted: ${jobTitle}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+             body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Your Job is Live! 📢</h2>
+            <p>Hi ${name},</p>
+            <p>Your job <strong>${jobTitle}</strong> has been successfully posted and is now visible to freelancers.</p>
+            <p>You will be notified when proposals start coming in.</p>
+            <a href="${jobLink}" class="btn">View Job</a>
+          </div>
+        </body>
+        </html>
+    `;
+    return (0, exports.sendEmail)(email, subject, html, `Your job ${jobTitle} is live.`);
+};
+exports.sendJobPostedEmail = sendJobPostedEmail;
+/**
+ * Send Payment Receipt Email
+ */
+const sendPaymentReceiptEmail = async (email, name, amount, projectTitle) => {
+    const subject = `Payment Receipt`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+             body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Payment Received ✅</h2>
+            <p>Hi ${name},</p>
+            <p>We have received your payment of <strong>${amount}</strong> for the project <strong>${projectTitle}</strong>.</p>
+            <p>The funds are now held in escrow and will be released to the freelancer upon completion.</p>
+            <p>Thank you for using Connecta.</p>
+          </div>
+        </body>
+        </html>
+    `;
+    return (0, exports.sendEmail)(email, subject, html, `Payment of ${amount} for ${projectTitle} received.`);
+};
+exports.sendPaymentReceiptEmail = sendPaymentReceiptEmail;
+/**
+ * Send Withdrawal Request Email
+ */
+const sendWithdrawalRequestEmail = async (email, name, amount) => {
+    const subject = `Withdrawal Request Received`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+             body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Withdrawal Request Received 🏦</h2>
+            <p>Hi ${name},</p>
+            <p>We received your request to withdraw <strong>${amount}</strong>.</p>
+            <p>Your request is being processed and funds will be sent to your bank account shortly (usually within 24 hours).</p>
+          </div>
+        </body>
+        </html>
+    `;
+    return (0, exports.sendEmail)(email, subject, html, `Withdrawal request for ${amount} received.`);
+};
+exports.sendWithdrawalRequestEmail = sendWithdrawalRequestEmail;
+/**
+ * Send New Proposal Notification to Client
+ */
+const sendNewProposalNotificationToClient = async (email, clientName, freelancerName, jobTitle, proposalLink) => {
+    const subject = `New Proposal for ${jobTitle}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>New Proposal Received! 📄</h2>
+            <p>Hi ${clientName},</p>
+            <p><strong>${freelancerName}</strong> has just submitted a proposal for your project <strong>${jobTitle}</strong>.</p>
+            <p>Review their proposal to see if they are a good fit for your project.</p>
+            
+            <a href="${proposalLink}" class="btn">View Proposal</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If you can't click the button, view your job entries on the Connecta app.
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+    const text = `Hi ${clientName}, ${freelancerName} has submitted a proposal for ${jobTitle}. Check your dashboard to review it.`;
+    return (0, exports.sendEmail)(email, subject, html, text);
+};
+exports.sendNewProposalNotificationToClient = sendNewProposalNotificationToClient;
+/**
  * Send Broadcast Email to Multiple Recipients
  */
 const sendBroadcastEmail = async (recipients, subject, body) => {
@@ -380,3 +622,52 @@ const verifyEmailConfig = async () => {
     }
 };
 exports.verifyEmailConfig = verifyEmailConfig;
+/**
+ * Send Gig Notification Email
+ */
+const sendGigNotificationEmail = async (email, userName, jobTitle, jobLink, skills) => {
+    const subject = `New Gig Alert: ${jobTitle}`;
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+            .skills { margin-top: 10px; }
+            .skill-tag { background-color: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>New Gig Alert! 🚀</h2>
+            <p>Hi ${userName},</p>
+            <p>A new gig matching your skills has just been posted:</p>
+            <h3>${jobTitle}</h3>
+            
+            <div class="skills">
+              ${skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+            </div>
+
+            <p>Check it out and apply now if you're interested!</p>
+            
+            <a href="${jobLink}" class="btn">View Gig</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If the button doesn't work, copy and paste this link into your browser:<br>
+                ${jobLink}
+            </p>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+              You received this email because you are subscribed to gig notifications. 
+              To unsubscribe, update your notification settings in your profile.
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+    const text = `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
+    return (0, exports.sendEmail)(email, subject, html, text);
+};
+exports.sendGigNotificationEmail = sendGigNotificationEmail;

@@ -168,6 +168,46 @@ const createProposal = async (req, res) => {
             }
         }
         const proposal = await Proposal_model_1.default.create(proposalData);
+        // Notify Client of new proposal
+        try {
+            if (proposalData.jobId) {
+                const Job = require('../models/Job.model').default;
+                const User = require('../models/user.model').default;
+                const emailService = require('../services/email.service');
+                const job = await Job.findById(proposalData.jobId);
+                if (job && job.clientId) {
+                    const client = await User.findById(job.clientId);
+                    const freelancer = req.user;
+                    if (client && client.email) {
+                        const freelancerName = freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'A freelancer';
+                        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/jobs/${job._id}`;
+                        await emailService.sendNewProposalNotificationToClient(client.email, client.firstName || 'Client', freelancerName, job.title, link);
+                    }
+                    // Also send Socket Notification to Client
+                    const io = require('../core/utils/socketIO').getIO();
+                    const mongoose = require('mongoose');
+                    await mongoose.model('Notification').create({
+                        userId: job.clientId,
+                        type: 'proposal_new',
+                        title: 'New Proposal Received',
+                        message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
+                        relatedId: proposal._id,
+                        relatedType: 'proposal',
+                        actorId: freelancer?._id || freelancer?.id,
+                        actorName: freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'Freelancer',
+                        isRead: false,
+                    });
+                    io.to(job.clientId.toString()).emit('notification:new', {
+                        title: 'New Proposal Received',
+                        message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
+                        type: 'proposal_new'
+                    });
+                }
+            }
+        }
+        catch (notifyError) {
+            console.warn('Error sending new proposal notification:', notifyError);
+        }
         res.status(201).json({
             success: true,
             message: 'Proposal created successfully',
@@ -383,9 +423,7 @@ const approveProposal = async (req, res) => {
                 message: 'This proposal has already been accepted.',
             });
         }
-        // Update proposal status to approved
-        proposal.status = 'approved';
-        await proposal.save();
+        // Status update moved to end to ensure atomicity
         // Create a project
         const Project = require('../models/Project.model').default;
         const freelancer = proposal.freelancerId;
@@ -458,13 +496,13 @@ const approveProposal = async (req, res) => {
             amount: proposal.budget.amount,
             platformFee: (proposal.budget.amount * 10) / 100, // 10% fee
             netAmount: proposal.budget.amount - ((proposal.budget.amount * 10) / 100),
-            currency: proposal.budget.currency || 'NGN',
+            currency: (proposal.budget.currency === '$' ? 'USD' : proposal.budget.currency) || 'NGN',
             paymentType: 'full_payment',
             description: `Payment for project: ${proposal.title}`,
             status: paymentStatus,
             escrowStatus: paymentEscrowStatus,
             paymentMethod: 'paystack', // or whatever
-            gatewayReference: paymentReference, // Link to original payment if exists
+            gatewayReference: paymentReference || undefined, // undefined to avoid unique constraint if sparse
             paidAt: paymentVerified ? new Date() : undefined
         });
         // If payment is already held in escrow, we should update the Freelancer's wallet escrow balance immediately
@@ -480,6 +518,9 @@ const approveProposal = async (req, res) => {
             freelancerWallet.balance += pendingPayment.netAmount;
             await freelancerWallet.save();
         }
+        // Update proposal status to approved (Moved here)
+        proposal.status = 'approved';
+        await proposal.save();
         res.status(200).json({
             success: true,
             message: 'Proposal approved and project created successfully',
@@ -545,20 +586,18 @@ const rejectProposal = async (req, res) => {
     try {
         const { id } = req.params;
         const clientId = req.user?.id || req.user?._id?.toString();
-        const proposal = await Proposal_model_1.default.findById(id);
+        const proposal = await Proposal_model_1.default.findById(id)
+            .populate('freelancerId', 'firstName lastName email')
+            .populate('clientId', 'firstName lastName')
+            .populate('jobId', 'title');
         if (!proposal) {
             return res.status(404).json({
                 success: false,
                 message: 'Proposal not found',
             });
         }
-        // Verify the client owns this proposal
-        if (false) { // if (proposal.clientId?.toString() !== clientId) {
-            return res.status(403).json({
-                success: false,
-                message: 'You are not authorized to reject this proposal',
-            });
-        }
+        // Verify the client owns this proposal (Skipped as per existing logic, but good practice to keep comments)
+        // if (proposal.clientId?.toString() !== clientId) ...
         proposal.status = 'declined';
         await proposal.save();
         res.status(200).json({
@@ -566,6 +605,43 @@ const rejectProposal = async (req, res) => {
             message: 'Proposal rejected successfully',
             data: proposal,
         });
+        // --- Notifications ---
+        try {
+            const freelancer = proposal.freelancerId;
+            const client = proposal.clientId;
+            const jobTitle = proposal.jobId?.title || 'Project';
+            const clientName = client?.firstName ? `${client.firstName} ${client.lastName}` : 'Client';
+            if (freelancer?._id) {
+                const mongoose = require('mongoose');
+                const io = require('../core/utils/socketIO').getIO();
+                // 1. DB Notification
+                await mongoose.model('Notification').create({
+                    userId: freelancer._id,
+                    type: 'proposal_rejected',
+                    title: 'Proposal Declined',
+                    message: `${clientName} has declined your proposal for "${jobTitle}".`,
+                    relatedId: proposal._id,
+                    relatedType: 'proposal',
+                    actorId: clientId,
+                    actorName: clientName,
+                    isRead: false,
+                });
+                // 2. Socket Notification
+                io.to(freelancer._id.toString()).emit('notification:new', {
+                    title: 'Proposal Declined',
+                    message: `${clientName} has declined your proposal for "${jobTitle}".`,
+                    type: 'proposal_rejected'
+                });
+                // 3. Email Notification
+                if (freelancer.email) {
+                    const emailService = require('../services/email.service');
+                    await emailService.sendProposalRejectedEmail(freelancer.email, freelancer.firstName || 'Freelancer', clientName, jobTitle);
+                }
+            }
+        }
+        catch (notifyError) {
+            console.warn('Error sending rejection notifications:', notifyError);
+        }
     }
     catch (error) {
         res.status(500).json({

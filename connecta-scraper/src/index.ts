@@ -23,30 +23,14 @@ async function main() {
 
     logger.info(`📋 Loaded ${scrapers.length} scraper(s): ${scrapers.map((s) => s.name).join(", ")}`);
 
-    // Initialize scheduler
+    // Initialize scheduler (used here just for the runNow wrapper)
     const scheduler = new CronScheduler(scrapers);
 
-    // Check if manual trigger is requested
-    const isManual = process.argv.includes("--manual");
-
-    if (isManual) {
-        // Run once and exit
-        logger.info("🔧 Manual mode: Running once then exiting...");
-        await scheduler.runNow();
-        logger.info("✅ Manual run completed. Exiting...");
-        process.exit(0);
-    } else {
-        // Start cron scheduler
-        logger.info("🔄 Starting automated scheduler...");
-        scheduler.start();
-
-        // Run immediately on startup
-        logger.info("🏁 Running initial scrape...");
-        await scheduler.runNow();
-
-        // Keep process alive
-        logger.info("✅ Service is now running. Press Ctrl+C to stop.");
-    }
+    // Run once and exit (PM2 will handle the daily restart)
+    logger.info("🔄 Starting scraping job (PM2 managed)...");
+    await scheduler.runNow();
+    logger.info("✅ Scraping completed. Exiting...");
+    process.exit(0);
 }
 
 // Error handling

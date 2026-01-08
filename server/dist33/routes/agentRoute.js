@@ -22,8 +22,8 @@ async function createAgent(userId, authToken, userType) {
     const agent = new agent_1.ConnectaAgent({
         apiBaseUrl: "http://localhost:5000",
         authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
-        openaiApiKey: apiKeys.openrouter || "fallback-api-key",
-        mockMode: true,
+        openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback-api-key",
+        mockMode: false,
         userId,
     });
     await agent.initializeTools(); // populate toolMap dynamically
