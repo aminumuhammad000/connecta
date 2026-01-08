@@ -33,6 +33,13 @@ export interface IJob extends Document {
   paymentStatus: "pending" | "escrow" | "released" | "refunded";
   paymentReference?: string;
   paymentId?: mongoose.Types.ObjectId;
+
+  // External gig fields
+  isExternal?: boolean;
+  externalId?: string;
+  source?: string;
+  applyUrl?: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -88,6 +95,12 @@ const JobSchema: Schema<IJob> = new Schema(
     },
     paymentReference: { type: String },
     paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
+
+    // External gig fields
+    isExternal: { type: Boolean, default: false },
+    externalId: { type: String },
+    source: { type: String },
+    applyUrl: { type: String },
   },
   { timestamps: true }
 );

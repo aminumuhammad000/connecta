@@ -92,6 +92,9 @@ app.use("/api/webhooks", webhookRoutes);
 import broadcastRoutes from "./routes/broadcast.routes";
 app.use("/api/broadcast", broadcastRoutes);
 
+import externalGigsRoutes from "./routes/external-gigs.routes";
+app.use("/api/external-gigs", externalGigsRoutes);
+
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
 });
