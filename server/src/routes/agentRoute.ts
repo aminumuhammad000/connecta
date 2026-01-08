@@ -29,7 +29,7 @@ async function createAgent(userId: string, authToken?: string, userType?: string
 
   const apiKeys = await getApiKeys();
   const agent = new ConnectaAgent({
-    apiBaseUrl: "https://api.myconnecta.ng",
+    apiBaseUrl: "http://localhost:5000",
     authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
     openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback-api-key",
     mockMode: false,
