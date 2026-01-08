@@ -31,8 +31,8 @@ async function createAgent(userId: string, authToken?: string, userType?: string
   const agent = new ConnectaAgent({
     apiBaseUrl: "http://localhost:5000",
     authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
-    openaiApiKey: apiKeys.openrouter || "fallback-api-key",
-    mockMode: true,
+    openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback-api-key",
+    mockMode: false,
     userId,
   });
 

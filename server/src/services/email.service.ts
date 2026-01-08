@@ -268,6 +268,44 @@ export const sendProposalAcceptedEmail = async (
 };
 
 /**
+ * Send Proposal Rejected Email
+ */
+export const sendProposalRejectedEmail = async (
+  email: string,
+  freelancerName: string,
+  clientName: string,
+  proposalTitle: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `Update on your proposal for ${proposalTitle}`;
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Proposal Update</h2>
+            <p>Hi ${freelancerName},</p>
+            <p>Thank you for submitting your proposal for <strong>${proposalTitle}</strong>.</p>
+            <p>Unfortunately, <strong>${clientName}</strong> has decided not to move forward with your proposal at this time.</p>
+            <p>Don't be discouraged! There are many other opportunities waiting for you on Connecta.</p>
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                Best regards,<br>The Connecta Team
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${freelancerName}, Unfortunately, ${clientName} has decided not to move forward with your proposal for ${proposalTitle}. Keep applying to other jobs!`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
  * Send Broadcast Email to Multiple Recipients
  */
 export const sendBroadcastEmail = async (

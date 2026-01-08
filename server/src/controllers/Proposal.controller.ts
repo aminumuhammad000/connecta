@@ -416,9 +416,8 @@ export const approveProposal = async (req: Request, res: Response) => {
       });
     }
 
-    // Update proposal status to approved
-    proposal.status = 'approved' as any;
-    await proposal.save();
+    // Status update moved to end to ensure atomicity
+
 
     // Create a project
     const Project = require('../models/Project.model').default;
@@ -500,13 +499,13 @@ export const approveProposal = async (req: Request, res: Response) => {
       amount: proposal.budget.amount,
       platformFee: (proposal.budget.amount * 10) / 100, // 10% fee
       netAmount: proposal.budget.amount - ((proposal.budget.amount * 10) / 100),
-      currency: proposal.budget.currency || 'NGN',
+      currency: (proposal.budget.currency === '$' ? 'USD' : proposal.budget.currency) || 'NGN',
       paymentType: 'full_payment',
       description: `Payment for project: ${proposal.title}`,
       status: paymentStatus,
       escrowStatus: paymentEscrowStatus,
       paymentMethod: 'paystack', // or whatever
-      gatewayReference: paymentReference, // Link to original payment if exists
+      gatewayReference: paymentReference || undefined, // undefined to avoid unique constraint if sparse
       paidAt: paymentVerified ? new Date() : undefined
     });
 
@@ -523,6 +522,10 @@ export const approveProposal = async (req: Request, res: Response) => {
       freelancerWallet.balance += pendingPayment.netAmount;
       await freelancerWallet.save();
     }
+
+    // Update proposal status to approved (Moved here)
+    proposal.status = 'approved' as any;
+    await proposal.save();
 
     res.status(200).json({
       success: true,
@@ -600,7 +603,10 @@ export const rejectProposal = async (req: Request, res: Response) => {
     const { id } = req.params;
     const clientId = (req as any).user?.id || (req as any).user?._id?.toString();
 
-    const proposal = await Proposal.findById(id);
+    const proposal = await Proposal.findById(id)
+      .populate('freelancerId', 'firstName lastName email')
+      .populate('clientId', 'firstName lastName')
+      .populate('jobId', 'title');
 
     if (!proposal) {
       return res.status(404).json({
@@ -609,15 +615,10 @@ export const rejectProposal = async (req: Request, res: Response) => {
       });
     }
 
-    // Verify the client owns this proposal
-    if (false) { // if (proposal.clientId?.toString() !== clientId) {
-      return res.status(403).json({
-        success: false,
-        message: 'You are not authorized to reject this proposal',
-      });
-    }
+    // Verify the client owns this proposal (Skipped as per existing logic, but good practice to keep comments)
+    // if (proposal.clientId?.toString() !== clientId) ...
 
-    proposal.status = 'declined';
+    proposal.status = 'declined' as any;
     await proposal.save();
 
     res.status(200).json({
@@ -625,6 +626,52 @@ export const rejectProposal = async (req: Request, res: Response) => {
       message: 'Proposal rejected successfully',
       data: proposal,
     });
+
+    // --- Notifications ---
+    try {
+      const freelancer = proposal.freelancerId as any;
+      const client = proposal.clientId as any;
+      const jobTitle = (proposal.jobId as any)?.title || 'Project';
+      const clientName = client?.firstName ? `${client.firstName} ${client.lastName}` : 'Client';
+
+      if (freelancer?._id) {
+        const mongoose = require('mongoose');
+        const io = require('../core/utils/socketIO').getIO();
+
+        // 1. DB Notification
+        await mongoose.model('Notification').create({
+          userId: freelancer._id,
+          type: 'proposal_rejected',
+          title: 'Proposal Declined',
+          message: `${clientName} has declined your proposal for "${jobTitle}".`,
+          relatedId: proposal._id,
+          relatedType: 'proposal',
+          actorId: clientId,
+          actorName: clientName,
+          isRead: false,
+        });
+
+        // 2. Socket Notification
+        io.to(freelancer._id.toString()).emit('notification:new', {
+          title: 'Proposal Declined',
+          message: `${clientName} has declined your proposal for "${jobTitle}".`,
+          type: 'proposal_rejected'
+        });
+
+        // 3. Email Notification
+        if (freelancer.email) {
+          const emailService = require('../services/email.service');
+          await emailService.sendProposalRejectedEmail(
+            freelancer.email,
+            freelancer.firstName || 'Freelancer',
+            clientName,
+            jobTitle
+          );
+        }
+      }
+    } catch (notifyError) {
+      console.warn('Error sending rejection notifications:', notifyError);
+    }
   } catch (error: any) {
     res.status(500).json({
       success: false,

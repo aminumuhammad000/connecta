@@ -453,7 +453,6 @@ export const getWalletBalance = async (req: Request, res: Response) => {
     // Calculate actual escrow balance from payments
     const escrowPayments = await Payment.find({
       payeeId: userId,
-      status: 'completed',
       escrowStatus: 'held',
     }).catch(() => []);
 
@@ -641,6 +640,23 @@ export const processWithdrawal = async (req: Request, res: Response) => {
         gatewayReference: transfer.data.id.toString(),
         description: 'Withdrawal to bank account',
       });
+
+      // Send email notification
+      try {
+        const User = require('../models/user.model').default;
+        const user = await User.findById(withdrawal.userId);
+        if (user && user.email) {
+          const emailService = require('../services/email.service');
+          await emailService.sendEmail(
+            user.email,
+            'Withdrawal Processed',
+            `<p>Hi ${user.firstName},</p><p>Your withdrawal of <strong>${withdrawal.currency} ${withdrawal.amount}</strong> has been successfully processed and sent to your bank account.</p>`,
+            `Your withdrawal of ${withdrawal.currency} ${withdrawal.amount} has been processed.`
+          );
+        }
+      } catch (e) {
+        console.error('Failed to send withdrawal email', e);
+      }
 
       return res.status(200).json({
         success: true,

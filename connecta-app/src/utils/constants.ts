@@ -31,6 +31,7 @@ const getBaseUrl = () => {
     let url = explicitBaseUrl || platformDefaultBaseUrl;
 
     // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
+    // For iOS physical device, derivedHostBaseUrl usually works (it's the LAN IP of the host)
     if (Platform.OS === 'ios' && (url?.includes('10.0.2.2'))) {
         return 'http://localhost:5000';
     }

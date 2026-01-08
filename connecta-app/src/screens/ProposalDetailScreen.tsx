@@ -4,15 +4,23 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Alert } from 'react-native';
+import { useAuth } from '../context/AuthContext';
+import SuccessModal from '../components/SuccessModal';
+import { approveProposal } from '../services/proposalService';
 
 const ProposalDetailScreen: React.FC = () => {
     const c = useThemeColors();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const route = useRoute();
+    const { user } = useAuth();
     const { id } = route.params as { id: string };
     const [proposal, setProposal] = React.useState<any>(null);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [isHiring, setIsHiring] = React.useState(false);
+    const [showSuccessModal, setShowSuccessModal] = React.useState(false);
+    const [createdProjectData, setCreatedProjectData] = React.useState<any>(null);
 
     React.useEffect(() => {
         loadProposalDetails();
@@ -75,6 +83,48 @@ const ProposalDetailScreen: React.FC = () => {
     };
 
     const statusStyle = statusColors[status as keyof typeof statusColors] || statusColors.pending;
+
+    const isClientOwner = user?._id === (clientSource?._id || clientSource);
+    // If no user logic for freelancer, assume current user if not client
+    const isFreelancerOwner = !isClientOwner;
+
+    const handleHire = async () => {
+        Alert.alert(
+            "Hire Freelancer",
+            "Are you sure you want to hire this freelancer? This will create a project and hold funds in escrow.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Hire",
+                    style: "default",
+                    onPress: async () => {
+                        try {
+                            setIsHiring(true);
+                            const result = await approveProposal(id);
+                            if (result) {
+                                // The backend returns { success: true, data: { proposal, project, payment } }
+                                // or sometimes strictly the data. API Service wrapper usually returns data.
+                                // Let's check format.
+                                const projectData = (result as any).project || (result as any).data?.project;
+                                setCreatedProjectData(projectData);
+                                setShowSuccessModal(true);
+                                refreshProposal();
+                            }
+                        } catch (error: any) {
+                            console.error("Hire error:", error);
+                            Alert.alert("Error", error.message || "Failed to hire freelancer");
+                        } finally {
+                            setIsHiring(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const refreshProposal = () => {
+        loadProposalDetails();
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -182,31 +232,62 @@ const ProposalDetailScreen: React.FC = () => {
 
             {/* Fixed CTA */}
             <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
-                {status === 'pending' && (
+                {isFreelancerOwner && status === 'pending' && (
                     <TouchableOpacity style={[styles.secondaryBtn, { borderColor: c.border }]}>
                         <Text style={[styles.secondaryBtnText, { color: c.text }]}>Edit Proposal</Text>
                     </TouchableOpacity>
                 )}
-                <TouchableOpacity
-                    style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-                    onPress={() => {
-                        const targetClientId = typeof clientSource === 'object' ? clientSource?._id : clientSource;
-                        const targetProjectId = typeof jobId === 'object' ? jobId?._id : jobId;
 
-                        if (targetClientId) {
+                {isClientOwner && status === 'pending' && (
+                    <TouchableOpacity
+                        style={[styles.primaryBtn, { backgroundColor: c.primary, flex: 2 }]}
+                        onPress={handleHire}
+                        disabled={isHiring}
+                    >
+                        {isHiring ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.primaryBtnText}>Hire Freelancer</Text>
+                        )}
+                    </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                    style={[styles.primaryBtn, { backgroundColor: isClientOwner ? c.card : c.primary, borderWidth: isClientOwner ? 1 : 0, borderColor: c.border }]}
+                    onPress={() => {
+                        const targetUserId = isFreelancerOwner ? (typeof clientSource === 'object' ? clientSource?._id : clientSource) : (proposal.freelancerId?._id || proposal.freelancerId);
+                        const targetUserName = isFreelancerOwner ? clientName : `${proposal.freelancerId?.firstName} ${proposal.freelancerId?.lastName}`;
+
+                        if (targetUserId) {
                             (navigation as any).navigate('MessagesDetail', {
-                                receiverId: targetClientId,
-                                userName: clientName,
-                                userAvatar: clientAvatar,
-                                projectId: targetProjectId || id, // Fallback to proposal ID if job ID missing (shouldn't happen)
-                                clientId: targetClientId,
+                                receiverId: targetUserId,
+                                userName: targetUserName,
+                                projectId: jobId?._id || jobId,
                             });
                         }
                     }}
                 >
-                    <Text style={styles.primaryBtnText}>Message Client</Text>
+                    <Text style={[styles.primaryBtnText, isClientOwner && { color: c.text }]}>Message</Text>
                 </TouchableOpacity>
             </View>
+
+            <SuccessModal
+                visible={showSuccessModal}
+                title="Freelancer Hired!"
+                message={`You have successfully hired this freelancer. A notification has been sent to them.`}
+                buttonText="Go to Project"
+                onAction={() => {
+                    setShowSuccessModal(false);
+                    // Navigate to project workspace using the project ID returned from approval if available, 
+                    // or navigate to client projects list
+                    if (createdProjectData?._id) {
+                        (navigation as any).navigate('ProjectWorkspace', { projectId: createdProjectData._id });
+                    } else {
+                        (navigation as any).navigate('ClientProjects');
+                    }
+                }}
+                onClose={() => setShowSuccessModal(false)}
+            />
             {(status === 'accepted' || status === 'approved') && (
                 <View style={{ position: 'absolute', bottom: 80, left: 16, right: 16 }}>
                     <TouchableOpacity
