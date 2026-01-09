@@ -19,24 +19,24 @@ export interface INotification extends Document {
   type: NotificationType;
   title: string;
   message: string;
-  
+
   // Related entities
   relatedId?: mongoose.Types.ObjectId; // Job, Project, Proposal, etc.
   relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment';
-  
+
   // Actor (who triggered the notification)
   actorId?: mongoose.Types.ObjectId;
   actorName?: string;
-  
+
   // Metadata
   link?: string; // Frontend URL to navigate to
   icon?: string; // Icon name for display
   priority?: 'low' | 'medium' | 'high';
-  
+
   // Status
   isRead: boolean;
   readAt?: Date;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +56,7 @@ const NotificationSchema = new Schema<INotification>(
         'proposal_received',
         'proposal_accepted',
         'proposal_rejected',
+        'proposal_new',
         'project_started',
         'project_completed',
         'milestone_completed',
@@ -80,7 +81,7 @@ const NotificationSchema = new Schema<INotification>(
     },
     relatedType: {
       type: String,
-      enum: ['job', 'project', 'proposal', 'message', 'review', 'payment'],
+      enum: ['job', 'project', 'proposal', 'message', 'review', 'payment', 'user'],
     },
     actorId: {
       type: Schema.Types.ObjectId,

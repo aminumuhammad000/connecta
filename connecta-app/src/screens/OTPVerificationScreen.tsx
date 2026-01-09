@@ -3,17 +3,19 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { verifyOTP, sendPasswordResetOTP } from '../services/authService';
+import { verifyOTP, sendPasswordResetOTP, verifyEmail } from '../services/authService';
 import CustomAlert, { AlertType } from '../components/CustomAlert';
 
 interface OTPVerificationScreenProps {
     email: string;
+    mode?: 'signup' | 'forgotPassword';
     onBackToForgotPassword?: () => void;
-    onOTPVerified?: (token: string) => void;
+    onOTPVerified?: (tokenData: string | { token: string; user: any }) => void;
 }
 
 const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
     email,
+    mode = 'forgotPassword',
     onBackToForgotPassword,
     onOTPVerified
 }) => {
@@ -100,12 +102,30 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
         setIsLoading(true);
 
         try {
-            const response = await verifyOTP(email, code);
+            if (mode === 'signup') {
+                // Email Verification Flow
+                const response = await verifyEmail(code);
+                const data = response as any;
 
-            if (response.resetToken) {
-                onOTPVerified?.(response.resetToken);
+                if (data.token) {
+                    onOTPVerified?.({ token: data.token, user: data.user });
+                } else {
+                    // Should not happen if successful
+                    if (response.success) {
+                        // Fallback
+                        showAlert('Error', 'Verification successful but login failed. Please login manually.', 'error');
+                    } else {
+                        throw new Error('Verification failed');
+                    }
+                }
             } else {
-                throw new Error('No reset token received');
+                // Password Reset Flow
+                const response = await verifyOTP(email, code);
+                if (response.resetToken) {
+                    onOTPVerified?.(response.resetToken);
+                } else {
+                    throw new Error('No reset token received');
+                }
             }
         } catch (error: any) {
             console.error('Verify OTP Error:', error);

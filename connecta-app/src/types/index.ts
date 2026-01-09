@@ -53,6 +53,17 @@ export interface Profile {
     website?: string;
     companyName?: string; // Added
     avatar?: string; // Added
+
+    // Onboarding / Preferences
+    remoteWorkType?: 'remote_only' | 'hybrid' | 'onsite';
+    minimumSalary?: number;
+    workLocationPreferences?: string[];
+    jobTitle?: string;
+    jobCategories?: string[];
+    yearsOfExperience?: number;
+    engagementTypes?: string[];
+    jobNotificationFrequency?: 'daily' | 'weekly' | 'relevant_only';
+
     portfolio?: PortfolioItem[];
     experience?: Experience[];
     education?: Education[];
