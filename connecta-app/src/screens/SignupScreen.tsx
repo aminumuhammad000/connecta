@@ -17,7 +17,7 @@ const SignupScreen: React.FC = () => {
   const navigation = useNavigation();
   const { signup, googleSignup } = useAuth();
   const { showAlert } = useInAppAlert();
-  const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer'>('client');
+  const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer'>('freelancer');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,47 +116,6 @@ const SignupScreen: React.FC = () => {
                     style={[
                       styles.roleOption,
                       {
-                        backgroundColor: selectedRole === 'client' ? c.primary + '15' : c.card,
-                        borderColor: selectedRole === 'client' ? c.primary : c.border
-                      }
-                    ]}
-                    onPress={() => setSelectedRole('client')}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[
-                      styles.roleIconWrap,
-                      {
-                        backgroundColor: selectedRole === 'client' ? c.primary : c.background,
-                      }
-                    ]}>
-                      <MaterialIcons
-                        name="work-outline"
-                        size={20}
-                        color={selectedRole === 'client' ? '#fff' : c.subtext}
-                      />
-                    </View>
-                    <View style={styles.roleTextWrap}>
-                      <Text style={[
-                        styles.roleTitle,
-                        { color: selectedRole === 'client' ? c.primary : c.text }
-                      ]}>
-                        I am a Client
-                      </Text>
-                      <Text style={[styles.roleDesc, { color: c.subtext }]}>
-                        I want to hire talent for my projects
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name={selectedRole === 'client' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                      size={22}
-                      color={selectedRole === 'client' ? c.primary : c.subtext}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.roleOption,
-                      {
                         backgroundColor: selectedRole === 'freelancer' ? c.primary + '15' : c.card,
                         borderColor: selectedRole === 'freelancer' ? c.primary : c.border
                       }
@@ -191,6 +150,47 @@ const SignupScreen: React.FC = () => {
                       name={selectedRole === 'freelancer' ? 'radio-button-checked' : 'radio-button-unchecked'}
                       size={22}
                       color={selectedRole === 'freelancer' ? c.primary : c.subtext}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.roleOption,
+                      {
+                        backgroundColor: selectedRole === 'client' ? c.primary + '15' : c.card,
+                        borderColor: selectedRole === 'client' ? c.primary : c.border
+                      }
+                    ]}
+                    onPress={() => setSelectedRole('client')}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.roleIconWrap,
+                      {
+                        backgroundColor: selectedRole === 'client' ? c.primary : c.background,
+                      }
+                    ]}>
+                      <MaterialIcons
+                        name="work-outline"
+                        size={20}
+                        color={selectedRole === 'client' ? '#fff' : c.subtext}
+                      />
+                    </View>
+                    <View style={styles.roleTextWrap}>
+                      <Text style={[
+                        styles.roleTitle,
+                        { color: selectedRole === 'client' ? c.primary : c.text }
+                      ]}>
+                        I am a Client
+                      </Text>
+                      <Text style={[styles.roleDesc, { color: c.subtext }]}>
+                        I want to hire talent for my projects
+                      </Text>
+                    </View>
+                    <MaterialIcons
+                      name={selectedRole === 'client' ? 'radio-button-checked' : 'radio-button-unchecked'}
+                      size={22}
+                      color={selectedRole === 'client' ? c.primary : c.subtext}
                     />
                   </TouchableOpacity>
                 </View>

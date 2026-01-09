@@ -225,6 +225,52 @@ export const sendEmail = async (
 };
 
 /**
+ * Send Welcome Email to New User
+ */
+export const sendWelcomeEmail = async (
+  email: string,
+  userName: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = 'Welcome to Connecta! 🎉';
+  const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Welcome to Connecta! 🚀</h2>
+            <p>Hi ${userName},</p>
+            <p>We're thrilled to have you on board! Your account has been successfully verified.</p>
+            <p>Connecta is your gateway to finding amazing projects and talented professionals.</p>
+            
+            <h3>Here's what you can do next:</h3>
+            <ul>
+              <li><strong>Complete your profile:</strong> Add your skills, portfolio, and experience to stand out.</li>
+              <li><strong>Browse jobs:</strong> Find projects that match your expertise.</li>
+              <li><strong>Post a project:</strong> Hire top talent for your needs.</li>
+            </ul>
+            
+            <a href="${process.env.CLIENT_URL || '#'}" class="btn">Get Started</a>
+            
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                If you have any questions, feel free to reply to this email.
+            </p>
+          </div>
+        </body>
+        </html>
+    `;
+  const text = `Hi ${userName}, Welcome to Connecta! Your account has been successfully verified. We're thrilled to have you on board.`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
  * Send Proposal Accepted Email
  */
 export const sendProposalAcceptedEmail = async (
