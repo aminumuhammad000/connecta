@@ -53,6 +53,7 @@ interface AgentResponse {
   success: boolean;
   toolUsed?: string;
   suggestions?: string[];
+  responseType?: string;
   metadata?: {
     responseTime: number;
     cached: boolean;
@@ -96,7 +97,7 @@ export class ConnectaAgent {
       console.log("🤖 Initializing Connecta Agent with Gemini");
       this.model = new ChatGoogleGenerativeAI({
         apiKey: geminiKey,
-        modelName: aiConfig.model || "gemini-pro",
+        model: aiConfig.model || "gemini-pro",
         maxOutputTokens: 2000,
         temperature: this.config.temperature ?? 0.3,
       });
