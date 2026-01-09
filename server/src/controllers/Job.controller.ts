@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import Job from "../models/Job.model";
 import User from "../models/user.model";
-import Profile from "../models/Profile.model";
-import { RecommendationService } from "../services/recommendation.service";
-import { sendGigNotificationEmail } from "../services/email.service";
 
 // ===================
 // Get Jobs for Current Client
@@ -13,7 +10,7 @@ import { sendGigNotificationEmail } from "../services/email.service";
 // ===================
 export const getClientJobs = async (req: Request, res: Response) => {
   try {
-    // Use (req as any).user to avoid TS errors
+    // Use (req.user as any) to avoid TS errors
     const clientId = (req as any).user?._id || (req as any).user?.id;
     if (!clientId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -118,96 +115,6 @@ export const createJob = async (req: Request, res: Response) => {
     }
     jobData.clientId = clientId;
     const newJob = await Job.create(jobData);
-
-    // Notify Client (Job Owner)
-    (async () => {
-      try {
-        const user = (req as any).user;
-        const jobLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/gigs/${newJob._id}`;
-
-        // Email
-        const { sendJobPostedEmail } = require("../services/email.service");
-        await sendJobPostedEmail(user.email, user.firstName, newJob.title, jobLink);
-
-        // Notification
-        const mongoose = require('mongoose');
-        const io = require('../core/utils/socketIO').getIO();
-
-        await mongoose.model('Notification').create({
-          userId: user._id,
-          type: 'system',
-          title: 'Job Posted',
-          message: `Your job "${newJob.title}" is now live.`,
-          relatedId: newJob._id,
-          relatedType: 'job',
-          actorId: user._id,
-          actorName: 'System',
-          isRead: false,
-        });
-
-        io.to(user._id.toString()).emit('notification:new', {
-          title: 'Job Posted',
-          message: `Your job "${newJob.title}" is now live.`,
-          type: 'system'
-        });
-
-        // Push Notification
-        const notificationService = require('../services/notification.service').default;
-        notificationService.sendPushNotification(
-          user._id,
-          'Job Posted 📢',
-          `Your job "${newJob.title}" is now live.`,
-          { jobId: newJob._id, type: 'job' }
-        );
-
-      } catch (e) {
-        console.error("Error sending job posted notification:", e);
-      }
-    })();
-
-    // Send notifications to matching freelancers
-    // We do this asynchronously so we don't block the response
-    (async () => {
-      try {
-        if (!newJob.skills || newJob.skills.length === 0) return;
-
-        // Find profiles that have at least one matching skill
-        const matchingProfiles = await Profile.find({
-          skills: { $in: newJob.skills }
-        }).populate("user");
-
-        const notifiedUserIds = new Set();
-
-        for (const profile of matchingProfiles) {
-          const user = profile.user as any;
-
-          // Check if user exists, is a freelancer, is subscribed, and hasn't been notified yet
-          if (
-            user &&
-            user.userType === "freelancer" &&
-            user.isSubscribedToGigs !== false && // Default is true if undefined
-            !notifiedUserIds.has(user._id.toString())
-          ) {
-            notifiedUserIds.add(user._id.toString());
-
-            // Construct job link (adjust base URL as needed)
-            const jobLink = `${process.env.CLIENT_URL || 'http://localhost:3000'}/gigs/${newJob._id}`;
-
-            await sendGigNotificationEmail(
-              user.email,
-              user.firstName,
-              newJob.title,
-              jobLink,
-              newJob.skills
-            );
-            console.log(`Gig notification email sent to ${user.email}`);
-          }
-        }
-      } catch (error) {
-        console.error("Error sending gig notifications:", error);
-      }
-    })();
-
     res.status(201).json({
       success: true,
       message: "Job created successfully",
@@ -273,19 +180,12 @@ export const deleteJob = async (req: Request, res: Response) => {
 export const getRecommendedJobs = async (req: Request, res: Response) => {
   try {
     const { limit = 6 } = req.query;
-    const userId = (req as any).user?._id || (req as any).user?.id;
 
-    if (!userId) {
-      // Fallback to existing logic if no user logged in
-      const jobs = await Job.find({ status: "active" })
-        .sort({ posted: -1 })
-        .limit(Number(limit))
-        .populate("clientId", "firstName lastName email");
-      return res.status(200).json({ success: true, data: jobs });
-    }
-
-    const recommendationService = new RecommendationService();
-    const jobs = await recommendationService.getRecommendationsForUser(userId, Number(limit));
+    // Get active jobs, sorted by posted date
+    const jobs = await Job.find({ status: "active" })
+      .sort({ posted: -1 })
+      .limit(Number(limit))
+      .populate("clientId", "firstName lastName email");
 
     res.status(200).json({
       success: true,

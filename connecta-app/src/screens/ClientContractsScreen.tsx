@@ -80,9 +80,9 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        <View style={[styles.appBar, { borderBottomColor: c.border }]}> 
-          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Back">
-            <MaterialIcons name="arrow-back-ios-new" size={20} color={c.text} style={{ opacity: 0 }} />
+        <View style={[styles.appBar, { borderBottomColor: c.border }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn} accessibilityLabel="Back">
+            <MaterialIcons name="arrow-back-ios-new" size={20} color={c.text} />
           </TouchableOpacity>
           <Text style={[styles.appBarTitle, { color: c.text }]}>Contracts</Text>
           <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Search">
@@ -90,15 +90,15 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ paddingBottom: 96 }}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
           }
         >
-          <View style={[styles.tabsRow, { borderBottomColor: c.border }]}> 
+          <View style={[styles.tabsRow, { borderBottomColor: c.border }]}>
             {TABS.map(t => (
-              <TouchableOpacity key={t} onPress={() => setTab(t)} style={styles.tabBtn}> 
+              <TouchableOpacity key={t} onPress={() => setTab(t)} style={styles.tabBtn}>
                 <Text style={[styles.tabText, { color: tab === t ? c.primary : c.subtext, fontWeight: tab === t ? '800' : '600', borderBottomColor: tab === t ? c.primary : 'transparent', borderBottomWidth: 2, paddingBottom: 10 }]}>
                   {t}{t === 'Active' ? ` (${activeCount})` : t === 'Pending' ? ` (${pendingCount})` : ''}
                 </Text>
@@ -115,21 +115,21 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
               </View>
             ) : (
               filtered.map((item: any) => (
-                <View key={item._id} style={[styles.card, { backgroundColor: c.isDark ? '#1E1E1E' : '#F3F4F6', borderColor: c.border }]}> 
-                  <View style={styles.cardTop}> 
+                <View key={item._id} style={[styles.card, { backgroundColor: c.isDark ? '#1E1E1E' : '#F3F4F6', borderColor: c.border }]}>
+                  <View style={styles.cardTop}>
                     <View>
                       <Text style={[styles.title, { color: c.text }]}>{item.title}</Text>
                       <Text style={{ color: c.subtext, fontSize: 12 }}>Client: {item.client?.firstName || 'N/A'} {item.client?.lastName || ''}</Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
-                      <View style={[styles.pill, pillStyle(mapStatus(item.status))]}> 
+                      <View style={[styles.pill, pillStyle(mapStatus(item.status))]}>
                         <Text style={[styles.pillText, { color: pillStyle(mapStatus(item.status)).color }]}>{mapStatus(item.status)}</Text>
                       </View>
                     </View>
                   </View>
 
                   {item.status === 'pending' ? (
-                    <View style={styles.metaRow}> 
+                    <View style={styles.metaRow}>
                       <View>
                         <Text style={{ color: c.subtext, fontSize: 12 }}>Sent Date</Text>
                         <Text style={[styles.metaValue, { color: c.text }]}>{formatDate(item.sentDate)}</Text>
@@ -140,7 +140,7 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
                       </View>
                     </View>
                   ) : (
-                    <View style={styles.metaRow}> 
+                    <View style={styles.metaRow}>
                       <View>
                         <Text style={{ color: c.subtext, fontSize: 12 }}>Start Date</Text>
                         <Text style={[styles.metaValue, { color: c.text }]}>{formatDate(item.startDate)}</Text>
@@ -152,25 +152,25 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
                     </View>
                   )}
 
-                {item.status === 'Pending' ? (
-                  <TouchableOpacity style={[styles.signBtn, { backgroundColor: '#FD6730' }]}>
-                    <Text style={styles.signText}>Sign Contract</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={{ flexDirection: 'row', gap: 8 }}> 
-                    <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: c.card, borderColor: c.border }]} onPress={() => navigation.navigate('JobDetail')}>
-                      <Text style={[styles.secondaryText, { color: c.text }]}>View Details</Text>
+                  {item.status === 'Pending' ? (
+                    <TouchableOpacity style={[styles.signBtn, { backgroundColor: '#FD6730' }]}>
+                      <Text style={styles.signText}>Sign Contract</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.terminateBtn}>
-                      <Text style={styles.terminateText}>Terminate</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            ))}
+                  ) : (
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: c.card, borderColor: c.border }]} onPress={() => navigation.navigate('JobDetail')}>
+                        <Text style={[styles.secondaryText, { color: c.text }]}>View Details</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.terminateBtn}>
+                        <Text style={styles.terminateText}>Terminate</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              ))}
           </View>
         </ScrollView>
-</View>
+      </View>
     </SafeAreaView>
   );
 };

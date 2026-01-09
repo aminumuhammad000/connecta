@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Linking } from 'react-native';
+=======
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Animated } from 'react-native';
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
@@ -14,6 +19,12 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'fixed' | 'hourly' | 'remote'>('all');
   const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
+  const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
+  const [dismissedGigs, setDismissedGigs] = useState<Set<string>>(new Set());
+
+  const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
+  const fadeAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,11 +37,39 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
       setIsLoading(true);
       const jobsData = await jobService.getRecommendedJobs(50);
       setJobs(jobsData);
+      // Initialize anim values
+      jobsData.forEach(job => {
+        if (job._id) {
+          scaleAnims[job._id] = new Animated.Value(1);
+          fadeAnims[job._id] = new Animated.Value(1);
+        }
+      });
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleNotInterested = (gigId: string) => {
+    if (!fadeAnims[gigId]) fadeAnims[gigId] = new Animated.Value(1);
+
+    Animated.timing(fadeAnims[gigId], {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true
+    }).start(() => {
+      setDismissedGigs(prev => {
+        const newSet = new Set(prev);
+        newSet.add(gigId);
+        return newSet;
+      });
+    });
+  };
+
+  const handleInterested = (gigId: string) => {
+    // Navigate to details (Apply flow)
+    navigation.navigate('JobDetail', { id: gigId });
   };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
@@ -39,8 +78,48 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
     return 'primary';
   };
 
-  const toggleSaveGig = (gigId: string) => {
-    setSavedGigs(prev => {
+  const toggleSaveGig = async (gigId: string) => {
+    try {
+      if (savedGigs.has(gigId)) {
+        await jobService.unsaveJob(gigId);
+        setSavedGigs(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(gigId);
+          return newSet;
+        });
+      } else {
+        await jobService.saveJob(gigId);
+        setSavedGigs(prev => {
+          const newSet = new Set(prev);
+          newSet.add(gigId);
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling save:", error);
+    }
+  };
+
+  const toggleLikeGig = (gigId: string) => {
+    // Animate
+    if (!scaleAnims[gigId]) {
+      scaleAnims[gigId] = new Animated.Value(1);
+    }
+
+    Animated.sequence([
+      Animated.spring(scaleAnims[gigId], {
+        toValue: 1.5,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnims[gigId], {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    setLikedGigs(prev => {
       const newSet = new Set(prev);
       if (newSet.has(gigId)) {
         newSet.delete(gigId);
@@ -67,6 +146,9 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   // Filter jobs based on selected filter and search query
   const filteredJobs = jobs.filter(job => {
     if (!job) return false;
+    // Hide dismissed
+    if (dismissedGigs.has(job._id)) return false;
+
     // Filter by type
     if (selectedFilter === 'fixed' && job.budgetType !== 'fixed') return false;
     if (selectedFilter === 'hourly' && job.budgetType !== 'hourly') return false;
@@ -194,6 +276,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                 filteredJobs.map(job => {
                   if (!job) return null;
                   return (
+<<<<<<< HEAD
                     <Card key={job._id} variant="elevated" padding={16}>
                       <View style={styles.gigCard}>
                         <View style={styles.gigHeader}>
@@ -208,48 +291,110 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                               {job.isExternal && (
                                 <Badge label={job.source || "External"} variant="info" size="small" />
                               )}
+=======
+                    <Animated.View
+                      key={job._id}
+                      style={{ opacity: fadeAnims[job._id] || 1, transform: [{ scale: fadeAnims[job._id] || 1 }] }}
+                    >
+                      <Card variant="elevated" padding={16}>
+                        <View style={styles.gigCard}>
+                          <View style={styles.gigHeader}>
+                            <View style={{ flex: 1 }}>
+                              <View style={styles.titleRow}>
+                                <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
+                                  {job.title}
+                                </Text>
+                                {job.status === 'active' && (
+                                  <Badge label="Active" variant="success" size="small" />
+                                )}
+                              </View>
+                              <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
                             </View>
-                            <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
-                          </View>
-                          <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
-                            <MaterialIcons
-                              name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
-                              size={24}
-                              color={savedGigs.has(job._id) ? c.primary : c.subtext}
-                            />
-                          </TouchableOpacity>
-                        </View>
 
-                        <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
-                          {job.description || job.summary || 'No description available'}
-                        </Text>
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                              {/* Like Button */}
+                              <TouchableOpacity onPress={() => toggleLikeGig(job._id)}>
+                                <Animated.View style={{ transform: [{ scale: scaleAnims[job._id] || 1 }] }}>
+                                  <Ionicons
+                                    name={likedGigs.has(job._id) ? "heart" : "heart-outline"}
+                                    size={24}
+                                    color={likedGigs.has(job._id) ? "#ef4444" : c.subtext} // Red for liked
+                                  />
+                                </Animated.View>
+                              </TouchableOpacity>
 
-                        <View style={styles.gigMeta}>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.text }]}>{job.budget || 'N/A'}</Text>
+                              {/* Save Button */}
+                              <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
+                                <MaterialIcons
+                                  name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
+                                  size={24}
+                                  color={savedGigs.has(job._id) ? c.primary : c.subtext}
+                                />
+                              </TouchableOpacity>
+                            </View>
                           </View>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.subtext }]}>
-                              {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
-                            </Text>
+
+                          <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
+                            {job.description || job.summary || 'No description available'}
+                          </Text>
+
+                          <View style={styles.gigMeta}>
+                            <View style={styles.metaItem}>
+                              <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
+                              <Text style={[styles.metaText, { color: c.text }]}>{job.budget || 'N/A'}</Text>
+                            </View>
+                            <View style={styles.metaItem}>
+                              <MaterialIcons name="schedule" size={16} color={c.subtext} />
+                              <Text style={[styles.metaText, { color: c.subtext }]}>
+                                {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
+                              </Text>
+                            </View>
+                            {job.budgetType && (
+                              <Badge
+                                label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
+                                variant="neutral"
+                                size="small"
+                              />
+                            )}
                           </View>
-                          {job.budgetType && (
-                            <Badge
-                              label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
-                              variant="neutral"
-                              size="small"
-                            />
+
+                          {job.skills && job.skills.length > 0 && (
+                            <View style={styles.skillsRow}>
+                              {job.skills.slice(0, 5).map((skill, idx) => (
+                                <Badge key={idx} label={skill} variant="info" size="small" />
+                              ))}
+                            </View>
                           )}
-                        </View>
 
-                        {job.skills && job.skills.length > 0 && (
-                          <View style={styles.skillsRow}>
-                            {job.skills.slice(0, 5).map((skill, idx) => (
-                              <Badge key={idx} label={skill} variant="info" size="small" />
-                            ))}
+                          <View style={styles.gigActions}>
+                            <TouchableOpacity
+                              onPress={() => handleNotInterested(job._id)}
+                              style={[styles.actionBtn, { backgroundColor: c.card, borderColor: '#ef4444', borderWidth: 1 }]}
+                            >
+                              <MaterialIcons name="thumb-down-off-alt" size={20} color="#ef4444" />
+                              <Text style={{ color: '#ef4444', fontWeight: '600', marginLeft: 6 }}>Not Interested</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                              onPress={() => handleInterested(job._id)}
+                              style={[
+                                styles.actionBtn,
+                                {
+                                  backgroundColor: c.primary,
+                                  shadowColor: c.primary,
+                                  shadowOpacity: 0.3,
+                                  shadowRadius: 6,
+                                  shadowOffset: { width: 0, height: 3 },
+                                  elevation: 4
+                                }
+                              ]}
+                            >
+                              <MaterialIcons name="thumb-up" size={20} color="#fff" />
+                              <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 6 }}>I'm Interested</Text>
+                            </TouchableOpacity>
                           </View>
+<<<<<<< HEAD
                         )}
 
                         <View style={styles.gigActions}>
@@ -273,9 +418,11 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                             size="small"
                             style={{ flex: 1 }}
                           />
+=======
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
                         </View>
-                      </View>
-                    </Card>
+                      </Card>
+                    </Animated.View>
                   );
                 })
               ) : (
@@ -405,7 +552,17 @@ const styles = StyleSheet.create({
   gigActions: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 8
   },
+  actionBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 0
+  }
 });
 
 export default FreelancerMatchedGigsScreen;

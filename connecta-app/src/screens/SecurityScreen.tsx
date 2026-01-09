@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -12,8 +12,9 @@ export default function SecurityScreen({ navigation }: any) {
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
@@ -26,10 +27,21 @@ export default function SecurityScreen({ navigation }: any) {
             Alert.alert('Error', 'Password must be at least 8 characters');
             return;
         }
-        Alert.alert('Success', 'Password changed successfully');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+
+        try {
+            setIsLoading(true);
+            const { changePassword } = require('../services/authService');
+            await changePassword(currentPassword, newPassword);
+            Alert.alert('Success', 'Password changed successfully');
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || 'Failed to change password';
+            Alert.alert('Error', msg);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -112,10 +124,15 @@ export default function SecurityScreen({ navigation }: any) {
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: c.primary }]}
+                    style={[styles.saveButton, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
                     onPress={handleChangePassword}
+                    disabled={isLoading}
                 >
-                    <Text style={styles.saveButtonText}>Change Password</Text>
+                    {isLoading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text style={styles.saveButtonText}>Change Password</Text>
+                    )}
                 </TouchableOpacity>
 
                 <View style={[styles.divider, { backgroundColor: c.border }]} />

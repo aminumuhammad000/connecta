@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+=======
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Animated } from 'react-native';
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
@@ -26,20 +31,27 @@ interface JobRec {
   postedAgo: string;
 }
 
-
-
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { user } = useAuth();
+<<<<<<< HEAD
   const [stats, setStats] = useState<any>(null);
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+=======
+  const [stats, setStats] = React.useState<any>(null);
+  const [recommendedJobs, setRecommendedJobs] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [likedGigs, setLikedGigs] = React.useState<Set<string>>(new Set());
+
+  const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 
   // Profile Completion Logic
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
-
 
 
   useFocusEffect(
@@ -57,6 +69,14 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
       ]);
       setStats(statsData);
       setRecommendedJobs(jobsData);
+
+      // Init animations
+      jobsData.forEach((job: any) => {
+        if (job._id && !scaleAnims[job._id]) {
+          scaleAnims[job._id] = new Animated.Value(1);
+        }
+      });
+
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -106,6 +126,36 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const handleSkipProfile = () => {
     setProfileModalVisible(false);
+  };
+
+  const toggleLikeGig = (gigId: string) => {
+    // Animate
+    if (!scaleAnims[gigId]) {
+      scaleAnims[gigId] = new Animated.Value(1);
+    }
+
+    Animated.sequence([
+      Animated.spring(scaleAnims[gigId], {
+        toValue: 1.5,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnims[gigId], {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    setLikedGigs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(gigId)) {
+        newSet.delete(gigId);
+      } else {
+        newSet.add(gigId);
+      }
+      return newSet;
+    });
   };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
@@ -256,6 +306,16 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                             </View>
                             <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
                           </View>
+
+                          <TouchableOpacity onPress={() => toggleLikeGig(job._id)}>
+                            <Animated.View style={{ transform: [{ scale: scaleAnims[job._id] || 1 }] }}>
+                              <Ionicons
+                                name={likedGigs.has(job._id) ? "heart" : "heart-outline"}
+                                size={24}
+                                color={likedGigs.has(job._id) ? "#ef4444" : c.subtext}
+                              />
+                            </Animated.View>
+                          </TouchableOpacity>
                         </View>
 
                         <View style={styles.jobMeta}>

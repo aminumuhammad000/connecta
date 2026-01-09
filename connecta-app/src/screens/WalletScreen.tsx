@@ -131,8 +131,14 @@ const WalletScreen = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       {/* App Bar */}
+      {/* App Bar */}
       <View style={[styles.appBar, { borderBottomColor: c.border }]}>
-        <Text style={[styles.screenTitle, { color: c.text }]}>Wallet</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color={c.text} />
+          </TouchableOpacity>
+          <Text style={[styles.screenTitle, { color: c.text }]}>Wallet</Text>
+        </View>
         <TouchableOpacity onPress={() => navigation.navigate('WithdrawalSetup')}>
           <MaterialIcons name="settings" size={24} color={c.text} />
         </TouchableOpacity>

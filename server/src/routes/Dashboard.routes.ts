@@ -4,6 +4,7 @@ import {
   getFreelancerDashboard,
   getTopFreelancers,
   getRecentMessages,
+  getAdminStats,
 } from '../controllers/Dashboard.controller';
 import { authenticate } from '../core/middleware/auth.middleware';
 
@@ -14,6 +15,9 @@ router.use(authenticate);
 
 // Get client dashboard stats
 router.get('/stats', getClientDashboard);
+
+// Get admin dashboard stats
+router.get('/admin/stats', getAdminStats);
 
 // Get freelancer dashboard stats
 router.get('/freelancer/stats', getFreelancerDashboard);

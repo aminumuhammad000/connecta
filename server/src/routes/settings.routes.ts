@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { getSettings, updateSmtpSettings, updateApiKeys } from '../controllers/settings.controller';
-// import { authenticate, authorize } from '../core/middleware/auth.middleware'; // Assuming we have auth middleware
+import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = Router();
 
-// TODO: Add authentication and authorization (admin only)
-// router.use(authenticate);
+// Secure all settings routes
+router.use(authenticate);
+
+// TODO: Add refined authorization (e.g. admin only) for specific routes if needed
 // router.use(authorize('admin'));
 
 router.get('/', getSettings);

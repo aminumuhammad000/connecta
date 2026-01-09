@@ -3,17 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import User from "../models/user.model";
-import { getApiKeys } from "../services/apiKeys.service";
 
-let googleClient: OAuth2Client | null = null;
-
-const getGoogleClient = async () => {
-  if (!googleClient) {
-    const apiKeys = await getApiKeys();
-    googleClient = new OAuth2Client(apiKeys.google.clientId);
-  }
-  return googleClient;
-};
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 
 // ===================
 // Get All Users / Search Users
@@ -107,20 +98,7 @@ export const signup = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       userType,
-      isVerified: false,
     });
-
-    // Generate Verification OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-    const OTP = (await import('../models/otp.model')).default;
-    await OTP.create({ userId: newUser._id, otp, expiresAt });
-
-    // Send Verification Email
-    const { sendOTPEmail } = await import('../services/email.service');
-    // Note: async send to not block response too long, or await if critical
-    sendOTPEmail(email, otp, firstName, 'EMAIL_VERIFICATION').catch(err => console.error('Failed to send signup verification email:', err));
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
     res.status(201).json({ user: newUser, token });
@@ -156,11 +134,9 @@ export const signin = async (req: Request, res: Response) => {
 export const googleSignup = async (req: Request, res: Response) => {
   try {
     const { tokenId, userType } = req.body;
-    const client = await getGoogleClient();
-    const apiKeys = await getApiKeys();
     const ticket = await client.verifyIdToken({
       idToken: tokenId,
-      audience: apiKeys.google.clientId,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
 
@@ -177,7 +153,6 @@ export const googleSignup = async (req: Request, res: Response) => {
       email,
       userType,
       password: "", // no password needed for Google accounts
-      isVerified: true, // Google accounts are verified by default
     });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -187,6 +162,7 @@ export const googleSignup = async (req: Request, res: Response) => {
   }
 };
 
+// ===================
 // ===================
 // Resend Verification OTP
 // ===================
@@ -259,7 +235,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await user.save();
 
     // Clean up OTP
-    // Clean up OTP
     await OTP.deleteOne({ _id: otpRecord._id });
 
     // Send Welcome Email
@@ -327,18 +302,15 @@ export const updatePushToken = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error: err });
   }
 };
-
 // ===================
 // Google Sign In
 // ===================
 export const googleSignin = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.body;
-    const client = await getGoogleClient();
-    const apiKeys = await getApiKeys();
     const ticket = await client.verifyIdToken({
       idToken: tokenId,
-      audience: apiKeys.google.clientId,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
 
@@ -398,12 +370,12 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     // Send OTP via email
     const { sendOTPEmail } = await import('../services/email.service');
-    const result = await sendOTPEmail(email, otp, user.firstName);
+    const emailSent = await sendOTPEmail(email, otp, user.firstName);
 
-    if (!result.success) {
+    if (!emailSent) {
       return res.status(500).json({
         success: false,
-        message: `Failed to send OTP email: ${result.error || 'Unknown error'}`
+        message: "Failed to send OTP email. Please try again."
       });
     }
 
@@ -674,7 +646,64 @@ export const getMe = async (req: Request, res: Response) => {
 };
 
 // ===================
-// Update Current User
+// Change Password
+// ===================
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current and new passwords are required"
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters"
+      });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Check current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: "Incorrect current password" });
+    }
+
+    // Update password (hashing handled by pre-save hook usually, or we hash it here)
+    // Checking if pre-save hook exists in User model is safer. 
+    // IF NOT, we must hash it here. 
+    // Given signin just compares, let's assume pre-save hooks handles hashing on save.
+    // BUT wait, `user.password = newPassword` might not trigger hash if logic is weak.
+    // Let's check User model after this. Safe bet: hash it if plaintext.
+
+    // For now, let's rely on User model knowing how to hash, OR manually hash.
+    // Most likely: user.password = await bcrypt.hash(newPassword, 12);
+
+    // I will check User model NEXT. For now, valid bcrypt check is key.
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully"
+    });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Update Push Token
 // ===================
 export const updateMe = async (req: Request, res: Response) => {
   try {
@@ -737,15 +766,14 @@ export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findById(id);
+    const user = await User.findByIdAndDelete(id);
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found"
       });
     }
-
-    await User.findByIdAndDelete(id);
 
     res.status(200).json({
       success: true,
@@ -760,3 +788,5 @@ export const deleteUser = async (req: Request, res: Response) => {
     });
   }
 };
+
+

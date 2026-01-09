@@ -60,23 +60,63 @@ export default function ConnectaAIScreen({ navigation }: any) {
         Keyboard.dismiss();
 
         try {
-            if (!user?._id) {
-                throw new Error('User ID not found');
-            }
+            if (!user?._id) throw new Error('User ID not found');
 
             const response = await agentService.sendMessageToAgent(text, user._id, user.userType);
 
             if (response.success && response.result.success) {
+<<<<<<< HEAD
                 const result = response.result;
                 const responseText = result.message || (typeof result.data === 'string' ? result.data : "Here is what I found:");
+=======
+                const resultData = response.result.data;
+                let messageType: 'text' | 'jobs' | 'profiles' = 'text';
+                let jobsData: any[] = [];
+                let profilesData: any[] = [];
+                let displayText = response.result.message || (typeof resultData === 'string' ? resultData : "Here is what I found:");
+
+                // Detect response type
+                if (typeof resultData === 'object' && resultData !== null) {
+                    // Check for Jobs
+                    if (resultData.data && Array.isArray(resultData.data)) {
+                        // Keep robust check for job-like structures
+                        const sample = resultData.data[0];
+                        if (sample && (sample.title || sample.budget)) {
+                            messageType = 'jobs';
+                            jobsData = resultData.data;
+                            displayText = response.result.message || `I found ${jobsData.length} gigs matching your request:`;
+                        } else if (sample && (sample.firstName || sample.userType)) {
+                            messageType = 'profiles';
+                            profilesData = resultData.data;
+                            displayText = response.result.message || `I found ${profilesData.length} profiles matching your request:`;
+                        }
+                    } else if (Array.isArray(resultData)) {
+                        // Direct array handling
+                        const sample = resultData[0];
+                        if (sample && (sample.title || sample.budget)) {
+                            messageType = 'jobs';
+                            jobsData = resultData;
+                        } else if (sample && (sample.firstName || sample.userType)) {
+                            messageType = 'profiles';
+                            profilesData = resultData;
+                        }
+                    }
+                }
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 
                 const aiMsg: Message = {
                     id: (Date.now() + 1).toString(),
-                    text: responseText,
+                    text: typeof displayText === 'string' ? displayText : JSON.stringify(displayText),
                     sender: 'ai',
                     timestamp: new Date(),
+<<<<<<< HEAD
                     responseType: result.responseType as any,
                     data: result.data
+=======
+                    type: messageType,
+                    jobs: jobsData,
+                    profiles: profilesData
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
                 };
                 setMessages(prev => [...prev, aiMsg]);
             } else {
@@ -89,10 +129,9 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 message: 'Failed to get response from AI',
                 type: 'error'
             });
-
             const errorMsg: Message = {
                 id: (Date.now() + 1).toString(),
-                text: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+                text: "I'm sorry, connection failed. Please try again.",
                 sender: 'ai',
                 timestamp: new Date()
             };
@@ -102,8 +141,52 @@ export default function ConnectaAIScreen({ navigation }: any) {
         }
     };
 
+    const renderJobCard = (job: any) => (
+        <TouchableOpacity
+            key={job._id || job.id}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            onPress={() => navigation.navigate('JobDetail', { jobId: job._id || job.id })}
+        >
+            <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{job.title}</Text>
+            <Text style={[styles.cardSubtitle, { color: c.subtext }]} numberOfLines={1}>{job.company || 'Confidential'}</Text>
+            <View style={styles.cardFooter}>
+                <Text style={[styles.cardPrice, { color: c.primary }]}>
+                    {job.budget?.currency || '$'}{job.budget?.amount?.toLocaleString() || '0'}
+                </Text>
+                <View style={[styles.badge, { backgroundColor: c.surface }]}>
+                    <Text style={[styles.badgeText, { color: c.subtext }]}>{job.type || 'Fixed'}</Text>
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+
+    const renderProfileCard = (profile: any) => (
+        <TouchableOpacity
+            key={profile._id || profile.id}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
+            // Navigate to generic public profile or specific freelancer profile
+            onPress={() => navigation.navigate('ClientProfile', { clientId: profile._id || profile.id })}
+        >
+            <View style={styles.profileHeader}>
+                <Image
+                    source={{ uri: profile.profileImage || 'https://i.pravatar.cc/100' }}
+                    style={styles.cardAvatar}
+                />
+                <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>
+                        {profile.firstName} {profile.lastName}
+                    </Text>
+                    <Text style={[styles.cardSubtitle, { color: c.subtext }]} numberOfLines={1}>
+                        {profile.title || 'Freelancer'}
+                    </Text>
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+
     const renderMessage = ({ item }: { item: Message }) => {
         const isUser = item.sender === 'user';
+<<<<<<< HEAD
 
         // Helper to render content based on type
         const renderContent = () => {
@@ -184,6 +267,51 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 <View style={{ flex: 1 }}>
                     {renderContent()}
                 </View>
+=======
+        return (
+            <View style={{ marginBottom: 16, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+                <View style={[
+                    styles.messageBubble,
+                    isUser ? styles.userBubble : styles.aiBubble,
+                    isUser ? { backgroundColor: c.primary } : { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }
+                ]}>
+                    {!isUser && (
+                        <View style={styles.aiIcon}>
+                            <Ionicons name="sparkles" size={16} color={c.primary} />
+                        </View>
+                    )}
+                    <Text style={[
+                        styles.messageText,
+                        isUser ? { color: 'white' } : { color: c.text }
+                    ]}>
+                        {item.text}
+                    </Text>
+                </View>
+
+                {/* Render Horizontal List for Jobs */}
+                {item.type === 'jobs' && item.jobs && item.jobs.length > 0 && (
+                    <FlatList
+                        horizontal
+                        data={item.jobs}
+                        renderItem={({ item }) => renderJobCard(item)}
+                        keyExtractor={job => job._id || Math.random().toString()}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.carouselContent}
+                    />
+                )}
+
+                {/* Render Horizontal List for Profiles */}
+                {item.type === 'profiles' && item.profiles && item.profiles.length > 0 && (
+                    <FlatList
+                        horizontal
+                        data={item.profiles}
+                        renderItem={({ item }) => renderProfileCard(item)}
+                        keyExtractor={p => p._id || Math.random().toString()}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.carouselContent}
+                    />
+                )}
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
             </View>
         );
     };
@@ -378,5 +506,58 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    // New Card Styles
+    carouselContent: {
+        paddingLeft: 4,
+        paddingTop: 8,
+        paddingBottom: 4,
+        gap: 12,
+    },
+    card: {
+        width: 220,
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginRight: 10,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    cardSubtitle: {
+        fontSize: 14,
+        marginBottom: 8,
+    },
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    cardPrice: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    badgeText: {
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    cardAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#eee',
     },
 });

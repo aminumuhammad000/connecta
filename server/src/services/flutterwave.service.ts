@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const FLUTTERWAVE_SECRET_KEY = 'FLWSECK_TEST-8f427e73ba259780bd824c1bd7b9ef67-X';
+const FLUTTERWAVE_SECRET_KEY = 'FLWSECK-0f4d2d4198568a5d2a69689d337fcd69-19b9e66ac44vt-X';
 const FLUTTERWAVE_BASE_URL = 'https://api.flutterwave.com/v3';
 
 interface FlutterwaveInitializeResponse {
@@ -63,7 +63,7 @@ class FlutterwaveService {
                 tx_ref: reference,
                 amount,
                 currency: 'NGN',
-                redirect_url: 'https://connecta.app/payment/callback', // This will be intercepted by the WebView
+                redirect_url: 'http://172.20.10.3:5000/payment/callback', // This will be intercepted by the WebView
                 payment_options: 'card',
                 meta: metadata,
                 customer: {
@@ -128,6 +128,8 @@ class FlutterwaveService {
      */
     async resolveAccount(accountNumber: string, bankCode: string): Promise<any> {
         try {
+
+
             const response = await axios.post(
                 `${FLUTTERWAVE_BASE_URL}/accounts/resolve`,
                 {

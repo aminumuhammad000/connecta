@@ -10,6 +10,8 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import SkillSelectionScreen from '../screens/SkillSelectionScreen';
+import FreelancerOnboardingScreen from '../screens/FreelancerOnboardingScreen';
+import MatchingJobsScreen from '../screens/MatchingJobsScreen';
 import { useRole } from '../context/RoleContext';
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +29,8 @@ export default function AuthNavigator() {
             <Stack.Screen name="OTPVerification" component={OTPVerificationWrapper} />
             <Stack.Screen name="ResetPassword" component={ResetPasswordWrapper} />
             <Stack.Screen name="SkillSelection" component={SkillSelectionScreen} />
+            <Stack.Screen name="FreelancerOnboarding" component={FreelancerOnboardingScreen} />
+            <Stack.Screen name="MatchingJobs" component={MatchingJobsScreen} />
         </Stack.Navigator>
     );
 }
@@ -77,7 +81,7 @@ function OTPVerificationWrapper({ navigation, route }: any) {
             onOTPVerified={(token: string) => {
                 // If signing up as freelancer, go to skills selection
                 if (mode === 'signup' && role === 'freelancer') {
-                    navigation.navigate('SkillSelection', { token });
+                    navigation.navigate('FreelancerOnboarding', { token });
                 } else if (mode === 'signup') {
                     // Client signup - finished
                     // Trigger auth state update or nav to login
