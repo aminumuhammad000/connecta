@@ -1,0 +1,31 @@
+{
+    "name": "connecta-scraper",
+    "version": "1.0.0",
+    "description": "External job scraper service for Connecta",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "ts-node src/index.ts",
+        "scrape:manual": "ts-node src/index.ts --manual"
+    },
+    "keywords": [
+        "scraper",
+        "jobs",
+        "playwright"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "playwright": "^1.40.0",
+        "axios": "^1.6.0",
+        "node-cron": "^3.0.3",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/node-cron": "^3.0.11",
+        "typescript": "^5.0.0",
+        "ts-node": "^10.9.0"
+    }
+}

@@ -6,6 +6,8 @@ import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.config";
 import agentRoute from "./routes/agentRoute"
+import { initCronJobs } from "./services/cron.service";
+
 
 // routes 
 import userRoutes from "./routes/user.routes";
@@ -93,6 +95,9 @@ app.use("/api/webhooks", webhookRoutes);
 
 import broadcastRoutes from "./routes/broadcast.routes";
 app.use("/api/broadcast", broadcastRoutes);
+
+import externalGigsRoutes from "./routes/external-gigs.routes";
+app.use("/api/external-gigs", externalGigsRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
@@ -184,5 +189,8 @@ io.on("connection", (socket) => {
 server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`🔌 Socket.io ready for real-time messaging`);
+
+  // Initialize cron jobs
+  initCronJobs();
 });
 

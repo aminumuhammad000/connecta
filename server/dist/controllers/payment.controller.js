@@ -265,6 +265,42 @@ const releasePayment = async (req, res) => {
             freelancerWallet.totalEarnings += payment.netAmount;
             await freelancerWallet.save();
         }
+        // Notify Freelancer
+        try {
+            const User = require('../models/user.model').default;
+            const Project = require('../models/Project.model').default;
+            const emailService = require('../services/email.service');
+            const io = require('../core/utils/socketIO').getIO();
+            const mongoose = require('mongoose');
+            const freelancer = await User.findById(payment.payeeId);
+            const project = payment.projectId ? await Project.findById(payment.projectId) : null;
+            const projectName = project ? project.title : 'Project';
+            const amountStr = `${payment.currency} ${payment.amount}`;
+            // Socket Notification
+            await mongoose.model('Notification').create({
+                userId: payment.payeeId,
+                type: 'payment_released',
+                title: 'Funds Released',
+                message: `Payment of ${amountStr} for "${projectName}" has been released.`,
+                relatedId: payment._id,
+                relatedType: 'payment',
+                actorId: userId,
+                actorName: 'Client',
+                isRead: false
+            });
+            io.to(payment.payeeId.toString()).emit('notification:new', {
+                title: 'Funds Released',
+                message: `Payment of ${amountStr} for "${projectName}" has been released.`,
+                type: 'payment_released'
+            });
+            // Email Notification
+            if (freelancer && freelancer.email) {
+                await emailService.sendPaymentReleasedEmail(freelancer.email, freelancer.firstName || 'Freelancer', projectName, amountStr);
+            }
+        }
+        catch (e) {
+            console.warn('Notify failed', e);
+        }
         return res.status(200).json({
             success: true,
             message: 'Payment released successfully',
@@ -525,6 +561,40 @@ const requestWithdrawal = async (req, res) => {
         wallet.balance -= amount;
         // Pre-save hook will update availableBalance
         await wallet.save();
+        // Notify User
+        try {
+            const User = require('../models/user.model').default;
+            const { sendWithdrawalRequestEmail } = require('../services/email.service');
+            const mongoose = require('mongoose');
+            const user = await User.findById(userId);
+            if (user && user.email) {
+                await sendWithdrawalRequestEmail(user.email, user.firstName, `${wallet.currency} ${amount}`);
+            }
+            // Notification
+            await mongoose.model('Notification').create({
+                userId: userId,
+                type: 'system',
+                title: 'Withdrawal Requested',
+                message: `Withdrawal of ${wallet.currency} ${amount} initiated.`,
+                relatedId: withdrawal._id,
+                relatedType: 'withdrawal',
+                actorId: userId,
+                actorName: 'System',
+                isRead: false,
+            });
+            const ioInstance = require('../core/utils/socketIO').getIO();
+            ioInstance.to(userId.toString()).emit('notification:new', {
+                title: 'Withdrawal Requested',
+                message: `Withdrawal initiated.`,
+                type: 'system'
+            });
+            // Push Notification
+            const notificationService = require('../services/notification.service').default;
+            notificationService.sendPushNotification(userId, 'Withdrawal Requested 🏦', `Withdrawal of ${wallet.currency} ${amount} initiated.`, { withdrawalId: withdrawal._id, type: 'withdrawal' });
+        }
+        catch (e) {
+            console.warn('Withdrawal notify error', e);
+        }
         return res.status(200).json({
             success: true,
             message: 'Withdrawal request submitted successfully',

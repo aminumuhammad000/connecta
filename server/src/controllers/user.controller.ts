@@ -163,6 +163,146 @@ export const googleSignup = async (req: Request, res: Response) => {
 };
 
 // ===================
+// ===================
+// Resend Verification OTP
+// ===================
+export const resendVerificationOTP = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email is already verified" });
+    }
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Manage OTP record
+    const OTP = (await import('../models/otp.model')).default;
+    await OTP.deleteMany({ userId: user._id });
+    await OTP.create({ userId: user._id, otp, expiresAt });
+
+    // Send OTP email
+    const { sendOTPEmail } = await import('../services/email.service');
+    const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION');
+
+    if (!result.success) {
+      return res.status(500).json({ message: "Failed to send verification email" });
+    }
+
+    res.status(200).json({ success: true, message: "Verification code sent" });
+  } catch (err) {
+    console.error('Resend OTP error:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Verify Email OTP
+// ===================
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { otp } = req.body;
+
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    if (!otp) return res.status(400).json({ message: "OTP is required" });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.isVerified) {
+      return res.status(200).json({ success: true, message: "Email already verified" });
+    }
+
+    // Verify OTP
+    const OTP = (await import('../models/otp.model')).default;
+    const otpRecord = await OTP.findOne({ userId: user._id, otp, verified: false });
+
+    if (!otpRecord) return res.status(400).json({ message: "Invalid OTP" });
+    if (new Date() > otpRecord.expiresAt) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    // Mark user as verified
+    user.isVerified = true;
+    await user.save();
+
+    // Clean up OTP
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    // Send Welcome Email
+    const { sendWelcomeEmail } = await import('../services/email.service');
+    sendWelcomeEmail(user.email, user.firstName).catch(console.error);
+
+    // Send Welcome Notification
+    try {
+      const mongoose = require('mongoose');
+      const io = require('../core/utils/socketIO').getIO();
+
+      await mongoose.model('Notification').create({
+        userId: user._id,
+        type: 'system',
+        title: 'Welcome to Connecta!',
+        message: 'Your account has been verified. You can now access all features.',
+        relatedId: user._id,
+        relatedType: 'user',
+        actorId: null,
+        actorName: 'System',
+        isRead: false,
+      });
+
+      io.to(user._id.toString()).emit('notification:new', {
+        title: 'Welcome to Connecta!',
+        message: 'Your account has been verified.',
+        type: 'system'
+      });
+
+      // Push Notification
+      const notificationService = (await import('../services/notification.service')).default;
+      notificationService.sendPushNotification(
+        user._id.toString(),
+        'Welcome to Connecta! 🚀',
+        'Your account has been verified. You can now access all features.',
+        { type: 'system' }
+      );
+
+    } catch (e) { console.warn('Welcome notification error', e); }
+
+    // Return updated user
+    res.status(200).json({ success: true, message: "Email verified successfully", user });
+  } catch (err) {
+    console.error('Verify Email error:', err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Update Push Token
+// ===================
+export const updatePushToken = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { pushToken } = req.body;
+
+    if (!pushToken) {
+      return res.status(400).json({ message: "Push token is required" });
+    }
+
+    await User.findByIdAndUpdate(userId, { pushToken });
+
+    res.status(200).json({ success: true, message: "Push token updated" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+// ===================
 // Google Sign In
 // ===================
 export const googleSignin = async (req: Request, res: Response) => {
@@ -649,156 +789,4 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-// ===================
-// Verify Email
-// ===================
-export const verifyEmail = async (req: Request, res: Response) => {
-  try {
-    const { otp } = req.body;
-    const userId = (req as any).user?.id;
 
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    if (!otp) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP is required"
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ success: false, message: "Email is already verified" });
-    }
-
-    // Reuse OTP model for verification
-    const OTP = (await import('../models/otp.model')).default;
-    const otpRecord = await OTP.findOne({
-      userId: user._id,
-      otp,
-      verified: false,
-    });
-
-    if (!otpRecord) {
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ success: false, message: "OTP has expired" });
-    }
-
-    // Mark user as verified
-    user.isVerified = true;
-    await user.save();
-
-    // Mark OTP verified / Delete it
-    await OTP.deleteOne({ _id: otpRecord._id });
-
-    // Generate token if not logged in? usually this is a public unauth route, or auth.
-    // Assuming unauth flow (signup -> verify), giving token is helpful.
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
-
-    res.status(200).json({
-      success: true,
-      message: "Email verified successfully",
-      token,
-      user
-    });
-  } catch (err) {
-    console.error('Verify email error:', err);
-    res.status(500).json({ success: false, message: "Server error", error: err });
-  }
-};
-
-// ===================
-// Resend Verification OTP
-// ===================
-export const resendVerificationOTP = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ success: false, message: "User is already verified" });
-    }
-
-    // Generate OTP
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-
-    const OTP = (await import('../models/otp.model')).default;
-    // Clear old OTPs
-    await OTP.deleteMany({ userId: user._id });
-
-    await OTP.create({
-      userId: user._id,
-      otp,
-      expiresAt
-    });
-
-    // Send email
-    const { sendOTPEmail } = await import('../services/email.service');
-    const emailSent = await sendOTPEmail(user.email, otp, user.firstName);
-
-    if (!emailSent) {
-      return res.status(500).json({ success: false, message: "Failed to send email" });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Verification Code sent successfully"
-    });
-  } catch (err) {
-    console.error('Resend OTP error:', err);
-    res.status(500).json({ success: false, message: "Server error", error: err });
-  }
-};
-
-// ===================
-// Update Push Token
-// ===================
-export const updatePushToken = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id;
-    const { token } = req.body;
-
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    if (!token) {
-      return res.status(400).json({ success: false, message: "Token is required" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    user.pushToken = token;
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Push token updated successfully"
-    });
-  } catch (err) {
-    console.error('Update push token error:', err);
-    res.status(500).json({ success: false, message: "Server error", error: err });
-  }
-};
