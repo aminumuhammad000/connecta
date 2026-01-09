@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const settings_controller_1 = require("../controllers/settings.controller");
-// import { authenticate, authorize } from '../core/middleware/auth.middleware'; // Assuming we have auth middleware
+const auth_middleware_1 = require("../core/middleware/auth.middleware");
 const router = (0, express_1.Router)();
-// TODO: Add authentication and authorization (admin only)
-// router.use(authenticate);
+// Secure all settings routes
+router.use(auth_middleware_1.authenticate);
+// TODO: Add refined authorization (e.g. admin only) for specific routes if needed
 // router.use(authorize('admin'));
 router.get('/', settings_controller_1.getSettings);
 router.put('/smtp', settings_controller_1.updateSmtpSettings);

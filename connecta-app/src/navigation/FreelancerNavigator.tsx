@@ -23,6 +23,7 @@ import MessagesScreen from '../screens/MessagesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
+import VideoCallScreen from '../screens/VideoCallScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -85,6 +86,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="ProposalDetail" component={require('../screens/ProposalDetailScreen').default} />
             <Stack.Screen name="ClientProfile" component={require('../screens/ClientProfileScreen').default} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
+            <Stack.Screen name="VideoCall" component={VideoCallScreen} />
             <Stack.Screen name="FreelancerProjects" component={require('../screens/FreelancerProjectsScreen').default} />
             <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
             <Stack.Screen name="WithdrawalSetup" component={require('../screens/WithdrawalSetupScreen').default} />

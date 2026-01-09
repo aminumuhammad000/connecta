@@ -30,6 +30,7 @@ import ClientEditProfileScreen from '../screens/ClientEditProfileScreen';
 import NotificationDetailScreen from '../screens/NotificationDetailScreen';
 import ProposalsScreen from '../screens/ProposalsScreen';
 import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
+import VideoCallScreen from '../screens/VideoCallScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -95,6 +96,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="Proposals" component={ProposalsScreen} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
             <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
+            <Stack.Screen name="VideoCall" component={VideoCallScreen} />
         </Stack.Navigator>
     );
 }

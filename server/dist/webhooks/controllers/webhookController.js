@@ -4,7 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleWebhook = void 0;
-const payment_service_1 = __importDefault(require("../../services/payment.service"));
+const Payment_model_1 = __importDefault(require("../../models/Payment.model"));
+const Job_model_1 = __importDefault(require("../../models/Job.model"));
+const flutterwave_service_1 = __importDefault(require("../../services/flutterwave.service"));
 /**
  * Handle Flutterwave Webhook
  */
@@ -24,10 +26,42 @@ const handleWebhook = async (req, res) => {
         // 2. Handle specific events
         if (payload.event === 'charge.completed' && payload.data.status === 'successful') {
             const { tx_ref, id } = payload.data;
-            // Process payment
-            // We pass the transaction ID to verify it one last time with the gateway
-            await payment_service_1.default.processSuccessfulPayment(tx_ref, id.toString());
-            console.log(`Payment processed via webhook: ${tx_ref}`);
+            console.log(`Processing Webhook for ref: ${tx_ref}`);
+            // Verify with Gateway (Double check)
+            const flwResponse = await flutterwave_service_1.default.verifyPayment(id.toString());
+            if (flwResponse.status === 'success' && flwResponse.data.status === 'successful') {
+                // Find Payment
+                const payment = await Payment_model_1.default.findById(tx_ref);
+                if (payment && payment.status !== 'completed') {
+                    // Verify Amount
+                    if (payment.amount <= flwResponse.data.amount) {
+                        // Update Payment
+                        payment.status = 'completed';
+                        payment.gatewayResponse = flwResponse.data;
+                        payment.paidAt = new Date();
+                        await payment.save();
+                        // Handle Job Verification
+                        if (payment.paymentType === 'job_verification' && payment.jobId) {
+                            const job = await Job_model_1.default.findById(payment.jobId);
+                            if (job) {
+                                job.paymentVerified = true;
+                                job.paymentStatus = 'escrow';
+                                await job.save();
+                            }
+                        }
+                        console.log(`Payment completed via webhook: ${tx_ref}`);
+                    }
+                    else {
+                        console.error('Webhook amount mismatch', { expected: payment.amount, received: flwResponse.data.amount });
+                    }
+                }
+                else {
+                    console.log('Payment already completed or not found for ref:', tx_ref);
+                }
+            }
+            else {
+                console.error('Webhook verification failed with gateway', flwResponse);
+            }
         }
         // Always return 200 OK to acknowledge receipt
         res.status(200).send('Webhook received');

@@ -130,14 +130,6 @@ export const getAllProjects = async (req: Request, res: Response) => {
       query.status = status;
     }
 
-    const { userId } = req.query;
-    if (userId) {
-      query.$or = [
-        { clientId: userId },
-        { freelancerId: userId }
-      ];
-    }
-
     const skip = (Number(page) - 1) * Number(limit);
 
     const projects = await Project.find(query)
@@ -170,16 +162,7 @@ export const getAllProjects = async (req: Request, res: Response) => {
 export const getProjectById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    console.log('🔍 [getProjectById] Requesting ID:', id);
 
-    // DEBUG: Check if ID is valid ObjectId
-    const mongoose = require('mongoose');
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.error('❌ [getProjectById] Invalid ObjectId:', id);
-      return res.status(400).json({ success: false, message: 'Invalid Project ID format' });
-    }
-
-    const start = Date.now();
     const project = await Project.findById(id)
       .populate('clientId', 'firstName lastName email')
       .populate('freelancerId', 'firstName lastName email')
@@ -272,10 +255,10 @@ export const updateProjectStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status, statusLabel } = req.body;
 
-    if (!['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration'].includes(status)) {
+    if (!['ongoing', 'completed', 'cancelled'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid status',
+        message: 'Invalid status. Must be ongoing, completed, or cancelled',
       });
     }
 
@@ -301,91 +284,6 @@ export const updateProjectStatus = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error updating project status',
-      error: error.message,
-    });
-  }
-};
-
-// Submit project for review (Freelancer)
-export const submitProject = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const userId = (req as any).user?.id || (req as any).user?._id;
-
-    const project = await Project.findById(id);
-    if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
-    }
-
-    // Verify freelancer
-    if (project.freelancerId.toString() !== userId) {
-      return res.status(403).json({ success: false, message: 'Only the freelancer can submit this project' });
-    }
-
-    if (project.status === 'completed' || project.status === 'cancelled') {
-      return res.status(400).json({ success: false, message: 'Project is already closed' });
-    }
-
-    project.status = 'submitted';
-    project.statusLabel = 'Under Review';
-    project.activity.push({
-      date: new Date(),
-      description: 'Project submitted for client review',
-    });
-
-    await project.save();
-
-    // Notify Client
-    try {
-      const io = require('../core/utils/socketIO').getIO();
-      const mongoose = require('mongoose');
-
-      await mongoose.model('Notification').create({
-        userId: project.clientId,
-        type: 'project_submitted',
-        title: 'Project Submitted',
-        message: `Freelancer has submitted work for "${project.title}". Please review.`,
-        relatedId: project._id,
-        relatedType: 'project',
-        actorId: userId,
-        actorName: 'Freelancer', // Could fetch name
-        isRead: false,
-      });
-
-      io.to(project.clientId.toString()).emit('notification:new', {
-        title: 'Project Submitted',
-        message: `Freelancer has submitted work for "${project.title}". Please review.`,
-        type: 'project_submitted'
-      });
-
-      // Email Notification
-      const User = require('../models/user.model').default;
-      const emailService = require('../services/email.service');
-      const client = await User.findById(project.clientId);
-      if (client && client.email) {
-        const clientName = client.firstName || 'Client';
-        const freelancerName = (req as any).user?.firstName ? `${(req as any).user.firstName} ${(req as any).user.lastName}` : 'Freelancer';
-
-        await emailService.sendWorkSubmittedEmail(
-          client.email,
-          clientName,
-          freelancerName,
-          project.title
-        );
-      }
-    } catch (e) {
-      console.warn('Notification failed', e);
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Project submitted for review',
-      data: project,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error submitting project',
       error: error.message,
     });
   }
@@ -531,6 +429,51 @@ export const getProjectStats = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching project statistics',
+      error: error.message,
+    });
+  }
+};
+
+// Submit project
+export const submitProject = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { message, attachments } = req.body;
+
+    // In a real implementation, you might want to create a Submission model
+    // or update a submissions array in the Project model.
+    // For now, we'll just add an activity and update status if needed.
+
+    const project = await Project.findByIdAndUpdate(
+      id,
+      {
+        $push: {
+          activity: {
+            date: new Date(),
+            description: `Project Submitted: ${message || 'No description'}`,
+          }
+        },
+        // status: 'submitted', // If you have a 'submitted' status in your enum
+      },
+      { new: true }
+    );
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Project submitted successfully',
+      data: project,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error submitting project',
       error: error.message,
     });
   }

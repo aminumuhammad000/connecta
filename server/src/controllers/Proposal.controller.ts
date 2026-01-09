@@ -223,6 +223,15 @@ export const createProposal = async (req: Request, res: Response) => {
             message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
             type: 'proposal_new'
           });
+
+          // Send Push Notification
+          const notificationService = (await import('../services/notification.service')).default;
+          notificationService.sendPushNotification(
+            job.clientId.toString(),
+            'New Proposal',
+            `${freelancer ? freelancer.firstName : 'A freelancer'} applied for: ${job.title}`,
+            { proposalId: proposal._id, type: 'proposal' }
+          );
         }
       }
     } catch (notifyError) {
@@ -454,7 +463,7 @@ export const approveProposal = async (req: Request, res: Response) => {
       : proposal.clientId?.toString();
 
     // Verify the client owns this proposal
-    if (false) { // if (proposalClientId !== clientId) {
+    if (proposalClientId !== clientId) {
       return res.status(403).json({
         success: false,
         message: 'You are not authorized to approve this proposal',
@@ -613,6 +622,15 @@ export const approveProposal = async (req: Request, res: Response) => {
         message: `Your proposal for "${proposal.title}" has been accepted!`,
         type: 'proposal_accepted'
       });
+
+      // Send Push Notification
+      const notificationService = (await import('../services/notification.service')).default;
+      notificationService.sendPushNotification(
+        actualFreelancerId.toString(),
+        'Proposal Accepted',
+        `Your proposal for "${proposal.title}" has been accepted!`,
+        { projectId: project._id, type: 'project' }
+      );
     } catch (socketError) {
       console.warn('Socket/Notification error (non-fatal):', socketError);
       // Continue execution - do not fail the request just because notification failed
@@ -710,6 +728,15 @@ export const rejectProposal = async (req: Request, res: Response) => {
           message: `${clientName} has declined your proposal for "${jobTitle}".`,
           type: 'proposal_rejected'
         });
+
+        // Send Push Notification
+        const notificationService = (await import('../services/notification.service')).default;
+        notificationService.sendPushNotification(
+          freelancer._id.toString(),
+          'Proposal Declined',
+          `${clientName} declined your proposal for "${jobTitle}".`,
+          { type: 'proposal' }
+        );
 
         // 3. Email Notification
         if (freelancer.email) {

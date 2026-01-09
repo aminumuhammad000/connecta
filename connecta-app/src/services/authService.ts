@@ -76,6 +76,11 @@ export const updatePushToken = async (pushToken: string): Promise<ApiResponse> =
     return response;
 };
 
+export const changePassword = async (currentPassword: string, newPassword: string): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/change-password', { currentPassword, newPassword });
+    return response;
+};
+
 export default {
     signup,
     signin,

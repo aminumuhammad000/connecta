@@ -22,6 +22,7 @@ router.put("/me", auth_middleware_1.authenticate, user_controller_1.updateMe); /
 router.post("/verify-email", auth_middleware_1.authenticate, user_controller_1.verifyEmail); // POST /api/users/verify-email
 router.post("/resend-verification", auth_middleware_1.authenticate, user_controller_1.resendVerificationOTP); // POST /api/users/resend-verification
 router.post("/push-token", auth_middleware_1.authenticate, user_controller_1.updatePushToken); // POST /api/users/push-token
+router.post("/change-password", auth_middleware_1.authenticate, user_controller_1.changePassword); // POST /api/users/change-password
 // User data routes
 router.get("/", user_controller_1.getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20
 router.get("/:id", user_controller_1.getUserById); // GET /api/users/:id

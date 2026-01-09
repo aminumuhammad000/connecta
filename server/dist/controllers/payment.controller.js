@@ -175,7 +175,7 @@ exports.initializePayment = initializePayment;
 /**
  * Verify payment after Flutterwave callback
  */
-const payment_service_1 = __importDefault(require("../services/payment.service"));
+// Removed missing service import
 /**
  * Verify payment after Flutterwave callback
  */
@@ -189,8 +189,35 @@ const verifyPayment = async (req, res) => {
         if (!transactionId) {
             return res.status(400).json({ success: false, message: 'Transaction ID is required' });
         }
-        // Process payment via service
-        const payment = await payment_service_1.default.processSuccessfulPayment(reference, transactionId);
+        // Verify with Flutterwave
+        const flwResponse = await flutterwave_service_1.default.verifyPayment(transactionId);
+        if (flwResponse.status !== 'success' || flwResponse.data.status !== 'successful') {
+            return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
+        }
+        // Find local payment record
+        // The reference passed in params was set to payment._id during initialization
+        const payment = await Payment_model_1.default.findById(reference);
+        if (!payment) {
+            return res.status(404).json({ success: false, message: 'Payment record not found' });
+        }
+        // Verify amount (allow small diff for floating point?)
+        if (payment.amount > flwResponse.data.amount) {
+            return res.status(400).json({ success: false, message: 'Payment amount mismatch' });
+        }
+        // Update Payment
+        payment.status = 'completed';
+        payment.gatewayResponse = flwResponse.data;
+        payment.paidAt = new Date();
+        await payment.save();
+        // Handle Job Verification
+        if (payment.paymentType === 'job_verification' && payment.jobId) {
+            const job = await Job_model_1.default.findById(payment.jobId);
+            if (job) {
+                job.paymentVerified = true;
+                job.paymentStatus = 'escrow'; // Or released/verified depending on flow
+                await job.save();
+            }
+        }
         return res.status(200).json({
             success: true,
             message: 'Payment verified successfully',
@@ -405,7 +432,6 @@ const getWalletBalance = async (req, res) => {
         // Calculate actual escrow balance from payments
         const escrowPayments = await Payment_model_1.default.find({
             payeeId: userId,
-            status: 'completed',
             escrowStatus: 'held',
         }).catch(() => []);
         let actualEscrowBalance = 0;
@@ -446,40 +472,58 @@ const requestWithdrawal = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { amount, bankDetails } = req.body;
-        if (!amount || !bankDetails) {
+        if (!amount) {
             return res.status(400).json({
                 success: false,
-                message: 'Amount and bank details are required',
+                message: 'Withdrawal amount is required',
             });
         }
         // Get wallet
+        // We need to check if wallet exists and has balance
         const wallet = await Wallet_model_1.default.findOne({ userId });
         if (!wallet) {
             return res.status(404).json({ success: false, message: 'Wallet not found' });
+        }
+        // Determine Bank Details to use
+        // Prioritize request body, fallback to saved wallet settings
+        let withdrawalBankDetails = bankDetails;
+        // Validating if bankDetails from body is empty, we check wallet
+        if (!withdrawalBankDetails || !withdrawalBankDetails.accountNumber) {
+            if (wallet.bankDetails && wallet.bankDetails.accountNumber) {
+                withdrawalBankDetails = wallet.bankDetails;
+            }
+            else {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Bank details are required. Please provide them or save them in settings.',
+                });
+            }
         }
         // Check available balance
         if (wallet.availableBalance < amount) {
             return res.status(400).json({
                 success: false,
-                message: 'Insufficient balance',
+                message: 'Insufficient available balance',
             });
         }
-        // Calculate processing fee (e.g., 1% or fixed amount)
-        const processingFee = Math.max(100, amount * 0.01); // Min 100 NGN or 1%
+        // Calculate processing fee (e.g., 100 NGN or 1.5%) - Lets stick to simple flat fee for now or percentage
+        // Standard Flutterwave transfer fee is usually around 10-50 NGN depending on amount, but platform can charge more.
+        const processingFee = amount < 5000 ? 10 : 50;
         const netAmount = amount - processingFee;
         // Create withdrawal request
         const withdrawal = new Withdrawal_model_1.default({
             userId,
             amount,
             currency: wallet.currency,
-            bankDetails,
+            bankDetails: withdrawalBankDetails,
             processingFee,
             netAmount,
             status: 'pending',
         });
         await withdrawal.save();
-        // Deduct from available balance
+        // Deduct from wallet balance IMMEDIATELY to prevent double spend
         wallet.balance -= amount;
+        // Pre-save hook will update availableBalance
         await wallet.save();
         return res.status(200).json({
             success: true,
@@ -569,6 +613,18 @@ const processWithdrawal = async (req, res) => {
                 gatewayReference: transfer.data.id.toString(),
                 description: 'Withdrawal to bank account',
             });
+            // Send email notification
+            try {
+                const User = require('../models/user.model').default;
+                const user = await User.findById(withdrawal.userId);
+                if (user && user.email) {
+                    const emailService = require('../services/email.service');
+                    await emailService.sendEmail(user.email, 'Withdrawal Processed', `<p>Hi ${user.firstName},</p><p>Your withdrawal of <strong>${withdrawal.currency} ${withdrawal.amount}</strong> has been successfully processed and sent to your bank account.</p>`, `Your withdrawal of ${withdrawal.currency} ${withdrawal.amount} has been processed.`);
+                }
+            }
+            catch (e) {
+                console.error('Failed to send withdrawal email', e);
+            }
             return res.status(200).json({
                 success: true,
                 message: 'Withdrawal processed successfully',

@@ -83,7 +83,12 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {/* Top App Bar */}
         <View style={styles.appBar}>
-          <Text style={[styles.h1, { color: c.text }]}>My Projects</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
+              <MaterialIcons name="arrow-back" size={24} color={c.text} />
+            </TouchableOpacity>
+            <Text style={[styles.h1, { color: c.text }]}>My Projects</Text>
+          </View>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Notifications" style={styles.iconBtn}>
             <MaterialIcons name="notifications" size={24} color={c.text} />
           </TouchableOpacity>

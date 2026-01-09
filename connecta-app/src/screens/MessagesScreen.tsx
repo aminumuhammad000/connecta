@@ -201,6 +201,11 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
     const mine = item.senderId?._id === user?._id || item.senderId === user?._id;
     const time = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    // Check for video call invite
+    const videoCallMatch = item.text.match(/\[VIDEO_CALL_INVITE:(.*?)\]/);
+    const isVideoCall = !!videoCallMatch;
+    const roomName = videoCallMatch ? videoCallMatch[1] : '';
+
     return (
       <View style={[styles.row, mine ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }]}>
         {!mine && (
@@ -210,7 +215,17 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
         )}
         <View style={[styles.bubbleWrap, { maxWidth: '75%' }, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }]}>
           <View style={[styles.bubble, mine ? { backgroundColor: c.primary, borderTopRightRadius: 8 } : { backgroundColor: c.card, borderTopLeftRadius: 8 }]}>
-            <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.text}</Text>
+            {isVideoCall ? (
+              <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                onPress={() => navigation.navigate('VideoCall', { roomName, userName: user?.firstName || 'User' })}
+              >
+                <MaterialIcons name="videocam" size={24} color={mine ? 'white' : c.primary} />
+                <Text style={{ color: mine ? 'white' : c.text, fontWeight: 'bold' }}>Join Video Call</Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.text}</Text>
+            )}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
@@ -227,8 +242,10 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
     );
   };
 
-  const onSend = async () => {
-    if (!input.trim() || isSending) return;
+  const onSend = async (customText?: string) => {
+    const textToSend = customText || input;
+
+    if (!textToSend.trim() || isSending) return;
 
     if (!user?._id) {
       console.error("Cannot send message: User not logged in");
@@ -246,8 +263,8 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
       return;
     }
 
-    const messageText = input.trim();
-    setInput('');
+    const messageText = textToSend.trim();
+    if (!customText) setInput('');
     setIsSending(true);
 
     try {
@@ -322,9 +339,26 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
             </Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.iconBtn}>
-          <MaterialIcons name="more-vert" size={22} color={c.text} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row' }}>
+          <TouchableOpacity
+            style={[styles.iconBtn, { marginRight: 4 }]}
+            onPress={() => {
+              const roomName = `Connecta-${activeConversationId || Date.now()}`;
+              // Send a system message indicating call started (optional, for other user to see)
+              onSend(`[VIDEO_CALL_INVITE:${roomName}] Join my video call`);
+
+              navigation.navigate('VideoCall', {
+                roomName,
+                userName: user?.firstName || 'User'
+              });
+            }}
+          >
+            <MaterialIcons name="videocam" size={24} color={c.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn}>
+            <MaterialIcons name="more-vert" size={22} color={c.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -372,9 +406,9 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
               <MaterialIcons name="sentiment-satisfied" size={22} color={c.subtext} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={onSend}
+              onPress={() => onSend()}
               style={[styles.sendBtn, { backgroundColor: c.primary, opacity: (!input.trim() || isSending) ? 0.5 : 1 }]}
-              disabled={!input.trim() || isSending}
+              disabled={(!input.trim() && !isSending) || isSending}
             >
               {isSending ? (
                 <ActivityIndicator size="small" color="#fff" />

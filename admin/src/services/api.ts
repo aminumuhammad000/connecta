@@ -11,7 +11,8 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'http://localhost:5000' for local development
-const API_BASE_URL = 'https://api.myconnecta.ng'
+// Use 'http://localhost:5000' for local development
+const API_BASE_URL = 'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -394,7 +395,7 @@ export const reviewsAPI = {
 // ============================================
 export const dashboardAPI = {
   getStats: async () => {
-    const { data } = await api.get('/api/dashboard/stats')
+    const { data } = await api.get('/api/dashboard/admin/stats')
     return data
   },
   getFreelancers: async () => {

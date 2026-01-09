@@ -68,6 +68,7 @@ const UserSchema = new mongoose_1.Schema({
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     pushToken: { type: String, required: false },
+    isSubscribedToGigs: { type: Boolean, default: true },
 }, { timestamps: true });
 const User = mongoose_1.default.model("User", UserSchema);
 exports.default = User;

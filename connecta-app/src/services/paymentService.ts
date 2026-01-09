@@ -71,10 +71,18 @@ export const getTransactions = async (): Promise<Transaction[]> => {
  */
 export const requestWithdrawal = async (withdrawalData: {
     amount: number;
-    bankCode: string;
-    accountNumber: string;
+    bankCode?: string;
+    accountNumber?: string;
 }): Promise<any> => {
-    const response = await post(API_ENDPOINTS.WITHDRAWAL_REQUEST, withdrawalData);
+    // Transform to match backend expectation
+    const payload = {
+        amount: withdrawalData.amount,
+        bankDetails: {
+            bankCode: withdrawalData.bankCode,
+            accountNumber: withdrawalData.accountNumber
+        }
+    };
+    const response = await post(API_ENDPOINTS.WITHDRAWAL_REQUEST, payload);
     return response.data!;
 };
 

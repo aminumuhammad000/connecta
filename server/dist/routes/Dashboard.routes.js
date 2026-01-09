@@ -8,6 +8,8 @@ const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authenticate);
 // Get client dashboard stats
 router.get('/stats', Dashboard_controller_1.getClientDashboard);
+// Get admin dashboard stats
+router.get('/admin/stats', Dashboard_controller_1.getAdminStats);
 // Get freelancer dashboard stats
 router.get('/freelancer/stats', Dashboard_controller_1.getFreelancerDashboard);
 // Get top freelancers recommendations

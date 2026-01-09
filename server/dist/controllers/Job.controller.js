@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSavedJobs = exports.unsaveJob = exports.saveJob = exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
 const Job_model_1 = __importDefault(require("../models/Job.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
-const recommendation_service_1 = require("../services/recommendation.service");
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -15,7 +14,7 @@ const recommendation_service_1 = require("../services/recommendation.service");
 // ===================
 const getClientJobs = async (req, res) => {
     try {
-        // Use (req as any).user to avoid TS errors
+        // Use (req.user as any) to avoid TS errors
         const clientId = req.user?._id || req.user?.id;
         if (!clientId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -170,17 +169,11 @@ exports.deleteJob = deleteJob;
 const getRecommendedJobs = async (req, res) => {
     try {
         const { limit = 6 } = req.query;
-        const userId = req.user?._id || req.user?.id;
-        if (!userId) {
-            // Fallback to existing logic if no user logged in
-            const jobs = await Job_model_1.default.find({ status: "active" })
-                .sort({ posted: -1 })
-                .limit(Number(limit))
-                .populate("clientId", "firstName lastName email");
-            return res.status(200).json({ success: true, data: jobs });
-        }
-        const recommendationService = new recommendation_service_1.RecommendationService();
-        const jobs = await recommendationService.getRecommendationsForUser(userId, Number(limit));
+        // Get active jobs, sorted by posted date
+        const jobs = await Job_model_1.default.find({ status: "active" })
+            .sort({ posted: -1 })
+            .limit(Number(limit))
+            .populate("clientId", "firstName lastName email");
         res.status(200).json({
             success: true,
             data: jobs,

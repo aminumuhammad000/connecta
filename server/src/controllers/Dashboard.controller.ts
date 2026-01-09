@@ -5,7 +5,72 @@ import Message from '../models/Message.model';
 import User from '../models/user.model';
 import Conversation from '../models/Conversation.model';
 import Proposal from '../models/Proposal.model';
+import Payment from '../models/Payment.model';
+import Wallet from '../models/Wallet.model';
 import mongoose from 'mongoose';
+
+// Get Admin Dashboard Data
+export const getAdminStats = async (req: Request, res: Response) => {
+  try {
+    // 1. User Stats
+    const totalUsers = await User.countDocuments();
+    const totalClients = await User.countDocuments({ userType: 'client' });
+    const totalFreelancers = await User.countDocuments({ userType: 'freelancer' });
+
+    // 2. Job Stats
+    const totalJobs = await Job.countDocuments();
+    const activeJobs = await Job.countDocuments({ status: { $in: ['Open', 'open', 'active'] } });
+
+    // 3. Project Stats
+    const totalProjects = await Project.countDocuments();
+    const activeProjects = await Project.countDocuments({ status: { $in: ['ongoing', 'active', 'In-Progress'] } });
+    const completedProjects = await Project.countDocuments({ status: 'completed' });
+
+    // 4. Financial Stats
+    const revenueResult = await Payment.aggregate([
+      { $match: { status: 'completed' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalRevenue = revenueResult[0]?.total || 0;
+
+    const pendingPaymentsCount = await Payment.countDocuments({ status: 'pending' });
+
+    // 5. Proposals
+    const totalProposals = await Proposal.countDocuments();
+    const pendingProposals = await Proposal.countDocuments({ status: 'pending' });
+
+    // 6. Contracts
+    const Contract = mongoose.models.Contract || mongoose.model('Contract', new mongoose.Schema({}));
+    // Handle case where Contract model might not be registered yet if not imported
+    // But usually it is. If not, safe fallback or skip.
+    // For now we assume Contract model exists or we skip.
+    // simpler:
+    const totalContracts = 0; // Placeholder if Contract model not imported in this file
+    const activeContracts = 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalClients,
+        totalFreelancers,
+        totalJobs,
+        activeJobs,
+        totalProjects,
+        activeProjects,
+        completedProjects,
+        totalRevenue,
+        pendingPayments: pendingPaymentsCount,
+        totalProposals,
+        pendingProposals
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching admin dashboard:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
 
 // Get Client Dashboard Data
 export const getClientDashboard = async (req: Request, res: Response) => {
@@ -47,9 +112,21 @@ export const getClientDashboard = async (req: Request, res: Response) => {
       isRead: false,
     });
 
+    // Get pending payments (unverified or held in escrow)
+    const pendingPaymentsResult = await Payment.aggregate([
+      {
+        $match: {
+          payerId: new mongoose.Types.ObjectId(userId),
+          status: { $in: ['pending', 'processing'] }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const pendingPayments = pendingPaymentsResult[0]?.total || 0;
+
     res.status(200).json({
       activeProjects: activeJobsCount,
-      pendingPayments: 0, // TODO: Calculate from payment system
+      pendingPayments: pendingPayments,
       newMessages: unreadMessagesCount,
     });
   } catch (error) {
@@ -89,9 +166,41 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
       isRead: false,
     });
 
-    // Get total earnings (mocked for now as we don't have a Transaction model fully integrated yet)
-    // In a real app, we would sum up completed transactions.
-    const totalEarnings = 0;
+    // Get total earnings from Wallet
+    let totalEarnings = 0;
+    const wallet = await Wallet.findOne({ userId });
+    if (wallet) {
+      // Assuming totalEarnings in wallet tracks lifetime earnings, 
+      // or we can sum up completed payments if wallet doesn't exist yet/is partial.
+      // For now, let's use the Wallet's totalEarnings or sum of completed payments.
+      totalEarnings = wallet.totalEarnings || 0;
+
+      // If wallet doesn't track it, fallback to aggregation
+      if (totalEarnings === 0) {
+        const earningsResult = await Payment.aggregate([
+          {
+            $match: {
+              payeeId: new mongoose.Types.ObjectId(userId),
+              status: 'completed'
+            }
+          },
+          { $group: { _id: null, total: { $sum: '$netAmount' } } }
+        ]);
+        totalEarnings = earningsResult[0]?.total || 0;
+      }
+    } else {
+      // Fallback if no wallet exists yet
+      const earningsResult = await Payment.aggregate([
+        {
+          $match: {
+            payeeId: new mongoose.Types.ObjectId(userId),
+            status: 'completed'
+          }
+        },
+        { $group: { _id: null, total: { $sum: '$netAmount' } } }
+      ]);
+      totalEarnings = earningsResult[0]?.total || 0;
+    }
 
     res.status(200).json({
       activeProposals: activeProposalsCount,

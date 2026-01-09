@@ -200,7 +200,7 @@ export const initializePayment = async (req: Request, res: Response) => {
 /**
  * Verify payment after Flutterwave callback
  */
-import paymentService from '../services/payment.service';
+// Removed missing service import
 
 /**
  * Verify payment after Flutterwave callback
@@ -218,8 +218,40 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Transaction ID is required' });
     }
 
-    // Process payment via service
-    const payment = await paymentService.processSuccessfulPayment(reference, transactionId);
+    // Verify with Flutterwave
+    const flwResponse = await flutterwaveService.verifyPayment(transactionId);
+
+    if (flwResponse.status !== 'success' || flwResponse.data.status !== 'successful') {
+      return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
+    }
+
+    // Find local payment record
+    // The reference passed in params was set to payment._id during initialization
+    const payment = await Payment.findById(reference);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Verify amount (allow small diff for floating point?)
+    if (payment.amount > flwResponse.data.amount) {
+      return res.status(400).json({ success: false, message: 'Payment amount mismatch' });
+    }
+
+    // Update Payment
+    payment.status = 'completed';
+    payment.gatewayResponse = flwResponse.data;
+    payment.paidAt = new Date();
+    await payment.save();
+
+    // Handle Job Verification
+    if (payment.paymentType === 'job_verification' && payment.jobId) {
+      const job = await Job.findById(payment.jobId);
+      if (job) {
+        job.paymentVerified = true;
+        job.paymentStatus = 'escrow'; // Or released/verified depending on flow
+        await job.save();
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -272,50 +304,6 @@ export const releasePayment = async (req: Request, res: Response) => {
       freelancerWallet.totalEarnings += payment.netAmount;
       await freelancerWallet.save();
     }
-
-    // Notify Freelancer
-    try {
-      const User = require('../models/user.model').default;
-      const Project = require('../models/Project.model').default;
-      const emailService = require('../services/email.service');
-      const io = require('../core/utils/socketIO').getIO();
-      const mongoose = require('mongoose');
-
-      const freelancer = await User.findById(payment.payeeId);
-      const project = payment.projectId ? await Project.findById(payment.projectId) : null;
-
-      const projectName = project ? project.title : 'Project';
-      const amountStr = `${payment.currency} ${payment.amount}`;
-
-      // Socket Notification
-      await mongoose.model('Notification').create({
-        userId: payment.payeeId,
-        type: 'payment_released',
-        title: 'Funds Released',
-        message: `Payment of ${amountStr} for "${projectName}" has been released.`,
-        relatedId: payment._id,
-        relatedType: 'payment',
-        actorId: userId,
-        actorName: 'Client',
-        isRead: false
-      });
-
-      io.to(payment.payeeId.toString()).emit('notification:new', {
-        title: 'Funds Released',
-        message: `Payment of ${amountStr} for "${projectName}" has been released.`,
-        type: 'payment_released'
-      });
-
-      // Email Notification
-      if (freelancer && freelancer.email) {
-        await emailService.sendPaymentReleasedEmail(
-          freelancer.email,
-          freelancer.firstName || 'Freelancer',
-          projectName,
-          amountStr
-        );
-      }
-    } catch (e) { console.warn('Notify failed', e); }
 
     return res.status(200).json({
       success: true,
@@ -540,29 +528,47 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
     const { amount, bankDetails } = req.body;
 
-    if (!amount || !bankDetails) {
+    if (!amount) {
       return res.status(400).json({
         success: false,
-        message: 'Amount and bank details are required',
+        message: 'Withdrawal amount is required',
       });
     }
 
     // Get wallet
+    // We need to check if wallet exists and has balance
     const wallet = await Wallet.findOne({ userId });
     if (!wallet) {
       return res.status(404).json({ success: false, message: 'Wallet not found' });
+    }
+
+    // Determine Bank Details to use
+    // Prioritize request body, fallback to saved wallet settings
+    let withdrawalBankDetails = bankDetails;
+
+    // Validating if bankDetails from body is empty, we check wallet
+    if (!withdrawalBankDetails || !withdrawalBankDetails.accountNumber) {
+      if (wallet.bankDetails && wallet.bankDetails.accountNumber) {
+        withdrawalBankDetails = wallet.bankDetails;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Bank details are required. Please provide them or save them in settings.',
+        });
+      }
     }
 
     // Check available balance
     if (wallet.availableBalance < amount) {
       return res.status(400).json({
         success: false,
-        message: 'Insufficient balance',
+        message: 'Insufficient available balance',
       });
     }
 
-    // Calculate processing fee (e.g., 1% or fixed amount)
-    const processingFee = Math.max(100, amount * 0.01); // Min 100 NGN or 1%
+    // Calculate processing fee (e.g., 100 NGN or 1.5%) - Lets stick to simple flat fee for now or percentage
+    // Standard Flutterwave transfer fee is usually around 10-50 NGN depending on amount, but platform can charge more.
+    const processingFee = amount < 5000 ? 10 : 50;
     const netAmount = amount - processingFee;
 
     // Create withdrawal request
@@ -570,7 +576,7 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
       userId,
       amount,
       currency: wallet.currency,
-      bankDetails,
+      bankDetails: withdrawalBankDetails,
       processingFee,
       netAmount,
       status: 'pending',
@@ -578,51 +584,10 @@ export const requestWithdrawal = async (req: Request, res: Response) => {
 
     await withdrawal.save();
 
-    // Deduct from available balance
+    // Deduct from wallet balance IMMEDIATELY to prevent double spend
     wallet.balance -= amount;
+    // Pre-save hook will update availableBalance
     await wallet.save();
-
-    // Notify User
-    try {
-      const User = require('../models/user.model').default;
-      const { sendWithdrawalRequestEmail } = require('../services/email.service');
-      const mongoose = require('mongoose');
-
-      const user = await User.findById(userId);
-      if (user && user.email) {
-        await sendWithdrawalRequestEmail(user.email, user.firstName, `${wallet.currency} ${amount}`);
-      }
-
-      // Notification
-      await mongoose.model('Notification').create({
-        userId: userId,
-        type: 'system',
-        title: 'Withdrawal Requested',
-        message: `Withdrawal of ${wallet.currency} ${amount} initiated.`,
-        relatedId: withdrawal._id,
-        relatedType: 'withdrawal',
-        actorId: userId,
-        actorName: 'System',
-        isRead: false,
-      });
-
-      const ioInstance = require('../core/utils/socketIO').getIO();
-      ioInstance.to(userId.toString()).emit('notification:new', {
-        title: 'Withdrawal Requested',
-        message: `Withdrawal initiated.`,
-        type: 'system'
-      });
-
-      // Push Notification
-      const notificationService = require('../services/notification.service').default;
-      notificationService.sendPushNotification(
-        userId,
-        'Withdrawal Requested 🏦',
-        `Withdrawal of ${wallet.currency} ${amount} initiated.`,
-        { withdrawalId: withdrawal._id, type: 'withdrawal' }
-      );
-
-    } catch (e) { console.warn('Withdrawal notify error', e); }
 
     return res.status(200).json({
       success: true,

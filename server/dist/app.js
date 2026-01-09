@@ -36,7 +36,7 @@ const server = http_1.default.createServer(app);
 const socketIO_1 = require("./core/utils/socketIO");
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "*"],
+        origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "http://172.20.10.3:5000", "*"],
         methods: ["GET", "POST"],
         credentials: true,
     },
@@ -52,7 +52,9 @@ app.use((0, cors_1.default)({
         "https://www.myconnecta.ng",
         "https://admin.myconnecta.ng",
         "https://app.myconnecta.ng",
-        "https://api.myconnecta.ng"
+        "https://api.myconnecta.ng",
+        "http://172.20.10.3:5000",
+        "*"
     ],
     credentials: true
 }));
