@@ -58,8 +58,13 @@ export const sendOTPEmail = async (
     if (!transporter) return { success: false, error: 'Transporter not available' };
 
     const settings = await SystemSettings.findOne();
-    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    // For automated emails, we prefer a no-reply address if possible, 
+    // but we must send FROM the authenticated user to avoid spam filters/errors.
+    // We set the Reply-To to a no-reply address.
+    const replyTo = 'no-reply@connecta.ng';
 
     const isVerification = type === 'EMAIL_VERIFICATION';
     const subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
@@ -70,6 +75,7 @@ export const sendOTPEmail = async (
 
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
+      replyTo: replyTo,
       to: email,
       subject: subject,
       html: `
@@ -158,7 +164,7 @@ export const sendOTPEmail = async (
             
             <div class="footer">
               <p>This is an automated email, please do not reply.</p>
-              <p>&copy; ${new Date().getFullYear()} Connecta. All rights reserved.</p>
+              <p>&copy; ${new Date().getFullYear()} Connecta Inc. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -204,7 +210,7 @@ export const sendEmail = async (
     if (!transporter) return { success: false, error: 'Transporter not available' };
 
     const settings = await SystemSettings.findOne();
-    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
     const mailOptions = {
@@ -566,7 +572,7 @@ export const sendBroadcastEmail = async (
     }
 
     const settings = await SystemSettings.findOne();
-    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
     let sent = 0;
@@ -633,7 +639,7 @@ export const sendBroadcastEmail = async (
               
               <div class="footer">
                 <p>This is an automated email from Connecta.</p>
-                <p>&copy; ${new Date().getFullYear()} Connecta. All rights reserved.</p>
+                <p>&copy; ${new Date().getFullYear()} Connecta Inc. All rights reserved.</p>
               </div>
             </div>
           </body>
@@ -702,48 +708,74 @@ export const sendGigNotificationEmail = async (
   jobLink: string,
   skills: string[]
 ): Promise<{ success: boolean; error?: any }> => {
-  const subject = `New Gig Alert: ${jobTitle}`;
-  const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
-            .skills { margin-top: 10px; }
-            .skill-tag { background-color: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>New Gig Alert! 🚀</h2>
-            <p>Hi ${userName},</p>
-            <p>A new gig matching your skills has just been posted:</p>
-            <h3>${jobTitle}</h3>
-            
-            <div class="skills">
-              ${skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+  try {
+    const transporter = await getTransporter();
+    if (!transporter) return { success: false, error: 'Transporter not available' };
+
+    const settings = await SystemSettings.findOne();
+    const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
+    const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    // Set Reply-To to no-reply for notifications
+    const replyTo = 'no-reply@connecta.ng';
+
+    const subject = `New Gig Alert: ${jobTitle}`;
+    const html = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
+              .skills { margin-top: 10px; }
+              .skill-tag { background-color: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2>New Gig Alert! 🚀</h2>
+              <p>Hi ${userName},</p>
+              <p>A new gig matching your skills has just been posted:</p>
+              <h3>${jobTitle}</h3>
+              
+              <div class="skills">
+                ${skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+              </div>
+
+              <p>Check it out and apply now if you're interested!</p>
+              
+              <a href="${jobLink}" class="btn">View Gig</a>
+              
+              <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                  If the button doesn't work, copy and paste this link into your browser:<br>
+                  ${jobLink}
+              </p>
+              
+              <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                You received this email because you are subscribed to gig notifications. 
+                To unsubscribe, update your notification settings in your profile.
+              </p>
             </div>
+          </body>
+          </html>
+      `;
+    const text = `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
 
-            <p>Check it out and apply now if you're interested!</p>
-            
-            <a href="${jobLink}" class="btn">View Gig</a>
-            
-            <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                If the button doesn't work, copy and paste this link into your browser:<br>
-                ${jobLink}
-            </p>
-            
-            <p style="margin-top: 20px; font-size: 12px; color: #999;">
-              You received this email because you are subscribed to gig notifications. 
-              To unsubscribe, update your notification settings in your profile.
-            </p>
-          </div>
-        </body>
-        </html>
-    `;
-  const text = `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      replyTo: replyTo,
+      to: email,
+      subject: subject,
+      html: html,
+      text: text,
+    };
 
-  return sendEmail(email, subject, html, text);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Gig notification email sent:', info.messageId);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error sending gig notification email:', error);
+    return { success: false, error: error.message || error };
+  }
 };

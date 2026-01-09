@@ -46,9 +46,11 @@ export abstract class BaseScraper implements IScraper {
     /**
      * Clean and truncate description
      */
-    protected cleanDescription(text: string, maxLength: number = 500): string {
+    protected cleanDescription(text: string, maxLength: number = 2000): string {
         return text
-            .replace(/\s+/g, " ")
+            .replace(/<[^>]*>/g, "") // Strip HTML tags
+            .replace(/[ \t]+/g, " ") // Collapse spaces/tabs
+            .replace(/\n\s*\n/g, "\n") // Collapse multiple newlines
             .trim()
             .substring(0, maxLength);
     }

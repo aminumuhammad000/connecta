@@ -446,10 +446,18 @@ const JobDetailScreen: React.FC = () => {
             <TouchableOpacity
               style={[styles.applyBtn, { backgroundColor: hasApplied ? (c.isDark ? '#374151' : '#E5E7EB') : c.primary }]}
               disabled={hasApplied}
-              onPress={() => (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget })}
+              onPress={() => {
+                if (job.isExternal && job.applyUrl) {
+                  import('react-native').then(({ Linking }) => {
+                    Linking.openURL(job.applyUrl!);
+                  });
+                } else {
+                  (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget });
+                }
+              }}
             >
               <Text style={[styles.applyText, hasApplied && { color: c.subtext }]}>
-                {hasApplied ? 'Applied' : 'Apply Now'}
+                {job.isExternal ? 'Visit Job' : (hasApplied ? 'Applied' : 'Apply Now')}
               </Text>
             </TouchableOpacity>
           </View>

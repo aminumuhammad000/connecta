@@ -1,24 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Keyboard } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Keyboard, ScrollView, Linking } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
 import * as agentService from '../services/agentService';
 import { useInAppAlert } from '../components/InAppAlert';
+import Card from '../components/Card';
+import Avatar from '../components/Avatar';
+import Button from '../components/Button';
+import Badge from '../components/Badge';
 
 interface Message {
     id: string;
     text: string;
     sender: 'user' | 'ai';
     timestamp: Date;
-    type?: 'text' | 'jobs' | 'profiles';
-    jobs?: any[];
-    profiles?: any[];
+    responseType?: 'card' | 'list' | 'analytics' | 'text' | 'friendly_message';
+    data?: any;
 }
 
 export default function ConnectaAIScreen({ navigation }: any) {
     const c = useThemeColors();
+    const insets = useSafeAreaInsets();
     const { user } = useAuth();
     const { showAlert } = useInAppAlert();
     const [messages, setMessages] = useState<Message[]>([
@@ -63,17 +67,16 @@ export default function ConnectaAIScreen({ navigation }: any) {
             const response = await agentService.sendMessageToAgent(text, user._id, user.userType);
 
             if (response.success && response.result.success) {
-                // Convert response data to string if it's an object
-                let responseText = response.result.data;
-                if (typeof responseText === 'object') {
-                    responseText = JSON.stringify(responseText, null, 2);
-                }
+                const result = response.result;
+                const responseText = result.message || (typeof result.data === 'string' ? result.data : "Here is what I found:");
 
                 const aiMsg: Message = {
                     id: (Date.now() + 1).toString(),
                     text: responseText,
                     sender: 'ai',
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    responseType: result.responseType as any,
+                    data: result.data
                 };
                 setMessages(prev => [...prev, aiMsg]);
             } else {
@@ -101,23 +104,86 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
     const renderMessage = ({ item }: { item: Message }) => {
         const isUser = item.sender === 'user';
-        return (
-            <View style={[
-                styles.messageBubble,
-                isUser ? styles.userBubble : styles.aiBubble,
-                isUser ? { backgroundColor: c.primary } : { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }
-            ]}>
-                {!isUser && (
-                    <View style={styles.aiIcon}>
-                        <Ionicons name="sparkles" size={16} color={c.primary} />
-                    </View>
-                )}
+
+        // Helper to render content based on type
+        const renderContent = () => {
+            if (item.responseType === 'card' && item.data) {
+                // Check if it's a list of gigs (common for get_matched_gigs)
+                if (Array.isArray(item.data) || (item.data.gigs && Array.isArray(item.data.gigs))) {
+                    const gigs = Array.isArray(item.data) ? item.data : item.data.gigs;
+                    return (
+                        <View style={{ marginTop: 8 }}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                                {gigs.map((gig: any, idx: number) => (
+                                    <Card key={gig._id || idx} variant="elevated" style={{ width: 280, padding: 12 }}>
+                                        <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4, color: c.text }} numberOfLines={1}>{gig.title}</Text>
+                                        <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 8 }} numberOfLines={1}>{gig.company || "Unknown Client"}</Text>
+                                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                                            <Badge label={gig.jobType || 'Fixed'} variant="neutral" size="small" />
+                                            <Text style={{ fontWeight: '600', color: c.primary }}>{gig.budget}</Text>
+                                        </View>
+                                        <Button
+                                            title={gig.isExternal ? "Visit Job" : "View Details"}
+                                            size="small"
+                                            onPress={() => {
+                                                if (gig.isExternal && gig.applyUrl) {
+                                                    Linking.openURL(gig.applyUrl);
+                                                } else {
+                                                    navigation.navigate('JobDetail', { id: gig._id });
+                                                }
+                                            }}
+                                        />
+                                    </Card>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    );
+                }
+
+                // Check if it's a single profile (get_profile_details)
+                if (item.data.user || item.data.firstName) {
+                    const p = item.data.user || item.data; // Handle nested user object if present
+                    return (
+                        <Card variant="elevated" style={{ marginTop: 8, width: '100%' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                <Avatar uri={p.avatar || p.profileImage} name={p.firstName} size={48} />
+                                <View style={{ marginLeft: 12 }}>
+                                    <Text style={{ fontWeight: 'bold', fontSize: 16, color: c.text }}>{p.firstName} {p.lastName}</Text>
+                                    <Text style={{ color: c.subtext }}>{p.title || "Freelancer"}</Text>
+                                </View>
+                            </View>
+                            {p.bio && <Text style={{ color: c.text, marginBottom: 12 }} numberOfLines={3}>{p.bio}</Text>}
+                            <Button title="View Full Profile" size="small" variant="outline" onPress={() => navigation.navigate('Profile', { userId: p._id })} />
+                        </Card>
+                    );
+                }
+            }
+
+            return (
                 <Text style={[
                     styles.messageText,
                     isUser ? { color: 'white' } : { color: c.text }
                 ]}>
                     {item.text}
                 </Text>
+            );
+        };
+
+        return (
+            <View style={[
+                styles.messageBubble,
+                isUser ? styles.userBubble : styles.aiBubble,
+                isUser ? { backgroundColor: c.primary } : { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 },
+                item.responseType === 'card' ? { maxWidth: '95%' } : {}
+            ]}>
+                {!isUser && (
+                    <View style={styles.aiIcon}>
+                        <Ionicons name="sparkles" size={16} color={c.primary} />
+                    </View>
+                )}
+                <View style={{ flex: 1 }}>
+                    {renderContent()}
+                </View>
             </View>
         );
     };
@@ -170,7 +236,14 @@ export default function ConnectaAIScreen({ navigation }: any) {
                     </View>
                 )}
 
-                <View style={[styles.inputContainer, { backgroundColor: c.card, borderTopColor: c.border }]}>
+                <View style={[
+                    styles.inputContainer,
+                    {
+                        backgroundColor: c.card,
+                        borderTopColor: c.border,
+                        paddingBottom: Math.max(insets.bottom, 12)
+                    }
+                ]}>
                     <TouchableOpacity style={styles.attachButton}>
                         <Ionicons name="add-circle-outline" size={24} color={c.subtext} />
                     </TouchableOpacity>
@@ -284,7 +357,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderTopWidth: 1,
         gap: 12,
-        paddingBottom: Platform.OS === 'ios' ? 30 : 12,
+        // paddingBottom is now handled dynamically in the component
     },
     attachButton: {
         padding: 4,

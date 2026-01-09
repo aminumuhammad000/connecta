@@ -20,6 +20,12 @@ export interface ISystemSettings extends Document {
             callbackUrl: string;
         };
     };
+    ai: {
+        provider: 'openai' | 'gemini';
+        openaiApiKey: string;
+        geminiApiKey: string;
+        model: string;
+    };
     updatedAt: Date;
 }
 
@@ -46,6 +52,12 @@ const SystemSettingsSchema: Schema = new Schema({
             clientSecret: { type: String, default: '' },
             callbackUrl: { type: String, default: '' }
         }
+    },
+    ai: {
+        provider: { type: String, enum: ['openai', 'gemini'], default: 'openai' },
+        openaiApiKey: { type: String, default: '' },
+        geminiApiKey: { type: String, default: '' },
+        model: { type: String, default: '' }
     }
 }, {
     timestamps: true

@@ -5,7 +5,9 @@ interface AgentResponse {
     success: boolean;
     result: {
         success: boolean;
-        data: string;
+        message?: string;
+        data: any;
+        responseType?: string;
         metadata?: any;
     };
 }

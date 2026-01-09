@@ -18,7 +18,7 @@ export const createOrUpdateExternalGig = async (req: Request, res: Response) => 
             apply_url,
             posted_at,
             skills = [],
-            category = "General",
+            category = "External",
             deadline,
         } = req.body;
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -202,8 +202,11 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                               <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
                                 {job.title}
                               </Text>
-                              {job.status === 'active' && (
+                              {job.status === 'active' && !job.isExternal && (
                                 <Badge label="Active" variant="success" size="small" />
+                              )}
+                              {job.isExternal && (
+                                <Badge label={job.source || "External"} variant="info" size="small" />
                               )}
                             </View>
                             <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
@@ -258,8 +261,14 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                             style={{ flex: 1 }}
                           />
                           <Button
-                            title="Apply Now"
-                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                            title={job.isExternal ? "Visit Job" : "Apply Now"}
+                            onPress={() => {
+                              if (job.isExternal && job.applyUrl) {
+                                Linking.openURL(job.applyUrl);
+                              } else {
+                                navigation.navigate('JobDetail', { id: job._id });
+                              }
+                            }}
                             variant="primary"
                             size="small"
                             style={{ flex: 1 }}
