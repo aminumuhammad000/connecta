@@ -36,7 +36,7 @@ async function createAgent(userId: string, authToken?: string, userType?: string
     userId,
   });
 
-  await agent.initializeTools(); // populate toolMap dynamically
+  await agent.initialize(); // Initialize agent (fetches settings and sets up model)
   return agent;
 }
 

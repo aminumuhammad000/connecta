@@ -340,6 +340,10 @@ export interface Gig {
     status: string;
     saved?: boolean;
     applied?: boolean;
+    isExternal?: boolean;
+    externalId?: string;
+    source?: string;
+    applyUrl?: string;
 }
 
 // Dashboard Types

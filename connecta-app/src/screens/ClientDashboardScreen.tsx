@@ -14,6 +14,7 @@ import * as profileService from '../services/profileService';
 import { DashboardStats, User } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import EmailVerificationModal from '../components/EmailVerificationModal';
+import { AIButton } from '../components/AIButton';
 
 const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
@@ -145,12 +146,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                     </View>
                   )}
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('ConnectaAI')}
-                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
-                >
-                  <MaterialIcons name="smart-toy" size={22} color="#fff" />
-                </TouchableOpacity>
+                <AIButton onPress={() => navigation.navigate('ConnectaAI')} />
               </View>
             </View>
             <Text style={styles.greeting}>{getGreeting()},</Text>

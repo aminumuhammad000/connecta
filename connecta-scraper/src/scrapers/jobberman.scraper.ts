@@ -52,7 +52,7 @@ export class JobbermanScraper extends BaseScraper {
                     const location = await page.$eval(".job-header-location", el => el.textContent?.trim()).catch(() => "Nigeria");
 
                     // Extract Description
-                    const description = await page.$eval(".job-details-content", el => el.innerHTML).catch(() => title);
+                    const description = await page.$eval(".job-details-content", (el: any) => el.innerText).catch(() => title);
 
                     // Extract Deadline
                     const deadlineText = await page.evaluate(() => {

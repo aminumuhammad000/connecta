@@ -227,8 +227,21 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
                     <TouchableOpacity onPress={() => navigation.navigate('JobDetail', { id: item._id })} style={[styles.btn, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
                       <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>View Details</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => navigation.navigate('JobDetail', { id: item._id })} style={[styles.btn, { backgroundColor: c.primary }]}>
-                      <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>Apply Now</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (item.isExternal && item.applyUrl) {
+                          import('react-native').then(({ Linking }) => {
+                            Linking.openURL(item.applyUrl!);
+                          });
+                        } else {
+                          navigation.navigate('JobDetail', { id: item._id });
+                        }
+                      }}
+                      style={[styles.btn, { backgroundColor: c.primary }]}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
+                        {item.isExternal ? 'Visit Job' : 'Apply Now'}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>

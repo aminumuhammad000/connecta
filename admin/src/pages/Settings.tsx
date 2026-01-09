@@ -27,6 +27,10 @@ export default function Settings() {
     googleClientId: '',
     googleClientSecret: '',
     googleCallbackUrl: '',
+    // AI Config
+    aiProvider: 'openai' as 'openai' | 'gemini',
+    openaiApiKey: '',
+    geminiApiKey: '',
   })
 
   useEffect(() => {
@@ -39,6 +43,7 @@ export default function Settings() {
       if (response.success && response.data) {
         const s = response.data.smtp;
         const a = response.data.apiKeys;
+        const ai = response.data.ai || {};
         setSettings(prev => ({
           ...prev,
           smtpProvider: s.provider || 'other',
@@ -54,6 +59,9 @@ export default function Settings() {
           googleClientId: a?.google?.clientId || '',
           googleClientSecret: a?.google?.clientSecret || '',
           googleCallbackUrl: a?.google?.callbackUrl || '',
+          aiProvider: ai.provider || 'openai',
+          openaiApiKey: ai.openaiApiKey || '',
+          geminiApiKey: ai.geminiApiKey || '',
         }));
       }
     } catch (error) {
@@ -86,6 +94,11 @@ export default function Settings() {
             clientSecret: settings.googleClientSecret,
             callbackUrl: settings.googleCallbackUrl,
           },
+          ai: {
+            provider: settings.aiProvider,
+            openaiApiKey: settings.openaiApiKey,
+            geminiApiKey: settings.geminiApiKey,
+          }
         };
         await settingsAPI.updateApiKeys(apiKeysData);
         toast.success('API keys saved successfully!');
@@ -441,7 +454,7 @@ export default function Settings() {
             {activeTab === 'apikeys' && (
               <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
                 <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
-                  API Keys Configuration
+                  AI & API Keys Configuration
                 </h2>
                 <div className="space-y-4">
                   <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg mb-4">
@@ -450,36 +463,79 @@ export default function Settings() {
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
-                      OpenRouter API Key
-                    </label>
-                    <input
-                      type="password"
-                      value={settings.openrouterApiKey}
-                      onChange={(e) => setSettings({ ...settings, openrouterApiKey: e.target.value })}
-                      placeholder="sk-or-v1-..."
-                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
-                      Used for AI agent functionality
-                    </p>
+                  {/* AI Provider Selection */}
+                  <div className="border-b border-border-light dark:border-border-dark pb-4 mb-4">
+                    <h3 className="text-lg font-semibold text-text-light-primary dark:text-dark-primary mb-3">
+                      AI Agent Configuration
+                    </h3>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                        AI Provider
+                      </label>
+                      <select
+                        value={settings.aiProvider}
+                        onChange={(e) => setSettings({ ...settings, aiProvider: e.target.value as 'openai' | 'gemini' })}
+                        className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="openai">OpenAI / OpenRouter</option>
+                        <option value="gemini">Google Gemini</option>
+                      </select>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                        Select the AI provider for the Connecta Agent.
+                      </p>
+                    </div>
+
+                    {settings.aiProvider === 'openai' && (
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          OpenAI / OpenRouter API Key
+                        </label>
+                        <input
+                          type="password"
+                          value={settings.openaiApiKey}
+                          onChange={(e) => setSettings({ ...settings, openaiApiKey: e.target.value })}
+                          placeholder="sk-..."
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    )}
+
+                    {settings.aiProvider === 'gemini' && (
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          Gemini API Key
+                        </label>
+                        <input
+                          type="password"
+                          value={settings.geminiApiKey}
+                          onChange={(e) => setSettings({ ...settings, geminiApiKey: e.target.value })}
+                          placeholder="AIza..."
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
-                      Hugging Face API Key
-                    </label>
-                    <input
-                      type="password"
-                      value={settings.huggingfaceApiKey}
-                      onChange={(e) => setSettings({ ...settings, huggingfaceApiKey: e.target.value })}
-                      placeholder="hf_..."
-                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
-                      Used for ML model integrations
-                    </p>
+                  <div className="border-t border-border-light dark:border-border-dark pt-4 mt-4">
+                    <h3 className="text-lg font-semibold text-text-light-primary dark:text-dark-primary mb-3">
+                      Other Integrations
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                          Hugging Face API Key
+                        </label>
+                        <input
+                          type="password"
+                          value={settings.huggingfaceApiKey}
+                          onChange={(e) => setSettings({ ...settings, huggingfaceApiKey: e.target.value })}
+                          placeholder="hf_..."
+                          className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="border-t border-border-light dark:border-border-dark pt-4 mt-4">

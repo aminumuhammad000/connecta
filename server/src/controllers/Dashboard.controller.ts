@@ -150,20 +150,10 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
       status: { $in: ['pending', 'accepted', 'viewed'] },
     });
 
-    // Get unread messages count (same logic as client)
-    const conversations = await Conversation.find({
-      $or: [
-        { clientId: userId },
-        { freelancerId: userId },
-      ],
-    }).select('_id');
-
-    const conversationIds = conversations.map((conv) => conv._id);
-
-    const unreadMessagesCount = await Message.countDocuments({
-      conversationId: { $in: conversationIds },
-      sender: { $ne: userId },
-      isRead: false,
+    // Get completed jobs count (proposals that are approved/completed)
+    const completedJobsCount = await Proposal.countDocuments({
+      freelancerId: userId,
+      status: 'approved', // Assuming 'approved' means completed in this context, or add a 'completed' status
     });
 
     // Get total earnings from Wallet
@@ -204,7 +194,7 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
 
     res.status(200).json({
       activeProposals: activeProposalsCount,
-      newMessages: unreadMessagesCount,
+      completedJobs: completedJobsCount,
       totalEarnings: totalEarnings,
     });
   } catch (error) {

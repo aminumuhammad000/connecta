@@ -1,5 +1,10 @@
+<<<<<<< HEAD
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+=======
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Animated } from 'react-native';
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +18,7 @@ import jobService from '../services/jobService';
 import * as profileService from '../services/profileService';
 import { useFocusEffect } from '@react-navigation/native';
 import ProfileCompletionModal from '../components/ProfileCompletionModal';
+import { AIButton } from '../components/AIButton';
 
 interface JobRec {
   id: string;
@@ -28,6 +34,12 @@ interface JobRec {
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { user } = useAuth();
+<<<<<<< HEAD
+  const [stats, setStats] = useState<any>(null);
+  const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+=======
   const [stats, setStats] = React.useState<any>(null);
   const [recommendedJobs, setRecommendedJobs] = React.useState<any[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -35,14 +47,15 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [likedGigs, setLikedGigs] = React.useState<Set<string>>(new Set());
 
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
+>>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 
   // Profile Completion Logic
-  const [profileModalVisible, setProfileModalVisible] = React.useState(false);
-  const [missingFields, setMissingFields] = React.useState<string[]>([]);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
 
 
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       loadDashboardData();
       checkProfileStatus();
     }, [user])
@@ -193,12 +206,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                   <MaterialIcons name="notifications" size={22} color="#fff" />
                   {/* Badge logic would go here */}
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('ConnectaAI')}
-                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
-                >
-                  <MaterialIcons name="smart-toy" size={22} color="#fff" />
-                </TouchableOpacity>
+                <AIButton onPress={() => navigation.navigate('ConnectaAI')} />
               </View>
             </View>
             <Text style={styles.greeting}>Welcome back,</Text>
@@ -217,10 +225,10 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
             <Card variant="elevated" padding={16} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: '#F59E0B22' }]}>
-                <MaterialIcons name="mail" size={20} color="#F59E0B" />
+                <MaterialIcons name="check-circle" size={20} color="#F59E0B" />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>{stats?.newMessages || 0}</Text>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>New Messages</Text>
+              <Text style={[styles.statValue, { color: c.text }]}>{stats?.completedJobs || 0}</Text>
+              <Text style={[styles.statLabel, { color: c.subtext }]}>Completed Jobs</Text>
             </Card>
 
             <Card variant="elevated" padding={16} style={styles.statCard}>
@@ -337,8 +345,16 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                             style={{ flex: 1 }}
                           />
                           <Button
-                            title="Apply Now"
-                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                            title={job.isExternal ? "Visit Job" : "Apply Now"}
+                            onPress={() => {
+                              if (job.isExternal && job.applyUrl) {
+                                import('react-native').then(({ Linking }) => {
+                                  Linking.openURL(job.applyUrl!);
+                                });
+                              } else {
+                                navigation.navigate('JobDetail', { id: job._id });
+                              }
+                            }}
                             variant="primary"
                             size="small"
                             style={{ flex: 1 }}

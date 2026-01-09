@@ -80,6 +80,16 @@ export const updateApiKeys = async (req: Request, res: Response) => {
             }
         };
 
+        const { ai } = req.body;
+        if (ai) {
+            settings.ai = {
+                provider: ai.provider || settings.ai?.provider || 'openai',
+                openaiApiKey: ai.openaiApiKey || settings.ai?.openaiApiKey || '',
+                geminiApiKey: ai.geminiApiKey || settings.ai?.geminiApiKey || '',
+                model: ai.model || settings.ai?.model || ''
+            };
+        }
+
         await settings.save();
 
         res.json({

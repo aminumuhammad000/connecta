@@ -51,7 +51,7 @@ export class MyJobMagScraper extends BaseScraper {
                     const location = await page.$eval(".job-key-info span", el => el.textContent?.trim()).catch(() => "Nigeria");
 
                     // Extract Description
-                    const description = await page.$eval(".job-details", el => el.innerHTML).catch(() => title);
+                    const description = await page.$eval(".job-details", (el: any) => el.innerText).catch(() => title);
 
                     // Extract Deadline
                     // Look for "Deadline" or "Application Deadline"

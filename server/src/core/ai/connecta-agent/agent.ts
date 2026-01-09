@@ -1,11 +1,13 @@
 
 
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from "@langchain/core/prompts";
 import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 // import { z } from "zod";
 import axios from "axios";
+import SystemSettings from "../../../models/SystemSettings.model";
 
 // Dynamic tool loading
 import { tools, loadTools } from "./tools";
@@ -16,7 +18,7 @@ export interface ConnectaAgentConfig {
   authToken: string;
   userId: string;
   conversationId?: string;
-  openaiApiKey: string;
+  openaiApiKey?: string; // Optional now
   mockMode?: boolean;
   temperature?: number; // Allow customization
   maxHistoryLength?: number;
@@ -51,6 +53,7 @@ interface AgentResponse {
   success: boolean;
   toolUsed?: string;
   suggestions?: string[];
+  responseType?: string;
   metadata?: {
     responseTime: number;
     cached: boolean;
@@ -59,7 +62,7 @@ interface AgentResponse {
 }
 
 export class ConnectaAgent {
-  private model: ChatOpenAI;
+  private model: any; // ChatOpenAI | ChatGoogleGenerativeAI
   private chatHistory: ChatMessage[] = [];
   private toolMap: Record<string, any> = {};
   private userContext: any = null;
@@ -76,19 +79,42 @@ export class ConnectaAgent {
   };
 
   constructor(private config: ConnectaAgentConfig) {
-    this.model = new ChatOpenAI({
-      apiKey: process.env.OPENROUTER_API_KEY || config.openaiApiKey,
-      model: "deepseek/deepseek-chat",
-      configuration: {
-        baseURL: "https://openrouter.ai/api/v1",
-      },
-      temperature: config.temperature ?? 0.3, // Slightly creative but focused
-      maxTokens: 2000,
-    });
-
     this.conversationId = config.conversationId || `conv_${config.userId}_${Date.now()}`;
     this.maxHistoryLength = config.maxHistoryLength ?? 50;
     this.loadMemory();
+    // Model initialization is now async, called in initialize()
+  }
+
+  async initialize() {
+    const settings = await SystemSettings.findOne();
+    const aiConfig = settings?.ai || { provider: 'openai', openaiApiKey: '', geminiApiKey: '' };
+
+    // Fallback to env or config if DB settings are empty
+    const openaiKey = aiConfig.openaiApiKey || process.env.OPENROUTER_API_KEY || this.config.openaiApiKey;
+    const geminiKey = aiConfig.geminiApiKey || process.env.GEMINI_API_KEY;
+
+    if (aiConfig.provider === 'gemini' && geminiKey) {
+      console.log("🤖 Initializing Connecta Agent with Gemini");
+      this.model = new ChatGoogleGenerativeAI({
+        apiKey: geminiKey,
+        model: aiConfig.model || "gemini-pro",
+        maxOutputTokens: 2000,
+        temperature: this.config.temperature ?? 0.3,
+      });
+    } else {
+      console.log("🤖 Initializing Connecta Agent with OpenAI/OpenRouter");
+      this.model = new ChatOpenAI({
+        apiKey: openaiKey,
+        model: "deepseek/deepseek-chat", // Default model
+        configuration: {
+          baseURL: "https://openrouter.ai/api/v1",
+        },
+        temperature: this.config.temperature ?? 0.3,
+        maxTokens: 2000,
+      });
+    }
+
+    await this.initializeTools();
   }
 
   /**
@@ -368,6 +394,18 @@ export class ConnectaAgent {
       );
     }
 
+    if (!this.model) {
+      await this.initialize();
+      if (!this.model) {
+        return this.createResponse(
+          "I'm having trouble connecting to my brain (AI Model). Please contact support.",
+          null,
+          false,
+          startTime
+        );
+      }
+    }
+
     try {
       // Ensure fresh context
       await this.ensureContextFreshness();
@@ -472,16 +510,26 @@ export class ConnectaAgent {
         async (rawOutput: any) => {
           let textOutput = typeof rawOutput === "string" ? rawOutput : rawOutput?.content || "";
 
-          textOutput = textOutput
-            .replace(/```json/g, "")
-            .replace(/```/g, "")
-            .trim();
+          // Robust JSON extraction
+          const jsonBlockMatch = textOutput.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i);
+          if (jsonBlockMatch) {
+            textOutput = jsonBlockMatch[1];
+          } else {
+            // Fallback: try to find the first { and last }
+            const firstBrace = textOutput.indexOf('{');
+            const lastBrace = textOutput.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+              textOutput = textOutput.substring(firstBrace, lastBrace + 1);
+            }
+          }
 
           let parsedOutput;
           try {
             parsedOutput = JSON.parse(textOutput);
           } catch (err) {
             console.error("⚠️ JSON parse error:", err, "\nRAW:", textOutput);
+            // Attempt to recover from common Gemini errors (e.g. trailing commas) if needed
+            // For now, just throw to trigger the error handler
             throw new Error("Failed to parse model output as JSON");
           }
 
@@ -505,8 +553,12 @@ export class ConnectaAgent {
           }
 
           this.chatHistory.push({ input, output: JSON.stringify(result), success: true, timestamp: new Date() });
-          // Ensure result has success field
-          return { ...result, success: result.success ?? true };
+          // Ensure result has success field and responseType
+          return {
+            ...result,
+            success: result.success ?? true,
+            responseType: validatedOutput.responseType
+          };
         },
       ]);
 
@@ -611,7 +663,8 @@ export class ConnectaAgent {
     success: boolean,
     startTime: number,
     suggestions: string[] = [],
-    toolUsed?: string
+    toolUsed?: string,
+    responseType?: string
   ): AgentResponse {
     const response: AgentResponse = {
       message,
@@ -619,6 +672,7 @@ export class ConnectaAgent {
       success,
       toolUsed,
       suggestions,
+      responseType,
       metadata: {
         responseTime: Date.now() - startTime,
         cached: false,
