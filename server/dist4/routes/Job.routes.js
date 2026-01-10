@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const Job_controller_1 = require("../controllers/Job.controller");
 const auth_middleware_1 = require("../core/middleware/auth.middleware");
+const admin_middleware_1 = require("../core/middleware/admin.middleware");
 const router = express_1.default.Router();
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", auth_middleware_1.authenticate, Job_controller_1.getClientJobs);
@@ -29,5 +30,5 @@ router.post("/", auth_middleware_1.authenticate, Job_controller_1.createJob);
 // Update job
 router.put("/:id", Job_controller_1.updateJob);
 // Delete job
-router.delete("/:id", Job_controller_1.deleteJob);
+router.delete("/:id", auth_middleware_1.authenticate, admin_middleware_1.isAdmin, Job_controller_1.deleteJob);
 exports.default = router;

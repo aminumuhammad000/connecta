@@ -47,17 +47,23 @@ export const getAllJobs = async (req: Request, res: Response) => {
       jobType,
       locationType,
       skills,
+      isExternal,
+      status,
       limit = 10,
       page = 1
     } = req.query;
 
-    const filter: any = { status: "active" };
+    const filter: any = {};
+
+    if (status) filter.status = status;
+    else filter.status = "active";
 
     if (category) filter.category = category;
     if (location) filter.location = { $regex: location, $options: "i" };
     if (jobType) filter.jobType = jobType;
     if (locationType) filter.locationType = locationType;
     if (skills) filter.skills = { $in: (skills as string).split(",") };
+    if (isExternal !== undefined) filter.isExternal = isExternal === 'true';
 
     const skip = (Number(page) - 1) * Number(limit);
 

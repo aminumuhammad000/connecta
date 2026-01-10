@@ -43,8 +43,12 @@ exports.getClientJobs = getClientJobs;
 // ===================
 const getAllJobs = async (req, res) => {
     try {
-        const { category, location, jobType, locationType, skills, limit = 10, page = 1 } = req.query;
-        const filter = { status: "active" };
+        const { category, location, jobType, locationType, skills, isExternal, status, limit = 10, page = 1 } = req.query;
+        const filter = {};
+        if (status)
+            filter.status = status;
+        else
+            filter.status = "active";
         if (category)
             filter.category = category;
         if (location)
@@ -55,6 +59,8 @@ const getAllJobs = async (req, res) => {
             filter.locationType = locationType;
         if (skills)
             filter.skills = { $in: skills.split(",") };
+        if (isExternal !== undefined)
+            filter.isExternal = isExternal === 'true';
         const skip = (Number(page) - 1) * Number(limit);
         const jobs = await Job_model_1.default.find(filter)
             .sort({ posted: -1 })
