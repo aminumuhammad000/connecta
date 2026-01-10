@@ -1,184 +1,247 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
-import { usersAPI } from '../services/api'
-import type { User } from '../types'
+import { jobsAPI } from '../services/api'
+
+interface Job {
+  _id: string
+  title: string
+  company: string
+  location: string
+  jobType: string
+  status: string
+  isExternal: boolean
+  source?: string
+  createdAt: string
+  budget?: string
+}
 
 export default function Jobs() {
-  const [users, setUsers] = useState<User[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterType, setFilterType] = useState<'all' | 'internal' | 'external'>('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const jobsPerPage = 10
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    jobId: string | null
+    title: string
+  }>({
+    isOpen: false,
+    jobId: null,
+    title: ''
+  })
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true)
-        const response: any = await usersAPI.getAll({ limit: 100 })
-        if (response.success && response.data) {
-          setUsers(response.data)
-        } else if (Array.isArray(response)) {
-          setUsers(response)
-        } else {
-          setUsers([])
-        }
-      } catch (error) {
-        console.error('Error fetching users:', error)
-        toast.error('Failed to load users')
-        setUsers([])
-      } finally {
-        setLoading(false)
-      }
-    }
+    fetchJobs()
+  }, [filterType])
 
-    fetchUsers()
-  }, [])
+  const fetchJobs = async () => {
+    try {
+      setLoading(true)
+      const params: any = {
+        limit: 100,
+        status: 'active' // Fetch active jobs by default
+      }
+
+      if (filterType === 'external') {
+        params.isExternal = 'true'
+      } else if (filterType === 'internal') {
+        params.isExternal = 'false'
+      }
+
+      const response: any = await jobsAPI.getAll(params)
+
+      let jobData = []
+      if (response.success && response.data) {
+        jobData = response.data
+      } else if (Array.isArray(response)) {
+        jobData = response
+      } else if (response.data && Array.isArray(response.data)) {
+        jobData = response.data
+      }
+
+      setJobs(jobData)
+    } catch (error: any) {
+      toast.error('Failed to load jobs')
+      setJobs([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteJob = async () => {
+    if (!confirmModal.jobId) return
+
+    try {
+      await jobsAPI.delete(confirmModal.jobId)
+      toast.success('Job deleted successfully')
+      setJobs(jobs.filter(j => j._id !== confirmModal.jobId))
+      setConfirmModal({ isOpen: false, jobId: null, title: '' })
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete job')
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const filteredJobs = jobs.filter(job =>
+    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.company.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
+  const currentJobs = filteredJobs.slice((currentPage - 1) * jobsPerPage, currentPage * jobsPerPage)
+
   return (
-    <main className="flex-1 p-4 md:p-8 overflow-x-auto">
-      <div className="max-w-7xl mx-auto">
-        {/* PageHeading */}
-        <div className="flex flex-wrap justify-between gap-4 items-center mb-6">
-          <p className="text-gray-900 dark:text-white text-2xl md:text-4xl font-black leading-tight tracking-[-0.033em]">Users Management</p>
-          <button className="flex items-center justify-center gap-2 min-w-[84px] cursor-pointer rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em]">
-            <Icon name="add_circle" size={20} />
-            <span className="truncate">Add New User</span>
-          </button>
+    <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+            Job Management
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
+            Manage all jobs and external gigs on the platform
+          </p>
         </div>
 
-        {/* Filters Section */}
-        <div className="bg-white dark:bg-[#181210] p-3 md:p-4 rounded-xl border border-gray-200 dark:border-gray-800 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 items-end">
-            {/* SearchBar */}
-            <div className="lg:col-span-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block" htmlFor="search">Search</label>
-              <div className="flex w-full flex-1 items-stretch rounded-lg h-12">
-                <div className="text-gray-500 dark:text-gray-400 flex border-none bg-background-light dark:bg-background-dark items-center justify-center pl-4 rounded-l-lg border-r-0">
-                  <Icon name="search" />
-                </div>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Icon name="search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
-                  id="search"
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-background-light dark:bg-background-dark h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
-                  placeholder="Search by name, email, user type..."
+                  type="text"
+                  placeholder="Search jobs by title or company..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as any)}
+                className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="all">All Gigs</option>
+                <option value="internal">Internal Only</option>
+                <option value="external">External Only</option>
+              </select>
             </div>
-            {/* Chips */}
-            <div className="flex items-end gap-2 flex-wrap">
-              <div className="flex-1 min-w-[150px]">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block" htmlFor="status-filter">Status</label>
+          </div>
+
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">Loading jobs...</p>
+              </div>
+            ) : filteredJobs.length === 0 ? (
+              <div className="text-center py-20">
+                <Icon name="work_off" size={64} className="mx-auto text-slate-400 mb-4 opacity-50" />
+                <p className="text-slate-600 dark:text-slate-400 text-lg">No jobs found</p>
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Job Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Source</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Posted</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                  {currentJobs.map((job) => (
+                    <tr key={job._id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-900 dark:text-white truncate max-w-xs">{job.title}</p>
+                        <p className="text-xs text-slate-500">{job.location}</p>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{job.company}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${job.isExternal ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                          {job.isExternal ? 'External' : 'Internal'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{job.source || 'Connecta'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{formatDate(job.createdAt)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => setConfirmModal({ isOpen: true, jobId: job._id, title: job.title })}
+                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                          title="Delete Job"
+                        >
+                          <Icon name="delete" size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="text-sm text-slate-600 dark:text-slate-400">
+                Showing {(currentPage - 1) * jobsPerPage + 1} to {Math.min(currentPage * jobsPerPage, filteredJobs.length)} of {filteredJobs.length} jobs
+              </div>
+              <div className="flex items-center gap-2">
                 <button
-                  id="status-filter"
-                  className="flex w-full h-12 items-center justify-between gap-x-2 rounded-lg bg-background-light dark:bg-background-dark px-3 text-left border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 disabled:opacity-50"
                 >
-                  <div className="flex items-center gap-2">
-                    <Icon name="tune" className="text-gray-600 dark:text-gray-300" />
-                    <p className="text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal">All Statuses</p>
-                  </div>
-                  <Icon name="expand_more" className="text-gray-600 dark:text-gray-300" />
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 disabled:opacity-50"
+                >
+                  Next
                 </button>
               </div>
-              <div className="flex-1 min-w-[150px]">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block" htmlFor="date-filter">Date Posted</label>
-                <button
-                  id="date-filter"
-                  className="flex w-full h-12 items-center justify-between gap-x-2 rounded-lg bg-background-light dark:bg-background-dark px-3 text-left border border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon name="calendar_today" className="text-gray-600 dark:text-gray-300" />
-                    <p className="text-gray-700 dark:text-gray-300 text-sm font-medium leading-normal">Any Date</p>
-                  </div>
-                  <Icon name="expand_more" className="text-gray-600 dark:text-gray-300" />
-                </button>
-              </div>
             </div>
-            {/* SingleButton */}
-            <div className="flex items-end h-12">
-              <button className="flex w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em]">
-                <span className="truncate">Apply Filters</span>
+          )}
+        </div>
+      </div>
+
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Delete Job?</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
+              Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-white">"{confirmModal.title}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmModal({ isOpen: false, jobId: null, title: '' })}
+                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteJob}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Job
               </button>
             </div>
           </div>
         </div>
-
-        {/* Data Table */}
-        <div className="bg-white dark:bg-[#181210] rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-[640px]">
-              <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-900/50">
-                <tr>
-                  <th scope="col" className="p-4 w-4">
-                    <input type="checkbox" className="form-checkbox h-4 w-4 rounded text-primary bg-gray-100 border-gray-300 focus:ring-primary dark:focus:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600" />
-                  </th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Name</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Email</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">User Type</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Created At</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-400">
-                        <Icon name="progress_activity" className="animate-spin" size={24} />
-                        <span>Loading users...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                      No users found
-                    </td>
-                  </tr>
-                ) : (
-                  users
-                    .filter((user) =>
-                      searchTerm.trim()
-                        ? `${user.name} ${user.email} ${user.userType}`.toLowerCase().includes(searchTerm.toLowerCase())
-                        : true
-                    )
-                    .map((user) => (
-                      <tr key={user._id} className="bg-white dark:bg-[#181210] border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                        <td className="p-4 w-4">
-                          <input type="checkbox" className="form-checkbox h-4 w-4 rounded text-primary bg-gray-100 border-gray-300 focus:ring-primary dark:focus:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600" />
-                        </td>
-                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{user.name || 'N/A'}</td>
-                        <td className="px-6 py-4">{user.email}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.userType === 'freelancer'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                            }`}>
-                            {user.userType}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">{new Date(user.createdAt).toLocaleDateString()}</td>
-                        <td className="px-6 py-4">
-                          <button className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-                            <Icon name="more_horiz" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          {/* Pagination */}
-          <div className="flex flex-col sm:flex-row items-center justify-between p-3 md:p-4 border-t border-gray-200 dark:border-gray-800 gap-3">
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400 text-center sm:text-left">
-              Showing <span className="font-semibold text-gray-900 dark:text-white">1-5</span> of <span className="font-semibold text-gray-900 dark:text-white">100</span>
-            </span>
-            <div className="inline-flex items-center -space-x-px">
-              <a className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" href="#">Previous</a>
-              <a className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" href="#">Next</a>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </main>
   )
 }

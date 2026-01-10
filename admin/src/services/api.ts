@@ -75,11 +75,15 @@ export const authAPI = {
     return data
   },
   getProfile: async () => {
-    const { data } = await api.get('/api/users/profile')
+    const { data } = await api.get('/api/users/me')
     return data
   },
   updateProfile: async (profileData: any) => {
-    const { data } = await api.put('/api/users/profile', profileData)
+    const { data } = await api.put('/api/users/me', profileData)
+    return data
+  },
+  changePassword: async (passwordData: any) => {
+    const { data } = await api.post('/api/users/change-password', passwordData)
     return data
   },
 }

@@ -134,7 +134,7 @@ export const getBaseTemplate = (options: EmailTemplateOptions) => {
 <body>
     <div class="email-container">
         <div class="header">
-            <a href="https://connecta.ng" class="logo-text">Connecta</a>
+            <a href="https://myconnecta.ng" class="logo-text">Connecta</a>
         </div>
 
         <div class="hero">
