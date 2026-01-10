@@ -167,7 +167,8 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
                     </View>
                   )}
                 </View>
-              ))}
+              ))
+            )}
           </View>
         </ScrollView>
       </View>

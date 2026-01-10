@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Linking, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Animated, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -63,8 +62,12 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const handleInterested = (gigId: string) => {
-    // Navigate to details (Apply flow)
-    navigation.navigate('JobDetail', { id: gigId });
+    const job = jobs.find(j => j._id === gigId);
+    if (job?.isExternal && job?.applyUrl) {
+      Linking.openURL(job.applyUrl);
+    } else {
+      navigation.navigate('JobDetail', { id: gigId });
+    }
   };
 
   const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
@@ -261,12 +264,11 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
               </View>
             </ScrollView>
           </View>
-
           {/* Jobs List */}
           <View style={styles.section}>
-            <Text style={[styles.resultsText, { color: c.subtext }]}>{filteredJobs.length} jobs found</Text>
+            <Text style={[styles.resultsText, { color: c.subtext, marginBottom: 12 }]}>{filteredJobs.length} jobs found</Text>
 
-            <View style={{ gap: 12, marginTop: 12 }}>
+            <View style={{ gap: 12 }}>
               {filteredJobs.length > 0 ? (
                 filteredJobs.map(job => {
                   if (!job) return null;
@@ -294,18 +296,16 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                             </View>
 
                             <View style={{ flexDirection: 'row', gap: 12 }}>
-                              {/* Like Button */}
                               <TouchableOpacity onPress={() => toggleLikeGig(job._id)}>
                                 <Animated.View style={{ transform: [{ scale: scaleAnims[job._id] || 1 }] }}>
                                   <Ionicons
                                     name={likedGigs.has(job._id) ? "heart" : "heart-outline"}
                                     size={24}
-                                    color={likedGigs.has(job._id) ? "#ef4444" : c.subtext} // Red for liked
+                                    color={likedGigs.has(job._id) ? "#ef4444" : c.subtext}
                                   />
                                 </Animated.View>
                               </TouchableOpacity>
 
-                              {/* Save Button */}
                               <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
                                 <MaterialIcons
                                   name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
@@ -342,37 +342,29 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
 
                           {job.skills && job.skills.length > 0 && (
                             <View style={styles.skillsRow}>
-                              {job.skills.slice(0, 5).map((skill, idx) => (
+                              {job.skills.slice(0, 3).map((skill, idx) => (
                                 <Badge key={idx} label={skill} variant="info" size="small" />
                               ))}
                             </View>
                           )}
 
-                          <View style={styles.gigActions}>
+                          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
                             <Button
                               title="View Details"
                               onPress={() => navigation.navigate('JobDetail', { id: job._id })}
                               variant="outline"
-                              size="small"
                               style={{ flex: 1 }}
                             />
                             <Button
-                              title={job.isExternal ? "Visit Job" : "Apply Now"}
-                              onPress={() => {
-                                if (job.isExternal && job.applyUrl) {
-                                  Linking.openURL(job.applyUrl);
-                                } else {
-                                  navigation.navigate('JobDetail', { id: job._id });
-                                }
-                              }}
+                              title="Apply Now"
+                              onPress={() => handleInterested(job._id)}
                               variant="primary"
-                              size="small"
                               style={{ flex: 1 }}
                             />
                           </View>
-                        </View>
-                      </Card>
-                    </Animated.View>
+                        </View >
+                      </Card >
+                    </Animated.View >
                   );
                 })
               ) : (
@@ -383,11 +375,10 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                   </Text>
                 </View>
               )}
-            </View>
-          </View>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+            </View >
+        </ScrollView >
+      </View >
+    </SafeAreaView >
   );
 };
 

@@ -129,6 +129,9 @@ export interface Job {
     company?: string;
     posted?: Date;
     postedTime?: string;
+    isExternal?: boolean;
+    applyUrl?: string;
+    source?: string;
     createdAt: string;
     updatedAt: string;
 }

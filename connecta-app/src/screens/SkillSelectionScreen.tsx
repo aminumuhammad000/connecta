@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Dimensions, Animated as NativeAnimated, Easing } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Dimensions, Animated as NativeAnimated, Easing, Keyboard, Platform, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
-import CustomAlert from '../components/CustomAlert';
 import * as profileService from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { saveToken } from '../utils/storage';
@@ -15,11 +14,13 @@ const { width } = Dimensions.get('window');
 // --- Types ---
 interface OnboardingData {
     remoteWorkType: 'remote_only' | 'hybrid' | 'onsite' | null;
-    minimumSalary: string;
-    workLocationPreferences: string[];
-    jobTitle: string;
-    jobCategories: string[];
+    workLocation: string;
+    category: string;
+    jobTitles: string[];
     yearsOfExperience: string;
+    whatsappNumber: string;
+    // Keeping these for compatibility/completeness if backend expects them
+    minimumSalary: string;
     engagementTypes: string[];
     jobNotificationFrequency: 'daily' | 'weekly' | 'relevant_only' | null;
 }
@@ -32,24 +33,53 @@ interface StepProps {
 }
 
 // --- Data Constants ---
-const JOB_CATEGORIES = [
-    'Web Development', 'Mobile Development', 'Data Science', 'Design',
-    'Writing', 'Marketing', 'Sales', 'Customer Support', 'Virtual Assistance',
-    'Accounting', 'Legal', 'HR', 'Engineering', 'Architecture'
-];
+const JOB_DATA: Record<string, string[]> = {
+    'IT & Tech': [
+        'Web Developer', 'Mobile App Developer', 'DevOps Engineer', 'Data Scientist', 'UX/UI Designer',
+        'QA Engineer', 'Blockchain Developer', 'System Administrator', 'Cybersecurity Analyst', 'Cloud Architect',
+        'AI/ML Engineer', 'Game Developer', 'Product Manager', 'Tech Support Specialist', 'Database Administrator',
+        'Network Engineer', 'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 'Software Engineer'
+    ],
+    'Creative & Design': [
+        'Graphic Designer', 'Illustrator', 'Motion Graphics Artist', 'Video Editor', '3D Modeler',
+        'Photographer', 'Art Director', 'Fashion Designer', 'Interior Designer', 'Industrial Designer',
+        'UX Researcher', 'Copywriter', 'Creative Director', 'Animator', 'Voice Over Artist'
+    ],
+    'Business & Finance': [
+        'Accountant', 'Financial Analyst', 'Bookkeeper', 'Tax Consultant', 'Business Consultant',
+        'Project Manager', 'Product Owner', 'Executive Assistant', 'Data Analyst', 'Market Researcher',
+        'Investment Banker', 'Risk Manager', 'Compliance Officer', 'Auditor'
+    ],
+    'Marketing & Sales': [
+        'Digital Marketer', 'SEO Specialist', 'Social Media Manager', 'Content Specialist', 'Email Marketer',
+        'Affiliate Marketer', 'Sales Representative', 'Lead Generation Specialist', 'Public Relations Specialist',
+        'Brand Ambassador', 'CRM Manager', 'Advertising Specialist'
+    ],
+    'Writing & Translation': [
+        'Content Writer', 'Copywriter', 'Technical Writer', 'Editor', 'Proofreader', 'Translator',
+        'Ghostwriter', 'Blogger', 'Screenwriter', 'Grant Writer', 'Resume Writer', 'Journalist'
+    ],
+    'Admin & Support': [
+        'Virtual Assistant', 'Data Entry Specialist', 'Customer Service Rep', 'Technical Support', 'Office Manager',
+        'Transcriptionist', 'Receptionist', 'Travel Planner', 'Research Assistant', 'Email Support'
+    ],
+    'Legal': [
+        'Legal Consultant', 'Contract Lawyer', 'Paralegal', 'Intellectual Property Lawyer', 'Corporate Lawyer',
+        'Family Lawyer', 'Legal Writer', 'Compliance Specialist'
+    ],
+    'Engineering': [
+        'Civil Engineer', 'Mechanical Engineer', 'Electrical Engineer', 'Architect', 'CAD Drafter',
+        'Structural Engineer', 'Chemical Engineer', 'Biomedical Engineer'
+    ]
+};
 
-const ENGAGEMENT_TYPES = [
-    { id: 'full_time', label: 'Full-time' },
-    { id: 'part_time', label: 'Part-time' },
-    { id: 'contract', label: 'Contract' },
-    { id: 'freelance', label: 'Freelance' },
-    { id: 'internship', label: 'Internship' },
-];
+const CATEGORIES = Object.keys(JOB_DATA);
 
-const NOTIFICATION_FREQUENCIES = [
-    { id: 'daily', label: 'Daily' },
-    { id: 'weekly', label: 'Weekly' },
-    { id: 'relevant_only', label: 'Only when highly relevant' },
+const MOCK_LOCATIONS = [
+    'New York, USA', 'San Francisco, USA', 'London, UK', 'Berlin, Germany', 'Lagos, Nigeria',
+    'Nairobi, Kenya', 'Bangalore, India', 'Singapore', 'Toronto, Canada', 'Sydney, Australia',
+    'Dubai, UAE', 'Paris, France', 'Amsterdam, Netherlands', 'Austin, USA', 'Remote (Worldwide)',
+    'Johannesburg, South Africa', 'Accra, Ghana', 'Kigali, Rwanda', 'Mumbai, India', 'Tokyo, Japan'
 ];
 
 // --- Wizard Steps ---
@@ -58,14 +88,15 @@ const NOTIFICATION_FREQUENCIES = [
 const RemoteWorkStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
     const options = [
-        { id: 'remote_only', label: 'Remote Only', icon: 'laptop' },
-        { id: 'hybrid', label: 'Hybrid', icon: 'business' },
-        { id: 'onsite', label: 'On-site', icon: 'location-city' },
+        { id: 'remote_only', label: 'Remote Only', icon: 'laptop-mac', desc: 'Work from anywhere' },
+        { id: 'hybrid', label: 'Hybrid', icon: 'sync-alt', desc: 'Mix of home & office' },
+        { id: 'onsite', label: 'On-site', icon: 'location-city', desc: 'Work at an office' },
     ];
 
     return (
         <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>What type of remote work are you looking for?</Text>
+            <Text style={[styles.questionText, { color: c.text }]}>What type of work are you looking for?</Text>
+            <Text style={[styles.subText, { color: c.subtext }]}>We'll curate jobs based on your preference.</Text>
             <View style={styles.optionsContainer}>
                 {options.map((opt) => (
                     <TouchableOpacity
@@ -79,8 +110,14 @@ const RemoteWorkStep: React.FC<StepProps> = ({ data, updateData }) => {
                         ]}
                         onPress={() => updateData('remoteWorkType', opt.id)}
                     >
-                        <MaterialIcons name={opt.icon as any} size={32} color={data.remoteWorkType === opt.id ? c.primary : c.subtext} />
-                        <Text style={[styles.optionLabel, { color: data.remoteWorkType === opt.id ? c.primary : c.text }]}>{opt.label}</Text>
+                        <View style={[styles.iconBox, { backgroundColor: data.remoteWorkType === opt.id ? c.primary : c.border + '40' }]}>
+                            <MaterialIcons name={opt.icon as any} size={24} color={data.remoteWorkType === opt.id ? '#fff' : c.subtext} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.optionLabel, { color: c.text }]}>{opt.label}</Text>
+                            <Text style={[styles.optionDesc, { color: c.subtext }]}>{opt.desc}</Text>
+                        </View>
+                        {data.remoteWorkType === opt.id && <MaterialIcons name="check-circle" size={24} color={c.primary} />}
                     </TouchableOpacity>
                 ))}
             </View>
@@ -88,120 +125,161 @@ const RemoteWorkStep: React.FC<StepProps> = ({ data, updateData }) => {
     );
 };
 
-// 2. Salary
-const SalaryStep: React.FC<StepProps> = ({ data, updateData }) => {
-    const c = useThemeColors();
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>What is your minimum desired salary?</Text>
-            <Text style={[styles.subText, { color: c.subtext }]}>Annual USD equivalent</Text>
-            <View style={[styles.inputWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
-                <Text style={{ color: c.text, fontSize: 18, marginRight: 8 }}>$</Text>
-                <TextInput
-                    style={[styles.input, { color: c.text }]}
-                    value={data.minimumSalary}
-                    onChangeText={(val) => updateData('minimumSalary', val.replace(/[^0-9]/g, ''))}
-                    placeholder="e.g. 50000"
-                    placeholderTextColor={c.subtext}
-                    keyboardType="numeric"
-                />
-            </View>
-        </View>
-    );
-};
-
-// 3. Location
+// 2. Location (Intelligent Autocomplete)
 const LocationStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
-    const [input, setInput] = useState('');
+    const [query, setQuery] = useState(data.workLocation || '');
+    const [suggestions, setSuggestions] = useState<string[]>([]);
 
-    const addLocation = () => {
-        if (input.trim() && !data.workLocationPreferences.includes(input.trim())) {
-            updateData('workLocationPreferences', [...data.workLocationPreferences, input.trim()]);
-            setInput('');
+    // Determine question based on previous selection
+    const questionText = data.remoteWorkType === 'remote_only'
+        ? "Where do you want to work remotely from?"
+        : "Where are you located?";
+
+    const handleSearch = (text: string) => {
+        setQuery(text);
+        updateData('workLocation', text); // Update anyway in case they type a custom one
+
+        if (text.length > 1) {
+            const filtered = MOCK_LOCATIONS.filter(loc => loc.toLowerCase().includes(text.toLowerCase()));
+            setSuggestions(filtered.slice(0, 5));
+        } else {
+            setSuggestions([]);
         }
     };
 
-    const removeLocation = (loc: string) => {
-        updateData('workLocationPreferences', data.workLocationPreferences.filter(l => l !== loc));
+    const handleSelect = (loc: string) => {
+        setQuery(loc);
+        updateData('workLocation', loc);
+        setSuggestions([]);
+        Keyboard.dismiss();
     };
 
     return (
         <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>Where do you want to work remotely from?</Text>
-            <Text style={[styles.subText, { color: c.subtext }]}>Add preferred countries or timezones</Text>
+            <Text style={[styles.questionText, { color: c.text }]}>{questionText}</Text>
+            <Text style={[styles.subText, { color: c.subtext }]}>Start typing to find your location...</Text>
 
-            <View style={[styles.inputRow, { borderColor: c.border, backgroundColor: c.card }]}>
-                <TextInput
-                    style={[styles.input, { color: c.text }]}
-                    value={input}
-                    onChangeText={setInput}
-                    placeholder="e.g. Anywhere, USA, UTC+1"
-                    placeholderTextColor={c.subtext}
-                    onSubmitEditing={addLocation}
-                />
-                <TouchableOpacity onPress={addLocation} style={styles.addBtn}>
-                    <MaterialIcons name="add" size={24} color={c.primary} />
-                </TouchableOpacity>
+            <View style={{ zIndex: 10 }}>
+                <View style={[styles.inputWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
+                    <MaterialIcons name="search" size={24} color={c.subtext} />
+                    <TextInput
+                        style={[styles.input, { color: c.text }]}
+                        value={query}
+                        onChangeText={handleSearch}
+                        placeholder="e.g. London, United Kingdom"
+                        placeholderTextColor={c.subtext}
+                    />
+                    {query.length > 0 && (
+                        <TouchableOpacity onPress={() => handleSearch('')}>
+                            <MaterialIcons name="close" size={20} color={c.subtext} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {suggestions.length > 0 && (
+                    <View style={[styles.suggestionsList, { backgroundColor: c.card, borderColor: c.border }]}>
+                        {suggestions.map((item, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={[styles.suggestionItem, { borderBottomColor: c.border }]}
+                                onPress={() => handleSelect(item)}
+                            >
+                                <MaterialIcons name="location-on" size={18} color={c.subtext} style={{ marginRight: 8 }} />
+                                <Text style={{ color: c.text, fontSize: 16 }}>{item}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
             </View>
 
-            <View style={styles.chipsContainer}>
-                {data.workLocationPreferences.map(loc => (
-                    <View key={loc} style={[styles.chip, { backgroundColor: c.primary + '20' }]}>
-                        <Text style={{ color: c.primary }}>{loc}</Text>
-                        <TouchableOpacity onPress={() => removeLocation(loc)}>
-                            <MaterialIcons name="close" size={16} color={c.primary} />
-                        </TouchableOpacity>
-                    </View>
-                ))}
+            {/* Simulated Map Visual */}
+            <View style={[styles.mapPlaceholder, { backgroundColor: c.card, borderColor: c.border }]}>
+                <MaterialIcons name="map" size={48} color={c.border} />
+                <Text style={{ color: c.subtext, marginTop: 8 }}>Map location preview</Text>
             </View>
         </View>
     );
 };
 
-// 4. Job Title
-const JobTitleStep: React.FC<StepProps> = ({ data, updateData }) => {
+// 3. Category Selection
+const CategoryStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
+
     return (
         <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>Do you have a specific job title in mind?</Text>
-            <View style={[styles.inputWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
-                <TextInput
-                    style={[styles.input, { color: c.text }]}
-                    value={data.jobTitle}
-                    onChangeText={(val) => updateData('jobTitle', val)}
-                    placeholder="e.g. Senior React Developer"
-                    placeholderTextColor={c.subtext}
-                />
-            </View>
+            <Text style={[styles.questionText, { color: c.text }]}>Which industry best describes your skills?</Text>
+            <ScrollView style={{ marginTop: 12, flex: 1 }} showsVerticalScrollIndicator={false}>
+                <View style={styles.gridContainer}>
+                    {CATEGORIES.map(cat => (
+                        <TouchableOpacity
+                            key={cat}
+                            style={[
+                                styles.categoryCard,
+                                {
+                                    backgroundColor: data.category === cat ? c.primary : c.card,
+                                    borderColor: data.category === cat ? c.primary : c.border
+                                }
+                            ]}
+                            onPress={() => {
+                                updateData('category', cat);
+                                // Clear job titles if category changes
+                                updateData('jobTitles', []);
+                            }}
+                        >
+                            <Text style={[styles.categoryText, { color: data.category === cat ? '#fff' : c.text }]}>{cat}</Text>
+                        </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity
+                        style={[styles.categoryCard, { backgroundColor: c.card, borderColor: c.border }]}
+                        onPress={() => updateData('category', 'Other')}
+                    >
+                        <Text style={[styles.categoryText, { color: c.text }]}>Other</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
         </View>
     );
 };
 
-// 5. Categories
-const CategoriesStep: React.FC<StepProps> = ({ data, updateData }) => {
+// 4. Job Titles (Dynamic based on Category)
+const JobTitlesStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
+    const [otherInput, setOtherInput] = useState('');
+    const [showOtherInput, setShowOtherInput] = useState(false);
 
-    const toggleCategory = (cat: string) => {
-        if (data.jobCategories.includes(cat)) {
-            updateData('jobCategories', data.jobCategories.filter(c => c !== cat));
+    const titles = data.category && JOB_DATA[data.category] ? JOB_DATA[data.category] : [];
+
+    const toggleTitle = (title: string) => {
+        if (data.jobTitles.includes(title)) {
+            updateData('jobTitles', data.jobTitles.filter(t => t !== title));
         } else {
-            if (data.jobCategories.length < 5) {
-                updateData('jobCategories', [...data.jobCategories, cat]);
+            if (data.jobTitles.length < 5) {
+                updateData('jobTitles', [...data.jobTitles, title]);
             }
         }
     };
 
+    const addOtherTitle = () => {
+        if (otherInput.trim()) {
+            toggleTitle(otherInput.trim());
+            setOtherInput('');
+            setShowOtherInput(false);
+        }
+    };
+
     return (
         <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>Select up to 5 job categories</Text>
-            <ScrollView style={{ maxHeight: 400 }}>
+            <Text style={[styles.questionText, { color: c.text }]}>Select specific roles in {data.category}</Text>
+            <Text style={[styles.subText, { color: c.subtext }]}>Select up to 5 that apply to you</Text>
+
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                 <View style={styles.chipsContainer}>
-                    {JOB_CATEGORIES.map(cat => {
-                        const isSelected = data.jobCategories.includes(cat);
+                    {titles.map(title => {
+                        const isSelected = data.jobTitles.includes(title);
                         return (
                             <TouchableOpacity
-                                key={cat}
+                                key={title}
                                 style={[
                                     styles.selectableChip,
                                     {
@@ -209,116 +287,71 @@ const CategoriesStep: React.FC<StepProps> = ({ data, updateData }) => {
                                         borderColor: isSelected ? c.primary : c.border
                                     }
                                 ]}
-                                onPress={() => toggleCategory(cat)}
+                                onPress={() => toggleTitle(title)}
                             >
-                                <Text style={{ color: isSelected ? '#fff' : c.text }}>{cat}</Text>
+                                <Text style={{ color: isSelected ? '#fff' : c.text }}>{title}</Text>
                             </TouchableOpacity>
                         );
                     })}
+
+                    {/* Add Custom Title */}
+                    <TouchableOpacity
+                        style={[styles.selectableChip, { backgroundColor: c.card, borderColor: c.border, borderStyle: 'dashed' }]}
+                        onPress={() => setShowOtherInput(true)}
+                    >
+                        <MaterialIcons name="add" size={16} color={c.primary} />
+                        <Text style={{ color: c.primary, marginLeft: 4 }}>Add Other</Text>
+                    </TouchableOpacity>
                 </View>
+
+                {showOtherInput && (
+                    <View style={[styles.inputWrapper, { marginTop: 16, backgroundColor: c.card, borderColor: c.border }]}>
+                        <TextInput
+                            style={[styles.input, { color: c.text }]}
+                            value={otherInput}
+                            onChangeText={setOtherInput}
+                            placeholder="Type job title..."
+                            placeholderTextColor={c.subtext}
+                            autoFocus
+                            onSubmitEditing={addOtherTitle}
+                        />
+                        <TouchableOpacity onPress={addOtherTitle} style={styles.addBtn}>
+                            <MaterialIcons name="check" size={20} color={c.primary} />
+                        </TouchableOpacity>
+                    </View>
+                )}
             </ScrollView>
         </View>
     );
 };
 
-// 6. Experience
-const ExperienceStep: React.FC<StepProps> = ({ data, updateData }) => {
+// 5. WhatsApp Number
+const WhatsAppStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
     return (
         <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>How many years of relevant experience do you have?</Text>
+            <Text style={[styles.questionText, { color: c.text }]}>Are you on WhatsApp?</Text>
+            <Text style={[styles.subText, { color: c.subtext }]}>Add your number to receive instant job alerts (Optional).</Text>
+
             <View style={[styles.inputWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Ionicons name="logo-whatsapp" size={24} color="#25D366" style={{ marginRight: 12 }} />
                 <TextInput
                     style={[styles.input, { color: c.text }]}
-                    value={data.yearsOfExperience}
-                    onChangeText={(val) => updateData('yearsOfExperience', val.replace(/[^0-9]/g, ''))}
-                    placeholder="e.g. 5"
+                    value={data.whatsappNumber}
+                    onChangeText={(val) => updateData('whatsappNumber', val)}
+                    placeholder="+123 456 7890"
                     placeholderTextColor={c.subtext}
-                    keyboardType="numeric"
-                    maxLength={2}
+                    keyboardType="phone-pad"
                 />
-                <Text style={{ color: c.subtext, fontSize: 16 }}>years</Text>
+            </View>
+
+            <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <MaterialIcons name="lock-outline" size={18} color={c.subtext} />
+                <Text style={{ color: c.subtext, fontSize: 13, flex: 1 }}>Your number is secure and only used for important notifications.</Text>
             </View>
         </View>
     );
 };
-
-// 7. Engagement Type
-const EngagementStep: React.FC<StepProps> = ({ data, updateData }) => {
-    const c = useThemeColors();
-
-    const toggleEngagement = (id: string) => {
-        if (data.engagementTypes.includes(id)) {
-            updateData('engagementTypes', data.engagementTypes.filter(t => t !== id));
-        } else {
-            updateData('engagementTypes', [...data.engagementTypes, id]);
-        }
-    };
-
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>What type of engagement are you open to?</Text>
-            <View style={styles.optionsContainer}>
-                {ENGAGEMENT_TYPES.map((opt) => {
-                    const isSelected = data.engagementTypes.includes(opt.id);
-                    return (
-                        <TouchableOpacity
-                            key={opt.id}
-                            style={[
-                                styles.optionCard,
-                                {
-                                    backgroundColor: isSelected ? c.primary + '15' : c.card,
-                                    borderColor: isSelected ? c.primary : c.border
-                                }
-                            ]}
-                            onPress={() => toggleEngagement(opt.id)}
-                        >
-                            <MaterialIcons
-                                name={isSelected ? "check-circle" : "radio-button-unchecked"}
-                                size={24}
-                                color={isSelected ? c.primary : c.subtext}
-                            />
-                            <Text style={[styles.optionLabel, { marginLeft: 12, color: isSelected ? c.primary : c.text }]}>{opt.label}</Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        </View>
-    );
-};
-
-// 8. Notification Frequency
-const NotificationStep: React.FC<StepProps> = ({ data, updateData }) => {
-    const c = useThemeColors();
-    return (
-        <View style={styles.stepContainer}>
-            <Text style={[styles.questionText, { color: c.text }]}>How often would you like to receive job recommendations?</Text>
-            <View style={styles.optionsContainer}>
-                {NOTIFICATION_FREQUENCIES.map((opt) => (
-                    <TouchableOpacity
-                        key={opt.id}
-                        style={[
-                            styles.optionCard,
-                            {
-                                backgroundColor: data.jobNotificationFrequency === opt.id ? c.primary + '15' : c.card,
-                                borderColor: data.jobNotificationFrequency === opt.id ? c.primary : c.border
-                            }
-                        ]}
-                        onPress={() => updateData('jobNotificationFrequency', opt.id)}
-                    >
-                        <MaterialIcons
-                            name={data.jobNotificationFrequency === opt.id ? "radio-button-checked" : "radio-button-unchecked"}
-                            size={24}
-                            color={data.jobNotificationFrequency === opt.id ? c.primary : c.subtext}
-                        />
-                        <Text style={[styles.optionLabel, { marginLeft: 12, color: data.jobNotificationFrequency === opt.id ? c.primary : c.text }]}>{opt.label}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </View>
-    );
-};
-
 
 // --- Main Component ---
 const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navigation, route }) => {
@@ -334,12 +367,13 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     const slideAnim = useRef(new NativeAnimated.Value(0)).current;
 
     const [data, setData] = useState<OnboardingData>({
-        remoteWorkType: null,
-        minimumSalary: '',
-        workLocationPreferences: [],
-        jobTitle: '',
-        jobCategories: [],
+        remoteWorkType: 'remote_only', // Default to avoid null issues in Step 0
+        workLocation: '',
+        category: '',
+        jobTitles: [],
         yearsOfExperience: '',
+        whatsappNumber: '',
+        minimumSalary: '',
         engagementTypes: [],
         jobNotificationFrequency: null,
     });
@@ -353,7 +387,6 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
             NativeAnimated.timing(fadeAnim, {
                 toValue: 0,
                 duration: 200,
-                //useNativeDriver: true, // Some properties might not support native driver, safer to disable or check
                 useNativeDriver: true
             }),
             NativeAnimated.timing(slideAnim, {
@@ -367,20 +400,27 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
             NativeAnimated.parallel([
                 NativeAnimated.timing(fadeAnim, {
                     toValue: 1,
-                    duration: 200,
-                    useNativeDriver: true,
+                    duration: 250,
+                    useNativeDriver: true
                 }),
                 NativeAnimated.timing(slideAnim, {
                     toValue: 0,
-                    duration: 200,
+                    duration: 250,
                     useNativeDriver: true,
+                    easing: Easing.out(Easing.cubic)
                 }),
             ]).start();
         });
     };
 
     const nextStep = () => {
-        if (step < 7) {
+        // Validation logic
+        if (step === 0 && !data.remoteWorkType) return;
+        if (step === 1 && !data.workLocation) return;
+        if (step === 2 && !data.category) return;
+        if (step === 3 && data.jobTitles.length === 0) return;
+
+        if (step < 4) {
             animateTransition('next', () => setStep(prev => prev + 1));
         } else {
             handleSubmit();
@@ -397,29 +437,26 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
         setIsMatching(true);
 
         try {
-            // 1. Temporarily save token if needed
             if (token) await saveToken(token);
 
-            // 2. Prepare profile data
+            // Construct profile update
             const profileUpdate: Partial<Profile> = {
                 remoteWorkType: data.remoteWorkType as any,
+                workLocationPreferences: [data.workLocation], // Storing as array for compatibility
+                jobTitle: data.jobTitles.join(', '), // Store primary or join
+                skills: data.jobTitles, // Use titles as skills for matching
+                jobCategories: [data.category],
+                // Store WhatsApp in a suitable field, e.g., phone or metadata if backend supports
+                phone: data.whatsappNumber,
+                // Defaulting or inferring others
                 minimumSalary: parseInt(data.minimumSalary) || 0,
-                workLocationPreferences: data.workLocationPreferences,
-                jobTitle: data.jobTitle,
-                jobCategories: data.jobCategories,
-                yearsOfExperience: parseInt(data.yearsOfExperience) || 0,
-                engagementTypes: data.engagementTypes,
-                jobNotificationFrequency: data.jobNotificationFrequency as any,
-                // Also populate standard 'skills' with categories just in case
-                skills: data.jobCategories
+                yearsOfExperience: 0, // Simplified flow didn't ask explicitly, could add back if needed
             };
 
             await profileService.updateMyProfile(profileUpdate);
 
         } catch (error) {
             console.error("Profile update error:", error);
-            // Even if update fails, we might want to let them in, or show error.
-            // For onboarding flow, usually better to let them in and retry later or show alert.
         }
     };
 
@@ -427,46 +464,41 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     const handleMatchingFinished = async () => {
         if (token && user) {
             try {
-                // Ensure we pass the updated user or re-fetch? 
-                // Usually logging in with existing user object is fine, auth context might re-fetch profile.
                 await loginWithToken(token, user);
             } catch (e) {
                 console.error("Login after matching failed", e);
-                navigation.navigate('Login'); // Fallback to login if context fails
+                navigation.navigate('Login');
             }
         } else if (!token) {
             navigation.goBack();
         }
     };
 
-    const StepComponents = [
+    const Steps = [
         RemoteWorkStep,
-        SalaryStep,
         LocationStep,
-        JobTitleStep,
-        CategoriesStep,
-        ExperienceStep,
-        EngagementStep,
-        NotificationStep
+        CategoryStep,
+        JobTitlesStep,
+        WhatsAppStep
     ];
 
-    const CurrentStepComponent = StepComponents[step];
+    const CurrentStepComponent = Steps[step];
 
     if (isMatching) {
-        return <MatchingScreen onFinish={handleMatchingFinished} />;
+        return <MatchingScreen onFinish={handleMatchingFinished} navigation={navigation} />;
     }
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             {/* Header / Progress */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={prevStep} disabled={step === 0} style={{ opacity: step === 0 ? 0 : 1 }}>
-                    <MaterialIcons name="arrow-back" size={28} color={c.text} />
+                <TouchableOpacity onPress={prevStep} disabled={step === 0} style={{ opacity: step === 0 ? 0 : 1, padding: 8 }}>
+                    <MaterialIcons name="arrow-back" size={24} color={c.text} />
                 </TouchableOpacity>
                 <View style={styles.progressContainer}>
-                    <View style={[styles.progressBar, { width: `${((step + 1) / 8) * 100}%`, backgroundColor: c.primary }]} />
+                    <View style={[styles.progressBar, { width: `${((step + 1) / Steps.length) * 100}%`, backgroundColor: c.primary }]} />
                 </View>
-                <Text style={[styles.stepIndicator, { color: c.subtext }]}>{step + 1}/8</Text>
+                <Text style={[styles.stepIndicator, { color: c.subtext }]}>{step + 1}/{Steps.length}</Text>
             </View>
 
             {/* Content */}
@@ -484,94 +516,103 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
             {/* Footer */}
             <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border }]}>
                 <Button
-                    title={step === 7 ? "Find Matching Jobs" : "Next"}
+                    title={step === Steps.length - 1 ? "Start Matching" : "Continue"}
                     onPress={nextStep}
                     variant="primary"
-                // Add validation logic here to disable if empty
+                    disabled={
+                        (step === 1 && !data.workLocation) ||
+                        (step === 2 && !data.category) ||
+                        (step === 3 && data.jobTitles.length === 0)
+                    }
                 />
             </View>
         </SafeAreaView>
     );
 };
 
-const MatchingScreen = ({ onFinish }: { onFinish: () => void }) => {
+const MatchingScreen = ({ onFinish, navigation }: { onFinish: () => void, navigation: any }) => {
     const c = useThemeColors();
     const progress = useRef(new NativeAnimated.Value(0)).current;
-    const [statusText, setStatusText] = useState("Analyzing your profile...");
+    const [statusText, setStatusText] = useState("Analyzing your fit...");
     const [matchCount, setMatchCount] = useState(0);
+    const [isComplete, setIsComplete] = useState(false);
 
     useEffect(() => {
-        // Duration: 10 seconds total
         const duration = 10000;
-
         NativeAnimated.timing(progress, {
             toValue: 1,
             duration: duration,
-            useNativeDriver: false, // width needs false
-            easing: Easing.linear
+            useNativeDriver: false,
+            easing: Easing.out(Easing.quad)
         }).start(({ finished }) => {
-            if (finished) {
-                onFinish();
-            }
+            if (finished) setIsComplete(true);
         });
 
-        // Text Updates
-        const t1 = setTimeout(() => setStatusText("Scanning 10,000+ active listings..."), 2500);
-        const t2 = setTimeout(() => setStatusText("Filtering by your preferences..."), 5000);
-        const t3 = setTimeout(() => setStatusText("Found high-quality matches!"), 8000);
+        const t1 = setTimeout(() => setStatusText("Scanning job market..."), 2000);
+        const t2 = setTimeout(() => setStatusText("Filtering by your location & skills..."), 5000);
+        const t3 = setTimeout(() => setStatusText("Found relevant opportunities!"), 8000);
 
-        // Counter Effect
         const interval = setInterval(() => {
-            setMatchCount(prev => {
-                if (prev < 320) return prev + Math.floor(Math.random() * 5) + 1;
-                return prev;
-            });
-        }, 150);
+            setMatchCount(prev => prev < 150 ? prev + Math.floor(Math.random() * 3) + 1 : prev);
+        }, 200);
 
         return () => {
-            clearTimeout(t1);
-            clearTimeout(t2);
-            clearTimeout(t3);
-            clearInterval(interval);
+            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearInterval(interval);
         };
     }, []);
 
-    const widthInterp = progress.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0%', '100%']
-    });
+    const widthInterp = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center', padding: 30 }]}>
-
-            {/* Icon Animation */}
-            <View style={{ marginBottom: 50, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: c.primary + '10' }} />
-                <View style={{ position: 'absolute', width: 90, height: 90, borderRadius: 45, backgroundColor: c.primary + '20' }} />
-                <MaterialIcons name="work-outline" size={50} color={c.primary} />
+            <View style={{ marginBottom: 40, alignItems: 'center' }}>
+                <NativeAnimated.View style={{ transform: [{ scale: progress.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.8, 1.1, 1] }) }] }}>
+                    <MaterialIcons name="auto-awesome" size={64} color={c.primary} />
+                </NativeAnimated.View>
             </View>
 
-            <Text style={{ fontSize: 22, fontWeight: '700', color: c.text, marginBottom: 16, textAlign: 'center' }}>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: c.text, marginBottom: 12, textAlign: 'center' }}>
                 {statusText}
             </Text>
-
-            <Text style={{ fontSize: 15, color: c.subtext, marginBottom: 40, textAlign: 'center' }}>
-                Connecting you with top clients globally
+            <Text style={{ fontSize: 16, color: c.subtext, marginBottom: 40, textAlign: 'center' }}>
+                We are personalizing your dashboard
             </Text>
 
-            {/* Progress Bar */}
-            <View style={{ width: '100%', height: 6, backgroundColor: c.border, borderRadius: 3, overflow: 'hidden', marginBottom: 20 }}>
+            <View style={{ width: '100%', height: 8, backgroundColor: c.border, borderRadius: 4, overflow: 'hidden', marginBottom: 24 }}>
                 <NativeAnimated.View style={{ height: '100%', backgroundColor: c.primary, width: widthInterp }} />
             </View>
 
-            {/* Stats */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, backgroundColor: c.card, borderRadius: 20, marginBottom: 40 }}>
                 <MaterialIcons name="check-circle" size={20} color={'#10B981'} />
-                <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>
-                    {matchCount > 0 ? `${matchCount} Potential Jobs Found` : 'Starting search...'}
-                </Text>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>{matchCount}+ Jobs Found</Text>
             </View>
 
+            {isComplete && (
+                <View style={{ width: '100%', gap: 16 }}>
+                    <Button
+                        title="Go to Dashboard"
+                        onPress={onFinish}
+                        variant="primary"
+                    />
+                    <Button
+                        title="Complete Profile"
+                        onPress={() => {
+                            // First finalize onboarding logic then navigate
+                            onFinish();
+                            // Note: We need a slight delay or mechanism to ensure we land on dashboard then navigate,
+                            // or we can navigate directly if user is already logged incontext.
+                            // Given the flow, onFinish logs them in. We might need to handle navigation params.
+                            // Ideally, we'd navigate to EditProfile directly if we can, but we need to ensure login state first.
+                            // For simplicity, let's assume onFinish handles the login/main-nav state switch.
+                            // But usually onFinish calls loginWithToken which resets nav stack.
+                            // So we might rely on the user navigating manually or finding the button in dashboard if the nav resets.
+                            // HOWEVER, if we want to force it:
+                            setTimeout(() => navigation.navigate('EditProfile'), 500);
+                        }}
+                        variant="outline"
+                    />
+                </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -581,13 +622,15 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 20,
         gap: 15
     },
     progressContainer: {
         flex: 1,
         height: 6,
-        backgroundColor: '#E0E0E0',
+        backgroundColor: 'rgba(0,0,0,0.05)',
         borderRadius: 3,
         overflow: 'hidden'
     },
@@ -608,72 +651,116 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     questionText: {
-        fontSize: 28,
+        fontSize: 26, // Little smaller for professionalism
         fontWeight: '700',
-        marginBottom: 10,
+        marginBottom: 8,
+        lineHeight: 34
     },
     subText: {
         fontSize: 16,
-        marginBottom: 30,
+        marginBottom: 24,
+        opacity: 0.7
     },
     optionsContainer: {
         gap: 12,
-        marginTop: 20
+        marginTop: 10
     },
     optionCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 20,
+        padding: 16,
         borderRadius: 16,
-        borderWidth: 1,
+        borderWidth: 1.5,
+        gap: 16
+    },
+    iconBox: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center'
     },
     optionLabel: {
-        fontSize: 18,
-        fontWeight: '500'
+        fontSize: 17,
+        fontWeight: '600',
+        marginBottom: 2
+    },
+    optionDesc: {
+        fontSize: 13,
     },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 12,
+        borderRadius: 14,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 4,
+        height: 56
     },
     input: {
         flex: 1,
-        fontSize: 18,
-        height: 48
+        fontSize: 16,
+        height: '100%',
+        marginLeft: 8
     },
-    inputRow: {
+    suggestionsList: {
+        position: 'absolute',
+        top: 60,
+        left: 0,
+        right: 0,
+        borderWidth: 1,
+        borderRadius: 14,
+        maxHeight: 200,
+        overflow: 'hidden'
+    },
+    suggestionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
+        padding: 16,
+        borderBottomWidth: 1,
     },
-    addBtn: {
-        padding: 8
+    mapPlaceholder: {
+        marginTop: 20,
+        height: 150,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: 0.5
+    },
+    gridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10
+    },
+    categoryCard: {
+        paddingHorizontal: 20,
+        paddingVertical: 14,
+        borderRadius: 25,
+        borderWidth: 1,
+        marginBottom: 4
+    },
+    categoryText: {
+        fontWeight: '600',
+        fontSize: 15
     },
     chipsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 10,
-        marginTop: 15
-    },
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 16,
+        marginTop: 5
     },
     selectableChip: {
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 20,
         borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    addBtn: {
+        padding: 8
     },
     footer: {
         padding: 24,

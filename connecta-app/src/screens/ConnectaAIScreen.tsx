@@ -226,6 +226,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 </View>
             </View>
         );
+
     };
 
     return (
