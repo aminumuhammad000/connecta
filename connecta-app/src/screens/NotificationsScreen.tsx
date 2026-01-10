@@ -186,24 +186,7 @@ export default function NotificationsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <Header navigation={navigation} c={c} />
-      <View style={styles.actionsRow}>
-        <TouchableOpacity
-          onPress={() => scheduleLocalNotification('Hello from Connecta', 'This is a local push preview.')}
-          style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border }]}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="notifications" size={18} color={c.primary} />
-          <Text style={[styles.actionText, { color: c.text }]}>Test Local Push</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => showAlert({ title: 'Beautiful Alert', message: 'This is a modern in-app alert.', type: 'success' })}
-          style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border }]}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="alert-circle" size={18} color={c.primary} />
-          <Text style={[styles.actionText, { color: c.text }]}>Show In-App Alert</Text>
-        </TouchableOpacity>
-      </View>
+
       {isLoading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={c.primary} />
@@ -236,7 +219,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginTop: 18,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backButton: {

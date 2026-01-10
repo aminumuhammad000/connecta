@@ -538,7 +538,7 @@ const MatchingScreen = ({ onFinish, navigation }: { onFinish: () => void, naviga
     const [isComplete, setIsComplete] = useState(false);
 
     useEffect(() => {
-        const duration = 10000;
+        const duration = 2500; // Speed up to 2.5 seconds
         NativeAnimated.timing(progress, {
             toValue: 1,
             duration: duration,
@@ -548,16 +548,16 @@ const MatchingScreen = ({ onFinish, navigation }: { onFinish: () => void, naviga
             if (finished) setIsComplete(true);
         });
 
-        const t1 = setTimeout(() => setStatusText("Scanning job market..."), 2000);
-        const t2 = setTimeout(() => setStatusText("Filtering by your location & skills..."), 5000);
-        const t3 = setTimeout(() => setStatusText("Found relevant opportunities!"), 8000);
+        const t1 = setTimeout(() => setStatusText("Scanning job market..."), 600);
+        const t2 = setTimeout(() => setStatusText("Found relevant opportunities!"), 1200);
 
+        // Faster counter to reach high numbers in 2.5s
         const interval = setInterval(() => {
-            setMatchCount(prev => prev < 150 ? prev + Math.floor(Math.random() * 3) + 1 : prev);
-        }, 200);
+            setMatchCount(prev => prev < 152 ? prev + Math.floor(Math.random() * 8) + 3 : prev);
+        }, 80);
 
         return () => {
-            clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearInterval(interval);
+            clearTimeout(t1); clearTimeout(t2); clearInterval(interval);
         };
     }, []);
 
