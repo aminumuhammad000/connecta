@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import SystemSettings from '../models/SystemSettings.model';
+import { getBaseTemplate } from '../utils/emailTemplates';
 
 dotenv.config();
 
@@ -73,103 +74,29 @@ export const sendOTPEmail = async (
       ? 'Welcome to Connecta! Please use the verification code below to verify your email address:'
       : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
 
+    const html = getBaseTemplate({
+      title: title,
+      subject: subject,
+      content: `
+        <p>Hi ${userName || 'there'},</p>
+        <p>${message}</p>
+        <div style="background: #f8f9fa; border: 2px solid #FD6730; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">Your Verification Code</p>
+          <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #FD6730; margin: 10px 0;">${otp}</div>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">Valid for 10 minutes</p>
+        </div>
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px;">
+          <strong>⚠️ Security Notice:</strong> If you didn't request this code, please ignore this email.
+        </div>
+      `
+    });
+
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       replyTo: replyTo,
       to: email,
       subject: subject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            .container {
-              background: #ffffff;
-              border-radius: 12px;
-              padding: 40px;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-            }
-            .logo {
-              font-size: 32px;
-              font-weight: 800;
-              color: #6366f1;
-              margin-bottom: 10px;
-            }
-            .otp-box {
-              background: #f8f9fa;
-              border: 2px solid #6366f1;
-              border-radius: 8px;
-              padding: 20px;
-              text-align: center;
-              margin: 30px 0;
-            }
-            .otp-code {
-              font-size: 36px;
-              font-weight: 700;
-              letter-spacing: 8px;
-              color: #6366f1;
-              margin: 10px 0;
-            }
-            .warning {
-              background: #fff3cd;
-              border-left: 4px solid #ffc107;
-              padding: 12px;
-              margin: 20px 0;
-              border-radius: 4px;
-            }
-            .footer {
-              text-align: center;
-              margin-top: 30px;
-              padding-top: 20px;
-              border-top: 1px solid #e5e7eb;
-              color: #6b7280;
-              font-size: 14px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">Connecta</div>
-              <h2 style="margin: 0; color: #1f2937;">${title}</h2>
-            </div>
-            
-            <p>Hi ${userName || 'there'},</p>
-            
-            <p>${message}</p>
-            
-            <div class="otp-box">
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">Your Verification Code</p>
-              <div class="otp-code">${otp}</div>
-              <p style="margin: 0; color: #6b7280; font-size: 14px;">Valid for 10 minutes</p>
-            </div>
-            
-            <div class="warning">
-              <strong>⚠️ Security Notice:</strong> If you didn't request this code, please ignore this email.
-            </div>
-            
-            <p>For security reasons, this code will expire in 10 minutes.</p>
-            
-            <div class="footer">
-              <p>This is an automated email, please do not reply.</p>
-              <p>&copy; ${new Date().getFullYear()} Connecta Inc. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html: html,
       text: `
 Hi ${userName || 'there'},
 
@@ -213,11 +140,20 @@ export const sendEmail = async (
     const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
+    // Wrap HTML in base template if it's not already a full document
+    const finalHtml = html.includes('<!DOCTYPE html>')
+      ? html
+      : getBaseTemplate({
+        title: subject,
+        subject: subject,
+        content: html
+      });
+
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
       to,
       subject,
-      html,
+      html: finalHtml,
       text,
     };
 
@@ -238,39 +174,28 @@ export const sendWelcomeEmail = async (
   userName: string
 ): Promise<{ success: boolean; error?: any }> => {
   const subject = 'Welcome to Connecta! 🎉';
-  const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>Welcome to Connecta! 🚀</h2>
-            <p>Hi ${userName},</p>
-            <p>We're thrilled to have you on board! Your account has been successfully verified.</p>
-            <p>Connecta is your gateway to finding amazing projects and talented professionals.</p>
-            
-            <h3>Here's what you can do next:</h3>
-            <ul>
-              <li><strong>Complete your profile:</strong> Add your skills, portfolio, and experience to stand out.</li>
-              <li><strong>Browse jobs:</strong> Find projects that match your expertise.</li>
-              <li><strong>Post a project:</strong> Hire top talent for your needs.</li>
-            </ul>
-            
-            <a href="${process.env.CLIENT_URL || '#'}" class="btn">Get Started</a>
-            
-            <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                If you have any questions, feel free to reply to this email.
-            </p>
-          </div>
-        </body>
-        </html>
-    `;
+  const html = getBaseTemplate({
+    title: 'Welcome to Connecta! 🚀',
+    subject: subject,
+    content: `
+      <p>Hi ${userName},</p>
+      <p>We're thrilled to have you on board! Your account has been successfully verified.</p>
+      <p>Connecta is your gateway to finding amazing projects and talented professionals.</p>
+      
+      <h3>Here's what you can do next:</h3>
+      <ul>
+        <li><strong>Complete your profile:</strong> Add your skills, portfolio, and experience to stand out.</li>
+        <li><strong>Browse jobs:</strong> Find projects that match your expertise.</li>
+        <li><strong>Post a project:</strong> Hire top talent for your needs.</li>
+      </ul>
+      
+      <p style="margin-top: 30px; font-size: 14px; color: #666;">
+          If you have any questions, feel free to reply to this email.
+      </p>
+    `,
+    actionUrl: process.env.CLIENT_URL || 'https://connecta.ng',
+    actionText: 'Get Started'
+  });
   const text = `Hi ${userName}, Welcome to Connecta! Your account has been successfully verified. We're thrilled to have you on board.`;
 
   return sendEmail(email, subject, html, text);
@@ -287,33 +212,17 @@ export const sendProposalAcceptedEmail = async (
   projectLink: string
 ): Promise<{ success: boolean; error?: any }> => {
   const subject = `Congratulations! You've been hired for ${projectName}`;
-  const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>You've been hired! 🎉</h2>
-            <p>Hi ${freelancerName},</p>
-            <p>Great news! <strong>${clientName}</strong> has accepted your proposal for the project <strong>${projectName}</strong>.</p>
-            <p>The project workspace is now active. You can communicate with the client and start working immediately.</p>
-            
-            <a href="${projectLink}" class="btn">Go to Project Workspace</a>
-            
-            <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                If the button doesn't work, copy and paste this link into your browser:<br>
-                ${projectLink}
-            </p>
-          </div>
-        </body>
-        </html>
-    `;
+  const html = getBaseTemplate({
+    title: "You've been hired! 🎉",
+    subject: subject,
+    content: `
+      <p>Hi ${freelancerName},</p>
+      <p>Great news! <strong>${clientName}</strong> has accepted your proposal for the project <strong>${projectName}</strong>.</p>
+      <p>The project workspace is now active. You can communicate with the client and start working immediately.</p>
+    `,
+    actionUrl: projectLink,
+    actionText: 'Go to Project Workspace'
+  });
   const text = `Hi ${freelancerName}, Great news! ${clientName} has accepted your proposal for ${projectName}. Go to your dashboard to start working.`;
 
   return sendEmail(email, subject, html, text);
@@ -329,29 +238,16 @@ export const sendProposalRejectedEmail = async (
   proposalTitle: string
 ): Promise<{ success: boolean; error?: any }> => {
   const subject = `Update on your proposal for ${proposalTitle}`;
-  const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>Proposal Update</h2>
-            <p>Hi ${freelancerName},</p>
-            <p>Thank you for submitting your proposal for <strong>${proposalTitle}</strong>.</p>
-            <p>Unfortunately, <strong>${clientName}</strong> has decided not to move forward with your proposal at this time.</p>
-            <p>Don't be discouraged! There are many other opportunities waiting for you on Connecta.</p>
-            <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                Best regards,<br>The Connecta Team
-            </p>
-          </div>
-        </body>
-        </html>
-    `;
+  const html = getBaseTemplate({
+    title: 'Proposal Update',
+    subject: subject,
+    content: `
+      <p>Hi ${freelancerName},</p>
+      <p>Thank you for submitting your proposal for <strong>${proposalTitle}</strong>.</p>
+      <p>Unfortunately, <strong>${clientName}</strong> has decided not to move forward with your proposal at this time.</p>
+      <p>Don't be discouraged! There are many other opportunities waiting for you on Connecta.</p>
+    `
+  });
   const text = `Hi ${freelancerName}, Unfortunately, ${clientName} has decided not to move forward with your proposal for ${proposalTitle}. Keep applying to other jobs!`;
 
   return sendEmail(email, subject, html, text);
@@ -368,32 +264,17 @@ export const sendNewProposalNotificationToClient = async (
   proposalLink: string
 ): Promise<{ success: boolean; error?: any }> => {
   const subject = `New Proposal for ${jobTitle}`;
-  const html = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h2>New Proposal Received! 📄</h2>
-            <p>Hi ${clientName},</p>
-            <p><strong>${freelancerName}</strong> has just submitted a proposal for your project <strong>${jobTitle}</strong>.</p>
-            <p>Review their proposal to see if they are a good fit for your project.</p>
-            
-            <a href="${proposalLink}" class="btn">View Proposal</a>
-            
-            <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                If you can't click the button, view your job entries on the Connecta app.
-            </p>
-          </div>
-        </body>
-        </html>
-    `;
+  const html = getBaseTemplate({
+    title: 'New Proposal Received! 📄',
+    subject: subject,
+    content: `
+      <p>Hi ${clientName},</p>
+      <p><strong>${freelancerName}</strong> has just submitted a proposal for your project <strong>${jobTitle}</strong>.</p>
+      <p>Review their proposal to see if they are a good fit for your project.</p>
+    `,
+    actionUrl: proposalLink,
+    actionText: 'View Proposal'
+  });
   const text = `Hi ${clientName}, ${freelancerName} has submitted a proposal for ${jobTitle}. Check your dashboard to review it.`;
 
   return sendEmail(email, subject, html, text);
@@ -424,69 +305,11 @@ export const sendBroadcastEmail = async (
     // Send emails to all recipients
     for (const recipient of recipients) {
       try {
-        const html = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 600px;
-                margin: 0 auto;
-                padding: 20px;
-              }
-              .container {
-                background: #ffffff;
-                border-radius: 12px;
-                padding: 40px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-              }
-              .header {
-                text-align: center;
-                margin-bottom: 30px;
-                border-bottom: 2px solid #6366f1;
-                padding-bottom: 20px;
-              }
-              .logo {
-                font-size: 32px;
-                font-weight: 800;
-                color: #6366f1;
-                margin-bottom: 10px;
-              }
-              .content {
-                margin: 30px 0;
-                white-space: pre-wrap;
-              }
-              .footer {
-                text-align: center;
-                margin-top: 30px;
-                padding-top: 20px;
-                border-top: 1px solid #e5e7eb;
-                color: #6b7280;
-                font-size: 14px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <div class="logo">Connecta</div>
-              </div>
-              
-              <div class="content">
-                ${body.replace(/\n/g, '<br>')}
-              </div>
-              
-              <div class="footer">
-                <p>This is an automated email from Connecta.</p>
-                <p>&copy; ${new Date().getFullYear()} Connecta Inc. All rights reserved.</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
+        const html = getBaseTemplate({
+          title: subject,
+          subject: subject,
+          content: body.replace(/\n/g, '<br>')
+        });
 
         const mailOptions = {
           from: `"${fromName}" <${fromEmail}>`,
@@ -562,46 +385,28 @@ export const sendGigNotificationEmail = async (
     const replyTo = 'no-reply@connecta.ng';
 
     const subject = `New Gig Alert: ${jobTitle}`;
-    const html = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <style>
-              body { font-family: sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .btn { background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 20px; }
-              .skills { margin-top: 10px; }
-              .skill-tag { background-color: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h2>New Gig Alert! 🚀</h2>
-              <p>Hi ${userName},</p>
-              <p>A new gig matching your skills has just been posted:</p>
-              <h3>${jobTitle}</h3>
-              
-              <div class="skills">
-                ${skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
-              </div>
+    const html = getBaseTemplate({
+      title: 'New Gig Alert! 🚀',
+      subject: subject,
+      content: `
+        <p>Hi ${userName},</p>
+        <p>A new gig matching your skills has just been posted:</p>
+        <h3 style="color: #111827; margin: 20px 0;">${jobTitle}</h3>
+        
+        <div style="margin: 20px 0;">
+          ${skills.map(skill => `<span style="background-color: #FFF0EB; color: #FD6730; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin-right: 8px; margin-bottom: 8px; display: inline-block; font-weight: 600;">${skill}</span>`).join('')}
+        </div>
 
-              <p>Check it out and apply now if you're interested!</p>
-              
-              <a href="${jobLink}" class="btn">View Gig</a>
-              
-              <p style="margin-top: 30px; font-size: 14px; color: #666;">
-                  If the button doesn't work, copy and paste this link into your browser:<br>
-                  ${jobLink}
-              </p>
-              
-              <p style="margin-top: 20px; font-size: 12px; color: #999;">
-                You received this email because you are subscribed to gig notifications. 
-                To unsubscribe, update your notification settings in your profile.
-              </p>
-            </div>
-          </body>
-          </html>
-      `;
+        <p>Check it out and apply now if you're interested!</p>
+        
+        <p style="margin-top: 30px; font-size: 12px; color: #9CA3AF;">
+          You received this email because you are subscribed to gig notifications. 
+          To unsubscribe, update your notification settings in your profile.
+        </p>
+      `,
+      actionUrl: jobLink,
+      actionText: 'View Gig'
+    });
     const text = `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
 
     const mailOptions = {

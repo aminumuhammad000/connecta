@@ -101,6 +101,26 @@ export const signup = async (req: Request, res: Response) => {
     });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
+
+    // Generate and send OTP automatically on signup
+    try {
+      const otp = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      // Manage OTP record
+      const OTP = (await import('../models/otp.model')).default;
+      await OTP.deleteMany({ userId: newUser._id });
+      await OTP.create({ userId: newUser._id, otp, expiresAt });
+
+      // Send OTP email
+      const { sendOTPEmail } = await import('../services/email.service');
+      await sendOTPEmail(newUser.email, otp, newUser.firstName, 'EMAIL_VERIFICATION');
+      console.log(`Automatic verification email sent to ${newUser.email}`);
+    } catch (otpErr) {
+      console.error('Failed to send automatic verification email on signup:', otpErr);
+      // We don't block signup if email fails, user can still click resend
+    }
+
     res.status(201).json({ user: newUser, token });
   } catch (err) {
     console.error('Signup error:', err);
@@ -370,12 +390,12 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     // Send OTP via email
     const { sendOTPEmail } = await import('../services/email.service');
-    const emailSent = await sendOTPEmail(email, otp, user.firstName);
+    const result = await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET');
 
-    if (!emailSent) {
+    if (!result.success) {
       return res.status(500).json({
         success: false,
-        message: "Failed to send OTP email. Please try again."
+        message: result.error || "Failed to send OTP email. Please try again."
       });
     }
 
