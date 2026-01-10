@@ -9,6 +9,7 @@ interface AuthContextValue {
     isAuthenticated: boolean;
     isLoading: boolean;
     login: (credentials: LoginCredentials) => Promise<void>;
+    loginWithToken: (token: string, user: User) => Promise<void>;
     signup: (data: SignupData) => Promise<void>;
     googleLogin: (tokenId: string) => Promise<void>;
     googleSignup: (tokenId: string, userType: UserType) => Promise<void>;
@@ -108,6 +109,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const loginWithToken = async (token: string, user: User) => {
+        try {
+            await storage.saveToken(token);
+            await storage.saveUserData(user);
+            await storage.saveUserRole(user.userType);
+            setToken(token);
+            setUser(user);
+        } catch (error) {
+            console.error('Login with token error:', error);
+            throw error;
+        }
+    };
+
     const logout = async () => {
         try {
             // Clear all stored data
@@ -133,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isAuthenticated: !!token && !!user,
             isLoading,
             login,
+            loginWithToken,
             signup,
             googleLogin,
             googleSignup,

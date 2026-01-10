@@ -37,12 +37,22 @@ export interface IProfile extends Document {
   location?: string;
   resume?: string; // Could be a URL to uploaded file
   skills?: string[]; // Array of skills
-  
+
   // Client-specific fields
   companyName?: string;
   website?: string;
   bio?: string;
   avatar?: string;
+
+  // Onboarding / Preferences
+  remoteWorkType?: 'remote_only' | 'hybrid' | 'onsite';
+  minimumSalary?: number;
+  workLocationPreferences?: string[];
+  jobTitle?: string;
+  jobCategories?: string[];
+  yearsOfExperience?: number;
+  engagementTypes?: string[];
+  jobNotificationFrequency?: 'daily' | 'weekly' | 'relevant_only';
 
   education?: IEducation[];
   languages?: ILanguage[];
@@ -111,6 +121,16 @@ const ProfileSchema = new Schema<IProfile>(
     website: { type: String },
     bio: { type: String },
     avatar: { type: String },
+
+    // Onboarding / Preferences
+    remoteWorkType: { type: String, enum: ['remote_only', 'hybrid', 'onsite'] },
+    minimumSalary: { type: Number },
+    workLocationPreferences: [{ type: String }],
+    jobTitle: { type: String },
+    jobCategories: [{ type: String }],
+    yearsOfExperience: { type: Number },
+    engagementTypes: [{ type: String, enum: ['full_time', 'part_time', 'contract', 'freelance', 'internship'] }],
+    jobNotificationFrequency: { type: String, enum: ['daily', 'weekly', 'relevant_only'] },
 
     education: [EducationSchema],
     languages: [LanguageSchema],

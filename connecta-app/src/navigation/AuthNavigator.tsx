@@ -77,11 +77,22 @@ function OTPVerificationWrapper({ navigation, route }: any) {
     return (
         <OTPVerificationScreen
             email={email}
+            mode={mode}
             onBackToForgotPassword={() => navigation.goBack()}
-            onOTPVerified={(token: string) => {
+            onOTPVerified={(tokenData: string | { token: string; user: any }) => {
+                let token: string;
+                let user: any;
+
+                if (typeof tokenData === 'string') {
+                    token = tokenData;
+                } else {
+                    token = tokenData.token;
+                    user = tokenData.user;
+                }
+
                 // If signing up as freelancer, go to skills selection
                 if (mode === 'signup' && role === 'freelancer') {
-                    navigation.navigate('FreelancerOnboarding', { token });
+                    navigation.navigate('SkillSelection', { token, user });
                 } else if (mode === 'signup') {
                     // Client signup - finished
                     // Trigger auth state update or nav to login
