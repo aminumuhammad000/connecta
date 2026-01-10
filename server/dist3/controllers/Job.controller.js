@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSavedJobs = exports.unsaveJob = exports.saveJob = exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
 const Job_model_1 = __importDefault(require("../models/Job.model"));
 const user_model_1 = __importDefault(require("../models/user.model"));
+const Profile_model_1 = __importDefault(require("../models/Profile.model"));
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -169,11 +170,53 @@ exports.deleteJob = deleteJob;
 const getRecommendedJobs = async (req, res) => {
     try {
         const { limit = 6 } = req.query;
-        // Get active jobs, sorted by posted date
-        const jobs = await Job_model_1.default.find({ status: "active" })
+        // @ts-ignore
+        const userId = req.user?._id || req.user?.id;
+        let filter = { status: "active" };
+        if (userId) {
+            const profile = await Profile_model_1.default.findOne({ user: userId });
+            if (profile) {
+                const orConditions = [];
+                // 1. Match Skills
+                if (profile.skills && profile.skills.length > 0) {
+                    orConditions.push({ skills: { $in: profile.skills } });
+                }
+                // 2. Match Categories
+                if (profile.jobCategories && profile.jobCategories.length > 0) {
+                    // Assuming job model has 'category' field
+                    orConditions.push({ category: { $in: profile.jobCategories } });
+                }
+                // 3. Match Job Title
+                if (profile.jobTitle) {
+                    orConditions.push({ title: { $regex: profile.jobTitle, $options: "i" } });
+                }
+                if (orConditions.length > 0) {
+                    filter.$or = orConditions;
+                }
+                // 4. Match Remote Type if specified (optional strictness)
+                if (profile.remoteWorkType === 'remote_only') {
+                    // Adjust based on Job model schema. Assuming locationType or similar.
+                    // Job model has locationType?: 'remote' | 'onsite' | 'hybrid';
+                    filter.locationType = 'remote';
+                }
+                else if (profile.remoteWorkType === 'hybrid') {
+                    filter.locationType = { $in: ['hybrid', 'remote'] };
+                }
+                // If onsite, we don't strictly filter to onsite usually, or maybe we do.
+            }
+        }
+        // Get active jobs, prioritized by match logic if possible, but for now simple filter
+        let jobs = await Job_model_1.default.find(filter)
             .sort({ posted: -1 })
             .limit(Number(limit))
             .populate("clientId", "firstName lastName email");
+        // Fallback: If no jobs found with strict filter, return recent jobs
+        if (jobs.length === 0) {
+            jobs = await Job_model_1.default.find({ status: "active" })
+                .sort({ posted: -1 })
+                .limit(Number(limit))
+                .populate("clientId", "firstName lastName email");
+        }
         res.status(200).json({
             success: true,
             data: jobs,

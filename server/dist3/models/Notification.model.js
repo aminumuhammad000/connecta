@@ -48,6 +48,7 @@ const NotificationSchema = new mongoose_1.Schema({
             'proposal_received',
             'proposal_accepted',
             'proposal_rejected',
+            'proposal_new',
             'project_started',
             'project_completed',
             'milestone_completed',
@@ -72,7 +73,7 @@ const NotificationSchema = new mongoose_1.Schema({
     },
     relatedType: {
         type: String,
-        enum: ['job', 'project', 'proposal', 'message', 'review', 'payment'],
+        enum: ['job', 'project', 'proposal', 'message', 'review', 'payment', 'user'],
     },
     actorId: {
         type: mongoose_1.Schema.Types.ObjectId,

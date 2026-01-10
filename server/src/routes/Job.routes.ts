@@ -14,6 +14,7 @@ import {
   getSavedJobs
 } from "../controllers/Job.controller";
 import { authenticate } from "../core/middleware/auth.middleware";
+import { isAdmin } from "../core/middleware/admin.middleware";
 
 const router = express.Router();
 
@@ -48,6 +49,6 @@ router.post("/", authenticate, createJob);
 router.put("/:id", updateJob);
 
 // Delete job
-router.delete("/:id", deleteJob);
+router.delete("/:id", authenticate, isAdmin, deleteJob);
 
 export default router;
