@@ -1,6 +1,6 @@
 // TypeScript declarations for platform-specific notification implementations
 
-export type PushRegistrationReason = 'expo-go' | 'denied' | 'error';
+export type PushRegistrationReason = 'expo-go' | 'denied' | 'error' | 'unavailable';
 
 export type PushRegistrationResult = {
     token: string | null;

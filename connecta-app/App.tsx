@@ -49,41 +49,58 @@ function AppContent() {
       return;
     }
 
-    // Dynamically import expo-notifications only on native platforms
+    // Setup notifications without blocking the app
     let receivedSub: any;
     let responseSub: any;
 
     (async () => {
-      const Notifications = await import('expo-notifications');
+      try {
+        await configureNotifications();
+        const { token, reason } = await registerForPushNotificationsAsync();
 
-      await configureNotifications();
-      const { token, reason } = await registerForPushNotificationsAsync();
-      if (token) {
-        // Send token to backend
-        try {
-          await authService.updatePushToken(token);
-        } catch (e) {
-          console.error('Failed to update push token', e);
+        if (token) {
+          // Send token to backend
+          try {
+            await authService.updatePushToken(token);
+            console.log('[App] Push token registered successfully');
+          } catch (e) {
+            console.error('[App] Failed to update push token', e);
+          }
+        } else if (reason === 'unavailable') {
+          // Notifications not available in this build - silently continue
+          console.log('[App] Notifications not available - continuing without push support');
+        } else if (reason === 'expo-go') {
+          // In Expo Go - notifications are limited but don't show intrusive alert
+          console.log('[App] Running in Expo Go - push notifications limited');
+        } else if (reason === 'denied') {
+          // Only show alert if user explicitly denied permissions
+          showAlert({
+            title: 'Notifications disabled',
+            message: 'Enable permissions to receive alerts.',
+            type: 'info'
+          });
         }
-      } else if (reason === 'expo-go') {
-        showAlert({
-          title: 'Push notifications limited in Expo Go',
-          message: 'Build a development client to test remote push notifications on device.',
-          type: 'info',
-        });
-      } else {
-        showAlert({ title: 'Notifications disabled', message: 'Enable permissions to receive alerts.', type: 'info' });
+
+        // Try to setup notification listeners (only if notifications are available)
+        try {
+          const Notifications = await import('expo-notifications');
+
+          receivedSub = Notifications.addNotificationReceivedListener((notification: any) => {
+            const title = notification.request.content.title ?? 'Notification';
+            const body = notification.request.content.body ?? '';
+            showAlert({ title, message: body, type: 'info' });
+          });
+
+          responseSub = Notifications.addNotificationResponseReceivedListener(() => {
+            // Handle taps if needed
+          });
+        } catch (importError) {
+          // Notifications module not available - continue without listeners
+          console.log('[App] Notification listeners not available');
+        }
+      } catch (error) {
+        console.error('[App] Error setting up notifications:', error);
       }
-
-      receivedSub = Notifications.addNotificationReceivedListener((notification: any) => {
-        const title = notification.request.content.title ?? 'Notification';
-        const body = notification.request.content.body ?? '';
-        showAlert({ title, message: body, type: 'info' });
-      });
-
-      responseSub = Notifications.addNotificationResponseReceivedListener(() => {
-        // Handle taps if needed
-      });
     })();
 
     return () => {

@@ -32,6 +32,7 @@
     },
     "scheme": "connecta",
     "extra": {
+      "apiBaseUrl": "https://api.myconnecta.ng",
       "eas": {
         "projectId": "6726d9ba-7936-44be-988e-331265e60d7a"
       }

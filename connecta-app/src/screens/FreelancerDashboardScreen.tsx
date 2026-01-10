@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
-=======
-import React, { useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Animated } from 'react-native';
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
@@ -34,20 +29,13 @@ interface JobRec {
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { user } = useAuth();
-<<<<<<< HEAD
   const [stats, setStats] = useState<any>(null);
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-=======
-  const [stats, setStats] = React.useState<any>(null);
-  const [recommendedJobs, setRecommendedJobs] = React.useState<any[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [likedGigs, setLikedGigs] = React.useState<Set<string>>(new Set());
+  const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
 
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 
   // Profile Completion Logic
   const [profileModalVisible, setProfileModalVisible] = useState(false);

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Linking } from 'react-native';
-=======
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Animated } from 'react-native';
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Linking, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -276,22 +271,6 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                 filteredJobs.map(job => {
                   if (!job) return null;
                   return (
-<<<<<<< HEAD
-                    <Card key={job._id} variant="elevated" padding={16}>
-                      <View style={styles.gigCard}>
-                        <View style={styles.gigHeader}>
-                          <View style={{ flex: 1 }}>
-                            <View style={styles.titleRow}>
-                              <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
-                                {job.title}
-                              </Text>
-                              {job.status === 'active' && !job.isExternal && (
-                                <Badge label="Active" variant="success" size="small" />
-                              )}
-                              {job.isExternal && (
-                                <Badge label={job.source || "External"} variant="info" size="small" />
-                              )}
-=======
                     <Animated.View
                       key={job._id}
                       style={{ opacity: fadeAnims[job._id] || 1, transform: [{ scale: fadeAnims[job._id] || 1 }] }}
@@ -304,12 +283,14 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                                 <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
                                   {job.title}
                                 </Text>
-                                {job.status === 'active' && (
+                                {job.status === 'active' && !job.isExternal && (
                                   <Badge label="Active" variant="success" size="small" />
+                                )}
+                                {job.isExternal && (
+                                  <Badge label={job.source || "External"} variant="info" size="small" />
                                 )}
                               </View>
                               <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
                             </View>
 
                             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -368,58 +349,27 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                           )}
 
                           <View style={styles.gigActions}>
-                            <TouchableOpacity
-                              onPress={() => handleNotInterested(job._id)}
-                              style={[styles.actionBtn, { backgroundColor: c.card, borderColor: '#ef4444', borderWidth: 1 }]}
-                            >
-                              <MaterialIcons name="thumb-down-off-alt" size={20} color="#ef4444" />
-                              <Text style={{ color: '#ef4444', fontWeight: '600', marginLeft: 6 }}>Not Interested</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                              onPress={() => handleInterested(job._id)}
-                              style={[
-                                styles.actionBtn,
-                                {
-                                  backgroundColor: c.primary,
-                                  shadowColor: c.primary,
-                                  shadowOpacity: 0.3,
-                                  shadowRadius: 6,
-                                  shadowOffset: { width: 0, height: 3 },
-                                  elevation: 4
+                            <Button
+                              title="View Details"
+                              onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                              variant="outline"
+                              size="small"
+                              style={{ flex: 1 }}
+                            />
+                            <Button
+                              title={job.isExternal ? "Visit Job" : "Apply Now"}
+                              onPress={() => {
+                                if (job.isExternal && job.applyUrl) {
+                                  Linking.openURL(job.applyUrl);
+                                } else {
+                                  navigation.navigate('JobDetail', { id: job._id });
                                 }
-                              ]}
-                            >
-                              <MaterialIcons name="thumb-up" size={20} color="#fff" />
-                              <Text style={{ color: '#fff', fontWeight: '600', marginLeft: 6 }}>I'm Interested</Text>
-                            </TouchableOpacity>
+                              }}
+                              variant="primary"
+                              size="small"
+                              style={{ flex: 1 }}
+                            />
                           </View>
-<<<<<<< HEAD
-                        )}
-
-                        <View style={styles.gigActions}>
-                          <Button
-                            title="View Details"
-                            onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                            variant="outline"
-                            size="small"
-                            style={{ flex: 1 }}
-                          />
-                          <Button
-                            title={job.isExternal ? "Visit Job" : "Apply Now"}
-                            onPress={() => {
-                              if (job.isExternal && job.applyUrl) {
-                                Linking.openURL(job.applyUrl);
-                              } else {
-                                navigation.navigate('JobDetail', { id: job._id });
-                              }
-                            }}
-                            variant="primary"
-                            size="small"
-                            style={{ flex: 1 }}
-                          />
-=======
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
                         </View>
                       </Card>
                     </Animated.View>

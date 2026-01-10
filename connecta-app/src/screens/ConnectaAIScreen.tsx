@@ -65,58 +65,16 @@ export default function ConnectaAIScreen({ navigation }: any) {
             const response = await agentService.sendMessageToAgent(text, user._id, user.userType);
 
             if (response.success && response.result.success) {
-<<<<<<< HEAD
                 const result = response.result;
                 const responseText = result.message || (typeof result.data === 'string' ? result.data : "Here is what I found:");
-=======
-                const resultData = response.result.data;
-                let messageType: 'text' | 'jobs' | 'profiles' = 'text';
-                let jobsData: any[] = [];
-                let profilesData: any[] = [];
-                let displayText = response.result.message || (typeof resultData === 'string' ? resultData : "Here is what I found:");
-
-                // Detect response type
-                if (typeof resultData === 'object' && resultData !== null) {
-                    // Check for Jobs
-                    if (resultData.data && Array.isArray(resultData.data)) {
-                        // Keep robust check for job-like structures
-                        const sample = resultData.data[0];
-                        if (sample && (sample.title || sample.budget)) {
-                            messageType = 'jobs';
-                            jobsData = resultData.data;
-                            displayText = response.result.message || `I found ${jobsData.length} gigs matching your request:`;
-                        } else if (sample && (sample.firstName || sample.userType)) {
-                            messageType = 'profiles';
-                            profilesData = resultData.data;
-                            displayText = response.result.message || `I found ${profilesData.length} profiles matching your request:`;
-                        }
-                    } else if (Array.isArray(resultData)) {
-                        // Direct array handling
-                        const sample = resultData[0];
-                        if (sample && (sample.title || sample.budget)) {
-                            messageType = 'jobs';
-                            jobsData = resultData;
-                        } else if (sample && (sample.firstName || sample.userType)) {
-                            messageType = 'profiles';
-                            profilesData = resultData;
-                        }
-                    }
-                }
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
 
                 const aiMsg: Message = {
                     id: (Date.now() + 1).toString(),
-                    text: typeof displayText === 'string' ? displayText : JSON.stringify(displayText),
+                    text: typeof responseText === 'string' ? responseText : JSON.stringify(responseText),
                     sender: 'ai',
                     timestamp: new Date(),
-<<<<<<< HEAD
                     responseType: result.responseType as any,
                     data: result.data
-=======
-                    type: messageType,
-                    jobs: jobsData,
-                    profiles: profilesData
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
                 };
                 setMessages(prev => [...prev, aiMsg]);
             } else {
@@ -186,7 +144,6 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
     const renderMessage = ({ item }: { item: Message }) => {
         const isUser = item.sender === 'user';
-<<<<<<< HEAD
 
         // Helper to render content based on type
         const renderContent = () => {
@@ -267,51 +224,6 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 <View style={{ flex: 1 }}>
                     {renderContent()}
                 </View>
-=======
-        return (
-            <View style={{ marginBottom: 16, alignItems: isUser ? 'flex-end' : 'flex-start' }}>
-                <View style={[
-                    styles.messageBubble,
-                    isUser ? styles.userBubble : styles.aiBubble,
-                    isUser ? { backgroundColor: c.primary } : { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }
-                ]}>
-                    {!isUser && (
-                        <View style={styles.aiIcon}>
-                            <Ionicons name="sparkles" size={16} color={c.primary} />
-                        </View>
-                    )}
-                    <Text style={[
-                        styles.messageText,
-                        isUser ? { color: 'white' } : { color: c.text }
-                    ]}>
-                        {item.text}
-                    </Text>
-                </View>
-
-                {/* Render Horizontal List for Jobs */}
-                {item.type === 'jobs' && item.jobs && item.jobs.length > 0 && (
-                    <FlatList
-                        horizontal
-                        data={item.jobs}
-                        renderItem={({ item }) => renderJobCard(item)}
-                        keyExtractor={job => job._id || Math.random().toString()}
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.carouselContent}
-                    />
-                )}
-
-                {/* Render Horizontal List for Profiles */}
-                {item.type === 'profiles' && item.profiles && item.profiles.length > 0 && (
-                    <FlatList
-                        horizontal
-                        data={item.profiles}
-                        renderItem={({ item }) => renderProfileCard(item)}
-                        keyExtractor={p => p._id || Math.random().toString()}
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.carouselContent}
-                    />
-                )}
->>>>>>> 8af02241b3ff2760b8a639b633ea6df0df8faf41
             </View>
         );
     };
