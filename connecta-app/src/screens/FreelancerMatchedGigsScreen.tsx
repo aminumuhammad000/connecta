@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Animated, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
@@ -375,8 +376,9 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                   </Text>
                 </View>
               )}
-            </View >
-        </ScrollView >
+            </View>
+          </View>
+        </ScrollView>
       </View >
     </SafeAreaView >
   );
