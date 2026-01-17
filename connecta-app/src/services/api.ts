@@ -62,6 +62,7 @@ apiClient.interceptors.response.use(
                 apiError.message = serverMessage;
             } else if (error.response.status === 401) {
                 apiError.message = 'Session expired. Please login again.';
+                if (logoutHandler) logoutHandler();
             } else if (error.response.status === 403) {
                 apiError.message = 'You do not have permission to perform this action.';
             } else if (error.response.status === 404) {
@@ -128,6 +129,13 @@ export const uploadFile = async (url: string, formData: FormData): Promise<ApiRe
             'Content-Type': 'multipart/form-data',
         },
     });
+};
+
+// Event for handling 401 Unauthorized
+let logoutHandler: (() => void) | null = null;
+
+export const registerLogoutHandler = (handler: () => void) => {
+    logoutHandler = handler;
 };
 
 export default apiClient;

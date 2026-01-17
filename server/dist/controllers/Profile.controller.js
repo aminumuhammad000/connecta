@@ -64,7 +64,7 @@ const getMyProfile = async (req, res) => {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        let profile = await Profile_model_1.default.findOne({ user: userId }).populate('user', 'firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate');
+        let profile = await Profile_model_1.default.findOne({ user: userId }).populate('user', 'firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate averageRating totalReviews jobSuccessScore badges performanceMetrics');
         // Auto-create profile if it doesn't exist
         if (!profile) {
             profile = await Profile_model_1.default.create({
@@ -113,6 +113,16 @@ const getMyProfile = async (req, res) => {
             subscriptionTier: userData.subscriptionTier,
             subscriptionStatus: userData.subscriptionStatus,
             premiumExpiryDate: userData.premiumExpiryDate,
+            // Reputation
+            averageRating: userData.averageRating || 0,
+            totalReviews: userData.totalReviews || 0,
+            jobSuccessScore: userData.jobSuccessScore || 0,
+            badges: userData.badges || [],
+            performanceMetrics: userData.performanceMetrics || {
+                onTimeDeliveryRate: 100,
+                completionRate: 100,
+                responseTime: 24,
+            },
             // Additional data
             jobs,
             jobsPosted,

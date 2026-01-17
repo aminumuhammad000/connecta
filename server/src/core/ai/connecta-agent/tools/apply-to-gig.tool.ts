@@ -6,6 +6,14 @@ export class ApplyToGigTool extends BaseTool {
 
   async _call(params: Record<string, any>) {
     // params: { gigId, userId?, coverLetterId?, message }
-return this.request(`/api/jobs/${params.gigId}/apply`, "POST", params);
+    // Map gigId to jobId for the Proposal controller
+    const proposalData = {
+      jobId: params.gigId,
+      description: params.message || "I am interested in this job.",
+      // Budget can be optionally passed or defaulted, but Controller handles fetching job details usually
+      // We assume user wants to apply with job's budget or similar.
+      // Ideally tool should accept budget too.
+    };
+    return this.request(`/api/proposals`, "POST", proposalData);
   }
 }

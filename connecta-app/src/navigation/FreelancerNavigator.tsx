@@ -87,10 +87,14 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="ClientProfile" component={require('../screens/ClientProfileScreen').default} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
             <Stack.Screen name="VideoCall" component={VideoCallScreen} />
+            <Stack.Screen name="CollaboWorkspace" component={require('../screens/CollaboWorkspaceScreen').default} />
+            <Stack.Screen name="CollaboInvite" component={require('../screens/CollaboInviteScreen').default} />
             <Stack.Screen name="FreelancerProjects" component={require('../screens/FreelancerProjectsScreen').default} />
             <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
             <Stack.Screen name="WithdrawalSetup" component={require('../screens/WithdrawalSetupScreen').default} />
             <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
+            <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
+            <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
         </Stack.Navigator>
     );
 }

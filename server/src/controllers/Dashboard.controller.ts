@@ -208,15 +208,19 @@ export const getTopFreelancers = async (req: Request, res: Response) => {
   try {
     // Get freelancers with profiles and high ratings
     const freelancers = await User.find({ userType: 'freelancer' })
-      .select('firstName lastName email profileImage')
-      .limit(3);
+      .select('firstName lastName email profileImage jobSuccessScore averageRating totalReviews')
+      .sort({ jobSuccessScore: -1, averageRating: -1 })
+      .limit(10);
 
     const freelancersData = freelancers.map((freelancer) => ({
       id: freelancer._id,
       name: `${freelancer.firstName} ${freelancer.lastName}`,
       role: 'Freelancer', // This could come from profile data
-      rating: (Math.random() * (5 - 4.5) + 4.5).toFixed(1), // Random rating for now
-      avatar: freelancer.profileImage || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      rating: freelancer.averageRating || 0,
+      reviews: freelancer.totalReviews || 0,
+      jobSuccessScore: freelancer.jobSuccessScore,
+      avatar: freelancer.profileImage || `https://ui-avatars.com/api/?name=${freelancer.firstName}+${freelancer.lastName}`,
+      skills: (freelancer as any).skills || ['Mobile Dev', 'React Native'] // Fallback
     }));
 
     res.status(200).json({ freelancers: freelancersData });

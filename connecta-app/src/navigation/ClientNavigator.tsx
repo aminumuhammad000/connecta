@@ -75,7 +75,9 @@ export default function ClientNavigator() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="ClientTabs" component={ClientTabs} />
             <Stack.Screen name="PostJob" component={PostJobScreen} />
+            <Stack.Screen name="PostCollaboJob" component={require('../screens/PostCollaboJobScreen').default} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
+            <Stack.Screen name="CollaboWorkspace" component={require('../screens/CollaboWorkspaceScreen').default} />
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
             <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />
@@ -97,6 +99,8 @@ export default function ClientNavigator() {
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
             <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
             <Stack.Screen name="VideoCall" component={VideoCallScreen} />
+            <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
+            <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
         </Stack.Navigator>
     );
 }

@@ -122,6 +122,17 @@ export const createJob = async (req: Request, res: Response) => {
     }
     jobData.clientId = clientId;
     const newJob = await Job.create(jobData);
+
+    // Notify matching freelancers via WhatsApp
+    try {
+      // Import dynamically if needed, or rely on top-level import if I add it.
+      // Better to add top-level import.
+      const TwilioService = require('../services/twilio.service').default;
+      TwilioService.notifyMatchingFreelancers(newJob);
+    } catch (notifyErr) {
+      console.error("Failed to notify freelancers:", notifyErr);
+    }
+
     res.status(201).json({
       success: true,
       message: "Job created successfully",
@@ -230,10 +241,10 @@ export const getRecommendedJobs = async (req: Request, res: Response) => {
       }
     }
 
-    // Get active jobs, prioritized by match logic if possible, but for now simple filter
+    // Get active jobs, prioritized by match logic
     let jobs = await Job.find(filter)
       .sort({ posted: -1 })
-      .limit(Number(limit))
+      .limit(Number(limit) * 2) // Fetch more to filter
       .populate("clientId", "firstName lastName email");
 
     // Fallback: If no jobs found with strict filter, return recent jobs
@@ -244,9 +255,56 @@ export const getRecommendedJobs = async (req: Request, res: Response) => {
         .populate("clientId", "firstName lastName email");
     }
 
+    // Scoring and Categorization
+    // 1. Calculate Score (Simple overlap match)
+    // 2. Prioritize Internal (!isExternal)
+    const profileSkills = new Set(await Profile.findOne({ user: userId }).then(p => p?.skills || []));
+
+    let scoredJobs = jobs.map((job) => {
+      let score = 0;
+      let matchCount = 0;
+
+      // Match Skills
+      if (job.skills && job.skills.length > 0) {
+        job.skills.forEach(s => {
+          if (profileSkills.has(s)) matchCount++;
+        });
+        score = matchCount / Math.max(job.skills.length, 1);
+      } else {
+        // If job has no skills listed, give a neutral score if title matches?
+        // For now, assume 0.5 baseline for loose matches
+        score = 0.5;
+      }
+
+      // Boost internal jobs
+      if (!job.isExternal) {
+        score += 0.2; // Internal boost
+      }
+
+      return { job, score };
+    });
+
+    // Filter out low scores (< 0.5) UNLESS it's a fallback situation where we need data
+    // The user requirement says "if score < 0.5 do not recommend it"
+    // We strictly follow this unless no jobs remain, effectively empty.
+
+    // Normalize Score:
+    // Pure skill match is 0.0 - 1.0. 
+    // Internal boost adds 0.2.
+    // So internal jobs with 30% skill match (0.3 + 0.2 = 0.5) pass.
+    // External jobs need 50% skill match to pass.
+
+    scoredJobs = scoredJobs.filter(item => item.score >= 0.5);
+
+    // Sort: Higher score first
+    scoredJobs.sort((a, b) => b.score - a.score);
+
+    // Take limit
+    const finalJobs = scoredJobs.slice(0, Number(limit)).map(item => item.job);
+
     res.status(200).json({
       success: true,
-      data: jobs,
+      data: finalJobs,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });

@@ -69,8 +69,10 @@ export class ConnectaAgent {
   private conversationId: string;
   private memoryStore: Map<string, ConversationMemory> = new Map();
   private maxHistoryLength: number;
+  private maxMemoryStoreSize: number = 1000; // Prevent unbounded growth
   private responseCache: Map<string, { response: any; timestamp: number }> = new Map();
   private cacheTTL: number = 5 * 60 * 1000; // 5 minutes
+  private maxCacheSize: number = 100;
   private sessionMetrics = {
     totalRequests: 0,
     successfulRequests: 0,
@@ -93,12 +95,15 @@ export class ConnectaAgent {
     const openaiKey = aiConfig.openaiApiKey || process.env.OPENROUTER_API_KEY || this.config.openaiApiKey;
     const geminiKey = aiConfig.geminiApiKey || process.env.GEMINI_API_KEY;
 
-    if (aiConfig.provider === 'gemini' && geminiKey) {
-      console.log("🤖 Initializing Connecta Agent with Gemini");
+    // Prioritize Gemini if key is present, unless explicitly set to 'openai' in DB settings
+    const useGemini = (aiConfig.provider === 'gemini') || (geminiKey && aiConfig.provider !== 'openai');
+
+    if (useGemini && geminiKey) {
+      console.log("🤖 Initializing Connecta Agent with Gemini (Google Generative AI)");
       this.model = new ChatGoogleGenerativeAI({
         apiKey: geminiKey,
         model: aiConfig.model || "gemini-pro",
-        maxOutputTokens: 2000,
+        maxOutputTokens: 2048,
         temperature: this.config.temperature ?? 0.3,
       });
     } else {
@@ -199,6 +204,16 @@ export class ConnectaAgent {
       };
 
       this.memoryStore.set(memoryKey, memory);
+
+      // Cleanup old entries if memoryStore exceeds max size
+      if (this.memoryStore.size > this.maxMemoryStoreSize) {
+        const entriesToDelete = this.memoryStore.size - this.maxMemoryStoreSize;
+        const keys = Array.from(this.memoryStore.keys());
+        for (let i = 0; i < entriesToDelete; i++) {
+          this.memoryStore.delete(keys[i]);
+        }
+        console.log(`🧹 Cleaned up ${entriesToDelete} old memory entries`);
+      }
     } catch (error) {
       console.warn("⚠️ Failed to save memory:", error);
     }
@@ -271,10 +286,13 @@ export class ConnectaAgent {
       timestamp: Date.now(),
     });
 
-    // Cleanup old cache entries
-    if (this.responseCache.size > 100) {
-      const oldestKey = Array.from(this.responseCache.keys())[0];
-      this.responseCache.delete(oldestKey);
+    // Cleanup old cache entries (remove excess entries, not just one)
+    if (this.responseCache.size > this.maxCacheSize) {
+      const entriesToDelete = this.responseCache.size - this.maxCacheSize;
+      const keys = Array.from(this.responseCache.keys());
+      for (let i = 0; i < entriesToDelete; i++) {
+        this.responseCache.delete(keys[i]);
+      }
     }
   }
 

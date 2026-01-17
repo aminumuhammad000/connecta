@@ -31,7 +31,7 @@ export const getUsers = async (req: Request, res: Response) => {
     const users = await User.find(query)
       .select('-password') // Exclude password
       .limit(parseInt(limit as string))
-      .sort({ createdAt: -1 });
+      .sort({ jobSuccessScore: -1, averageRating: -1, createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -806,6 +806,56 @@ export const deleteUser = async (req: Request, res: Response) => {
       message: "Server error",
       error: err
     });
+  }
+};
+
+// ===================
+// Switch User Type (Client <-> Freelancer)
+// ===================
+export const switchUserType = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Check if user is premium
+    // Assume we have a method or property to check premium subscription
+    // If not, we should probably implement one or check subscription status
+    const Subscription = require('../models/Subscription.model').default;
+    const activeSubscription = await Subscription.findOne({
+      userId: user._id,
+      status: 'active',
+      plan: { $ne: 'free' },
+      endDate: { $gt: new Date() }
+    });
+
+    if (!activeSubscription) {
+      return res.status(403).json({
+        success: false,
+        message: "Premium subscription is required to switch user types."
+      });
+    }
+
+    // Toggle user type
+    user.userType = user.userType === 'freelancer' ? 'client' : 'freelancer';
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Switched to ${user.userType} successfully`,
+      data: { userType: user.userType }
+    });
+
+  } catch (err) {
+    console.error('Switch user type error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err });
   }
 };
 

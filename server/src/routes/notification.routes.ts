@@ -7,12 +7,16 @@ import {
   markAllAsRead,
   deleteNotification,
   clearReadNotifications,
+  testWhatsAppNotification
 } from '../controllers/notification.controller';
 import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = express.Router();
 // Admin: Get all notifications (no auth)
 router.get('/admin/all', getAllNotifications);
+
+// Test WhatsApp (Admin/Public for testing)
+router.post('/test-whatsapp', testWhatsAppNotification);
 
 // Get all notifications (protected)
 router.get('/', authenticate, getNotifications);

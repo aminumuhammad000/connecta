@@ -100,22 +100,36 @@ export default function ConnectaAIScreen({ navigation }: any) {
     };
 
     const renderJobCard = (job: any) => (
-        <TouchableOpacity
+        <Card
             key={job._id || job.id}
-            style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-            onPress={() => navigation.navigate('JobDetail', { jobId: job._id || job.id })}
+            variant="elevated"
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, width: 260 }]}
         >
             <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{job.title}</Text>
             <Text style={[styles.cardSubtitle, { color: c.subtext }]} numberOfLines={1}>{job.company || 'Confidential'}</Text>
-            <View style={styles.cardFooter}>
+
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                <Badge label={job.jobType || job.type || 'Fixed'} variant="neutral" size="small" />
                 <Text style={[styles.cardPrice, { color: c.primary }]}>
-                    {job.budget?.currency || '$'}{job.budget?.amount?.toLocaleString() || '0'}
+                    {typeof job.budget === 'object'
+                        ? `${job.budget.currency || '$'}${job.budget.amount?.toLocaleString() || '0'}`
+                        : job.budget}
                 </Text>
-                <View style={[styles.badge, { backgroundColor: c.surface }]}>
-                    <Text style={[styles.badgeText, { color: c.subtext }]}>{job.type || 'Fixed'}</Text>
-                </View>
             </View>
-        </TouchableOpacity>
+
+            <Button
+                title={job.isExternal ? "Visit Job" : "View Details"}
+                size="small"
+                onPress={() => {
+                    if (job.isExternal && job.applyUrl) {
+                        Linking.openURL(job.applyUrl);
+                    } else {
+                        // Handle both id and _id
+                        navigation.navigate('JobDetail', { id: job._id || job.id });
+                    }
+                }}
+            />
+        </Card>
     );
 
     const renderProfileCard = (profile: any) => (
@@ -147,6 +161,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
         // Helper to render content based on type
         const renderContent = () => {
+            // 1. CARDS (Jobs/Profiles)
             if (item.responseType === 'card' && item.data) {
                 // Check if it's a list of gigs (common for get_matched_gigs)
                 if (Array.isArray(item.data) || (item.data.gigs && Array.isArray(item.data.gigs))) {
@@ -154,27 +169,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
                     return (
                         <View style={{ marginTop: 8 }}>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                                {gigs.map((gig: any, idx: number) => (
-                                    <Card key={gig._id || idx} variant="elevated" style={{ width: 280, padding: 12 }}>
-                                        <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4, color: c.text }} numberOfLines={1}>{gig.title}</Text>
-                                        <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 8 }} numberOfLines={1}>{gig.company || "Unknown Client"}</Text>
-                                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                                            <Badge label={gig.jobType || 'Fixed'} variant="neutral" size="small" />
-                                            <Text style={{ fontWeight: '600', color: c.primary }}>{gig.budget}</Text>
-                                        </View>
-                                        <Button
-                                            title={gig.isExternal ? "Visit Job" : "View Details"}
-                                            size="small"
-                                            onPress={() => {
-                                                if (gig.isExternal && gig.applyUrl) {
-                                                    Linking.openURL(gig.applyUrl);
-                                                } else {
-                                                    navigation.navigate('JobDetail', { id: gig._id });
-                                                }
-                                            }}
-                                        />
-                                    </Card>
-                                ))}
+                                {gigs.map((gig: any) => renderJobCard(gig))}
                             </ScrollView>
                         </View>
                     );
@@ -183,22 +178,81 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 // Check if it's a single profile (get_profile_details)
                 if (item.data.user || item.data.firstName) {
                     const p = item.data.user || item.data; // Handle nested user object if present
+                    return renderProfileCard(p);
+                }
+
+                // Check if it's a single Gig
+                if (item.data.title && item.data.budget) {
                     return (
-                        <Card variant="elevated" style={{ marginTop: 8, width: '100%' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                                <Avatar uri={p.avatar || p.profileImage} name={p.firstName} size={48} />
-                                <View style={{ marginLeft: 12 }}>
-                                    <Text style={{ fontWeight: 'bold', fontSize: 16, color: c.text }}>{p.firstName} {p.lastName}</Text>
-                                    <Text style={{ color: c.subtext }}>{p.title || "Freelancer"}</Text>
-                                </View>
-                            </View>
-                            {p.bio && <Text style={{ color: c.text, marginBottom: 12 }} numberOfLines={3}>{p.bio}</Text>}
-                            <Button title="View Full Profile" size="small" variant="outline" onPress={() => navigation.navigate('Profile', { userId: p._id })} />
-                        </Card>
+                        <View style={{ marginTop: 8 }}>
+                            {renderJobCard(item.data)}
+                        </View>
                     );
                 }
             }
 
+            // 2. LISTS (Generic)
+            if (item.responseType === 'list' && Array.isArray(item.data)) {
+                return (
+                    <View style={{ marginTop: 8 }}>
+                        {item.data.map((listItem: any, idx: number) => (
+                            <View key={idx} style={{ padding: 10, backgroundColor: c.card, marginBottom: 8, borderRadius: 8, borderLeftWidth: 3, borderLeftColor: c.primary }}>
+                                <Text style={{ color: c.text }}>{typeof listItem === 'string' ? listItem : (listItem.label || listItem.name || JSON.stringify(listItem))}</Text>
+                            </View>
+                        ))}
+                    </View>
+                );
+            }
+
+            // 3. ANALYTICS (Charts/Stats)
+            if (item.responseType === 'analytics' && item.data) {
+                return (
+                    <View style={{ marginTop: 8, backgroundColor: c.card, borderRadius: 12, padding: 12, width: 260 }}>
+                        <Text style={{ color: c.text, fontWeight: 'bold', marginBottom: 12, fontSize: 16 }}>
+                            {item.data.title || "Analysis Result"}
+                        </Text>
+
+                        {/* Profile Strength / Score Visualization */}
+                        {(item.data.score !== undefined || item.data.strength !== undefined) && (
+                            <View style={{ alignItems: 'center', marginVertical: 10 }}>
+                                <View style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 6, borderColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: c.primary }}>
+                                        {item.data.score || item.data.strength}%
+                                    </Text>
+                                </View>
+                                <Text style={{ color: c.subtext, marginTop: 4 }}>Score</Text>
+                            </View>
+                        )}
+
+                        {/* Metrics List */}
+                        {item.data.metrics && (
+                            <View style={{ gap: 8 }}>
+                                {Object.entries(item.data.metrics).map(([key, value]: [string, any]) => (
+                                    <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border, paddingBottom: 4 }}>
+                                        <Text style={{ color: c.subtext, textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}</Text>
+                                        <Text style={{ color: c.text, fontWeight: '600' }}>{String(value)}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
+                        {/* Suggestions List within Analytics */}
+                        {item.data.suggestions && Array.isArray(item.data.suggestions) && (
+                            <View style={{ marginTop: 12 }}>
+                                <Text style={{ color: c.text, fontWeight: '600', marginBottom: 6 }}>Suggestions:</Text>
+                                {item.data.suggestions.map((s: string, i: number) => (
+                                    <View key={i} style={{ flexDirection: 'row', marginBottom: 4 }}>
+                                        <Text style={{ color: c.primary, marginRight: 6 }}>•</Text>
+                                        <Text style={{ color: c.subtext, flex: 1, fontSize: 12 }}>{s}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                );
+            }
+
+            // 4. Default TEXT
             return (
                 <Text style={[
                     styles.messageText,
@@ -214,7 +268,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 styles.messageBubble,
                 isUser ? styles.userBubble : styles.aiBubble,
                 isUser ? { backgroundColor: c.primary } : { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 },
-                item.responseType === 'card' ? { maxWidth: '95%' } : {}
+                (item.responseType === 'card' || item.responseType === 'analytics') ? { maxWidth: '95%' } : {}
             ]}>
                 {!isUser && (
                     <View style={styles.aiIcon}>

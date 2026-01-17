@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Review from '../models/Review.model';
 import Project from '../models/Project.model';
 import User from '../models/user.model';
+import ReputationService from '../services/Reputation.service';
 
 /**
  * Create a review for a completed project
@@ -81,8 +82,8 @@ export const createReview = async (req: Request, res: Response) => {
       tags: tags || [],
     });
 
-    // Update user's average rating
-    await updateUserAverageRating(revieweeId);
+    // Update user's reputation (JSS, Rating, Badges)
+    await ReputationService.updateFreelancerReputation(revieweeId);
 
     // Populate reviewer details
     await review.populate('reviewerId', 'firstName lastName profilePicture');
@@ -341,8 +342,8 @@ export const updateReview = async (req: Request, res: Response) => {
 
     await review.save();
 
-    // Update user's average rating
-    await updateUserAverageRating(review.revieweeId);
+    // Update user's reputation (JSS, Rating, Badges)
+    await ReputationService.updateFreelancerReputation(review.revieweeId.toString());
 
     return res.status(200).json({
       success: true,
@@ -358,30 +359,7 @@ export const updateReview = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Helper function to update user's average rating
- */
-async function updateUserAverageRating(userId: any) {
-  try {
-    const reviews = await Review.find({
-      revieweeId: userId,
-      isPublic: true,
-      isFlagged: false,
-    });
 
-    const totalReviews = reviews.length;
-    const averageRating = totalReviews > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-      : 0;
-
-    await User.findByIdAndUpdate(userId, {
-      'profile.rating': Number(averageRating.toFixed(2)),
-      'profile.totalReviews': totalReviews,
-    });
-  } catch (error) {
-    console.error('Update average rating error:', error);
-  }
-}
 
 /**
  * Get all reviews for admin (no auth required)

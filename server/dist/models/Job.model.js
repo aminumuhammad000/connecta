@@ -46,11 +46,25 @@ const JobSchema = new mongoose_1.Schema({
         required: true,
         default: "remote",
     },
+    // Updated job type enums
     jobType: {
         type: String,
-        enum: ["full-time", "part-time", "contract", "freelance"],
+        enum: ["full-time", "part-time", "contract", "freelance", "one-time", "monthly", "permanent", "adhoc"],
         required: true,
         default: "full-time",
+    },
+    // New fields
+    jobScope: {
+        type: String,
+        enum: ["local", "international"],
+        default: "local"
+    },
+    niche: { type: String, required: false }, // e.g. IT, Hospitality, Health
+    duration: { type: String }, // e.g. "3", "6"
+    durationType: {
+        type: String,
+        enum: ["days", "weeks", "months", "years"],
+        default: "months"
     },
     salary: {
         min: { type: Number },
@@ -90,6 +104,21 @@ const JobSchema = new mongoose_1.Schema({
     externalId: { type: String },
     source: { type: String },
     applyUrl: { type: String },
+    // Collabo fields
+    jobMode: {
+        type: String,
+        enum: ["individual", "collabo"],
+        default: "individual",
+    },
+    collaboRoles: [
+        {
+            title: { type: String },
+            description: { type: String },
+            budget: { type: Number },
+            skills: [{ type: String }],
+            count: { type: Number, default: 1 },
+        },
+    ],
 }, { timestamps: true });
 const Job = mongoose_1.default.model("Job", JobSchema);
 exports.default = Job;

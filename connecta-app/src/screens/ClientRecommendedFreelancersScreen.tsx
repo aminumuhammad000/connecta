@@ -14,12 +14,13 @@ interface FreelancerItem {
   rating: number;
   reviews: number;
   skills: string[];
+  jobSuccessScore?: number;
 }
 
 const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [q, setQ] = useState('');
-  const [freelancers, setFreelancers] = useState<User[]>([]);
+  const [freelancers, setFreelancers] = useState<FreelancerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -29,7 +30,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
 
   const loadFreelancers = async () => {
     try {
-      const data = await dashboardService.getRecommendedFreelancers();
+      const data: any = await dashboardService.getRecommendedFreelancers();
       setFreelancers(data);
     } catch (error) {
       console.error('Error loading freelancers:', error);
@@ -38,6 +39,8 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
       setIsRefreshing(false);
     }
   };
+
+
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -67,7 +70,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {/* Top App Bar */}
-        <View style={[styles.appBarWrap, { borderBottomColor: c.border }]}> 
+        <View style={[styles.appBarWrap, { borderBottomColor: c.border }]}>
           <View style={styles.appBar}>
             <TouchableOpacity onPress={() => navigation.goBack?.()} accessibilityLabel="Go back" style={styles.iconBtn}>
               <MaterialIcons name="arrow-back" size={22} color={c.text} />
@@ -78,7 +81,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
 
           {/* Search & Filter */}
           <View style={styles.searchRow}>
-            <View style={[styles.searchWrap, { backgroundColor: c.card }]}> 
+            <View style={[styles.searchWrap, { backgroundColor: c.card }]}>
               <MaterialIcons name="search" size={20} color={c.subtext} style={{ marginLeft: 12, marginRight: 6 }} />
               <TextInput
                 value={q}
@@ -94,7 +97,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
           </View>
 
           {/* Chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}> 
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             <Chip active label="Sort By" leftIcon="expand-more" />
             <Chip label="Hourly Rate" leftIcon="expand-more" />
             <Chip label="Location" leftIcon="expand-more" />
@@ -107,30 +110,36 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
         {/* List */}
         <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 96, gap: 12 }}>
           {filtered.map(f => (
-            <View key={f.id} style={[styles.card, { backgroundColor: c.card }]}> 
-              <View style={styles.cardHdr}> 
+            <View key={f.id} style={[styles.card, { backgroundColor: c.card }]}>
+              <View style={styles.cardHdr}>
                 <Image source={{ uri: f.avatar }} style={styles.avatar} />
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={[styles.name, { color: c.text }]}>{f.name}</Text>
                   <Text style={{ color: c.subtext, fontSize: 13 }}>{f.role}</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <MaterialIcons name="star" size={16} color="#f59e0b" />
-                    <Text style={{ color: c.subtext, fontSize: 12 }}>{f.rating.toFixed(1)} ({f.reviews} reviews)</Text>
+                    <Text style={{ color: c.subtext, fontSize: 12 }}>{(f.rating || 0).toFixed(1)} ({f.reviews || 0} reviews)</Text>
+                    {f.jobSuccessScore ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8, gap: 2 }}>
+                        <MaterialIcons name="bolt" size={14} color="#22C55E" />
+                        <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '700' }}>{f.jobSuccessScore}% Success</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}> 
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                 {f.skills.map(s => (
-                  <View key={s} style={[styles.skillPill, { backgroundColor: c.isDark ? '#3f3f46' : '#f4f4f5' }]}> 
+                  <View key={s} style={[styles.skillPill, { backgroundColor: c.isDark ? '#3f3f46' : '#f4f4f5' }]}>
                     <Text style={[styles.skillText, { color: c.subtext }]}>{s}</Text>
                   </View>
                 ))}
               </ScrollView>
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: c.isDark ? '#3f3f46' : '#f4f4f5' }]} onPress={() => navigation.navigate('ClientProfile')}> 
+                <TouchableOpacity style={[styles.btn, { backgroundColor: c.isDark ? '#3f3f46' : '#f4f4f5' }]} onPress={() => navigation.navigate('ClientProfile')}>
                   <Text style={[styles.btnText, { color: c.text }]}>View Profile</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: c.primary }]} onPress={() => navigation.navigate('PostJob')}> 
+                <TouchableOpacity style={[styles.btn, { backgroundColor: c.primary }]} onPress={() => navigation.navigate('PostJob')}>
                   <Text style={[styles.btnText, { color: '#fff' }]}>Invite to Job</Text>
                 </TouchableOpacity>
               </View>
@@ -139,7 +148,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
         </ScrollView>
 
         {/* BottomNav */}
-</View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -147,7 +156,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
 function Chip({ label, leftIcon, active }: { label: string; leftIcon?: keyof typeof MaterialIcons.glyphMap; active?: boolean }) {
   const c = useThemeColors();
   return (
-    <View style={[styles.chip, { backgroundColor: active ? c.primary + '33' : c.card }]}> 
+    <View style={[styles.chip, { backgroundColor: active ? c.primary + '33' : c.card }]}>
       <Text style={[styles.chipText, { color: active ? c.primary : c.text }]}>{label}</Text>
       {leftIcon ? <MaterialIcons name={leftIcon} size={18} color={active ? c.primary : c.text} /> : null}
     </View>

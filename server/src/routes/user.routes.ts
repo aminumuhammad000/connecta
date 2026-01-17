@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword } from "../controllers/user.controller";
+import { signup, signin, googleSignup, googleSignin, getUsers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, switchUserType } from "../controllers/user.controller";
 import { authenticate } from "../core/middleware/auth.middleware";
 
 const router = express.Router();
@@ -22,6 +22,7 @@ router.post("/verify-email", authenticate, verifyEmail); // POST /api/users/veri
 router.post("/resend-verification", authenticate, resendVerificationOTP); // POST /api/users/resend-verification
 router.post("/push-token", authenticate, updatePushToken); // POST /api/users/push-token
 router.post("/change-password", authenticate, changePassword); // POST /api/users/change-password
+router.post("/switch-type", authenticate, switchUserType); // POST /api/users/switch-type
 
 // User data routes
 router.get("/", getUsers); // GET /api/users?userType=freelancer&skills=React&limit=20

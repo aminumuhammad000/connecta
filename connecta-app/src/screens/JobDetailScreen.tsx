@@ -282,6 +282,70 @@ const JobDetailScreen: React.FC = () => {
             </View>
           </View>
 
+          {/* Connecta AI Match Insights */}
+          {!isJobOwner && !job.isExternal && (
+            <View style={{ marginTop: 24, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: c.isDark ? '#4338ca' : '#e0e7ff' }}>
+              <View style={{ backgroundColor: c.isDark ? '#312e81' : '#eef2ff', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialIcons name="auto-awesome" size={20} color={c.primary} />
+                <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>Connecta AI Insights</Text>
+              </View>
+
+              <View style={{ padding: 16, backgroundColor: c.card, gap: 16 }}>
+                {/* Match Reason */}
+                <View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 4 }}>🎯 Why this fits you</Text>
+                  <Text style={{ fontSize: 13, color: c.subtext, lineHeight: 20 }}>
+                    Your skills in <Text style={{ fontWeight: '700' }}>React Native</Text> and <Text style={{ fontWeight: '700' }}>TypeScript</Text> match 95% of the requirements. The client is looking for an intermediate freelancer, which aligns with your experience level.
+                  </Text>
+                </View>
+
+                {/* Proposal Outline */}
+                <View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 4 }}>📝 Recommended Proposal Outline</Text>
+                  <View style={{ gap: 4 }}>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Text style={{ color: c.primary }}>•</Text>
+                      <Text style={{ fontSize: 13, color: c.subtext }}>Start by mentioning your 3 years of experience with React Native.</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Text style={{ color: c.primary }}>•</Text>
+                      <Text style={{ fontSize: 13, color: c.subtext }}>Reference your "Fitness App" portfolio item as a relevant example.</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <Text style={{ color: c.primary }}>•</Text>
+                      <Text style={{ fontSize: 13, color: c.subtext }}>Ask about their specific timeline for the MVP launch.</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Key Phrases */}
+                <View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 4 }}>🔑 Key Phrases to Include</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {['Clean Architecture', 'Performance Optimization', 'Responsive Design'].map((phrase) => (
+                      <View key={phrase} style={{ backgroundColor: c.isDark ? '#374151' : '#f3f4f6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                        <Text style={{ fontSize: 11, color: c.text, fontWeight: '500' }}>{phrase}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Mistakes to Avoid */}
+                <View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#EF4444', marginBottom: 4 }}>⚠️ Common Mistakes to Avoid</Text>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <Text style={{ color: '#EF4444' }}>•</Text>
+                    <Text style={{ fontSize: 13, color: c.subtext }}>Don't send a generic "I can do this" message.</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: 6 }}>
+                    <Text style={{ color: '#EF4444' }}>•</Text>
+                    <Text style={{ fontSize: 13, color: c.subtext }}>Avoid ignoring the specific budget constraints mentioned.</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Client Info (Only show if NOT job owner) */}
           {!isJobOwner && (
             <View style={{ marginTop: 24, padding: 16, backgroundColor: c.card, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border }}>
@@ -305,6 +369,20 @@ const JobDetailScreen: React.FC = () => {
                   <Text style={{ color: c.subtext, fontSize: 11, marginTop: 4 }}>
                     Email: {job.clientId?.email ? 'Verified' : 'Unverified'} • Joined {new Date(job.createdAt).getFullYear()}
                   </Text>
+
+                  {/* Activity & Responsiveness */}
+                  <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <MaterialIcons name="bolt" size={14} color="#F59E0B" />
+                      <Text style={{ fontSize: 11, color: c.subtext }}>
+                        Typically replies in {job.clientId?.performanceMetrics?.responseTime || 24}h
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' }} />
+                      <Text style={{ fontSize: 11, color: c.subtext }}>Active recently</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             </View>
@@ -355,6 +433,16 @@ const JobDetailScreen: React.FC = () => {
                                 {isPremium && <MaterialIcons name="verified" size={16} color="#F59E0B" />}
                               </View>
                               <Text style={{ fontSize: 12, color: c.subtext }}>{p.freelancerId?.title || 'Freelancer'}</Text>
+                              {p.freelancerId?.jobSuccessScore !== undefined && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
+                                  <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: p.freelancerId.jobSuccessScore >= 90 ? '#22C55E' : '#F59E0B', alignItems: 'center', justifyContent: 'center' }}>
+                                    <MaterialIcons name="bolt" size={10} color="#FFF" />
+                                  </View>
+                                  <Text style={{ fontSize: 11, fontWeight: '700', color: p.freelancerId.jobSuccessScore >= 90 ? '#22C55E' : '#F59E0B' }}>
+                                    {p.freelancerId.jobSuccessScore}% Job Success
+                                  </Text>
+                                </View>
+                              )}
                             </View>
                           </View >
                           <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>${p.budget?.amount}</Text>

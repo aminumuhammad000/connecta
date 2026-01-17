@@ -5,8 +5,12 @@ export class UpdateProfileTool extends BaseTool {
   description = "Update user profile fields such as phoneNumber, location, resume, etc.";
 
   async _call(params: Record<string, any>) {
-    const profileId = params.profileId || params.userId || this.userId;
-    // The Profile.routes uses PUT /api/profiles/:id
-    return this.request(`/api/profiles/${profileId}`, "PUT", params);
+    // If specific profileId (ObjectId) is provided, use it.
+    // Otherwise, default to updating the current user's profile via /me
+    if (params.profileId && params.profileId.length === 24) {
+      return this.request(`/api/profiles/${params.profileId}`, "PUT", params);
+    }
+
+    return this.request(`/api/profiles/me`, "PUT", params);
   }
 }

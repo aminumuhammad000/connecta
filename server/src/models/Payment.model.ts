@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IPayment extends Document {
   projectId?: mongoose.Types.ObjectId;
+  collaboProjectId?: mongoose.Types.ObjectId;
   jobId?: mongoose.Types.ObjectId;
   milestoneId?: mongoose.Types.ObjectId;
   payerId: mongoose.Types.ObjectId; // Client
@@ -13,28 +14,28 @@ export interface IPayment extends Document {
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
   paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer';
   paymentType: 'milestone' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification';
-  
+
   // Payment Gateway Details
   gatewayReference: string; // Reference from payment gateway
   gatewayResponse?: any;
-  
+
   // Escrow Details
   escrowStatus: 'held' | 'released' | 'refunded' | 'none';
   escrowReleaseDate?: Date;
-  
+
   // Invoice Details
   invoiceNumber?: string;
   invoiceUrl?: string;
-  
+
   // Metadata
   description?: string;
   metadata?: Record<string, any>;
-  
+
   // Timestamps
   paidAt?: Date;
   releasedAt?: Date;
   refundedAt?: Date;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +45,10 @@ const PaymentSchema: Schema = new Schema(
     projectId: {
       type: Schema.Types.ObjectId,
       ref: 'Project',
+    },
+    collaboProjectId: {
+      type: Schema.Types.ObjectId,
+      ref: 'CollaboProject',
     },
     jobId: {
       type: Schema.Types.ObjectId,

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start": "node --max-old-space-size=4096 -r ts-node/register src/app.ts",
     "dev": "lsof -ti:5000 | xargs kill -9 2>/dev/null || true && nodemon --exec ts-node --swc src/app.ts",
     "seed:jobs": "ts-node scripts/seedJobs.ts",
     "seed:proposals": "ts-node scripts/seedProposals.ts",
@@ -35,6 +35,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "socket.io": "^4.8.1",
+    "twilio": "^5.11.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {

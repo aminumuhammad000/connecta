@@ -21,11 +21,13 @@ const explicitBaseUrl =
     (Constants as any)?.manifest?.extra?.apiBaseUrl;
 
 const derivedHostBaseUrl = deriveExpoHostBaseUrl();
-// const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
+const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+// const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
 
 const getBaseUrl = () => {
-    let url = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
+    // Force local server usage for now
+    let url = derivedHostBaseUrl || platformDefaultBaseUrl;
+    // let url = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
 
     // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
     // For iOS physical device, derivedHostBaseUrl usually works (it's the LAN IP of the host)

@@ -99,6 +99,9 @@ app.use("/api/broadcast", broadcastRoutes);
 import externalGigsRoutes from "./routes/external-gigs.routes";
 app.use("/api/external-gigs", externalGigsRoutes);
 
+import collaboRoutes from "./routes/Collabo.routes";
+app.use("/api/collabo", collaboRoutes);
+
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
 });
@@ -168,6 +171,17 @@ io.on("connection", (socket) => {
         readBy: data.userId,
       });
     }
+  });
+
+  // Room management (moved outside disconnect to prevent memory leak)
+  socket.on("room:join", (roomId: string) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+  });
+
+  socket.on("room:leave", (roomId: string) => {
+    socket.leave(roomId);
+    console.log(`Socket ${socket.id} left room ${roomId}`);
   });
 
   // Disconnect

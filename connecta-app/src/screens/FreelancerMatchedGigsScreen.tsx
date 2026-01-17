@@ -12,7 +12,7 @@ import { Job } from '../types';
 const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'fixed' | 'hourly' | 'remote'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'internal' | 'external' | 'fixed' | 'hourly' | 'remote'>('all');
   const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
   const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
   const [dismissedGigs, setDismissedGigs] = useState<Set<string>>(new Set());
@@ -149,6 +149,8 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
     if (dismissedGigs.has(job._id)) return false;
 
     // Filter by type
+    if (selectedFilter === 'internal' && job.isExternal) return false;
+    if (selectedFilter === 'external' && !job.isExternal) return false;
     if (selectedFilter === 'fixed' && job.budgetType !== 'fixed') return false;
     if (selectedFilter === 'hourly' && job.budgetType !== 'hourly') return false;
     if (selectedFilter === 'remote' && job.locationType !== 'remote') return false;
@@ -210,6 +212,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
             {/* Filter Chips */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
               <View style={styles.filterChips}>
+                {/* All Jobs */}
                 <TouchableOpacity
                   style={[
                     styles.filterChip,
@@ -220,9 +223,43 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                   onPress={() => setSelectedFilter('all')}
                 >
                   <Text style={selectedFilter === 'all' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    All Jobs
+                    All
                   </Text>
                 </TouchableOpacity>
+
+                {/* Internal */}
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilter === 'internal'
+                      ? { backgroundColor: c.primary, borderWidth: 0 }
+                      : { backgroundColor: c.card, borderColor: c.border }
+                  ]}
+                  onPress={() => setSelectedFilter('internal')}
+                >
+                  <MaterialIcons name="verified-user" size={14} color={selectedFilter === 'internal' ? '#FFF' : c.text} style={{ marginRight: 4 }} />
+                  <Text style={selectedFilter === 'internal' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    Internal
+                  </Text>
+                </TouchableOpacity>
+
+                {/* External */}
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilter === 'external'
+                      ? { backgroundColor: c.primary, borderWidth: 0 }
+                      : { backgroundColor: c.card, borderColor: c.border }
+                  ]}
+                  onPress={() => setSelectedFilter('external')}
+                >
+                  <MaterialIcons name="public" size={14} color={selectedFilter === 'external' ? '#FFF' : c.text} style={{ marginRight: 4 }} />
+                  <Text style={selectedFilter === 'external' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    External
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Existing filters */}
                 <TouchableOpacity
                   style={[
                     styles.filterChip,
@@ -332,6 +369,14 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                                 {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
                               </Text>
                             </View>
+                            {/* Physical Job Indicator */}
+                            {job.locationType !== 'remote' && (
+                              <View style={styles.metaItem}>
+                                <MaterialIcons name="place" size={16} color={c.primary} />
+                                <Text style={[styles.metaText, { color: c.primary }]}>{job.location || 'On-site'}</Text>
+                              </View>
+                            )}
+
                             {job.budgetType && (
                               <Badge
                                 label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
@@ -340,6 +385,25 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                               />
                             )}
                           </View>
+
+                          {/* Category Badge */}
+                          {job.category && (
+                            <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                              <Badge
+                                label={job.category}
+                                variant="custom"
+                                customColor={
+                                  job.category === 'Technology' ? '#3B82F6' : // Blue
+                                    job.category === 'Health' ? '#EF4444' : // Red
+                                      job.category === 'Business' ? '#F59E0B' : // Amber
+                                        job.category === 'Creative' ? '#EC4899' : // Pink
+                                          job.category === 'Finance' ? '#10B981' : // Emerald
+                                            '#8B5CF6' // Default Violet
+                                }
+                                size="small"
+                              />
+                            </View>
+                          )}
 
                           {job.skills && job.skills.length > 0 && (
                             <View style={styles.skillsRow}>

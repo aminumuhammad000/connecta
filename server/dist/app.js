@@ -91,6 +91,8 @@ const broadcast_routes_1 = __importDefault(require("./routes/broadcast.routes"))
 app.use("/api/broadcast", broadcast_routes_1.default);
 const external_gigs_routes_1 = __importDefault(require("./routes/external-gigs.routes"));
 app.use("/api/external-gigs", external_gigs_routes_1.default);
+const Collabo_routes_1 = __importDefault(require("./routes/Collabo.routes"));
+app.use("/api/collabo", Collabo_routes_1.default);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });
@@ -157,6 +159,15 @@ io.on("connection", (socket) => {
                 break;
             }
         }
+        // Room management
+        socket.on("room:join", (roomId) => {
+            socket.join(roomId);
+            console.log(`Socket ${socket.id} joined room ${roomId}`);
+        });
+        socket.on("room:leave", (roomId) => {
+            socket.leave(roomId);
+            console.log(`Socket ${socket.id} left room ${roomId}`);
+        });
     });
 });
 // Start Server

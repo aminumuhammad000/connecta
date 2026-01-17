@@ -4,15 +4,23 @@ import { useThemeColors } from '../theme/theme';
 
 interface BadgeProps {
     label: string;
-    variant?: 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'primary';
+    variant?: 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'primary' | 'custom';
     size?: 'small' | 'medium' | 'large';
+    customColor?: string; // Hex code for custom variant
     style?: ViewStyle;
 }
 
-export default function Badge({ label, variant = 'neutral', size = 'medium', style }: BadgeProps) {
+export default function Badge({ label, variant = 'neutral', size = 'medium', customColor, style }: BadgeProps) {
     const c = useThemeColors();
 
     const getColors = () => {
+        if (variant === 'custom' && customColor) {
+            return {
+                bg: c.isDark ? `${customColor}33` : `${customColor}20`, // low opacity bg
+                fg: customColor
+            };
+        }
+
         switch (variant) {
             case 'success':
                 return {

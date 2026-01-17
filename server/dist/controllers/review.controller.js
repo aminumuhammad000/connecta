@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getAllReviews = exports.updateReview = exports.flagReview = exports.voteReview = exports.respondToReview = exports.getUserReviewStats = exports.getUserReviews = exports.createReview = void 0;
 const Review_model_1 = __importDefault(require("../models/Review.model"));
 const Project_model_1 = __importDefault(require("../models/Project.model"));
-const user_model_1 = __importDefault(require("../models/user.model"));
+const Reputation_service_1 = __importDefault(require("../services/Reputation.service"));
 /**
  * Create a review for a completed project
  */
@@ -77,8 +77,8 @@ const createReview = async (req, res) => {
             comment,
             tags: tags || [],
         });
-        // Update user's average rating
-        await updateUserAverageRating(revieweeId);
+        // Update user's reputation (JSS, Rating, Badges)
+        await Reputation_service_1.default.updateFreelancerReputation(revieweeId);
         // Populate reviewer details
         await review.populate('reviewerId', 'firstName lastName profilePicture');
         return res.status(201).json({
@@ -319,8 +319,8 @@ const updateReview = async (req, res) => {
         if (tags)
             review.tags = tags;
         await review.save();
-        // Update user's average rating
-        await updateUserAverageRating(review.revieweeId);
+        // Update user's reputation (JSS, Rating, Badges)
+        await Reputation_service_1.default.updateFreelancerReputation(review.revieweeId.toString());
         return res.status(200).json({
             success: true,
             message: 'Review updated successfully',
@@ -336,29 +336,6 @@ const updateReview = async (req, res) => {
     }
 };
 exports.updateReview = updateReview;
-/**
- * Helper function to update user's average rating
- */
-async function updateUserAverageRating(userId) {
-    try {
-        const reviews = await Review_model_1.default.find({
-            revieweeId: userId,
-            isPublic: true,
-            isFlagged: false,
-        });
-        const totalReviews = reviews.length;
-        const averageRating = totalReviews > 0
-            ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-            : 0;
-        await user_model_1.default.findByIdAndUpdate(userId, {
-            'profile.rating': Number(averageRating.toFixed(2)),
-            'profile.totalReviews': totalReviews,
-        });
-    }
-    catch (error) {
-        console.error('Update average rating error:', error);
-    }
-}
 /**
  * Get all reviews for admin (no auth required)
  */

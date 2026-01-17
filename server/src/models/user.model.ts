@@ -17,6 +17,18 @@ export interface IUser extends Document {
   isVerified?: boolean;
   pushToken?: string;
   isSubscribedToGigs?: boolean;
+
+  // Reputation & Badges
+  averageRating: number;
+  totalReviews: number;
+  jobSuccessScore: number;
+  badges: string[];
+  performanceMetrics: {
+    onTimeDeliveryRate: number;
+    completionRate: number;
+    responseTime: number;
+  };
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +68,21 @@ const UserSchema: Schema<IUser> = new Schema(
     isVerified: { type: Boolean, default: false },
     pushToken: { type: String, required: false },
     isSubscribedToGigs: { type: Boolean, default: true },
+
+    // Reputation & Badges
+    averageRating: { type: Number, default: 0 },
+    totalReviews: { type: Number, default: 0 },
+    jobSuccessScore: { type: Number, default: 100 }, // Percentage (0-100)
+    badges: {
+      type: [String],
+      enum: ["rising_talent", "top_rated", "expert_vetted", "verified_pro"],
+      default: [],
+    },
+    performanceMetrics: {
+      onTimeDeliveryRate: { type: Number, default: 100 }, // Percentage
+      completionRate: { type: Number, default: 100 }, // Percentage
+      responseTime: { type: Number, default: 24 }, // Avg hours (default 24h)
+    },
   },
   { timestamps: true }
 );

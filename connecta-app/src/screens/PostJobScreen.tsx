@@ -12,6 +12,7 @@ import PaymentWebView from '../components/PaymentWebView';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 import SuccessModal from '../components/SuccessModal';
+import { JOB_CATEGORIES, JOB_TYPES, LOCATION_SCOPES, LOCATION_TYPES, DURATION_TYPES } from '../utils/categories';
 
 const PostJobScreen: React.FC = () => {
   const c = useThemeColors();
@@ -45,6 +46,14 @@ const PostJobScreen: React.FC = () => {
   const [paymentReference, setPaymentReference] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { user, token } = useAuth();
+  const [jobMode, setJobMode] = useState<'individual' | 'collabo' | null>(isEditMode ? 'individual' : null);
+
+  // New State Variables
+  const [jobScope, setJobScope] = useState('local');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [subCategory, setSubCategory] = useState('');
+  const [durationType, setDurationType] = useState('months');
+  const [durationValue, setDurationValue] = useState('');
 
   useEffect(() => {
     if (isEditMode && jobId) {
@@ -206,10 +215,14 @@ const PostJobScreen: React.FC = () => {
         location,
         category,
         experience,
-        jobType: 'freelance' as any,
-        budgetType: jobType,
+        jobType: jobType as any, // 'full-time', 'contract', etc.
+        budgetType: 'fixed', // Force fixed budget for now or add toggle
         status: 'active' as any,
-        locationType: 'remote' as any,
+        locationType: 'remote' as any, // This should also be dynamic if needed
+        jobScope,
+        niche: subCategory || undefined,
+        duration: durationValue,
+        durationType: durationType as any,
         paymentStatus,
         paymentReference,
         paymentVerified: paymentStatus === 'escrow',
@@ -288,6 +301,8 @@ const PostJobScreen: React.FC = () => {
     </View>
   );
 
+
+
   const renderBasics = () => (
     <View>
       <Text style={[styles.stepTitle, { color: c.text }]}>Job Basics</Text>
@@ -304,22 +319,67 @@ const PostJobScreen: React.FC = () => {
       </View>
 
       <View style={styles.inputGroup}>
+        <Text style={[styles.label, { color: c.text }]}>Category *</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }}>
+          {JOB_CATEGORIES.map(cat => (
+            <TouchableOpacity
+              key={cat.id}
+              onPress={() => {
+                setSelectedCategoryId(cat.id);
+                setCategory(cat.label);
+                setSubCategory('');
+              }}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: selectedCategoryId === cat.id ? c.primary : c.card,
+                  borderColor: selectedCategoryId === cat.id ? c.primary : c.border
+                }
+              ]}
+            >
+              <MaterialIcons
+                name={cat.icon as any}
+                size={16}
+                color={selectedCategoryId === cat.id ? '#FFF' : c.text}
+                style={{ marginRight: 4 }}
+              />
+              <Text style={{ color: selectedCategoryId === cat.id ? '#FFF' : c.text, fontWeight: '600' }}>
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {selectedCategoryId && JOB_CATEGORIES.find(c => c.id === selectedCategoryId)?.subcategories.length ? (
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: c.text }]}>Specialization (Niche) *</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {JOB_CATEGORIES.find(c => c.id === selectedCategoryId)?.subcategories.map(sub => (
+              <TouchableOpacity
+                key={sub}
+                onPress={() => setSubCategory(sub)}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: subCategory === sub ? c.primary + '20' : c.card,
+                    borderColor: subCategory === sub ? c.primary : c.border
+                  }
+                ]}
+              >
+                <Text style={{ color: subCategory === sub ? c.primary : c.text }}>{sub}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
+      <View style={styles.inputGroup}>
         <Text style={[styles.label, { color: c.text }]}>Company Name *</Text>
         <TextInput
           value={company}
           onChangeText={setCompany}
           placeholder="e.g. Tech Solutions Inc."
-          placeholderTextColor={c.subtext}
-          style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: c.text }]}>Category *</Text>
-        <TextInput
-          value={category}
-          onChangeText={setCategory}
-          placeholder="e.g. Design, Development"
           placeholderTextColor={c.subtext}
           style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
         />
@@ -346,14 +406,92 @@ const PostJobScreen: React.FC = () => {
       <Text style={[styles.stepTitle, { color: c.text }]}>Job Details</Text>
 
       <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: c.text }]}>Location *</Text>
+        <Text style={[styles.label, { color: c.text }]}>Scope & Location *</Text>
+        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+          {LOCATION_SCOPES.map(scope => (
+            <TouchableOpacity
+              key={scope.id}
+              onPress={() => setJobScope(scope.id)}
+              style={[
+                styles.selectionBox,
+                {
+                  borderColor: jobScope === scope.id ? c.primary : c.border,
+                  backgroundColor: jobScope === scope.id ? c.primary + '10' : c.card
+                }
+              ]}
+            >
+              <MaterialIcons
+                name={scope.id === 'local' ? 'place' : 'public'}
+                size={20}
+                color={jobScope === scope.id ? c.primary : c.subtext}
+              />
+              <Text style={[styles.selectionText, { color: jobScope === scope.id ? c.primary : c.text }]}>
+                {scope.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <TextInput
           value={location}
           onChangeText={setLocation}
-          placeholder="e.g. Remote, Lagos"
+          placeholder={jobScope === 'local' ? "e.g. Lagos, Nigeria" : "e.g. Remote / Worldwide"}
           placeholderTextColor={c.subtext}
           style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
         />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.label, { color: c.text }]}>Job Type *</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {JOB_TYPES.map(type => (
+            <TouchableOpacity
+              key={type.id}
+              onPress={() => setJobType(type.id)}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: jobType === type.id ? c.primary : c.card,
+                  borderColor: jobType === type.id ? c.primary : c.border
+                }
+              ]}
+            >
+              <Text style={{ color: jobType === type.id ? '#FFF' : c.text, fontWeight: '600' }}>{type.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.label, { color: c.text }]}>Duration</Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <TextInput
+            value={durationValue}
+            onChangeText={setDurationValue}
+            placeholder="e.g. 3"
+            keyboardType="numeric"
+            placeholderTextColor={c.subtext}
+            style={[styles.input, { flex: 0.3, color: c.text, borderColor: c.border, backgroundColor: c.card }]}
+          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: 'center' }}>
+            {DURATION_TYPES.map(dt => (
+              <TouchableOpacity
+                key={dt.id}
+                onPress={() => setDurationType(dt.id)}
+                style={[
+                  styles.chip,
+                  {
+                    paddingVertical: 12,
+                    backgroundColor: durationType === dt.id ? c.primary + '20' : c.card,
+                    borderColor: durationType === dt.id ? c.primary : c.border
+                  }
+                ]}
+              >
+                <Text style={{ color: durationType === dt.id ? c.primary : c.text }}>{dt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
       <View style={styles.inputGroup}>
@@ -366,6 +504,7 @@ const PostJobScreen: React.FC = () => {
           style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
         />
       </View>
+
 
       <View style={styles.inputGroup}>
         <Text style={[styles.label, { color: c.text }]}>Required Skills</Text>
@@ -410,32 +549,6 @@ const PostJobScreen: React.FC = () => {
             keyboardType="number-pad"
             style={[styles.input, styles.inputWithPrefix, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
           />
-        </View>
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: c.text }]}>Job Type</Text>
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          {['fixed', 'hourly'].map((type) => (
-            <TouchableOpacity
-              key={type}
-              onPress={() => setJobType(type)}
-              style={[
-                styles.typeBtn,
-                {
-                  borderColor: jobType === type ? c.primary : c.border,
-                  backgroundColor: jobType === type ? (c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)') : c.card
-                }
-              ]}
-            >
-              <Text style={[
-                styles.typeText,
-                { color: jobType === type ? c.primary : c.text }
-              ]}>
-                {type.charAt(0).toUpperCase() + type.slice(1)} Price
-              </Text>
-            </TouchableOpacity>
-          ))}
         </View>
       </View>
 
@@ -508,6 +621,48 @@ const PostJobScreen: React.FC = () => {
     </View>
   );
 
+  const renderTypeSelection = () => (
+    <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <Text style={[styles.stepTitle, { color: c.text, textAlign: 'center', marginBottom: 30 }]}>
+        What are you hiring for?
+      </Text>
+
+      <TouchableOpacity
+        style={[styles.typeCard, { backgroundColor: c.card, borderColor: c.border }]}
+        onPress={() => setJobMode('individual')}
+      >
+        <View style={[styles.iconCircle, { backgroundColor: c.primary + '20' }]}>
+          <MaterialIcons name="person" size={32} color={c.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.typeTitle, { color: c.text }]}>Individual Freelancer</Text>
+          <Text style={[styles.typeDesc, { color: c.subtext }]}>
+            Post a job to hire a single expert for a specific task or role.
+          </Text>
+        </View>
+        <MaterialIcons name="chevron-right" size={24} color={c.subtext} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.typeCard, { backgroundColor: c.card, borderColor: c.border }]}
+        onPress={() => navigation.navigate('PostCollaboJob')}
+      >
+        <View style={[styles.iconCircle, { backgroundColor: '#8B5CF620' }]}>
+          <MaterialIcons name="groups" size={32} color="#8B5CF6" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.typeTitle, { color: c.text }]}>Collabo Team</Text>
+          <Text style={[styles.typeDesc, { color: c.subtext }]}>
+            Build a complete team for complex projects. AI manages roles & budget.
+          </Text>
+        </View>
+        <View style={styles.recommendedBadge}>
+          <Text style={styles.recommendedText}>NEW</Text>
+        </View>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -519,41 +674,46 @@ const PostJobScreen: React.FC = () => {
           <View style={{ width: 40 }} />
         </View>
 
-        {renderStepIndicator()}
+        {(!jobMode && !isEditMode) ? (
+          renderTypeSelection()
+        ) : (
+          <>
+            {renderStepIndicator()}
+            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+              {currentStep === 0 && renderBasics()}
+              {currentStep === 1 && renderDetails()}
+              {currentStep === 2 && renderBudget()}
+              {currentStep === 3 && renderPreview()}
+            </ScrollView>
 
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-          {currentStep === 0 && renderBasics()}
-          {currentStep === 1 && renderDetails()}
-          {currentStep === 2 && renderBudget()}
-          {currentStep === 3 && renderPreview()}
-        </ScrollView>
+            <View style={[styles.footer, { borderTopColor: c.border, backgroundColor: c.background }]}>
+              {currentStep > 0 && (
+                <TouchableOpacity onPress={prevStep} style={[styles.navBtn, { borderColor: c.border, borderWidth: 1 }]}>
+                  <Text style={[styles.navBtnText, { color: c.text }]}>Back</Text>
+                </TouchableOpacity>
+              )}
 
-        <View style={[styles.footer, { borderTopColor: c.border, backgroundColor: c.background }]}>
-          {currentStep > 0 && (
-            <TouchableOpacity onPress={prevStep} style={[styles.navBtn, { borderColor: c.border, borderWidth: 1 }]}>
-              <Text style={[styles.navBtnText, { color: c.text }]}>Back</Text>
-            </TouchableOpacity>
-          )}
-
-          <Button
-            title={
-              currentStep === 3
-                ? isEditMode
-                  ? 'Update Job'
-                  : 'Proceed to Payment'
-                : 'Next'
-            }
-            onPress={
-              currentStep === 3
-                ? isEditMode
-                  ? handleUpdateJob
-                  : initiatePayment
-                : nextStep
-            }
-            style={{ flex: 1 }}
-            loading={isLoading}
-          />
-        </View>
+              <Button
+                title={
+                  currentStep === 3
+                    ? isEditMode
+                      ? 'Update Job'
+                      : 'Proceed to Payment'
+                    : 'Next'
+                }
+                onPress={
+                  currentStep === 3
+                    ? isEditMode
+                      ? handleUpdateJob
+                      : initiatePayment
+                    : nextStep
+                }
+                style={{ flex: 1 }}
+                loading={isLoading}
+              />
+            </View>
+          </>
+        )}
 
         {/* Flutterwave Payment WebView */}
         <PaymentWebView
@@ -580,6 +740,7 @@ const PostJobScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  // ... existing styles ...
   container: { flex: 1 },
   header: {
     flexDirection: 'row',
@@ -726,6 +887,70 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   payBtnText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  // New Styles
+  typeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 16,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  typeDesc: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#8B5CF6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  recommendedText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  selectionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+    flex: 1,
+  },
+  selectionText: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });
 
 export default PostJobScreen;

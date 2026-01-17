@@ -68,7 +68,7 @@ export const getMyProfile = async (
 
     let profile = await Profile.findOne({ user: userId }).populate(
       'user',
-      'firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate'
+      'firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate averageRating totalReviews jobSuccessScore badges performanceMetrics'
     );
 
     // Auto-create profile if it doesn't exist
@@ -127,6 +127,16 @@ export const getMyProfile = async (
       subscriptionTier: userData.subscriptionTier,
       subscriptionStatus: userData.subscriptionStatus,
       premiumExpiryDate: userData.premiumExpiryDate,
+      // Reputation
+      averageRating: userData.averageRating || 0,
+      totalReviews: userData.totalReviews || 0,
+      jobSuccessScore: userData.jobSuccessScore || 0,
+      badges: userData.badges || [],
+      performanceMetrics: userData.performanceMetrics || {
+        onTimeDeliveryRate: 100,
+        completionRate: 100,
+        responseTime: 24,
+      },
       // Additional data
       jobs,
       jobsPosted,

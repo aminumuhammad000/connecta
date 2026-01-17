@@ -69,6 +69,20 @@ const UserSchema = new mongoose_1.Schema({
     isVerified: { type: Boolean, default: false },
     pushToken: { type: String, required: false },
     isSubscribedToGigs: { type: Boolean, default: true },
+    // Reputation & Badges
+    averageRating: { type: Number, default: 0 },
+    totalReviews: { type: Number, default: 0 },
+    jobSuccessScore: { type: Number, default: 100 }, // Percentage (0-100)
+    badges: {
+        type: [String],
+        enum: ["rising_talent", "top_rated", "expert_vetted", "verified_pro"],
+        default: [],
+    },
+    performanceMetrics: {
+        onTimeDeliveryRate: { type: Number, default: 100 }, // Percentage
+        completionRate: { type: Number, default: 100 }, // Percentage
+        responseTime: { type: Number, default: 24 }, // Avg hours (default 24h)
+    },
 }, { timestamps: true });
 const User = mongoose_1.default.model("User", UserSchema);
 exports.default = User;

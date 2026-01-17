@@ -44,15 +44,25 @@ export const getProposalsByJobId = async (req: Request, res: Response) => {
     const { jobId } = req.params;
 
     const proposals = await Proposal.find({ jobId })
-      .populate('freelancerId', 'firstName lastName email profileImage isPremium subscriptionTier')
+      .populate('freelancerId', 'firstName lastName email profileImage isPremium subscriptionTier jobSuccessScore')
       .populate('referredBy', 'firstName lastName')
-      .populate('clientId', 'firstName lastName')
-      .sort({ createdAt: -1 });
+      .populate('clientId', 'firstName lastName');
+
+    // Sort by Job Success Score (Higher = Better chance)
+    const sortedProposals = proposals.sort((a: any, b: any) => {
+      const scoreA = a.freelancerId?.jobSuccessScore || 0;
+      const scoreB = b.freelancerId?.jobSuccessScore || 0;
+      // Secondary sort by created date
+      if (scoreA === scoreB) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return scoreB - scoreA;
+    });
 
     res.status(200).json({
       success: true,
-      count: proposals.length,
-      data: proposals,
+      count: sortedProposals.length,
+      data: sortedProposals,
     });
   } catch (error: any) {
     res.status(500).json({

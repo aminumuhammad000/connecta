@@ -27,6 +27,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for existing session on mount
     useEffect(() => {
         checkAuthStatus();
+
+        // Register logout handler for API 401s
+        const { registerLogoutHandler } = require('../services/api');
+        registerLogoutHandler(async () => {
+            await logout();
+        });
     }, []);
 
     const checkAuthStatus = async () => {

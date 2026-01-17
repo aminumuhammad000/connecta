@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,10 +16,12 @@ import { DashboardStats, User } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import EmailVerificationModal from '../components/EmailVerificationModal';
 import { AIButton } from '../components/AIButton';
+import Sidebar from '../components/Sidebar';
 
 const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { user } = useAuth();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [freelancers, setFreelancers] = useState<User[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -35,7 +38,6 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      // Refresh data whenever the dashboard regains focus (e.g., after editing profile)
       loadDashboardData();
       checkProfileStatus();
       checkAuthStatus();
@@ -93,7 +95,6 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
     checkProfileStatus();
   };
 
-
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -131,8 +132,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
             ]}
           >
             <View style={styles.headerTop}>
-              <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <Avatar uri={user?.profileImage} name={user?.firstName} size={48} />
+              <TouchableOpacity onPress={() => setSidebarVisible(true)}>
+                <MaterialIcons name="menu" size={32} color="#fff" />
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
@@ -292,6 +293,12 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
         <EmailVerificationModal
           visible={authModalVisible}
           onSuccess={handleEmailVerified}
+        />
+
+        <Sidebar
+          isVisible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          navigation={navigation}
         />
       </View>
     </SafeAreaView>

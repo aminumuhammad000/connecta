@@ -57,6 +57,7 @@ const NotificationSchema = new mongoose_1.Schema({
             'message_received',
             'review_received',
             'deadline_approaching',
+            'collabo_invite',
             'system',
         ],
     },

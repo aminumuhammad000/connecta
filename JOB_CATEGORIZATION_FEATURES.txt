@@ -1,0 +1,76 @@
+JOB CATEGORIZATION & DIFFERENTIATION FEATURES
+=============================================
+
+This document outlines the new features implemented for job posting and categorization in the Connecta application. These features apply to both Individual Freelancer jobs and Collabo Team projects.
+
+1. JOB TYPES (Engagement Models)
+--------------------------------
+Differentiates the nature of the engagement between the client and the talent.
+
+- Full-time: Standard long-term employment.
+- Part-time: Partial hours engagement.
+- Contract: Fixed-term agreement.
+- Freelance: Project-based independence.
+- One-time: Single task or "gig" (New).
+- Monthly: Retainer-based recurring work (New).
+- Permanent: Indefinite employment (New).
+- Adhoc: As-needed basis (New).
+
+2. JOB SCOPE (Location Strategy)
+--------------------------------
+Defines the geographical reach of the job.
+
+- Within Country (Local): Targeted at talent within the client's country (e.g., Nigeria).
+- International (Abroad): Open to global talent.
+
+3. LOCATION TYPE (Workplace)
+----------------------------
+Defines where the work takes place.
+
+- Remote: Work from anywhere.
+- Onsite (Physical): Work at a specific location.
+- Hybrid: Mix of remote and onsite.
+
+4. CATEGORIES & NICHES (Industry Specialization)
+------------------------------------------------
+Comprehensive list of industries with specific sub-categories.
+
+A. Technology & Programming
+   - Web Development, Mobile Development, Software Engineering, Data Science, DevOps, etc.
+
+B. Design & Creative
+   - Graphic Design, UI/UX, Branding, 3D Modeling, Animation, etc.
+
+C. Marketing & Sales
+   - Digital Marketing, SEO, Content Marketing, Social Media, etc.
+
+D. Business & Finance
+   - Accounting, Project Management, Virtual Assistance, Legal, HR, etc.
+
+E. Writing & Translation
+   - Copywriting, Technical Writing, Translation, Editing, etc.
+
+F. Hospitality & Events (New Niche)
+   - Hotel Management, Event Planning, Catering, Travel Planning, etc.
+
+G. Health & Fitness (New Niche)
+   - Personal Training, Nutrition, Wellness Coaching, Telehealth, etc.
+
+H. Education & Training
+   - Tutoring, Course Creation, Language Instruction, etc.
+
+I. Other
+   - Allows for manual entry if the category is not listed.
+
+5. DURATION SPECIFICATION
+-------------------------
+Granular control over the expected timeline of the project.
+
+- Value: Numeric input (e.g., "3", "6").
+- Unit: Days, Weeks, Months, Years.
+
+IMPLEMENTATION SUMMARY
+----------------------
+- Backend: Schema updated to support all new fields (`jobType`, `jobScope`, `niche`, `duration`).
+- Frontend: `PostJobScreen` updated with interactive "Chips" and selection lists for intuitive user experience.
+- UI/UX: Modern selection interface replacing manual text inputs.

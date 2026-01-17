@@ -39,6 +39,10 @@ const PaymentSchema = new mongoose_1.Schema({
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Project',
     },
+    collaboProjectId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'CollaboProject',
+    },
     jobId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Job',

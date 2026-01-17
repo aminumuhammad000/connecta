@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as projectService from '../services/projectService';
+import { getMyCollaboProjects } from '../services/collaboService';
 import { Project } from '../types';
 
 interface ProjectItem {
@@ -37,8 +38,25 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
 
   const loadProjects = async () => {
     try {
-      const data = await projectService.getMyProjects();
-      setProjects(data);
+      const [standardProjects, collaboProjects] = await Promise.all([
+        projectService.getMyProjects(),
+        getMyCollaboProjects()
+      ]);
+
+      const normalizedCollabo = Array.isArray(collaboProjects) ? collaboProjects.map((p: any) => ({
+        _id: p._id,
+        title: p.title,
+        budget: p.totalBudget,
+        status: p.status === 'planning' ? 'review' : (p.status === 'active' ? 'in_progress' : p.status),
+        freelancerId: { firstName: 'Collabo', lastName: 'Team', profileImage: 'https://ui-avatars.com/api/?name=Team&background=8B5CF6&color=fff' },
+        isCollabo: true,
+        createdAt: p.createdAt
+      })) : [];
+
+      const allProjects = [...(Array.isArray(standardProjects) ? standardProjects : []), ...normalizedCollabo]
+        .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      setProjects(allProjects);
     } catch (error) {
       console.error('Error loading projects:', error);
     } finally {
@@ -149,7 +167,10 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                   key={p._id}
                   activeOpacity={0.85}
                   style={[styles.card, { backgroundColor: c.card }]}
-                  onPress={() => navigation.navigate('ProjectWorkspace', { id: p._id })}
+                  onPress={() => (p as any).isCollabo
+                    ? navigation.navigate('CollaboWorkspace', { projectId: p._id })
+                    : navigation.navigate('ProjectWorkspace', { id: p._id })
+                  }
                 >
                   <View style={styles.cardTop}>
                     <Text style={[styles.cardTitle, { color: c.text }]}>{p.title || 'Untitled Project'}</Text>
@@ -185,8 +206,6 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
         >
           <MaterialIcons name="add" size={28} color="#fff" />
         </TouchableOpacity>
-
-        {/* Bottom Nav */}
       </View>
     </SafeAreaView>
   );

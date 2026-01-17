@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +15,7 @@ import * as profileService from '../services/profileService';
 import { useFocusEffect } from '@react-navigation/native';
 import ProfileCompletionModal from '../components/ProfileCompletionModal';
 import { AIButton } from '../components/AIButton';
+import Sidebar from '../components/Sidebar';
 
 interface JobRec {
   id: string;
@@ -29,6 +31,7 @@ interface JobRec {
 const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { user } = useAuth();
+  const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,11 +39,8 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
 
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
-
-  // Profile Completion Logic
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
-
 
   useFocusEffect(
     useCallback(() => {
@@ -64,7 +64,6 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
           scaleAnims[job._id] = new Animated.Value(1);
         }
       });
-
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -82,12 +81,10 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const checkProfileStatus = async () => {
     try {
       const profile = await profileService.getMyProfile();
-
       const missing: string[] = [];
       if (!profile?.bio) missing.push('bio');
       if (!profile?.skills || profile?.skills.length === 0) missing.push('skills');
       if (!profile?.location) missing.push('location');
-      // if (!profile.avatar) missing.push('avatar'); // Optional
 
       if (missing.length > 0) {
         setMissingFields(missing);
@@ -95,10 +92,8 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
       } else {
         setProfileModalVisible(false);
       }
-
     } catch (error: any) {
       if (error?.status === 404) {
-        // Entire profile is missing
         setMissingFields(['bio', 'skills', 'location']);
         setProfileModalVisible(true);
       } else {
@@ -108,8 +103,8 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const handleCompleteProfile = () => {
-    setProfileModalVisible(false); // Optionally keep it open or close it
-    navigation.navigate('EditProfile'); // Navigate to EditProfile
+    setProfileModalVisible(false);
+    navigation.navigate('EditProfile');
   };
 
   const handleSkipProfile = () => {
@@ -117,11 +112,9 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const toggleLikeGig = (gigId: string) => {
-    // Animate
     if (!scaleAnims[gigId]) {
       scaleAnims[gigId] = new Animated.Value(1);
     }
-
     Animated.sequence([
       Animated.spring(scaleAnims[gigId], {
         toValue: 1.5,
@@ -134,7 +127,6 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
         useNativeDriver: true,
       })
     ]).start();
-
     setLikedGigs(prev => {
       const newSet = new Set(prev);
       if (newSet.has(gigId)) {
@@ -146,14 +138,8 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
     });
   };
 
-  const getStatusVariant = (status: string): 'success' | 'warning' | 'primary' => {
-    if (status === 'Featured') return 'success';
-    if (status === 'Hot') return 'warning';
-    return 'primary';
-  };
-
   const userName = user ? `${user.firstName}` : 'User';
-  const fullName = user ? `${user.firstName} ${user.lastName}` : 'User';
+  // const fullName = user ? `${user.firstName} ${user.lastName}` : 'User';
 
   if (isLoading) {
     return (
@@ -183,8 +169,8 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
             ]}
           >
             <View style={styles.headerTop}>
-              <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                <Avatar name={fullName} size={48} uri={user?.avatar} />
+              <TouchableOpacity onPress={() => setSidebarVisible(true)}>
+                <MaterialIcons name="menu" size={32} color="#fff" />
               </TouchableOpacity>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
@@ -192,7 +178,6 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                   style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
                 >
                   <MaterialIcons name="notifications" size={22} color="#fff" />
-                  {/* Badge logic would go here */}
                 </TouchableOpacity>
                 <AIButton onPress={() => navigation.navigate('ConnectaAI')} />
               </View>
@@ -290,7 +275,6 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                               <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
                                 {job.title}
                               </Text>
-                              {/* <Badge label={job.status} variant={getStatusVariant(job.status)} size="small" /> */}
                             </View>
                             <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
                           </View>
@@ -359,12 +343,17 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
           </View>
         </ScrollView>
 
-
         <ProfileCompletionModal
           visible={profileModalVisible}
           missingFields={missingFields}
           onComplete={handleCompleteProfile}
           onSkip={handleSkipProfile}
+        />
+
+        <Sidebar
+          isVisible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          navigation={navigation}
         />
       </View>
     </SafeAreaView>
@@ -553,3 +542,4 @@ const styles = StyleSheet.create({
 });
 
 export default FreelancerDashboardScreen;
+

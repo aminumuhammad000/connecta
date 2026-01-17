@@ -13,6 +13,7 @@ import {
   approveProposal,
   rejectProposal,
 } from '../controllers/Proposal.controller';
+import { generateCoverLetter } from '../controllers/CoverLetter.controller';
 import { authenticate } from '../core/middleware/auth.middleware';
 
 const router = Router();
@@ -43,6 +44,9 @@ router.get('/:id', getProposalById);
 
 // Create a new proposal (protected)
 router.post('/', authenticate, createProposal);
+
+// Generate Cover Letter (protected)
+router.post('/cover-letter', authenticate, generateCoverLetter);
 
 // Update proposal status (accept/decline)
 router.patch('/:id/status', updateProposalStatus);

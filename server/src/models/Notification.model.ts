@@ -12,6 +12,7 @@ export type NotificationType =
   | 'message_received'
   | 'review_received'
   | 'deadline_approaching'
+  | 'collabo_invite'
   | 'system';
 
 export interface INotification extends Document {
@@ -65,6 +66,7 @@ const NotificationSchema = new Schema<INotification>(
         'message_received',
         'review_received',
         'deadline_approaching',
+        'collabo_invite',
         'system',
       ],
     },

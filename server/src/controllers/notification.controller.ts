@@ -334,3 +334,27 @@ export const getAllNotifications = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Test WhatsApp Notification manually
+ */
+export const testWhatsAppNotification = async (req: Request, res: Response) => {
+  try {
+    const { phone, message } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+
+    const TwilioService = require('../services/twilio.service').default;
+    const result = await TwilioService.sendWhatsAppMessage(phone, message || 'Hello from Connecta via Twilio Sandbox!');
+
+    if (result && result.sid) {
+      res.status(200).json({ success: true, message: 'WhatsApp sent', sid: result.sid });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to send WhatsApp (Check logs)' });
+    }
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

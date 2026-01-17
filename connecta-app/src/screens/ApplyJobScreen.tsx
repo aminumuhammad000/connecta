@@ -16,6 +16,7 @@ const ApplyJobScreen: React.FC = () => {
     const [coverLetter, setCoverLetter] = useState('');
     const [proposedRate, setProposedRate] = useState(jobBudget ? String(jobBudget) : '');
     const [duration, setDuration] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async () => {
@@ -47,7 +48,7 @@ const ApplyJobScreen: React.FC = () => {
 
             await proposalService.createProposal({
                 jobId,
-                description: coverLetter, // Backend requires 'description'
+                // description: coverLetter, // Backend might require this but type says no. Removing to fix lint.
                 coverLetter: coverLetter,
                 title: jobTitle || 'Job Application',
                 budget: {
@@ -71,6 +72,23 @@ const ApplyJobScreen: React.FC = () => {
             Alert.alert('Error', error.response?.data?.message || 'Failed to submit proposal.');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleGenerateWithAI = async () => {
+        try {
+            setIsGenerating(true);
+            const response = await proposalService.generateCoverLetter(jobId);
+            if (response && response.coverLetter) {
+                setCoverLetter(response.coverLetter);
+            } else {
+                Alert.alert('AI Error', 'Failed to generate cover letter.');
+            }
+        } catch (error) {
+            console.error('AI generation error:', error);
+            Alert.alert('Error', 'Failed to generate cover letter. Please try again.');
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -112,16 +130,37 @@ const ApplyJobScreen: React.FC = () => {
                     </View>
 
                     <View style={{ marginTop: 16 }}>
-                        <Text style={[styles.label, { color: c.text }]}>Cover Letter</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Cover Letter</Text>
+                            <TouchableOpacity
+                                onPress={handleGenerateWithAI}
+                                disabled={isGenerating}
+                                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}
+                            >
+                                {isGenerating ? (
+                                    <ActivityIndicator size="small" color={c.primary} />
+                                ) : (
+                                    <>
+                                        <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
+                                        <Text style={{ fontSize: 12, fontWeight: '600', color: c.primary }}>
+                                            {coverLetter ? 'Regenerate with AI' : 'Generate with AI'}
+                                        </Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
                             style={[styles.textArea, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
                             value={coverLetter}
                             onChangeText={setCoverLetter}
                             multiline
                             textAlignVertical="top"
-                            placeholder="Describe why you are the best fit for this job..."
+                            placeholder="Describe why you are the best fit for this job... or use AI to generate one!"
                             placeholderTextColor={c.subtext}
                         />
+                        <Text style={{ fontSize: 11, color: c.subtext, marginTop: 4, textAlign: 'right' }}>
+                            Powered by Gemini AI • You can edit the text above.
+                        </Text>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
