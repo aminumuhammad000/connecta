@@ -11,7 +11,7 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'http://localhost:5000' for local development
-const API_BASE_URL = 'https://api.myconnecta.ng'
+const API_BASE_URL = 'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -321,6 +321,14 @@ export const paymentsAPI = {
   },
   processWithdrawal: async (withdrawalId: string) => {
     const { data } = await api.post(`/api/payments/withdrawal/${withdrawalId}/process`)
+    return data
+  },
+  getAllWithdrawals: async (params?: { status?: string; limit?: number; page?: number }) => {
+    const { data } = await api.get('/api/payments/admin/withdrawals/all', { params })
+    return data
+  },
+  getAllWallets: async (params?: { limit?: number; page?: number }) => {
+    const { data } = await api.get('/api/payments/admin/wallets/all', { params })
     return data
   },
 }

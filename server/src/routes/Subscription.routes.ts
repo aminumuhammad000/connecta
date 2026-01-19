@@ -24,4 +24,19 @@ router.post('/verify-upgrade', verifyUpgradePayment);
 // Cancel subscription
 router.post('/cancel', cancelSubscription);
 
+// Admin routes
+import {
+    getAllSubscriptions,
+    getSubscriptionStats,
+    adminCancelSubscription,
+    adminReactivateSubscription,
+    adminDeleteSubscription
+} from '../controllers/Subscription.controller';
+
+router.get('/admin/all', getAllSubscriptions);
+router.get('/admin/stats', getSubscriptionStats);
+router.patch('/:id/cancel', adminCancelSubscription);
+router.patch('/:id/reactivate', adminReactivateSubscription);
+router.delete('/:id', adminDeleteSubscription);
+
 export default router;

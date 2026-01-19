@@ -132,6 +132,9 @@ export default function Notifications() {
             filteredNotifications.map((notif) => {
               const icon = getNotificationIcon(notif.type)
               const isUnread = !notif.read
+              const isWithin24Hours = (new Date().getTime() - new Date(notif.createdAt).getTime()) < 86400000
+              const showNewBadge = isUnread && isWithin24Hours
+
               return (
                 <div
                   key={notif._id}
@@ -152,7 +155,7 @@ export default function Notifications() {
                       <h4 className="text-sm font-semibold text-text-light-primary dark:text-dark-primary leading-tight">
                         {notif.title}
                       </h4>
-                      {isUnread && (
+                      {showNewBadge && (
                         <span className="flex-shrink-0 px-2 py-0.5 bg-primary text-white rounded-full text-xs font-medium">
                           New
                         </span>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import Icon from './Icon'
 
 interface NavItemProps {
@@ -19,14 +20,14 @@ function NavItem({ to, icon, label, collapsed, badge }: NavItemProps) {
       to={to}
       className={`group relative flex items-center rounded-xl transition-all duration-300 ${active
         ? 'bg-gradient-to-r from-primary to-amber-500 text-white shadow-lg shadow-primary/25'
-        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:shadow-md'
+        : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark/70 hover:shadow-md'
         } ${collapsed ? 'justify-center px-2 py-3' : 'px-3 py-3 gap-3'}`}
       title={collapsed ? label : undefined}
     >
       <Icon
         name={icon}
         size={22}
-        className={`shrink-0 transition-transform duration-200 ${active ? 'text-white scale-110' : 'text-slate-600 dark:text-slate-400 group-hover:scale-105'
+        className={`shrink-0 transition-transform duration-200 ${active ? 'text-white scale-110' : 'text-text-light-secondary dark:text-dark-secondary group-hover:scale-105'
           }`}
       />
       <span className={`text-sm font-semibold tracking-wide text-left transition-all duration-300 ${collapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100 flex-1'
@@ -41,7 +42,7 @@ function NavItem({ to, icon, label, collapsed, badge }: NavItemProps) {
             </span>
           )}
           {collapsed && (
-            <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-[16px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-slate-900">
+            <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-[16px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-white dark:border-card-dark">
               {badge > 9 ? '9+' : badge}
             </span>
           )}
@@ -60,6 +61,14 @@ export default function Sidebar({
 }) {
   const [collapsed, setCollapsed] = useState(false)
   const isMobile = variant === 'mobile'
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin_user')
+    toast.success('Logged out successfully')
+    navigate('/login')
+  }
 
   const toggleCollapse = () => {
     if (!isMobile) {
@@ -71,49 +80,78 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`flex h-screen flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl transition-all duration-300 ease-in-out shrink-0 ${isMobile ? 'fixed inset-y-0 left-0 z-50 w-72 md:hidden' : `sticky top-0 hidden md:flex ${isCollapsed ? 'w-20' : 'w-72'}`
+      className={`flex h-screen flex-col border-r border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark shadow-xl transition-all duration-300 ease-in-out shrink-0 ${isMobile ? 'fixed inset-y-0 left-0 z-50 w-60 md:hidden' : `sticky top-0 hidden md:flex ${isCollapsed ? 'w-20' : 'w-60'}`
         }`}
     >
       {/* Header */}
-      <div className={`flex items-center border-b border-slate-200 dark:border-slate-700 transition-all duration-300 ${isCollapsed ? 'justify-center px-2 py-5' : 'justify-between px-4 py-5 gap-3'
+      <div className={`flex items-center border-b border-border-light dark:border-border-dark transition-all duration-300 ${isCollapsed ? 'justify-center px-2 py-5' : 'justify-between px-4 py-5 gap-3'
         }`}>
-        {!isCollapsed && (
-          <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="relative">
-              <img src="/favicon.png" alt="Connecta" className="h-11 w-11 rounded-xl shadow-md transition-transform group-hover:scale-105" />
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-amber-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition-opacity" />
-            </div>
-            <div className="flex flex-col overflow-hidden transition-all duration-300">
-              <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent whitespace-nowrap">
-                Connecta
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">Admin Portal</p>
-            </div>
-          </Link>
+        {!isCollapsed && !isMobile && (
+          <div className="flex items-center justify-between w-full">
+            <Link to="/dashboard" className="flex items-center gap-3 group">
+              <div className="relative flex items-center justify-center">
+                <img src="/favicon.png" alt="Connecta" className="h-8 w-8 object-contain" />
+              </div>
+              <div className="flex flex-col overflow-hidden transition-all duration-300">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent whitespace-nowrap">
+                  Connecta
+                </h2>
+              </div>
+            </Link>
+            {!isMobile && (
+              <button
+                onClick={toggleCollapse}
+                className="p-1.5 rounded-lg text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark transition-colors"
+              >
+                <Icon name="chevron_left" size={20} />
+              </button>
+            )}
+          </div>
         )}
 
         {isCollapsed && (
-          <Link to="/dashboard" className="flex items-center justify-center group">
-            <div className="relative">
-              <img src="/favicon.png" alt="Connecta" className="h-11 w-11 rounded-xl shadow-md transition-transform group-hover:scale-105" />
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary to-amber-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition-opacity" />
-            </div>
-          </Link>
+          <div className="flex flex-col items-center gap-4">
+            <Link to="/dashboard" className="flex items-center justify-center group">
+              <div className="relative flex items-center justify-center">
+                <img src="/favicon.png" alt="Connecta" className="h-8 w-8 object-contain" />
+              </div>
+            </Link>
+            {!isMobile && (
+              <button
+                onClick={toggleCollapse}
+                className="p-1.5 rounded-lg text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark transition-colors"
+              >
+                <Icon name="chevron_right" size={20} />
+              </button>
+            )}
+          </div>
         )}
 
         {isMobile && (
-          <button
-            aria-label="Close menu"
-            className="flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 h-9 w-9 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            onClick={onClose}
-          >
-            <Icon name="close" size={22} />
-          </button>
+          <div className="flex items-center justify-between w-full">
+            <Link to="/dashboard" className="flex items-center gap-3 group">
+              <div className="relative flex items-center justify-center">
+                <img src="/favicon.png" alt="Connecta" className="h-8 w-8 object-contain" />
+              </div>
+              <div className="flex flex-col overflow-hidden transition-all duration-300">
+                <h2 className="text-lg font-bold bg-gradient-to-r from-primary to-amber-500 bg-clip-text text-transparent whitespace-nowrap">
+                  Connecta
+                </h2>
+              </div>
+            </Link>
+            <button
+              aria-label="Close menu"
+              className="flex items-center justify-center rounded-lg bg-background-light dark:bg-background-dark text-text-light-secondary dark:text-dark-secondary h-9 w-9 hover:bg-border-light dark:hover:bg-border-dark transition-colors"
+              onClick={onClose}
+            >
+              <Icon name="close" size={22} />
+            </button>
+          </div>
         )}
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin scrollbar-thumb-border-light dark:scrollbar-thumb-border-dark scrollbar-track-transparent">
         <NavItem to="/dashboard" icon="dashboard" label="Dashboard" collapsed={isCollapsed} />
         <NavItem to="/users" icon="group" label="Users" collapsed={isCollapsed} />
         <NavItem to="/projects" icon="work" label="Projects" collapsed={isCollapsed} />
@@ -130,26 +168,25 @@ export default function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-200 dark:border-slate-700 p-3 space-y-3">
+      <div className="border-t border-border-light dark:border-border-dark p-3 space-y-3">
         {/* Collapse Toggle (Desktop Only) */}
-        {!isMobile && (
-          <button
-            onClick={toggleCollapse}
-            className={`w-full flex items-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 group ${isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5'
-              }`}
-            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            <Icon
-              name={isCollapsed ? 'chevron_right' : 'chevron_left'}
-              size={20}
-              className="text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors"
-            />
-            <span className={`text-sm font-medium text-slate-700 dark:text-slate-300 transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
-              }`}>
-              Collapse Menu
-            </span>
-          </button>
-        )}
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className={`w-full flex items-center rounded-xl bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-all duration-300 group ${isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5'
+            }`}
+          title="Sign Out"
+        >
+          <Icon
+            name="logout"
+            size={20}
+            className="shrink-0"
+          />
+          <span className={`text-sm font-medium transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100'
+            }`}>
+            Sign Out
+          </span>
+        </button>
 
         {/* User Profile */}
         {/* <Link

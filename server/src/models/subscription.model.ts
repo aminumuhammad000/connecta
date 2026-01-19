@@ -23,7 +23,7 @@ const subscriptionSchema = new Schema<ISubscription>(
     },
     plan: {
       type: String,
-      enum: ['free', 'premium'],
+      enum: ['free', 'premium', 'enterprise'],
       default: 'free',
     },
     amount: {

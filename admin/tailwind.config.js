@@ -17,7 +17,7 @@ export default {
         warning: '#f97316',
         danger: '#dc2626',
         'card-light': '#ffffff',
-        'card-dark': '#23140f',
+        'card-dark': '#2f1f1a',
         'text-light-primary': '#181210',
         'text-light-secondary': '#8d6a5e',
         'text-dark-primary': '#f8f6f5',

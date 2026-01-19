@@ -629,6 +629,43 @@ export const getPendingWithdrawals = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get all withdrawals (Admin only)
+ */
+export const getAllWithdrawals = async (req: Request, res: Response) => {
+  try {
+    const { status, page = 1, limit = 100 } = req.query;
+    const query: any = {};
+    if (status) query.status = status;
+
+    const withdrawals = await Withdrawal.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .populate('userId', 'firstName lastName email profileImage');
+
+    const total = await Withdrawal.countDocuments(query);
+
+    return res.status(200).json({
+      success: true,
+      data: withdrawals,
+      total,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    console.error('Get all withdrawals error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch withdrawals',
+    });
+  }
+};
+
+/**
  * Process withdrawal (Admin only)
  */
 export const processWithdrawal = async (req: Request, res: Response) => {
@@ -931,6 +968,41 @@ export const saveWithdrawalSettings = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Failed to save withdrawal settings',
+    });
+  }
+};
+
+/**
+ * Get all wallets (Admin only)
+ */
+export const getAllWallets = async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 100 } = req.query;
+
+    const wallets = await Wallet.find()
+      .sort({ updatedAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit))
+      .populate('userId', 'firstName lastName email profileImage');
+
+    const total = await Wallet.countDocuments();
+
+    return res.status(200).json({
+      success: true,
+      data: wallets,
+      total,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error: any) {
+    console.error('Get all wallets error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch wallets',
     });
   }
 };
