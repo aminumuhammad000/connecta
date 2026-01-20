@@ -34,16 +34,26 @@ export default function Jobs() {
     title: ''
   })
 
+  const [viewModal, setViewModal] = useState<{
+    isOpen: boolean
+    job: Job | null
+  }>({
+    isOpen: false,
+    job: null
+  })
+
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'closed' | 'draft'>('all')
+
   useEffect(() => {
     fetchJobs()
-  }, [filterType])
+  }, [filterType, statusFilter])
 
   const fetchJobs = async () => {
     try {
       setLoading(true)
       const params: any = {
         limit: 100,
-        status: 'active' // Fetch active jobs by default
+        status: statusFilter // Fetch based on filter, default 'all'
       }
 
       if (filterType === 'external') {
@@ -127,6 +137,16 @@ export default function Jobs() {
                 />
               </div>
               <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-4 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="closed">Closed</option>
+                <option value="draft">Draft</option>
+              </select>
+              <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as any)}
                 className="px-4 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -177,13 +197,22 @@ export default function Jobs() {
                       <td className="px-6 py-4 text-sm text-text-light-secondary dark:text-dark-secondary">{job.source || 'Connecta'}</td>
                       <td className="px-6 py-4 text-sm text-text-light-secondary dark:text-dark-secondary">{formatDate(job.createdAt)}</td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setConfirmModal({ isOpen: true, jobId: job._id, title: job.title })}
-                          className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400"
-                          title="Delete Job"
-                        >
-                          <Icon name="delete" size={18} />
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setViewModal({ isOpen: true, job })}
+                            className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-primary"
+                            title="View Details"
+                          >
+                            <Icon name="visibility" size={18} />
+                          </button>
+                          <button
+                            onClick={() => setConfirmModal({ isOpen: true, jobId: job._id, title: job.title })}
+                            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                            title="Delete Job"
+                          >
+                            <Icon name="delete" size={18} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -218,6 +247,98 @@ export default function Jobs() {
         </div>
       </div>
 
+      {/* View Job Modal */}
+      {viewModal.isOpen && viewModal.job && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-text-light-primary dark:text-dark-primary">Job Details</h3>
+              <button
+                onClick={() => setViewModal({ isOpen: false, job: null })}
+                className="text-text-light-secondary dark:text-dark-secondary hover:text-text-light-primary dark:hover:text-dark-primary"
+              >
+                <Icon name="close" size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-text-light-primary dark:text-dark-primary">{viewModal.job.title}</h2>
+                  <div className="flex items-center gap-2 mt-2 text-text-light-secondary dark:text-dark-secondary">
+                    <Icon name="business" size={18} />
+                    <span>{viewModal.job.company}</span>
+                    <span>•</span>
+                    <Icon name="location_on" size={18} />
+                    <span>{viewModal.job.location}</span>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${viewModal.job.isExternal ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                  {viewModal.job.isExternal ? 'External' : 'Internal'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark">
+                  <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Job Type</p>
+                  <p className="font-medium text-text-light-primary dark:text-dark-primary capitalize">{viewModal.job.jobType}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark">
+                  <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Posted Date</p>
+                  <p className="font-medium text-text-light-primary dark:text-dark-primary">{formatDate(viewModal.job.createdAt)}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark">
+                  <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Status</p>
+                  <p className="font-medium text-text-light-primary dark:text-dark-primary capitalize">{viewModal.job.status}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark">
+                  <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Source</p>
+                  <p className="font-medium text-text-light-primary dark:text-dark-primary">{viewModal.job.source || 'Connecta'}</p>
+                </div>
+                {viewModal.job.budget && (
+                  <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark sm:col-span-2">
+                    <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Budget</p>
+                    <p className="font-medium text-text-light-primary dark:text-dark-primary">{viewModal.job.budget}</p>
+                  </div>
+                )}
+              </div>
+
+              {viewModal.job.isExternal && (viewModal.job as any).applyUrl && (
+                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                  <p className="text-sm text-blue-800 dark:text-blue-300 mb-2 font-medium">External Application Link</p>
+                  <a
+                    href={(viewModal.job as any).applyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline break-all"
+                  >
+                    {(viewModal.job as any).applyUrl}
+                  </a>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
+                <button
+                  onClick={() => setViewModal({ isOpen: false, job: null })}
+                  className="px-4 py-2 text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmModal({ isOpen: true, jobId: viewModal.job!._id, title: viewModal.job!.title })
+                    setViewModal({ isOpen: false, job: null })
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete Job
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 max-w-md w-full shadow-2xl">
@@ -245,3 +366,4 @@ export default function Jobs() {
     </main>
   )
 }
+

@@ -578,7 +578,7 @@ export default function Settings() {
                           type="text"
                           value={settings.googleCallbackUrl}
                           onChange={(e) => setSettings({ ...settings, googleCallbackUrl: e.target.value })}
-                          placeholder="http://localhost:5000/auth/google/callback"
+                          placeholder="https://api.myconnecta.ng/auth/google/callback"
                           className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                         <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
@@ -696,7 +696,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary mb-1">Environment</p>
-                    <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Development</p>
+                    <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Production</p>
                   </div>
                   <div>
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary mb-1">Database</p>

@@ -14,4 +14,11 @@ router.post('/initialize-upgrade', Subscription_controller_1.initializeUpgradePa
 router.post('/verify-upgrade', Subscription_controller_1.verifyUpgradePayment);
 // Cancel subscription
 router.post('/cancel', Subscription_controller_1.cancelSubscription);
+// Admin routes
+const Subscription_controller_2 = require("../controllers/Subscription.controller");
+router.get('/admin/all', Subscription_controller_2.getAllSubscriptions);
+router.get('/admin/stats', Subscription_controller_2.getSubscriptionStats);
+router.patch('/:id/cancel', Subscription_controller_2.adminCancelSubscription);
+router.patch('/:id/reactivate', Subscription_controller_2.adminReactivateSubscription);
+router.delete('/:id', Subscription_controller_2.adminDeleteSubscription);
 exports.default = router;

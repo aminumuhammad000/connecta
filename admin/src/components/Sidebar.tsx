@@ -155,6 +155,7 @@ export default function Sidebar({
         <NavItem to="/dashboard" icon="dashboard" label="Dashboard" collapsed={isCollapsed} />
         <NavItem to="/users" icon="group" label="Users" collapsed={isCollapsed} />
         <NavItem to="/projects" icon="work" label="Projects" collapsed={isCollapsed} />
+        <NavItem to="/jobs" icon="business" label="Jobs" collapsed={isCollapsed} />
         <NavItem to="/applications" icon="assignment" label="Gig Applications" collapsed={isCollapsed} />
         <NavItem to="/contracts" icon="description" label="Contracts" collapsed={isCollapsed} />
         <NavItem to="/payments" icon="payments" label="Payments" collapsed={isCollapsed} />

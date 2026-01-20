@@ -7,6 +7,8 @@ const router = (0, express_1.Router)();
 // Admin route - Get all payments (no auth)
 router.get('/admin/all', payment_controller_1.getAllPayments);
 router.get('/admin/withdrawals', auth_middleware_1.authenticate, payment_controller_1.getPendingWithdrawals);
+router.get('/admin/withdrawals/all', auth_middleware_1.authenticate, payment_controller_1.getAllWithdrawals);
+router.get('/admin/wallets/all', auth_middleware_1.authenticate, payment_controller_1.getAllWallets);
 // Payment routes
 router.post('/initialize', auth_middleware_1.authenticate, payment_controller_1.initializePayment);
 router.post('/job-verification', auth_middleware_1.authenticate, payment_controller_1.initializeJobVerification);

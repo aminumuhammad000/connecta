@@ -3,8 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelSubscription = exports.verifyUpgradePayment = exports.initializeUpgradePayment = exports.getMySubscription = void 0;
+exports.adminDeleteSubscription = exports.adminReactivateSubscription = exports.adminCancelSubscription = exports.getSubscriptionStats = exports.getAllSubscriptions = exports.cancelSubscription = exports.verifyUpgradePayment = exports.initializeUpgradePayment = exports.getMySubscription = void 0;
 const user_model_1 = __importDefault(require("../models/user.model"));
+const subscription_model_1 = __importDefault(require("../models/subscription.model"));
 /**
  * @desc Get current user's subscription
  * @route GET /api/subscriptions/me
@@ -140,6 +141,18 @@ const verifyUpgradePayment = async (req, res) => {
             user.subscriptionStatus = 'active';
             user.premiumExpiryDate = expiryDate;
             await user.save();
+            // Create Subscription record
+            await subscription_model_1.default.create({
+                userId: user._id,
+                plan: tier,
+                amount: verification.data?.amount || 0,
+                currency: verification.data?.currency || 'NGN',
+                status: 'active',
+                startDate: now,
+                endDate: expiryDate,
+                paymentReference: String(transaction_id || tx_ref),
+                autoRenew: false // Default to false for now
+            });
             return res.status(200).json({
                 success: true,
                 message: 'Subscription upgraded successfully',
@@ -180,6 +193,8 @@ const cancelSubscription = async (req, res) => {
         // Mark as cancelled but keep active until expiry
         user.subscriptionStatus = 'cancelled';
         await user.save();
+        // Update Subscription record
+        await subscription_model_1.default.findOneAndUpdate({ userId: user._id, status: 'active' }, { status: 'cancelled' });
         res.status(200).json({
             success: true,
             message: 'Subscription cancelled. You will retain access until expiry date.',
@@ -194,3 +209,159 @@ const cancelSubscription = async (req, res) => {
     }
 };
 exports.cancelSubscription = cancelSubscription;
+/**
+ * @desc Get all subscriptions (Admin)
+ * @route GET /api/subscriptions/admin/all
+ */
+const getAllSubscriptions = async (req, res) => {
+    try {
+        const subscriptions = await subscription_model_1.default.find()
+            .populate('userId', 'firstName lastName email userType isPremium')
+            .sort({ createdAt: -1 });
+        res.status(200).json({
+            success: true,
+            subscriptions
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getAllSubscriptions = getAllSubscriptions;
+/**
+ * @desc Get subscription stats (Admin)
+ * @route GET /api/subscriptions/admin/stats
+ */
+const getSubscriptionStats = async (req, res) => {
+    try {
+        const activeSubscriptions = await subscription_model_1.default.countDocuments({ status: 'active' });
+        const totalSubscriptions = await subscription_model_1.default.countDocuments();
+        const expiredSubscriptions = await subscription_model_1.default.countDocuments({ status: 'expired' });
+        const cancelledSubscriptions = await subscription_model_1.default.countDocuments({ status: 'cancelled' });
+        // Calculate monthly revenue (active subscriptions in current month)
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthlyRevenueData = await subscription_model_1.default.aggregate([
+            {
+                $match: {
+                    status: 'active',
+                    createdAt: { $gte: startOfMonth }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: '$amount' }
+                }
+            }
+        ]);
+        const totalRevenueData = await subscription_model_1.default.aggregate([
+            {
+                $group: {
+                    _id: null,
+                    total: { $sum: '$amount' }
+                }
+            }
+        ]);
+        res.status(200).json({
+            success: true,
+            data: {
+                activeSubscriptions,
+                totalSubscriptions,
+                expiredSubscriptions,
+                cancelledSubscriptions,
+                monthlyRevenue: monthlyRevenueData[0]?.total || 0,
+                totalRevenue: totalRevenueData[0]?.total || 0
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getSubscriptionStats = getSubscriptionStats;
+/**
+ * @desc Admin cancel subscription
+ * @route PATCH /api/subscriptions/:id/cancel
+ */
+const adminCancelSubscription = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const subscription = await subscription_model_1.default.findById(id);
+        if (!subscription) {
+            return res.status(404).json({ message: 'Subscription not found' });
+        }
+        subscription.status = 'cancelled';
+        await subscription.save();
+        // Also update user status
+        await user_model_1.default.findByIdAndUpdate(subscription.userId, {
+            subscriptionStatus: 'cancelled'
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Subscription cancelled successfully'
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.adminCancelSubscription = adminCancelSubscription;
+/**
+ * @desc Admin reactivate subscription
+ * @route PATCH /api/subscriptions/:id/reactivate
+ */
+const adminReactivateSubscription = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const subscription = await subscription_model_1.default.findById(id);
+        if (!subscription) {
+            return res.status(404).json({ message: 'Subscription not found' });
+        }
+        subscription.status = 'active';
+        await subscription.save();
+        // Also update user status
+        await user_model_1.default.findByIdAndUpdate(subscription.userId, {
+            subscriptionStatus: 'active',
+            isPremium: true
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Subscription reactivated successfully'
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.adminReactivateSubscription = adminReactivateSubscription;
+/**
+ * @desc Admin delete subscription
+ * @route DELETE /api/subscriptions/:id
+ */
+const adminDeleteSubscription = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const subscription = await subscription_model_1.default.findById(id);
+        if (!subscription) {
+            return res.status(404).json({ message: 'Subscription not found' });
+        }
+        // If it was the active subscription, we might want to update the user
+        if (subscription.status === 'active') {
+            await user_model_1.default.findByIdAndUpdate(subscription.userId, {
+                isPremium: false,
+                subscriptionTier: 'free',
+                subscriptionStatus: 'expired'
+            });
+        }
+        await subscription_model_1.default.findByIdAndDelete(id);
+        res.status(200).json({
+            success: true,
+            message: 'Subscription record deleted successfully'
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.adminDeleteSubscription = adminDeleteSubscription;

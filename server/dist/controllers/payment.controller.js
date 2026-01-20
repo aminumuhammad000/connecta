@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveWithdrawalSettings = exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.getPendingWithdrawals = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
+exports.getAllWallets = exports.saveWithdrawalSettings = exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.getAllWithdrawals = exports.getPendingWithdrawals = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
 const Payment_model_1 = __importDefault(require("../models/Payment.model"));
 const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
 const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
@@ -564,6 +564,42 @@ const getPendingWithdrawals = async (req, res) => {
 };
 exports.getPendingWithdrawals = getPendingWithdrawals;
 /**
+ * Get all withdrawals (Admin only)
+ */
+const getAllWithdrawals = async (req, res) => {
+    try {
+        const { status, page = 1, limit = 100 } = req.query;
+        const query = {};
+        if (status)
+            query.status = status;
+        const withdrawals = await Withdrawal_model_1.default.find(query)
+            .sort({ createdAt: -1 })
+            .limit(Number(limit))
+            .skip((Number(page) - 1) * Number(limit))
+            .populate('userId', 'firstName lastName email profileImage');
+        const total = await Withdrawal_model_1.default.countDocuments(query);
+        return res.status(200).json({
+            success: true,
+            data: withdrawals,
+            total,
+            pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total,
+                pages: Math.ceil(total / Number(limit)),
+            },
+        });
+    }
+    catch (error) {
+        console.error('Get all withdrawals error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to fetch withdrawals',
+        });
+    }
+};
+exports.getAllWithdrawals = getAllWithdrawals;
+/**
  * Process withdrawal (Admin only)
  */
 const processWithdrawal = async (req, res) => {
@@ -838,3 +874,36 @@ const saveWithdrawalSettings = async (req, res) => {
     }
 };
 exports.saveWithdrawalSettings = saveWithdrawalSettings;
+/**
+ * Get all wallets (Admin only)
+ */
+const getAllWallets = async (req, res) => {
+    try {
+        const { page = 1, limit = 100 } = req.query;
+        const wallets = await Wallet_model_1.default.find()
+            .sort({ updatedAt: -1 })
+            .limit(Number(limit))
+            .skip((Number(page) - 1) * Number(limit))
+            .populate('userId', 'firstName lastName email profileImage');
+        const total = await Wallet_model_1.default.countDocuments();
+        return res.status(200).json({
+            success: true,
+            data: wallets,
+            total,
+            pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total,
+                pages: Math.ceil(total / Number(limit)),
+            },
+        });
+    }
+    catch (error) {
+        console.error('Get all wallets error:', error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || 'Failed to fetch wallets',
+        });
+    }
+};
+exports.getAllWallets = getAllWallets;
