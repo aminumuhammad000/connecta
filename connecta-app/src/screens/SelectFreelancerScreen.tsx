@@ -11,7 +11,7 @@ import { useInAppAlert } from '../components/InAppAlert';
 export default function SelectFreelancerScreen({ navigation, route }: any) {
     const c = useThemeColors();
     const { showAlert } = useInAppAlert();
-    const { roleId, onSelect } = route.params;
+    const { roleId, projectId, onSelect } = route.params;
 
     const [freelancers, setFreelancers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,8 +23,11 @@ export default function SelectFreelancerScreen({ navigation, route }: any) {
 
     const fetchFreelancers = async () => {
         try {
-            const response = await get('/api/users/freelancers');
-            setFreelancers(Array.isArray(response) ? response : []);
+            const response: any = await get('/api/users/freelancers');
+            console.log('Freelancers response:', response);
+            // Handle { success: true, data: [...] } or direct array [...]
+            const list = Array.isArray(response) ? response : (response.data || []);
+            setFreelancers(Array.isArray(list) ? list : []);
         } catch (error) {
             console.error('Error fetching freelancers:', error);
             showAlert({ title: 'Error', message: 'Failed to load freelancers', type: 'error' });
@@ -43,8 +46,15 @@ export default function SelectFreelancerScreen({ navigation, route }: any) {
     const handleSelect = (freelancer: any) => {
         if (onSelect) {
             onSelect(freelancer);
+            navigation.goBack();
+        } else {
+            // Navigate back with params (clearer pattern)
+            navigation.navigate({
+                name: 'CollaboWorkspace',
+                params: { selectedFreelancer: freelancer, targetRoleId: roleId, projectId },
+                merge: true,
+            });
         }
-        navigation.goBack();
     };
 
     const renderItem = ({ item }: { item: any }) => (

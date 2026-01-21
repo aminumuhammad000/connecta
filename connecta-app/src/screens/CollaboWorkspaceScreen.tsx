@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork } from '../services/collaboService';
+import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole } from '../services/collaboService';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Linking from 'expo-linking';
 import * as DocumentPicker from 'expo-document-picker';
@@ -33,9 +33,33 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     const [files, setFiles] = useState<any[]>([]);
     const [isUploading, setIsUploading] = useState(false);
 
+    // Role State
+    const [isAddRoleModalVisible, setIsAddRoleModalVisible] = useState(false);
+    const [newRoleData, setNewRoleData] = useState({ title: '', description: '', budget: '', skills: '' });
+
     useEffect(() => {
         loadData();
     }, [projectId]);
+
+    useEffect(() => {
+        if (route.params?.selectedFreelancer && route.params?.targetRoleId) {
+            const { selectedFreelancer, targetRoleId } = route.params;
+
+            const handleInvite = async () => {
+                try {
+                    await inviteToRole(targetRoleId, selectedFreelancer._id);
+                    showAlert({ title: 'Success', message: 'Invitation sent!', type: 'success' });
+                    loadData(); // Refresh list to show pending state? Ideally inviteToRole updates status
+                } catch (error: any) {
+                    showAlert({ title: 'Error', message: error.message || 'Failed to invite', type: 'error' });
+                }
+            };
+            handleInvite();
+
+            // Clear params to prevent re-triggering
+            navigation.setParams({ selectedFreelancer: undefined, targetRoleId: undefined });
+        }
+    }, [route.params?.selectedFreelancer, route.params?.targetRoleId]);
 
     useEffect(() => {
         if (!socket || !projectData?.workspace) return;
@@ -213,11 +237,19 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                 </View>
 
                 {/* Team Members */}
-                <Text style={{ fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12 }}>Team Members</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>Team Members</Text>
+                    {user?.userType === 'client' && (
+                        <TouchableOpacity onPress={() => setIsAddRoleModalVisible(true)}>
+                            <Text style={{ color: c.primary, fontWeight: '600' }}>+ Add Role</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
                 {projectData?.roles?.map((role: any, index: number) => {
                     const isFilled = role.status === 'filled' && role.freelancerId;
                     const freelancer = role.freelancerId;
 
+                    const isClient = user?.userType === 'client';
                     return (
                         <View key={index} style={{
                             backgroundColor: c.card,
@@ -266,11 +298,56 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                             </Text>
                                         </View>
                                     </View>
+
+                                    {isClient && (
+                                        <TouchableOpacity
+                                            onPress={async () => {
+                                                try {
+                                                    await removeFromRole(role._id);
+                                                    showAlert({ title: 'Success', message: 'Team member removed', type: 'success' });
+                                                    loadData();
+                                                } catch (error: any) {
+                                                    showAlert({ title: 'Error', message: error.message || 'Failed to remove', type: 'error' });
+                                                }
+                                            }}
+                                            style={{
+                                                marginTop: 12,
+                                                backgroundColor: '#EF4444',
+                                                padding: 10,
+                                                borderRadius: 8,
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>Remove from Team</Text>
+                                        </TouchableOpacity>
+                                    )}
                                 </View>
                             ) : (
-                                <Text style={{ color: c.subtext, fontSize: 13, marginTop: 4 }}>
-                                    Waiting for freelancer to accept • ${role.budget}
-                                </Text>
+                                <View>
+                                    <Text style={{ color: c.subtext, fontSize: 13, marginTop: 4 }}>
+                                        Waiting for freelancer to accept • ${role.budget}
+                                    </Text>
+
+                                    {isClient && (
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                navigation.navigate('SelectFreelancer', {
+                                                    roleId: role._id,
+                                                    projectId: projectId
+                                                });
+                                            }}
+                                            style={{
+                                                marginTop: 12,
+                                                backgroundColor: c.primary,
+                                                padding: 10,
+                                                borderRadius: 8,
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>Invite Freelancer</Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
                             )}
                         </View>
                     );
@@ -597,6 +674,137 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                 {activeTab === 'tasks' && renderTasks()}
                 {activeTab === 'files' && renderFiles()}
             </View>
+
+            <Modal
+                visible={isAddRoleModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setIsAddRoleModalVisible(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}
+                >
+                    <View style={{ backgroundColor: c.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '80%' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>Add New Role</Text>
+                            <TouchableOpacity onPress={() => setIsAddRoleModalVisible(false)}>
+                                <MaterialIcons name="close" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView>
+                            <Text style={{ color: c.text, marginBottom: 8 }}>Role Title</Text>
+                            <TextInput
+                                style={{
+                                    backgroundColor: c.background,
+                                    borderWidth: 1,
+                                    borderColor: c.border,
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    color: c.text,
+                                    marginBottom: 16
+                                }}
+                                value={newRoleData.title}
+                                onChangeText={(text) => setNewRoleData({ ...newRoleData, title: text })}
+                                placeholder="e.g. Backend Developer"
+                                placeholderTextColor={c.subtext}
+                            />
+
+                            <Text style={{ color: c.text, marginBottom: 8 }}>Budget</Text>
+                            <TextInput
+                                style={{
+                                    backgroundColor: c.background,
+                                    borderWidth: 1,
+                                    borderColor: c.border,
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    color: c.text,
+                                    marginBottom: 16
+                                }}
+                                value={newRoleData.budget}
+                                onChangeText={(text) => setNewRoleData({ ...newRoleData, budget: text })}
+                                placeholder="e.g. 500"
+                                keyboardType="numeric"
+                                placeholderTextColor={c.subtext}
+                            />
+
+                            <Text style={{ color: c.text, marginBottom: 8 }}>Description</Text>
+                            <TextInput
+                                style={{
+                                    backgroundColor: c.background,
+                                    borderWidth: 1,
+                                    borderColor: c.border,
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    color: c.text,
+                                    marginBottom: 16,
+                                    minHeight: 100
+                                }}
+                                value={newRoleData.description}
+                                onChangeText={(text) => setNewRoleData({ ...newRoleData, description: text })}
+                                placeholder="Describe the role responsibilities..."
+                                placeholderTextColor={c.subtext}
+                                multiline
+                                textAlignVertical="top"
+                            />
+
+                            <Text style={{ color: c.text, marginBottom: 8 }}>Skills (comma separated)</Text>
+                            <TextInput
+                                style={{
+                                    backgroundColor: c.background,
+                                    borderWidth: 1,
+                                    borderColor: c.border,
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    color: c.text,
+                                    marginBottom: 24
+                                }}
+                                value={newRoleData.skills}
+                                onChangeText={(text) => setNewRoleData({ ...newRoleData, skills: text })}
+                                placeholder="e.g. Node.js, React, TypeScript"
+                                placeholderTextColor={c.subtext}
+                            />
+
+                            <TouchableOpacity
+                                style={{
+                                    backgroundColor: c.primary,
+                                    paddingVertical: 16,
+                                    borderRadius: 12,
+                                    alignItems: 'center',
+                                    marginBottom: 20
+                                }}
+                                onPress={async () => {
+                                    try {
+                                        if (!newRoleData.title || !newRoleData.budget) {
+                                            showAlert({ title: 'Validation Error', message: 'Please fill in title and budget', type: 'error' });
+                                            return;
+                                        }
+
+                                        const skillsList = newRoleData.skills.split(',').map(s => s.trim()).filter(Boolean);
+
+                                        await addRole(projectId, {
+                                            title: newRoleData.title,
+                                            description: newRoleData.description,
+                                            budget: Number(newRoleData.budget),
+                                            skills: skillsList
+                                        });
+
+                                        showAlert({ title: 'Success', message: 'Role added successfully', type: 'success' });
+                                        setIsAddRoleModalVisible(false);
+                                        setNewRoleData({ title: '', description: '', budget: '', skills: '' });
+                                        loadData();
+                                    } catch (error: any) {
+                                        showAlert({ title: 'Error', message: error.message || 'Failed to add role', type: 'error' });
+                                    }
+                                }}
+                            >
+                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: '700' }}>Add Role</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </SafeAreaView>
     );
 }

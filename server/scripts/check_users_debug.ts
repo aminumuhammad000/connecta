@@ -1,12 +1,22 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
+console.log('MONGO_URI Present:', !!process.env.MONGO_URI);
+if (process.env.MONGO_URI) {
+    console.log('MONGO_URI Start:', process.env.MONGO_URI.substring(0, 15) + '...');
+}
+
 const connectDB = async () => {
     try {
+        if (!process.env.MONGO_URI) throw new Error("MONGO_URI is missing");
         await mongoose.connect(process.env.MONGO_URI as string);
         console.log('MongoDB Connected');
     } catch (err) {

@@ -25,6 +25,7 @@ router.post('/:id/activate', authenticate, CollaboController.activateProject);
 router.post('/:id/start', authenticate, CollaboController.startWork);
 router.post('/role/:roleId/remove', authenticate, CollaboController.removeFromRole);
 router.post('/role/:roleId/invite', authenticate, CollaboController.inviteToRole);
+router.post('/:id/role', authenticate, CollaboController.addRole);
 router.get('/:id', authenticate, CollaboController.getCollaboProject);
 router.get('/role/:id', authenticate, CollaboController.getRole);
 

@@ -78,6 +78,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="PostCollaboJob" component={require('../screens/PostCollaboJobScreen').default} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
             <Stack.Screen name="CollaboWorkspace" component={require('../screens/CollaboWorkspaceScreen').default} />
+            <Stack.Screen name="SelectFreelancer" component={require('../screens/SelectFreelancerScreen').default} />
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
             <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />

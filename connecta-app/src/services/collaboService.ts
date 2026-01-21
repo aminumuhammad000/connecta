@@ -35,6 +35,11 @@ export const inviteToRole = async (roleId: string, freelancerId: string) => {
     return (response as any)?.data || response;
 };
 
+export const addRole = async (projectId: string, roleData: { title: string; description: string; budget: number; skills: string[] }) => {
+    const response = await post(`/api/collabo/${projectId}/role`, roleData);
+    return (response as any)?.data || response;
+};
+
 export const getMyCollaboProjects = async () => {
     const response = await get('/api/collabo/my-projects');
     return (response as any)?.data || response;

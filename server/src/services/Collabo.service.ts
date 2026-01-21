@@ -9,7 +9,7 @@ import CollaboMessage from '../models/CollaboMessage.model';
 import { getIO } from '../core/utils/socketIO';
 import CollaboFile from '../models/CollaboFile.model';
 import CollaboTask from '../models/CollaboTask.model';
-import User from '../models/User.model';
+import User from '../models/user.model';
 // import { sendEmail } from './email.service';
 // import { getBaseTemplate } from '../utils/emailTemplates';
 
@@ -385,6 +385,30 @@ class CollaboService {
         if (!role) throw new Error("Role not found");
         const project = await CollaboProject.findById(role.projectId).populate('clientId', 'firstName lastName avatar');
         return { role, project };
+    }
+
+    async addRole(projectId: string, clientId: string, roleData: { title: string; description: string; budget: number; skills: string[] }) {
+        const project = await CollaboProject.findById(projectId);
+        if (!project) throw new Error("Project not found");
+
+        if (project.clientId.toString() !== clientId) {
+            throw new Error("Unauthorized: Only project owner can add roles");
+        }
+
+        const newRole = await ProjectRole.create({
+            projectId: project._id,
+            title: roleData.title,
+            description: roleData.description,
+            budget: roleData.budget,
+            skills: roleData.skills,
+            status: 'open'
+        });
+
+        // Update project total budget if needed, or just leave it as initial estimate
+        // project.totalBudget += roleData.budget;
+        // await project.save();
+
+        return newRole;
     }
 
     async sendMessage(workspaceId: string, channelName: string, senderId: string, senderRole: string, content: string) {

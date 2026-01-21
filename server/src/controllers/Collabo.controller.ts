@@ -192,6 +192,18 @@ export const inviteToRole = async (req: Request, res: Response) => {
     }
 }
 
+export const addRole = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params; // projectId
+        const { title, description, budget, skills } = req.body;
+        const clientId = (req as any).user._id;
+        const result = await CollaboService.addRole(id, clientId, { title, description, budget, skills });
+        res.status(201).json(result);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to add role', error: error.message });
+    }
+}
+
 export const startWork = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
