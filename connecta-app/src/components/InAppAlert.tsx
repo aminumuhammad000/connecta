@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 
-type AlertType = 'info' | 'success' | 'error';
+type AlertType = 'info' | 'success' | 'error' | 'warning';
 
 type AlertPayload = {
   title: string;
@@ -38,6 +38,7 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
     info: { bg: c.isDark ? '#111827' : '#FFFFFF', border: c.border },
     success: { bg: '#10B981', border: '#059669' },
     error: { bg: '#EF4444', border: '#DC2626' },
+    warning: { bg: '#F59E0B', border: '#D97706' },
   }), [c]);
 
   const hide = useCallback(() => {
@@ -88,9 +89,9 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
               style={[
                 styles.card,
                 {
-                  backgroundColor: type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : (c.isDark ? '#1F2937' : '#FFFFFF'),
+                  backgroundColor: type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : type === 'warning' ? '#F59E0B' : (c.isDark ? '#1F2937' : '#FFFFFF'),
                   borderLeftWidth: 4,
-                  borderLeftColor: type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : c.primary,
+                  borderLeftColor: type === 'success' ? '#059669' : type === 'error' ? '#DC2626' : type === 'warning' ? '#D97706' : c.primary,
                   borderColor: type === 'info' ? c.border : 'transparent',
                   shadowColor: '#000',
                   transform: [{ translateY }],
@@ -107,6 +108,11 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
                   {type === 'error' && (
                     <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                       <Ionicons name="close-circle" size={24} color="#FFFFFF" />
+                    </View>
+                  )}
+                  {type === 'warning' && (
+                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                      <Ionicons name="warning" size={24} color="#FFFFFF" />
                     </View>
                   )}
                   {type === 'info' && (

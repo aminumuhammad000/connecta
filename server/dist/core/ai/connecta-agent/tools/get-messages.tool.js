@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetMessagesTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetMessagesTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetMessagesTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_messages_tool";
@@ -13,4 +10,3 @@ class GetMessagesTool extends base_tool_1.BaseTool {
         return this.request(`/api/messages/conversations/${userId}`, "GET");
     }
 }
-exports.GetMessagesTool = GetMessagesTool;

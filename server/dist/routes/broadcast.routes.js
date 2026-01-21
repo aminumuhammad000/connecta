@@ -1,12 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const email_service_1 = require("../services/email.service");
-const user_model_1 = __importDefault(require("../models/user.model"));
-const router = express_1.default.Router();
+import express from 'express';
+import { sendBroadcastEmail } from '../services/email.service';
+import User from '../models/user.model';
+const router = express.Router();
 /**
  * POST /api/broadcast/email
  * Send broadcast email to users
@@ -32,7 +27,7 @@ router.post('/email', async (req, res) => {
         // Determine recipients based on type
         if (recipientType === 'all') {
             // Get all active user emails
-            const users = await user_model_1.default.find({ isActive: true }, 'email');
+            const users = await User.find({ isActive: true }, 'email');
             recipients = users.map(u => u.email).filter(Boolean);
         }
         else if (recipientType === 'selected') {
@@ -45,11 +40,11 @@ router.post('/email', async (req, res) => {
             }
             console.log('Selected User IDs received:', selectedUserIds);
             // First check if users exist at all
-            const allUsers = await user_model_1.default.find({ _id: { $in: selectedUserIds } }, 'email isActive');
+            const allUsers = await User.find({ _id: { $in: selectedUserIds } }, 'email isActive');
             console.log('Total users found (including inactive):', allUsers.length);
             console.log('Users details:', allUsers.map(u => ({ id: u._id, email: u.email, isActive: u.isActive })));
             // Then filter to active users with emails
-            const users = await user_model_1.default.find({ _id: { $in: selectedUserIds }, isActive: true }, 'email');
+            const users = await User.find({ _id: { $in: selectedUserIds }, isActive: true }, 'email');
             console.log('Active users found:', users.length);
             console.log('User emails:', users.map(u => u.email));
             recipients = users.map(u => u.email).filter(Boolean);
@@ -96,7 +91,7 @@ router.post('/email', async (req, res) => {
             });
         }
         // Send broadcast email
-        const result = await (0, email_service_1.sendBroadcastEmail)(recipients, subject, body);
+        const result = await sendBroadcastEmail(recipients, subject, body);
         if (result.success) {
             return res.status(200).json({
                 success: true,
@@ -129,4 +124,4 @@ router.post('/email', async (req, res) => {
         });
     }
 });
-exports.default = router;
+export default router;

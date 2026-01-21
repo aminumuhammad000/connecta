@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SuggestProfileImprovementsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class SuggestProfileImprovementsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class SuggestProfileImprovementsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "suggest_profile_improvements_tool";
@@ -13,4 +10,3 @@ class SuggestProfileImprovementsTool extends base_tool_1.BaseTool {
         return this.request(`/api/v1/profile/${userId}/suggestions`, "GET");
     }
 }
-exports.SuggestProfileImprovementsTool = SuggestProfileImprovementsTool;

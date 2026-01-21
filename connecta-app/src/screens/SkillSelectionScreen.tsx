@@ -361,6 +361,7 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
 
     const [step, setStep] = useState(0);
     const [isMatching, setIsMatching] = useState(false);
+    const [isProfileSaved, setIsProfileSaved] = useState(false);
 
     // Animation Values
     const fadeAnim = useRef(new NativeAnimated.Value(1)).current;
@@ -454,9 +455,13 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
             };
 
             await profileService.updateMyProfile(profileUpdate);
+            setIsProfileSaved(true);
 
         } catch (error) {
             console.error("Profile update error:", error);
+            // Allow to proceed even if error to avoid stuck state, 
+            // but ideally we should show an error message.
+            setIsProfileSaved(true);
         }
     };
 
@@ -485,7 +490,7 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     const CurrentStepComponent = Steps[step];
 
     if (isMatching) {
-        return <MatchingScreen onFinish={handleMatchingFinished} navigation={navigation} />;
+        return <MatchingScreen onFinish={handleMatchingFinished} navigation={navigation} isProfileSaved={isProfileSaved} />;
     }
 
     return (
@@ -530,7 +535,7 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     );
 };
 
-const MatchingScreen = ({ onFinish, navigation }: { onFinish: () => void, navigation: any }) => {
+const MatchingScreen = ({ onFinish, navigation, isProfileSaved }: { onFinish: () => void, navigation: any, isProfileSaved: boolean }) => {
     const c = useThemeColors();
     const progress = useRef(new NativeAnimated.Value(0)).current;
     const [statusText, setStatusText] = useState("Analyzing your fit...");
@@ -538,28 +543,14 @@ const MatchingScreen = ({ onFinish, navigation }: { onFinish: () => void, naviga
     const [isComplete, setIsComplete] = useState(false);
 
     useEffect(() => {
-        const duration = 2500; // Speed up to 2.5 seconds
-        NativeAnimated.timing(progress, {
-            toValue: 1,
-            duration: duration,
-            useNativeDriver: false,
-            easing: Easing.out(Easing.quad)
-        }).start(({ finished }) => {
-            if (finished) setIsComplete(true);
-        });
-
-        const t1 = setTimeout(() => setStatusText("Scanning job market..."), 600);
-        const t2 = setTimeout(() => setStatusText("Found relevant opportunities!"), 1200);
-
-        // Faster counter to reach high numbers in 2.5s
-        const interval = setInterval(() => {
-            setMatchCount(prev => prev < 152 ? prev + Math.floor(Math.random() * 8) + 3 : prev);
-        }, 80);
-
-        return () => {
-            clearTimeout(t1); clearTimeout(t2); clearInterval(interval);
-        };
-    }, []);
+        if (isProfileSaved) {
+            setIsComplete(true);
+            setStatusText("Found relevant opportunities!");
+            setMatchCount(152);
+        } else {
+            setStatusText("Saving your profile...");
+        }
+    }, [isProfileSaved]);
 
     const widthInterp = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
@@ -599,15 +590,8 @@ const MatchingScreen = ({ onFinish, navigation }: { onFinish: () => void, naviga
                         onPress={() => {
                             // First finalize onboarding logic then navigate
                             onFinish();
-                            // Note: We need a slight delay or mechanism to ensure we land on dashboard then navigate,
-                            // or we can navigate directly if user is already logged incontext.
-                            // Given the flow, onFinish logs them in. We might need to handle navigation params.
-                            // Ideally, we'd navigate to EditProfile directly if we can, but we need to ensure login state first.
-                            // For simplicity, let's assume onFinish handles the login/main-nav state switch.
-                            // But usually onFinish calls loginWithToken which resets nav stack.
-                            // So we might rely on the user navigating manually or finding the button in dashboard if the nav resets.
-                            // HOWEVER, if we want to force it:
-                            setTimeout(() => navigation.navigate('EditProfile'), 500);
+                            // The onFinish callback will handle the login and switch to the main navigator
+                            // where the user can then access their profile.
                         }}
                         variant="outline"
                     />

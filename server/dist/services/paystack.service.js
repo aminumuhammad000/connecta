@@ -1,9 +1,4 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
+import axios from 'axios';
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || '';
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
 class PaystackService {
@@ -18,7 +13,7 @@ class PaystackService {
      */
     async initializePayment(email, amount, reference, metadata) {
         try {
-            const response = await axios_1.default.post(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
+            const response = await axios.post(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
                 email,
                 amount: amount * 100, // Paystack uses kobo (smallest currency unit)
                 reference,
@@ -37,7 +32,7 @@ class PaystackService {
      */
     async verifyPayment(reference) {
         try {
-            const response = await axios_1.default.get(`${PAYSTACK_BASE_URL}/transaction/verify/${reference}`, { headers: this.headers });
+            const response = await axios.get(`${PAYSTACK_BASE_URL}/transaction/verify/${reference}`, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -50,7 +45,7 @@ class PaystackService {
      */
     async createTransferRecipient(accountNumber, bankCode, accountName) {
         try {
-            const response = await axios_1.default.post(`${PAYSTACK_BASE_URL}/transferrecipient`, {
+            const response = await axios.post(`${PAYSTACK_BASE_URL}/transferrecipient`, {
                 type: 'nuban',
                 name: accountName,
                 account_number: accountNumber,
@@ -69,7 +64,7 @@ class PaystackService {
      */
     async initiateTransfer(recipientCode, amount, reference, reason) {
         try {
-            const response = await axios_1.default.post(`${PAYSTACK_BASE_URL}/transfer`, {
+            const response = await axios.post(`${PAYSTACK_BASE_URL}/transfer`, {
                 source: 'balance',
                 amount: amount * 100, // Convert to kobo
                 recipient: recipientCode,
@@ -88,7 +83,7 @@ class PaystackService {
      */
     async verifyTransfer(reference) {
         try {
-            const response = await axios_1.default.get(`${PAYSTACK_BASE_URL}/transfer/verify/${reference}`, { headers: this.headers });
+            const response = await axios.get(`${PAYSTACK_BASE_URL}/transfer/verify/${reference}`, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -101,7 +96,7 @@ class PaystackService {
      */
     async listBanks() {
         try {
-            const response = await axios_1.default.get(`${PAYSTACK_BASE_URL}/bank?currency=NGN`, { headers: this.headers });
+            const response = await axios.get(`${PAYSTACK_BASE_URL}/bank?currency=NGN`, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -114,7 +109,7 @@ class PaystackService {
      */
     async resolveAccountNumber(accountNumber, bankCode) {
         try {
-            const response = await axios_1.default.get(`${PAYSTACK_BASE_URL}/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, { headers: this.headers });
+            const response = await axios.get(`${PAYSTACK_BASE_URL}/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -123,4 +118,4 @@ class PaystackService {
         }
     }
 }
-exports.default = new PaystackService();
+export default new PaystackService();

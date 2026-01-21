@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetProfileDetailsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetProfileDetailsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetProfileDetailsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_profile_details_tool";
@@ -27,4 +24,3 @@ class GetProfileDetailsTool extends base_tool_1.BaseTool {
         };
     }
 }
-exports.GetProfileDetailsTool = GetProfileDetailsTool;

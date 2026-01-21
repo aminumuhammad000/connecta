@@ -255,10 +255,11 @@ export const createProposal = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error creating proposal:', error);
+    // EXPLICITLY return the error message for debugging
     res.status(500).json({
       success: false,
-      message: 'Error creating proposal',
-      error: error.message,
+      message: error.message || 'Error creating proposal',
+      error: error
     });
   }
 };

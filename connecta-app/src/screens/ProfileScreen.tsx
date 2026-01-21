@@ -121,10 +121,17 @@ export default function ProfileScreen({ navigation }: any) {
                 )}
               </View>
               <View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
                   <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+
+                  {/* Rating Star */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginLeft: 8 }}>
+                    <MaterialIcons name="star" size={14} color="#F59E0B" />
+                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#B45309', marginLeft: 2 }}>{profile?.averageRating || '5.0'}</Text>
+                  </View>
+
                   {profile?.isPremium && (
-                    <MaterialIcons name="verified" size={20} color="#F59E0B" style={{ marginLeft: 4 }} />
+                    <MaterialIcons name="verified" size={20} color="#F59E0B" style={{ marginLeft: 6 }} />
                   )}
                 </View>
 
@@ -142,7 +149,7 @@ export default function ProfileScreen({ navigation }: any) {
                 </View>
                 <View style={[styles.verifiedRow, { marginTop: 4 }]}>
                   <MaterialIcons name="verified" size={16} color="#22c55e" />
-                  <Text style={styles.verifiedText}>Identity Verified</Text>
+                  <Text style={styles.verifiedText}>Skills Verified</Text>
                 </View>
               </View>
             </View>
@@ -214,89 +221,11 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.sectionPad}>
           <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 20 }]}>
 
-            {/* Top Row: JSS & Rating */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-              <View>
-                <Text style={{ color: c.subtext, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Job Success</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                  <View style={{
-                    width: 48, height: 48, borderRadius: 24,
-                    backgroundColor: profile?.jobSuccessScore >= 90 ? '#DCFCE7' : '#F3F4F6',
-                    alignItems: 'center', justifyContent: 'center'
-                  }}>
-                    <MaterialIcons name="verified-user" size={28} color={profile?.jobSuccessScore >= 90 ? '#16A34A' : c.subtext} />
-                  </View>
-                  <View style={{ marginLeft: 12 }}>
-                    <Text style={{ fontSize: 28, fontWeight: '800', color: c.text }}>
-                      {profile?.jobSuccessScore || 100}%
-                    </Text>
-                    <Text style={{ fontSize: 12, color: c.subtext, marginTop: 2 }}>Client Satisfaction</Text>
-                  </View>
-                </View>
-              </View>
+            {/* JSS Removed as requested */}
 
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={{ color: c.subtext, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Rating</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: '#B45309', marginRight: 4 }}>
-                    {profile?.averageRating || '5.0'}
-                  </Text>
-                  <MaterialIcons name="star" size={20} color="#F59E0B" />
-                </View>
-              </View>
-            </View>
+            {/* Responsiveness & Activity Removed */}
 
-            {/* Activity & Responsiveness (New Feature) */}
-            <View style={{ flexDirection: 'row', gap: 16, marginBottom: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: c.border }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <MaterialIcons name="bolt" size={16} color="#F59E0B" />
-                <View>
-                  <Text style={{ fontSize: 12, color: c.subtext, fontWeight: '600' }}>Responsiveness</Text>
-                  <Text style={{ fontSize: 13, color: c.text, fontWeight: '700' }}>
-                    {profile?.performanceMetrics?.responseTime ? `< ${profile.performanceMetrics.responseTime}h` : 'Very Fast'}
-                  </Text>
-                </View>
-              </View>
-              <View style={{ width: 1, height: 24, backgroundColor: c.border }} />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' }} />
-                <View>
-                  <Text style={{ fontSize: 12, color: c.subtext, fontWeight: '600' }}>Activity</Text>
-                  <Text style={{ fontSize: 13, color: c.text, fontWeight: '700' }}>Online Recently</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Badges Area */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={{ color: c.subtext, fontSize: 13, fontWeight: '600', marginBottom: 12 }}>Achieved Badges</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-                {profile?.badges?.includes('top_rated') && (
-                  <View style={[styles.badge, { backgroundColor: '#FFFBEB', borderColor: '#FCD34D' }]}>
-                    <MaterialIcons name="workspace-premium" size={16} color="#F59E0B" />
-                    <Text style={[styles.badgeText, { color: '#B45309' }]}>Top Rated</Text>
-                  </View>
-                )}
-                {profile?.badges?.includes('rising_talent') && (
-                  <View style={[styles.badge, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-                    <MaterialIcons name="trending-up" size={16} color="#3B82F6" />
-                    <Text style={[styles.badgeText, { color: '#1D4ED8' }]}>Rising Talent</Text>
-                  </View>
-                )}
-                {/* Skill Verified Badge (New) */}
-                {profile?.skills?.length > 0 && (
-                  <View style={[styles.badge, { backgroundColor: '#ECFDF5', borderColor: '#6EE7B7' }]}>
-                    <MaterialIcons name="check-circle" size={16} color="#10B981" />
-                    <Text style={[styles.badgeText, { color: '#047857' }]}>Skills Verified</Text>
-                  </View>
-                )}
-                {!profile?.badges?.length && !profile?.skills?.length && (
-                  <View style={[styles.badge, { backgroundColor: c.background, borderColor: c.border, borderStyle: 'dashed' }]}>
-                    <Text style={[styles.badgeText, { color: c.subtext }]}>No badges yet</Text>
-                  </View>
-                )}
-              </View>
-            </View>
+            {/* Badges Removed */}
 
             {/* Metrics Breakdown */}
             <View style={{ paddingTop: 20, borderTopWidth: 1, borderTopColor: c.border }}>

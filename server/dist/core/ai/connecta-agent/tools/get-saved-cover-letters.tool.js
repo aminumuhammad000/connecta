@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetSavedCoverLettersTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetSavedCoverLettersTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetSavedCoverLettersTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_saved_cover_letters_tool";
@@ -13,4 +10,3 @@ class GetSavedCoverLettersTool extends base_tool_1.BaseTool {
         return this.request(`/api/proposals/cover-letters?userId=${userId}`, "GET");
     }
 }
-exports.GetSavedCoverLettersTool = GetSavedCoverLettersTool;

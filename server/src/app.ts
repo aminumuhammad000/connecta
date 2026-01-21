@@ -62,8 +62,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// import { seedFreelancersIfMissing } from "./utils/seeder";
+
 // Connect to Database
-connectDB();
+connectDB().then(() => {
+  // seedFreelancersIfMissing();
+});
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -105,6 +109,8 @@ app.use("/api/collabo", collaboRoutes);
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
 });
+
+
 
 // Socket.io connection handling
 const activeUsers = new Map<string, string>(); // userId -> socketId

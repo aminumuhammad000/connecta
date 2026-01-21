@@ -1,20 +1,15 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const google_genai_1 = require("@langchain/google-genai");
-const prompts_1 = require("@langchain/core/prompts");
-const output_parsers_1 = require("@langchain/core/output_parsers");
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { StringOutputParser } from "@langchain/core/output_parsers";
+import dotenv from 'dotenv';
+dotenv.config();
 class LLMService {
     constructor() {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             console.warn("⚠️ GEMINI_API_KEY is missing. LLM features will fail.");
         }
-        this.model = new google_genai_1.ChatGoogleGenerativeAI({
+        this.model = new ChatGoogleGenerativeAI({
             apiKey: apiKey,
             model: "gemini-flash-latest",
             maxOutputTokens: 2048,
@@ -26,7 +21,7 @@ class LLMService {
      */
     async scopeProject(description) {
         try {
-            const prompt = prompts_1.ChatPromptTemplate.fromMessages([
+            const prompt = ChatPromptTemplate.fromMessages([
                 ["system", `You are an expert Senior Project Manager and CTO.
                 Your goal is to actively scope a software project based on a high-level description. You must output a STRICT JSON object.
 
@@ -69,7 +64,7 @@ class LLMService {
                 `],
                 ["human", "{description}"]
             ]);
-            const chain = prompt.pipe(this.model).pipe(new output_parsers_1.StringOutputParser());
+            const chain = prompt.pipe(this.model).pipe(new StringOutputParser());
             const response = await chain.invoke({ description });
             // robust JSON parsing
             const cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -97,5 +92,48 @@ class LLMService {
             };
         }
     }
+    /**
+     * Generates a personalized cover letter.
+     */
+    async generateCoverLetter(jobTitle, jobDescription, freelancerName, freelancerSkills, freelancerBio) {
+        try {
+            const prompt = ChatPromptTemplate.fromMessages([
+                ["system", `You are an expert career coach and professional copywriter.
+                Your goal is to write a compelling, professional, and personalized cover letter for a freelancer applying to a job.
+                
+                The cover letter should:
+                1. Addressed to the Hiring Manager (or specific name if known).
+                2. Highlight relevant skills matching the job description.
+                3. Be enthusiastic but professional.
+                4. keep it concise (under 250 words).
+                
+                Freelancer Profile:
+                - Name: {freelancerName}
+                - Bio: {freelancerBio}
+                - Skills: {freelancerSkills}
+                
+                Job Details:
+                - Title: {jobTitle}
+                - Description: {jobDescription}
+                
+                Output ONLY the raw cover letter text. No markdown blocks, no "Here is your cover letter:".
+                `],
+                ["human", "Write the cover letter."]
+            ]);
+            const chain = prompt.pipe(this.model).pipe(new StringOutputParser());
+            const response = await chain.invoke({
+                freelancerName,
+                freelancerBio,
+                freelancerSkills: freelancerSkills.join(', '),
+                jobTitle,
+                jobDescription
+            });
+            return response.trim();
+        }
+        catch (error) {
+            console.error("LLM Cover Letter Error:", error);
+            return `Dear Hiring Manager,\n\nI am writing to express my interest in the ${jobTitle} position. With my background in ${freelancerSkills[0] || 'software development'}, I am confident I can contribute effectively to your project.\n\nThank you for considering my application.\n\nSincerely,\n${freelancerName}`;
+        }
+    }
 }
-exports.default = new LLMService();
+export default new LLMService();

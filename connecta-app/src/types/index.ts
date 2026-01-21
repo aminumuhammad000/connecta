@@ -142,10 +142,22 @@ export type ProposalStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
 export interface Proposal {
     _id: string;
     jobId: string;
+    title: string; // Added to match backend
     freelancerId: string;
+    description: string; // Added to match backend
     coverLetter: string;
-    proposedRate: number;
-    estimatedDuration: string;
+    budget: {
+        amount: number;
+        currency: string;
+    };
+    dateRange: {
+        startDate: Date | string;
+        endDate: Date | string;
+    };
+    estimatedDuration?: string; // Kept as optional for UI display
+    type: 'recommendation' | 'referral'; // Added required field
+    level: 'entry' | 'intermediate' | 'expert'; // Added required field
+    priceType: 'fixed' | 'hourly'; // Added required field
     status: ProposalStatus;
     attachments?: string[];
     createdAt: string;

@@ -1,14 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RecommendationService = void 0;
-const user_model_1 = __importDefault(require("../models/user.model"));
-const Profile_model_1 = __importDefault(require("../models/Profile.model"));
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const tfidf_1 = require("../utils/tfidf");
-class RecommendationService {
+import User from "../models/user.model";
+import Profile from "../models/Profile.model";
+import Job from "../models/Job.model";
+import { TFIDF } from "../utils/tfidf";
+export class RecommendationService {
     /**
      * Get job recommendations for a specific user based on their profile.
      * @param userId The ID of the user to get recommendations for.
@@ -17,14 +11,14 @@ class RecommendationService {
     async getRecommendationsForUser(userId, limit = 10) {
         try {
             // 1. Fetch User and Profile
-            const user = await user_model_1.default.findById(userId);
+            const user = await User.findById(userId);
             if (!user) {
                 throw new Error("User not found");
             }
-            const profile = await Profile_model_1.default.findOne({ user: userId });
+            const profile = await Profile.findOne({ user: userId });
             if (!profile) {
                 // If no profile, return latest jobs or empty
-                return await Job_model_1.default.find({ status: "active" }).sort({ createdAt: -1 }).limit(limit);
+                return await Job.find({ status: "active" }).sort({ createdAt: -1 }).limit(limit);
             }
             // 2. Construct User Profile Text
             // Combine skills, bio, job title (if available in future), etc.
@@ -48,12 +42,12 @@ class RecommendationService {
                 });
             }
             // 3. Fetch Active Jobs
-            const jobs = await Job_model_1.default.find({ status: "active" });
+            const jobs = await Job.find({ status: "active" });
             if (jobs.length === 0) {
                 return [];
             }
             // 4. Prepare Documents for TF-IDF
-            const tfidf = new tfidf_1.TFIDF();
+            const tfidf = new TFIDF();
             // We need to keep track of job IDs to map back from indices
             const jobIds = jobs.map(job => job._id);
             jobs.forEach(job => {
@@ -89,4 +83,3 @@ class RecommendationService {
         }
     }
 }
-exports.RecommendationService = RecommendationService;

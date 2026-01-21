@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import Logo from '../components/Logo';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,7 +28,7 @@ const SignupScreen: React.FC = () => {
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-    iosClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com', // Using web client ID as placeholder if specific iOS ID not provided
+    iosClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
     androidClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
     redirectUri: 'https://auth.expo.io/@0x_mrcoder/connecta',
   });
@@ -43,7 +45,6 @@ const SignupScreen: React.FC = () => {
     try {
       await googleSignup(token, selectedRole);
       showAlert({ title: 'Success', message: 'Account created with Google!', type: 'success' });
-      // Navigation happens automatically
     } catch (error: any) {
       showAlert({ title: 'Google Signup Failed', message: error.message || 'Failed to sign up with Google', type: 'error' });
     } finally {
@@ -52,23 +53,12 @@ const SignupScreen: React.FC = () => {
   };
 
   const handleCreateAccount = async () => {
-    // Validation
-    if (!name.trim()) {
-      showAlert({ title: 'Error', message: 'Please enter your full name', type: 'error' });
-      return;
-    }
-    if (!email.trim()) {
-      showAlert({ title: 'Error', message: 'Please enter your email', type: 'error' });
-      return;
-    }
-    if (!password.trim() || password.length < 6) {
-      showAlert({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
-      return;
-    }
+    if (!name.trim()) return showAlert({ title: 'Error', message: 'Please enter your full name', type: 'error' });
+    if (!email.trim()) return showAlert({ title: 'Error', message: 'Please enter your email', type: 'error' });
+    if (!password.trim() || password.length < 6) return showAlert({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
 
     setIsLoading(true);
     try {
-      // Split name into first and last name
       const nameParts = name.trim().split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || firstName;
@@ -81,7 +71,6 @@ const SignupScreen: React.FC = () => {
         userType: selectedRole,
       });
       showAlert({ title: 'Success', message: 'Account created! Please verify your email.', type: 'success' });
-      // Navigate to OTP screen with role
       (navigation as any).navigate('OTPVerification', { email: email.trim(), mode: 'signup', role: selectedRole });
     } catch (error: any) {
       showAlert({ title: 'Signup Failed', message: error.message || 'Failed to create account', type: 'error' });
@@ -92,172 +81,112 @@ const SignupScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-          <View style={styles.center}>
-            <View style={styles.backRow}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                <MaterialIcons name="arrow-back" size={22} color={c.text} />
+      <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+
+        {/* Header Back Btn */}
+        <View style={styles.navHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <MaterialIcons name="arrow-back" size={24} color={c.text} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.mainContent}>
+
+            {/* Logo & Title */}
+            <View style={styles.topSection}>
+              <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
+                <Logo size={42} />
+              </View>
+              <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
+              <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta today.</Text>
+            </View>
+
+            {/* Role Switcher - Simple & Clean */}
+            <View style={styles.roleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.roleBtn,
+                  selectedRole === 'freelancer' && { backgroundColor: c.primary, borderColor: c.primary },
+                  selectedRole !== 'freelancer' && { borderColor: c.border, backgroundColor: c.card }
+                ]}
+                onPress={() => setSelectedRole('freelancer')}
+              >
+                <Text style={[
+                  styles.roleText,
+                  { color: selectedRole === 'freelancer' ? '#fff' : c.subtext }
+                ]}>Freelancer</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.roleBtn,
+                  selectedRole === 'client' && { backgroundColor: c.primary, borderColor: c.primary },
+                  selectedRole !== 'client' && { borderColor: c.border, backgroundColor: c.card }
+                ]}
+                onPress={() => setSelectedRole('client')}
+              >
+                <Text style={[
+                  styles.roleText,
+                  { color: selectedRole === 'client' ? '#fff' : c.subtext }
+                ]}>Client</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
-              <Logo size={40} />
-            </View>
-
-            <Text style={[styles.title, { color: c.text }]}>Create your account</Text>
-            <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta to find projects and talent.</Text>
-
+            {/* Form */}
             <View style={styles.form}>
-              {/* Role Selection */}
-              <View style={styles.roleSection}>
-                <View style={styles.roleOptions}>
-                  <TouchableOpacity
-                    style={[
-                      styles.roleOption,
-                      {
-                        backgroundColor: selectedRole === 'freelancer' ? c.primary + '15' : c.card,
-                        borderColor: selectedRole === 'freelancer' ? c.primary : c.border
-                      }
-                    ]}
-                    onPress={() => setSelectedRole('freelancer')}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[
-                      styles.roleIconWrap,
-                      {
-                        backgroundColor: selectedRole === 'freelancer' ? c.primary : c.background,
-                      }
-                    ]}>
-                      <MaterialIcons
-                        name="person-outline"
-                        size={20}
-                        color={selectedRole === 'freelancer' ? '#fff' : c.subtext}
-                      />
-                    </View>
-                    <View style={styles.roleTextWrap}>
-                      <Text style={[
-                        styles.roleTitle,
-                        { color: selectedRole === 'freelancer' ? c.primary : c.text }
-                      ]}>
-                        I am a Freelancer
-                      </Text>
-                      <Text style={[styles.roleDesc, { color: c.subtext }]}>
-                        I want to find work & offer services
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name={selectedRole === 'freelancer' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                      size={22}
-                      color={selectedRole === 'freelancer' ? c.primary : c.subtext}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.roleOption,
-                      {
-                        backgroundColor: selectedRole === 'client' ? c.primary + '15' : c.card,
-                        borderColor: selectedRole === 'client' ? c.primary : c.border
-                      }
-                    ]}
-                    onPress={() => setSelectedRole('client')}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[
-                      styles.roleIconWrap,
-                      {
-                        backgroundColor: selectedRole === 'client' ? c.primary : c.background,
-                      }
-                    ]}>
-                      <MaterialIcons
-                        name="work-outline"
-                        size={20}
-                        color={selectedRole === 'client' ? '#fff' : c.subtext}
-                      />
-                    </View>
-                    <View style={styles.roleTextWrap}>
-                      <Text style={[
-                        styles.roleTitle,
-                        { color: selectedRole === 'client' ? c.primary : c.text }
-                      ]}>
-                        I am a Client
-                      </Text>
-                      <Text style={[styles.roleDesc, { color: c.subtext }]}>
-                        I want to hire talent for my projects
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name={selectedRole === 'client' ? 'radio-button-checked' : 'radio-button-unchecked'}
-                      size={22}
-                      color={selectedRole === 'client' ? c.primary : c.subtext}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Form Inputs */}
-              <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}>
-                <MaterialIcons name="person-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-                <TextInput
-                  value={name}
-                  onChangeText={setName}
-                  placeholder="Full name"
-                  placeholderTextColor={c.subtext}
-                  style={[styles.input, { color: c.text }]}
-                />
-              </View>
-
-              <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}>
-                <MaterialIcons name="mail-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  placeholderTextColor={c.subtext}
-                  style={[styles.input, { color: c.text }]}
-                />
-              </View>
-
-              <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.background }]}>
-                <MaterialIcons name="lock-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-                <TextInput
+              <Input
+                value={name}
+                onChangeText={setName}
+                placeholder="Full Name"
+                icon="person-outline"
+                containerStyle={styles.inputSpacing}
+              />
+              <Input
+                value={email}
+                onChangeText={setEmail}
+                placeholder="Email Address"
+                keyboardType="email-address"
+                containerStyle={styles.inputSpacing}
+                autoCapitalize="none"
+                icon="mail-outline"
+              />
+              <View style={styles.inputSpacing}>
+                <Input
                   value={password}
                   onChangeText={setPassword}
                   placeholder="Password"
-                  placeholderTextColor={c.subtext}
+                  icon="lock-outline"
                   secureTextEntry={!showPassword}
-                  style={[styles.input, { color: c.text }]}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                  <MaterialIcons
-                    name={showPassword ? "visibility" : "visibility-off"}
-                    size={20}
-                    color={c.subtext}
-                  />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                activeOpacity={0.9}
-                style={[styles.primaryBtn, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
-                onPress={handleCreateAccount}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.primaryBtnText}>Create Account</Text>
-                )}
-              </TouchableOpacity>
             </View>
 
+            <Button
+              title="Sign Up"
+              onPress={handleCreateAccount}
+              loading={isLoading}
+              variant="primary"
+              size="large"
+              style={styles.mainBtn}
+            />
+
+            {/* Social Login */}
             <View style={styles.dividerRow}>
-              <View style={[styles.divider, { borderColor: c.border }]} />
+              <View style={[styles.divider, { backgroundColor: c.border }]} />
               <Text style={[styles.orText, { color: c.subtext }]}>OR</Text>
-              <View style={[styles.divider, { borderColor: c.border }]} />
+              <View style={[styles.divider, { backgroundColor: c.border }]} />
             </View>
 
             <TouchableOpacity
@@ -267,157 +196,99 @@ const SignupScreen: React.FC = () => {
               disabled={!request}
             >
               <MaterialCommunityIcons name="google" size={20} color={c.text} />
-              <Text style={[styles.googleText, { color: c.text }]}>Sign up with Google</Text>
+              <Text style={[styles.googleText, { color: c.text }]}>Continue with Google</Text>
             </TouchableOpacity>
-          </View>
 
-          <View style={styles.footerRow}>
-            <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => (navigation as any).navigate('Login')} accessibilityRole="button" accessibilityLabel="Go to Login">
-              <Text style={[styles.footerLink, { color: c.primary }]}>Log in</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => (navigation as any).navigate('Login')}>
+                <Text style={{ color: c.primary, fontWeight: '700' }}>Log In</Text>
+              </TouchableOpacity>
+            </View>
 
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  center: {
-    flex: 1,
-    alignItems: 'center',
+  navHeader: {
+    paddingHorizontal: 20,
+    height: 50,
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+  },
+  backBtn: {
+    padding: 4,
+    marginLeft: -4,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+  },
+  mainContent: {
+    paddingVertical: 10,
+  },
+  topSection: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   logoWrap: {
-    padding: 16,
+    padding: 12,
     borderRadius: 16,
     marginBottom: 16,
   },
-  backRow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 12,
-    paddingTop: 4,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   title: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 4,
   },
   subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  form: {
-    width: '100%',
-    maxWidth: 360,
-    marginTop: 24,
-    gap: 12,
-  },
-  roleSection: {
-    marginBottom: 8,
-  },
-  roleLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  roleOptions: {
-    gap: 10,
-  },
-  roleOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    gap: 12,
-  },
-  roleIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  roleTextWrap: {
-    flex: 1,
-  },
-  roleTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  roleDesc: {
-    fontSize: 11,
-    fontWeight: '400',
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    height: 48,
     fontSize: 16,
   },
-  eyeIcon: {
-    padding: 4,
+  roleContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
   },
-  primaryBtn: {
-    height: 48,
+  roleBtn: {
+    flex: 1,
+    height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    borderWidth: 1,
   },
-  primaryBtnText: {
-    color: '#fff',
-    fontSize: 15,
+  roleText: {
+    fontSize: 14,
     fontWeight: '600',
   },
-  footerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
+  form: {
+    marginBottom: 20,
   },
-  footerText: {
-    fontSize: 13,
+  inputSpacing: {
+    marginBottom: 16,
   },
-  footerLink: {
-    fontSize: 13,
-    fontWeight: '600',
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: 14,
+  },
+  mainBtn: {
+    borderRadius: 12,
   },
   dividerRow: {
-    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 24,
     gap: 14,
   },
   divider: {
     flex: 1,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    height: 1,
   },
   orText: {
     fontSize: 13,
@@ -425,18 +296,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   googleBtn: {
-    width: '100%',
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
     gap: 10,
   },
   googleText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  footerText: {
+    fontSize: 14,
   },
 });
 

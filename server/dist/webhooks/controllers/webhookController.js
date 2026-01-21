@@ -1,16 +1,10 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleWebhook = void 0;
-const Payment_model_1 = __importDefault(require("../../models/Payment.model"));
-const Job_model_1 = __importDefault(require("../../models/Job.model"));
-const flutterwave_service_1 = __importDefault(require("../../services/flutterwave.service"));
+import Payment from '../../models/Payment.model';
+import Job from '../../models/Job.model';
+import flutterwaveService from '../../services/flutterwave.service';
 /**
  * Handle Flutterwave Webhook
  */
-const handleWebhook = async (req, res) => {
+export const handleWebhook = async (req, res) => {
     try {
         // 1. Verify Webhook Signature (Optional but recommended)
         const secretHash = process.env.FLUTTERWAVE_SECRET_HASH || 'default-secret-hash';
@@ -28,10 +22,10 @@ const handleWebhook = async (req, res) => {
             const { tx_ref, id } = payload.data;
             console.log(`Processing Webhook for ref: ${tx_ref}`);
             // Verify with Gateway (Double check)
-            const flwResponse = await flutterwave_service_1.default.verifyPayment(id.toString());
+            const flwResponse = await flutterwaveService.verifyPayment(id.toString());
             if (flwResponse.status === 'success' && flwResponse.data.status === 'successful') {
                 // Find Payment
-                const payment = await Payment_model_1.default.findById(tx_ref);
+                const payment = await Payment.findById(tx_ref);
                 if (payment && payment.status !== 'completed') {
                     // Verify Amount
                     if (payment.amount <= flwResponse.data.amount) {
@@ -42,7 +36,7 @@ const handleWebhook = async (req, res) => {
                         await payment.save();
                         // Handle Job Verification
                         if (payment.paymentType === 'job_verification' && payment.jobId) {
-                            const job = await Job_model_1.default.findById(payment.jobId);
+                            const job = await Job.findById(payment.jobId);
                             if (job) {
                                 job.paymentVerified = true;
                                 job.paymentStatus = 'escrow';
@@ -72,4 +66,3 @@ const handleWebhook = async (req, res) => {
         res.status(200).send('Error processing webhook');
     }
 };
-exports.handleWebhook = handleWebhook;

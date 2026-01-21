@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TrackGigApplicationsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class TrackGigApplicationsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class TrackGigApplicationsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "track_gig_applications_tool";
@@ -13,4 +10,3 @@ class TrackGigApplicationsTool extends base_tool_1.BaseTool {
         return this.request(`/api/jobs/applications?userId=${userId}`, "GET");
     }
 }
-exports.TrackGigApplicationsTool = TrackGigApplicationsTool;

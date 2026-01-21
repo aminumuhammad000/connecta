@@ -1,9 +1,4 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
+import axios from 'axios';
 const FLUTTERWAVE_SECRET_KEY = 'FLWSECK-0f4d2d4198568a5d2a69689d337fcd69-19b9e66ac44vt-X';
 const FLUTTERWAVE_BASE_URL = 'https://api.flutterwave.com/v3';
 class FlutterwaveService {
@@ -35,7 +30,7 @@ class FlutterwaveService {
                 },
             };
             console.log('Sending payload to Flutterwave:', JSON.stringify(payload, null, 2));
-            const response = await axios_1.default.post(`${FLUTTERWAVE_BASE_URL}/payments`, payload, { headers: this.headers });
+            const response = await axios.post(`${FLUTTERWAVE_BASE_URL}/payments`, payload, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -48,7 +43,7 @@ class FlutterwaveService {
      */
     async verifyPayment(transactionId) {
         try {
-            const response = await axios_1.default.get(`${FLUTTERWAVE_BASE_URL}/transactions/${transactionId}/verify`, { headers: this.headers });
+            const response = await axios.get(`${FLUTTERWAVE_BASE_URL}/transactions/${transactionId}/verify`, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -61,7 +56,7 @@ class FlutterwaveService {
      */
     async listBanks() {
         try {
-            const response = await axios_1.default.get(`${FLUTTERWAVE_BASE_URL}/banks/NG`, { headers: this.headers });
+            const response = await axios.get(`${FLUTTERWAVE_BASE_URL}/banks/NG`, { headers: this.headers });
             return response.data;
         }
         catch (error) {
@@ -74,7 +69,7 @@ class FlutterwaveService {
      */
     async resolveAccount(accountNumber, bankCode) {
         try {
-            const response = await axios_1.default.post(`${FLUTTERWAVE_BASE_URL}/accounts/resolve`, {
+            const response = await axios.post(`${FLUTTERWAVE_BASE_URL}/accounts/resolve`, {
                 account_number: accountNumber,
                 account_bank: bankCode,
             }, { headers: this.headers });
@@ -90,7 +85,7 @@ class FlutterwaveService {
      */
     async initiateTransfer(accountBank, accountNumber, amount, narration, reference) {
         try {
-            const response = await axios_1.default.post(`${FLUTTERWAVE_BASE_URL}/transfers`, {
+            const response = await axios.post(`${FLUTTERWAVE_BASE_URL}/transfers`, {
                 account_bank: accountBank,
                 account_number: accountNumber,
                 amount,
@@ -106,4 +101,4 @@ class FlutterwaveService {
         }
     }
 }
-exports.default = new FlutterwaveService();
+export default new FlutterwaveService();

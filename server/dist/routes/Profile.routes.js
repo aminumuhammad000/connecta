@@ -1,21 +1,16 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const Profile_controller_1 = require("../controllers/Profile.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const router = express_1.default.Router();
-router.post("/", Profile_controller_1.createProfile);
-router.get("/", Profile_controller_1.getAllProfiles);
+import express from "express";
+import { createProfile, getAllProfiles, getProfileById, getProfileByUserId, updateProfile, deleteProfile, getMyProfile, updateMyProfile, } from "../controllers/Profile.controller";
+import { authenticate } from "../core/middleware/auth.middleware";
+const router = express.Router();
+router.post("/", createProfile);
+router.get("/", getAllProfiles);
 // Get profile for authenticated user
-router.get("/me", auth_middleware_1.authenticate, Profile_controller_1.getMyProfile);
+router.get("/me", authenticate, getMyProfile);
 // Update profile for authenticated user
 // Update profile for authenticated user
-router.put("/me", auth_middleware_1.authenticate, Profile_controller_1.updateMyProfile);
-router.get("/user/:userId", Profile_controller_1.getProfileByUserId);
-router.get("/:id", Profile_controller_1.getProfileById);
-router.put("/:id", Profile_controller_1.updateProfile);
-router.delete("/:id", Profile_controller_1.deleteProfile);
-exports.default = router;
+router.put("/me", authenticate, updateMyProfile);
+router.get("/user/:userId", getProfileByUserId);
+router.get("/:id", getProfileById);
+router.put("/:id", updateProfile);
+router.delete("/:id", deleteProfile);
+export default router;

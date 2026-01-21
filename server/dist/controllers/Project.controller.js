@@ -1,12 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitProject = exports.getProjectStats = exports.deleteProject = exports.addProjectActivity = exports.addProjectUpload = exports.updateProjectStatus = exports.updateProject = exports.createProject = exports.getProjectById = exports.getAllProjects = exports.getClientProjects = exports.getMyProjects = exports.getFreelancerProjects = void 0;
-const Project_model_1 = __importDefault(require("../models/Project.model"));
+import Project from '../models/Project.model';
 // Get all projects for a freelancer
-const getFreelancerProjects = async (req, res) => {
+export const getFreelancerProjects = async (req, res) => {
     try {
         const { freelancerId } = req.params;
         const { status } = req.query;
@@ -14,7 +8,7 @@ const getFreelancerProjects = async (req, res) => {
         if (status && (status === 'ongoing' || status === 'completed' || status === 'cancelled')) {
             query.status = status;
         }
-        const projects = await Project_model_1.default.find(query)
+        const projects = await Project.find(query)
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
             .sort({ createdAt: -1 });
@@ -32,9 +26,8 @@ const getFreelancerProjects = async (req, res) => {
         });
     }
 };
-exports.getFreelancerProjects = getFreelancerProjects;
 // Get logged-in client's own projects
-const getMyProjects = async (req, res) => {
+export const getMyProjects = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -48,7 +41,7 @@ const getMyProjects = async (req, res) => {
         if (status && (status === 'ongoing' || status === 'completed' || status === 'cancelled')) {
             query.status = status;
         }
-        const projects = await Project_model_1.default.find(query)
+        const projects = await Project.find(query)
             .populate('clientId', 'firstName lastName email profileImage')
             .populate('freelancerId', 'firstName lastName email profileImage')
             .sort({ createdAt: -1 });
@@ -84,9 +77,8 @@ const getMyProjects = async (req, res) => {
         });
     }
 };
-exports.getMyProjects = getMyProjects;
 // Get all projects for a client
-const getClientProjects = async (req, res) => {
+export const getClientProjects = async (req, res) => {
     try {
         const { clientId } = req.params;
         const { status } = req.query;
@@ -94,7 +86,7 @@ const getClientProjects = async (req, res) => {
         if (status) {
             query.status = status;
         }
-        const projects = await Project_model_1.default.find(query)
+        const projects = await Project.find(query)
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
             .sort({ createdAt: -1 });
@@ -112,9 +104,8 @@ const getClientProjects = async (req, res) => {
         });
     }
 };
-exports.getClientProjects = getClientProjects;
 // Get all projects (admin)
-const getAllProjects = async (req, res) => {
+export const getAllProjects = async (req, res) => {
     try {
         const { page = 1, limit = 20, status } = req.query;
         let query = {};
@@ -122,13 +113,13 @@ const getAllProjects = async (req, res) => {
             query.status = status;
         }
         const skip = (Number(page) - 1) * Number(limit);
-        const projects = await Project_model_1.default.find(query)
+        const projects = await Project.find(query)
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip(skip);
-        const total = await Project_model_1.default.countDocuments(query);
+        const total = await Project.countDocuments(query);
         res.status(200).json({
             success: true,
             count: projects.length,
@@ -146,12 +137,11 @@ const getAllProjects = async (req, res) => {
         });
     }
 };
-exports.getAllProjects = getAllProjects;
 // ✅ FIXED: Get single project by ID (Type-safe)
-const getProjectById = async (req, res) => {
+export const getProjectById = async (req, res) => {
     try {
         const { id } = req.params;
-        const project = await Project_model_1.default.findById(id)
+        const project = await Project.findById(id)
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
             .populate('uploads.uploadedBy', 'firstName lastName');
@@ -180,12 +170,11 @@ const getProjectById = async (req, res) => {
         });
     }
 };
-exports.getProjectById = getProjectById;
 // Create a new project
-const createProject = async (req, res) => {
+export const createProject = async (req, res) => {
     try {
         const projectData = req.body;
-        const project = await Project_model_1.default.create(projectData);
+        const project = await Project.create(projectData);
         res.status(201).json({
             success: true,
             message: 'Project created successfully',
@@ -200,13 +189,12 @@ const createProject = async (req, res) => {
         });
     }
 };
-exports.createProject = createProject;
 // Update project
-const updateProject = async (req, res) => {
+export const updateProject = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const project = await Project_model_1.default.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        const project = await Project.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
         if (!project) {
             return res.status(404).json({
                 success: false,
@@ -227,9 +215,8 @@ const updateProject = async (req, res) => {
         });
     }
 };
-exports.updateProject = updateProject;
 // Update project status
-const updateProjectStatus = async (req, res) => {
+export const updateProjectStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status, statusLabel } = req.body;
@@ -239,7 +226,7 @@ const updateProjectStatus = async (req, res) => {
                 message: 'Invalid status. Must be ongoing, completed, or cancelled',
             });
         }
-        const project = await Project_model_1.default.findByIdAndUpdate(id, { status, statusLabel: statusLabel || (status === 'ongoing' ? 'Active' : 'Completed') }, { new: true, runValidators: true });
+        const project = await Project.findByIdAndUpdate(id, { status, statusLabel: statusLabel || (status === 'ongoing' ? 'Active' : 'Completed') }, { new: true, runValidators: true });
         if (!project) {
             return res.status(404).json({
                 success: false,
@@ -260,13 +247,12 @@ const updateProjectStatus = async (req, res) => {
         });
     }
 };
-exports.updateProjectStatus = updateProjectStatus;
 // Add file upload to project
-const addProjectUpload = async (req, res) => {
+export const addProjectUpload = async (req, res) => {
     try {
         const { id } = req.params;
         const { fileName, fileUrl, fileType, uploadedBy } = req.body;
-        const project = await Project_model_1.default.findByIdAndUpdate(id, {
+        const project = await Project.findByIdAndUpdate(id, {
             $push: {
                 uploads: {
                     fileName,
@@ -297,13 +283,12 @@ const addProjectUpload = async (req, res) => {
         });
     }
 };
-exports.addProjectUpload = addProjectUpload;
 // Add activity to project
-const addProjectActivity = async (req, res) => {
+export const addProjectActivity = async (req, res) => {
     try {
         const { id } = req.params;
         const { description } = req.body;
-        const project = await Project_model_1.default.findByIdAndUpdate(id, {
+        const project = await Project.findByIdAndUpdate(id, {
             $push: {
                 activity: {
                     date: new Date(),
@@ -331,12 +316,11 @@ const addProjectActivity = async (req, res) => {
         });
     }
 };
-exports.addProjectActivity = addProjectActivity;
 // Delete project
-const deleteProject = async (req, res) => {
+export const deleteProject = async (req, res) => {
     try {
         const { id } = req.params;
-        const project = await Project_model_1.default.findByIdAndDelete(id);
+        const project = await Project.findByIdAndDelete(id);
         if (!project) {
             return res.status(404).json({
                 success: false,
@@ -356,12 +340,11 @@ const deleteProject = async (req, res) => {
         });
     }
 };
-exports.deleteProject = deleteProject;
 // Get project statistics
-const getProjectStats = async (req, res) => {
+export const getProjectStats = async (req, res) => {
     try {
         const { userId } = req.params;
-        const stats = await Project_model_1.default.aggregate([
+        const stats = await Project.aggregate([
             {
                 $match: {
                     $or: [
@@ -390,16 +373,15 @@ const getProjectStats = async (req, res) => {
         });
     }
 };
-exports.getProjectStats = getProjectStats;
 // Submit project
-const submitProject = async (req, res) => {
+export const submitProject = async (req, res) => {
     try {
         const { id } = req.params;
         const { message, attachments } = req.body;
         // In a real implementation, you might want to create a Submission model
         // or update a submissions array in the Project model.
         // For now, we'll just add an activity and update status if needed.
-        const project = await Project_model_1.default.findByIdAndUpdate(id, {
+        const project = await Project.findByIdAndUpdate(id, {
             $push: {
                 activity: {
                     date: new Date(),
@@ -428,4 +410,3 @@ const submitProject = async (req, res) => {
         });
     }
 };
-exports.submitProject = submitProject;

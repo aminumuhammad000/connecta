@@ -1,16 +1,14 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/agent.routes.ts
-const express_1 = require("express");
-const tools_1 = require("../core/ai/connecta-agent/tools");
-const agent_1 = require("../core/ai/connecta-agent/agent");
-const apiKeys_service_1 = require("../services/apiKeys.service");
-const router = (0, express_1.Router)();
+import { Router } from "express";
+import { loadTools } from "../core/ai/connecta-agent/tools";
+import { ConnectaAgent } from "../core/ai/connecta-agent/agent";
+import { getApiKeys } from "../services/apiKeys.service";
+const router = Router();
 // 🧠 Global init: load tools once when the server starts
 let toolsLoaded = false;
 async function ensureToolsLoaded() {
     if (!toolsLoaded) {
-        await (0, tools_1.loadTools)();
+        await loadTools();
         toolsLoaded = true;
         console.log("✅ Tools successfully loaded for Connecta Agent.");
     }
@@ -18,8 +16,8 @@ async function ensureToolsLoaded() {
 // Helper to create agent
 async function createAgent(userId, authToken, userType) {
     await ensureToolsLoaded(); // ensure tools are ready before creating agent
-    const apiKeys = await (0, apiKeys_service_1.getApiKeys)();
-    const agent = new agent_1.ConnectaAgent({
+    const apiKeys = await getApiKeys();
+    const agent = new ConnectaAgent({
         apiBaseUrl: "http://localhost:5000",
         authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
         openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback-api-key",
@@ -63,4 +61,4 @@ router.post("/", async (req, res) => {
         });
     }
 });
-exports.default = router;
+export default router;

@@ -1,17 +1,11 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateApiKeys = exports.updateSmtpSettings = exports.getSettings = void 0;
-const SystemSettings_model_1 = __importDefault(require("../models/SystemSettings.model"));
-const email_service_1 = require("../services/email.service");
+import SystemSettings from '../models/SystemSettings.model';
+import { verifyEmailConfig } from '../services/email.service';
 /**
  * Get system settings
  */
-const getSettings = async (req, res) => {
+export const getSettings = async (req, res) => {
     try {
-        const settings = await SystemSettings_model_1.default.getSettings();
+        const settings = await SystemSettings.getSettings();
         res.json({
             success: true,
             data: settings
@@ -25,14 +19,13 @@ const getSettings = async (req, res) => {
         });
     }
 };
-exports.getSettings = getSettings;
 /**
  * Update SMTP settings
  */
-const updateSmtpSettings = async (req, res) => {
+export const updateSmtpSettings = async (req, res) => {
     try {
         const { host, port, user, pass, secure, fromEmail, fromName, provider } = req.body;
-        const settings = await SystemSettings_model_1.default.getSettings();
+        const settings = await SystemSettings.getSettings();
         settings.smtp = {
             provider: provider || 'other',
             host,
@@ -45,7 +38,7 @@ const updateSmtpSettings = async (req, res) => {
         };
         await settings.save();
         // Verify new configuration
-        const isVerified = await (0, email_service_1.verifyEmailConfig)();
+        const isVerified = await verifyEmailConfig();
         res.json({
             success: true,
             message: 'SMTP settings updated successfully',
@@ -61,14 +54,13 @@ const updateSmtpSettings = async (req, res) => {
         });
     }
 };
-exports.updateSmtpSettings = updateSmtpSettings;
 /**
  * Update API keys settings
  */
-const updateApiKeys = async (req, res) => {
+export const updateApiKeys = async (req, res) => {
     try {
         const { openrouter, huggingface, google } = req.body;
-        const settings = await SystemSettings_model_1.default.getSettings();
+        const settings = await SystemSettings.getSettings();
         settings.apiKeys = {
             openrouter: openrouter || settings.apiKeys?.openrouter || '',
             huggingface: huggingface || settings.apiKeys?.huggingface || '',
@@ -102,4 +94,3 @@ const updateApiKeys = async (req, res) => {
         });
     }
 };
-exports.updateApiKeys = updateApiKeys;

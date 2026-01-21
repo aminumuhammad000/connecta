@@ -1,15 +1,9 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllNotifications = exports.notifyReviewReceived = exports.notifyPaymentReceived = exports.notifyProposalAccepted = exports.notifyProposalReceived = exports.createNotification = exports.clearReadNotifications = exports.deleteNotification = exports.markAllAsRead = exports.markAsRead = exports.getUnreadCount = exports.getNotifications = void 0;
-const Notification_model_1 = __importDefault(require("../models/Notification.model"));
-const socketIO_1 = require("../core/utils/socketIO");
+import Notification from '../models/Notification.model';
+import { getIO } from '../core/utils/socketIO';
 /**
  * Get all notifications for the authenticated user
  */
-const getNotifications = async (req, res) => {
+export const getNotifications = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { page = 1, limit = 20, unreadOnly = false } = req.query;
@@ -17,12 +11,12 @@ const getNotifications = async (req, res) => {
         if (unreadOnly === 'true') {
             query.isRead = false;
         }
-        const notifications = await Notification_model_1.default.find(query)
+        const notifications = await Notification.find(query)
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit));
-        const total = await Notification_model_1.default.countDocuments(query);
-        const unreadCount = await Notification_model_1.default.countDocuments({ userId, isRead: false });
+        const total = await Notification.countDocuments(query);
+        const unreadCount = await Notification.countDocuments({ userId, isRead: false });
         return res.status(200).json({
             success: true,
             data: notifications,
@@ -43,14 +37,13 @@ const getNotifications = async (req, res) => {
         });
     }
 };
-exports.getNotifications = getNotifications;
 /**
  * Get unread count
  */
-const getUnreadCount = async (req, res) => {
+export const getUnreadCount = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const unreadCount = await Notification_model_1.default.countDocuments({
+        const unreadCount = await Notification.countDocuments({
             userId,
             isRead: false,
         });
@@ -67,15 +60,14 @@ const getUnreadCount = async (req, res) => {
         });
     }
 };
-exports.getUnreadCount = getUnreadCount;
 /**
  * Mark notification as read
  */
-const markAsRead = async (req, res) => {
+export const markAsRead = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { notificationId } = req.params;
-        const notification = await Notification_model_1.default.findOne({
+        const notification = await Notification.findOne({
             _id: notificationId,
             userId,
         });
@@ -104,14 +96,13 @@ const markAsRead = async (req, res) => {
         });
     }
 };
-exports.markAsRead = markAsRead;
 /**
  * Mark all notifications as read
  */
-const markAllAsRead = async (req, res) => {
+export const markAllAsRead = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        await Notification_model_1.default.updateMany({ userId, isRead: false }, { isRead: true, readAt: new Date() });
+        await Notification.updateMany({ userId, isRead: false }, { isRead: true, readAt: new Date() });
         return res.status(200).json({
             success: true,
             message: 'All notifications marked as read',
@@ -125,15 +116,14 @@ const markAllAsRead = async (req, res) => {
         });
     }
 };
-exports.markAllAsRead = markAllAsRead;
 /**
  * Delete a notification
  */
-const deleteNotification = async (req, res) => {
+export const deleteNotification = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { notificationId } = req.params;
-        const notification = await Notification_model_1.default.findOneAndDelete({
+        const notification = await Notification.findOneAndDelete({
             _id: notificationId,
             userId,
         });
@@ -156,14 +146,13 @@ const deleteNotification = async (req, res) => {
         });
     }
 };
-exports.deleteNotification = deleteNotification;
 /**
  * Delete all read notifications
  */
-const clearReadNotifications = async (req, res) => {
+export const clearReadNotifications = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        await Notification_model_1.default.deleteMany({ userId, isRead: true });
+        await Notification.deleteMany({ userId, isRead: true });
         return res.status(200).json({
             success: true,
             message: 'Read notifications cleared',
@@ -177,12 +166,11 @@ const clearReadNotifications = async (req, res) => {
         });
     }
 };
-exports.clearReadNotifications = clearReadNotifications;
-const createNotification = async (data) => {
+export const createNotification = async (data) => {
     try {
-        const notification = await Notification_model_1.default.create(data);
+        const notification = await Notification.create(data);
         // Emit real-time notification via Socket.IO
-        const io = (0, socketIO_1.getIO)();
+        const io = getIO();
         if (io) {
             io.to(data.userId.toString()).emit('notification', {
                 _id: notification._id,
@@ -202,12 +190,11 @@ const createNotification = async (data) => {
         throw error;
     }
 };
-exports.createNotification = createNotification;
 /**
  * Helper functions for common notification types
  */
-const notifyProposalReceived = async (clientId, freelancerName, jobTitle, proposalId) => {
-    return (0, exports.createNotification)({
+export const notifyProposalReceived = async (clientId, freelancerName, jobTitle, proposalId) => {
+    return createNotification({
         userId: clientId,
         type: 'proposal_received',
         title: 'New Proposal Received',
@@ -220,9 +207,8 @@ const notifyProposalReceived = async (clientId, freelancerName, jobTitle, propos
         priority: 'high',
     });
 };
-exports.notifyProposalReceived = notifyProposalReceived;
-const notifyProposalAccepted = async (freelancerId, clientName, jobTitle, projectId) => {
-    return (0, exports.createNotification)({
+export const notifyProposalAccepted = async (freelancerId, clientName, jobTitle, projectId) => {
+    return createNotification({
         userId: freelancerId,
         type: 'proposal_accepted',
         title: '🎉 Proposal Accepted!',
@@ -235,9 +221,8 @@ const notifyProposalAccepted = async (freelancerId, clientName, jobTitle, projec
         priority: 'high',
     });
 };
-exports.notifyProposalAccepted = notifyProposalAccepted;
-const notifyPaymentReceived = async (freelancerId, amount, currency, projectTitle) => {
-    return (0, exports.createNotification)({
+export const notifyPaymentReceived = async (freelancerId, amount, currency, projectTitle) => {
+    return createNotification({
         userId: freelancerId,
         type: 'payment_received',
         title: '💰 Payment Received',
@@ -248,9 +233,8 @@ const notifyPaymentReceived = async (freelancerId, amount, currency, projectTitl
         priority: 'high',
     });
 };
-exports.notifyPaymentReceived = notifyPaymentReceived;
-const notifyReviewReceived = async (userId, reviewerName, rating, projectTitle) => {
-    return (0, exports.createNotification)({
+export const notifyReviewReceived = async (userId, reviewerName, rating, projectTitle) => {
+    return createNotification({
         userId,
         type: 'review_received',
         title: '⭐ New Review',
@@ -262,13 +246,12 @@ const notifyReviewReceived = async (userId, reviewerName, rating, projectTitle) 
         priority: 'medium',
     });
 };
-exports.notifyReviewReceived = notifyReviewReceived;
 /**
  * Get all notifications for admin (no auth required)
  */
-const getAllNotifications = async (req, res) => {
+export const getAllNotifications = async (req, res) => {
     try {
-        const notifications = await Notification_model_1.default.find()
+        const notifications = await Notification.find()
             .populate('userId', 'firstName lastName email profileImage')
             .sort({ createdAt: -1 })
             .limit(100);
@@ -286,4 +269,25 @@ const getAllNotifications = async (req, res) => {
         });
     }
 };
-exports.getAllNotifications = getAllNotifications;
+/**
+ * Test WhatsApp Notification manually
+ */
+export const testWhatsAppNotification = async (req, res) => {
+    try {
+        const { phone, message } = req.body;
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required' });
+        }
+        const TwilioService = require('../services/twilio.service').default;
+        const result = await TwilioService.sendWhatsAppMessage(phone, message || 'Hello from Connecta via Twilio Sandbox!');
+        if (result && result.sid) {
+            res.status(200).json({ success: true, message: 'WhatsApp sent', sid: result.sid });
+        }
+        else {
+            res.status(500).json({ success: false, message: 'Failed to send WhatsApp (Check logs)' });
+        }
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};

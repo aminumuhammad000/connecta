@@ -1,29 +1,25 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConnectaAgent = void 0;
-const openai_1 = require("@langchain/openai");
-const google_genai_1 = require("@langchain/google-genai");
-const prompts_1 = require("@langchain/core/prompts");
-const runnables_1 = require("@langchain/core/runnables");
-const output_parsers_1 = require("@langchain/core/output_parsers");
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate } from "@langchain/core/prompts";
+import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
+import { StringOutputParser } from "@langchain/core/output_parsers";
 // import { z } from "zod";
-const axios_1 = __importDefault(require("axios"));
-const SystemSettings_model_1 = __importDefault(require("../../../models/SystemSettings.model"));
+import axios from "axios";
+import SystemSettings from "../../../models/SystemSettings.model";
 // Dynamic tool loading
-const tools_1 = require("./tools");
-const intent_prompt_1 = require("./prompts/intent-prompt");
-class ConnectaAgent {
+import { tools } from "./tools";
+import { intentPrompt, IntentSchema } from "./prompts/intent-prompt";
+export class ConnectaAgent {
     constructor(config) {
         this.config = config;
         this.chatHistory = [];
         this.toolMap = {};
         this.userContext = null;
         this.memoryStore = new Map();
+        this.maxMemoryStoreSize = 1000; // Prevent unbounded growth
         this.responseCache = new Map();
         this.cacheTTL = 5 * 60 * 1000; // 5 minutes
+        this.maxCacheSize = 100;
         this.sessionMetrics = {
             totalRequests: 0,
             successfulRequests: 0,
@@ -36,23 +32,25 @@ class ConnectaAgent {
         // Model initialization is now async, called in initialize()
     }
     async initialize() {
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         const aiConfig = settings?.ai || { provider: 'openai', openaiApiKey: '', geminiApiKey: '' };
         // Fallback to env or config if DB settings are empty
         const openaiKey = aiConfig.openaiApiKey || process.env.OPENROUTER_API_KEY || this.config.openaiApiKey;
         const geminiKey = aiConfig.geminiApiKey || process.env.GEMINI_API_KEY;
-        if (aiConfig.provider === 'gemini' && geminiKey) {
-            console.log("🤖 Initializing Connecta Agent with Gemini");
-            this.model = new google_genai_1.ChatGoogleGenerativeAI({
+        // Prioritize Gemini if key is present, unless explicitly set to 'openai' in DB settings
+        const useGemini = (aiConfig.provider === 'gemini') || (geminiKey && aiConfig.provider !== 'openai');
+        if (useGemini && geminiKey) {
+            console.log("🤖 Initializing Connecta Agent with Gemini (Google Generative AI)");
+            this.model = new ChatGoogleGenerativeAI({
                 apiKey: geminiKey,
                 model: aiConfig.model || "gemini-pro",
-                maxOutputTokens: 2000,
+                maxOutputTokens: 2048,
                 temperature: this.config.temperature ?? 0.3,
             });
         }
         else {
             console.log("🤖 Initializing Connecta Agent with OpenAI/OpenRouter");
-            this.model = new openai_1.ChatOpenAI({
+            this.model = new ChatOpenAI({
                 apiKey: openaiKey,
                 model: "deepseek/deepseek-chat", // Default model
                 configuration: {
@@ -71,7 +69,7 @@ class ConnectaAgent {
         const mockMode = this.config.mockMode ?? false;
         let successCount = 0;
         let failCount = 0;
-        for (const [toolName, ToolClass] of Object.entries(tools_1.tools)) {
+        for (const [toolName, ToolClass] of Object.entries(tools)) {
             try {
                 const inst = new ToolClass(this.config.apiBaseUrl, this.config.authToken, this.config.userId, mockMode);
                 // Validate tool has required methods
@@ -132,6 +130,15 @@ class ConnectaAgent {
                 },
             };
             this.memoryStore.set(memoryKey, memory);
+            // Cleanup old entries if memoryStore exceeds max size
+            if (this.memoryStore.size > this.maxMemoryStoreSize) {
+                const entriesToDelete = this.memoryStore.size - this.maxMemoryStoreSize;
+                const keys = Array.from(this.memoryStore.keys());
+                for (let i = 0; i < entriesToDelete; i++) {
+                    this.memoryStore.delete(keys[i]);
+                }
+                console.log(`🧹 Cleaned up ${entriesToDelete} old memory entries`);
+            }
         }
         catch (error) {
             console.warn("⚠️ Failed to save memory:", error);
@@ -192,10 +199,13 @@ class ConnectaAgent {
             response,
             timestamp: Date.now(),
         });
-        // Cleanup old cache entries
-        if (this.responseCache.size > 100) {
-            const oldestKey = Array.from(this.responseCache.keys())[0];
-            this.responseCache.delete(oldestKey);
+        // Cleanup old cache entries (remove excess entries, not just one)
+        if (this.responseCache.size > this.maxCacheSize) {
+            const entriesToDelete = this.responseCache.size - this.maxCacheSize;
+            const keys = Array.from(this.responseCache.keys());
+            for (let i = 0; i < entriesToDelete; i++) {
+                this.responseCache.delete(keys[i]);
+            }
         }
     }
     /**
@@ -372,15 +382,15 @@ class ConnectaAgent {
                 ]);
             }
             // --- Intent Detection with Enhanced Context ---
-            const promptTemplate = prompts_1.ChatPromptTemplate.fromMessages([
-                prompts_1.SystemMessagePromptTemplate.fromTemplate(intent_prompt_1.intentPrompt),
-                prompts_1.SystemMessagePromptTemplate.fromTemplate("User context:\n{userContext}"),
-                prompts_1.SystemMessagePromptTemplate.fromTemplate("Conversation history:\n{history}"),
-                prompts_1.HumanMessagePromptTemplate.fromTemplate("{input}"),
+            const promptTemplate = ChatPromptTemplate.fromMessages([
+                SystemMessagePromptTemplate.fromTemplate(intentPrompt),
+                SystemMessagePromptTemplate.fromTemplate("User context:\n{userContext}"),
+                SystemMessagePromptTemplate.fromTemplate("Conversation history:\n{history}"),
+                HumanMessagePromptTemplate.fromTemplate("{input}"),
             ]);
-            const chain = runnables_1.RunnableSequence.from([
+            const chain = RunnableSequence.from([
                 {
-                    input: new runnables_1.RunnablePassthrough(),
+                    input: new RunnablePassthrough(),
                     history: async () => this.getFormattedHistory(5),
                     userContext: async () => JSON.stringify(this.userContext ?? {}),
                 },
@@ -411,7 +421,7 @@ class ConnectaAgent {
                         // For now, just throw to trigger the error handler
                         throw new Error("Failed to parse model output as JSON");
                     }
-                    const validatedOutput = intent_prompt_1.IntentSchema.parse(parsedOutput);
+                    const validatedOutput = IntentSchema.parse(parsedOutput);
                     if (validatedOutput.tool === "none" || !this.toolMap[validatedOutput.tool]) {
                         const fallbackMessage = "⚠️ Sorry, I can only help with Connecta-related tasks — like updating your profile, writing cover letters, or finding gigs.";
                         this.chatHistory.push({ input, output: fallbackMessage, success: false, timestamp: new Date() });
@@ -458,7 +468,7 @@ class ConnectaAgent {
         // If no auth token, try public profiles list and match by userId
         if (!this.config.authToken) {
             try {
-                const res = await axios_1.default.get(`${this.config.apiBaseUrl}/api/profiles`, { timeout: 5000 });
+                const res = await axios.get(`${this.config.apiBaseUrl}/api/profiles`, { timeout: 5000 });
                 const profiles = Array.isArray(res.data) ? res.data : [];
                 const profile = profiles.find((p) => {
                     const uid = p?.user?._id || p?.user || p?.userId;
@@ -489,7 +499,7 @@ class ConnectaAgent {
         }
         // Authenticated fetch
         try {
-            const res = await axios_1.default.get(`${this.config.apiBaseUrl}/api/profiles/me`, {
+            const res = await axios.get(`${this.config.apiBaseUrl}/api/profiles/me`, {
                 headers: { Authorization: `Bearer ${this.config.authToken}` },
                 timeout: 5000,
             });
@@ -580,11 +590,11 @@ class ConnectaAgent {
     }
     async explainError(tool, error) {
         try {
-            const prompt = prompts_1.ChatPromptTemplate.fromTemplate("You are a helpful assistant. Explain this error in ONE friendly sentence and suggest ONE action. Tool: {tool}. Error: {error}.");
-            const chain = runnables_1.RunnableSequence.from([
+            const prompt = ChatPromptTemplate.fromTemplate("You are a helpful assistant. Explain this error in ONE friendly sentence and suggest ONE action. Tool: {tool}. Error: {error}.");
+            const chain = RunnableSequence.from([
                 prompt,
                 this.model,
-                new output_parsers_1.StringOutputParser(),
+                new StringOutputParser(),
             ]);
             const msg = await chain.invoke({ tool, error });
             return (msg || "Sorry, I couldn’t complete that just now. Please try again in a moment.").trim();
@@ -594,4 +604,3 @@ class ConnectaAgent {
         }
     }
 }
-exports.ConnectaAgent = ConnectaAgent;

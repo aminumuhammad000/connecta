@@ -1,12 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.OpenRouterClient = void 0;
-const axios_1 = __importDefault(require("axios"));
-const openrouter_1 = require("../config/openrouter");
-class OpenRouterClient {
+import axios from 'axios';
+import { OPENROUTER_CONFIG, getOpenRouterHeaders } from '../config/openrouter';
+export class OpenRouterClient {
     constructor() { }
     static getInstance() {
         if (!OpenRouterClient.instance) {
@@ -16,8 +10,8 @@ class OpenRouterClient {
     }
     async generateCompletion(prompt) {
         try {
-            const response = await axios_1.default.post(`${openrouter_1.OPENROUTER_CONFIG.baseURL}/chat/completions`, {
-                model: openrouter_1.OPENROUTER_CONFIG.model,
+            const response = await axios.post(`${OPENROUTER_CONFIG.baseURL}/chat/completions`, {
+                model: OPENROUTER_CONFIG.model,
                 messages: [
                     {
                         role: 'user',
@@ -25,7 +19,7 @@ class OpenRouterClient {
                     }
                 ]
             }, {
-                headers: await (0, openrouter_1.getOpenRouterHeaders)()
+                headers: await getOpenRouterHeaders()
             });
             return response.data.choices[0].message.content;
         }
@@ -35,4 +29,3 @@ class OpenRouterClient {
         }
     }
 }
-exports.OpenRouterClient = OpenRouterClient;

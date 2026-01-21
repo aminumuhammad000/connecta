@@ -104,7 +104,14 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const handleCompleteProfile = () => {
     setProfileModalVisible(false);
-    navigation.navigate('EditProfile');
+    // Navigate to sibling screen in the parent stack
+    // Try parent first (Stack), then current (Tabs)
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('EditProfile');
+    } else {
+      navigation.navigate('EditProfile');
+    }
   };
 
   const handleSkipProfile = () => {
@@ -245,10 +252,10 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
-                onPress={() => navigation.navigate('FreelancerSavedGigs')}
+                onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
               >
-                <MaterialIcons name="bookmark" size={20} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>Saved Jobs</Text>
+                <MaterialIcons name="groups" size={20} color={c.primary} />
+                <Text style={[styles.quickActionText, { color: c.text }]}>Team Projects</Text>
               </TouchableOpacity>
             </View>
           </View>

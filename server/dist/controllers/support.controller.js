@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onboarding = exports.sendFeedback = exports.getHelp = exports.explainFeature = void 0;
-const explainFeature = async (req, res) => {
+export const explainFeature = async (req, res) => {
     try {
         const { feature } = req.body;
         // respond with faq content or dynamic explanation
@@ -11,8 +8,7 @@ const explainFeature = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-exports.explainFeature = explainFeature;
-const getHelp = async (req, res) => {
+export const getHelp = async (req, res) => {
     try {
         res.json({ success: true, data: { faq: [] } });
     }
@@ -20,8 +16,7 @@ const getHelp = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-exports.getHelp = getHelp;
-const sendFeedback = async (req, res) => {
+export const sendFeedback = async (req, res) => {
     try {
         const { userId, feedback } = req.body;
         // persist feedback
@@ -31,8 +26,7 @@ const sendFeedback = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-exports.sendFeedback = sendFeedback;
-const onboarding = async (req, res) => {
+export const onboarding = async (req, res) => {
     try {
         const { step, userId } = req.body;
         res.json({ success: true, data: { step, next: "..." } });
@@ -41,4 +35,3 @@ const onboarding = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-exports.onboarding = onboarding;

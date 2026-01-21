@@ -1,20 +1,14 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelSubscription = exports.verifyUpgradePayment = exports.initializeUpgradePayment = exports.getMySubscription = void 0;
-const user_model_1 = __importDefault(require("../models/user.model"));
+import User from '../models/user.model';
 /**
  * @desc Get current user's subscription
  * @route GET /api/subscriptions/me
  */
-const getMySubscription = async (req, res) => {
+export const getMySubscription = async (req, res) => {
     try {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const user = await user_model_1.default.findById(userId).select('isPremium subscriptionTier subscriptionStatus premiumExpiryDate');
+        const user = await User.findById(userId).select('isPremium subscriptionTier subscriptionStatus premiumExpiryDate');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -47,17 +41,16 @@ const getMySubscription = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-exports.getMySubscription = getMySubscription;
 /**
  * @desc Upgrade user subscription
  * @route POST /api/subscriptions/upgrade
  */
-const flutterwave_service_1 = __importDefault(require("../services/flutterwave.service"));
+import flutterwaveService from '../services/flutterwave.service';
 /**
  * @desc Initialize subscription upgrade payment
  * @route POST /api/subscriptions/initialize-upgrade
  */
-const initializeUpgradePayment = async (req, res) => {
+export const initializeUpgradePayment = async (req, res) => {
     try {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
@@ -73,7 +66,7 @@ const initializeUpgradePayment = async (req, res) => {
         };
         const amount = prices[tier] * durationMonths;
         // Fetch user to ensure we have email
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -85,7 +78,7 @@ const initializeUpgradePayment = async (req, res) => {
         console.log('Initializing subscription payment for user:', user.email);
         // Generate unique reference
         const reference = `SUB_${userId}_${Date.now()}`;
-        const paymentResponse = await flutterwave_service_1.default.initializePayment(user.email, amount, reference, {
+        const paymentResponse = await flutterwaveService.initializePayment(user.email, amount, reference, {
             userId,
             type: 'subscription',
             tier,
@@ -104,12 +97,11 @@ const initializeUpgradePayment = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-exports.initializeUpgradePayment = initializeUpgradePayment;
 /**
  * @desc Verify subscription upgrade payment
  * @route POST /api/subscriptions/verify-upgrade
  */
-const verifyUpgradePayment = async (req, res) => {
+export const verifyUpgradePayment = async (req, res) => {
     try {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
@@ -120,10 +112,10 @@ const verifyUpgradePayment = async (req, res) => {
             return res.status(400).json({ message: 'Missing transaction reference' });
         }
         // Verify with Flutterwave
-        const verification = await flutterwave_service_1.default.verifyPayment(String(transaction_id || tx_ref));
+        const verification = await flutterwaveService.verifyPayment(String(transaction_id || tx_ref));
         console.log('Flutterwave verification response:', JSON.stringify(verification, null, 2));
         if (verification.data?.status === 'successful') {
-            const user = await user_model_1.default.findById(userId);
+            const user = await User.findById(userId);
             if (!user)
                 return res.status(404).json({ message: 'User not found' });
             // Extract metadata to confirm details (optional but recommended)
@@ -163,17 +155,16 @@ const verifyUpgradePayment = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-exports.verifyUpgradePayment = verifyUpgradePayment;
 /**
  * @desc Cancel user subscription
  * @route POST /api/subscriptions/cancel
  */
-const cancelSubscription = async (req, res) => {
+export const cancelSubscription = async (req, res) => {
     try {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -193,4 +184,3 @@ const cancelSubscription = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-exports.cancelSubscription = cancelSubscription;

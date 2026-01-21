@@ -21,13 +21,14 @@ const explicitBaseUrl =
     (Constants as any)?.manifest?.extra?.apiBaseUrl;
 
 const derivedHostBaseUrl = deriveExpoHostBaseUrl();
-const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-// const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
+// const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
 
 const getBaseUrl = () => {
-    // Force local server usage for now
-    let url = derivedHostBaseUrl || platformDefaultBaseUrl;
-    // let url = explicitBaseUrl || derivedHostBaseUrl || platformDefaultBaseUrl;
+    // Force production server usage
+    // let url = derivedHostBaseUrl || platformDefaultBaseUrl;
+    // let url = platformDefaultBaseUrl;
+    let url = derivedHostBaseUrl || 'http://10.0.2.2:5000'; // Default to Android Emulator localhost
 
     // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
     // For iOS physical device, derivedHostBaseUrl usually works (it's the LAN IP of the host)
@@ -65,6 +66,7 @@ export const API_ENDPOINTS = {
     PROFILES: '/api/profiles',
     PROFILE_ME: '/api/profiles/me',
     PROFILE_BY_ID: (id: string) => `/api/profiles/${id}`,
+    PROFILE_BY_USER_ID: (userId: string) => `/api/profiles/user/${userId}`,
 
     // Jobs
     JOBS: '/api/jobs',

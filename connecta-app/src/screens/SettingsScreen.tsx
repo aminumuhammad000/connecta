@@ -68,7 +68,13 @@ export default function SettingsScreen({ navigation }: any) {
         try {
             await logout();
             setRole(null);
-            showAlert({ title: 'Logged out', message: 'You have been logged out successfully', type: 'success' });
+            setTimeout(() => {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Landing' }],
+                });
+                showAlert({ title: 'Logged out', message: 'You have been logged out successfully', type: 'success' });
+            }, 100);
         } catch (error: any) {
             showAlert({ title: 'Error', message: error.message || 'Failed to logout', type: 'error' });
         }

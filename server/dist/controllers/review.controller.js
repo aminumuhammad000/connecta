@@ -1,16 +1,10 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllReviews = exports.updateReview = exports.flagReview = exports.voteReview = exports.respondToReview = exports.getUserReviewStats = exports.getUserReviews = exports.createReview = void 0;
-const Review_model_1 = __importDefault(require("../models/Review.model"));
-const Project_model_1 = __importDefault(require("../models/Project.model"));
-const Reputation_service_1 = __importDefault(require("../services/Reputation.service"));
+import Review from '../models/Review.model';
+import Project from '../models/Project.model';
+import ReputationService from '../services/Reputation.service';
 /**
  * Create a review for a completed project
  */
-const createReview = async (req, res) => {
+export const createReview = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { projectId, rating, comment, tags } = req.body;
@@ -28,7 +22,7 @@ const createReview = async (req, res) => {
             });
         }
         // Get project
-        const project = await Project_model_1.default.findById(projectId);
+        const project = await Project.findById(projectId);
         if (!project) {
             return res.status(404).json({ success: false, message: 'Project not found' });
         }
@@ -57,7 +51,7 @@ const createReview = async (req, res) => {
             });
         }
         // Check if review already exists
-        const existingReview = await Review_model_1.default.findOne({
+        const existingReview = await Review.findOne({
             projectId,
             reviewerId: userId,
         });
@@ -68,7 +62,7 @@ const createReview = async (req, res) => {
             });
         }
         // Create review
-        const review = await Review_model_1.default.create({
+        const review = await Review.create({
             projectId,
             reviewerId: userId,
             revieweeId,
@@ -78,7 +72,7 @@ const createReview = async (req, res) => {
             tags: tags || [],
         });
         // Update user's reputation (JSS, Rating, Badges)
-        await Reputation_service_1.default.updateFreelancerReputation(revieweeId);
+        await ReputationService.updateFreelancerReputation(revieweeId);
         // Populate reviewer details
         await review.populate('reviewerId', 'firstName lastName profilePicture');
         return res.status(201).json({
@@ -95,15 +89,14 @@ const createReview = async (req, res) => {
         });
     }
 };
-exports.createReview = createReview;
 /**
  * Get reviews for a specific user (freelancer or client)
  */
-const getUserReviews = async (req, res) => {
+export const getUserReviews = async (req, res) => {
     try {
         const { userId } = req.params;
         const { page = 1, limit = 10 } = req.query;
-        const reviews = await Review_model_1.default.find({
+        const reviews = await Review.find({
             revieweeId: userId,
             isPublic: true,
             isFlagged: false,
@@ -113,7 +106,7 @@ const getUserReviews = async (req, res) => {
             .skip((Number(page) - 1) * Number(limit))
             .populate('reviewerId', 'firstName lastName profilePicture')
             .populate('projectId', 'title');
-        const total = await Review_model_1.default.countDocuments({
+        const total = await Review.countDocuments({
             revieweeId: userId,
             isPublic: true,
             isFlagged: false,
@@ -137,14 +130,13 @@ const getUserReviews = async (req, res) => {
         });
     }
 };
-exports.getUserReviews = getUserReviews;
 /**
  * Get review statistics for a user
  */
-const getUserReviewStats = async (req, res) => {
+export const getUserReviewStats = async (req, res) => {
     try {
         const { userId } = req.params;
-        const reviews = await Review_model_1.default.find({
+        const reviews = await Review.find({
             revieweeId: userId,
             isPublic: true,
             isFlagged: false,
@@ -178,11 +170,10 @@ const getUserReviewStats = async (req, res) => {
         });
     }
 };
-exports.getUserReviewStats = getUserReviewStats;
 /**
  * Respond to a review
  */
-const respondToReview = async (req, res) => {
+export const respondToReview = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { reviewId } = req.params;
@@ -193,7 +184,7 @@ const respondToReview = async (req, res) => {
                 message: 'Response cannot be empty',
             });
         }
-        const review = await Review_model_1.default.findById(reviewId);
+        const review = await Review.findById(reviewId);
         if (!review) {
             return res.status(404).json({ success: false, message: 'Review not found' });
         }
@@ -221,15 +212,14 @@ const respondToReview = async (req, res) => {
         });
     }
 };
-exports.respondToReview = respondToReview;
 /**
  * Mark review as helpful/not helpful
  */
-const voteReview = async (req, res) => {
+export const voteReview = async (req, res) => {
     try {
         const { reviewId } = req.params;
         const { helpful } = req.body; // true or false
-        const review = await Review_model_1.default.findById(reviewId);
+        const review = await Review.findById(reviewId);
         if (!review) {
             return res.status(404).json({ success: false, message: 'Review not found' });
         }
@@ -257,15 +247,14 @@ const voteReview = async (req, res) => {
         });
     }
 };
-exports.voteReview = voteReview;
 /**
  * Flag a review
  */
-const flagReview = async (req, res) => {
+export const flagReview = async (req, res) => {
     try {
         const { reviewId } = req.params;
         const { reason } = req.body;
-        const review = await Review_model_1.default.findById(reviewId);
+        const review = await Review.findById(reviewId);
         if (!review) {
             return res.status(404).json({ success: false, message: 'Review not found' });
         }
@@ -285,16 +274,15 @@ const flagReview = async (req, res) => {
         });
     }
 };
-exports.flagReview = flagReview;
 /**
  * Update review (edit)
  */
-const updateReview = async (req, res) => {
+export const updateReview = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { reviewId } = req.params;
         const { rating, comment, tags } = req.body;
-        const review = await Review_model_1.default.findById(reviewId);
+        const review = await Review.findById(reviewId);
         if (!review) {
             return res.status(404).json({ success: false, message: 'Review not found' });
         }
@@ -320,7 +308,7 @@ const updateReview = async (req, res) => {
             review.tags = tags;
         await review.save();
         // Update user's reputation (JSS, Rating, Badges)
-        await Reputation_service_1.default.updateFreelancerReputation(review.revieweeId.toString());
+        await ReputationService.updateFreelancerReputation(review.revieweeId.toString());
         return res.status(200).json({
             success: true,
             message: 'Review updated successfully',
@@ -335,13 +323,12 @@ const updateReview = async (req, res) => {
         });
     }
 };
-exports.updateReview = updateReview;
 /**
  * Get all reviews for admin (no auth required)
  */
-const getAllReviews = async (req, res) => {
+export const getAllReviews = async (req, res) => {
     try {
-        const reviews = await Review_model_1.default.find()
+        const reviews = await Review.find()
             .populate('reviewerId', 'firstName lastName email profileImage')
             .populate('revieweeId', 'firstName lastName email profileImage')
             .populate('projectId', 'title description')
@@ -360,4 +347,3 @@ const getAllReviews = async (req, res) => {
         });
     }
 };
-exports.getAllReviews = getAllReviews;

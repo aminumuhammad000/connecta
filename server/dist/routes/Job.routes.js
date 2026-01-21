@@ -1,34 +1,29 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/Job.routes.ts
-const express_1 = __importDefault(require("express"));
-const Job_controller_1 = require("../controllers/Job.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const admin_middleware_1 = require("../core/middleware/admin.middleware");
-const router = express_1.default.Router();
+import express from "express";
+import { getAllJobs, getJobById, createJob, updateJob, deleteJob, getRecommendedJobs, searchJobs, getClientJobs, saveJob, unsaveJob, getSavedJobs } from "../controllers/Job.controller";
+import { authenticate } from "../core/middleware/auth.middleware";
+import { isAdmin } from "../core/middleware/admin.middleware";
+const router = express.Router();
 // Get jobs for the current client (protected)
-router.get("/client/my-jobs", auth_middleware_1.authenticate, Job_controller_1.getClientJobs);
+router.get("/client/my-jobs", authenticate, getClientJobs);
 // Get saved jobs (protected)
-router.get("/saved", auth_middleware_1.authenticate, Job_controller_1.getSavedJobs);
+router.get("/saved", authenticate, getSavedJobs);
 // Save a job (protected)
-router.post("/:id/save", auth_middleware_1.authenticate, Job_controller_1.saveJob);
+router.post("/:id/save", authenticate, saveJob);
 // Unsave a job (protected)
-router.delete("/:id/save", auth_middleware_1.authenticate, Job_controller_1.unsaveJob);
+router.delete("/:id/save", authenticate, unsaveJob);
 // Get all jobs with filters
-router.get("/", Job_controller_1.getAllJobs);
+router.get("/", getAllJobs);
 // Get recommended jobs (Jobs You May Like)
-router.get("/recommended", auth_middleware_1.authenticate, Job_controller_1.getRecommendedJobs);
+router.get("/recommended", authenticate, getRecommendedJobs);
 // Search jobs
-router.get("/search", Job_controller_1.searchJobs);
+router.get("/search", searchJobs);
 // Get job by ID
-router.get("/:id", Job_controller_1.getJobById);
+router.get("/:id", getJobById);
 // Create new job (protected)
-router.post("/", auth_middleware_1.authenticate, Job_controller_1.createJob);
+router.post("/", authenticate, createJob);
 // Update job
-router.put("/:id", Job_controller_1.updateJob);
+router.put("/:id", updateJob);
 // Delete job
-router.delete("/:id", auth_middleware_1.authenticate, admin_middleware_1.isAdmin, Job_controller_1.deleteJob);
-exports.default = router;
+router.delete("/:id", authenticate, isAdmin, deleteJob);
+export default router;

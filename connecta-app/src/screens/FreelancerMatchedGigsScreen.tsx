@@ -355,7 +355,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                           </View>
 
                           <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
-                            {job.description || job.summary || 'No description available'}
+                            {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : 'No description available')}
                           </Text>
 
                           <View style={styles.gigMeta}>

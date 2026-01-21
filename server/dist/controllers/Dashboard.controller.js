@@ -1,44 +1,38 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRecentMessages = exports.getTopFreelancers = exports.getFreelancerDashboard = exports.getClientDashboard = exports.getAdminStats = void 0;
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const Project_model_1 = __importDefault(require("../models/Project.model"));
-const Message_model_1 = __importDefault(require("../models/Message.model"));
-const user_model_1 = __importDefault(require("../models/user.model"));
-const Conversation_model_1 = __importDefault(require("../models/Conversation.model"));
-const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
-const Payment_model_1 = __importDefault(require("../models/Payment.model"));
-const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
-const mongoose_1 = __importDefault(require("mongoose"));
+import Job from '../models/Job.model';
+import Project from '../models/Project.model';
+import Message from '../models/Message.model';
+import User from '../models/user.model';
+import Conversation from '../models/Conversation.model';
+import Proposal from '../models/Proposal.model';
+import Payment from '../models/Payment.model';
+import Wallet from '../models/Wallet.model';
+import mongoose from 'mongoose';
 // Get Admin Dashboard Data
-const getAdminStats = async (req, res) => {
+export const getAdminStats = async (req, res) => {
     try {
         // 1. User Stats
-        const totalUsers = await user_model_1.default.countDocuments();
-        const totalClients = await user_model_1.default.countDocuments({ userType: 'client' });
-        const totalFreelancers = await user_model_1.default.countDocuments({ userType: 'freelancer' });
+        const totalUsers = await User.countDocuments();
+        const totalClients = await User.countDocuments({ userType: 'client' });
+        const totalFreelancers = await User.countDocuments({ userType: 'freelancer' });
         // 2. Job Stats
-        const totalJobs = await Job_model_1.default.countDocuments();
-        const activeJobs = await Job_model_1.default.countDocuments({ status: { $in: ['Open', 'open', 'active'] } });
+        const totalJobs = await Job.countDocuments();
+        const activeJobs = await Job.countDocuments({ status: { $in: ['Open', 'open', 'active'] } });
         // 3. Project Stats
-        const totalProjects = await Project_model_1.default.countDocuments();
-        const activeProjects = await Project_model_1.default.countDocuments({ status: { $in: ['ongoing', 'active', 'In-Progress'] } });
-        const completedProjects = await Project_model_1.default.countDocuments({ status: 'completed' });
+        const totalProjects = await Project.countDocuments();
+        const activeProjects = await Project.countDocuments({ status: { $in: ['ongoing', 'active', 'In-Progress'] } });
+        const completedProjects = await Project.countDocuments({ status: 'completed' });
         // 4. Financial Stats
-        const revenueResult = await Payment_model_1.default.aggregate([
+        const revenueResult = await Payment.aggregate([
             { $match: { status: 'completed' } },
             { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
         const totalRevenue = revenueResult[0]?.total || 0;
-        const pendingPaymentsCount = await Payment_model_1.default.countDocuments({ status: 'pending' });
+        const pendingPaymentsCount = await Payment.countDocuments({ status: 'pending' });
         // 5. Proposals
-        const totalProposals = await Proposal_model_1.default.countDocuments();
-        const pendingProposals = await Proposal_model_1.default.countDocuments({ status: 'pending' });
+        const totalProposals = await Proposal.countDocuments();
+        const pendingProposals = await Proposal.countDocuments({ status: 'pending' });
         // 6. Contracts
-        const Contract = mongoose_1.default.models.Contract || mongoose_1.default.model('Contract', new mongoose_1.default.Schema({}));
+        const Contract = mongoose.models.Contract || mongoose.model('Contract', new mongoose.Schema({}));
         // Handle case where Contract model might not be registered yet if not imported
         // But usually it is. If not, safe fallback or skip.
         // For now we assume Contract model exists or we skip.
@@ -68,44 +62,43 @@ const getAdminStats = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-exports.getAdminStats = getAdminStats;
 // Get Client Dashboard Data
-const getClientDashboard = async (req, res) => {
+export const getClientDashboard = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         // Get active jobs count
-        const activeJobsCount = await Job_model_1.default.countDocuments({
+        const activeJobsCount = await Job.countDocuments({
             clientId: userId,
             status: 'active',
         });
         // Get total candidates (applicants across all jobs)
-        const totalCandidatesResult = await Job_model_1.default.aggregate([
-            { $match: { clientId: new mongoose_1.default.Types.ObjectId(userId) } },
+        const totalCandidatesResult = await Job.aggregate([
+            { $match: { clientId: new mongoose.Types.ObjectId(userId) } },
             { $group: { _id: null, total: { $sum: '$applicants' } } },
         ]);
         const totalCandidates = totalCandidatesResult[0]?.total || 0;
         // Get unread messages count
         // Find conversations where user is either client or freelancer
-        const conversations = await Conversation_model_1.default.find({
+        const conversations = await Conversation.find({
             $or: [
                 { clientId: userId },
                 { freelancerId: userId },
             ],
         }).select('_id');
         const conversationIds = conversations.map((conv) => conv._id);
-        const unreadMessagesCount = await Message_model_1.default.countDocuments({
+        const unreadMessagesCount = await Message.countDocuments({
             conversationId: { $in: conversationIds },
             sender: { $ne: userId },
             isRead: false,
         });
         // Get pending payments (unverified or held in escrow)
-        const pendingPaymentsResult = await Payment_model_1.default.aggregate([
+        const pendingPaymentsResult = await Payment.aggregate([
             {
                 $match: {
-                    payerId: new mongoose_1.default.Types.ObjectId(userId),
+                    payerId: new mongoose.Types.ObjectId(userId),
                     status: { $in: ['pending', 'processing'] }
                 }
             },
@@ -123,27 +116,26 @@ const getClientDashboard = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-exports.getClientDashboard = getClientDashboard;
 // Get Freelancer Dashboard Data
-const getFreelancerDashboard = async (req, res) => {
+export const getFreelancerDashboard = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         // Get active proposals count (proposals that are not rejected or withdrawn)
-        const activeProposalsCount = await Proposal_model_1.default.countDocuments({
+        const activeProposalsCount = await Proposal.countDocuments({
             freelancerId: userId,
             status: { $in: ['pending', 'accepted', 'viewed'] },
         });
         // Get completed jobs count (proposals that are approved/completed)
-        const completedJobsCount = await Proposal_model_1.default.countDocuments({
+        const completedJobsCount = await Proposal.countDocuments({
             freelancerId: userId,
             status: 'approved', // Assuming 'approved' means completed in this context, or add a 'completed' status
         });
         // Get total earnings from Wallet
         let totalEarnings = 0;
-        const wallet = await Wallet_model_1.default.findOne({ userId });
+        const wallet = await Wallet.findOne({ userId });
         if (wallet) {
             // Assuming totalEarnings in wallet tracks lifetime earnings, 
             // or we can sum up completed payments if wallet doesn't exist yet/is partial.
@@ -151,10 +143,10 @@ const getFreelancerDashboard = async (req, res) => {
             totalEarnings = wallet.totalEarnings || 0;
             // If wallet doesn't track it, fallback to aggregation
             if (totalEarnings === 0) {
-                const earningsResult = await Payment_model_1.default.aggregate([
+                const earningsResult = await Payment.aggregate([
                     {
                         $match: {
-                            payeeId: new mongoose_1.default.Types.ObjectId(userId),
+                            payeeId: new mongoose.Types.ObjectId(userId),
                             status: 'completed'
                         }
                     },
@@ -165,10 +157,10 @@ const getFreelancerDashboard = async (req, res) => {
         }
         else {
             // Fallback if no wallet exists yet
-            const earningsResult = await Payment_model_1.default.aggregate([
+            const earningsResult = await Payment.aggregate([
                 {
                     $match: {
-                        payeeId: new mongoose_1.default.Types.ObjectId(userId),
+                        payeeId: new mongoose.Types.ObjectId(userId),
                         status: 'completed'
                     }
                 },
@@ -187,20 +179,23 @@ const getFreelancerDashboard = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-exports.getFreelancerDashboard = getFreelancerDashboard;
 // Get Top Freelancers (AI-powered recommendations)
-const getTopFreelancers = async (req, res) => {
+export const getTopFreelancers = async (req, res) => {
     try {
         // Get freelancers with profiles and high ratings
-        const freelancers = await user_model_1.default.find({ userType: 'freelancer' })
-            .select('firstName lastName email profileImage')
-            .limit(3);
+        const freelancers = await User.find({ userType: 'freelancer' })
+            .select('firstName lastName email profileImage jobSuccessScore averageRating totalReviews')
+            .sort({ jobSuccessScore: -1, averageRating: -1 })
+            .limit(10);
         const freelancersData = freelancers.map((freelancer) => ({
             id: freelancer._id,
             name: `${freelancer.firstName} ${freelancer.lastName}`,
             role: 'Freelancer', // This could come from profile data
-            rating: (Math.random() * (5 - 4.5) + 4.5).toFixed(1), // Random rating for now
-            avatar: freelancer.profileImage || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+            rating: freelancer.averageRating || 0,
+            reviews: freelancer.totalReviews || 0,
+            jobSuccessScore: freelancer.jobSuccessScore,
+            avatar: freelancer.profileImage || `https://ui-avatars.com/api/?name=${freelancer.firstName}+${freelancer.lastName}`,
+            skills: freelancer.skills || ['Mobile Dev', 'React Native'] // Fallback
         }));
         res.status(200).json({ freelancers: freelancersData });
     }
@@ -209,16 +204,15 @@ const getTopFreelancers = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-exports.getTopFreelancers = getTopFreelancers;
 // Get Recent Messages for Dashboard
-const getRecentMessages = async (req, res) => {
+export const getRecentMessages = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         // Get conversations for the user
-        const conversations = await Conversation_model_1.default.find({
+        const conversations = await Conversation.find({
             $or: [
                 { clientId: userId },
                 { freelancerId: userId },
@@ -239,7 +233,7 @@ const getRecentMessages = async (req, res) => {
                 otherParticipant = conv.freelancerId;
             }
             // Check if there are unread messages
-            const unreadCount = await Message_model_1.default.countDocuments({
+            const unreadCount = await Message.countDocuments({
                 conversationId: conv._id,
                 sender: { $ne: userId },
                 isRead: false,
@@ -266,7 +260,6 @@ const getRecentMessages = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-exports.getRecentMessages = getRecentMessages;
 // Helper function to format message time
 const formatMessageTime = (date) => {
     const now = new Date();

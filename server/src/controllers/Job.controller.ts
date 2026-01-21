@@ -316,13 +316,13 @@ export const getRecommendedJobs = async (req: Request, res: Response) => {
 // ===================
 export const searchJobs = async (req: Request, res: Response) => {
   try {
-    const { q, limit = 10, page = 1 } = req.query;
+    const { q, limit = 10, page = 1, isExternal } = req.query;
 
     if (!q) {
       return res.status(400).json({ success: false, message: "Search query required" });
     }
 
-    const filter = {
+    const filter: any = {
       status: "active",
       $or: [
         { title: { $regex: q, $options: "i" } },
@@ -332,10 +332,15 @@ export const searchJobs = async (req: Request, res: Response) => {
       ],
     };
 
+    if (isExternal !== undefined) {
+      filter.isExternal = isExternal === 'true';
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
 
+    // Prioritize internal jobs (isExternal: false (0) comes before true (1))
     const jobs = await Job.find(filter)
-      .sort({ posted: -1 })
+      .sort({ isExternal: 1, posted: -1 })
       .limit(Number(limit))
       .skip(skip)
       .populate("clientId", "firstName lastName email");

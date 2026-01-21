@@ -8,7 +8,7 @@ interface AuthContextValue {
     token: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (credentials: LoginCredentials) => Promise<void>;
+    login: (credentials: LoginCredentials) => Promise<any>;
     loginWithToken: (token: string, user: User) => Promise<void>;
     signup: (data: SignupData) => Promise<void>;
     googleLogin: (tokenId: string) => Promise<void>;
@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             setToken(response.token);
             setUser(response.user);
+            return response.user;
         } catch (error) {
             console.error('Login error:', error);
             throw error;

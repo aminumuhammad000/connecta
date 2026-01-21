@@ -14,16 +14,18 @@ import FreelancerOnboardingScreen from '../screens/FreelancerOnboardingScreen';
 import MatchingJobsScreen from '../screens/MatchingJobsScreen';
 import { useRole } from '../context/RoleContext';
 
+import MobileLandingScreen from '../screens/MobileLandingScreen';
+
 const Stack = createNativeStackNavigator();
 
 export default function AuthNavigator() {
     return (
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Onboarding">
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Welcome">
             <Stack.Screen name="Onboarding" component={OnboardingWrapper} />
             <Stack.Screen name="Welcome" component={WelcomeWrapper} />
             <Stack.Screen name="Login" component={LoginWrapper} />
             <Stack.Screen name="Signup" component={SignupScreen} />
-            <Stack.Screen name="Auth" component={AuthScreen} />
+            <Stack.Screen name="AuthSelection" component={AuthScreen} />
             <Stack.Screen name="Success" component={SuccessScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordWrapper} />
             <Stack.Screen name="OTPVerification" component={OTPVerificationWrapper} />
@@ -53,8 +55,19 @@ function WelcomeWrapper({ navigation }: any) {
 function LoginWrapper({ navigation }: any) {
     return (
         <LoginScreen
-            onSignedIn={() => {
-                // The RoleContext update will trigger App.tsx to switch navigators
+            onSignedIn={(user: any) => {
+                // Navigate based on role
+                if (user?.userType === 'client') {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'ClientMain' }],
+                    });
+                } else if (user?.userType === 'freelancer') {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'FreelancerMain' }],
+                    });
+                }
             }}
             onSignup={() => navigation.navigate('Signup')}
             onForgotPassword={() => navigation.navigate('ForgotPassword')}

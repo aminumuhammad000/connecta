@@ -1,21 +1,15 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllContracts = exports.getContractTemplate = exports.terminateContract = exports.signContract = exports.getUserContracts = exports.getContractById = exports.createContract = void 0;
-const Contract_model_1 = __importDefault(require("../models/Contract.model"));
-const Project_model_1 = __importDefault(require("../models/Project.model"));
-const notification_controller_1 = require("./notification.controller");
+import Contract from '../models/Contract.model';
+import Project from '../models/Project.model';
+import { createNotification } from './notification.controller';
 /**
  * Create a new contract
  */
-const createContract = async (req, res) => {
+export const createContract = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { projectId, jobId, freelancerId, title, description, contractType, terms, customTerms, budget, startDate, endDate, estimatedHours, deliverables, } = req.body;
         // Verify project exists
-        const project = await Project_model_1.default.findById(projectId);
+        const project = await Project.findById(projectId);
         if (!project) {
             return res.status(404).json({ success: false, message: 'Project not found' });
         }
@@ -24,7 +18,7 @@ const createContract = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Only client can create contract' });
         }
         // Create contract
-        const contract = await Contract_model_1.default.create({
+        const contract = await Contract.create({
             projectId,
             jobId,
             clientId: userId,
@@ -42,7 +36,7 @@ const createContract = async (req, res) => {
             status: 'pending_signatures',
         });
         // Notify freelancer
-        await (0, notification_controller_1.createNotification)({
+        await createNotification({
             userId: freelancerId,
             type: 'system',
             title: '📄 New Contract',
@@ -67,15 +61,14 @@ const createContract = async (req, res) => {
         });
     }
 };
-exports.createContract = createContract;
 /**
  * Get contract by ID
  */
-const getContractById = async (req, res) => {
+export const getContractById = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { contractId } = req.params;
-        const contract = await Contract_model_1.default.findById(contractId)
+        const contract = await Contract.findById(contractId)
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
             .populate('projectId', 'title description');
@@ -100,11 +93,10 @@ const getContractById = async (req, res) => {
         });
     }
 };
-exports.getContractById = getContractById;
 /**
  * Get contracts for a user
  */
-const getUserContracts = async (req, res) => {
+export const getUserContracts = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { status, page = 1, limit = 20 } = req.query;
@@ -114,14 +106,14 @@ const getUserContracts = async (req, res) => {
         if (status) {
             query.status = status;
         }
-        const contracts = await Contract_model_1.default.find(query)
+        const contracts = await Contract.find(query)
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit))
             .populate('clientId', 'firstName lastName')
             .populate('freelancerId', 'firstName lastName')
             .populate('projectId', 'title');
-        const total = await Contract_model_1.default.countDocuments(query);
+        const total = await Contract.countDocuments(query);
         return res.status(200).json({
             success: true,
             data: contracts,
@@ -141,16 +133,15 @@ const getUserContracts = async (req, res) => {
         });
     }
 };
-exports.getUserContracts = getUserContracts;
 /**
  * Sign contract
  */
-const signContract = async (req, res) => {
+export const signContract = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { contractId } = req.params;
         const { userName, ipAddress, userAgent } = req.body;
-        const contract = await Contract_model_1.default.findById(contractId)
+        const contract = await Contract.findById(contractId)
             .populate('clientId', 'firstName lastName')
             .populate('freelancerId', 'firstName lastName');
         if (!contract) {
@@ -200,7 +191,7 @@ const signContract = async (req, res) => {
         if (contract.clientSignature && contract.freelancerSignature) {
             contract.status = 'active';
             // Notify both parties
-            await (0, notification_controller_1.createNotification)({
+            await createNotification({
                 userId: contract.clientId._id,
                 type: 'system',
                 title: '✅ Contract Active',
@@ -211,7 +202,7 @@ const signContract = async (req, res) => {
                 icon: 'mdi:check-circle',
                 priority: 'high',
             });
-            await (0, notification_controller_1.createNotification)({
+            await createNotification({
                 userId: contract.freelancerId._id,
                 type: 'system',
                 title: '✅ Contract Active',
@@ -226,7 +217,7 @@ const signContract = async (req, res) => {
         else {
             // Notify the other party
             const otherPartyId = isClient ? contract.freelancerId._id : contract.clientId._id;
-            await (0, notification_controller_1.createNotification)({
+            await createNotification({
                 userId: otherPartyId,
                 type: 'system',
                 title: '✍️ Contract Signed',
@@ -253,16 +244,15 @@ const signContract = async (req, res) => {
         });
     }
 };
-exports.signContract = signContract;
 /**
  * Terminate contract
  */
-const terminateContract = async (req, res) => {
+export const terminateContract = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { contractId } = req.params;
         const { reason } = req.body;
-        const contract = await Contract_model_1.default.findById(contractId);
+        const contract = await Contract.findById(contractId);
         if (!contract) {
             return res.status(404).json({ success: false, message: 'Contract not found' });
         }
@@ -287,7 +277,7 @@ const terminateContract = async (req, res) => {
         const otherPartyId = contract.clientId.toString() === userId
             ? contract.freelancerId
             : contract.clientId;
-        await (0, notification_controller_1.createNotification)({
+        await createNotification({
             userId: otherPartyId,
             type: 'system',
             title: '⚠️ Contract Terminated',
@@ -312,11 +302,10 @@ const terminateContract = async (req, res) => {
         });
     }
 };
-exports.terminateContract = terminateContract;
 /**
  * Get contract template
  */
-const getContractTemplate = async (req, res) => {
+export const getContractTemplate = async (req, res) => {
     try {
         const { type } = req.params;
         const templates = {
@@ -435,25 +424,24 @@ const getContractTemplate = async (req, res) => {
         });
     }
 };
-exports.getContractTemplate = getContractTemplate;
 /**
  * Get all contracts (Admin only)
  */
-const getAllContracts = async (req, res) => {
+export const getAllContracts = async (req, res) => {
     try {
         const { status, page = 1, limit = 100 } = req.query;
         const query = {};
         if (status) {
             query.status = status;
         }
-        const contracts = await Contract_model_1.default.find(query)
+        const contracts = await Contract.find(query)
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit))
             .populate('clientId', 'firstName lastName email')
             .populate('freelancerId', 'firstName lastName email')
             .populate('projectId', 'title description');
-        const total = await Contract_model_1.default.countDocuments(query);
+        const total = await Contract.countDocuments(query);
         return res.status(200).json({
             success: true,
             data: contracts,
@@ -475,4 +463,3 @@ const getAllContracts = async (req, res) => {
         });
     }
 };
-exports.getAllContracts = getAllContracts;

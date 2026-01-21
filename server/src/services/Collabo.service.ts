@@ -32,20 +32,8 @@ class CollaboService {
             durationType?: string;
         }
     ) {
-        let session: mongoose.ClientSession | null = null;
-        let useTransaction = false;
-
+        // Transactions removed for standalone MongoDB compatibility
         try {
-            // Try to start a session (only works with replica sets)
-            try {
-                session = await mongoose.startSession();
-                session.startTransaction();
-                useTransaction = true;
-            } catch (err) {
-                console.warn('⚠️ Transactions not supported, using non-transactional saves');
-                session = null;
-            }
-
             // 1. Create Project
             const project = new CollaboProject({
                 clientId,
@@ -63,7 +51,7 @@ class CollaboService {
                 duration: data.duration,
                 durationType: data.durationType
             });
-            await project.save(session ? { session } : {});
+            await project.save();
 
             // 2. Create Roles
             const roleDocs = data.roles.map(role => ({
@@ -75,32 +63,22 @@ class CollaboService {
                 status: 'open',
             }));
 
-            const createdRoles = await ProjectRole.insertMany(roleDocs, session ? { session } : {});
+            const createdRoles = await ProjectRole.insertMany(roleDocs);
 
-            // 3. Create Workspace (Empty for now)
+            // 3. Create Workspace
             const workspace = new CollaboWorkspace({
                 projectId: project._id,
                 channels: [{ name: 'General', roleIds: [] }],
             });
-            await workspace.save(session ? { session } : {});
+            await workspace.save();
 
             project.workspaceId = workspace._id as mongoose.Types.ObjectId;
-            await project.save(session ? { session } : {});
-
-            if (useTransaction && session) {
-                await session.commitTransaction();
-            }
+            await project.save();
 
             return { project, roles: createdRoles, workspace };
         } catch (error) {
-            if (useTransaction && session) {
-                await session.abortTransaction();
-            }
+            console.error("Create Collabo Project Error:", error);
             throw error;
-        } finally {
-            if (session) {
-                session.endSession();
-            }
         }
     }
 
@@ -174,24 +152,12 @@ class CollaboService {
     }
 
     async acceptRole(roleId: string, freelancerId: string) {
-        let session: mongoose.ClientSession | null = null;
-        let useTransaction = false;
-
+        // Transactions removed for standalone MongoDB compatibility
         try {
-            // Try to start a session (only works with replica sets)
-            try {
-                session = await mongoose.startSession();
-                session.startTransaction();
-                useTransaction = true;
-            } catch (err) {
-                console.warn('⚠️ Transactions not supported, using non-transactional updates');
-                session = null;
-            }
-
             const role = await ProjectRole.findOneAndUpdate(
                 { _id: roleId, status: 'open' },
                 { freelancerId, status: 'filled' },
-                { new: true, ...(session ? { session } : {}) }
+                { new: true }
             );
 
             if (!role) throw new Error("Role not found or already filled");
@@ -200,23 +166,13 @@ class CollaboService {
             await CollaboWorkspace.findOneAndUpdate(
                 { projectId: role.projectId },
                 { $addToSet: { "channels.$[elem].roleIds": role._id } },
-                { arrayFilters: [{ "elem.name": "General" }], ...(session ? { session } : {}) }
+                { arrayFilters: [{ "elem.name": "General" }] }
             );
-
-            if (useTransaction && session) {
-                await session.commitTransaction();
-            }
 
             return role;
         } catch (error) {
-            if (useTransaction && session) {
-                await session.abortTransaction();
-            }
+            console.error("Accept Role Error:", error);
             throw error;
-        } finally {
-            if (session) {
-                session.endSession();
-            }
         }
     }
 

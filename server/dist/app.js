@@ -1,50 +1,45 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 // src/app.ts
-const express_1 = __importDefault(require("express"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const cors_1 = __importDefault(require("cors"));
-const http_1 = __importDefault(require("http"));
-const socket_io_1 = require("socket.io");
-const db_config_1 = __importDefault(require("./config/db.config"));
-const agentRoute_1 = __importDefault(require("./routes/agentRoute"));
-const cron_service_1 = require("./services/cron.service");
+import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
+import http from "http";
+import { Server } from "socket.io";
+import connectDB from "./config/db.config";
+import agentRoute from "./routes/agentRoute";
+import { initCronJobs } from "./services/cron.service";
 // routes 
-const user_routes_1 = __importDefault(require("./routes/user.routes"));
-const Profile_routes_1 = __importDefault(require("./routes/Profile.routes"));
-const Project_routes_1 = __importDefault(require("./routes/Project.routes"));
-const Job_routes_1 = __importDefault(require("./routes/Job.routes"));
-const Message_routes_1 = __importDefault(require("./routes/Message.routes"));
-const Proposal_routes_1 = __importDefault(require("./routes/Proposal.routes"));
-const Dashboard_routes_1 = __importDefault(require("./routes/Dashboard.routes"));
-const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
-const contract_routes_1 = __importDefault(require("./routes/contract.routes"));
-const payment_routes_1 = __importDefault(require("./routes/payment.routes"));
-const review_routes_1 = __importDefault(require("./routes/review.routes"));
-const gigs_routes_1 = __importDefault(require("./routes/gigs.routes"));
-const notification_routes_1 = __importDefault(require("./routes/notification.routes"));
-const insights_routes_1 = __importDefault(require("./routes/insights.routes"));
-const portfolio_routes_1 = __importDefault(require("./routes/portfolio.routes"));
-dotenv_1.default.config();
-const app = (0, express_1.default)();
+import userRoutes from "./routes/user.routes";
+import profileRoutes from "./routes/Profile.routes";
+import projectRoutes from "./routes/Project.routes";
+import jobRoutes from "./routes/Job.routes";
+import messageRoutes from "./routes/Message.routes";
+import proposalRoutes from "./routes/Proposal.routes";
+import dashboardRoutes from "./routes/Dashboard.routes";
+import uploadRoutes from "./routes/upload.routes";
+import contractRoutes from "./routes/contract.routes";
+import paymentRoutes from "./routes/payment.routes";
+import reviewRoutes from "./routes/review.routes";
+import gigsRoutes from "./routes/gigs.routes";
+import notificationRoutes from "./routes/notification.routes";
+import insightsRoutes from "./routes/insights.routes";
+import portfolioRoutes from "./routes/portfolio.routes";
+dotenv.config();
+const app = express();
 const PORT = process.env.PORT || 5000;
 // Create HTTP server
-const server = http_1.default.createServer(app);
+const server = http.createServer(app);
 // Initialize Socket.io
-const socketIO_1 = require("./core/utils/socketIO");
-const io = new socket_io_1.Server(server, {
+import { setIO } from './core/utils/socketIO';
+const io = new Server(server, {
     cors: {
         origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "http://172.20.10.3:5000", "*"],
         methods: ["GET", "POST"],
         credentials: true,
     },
 });
-(0, socketIO_1.setIO)(io);
+setIO(io);
 // Middleware
-app.use((0, cors_1.default)({
+app.use(cors({
     origin: [
         "http://102.68.84.56",
         "http://localhost:5173",
@@ -59,40 +54,40 @@ app.use((0, cors_1.default)({
     ],
     credentials: true
 }));
-app.use(express_1.default.json());
+app.use(express.json());
 // Connect to Database
-(0, db_config_1.default)();
+connectDB();
 // Routes
-app.use("/api/users", user_routes_1.default);
-app.use("/api/profiles", Profile_routes_1.default);
-app.use("/api/projects", Project_routes_1.default);
-app.use("/api/jobs", Job_routes_1.default);
-app.use("/api/messages", Message_routes_1.default);
-app.use("/api/proposals", Proposal_routes_1.default);
-app.use("/api/dashboard", Dashboard_routes_1.default);
-app.use("/api/uploads", upload_routes_1.default);
-app.use("/api/agent", agentRoute_1.default);
-app.use("/api/contracts", contract_routes_1.default);
-app.use("/api/payments", payment_routes_1.default);
-app.use("/api/reviews", review_routes_1.default);
-app.use("/api/gigs", gigs_routes_1.default);
-app.use("/api/notifications", notification_routes_1.default);
-app.use("/api/portfolio", portfolio_routes_1.default);
-const analytics_routes_1 = __importDefault(require("./routes/analytics.routes"));
-app.use("/api/analytics", analytics_routes_1.default);
-const Subscription_routes_1 = __importDefault(require("./routes/Subscription.routes"));
-app.use("/api/subscriptions", Subscription_routes_1.default);
-app.use("/api/analytics", insights_routes_1.default);
-const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
-app.use("/api/settings", settings_routes_1.default);
-const webhook_1 = __importDefault(require("./webhooks/routes/webhook"));
-app.use("/api/webhooks", webhook_1.default);
-const broadcast_routes_1 = __importDefault(require("./routes/broadcast.routes"));
-app.use("/api/broadcast", broadcast_routes_1.default);
-const external_gigs_routes_1 = __importDefault(require("./routes/external-gigs.routes"));
-app.use("/api/external-gigs", external_gigs_routes_1.default);
-const Collabo_routes_1 = __importDefault(require("./routes/Collabo.routes"));
-app.use("/api/collabo", Collabo_routes_1.default);
+app.use("/api/users", userRoutes);
+app.use("/api/profiles", profileRoutes);
+app.use("/api/projects", projectRoutes);
+app.use("/api/jobs", jobRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/proposals", proposalRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/uploads", uploadRoutes);
+app.use("/api/agent", agentRoute);
+app.use("/api/contracts", contractRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/gigs", gigsRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/portfolio", portfolioRoutes);
+import analyticsRoutes from "./routes/analytics.routes";
+app.use("/api/analytics", analyticsRoutes);
+import subscriptionRoutes from "./routes/Subscription.routes";
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/analytics", insightsRoutes);
+import settingsRoutes from "./routes/settings.routes";
+app.use("/api/settings", settingsRoutes);
+import webhookRoutes from "./webhooks/routes/webhook";
+app.use("/api/webhooks", webhookRoutes);
+import broadcastRoutes from "./routes/broadcast.routes";
+app.use("/api/broadcast", broadcastRoutes);
+import externalGigsRoutes from "./routes/external-gigs.routes";
+app.use("/api/external-gigs", externalGigsRoutes);
+import collaboRoutes from "./routes/Collabo.routes";
+app.use("/api/collabo", collaboRoutes);
 app.get("/", (req, res) => {
     res.send("✅ Connecta backend is running!");
 });
@@ -148,6 +143,15 @@ io.on("connection", (socket) => {
             });
         }
     });
+    // Room management (moved outside disconnect to prevent memory leak)
+    socket.on("room:join", (roomId) => {
+        socket.join(roomId);
+        console.log(`Socket ${socket.id} joined room ${roomId}`);
+    });
+    socket.on("room:leave", (roomId) => {
+        socket.leave(roomId);
+        console.log(`Socket ${socket.id} left room ${roomId}`);
+    });
     // Disconnect
     socket.on("disconnect", () => {
         console.log("❌ User disconnected:", socket.id);
@@ -159,15 +163,6 @@ io.on("connection", (socket) => {
                 break;
             }
         }
-        // Room management
-        socket.on("room:join", (roomId) => {
-            socket.join(roomId);
-            console.log(`Socket ${socket.id} joined room ${roomId}`);
-        });
-        socket.on("room:leave", (roomId) => {
-            socket.leave(roomId);
-            console.log(`Socket ${socket.id} left room ${roomId}`);
-        });
     });
 });
 // Start Server
@@ -175,5 +170,5 @@ server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`🔌 Socket.io ready for real-time messaging`);
     // Initialize cron jobs
-    (0, cron_service_1.initCronJobs)();
+    initCronJobs();
 });

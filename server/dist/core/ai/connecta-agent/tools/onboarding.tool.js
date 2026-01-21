@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.OnboardingTool = void 0;
-const base_tool_1 = require("./base.tool");
-class OnboardingTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class OnboardingTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "onboarding_tool";
@@ -12,4 +9,3 @@ class OnboardingTool extends base_tool_1.BaseTool {
         return this.request(`/api/support/onboarding`, "POST", params);
     }
 }
-exports.OnboardingTool = OnboardingTool;

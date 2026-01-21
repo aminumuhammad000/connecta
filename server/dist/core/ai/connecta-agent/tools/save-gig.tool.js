@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SaveGigTool = void 0;
-const base_tool_1 = require("./base.tool");
-class SaveGigTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class SaveGigTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "save_gig_tool";
@@ -12,4 +9,3 @@ class SaveGigTool extends base_tool_1.BaseTool {
         return this.request(`/api/jobs/${params.gigId}/save`, "POST", params);
     }
 }
-exports.SaveGigTool = SaveGigTool;

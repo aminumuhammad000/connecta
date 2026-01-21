@@ -1,17 +1,15 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const Subscription_controller_1 = require("../controllers/Subscription.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const router = (0, express_1.Router)();
+import { Router } from 'express';
+import { getMySubscription, initializeUpgradePayment, verifyUpgradePayment, cancelSubscription, } from '../controllers/Subscription.controller';
+import { authenticate } from '../core/middleware/auth.middleware';
+const router = Router();
 // All subscription routes require authentication
-router.use(auth_middleware_1.authenticate);
+router.use(authenticate);
 // Get current user's subscription
-router.get('/me', Subscription_controller_1.getMySubscription);
+router.get('/me', getMySubscription);
 // Initialize upgrade payment
-router.post('/initialize-upgrade', Subscription_controller_1.initializeUpgradePayment);
+router.post('/initialize-upgrade', initializeUpgradePayment);
 // Verify upgrade payment
-router.post('/verify-upgrade', Subscription_controller_1.verifyUpgradePayment);
+router.post('/verify-upgrade', verifyUpgradePayment);
 // Cancel subscription
-router.post('/cancel', Subscription_controller_1.cancelSubscription);
-exports.default = router;
+router.post('/cancel', cancelSubscription);
+export default router;

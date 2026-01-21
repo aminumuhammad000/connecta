@@ -1,11 +1,5 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseTool = void 0;
-const axios_1 = __importDefault(require("axios"));
-class BaseTool {
+import axios from "axios";
+export class BaseTool {
     constructor(apiBaseUrl, authToken, userId, mockMode = false) {
         this.apiBaseUrl = apiBaseUrl;
         this.authToken = authToken;
@@ -28,7 +22,7 @@ class BaseTool {
             params,
         };
         try {
-            const res = await axios_1.default.request(cfg);
+            const res = await axios.request(cfg);
             return { success: true, data: res.data };
         }
         catch (err) {
@@ -37,4 +31,3 @@ class BaseTool {
         }
     }
 }
-exports.BaseTool = BaseTool;

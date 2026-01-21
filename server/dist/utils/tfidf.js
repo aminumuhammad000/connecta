@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TFIDF = void 0;
-class TFIDF {
+export class TFIDF {
     constructor() {
         this.documents = [];
         this.terms = [];
@@ -130,4 +127,3 @@ class TFIDF {
         return scores.sort((a, b) => b.score - a.score).slice(0, limit);
     }
 }
-exports.TFIDF = TFIDF;

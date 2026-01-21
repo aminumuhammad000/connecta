@@ -1,29 +1,24 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const agent_1 = require("../core/ai/connecta-agent/agent");
-const user_model_1 = __importDefault(require("../models/user.model"));
-dotenv_1.default.config();
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import { ConnectaAgent } from '../core/ai/connecta-agent/agent';
+import User from '../models/user.model';
+dotenv.config();
 async function testAgent() {
     try {
         console.log('🔌 Connecting to MongoDB...');
         if (!process.env.MONGO_URI) {
             throw new Error('MONGO_URI not found in environment variables');
         }
-        await mongoose_1.default.connect(process.env.MONGO_URI);
+        await mongoose.connect(process.env.MONGO_URI);
         console.log('✅ Connected to MongoDB');
         // Find a test user (or create a mock context)
-        const user = await user_model_1.default.findOne({ email: 'freelancer@example.com' }); // Adjust email as needed
+        const user = await User.findOne({ email: 'freelancer@example.com' }); // Adjust email as needed
         if (!user) {
             console.log('⚠️ Test user not found, using mock ID');
         }
         const userId = user?._id.toString() || '65a1234567890abcdef12345';
         console.log('🤖 Initializing Agent...');
-        const agent = new agent_1.ConnectaAgent({
+        const agent = new ConnectaAgent({
             apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:5000',
             authToken: '', // No auth token for testing
             userId,
@@ -48,7 +43,7 @@ async function testAgent() {
         console.error('❌ Test Failed:', error);
     }
     finally {
-        await mongoose_1.default.disconnect();
+        await mongoose.disconnect();
         console.log('👋 Disconnected');
     }
 }

@@ -1,40 +1,34 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAnalyticsStats = void 0;
-const user_model_1 = __importDefault(require("../models/user.model"));
-const Project_model_1 = __importDefault(require("../models/Project.model"));
-const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
-const Payment_model_1 = __importDefault(require("../models/Payment.model"));
-const Contract_model_1 = __importDefault(require("../models/Contract.model"));
-const Review_model_1 = __importDefault(require("../models/Review.model"));
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const subscription_model_1 = __importDefault(require("../models/subscription.model"));
-const getAnalyticsStats = async (req, res) => {
+import User from '../models/user.model';
+import Project from '../models/Project.model';
+import Proposal from '../models/Proposal.model';
+import Payment from '../models/Payment.model';
+import Contract from '../models/Contract.model';
+import Review from '../models/Review.model';
+import Job from '../models/Job.model';
+import Subscription from '../models/subscription.model';
+export const getAnalyticsStats = async (req, res) => {
     try {
         // Get total counts
-        const totalUsers = await user_model_1.default.countDocuments();
-        const totalProjects = await Project_model_1.default.countDocuments();
-        const totalJobs = await Job_model_1.default.countDocuments();
-        const totalProposals = await Proposal_model_1.default.countDocuments();
-        const totalPayments = await Payment_model_1.default.countDocuments();
-        const totalContracts = await Contract_model_1.default.countDocuments();
-        const totalReviews = await Review_model_1.default.countDocuments();
+        const totalUsers = await User.countDocuments();
+        const totalProjects = await Project.countDocuments();
+        const totalJobs = await Job.countDocuments();
+        const totalProposals = await Proposal.countDocuments();
+        const totalPayments = await Payment.countDocuments();
+        const totalContracts = await Contract.countDocuments();
+        const totalReviews = await Review.countDocuments();
         // Get user type counts
-        const clientsCount = await user_model_1.default.countDocuments({ userType: 'client' });
-        const freelancersCount = await user_model_1.default.countDocuments({ userType: 'freelancer' });
+        const clientsCount = await User.countDocuments({ userType: 'client' });
+        const freelancersCount = await User.countDocuments({ userType: 'freelancer' });
         // Get project status counts
-        const activeProjects = await Project_model_1.default.countDocuments({ status: 'active' });
-        const completedProjects = await Project_model_1.default.countDocuments({ status: 'completed' });
+        const activeProjects = await Project.countDocuments({ status: 'active' });
+        const completedProjects = await Project.countDocuments({ status: 'completed' });
         // Get total revenue from payments
-        const paymentRevenue = await Payment_model_1.default.aggregate([
+        const paymentRevenue = await Payment.aggregate([
             { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
         const totalPaymentRevenue = paymentRevenue[0]?.total || 0;
         // Get user growth (monthly)
-        const userGrowth = await user_model_1.default.aggregate([
+        const userGrowth = await User.aggregate([
             {
                 $group: {
                     _id: {
@@ -53,15 +47,15 @@ const getAnalyticsStats = async (req, res) => {
             users: item.count
         }));
         // Get proposal statistics
-        const acceptedProposals = await Proposal_model_1.default.countDocuments({ status: 'accepted' });
-        const rejectedProposals = await Proposal_model_1.default.countDocuments({ status: 'rejected' });
+        const acceptedProposals = await Proposal.countDocuments({ status: 'accepted' });
+        const rejectedProposals = await Proposal.countDocuments({ status: 'rejected' });
         const proposalSuccessRate = totalProposals > 0
             ? Math.round((acceptedProposals / totalProposals) * 100)
             : 0;
         // Get weekly revenue from payments (last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const weeklyPaymentRevenue = await Payment_model_1.default.aggregate([
+        const weeklyPaymentRevenue = await Payment.aggregate([
             {
                 $match: {
                     createdAt: { $gte: sevenDaysAgo }
@@ -81,12 +75,12 @@ const getAnalyticsStats = async (req, res) => {
             amount: item.amount
         }));
         // Get subscription revenue
-        const subscriptionRevenue = await subscription_model_1.default.aggregate([
+        const subscriptionRevenue = await Subscription.aggregate([
             { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
         const totalSubscriptionRevenue = subscriptionRevenue[0]?.total || 0;
         // Get weekly subscription revenue (last 7 days)
-        const weeklySubscriptionRevenue = await subscription_model_1.default.aggregate([
+        const weeklySubscriptionRevenue = await Subscription.aggregate([
             {
                 $match: {
                     createdAt: {
@@ -110,14 +104,14 @@ const getAnalyticsStats = async (req, res) => {
             subscriptions: item.count
         }));
         // Get active subscriptions count
-        const activeSubscriptions = await subscription_model_1.default.countDocuments({
+        const activeSubscriptions = await Subscription.countDocuments({
             status: 'active',
             endDate: { $gt: new Date() }
         });
         // Get job statistics
-        const openJobs = await Job_model_1.default.countDocuments({ status: 'open' });
-        const inProgressJobs = await Job_model_1.default.countDocuments({ status: 'in-progress' });
-        const closedJobs = await Job_model_1.default.countDocuments({ status: 'closed' });
+        const openJobs = await Job.countDocuments({ status: 'open' });
+        const inProgressJobs = await Job.countDocuments({ status: 'in-progress' });
+        const closedJobs = await Job.countDocuments({ status: 'closed' });
         return res.status(200).json({
             success: true,
             data: {
@@ -165,4 +159,3 @@ const getAnalyticsStats = async (req, res) => {
         });
     }
 };
-exports.getAnalyticsStats = getAnalyticsStats;

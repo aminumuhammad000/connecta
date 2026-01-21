@@ -1,46 +1,7 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.rejectProposal = exports.approveProposal = exports.getClientAcceptedProposals = exports.getProposalStats = exports.deleteProposal = exports.updateProposal = exports.updateProposalStatus = exports.createProposal = exports.getProposalById = exports.getAllProposals = exports.getProposalsByJobId = exports.getFreelancerProposals = void 0;
-const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
-const mongoose_1 = __importDefault(require("mongoose"));
+import Proposal from '../models/Proposal.model';
+import mongoose from 'mongoose';
 // Get all proposals for a freelancer
-const getFreelancerProposals = async (req, res) => {
+export const getFreelancerProposals = async (req, res) => {
     try {
         const { freelancerId } = req.params;
         const { type, status } = req.query;
@@ -51,7 +12,7 @@ const getFreelancerProposals = async (req, res) => {
         if (status) {
             query.status = status;
         }
-        const proposals = await Proposal_model_1.default.find(query)
+        const proposals = await Proposal.find(query)
             .populate('referredBy', 'firstName lastName')
             .populate('jobId', 'title company')
             .populate('clientId', 'firstName lastName')
@@ -70,20 +31,28 @@ const getFreelancerProposals = async (req, res) => {
         });
     }
 };
-exports.getFreelancerProposals = getFreelancerProposals;
 // Get all proposals for a specific job
-const getProposalsByJobId = async (req, res) => {
+export const getProposalsByJobId = async (req, res) => {
     try {
         const { jobId } = req.params;
-        const proposals = await Proposal_model_1.default.find({ jobId })
-            .populate('freelancerId', 'firstName lastName email profileImage isPremium subscriptionTier')
+        const proposals = await Proposal.find({ jobId })
+            .populate('freelancerId', 'firstName lastName email profileImage isPremium subscriptionTier jobSuccessScore')
             .populate('referredBy', 'firstName lastName')
-            .populate('clientId', 'firstName lastName')
-            .sort({ createdAt: -1 });
+            .populate('clientId', 'firstName lastName');
+        // Sort by Job Success Score (Higher = Better chance)
+        const sortedProposals = proposals.sort((a, b) => {
+            const scoreA = a.freelancerId?.jobSuccessScore || 0;
+            const scoreB = b.freelancerId?.jobSuccessScore || 0;
+            // Secondary sort by created date
+            if (scoreA === scoreB) {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+            return scoreB - scoreA;
+        });
         res.status(200).json({
             success: true,
-            count: proposals.length,
-            data: proposals,
+            count: sortedProposals.length,
+            data: sortedProposals,
         });
     }
     catch (error) {
@@ -94,9 +63,8 @@ const getProposalsByJobId = async (req, res) => {
         });
     }
 };
-exports.getProposalsByJobId = getProposalsByJobId;
 // Get all proposals (admin)
-const getAllProposals = async (req, res) => {
+export const getAllProposals = async (req, res) => {
     try {
         const { page = 1, limit = 20, type, status } = req.query;
         let query = {};
@@ -115,7 +83,7 @@ const getAllProposals = async (req, res) => {
             ];
         }
         const skip = (Number(page) - 1) * Number(limit);
-        const proposals = await Proposal_model_1.default.find(query)
+        const proposals = await Proposal.find(query)
             .populate('freelancerId', 'firstName lastName email')
             .populate('referredBy', 'firstName lastName')
             .populate('jobId', 'title company')
@@ -123,7 +91,7 @@ const getAllProposals = async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip(skip);
-        const total = await Proposal_model_1.default.countDocuments(query);
+        const total = await Proposal.countDocuments(query);
         res.status(200).json({
             success: true,
             count: proposals.length,
@@ -141,12 +109,11 @@ const getAllProposals = async (req, res) => {
         });
     }
 };
-exports.getAllProposals = getAllProposals;
 // Get single proposal by ID
-const getProposalById = async (req, res) => {
+export const getProposalById = async (req, res) => {
     try {
         const { id } = req.params;
-        const proposal = await Proposal_model_1.default.findById(id)
+        const proposal = await Proposal.findById(id)
             .populate('freelancerId', 'firstName lastName email')
             .populate('referredBy', 'firstName lastName')
             .populate({
@@ -173,9 +140,8 @@ const getProposalById = async (req, res) => {
         });
     }
 };
-exports.getProposalById = getProposalById;
 // Create a new proposal
-const createProposal = async (req, res) => {
+export const createProposal = async (req, res) => {
     try {
         const proposalData = req.body;
         // Set freelancerId and clientId from authenticated user
@@ -200,7 +166,7 @@ const createProposal = async (req, res) => {
                 proposalData.title = 'Job Application';
             }
         }
-        const proposal = await Proposal_model_1.default.create(proposalData);
+        const proposal = await Proposal.create(proposalData);
         // Notify Client of new proposal
         try {
             if (proposalData.jobId) {
@@ -236,7 +202,7 @@ const createProposal = async (req, res) => {
                         type: 'proposal_new'
                     });
                     // Send Push Notification
-                    const notificationService = (await Promise.resolve().then(() => __importStar(require('../services/notification.service')))).default;
+                    const notificationService = (await import('../services/notification.service')).default;
                     notificationService.sendPushNotification(job.clientId.toString(), 'New Proposal', `${freelancer ? freelancer.firstName : 'A freelancer'} applied for: ${job.title}`, { proposalId: proposal._id, type: 'proposal' });
                 }
             }
@@ -259,9 +225,8 @@ const createProposal = async (req, res) => {
         });
     }
 };
-exports.createProposal = createProposal;
 // Update proposal status (accept/decline)
-const updateProposalStatus = async (req, res) => {
+export const updateProposalStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
@@ -271,7 +236,7 @@ const updateProposalStatus = async (req, res) => {
                 message: 'Invalid status. Must be pending, accepted, declined, or expired',
             });
         }
-        const proposal = await Proposal_model_1.default.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
+        const proposal = await Proposal.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
         if (!proposal) {
             return res.status(404).json({
                 success: false,
@@ -292,13 +257,12 @@ const updateProposalStatus = async (req, res) => {
         });
     }
 };
-exports.updateProposalStatus = updateProposalStatus;
 // Update proposal
-const updateProposal = async (req, res) => {
+export const updateProposal = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const proposal = await Proposal_model_1.default.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        const proposal = await Proposal.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
         if (!proposal) {
             return res.status(404).json({
                 success: false,
@@ -319,12 +283,11 @@ const updateProposal = async (req, res) => {
         });
     }
 };
-exports.updateProposal = updateProposal;
 // Delete proposal
-const deleteProposal = async (req, res) => {
+export const deleteProposal = async (req, res) => {
     try {
         const { id } = req.params;
-        const proposal = await Proposal_model_1.default.findByIdAndDelete(id);
+        const proposal = await Proposal.findByIdAndDelete(id);
         if (!proposal) {
             return res.status(404).json({
                 success: false,
@@ -344,12 +307,11 @@ const deleteProposal = async (req, res) => {
         });
     }
 };
-exports.deleteProposal = deleteProposal;
 // Get proposals statistics for a freelancer
-const getProposalStats = async (req, res) => {
+export const getProposalStats = async (req, res) => {
     try {
         const { freelancerId } = req.params;
-        const stats = await Proposal_model_1.default.aggregate([
+        const stats = await Proposal.aggregate([
             { $match: { freelancerId: freelancerId } },
             {
                 $group: {
@@ -358,7 +320,7 @@ const getProposalStats = async (req, res) => {
                 },
             },
         ]);
-        const typeStats = await Proposal_model_1.default.aggregate([
+        const typeStats = await Proposal.aggregate([
             { $match: { freelancerId: freelancerId } },
             {
                 $group: {
@@ -383,9 +345,8 @@ const getProposalStats = async (req, res) => {
         });
     }
 };
-exports.getProposalStats = getProposalStats;
 // Get accepted proposals for a client
-const getClientAcceptedProposals = async (req, res) => {
+export const getClientAcceptedProposals = async (req, res) => {
     try {
         const clientId = req.user?.id || req.user?._id?.toString();
         if (!clientId) {
@@ -394,7 +355,7 @@ const getClientAcceptedProposals = async (req, res) => {
                 message: 'Unauthorized',
             });
         }
-        const proposals = await Proposal_model_1.default.find({
+        const proposals = await Proposal.find({
             clientId,
             status: 'accepted',
         })
@@ -425,13 +386,12 @@ const getClientAcceptedProposals = async (req, res) => {
         });
     }
 };
-exports.getClientAcceptedProposals = getClientAcceptedProposals;
 // Approve a proposal and create a project
-const approveProposal = async (req, res) => {
+export const approveProposal = async (req, res) => {
     try {
         const { id } = req.params;
         const clientId = req.user?.id || req.user?._id?.toString();
-        const proposal = await Proposal_model_1.default.findById(id)
+        const proposal = await Proposal.findById(id)
             .populate('jobId')
             .populate('freelancerId', 'firstName lastName email')
             .populate('clientId', 'firstName lastName');
@@ -570,7 +530,7 @@ const approveProposal = async (req, res) => {
         try {
             const io = require('../core/utils/socketIO').getIO(); // Import here to avoid circular dependency issues if any
             // Create notification record
-            await mongoose_1.default.model('Notification').create({
+            await mongoose.model('Notification').create({
                 userId: actualFreelancerId,
                 type: 'proposal_accepted',
                 title: 'Proposal Accepted',
@@ -588,7 +548,7 @@ const approveProposal = async (req, res) => {
                 type: 'proposal_accepted'
             });
             // Send Push Notification
-            const notificationService = (await Promise.resolve().then(() => __importStar(require('../services/notification.service')))).default;
+            const notificationService = (await import('../services/notification.service')).default;
             notificationService.sendPushNotification(actualFreelancerId.toString(), 'Proposal Accepted', `Your proposal for "${proposal.title}" has been accepted!`, { projectId: project._id, type: 'project' });
         }
         catch (socketError) {
@@ -619,13 +579,12 @@ const approveProposal = async (req, res) => {
         });
     }
 };
-exports.approveProposal = approveProposal;
 // Reject a proposal
-const rejectProposal = async (req, res) => {
+export const rejectProposal = async (req, res) => {
     try {
         const { id } = req.params;
         const clientId = req.user?.id || req.user?._id?.toString();
-        const proposal = await Proposal_model_1.default.findById(id)
+        const proposal = await Proposal.findById(id)
             .populate('freelancerId', 'firstName lastName email')
             .populate('clientId', 'firstName lastName')
             .populate('jobId', 'title');
@@ -672,7 +631,7 @@ const rejectProposal = async (req, res) => {
                     type: 'proposal_rejected'
                 });
                 // Send Push Notification
-                const notificationService = (await Promise.resolve().then(() => __importStar(require('../services/notification.service')))).default;
+                const notificationService = (await import('../services/notification.service')).default;
                 notificationService.sendPushNotification(freelancer._id.toString(), 'Proposal Declined', `${clientName} declined your proposal for "${jobTitle}".`, { type: 'proposal' });
                 // 3. Email Notification
                 if (freelancer.email) {
@@ -693,4 +652,3 @@ const rejectProposal = async (req, res) => {
         });
     }
 };
-exports.rejectProposal = rejectProposal;

@@ -1,26 +1,20 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSavedJobs = exports.unsaveJob = exports.saveJob = exports.searchJobs = exports.getRecommendedJobs = exports.deleteJob = exports.updateJob = exports.createJob = exports.getJobById = exports.getAllJobs = exports.getClientJobs = void 0;
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const user_model_1 = __importDefault(require("../models/user.model"));
-const Profile_model_1 = __importDefault(require("../models/Profile.model"));
+import Job from "../models/Job.model";
+import User from "../models/user.model";
+import Profile from "../models/Profile.model";
 // ===================
 // Get Jobs for Current Client
 // ===================
 // ===================
 // Get Jobs for Current Client
 // ===================
-const getClientJobs = async (req, res) => {
+export const getClientJobs = async (req, res) => {
     try {
         // Use (req.user as any) to avoid TS errors
         const clientId = req.user?._id || req.user?.id;
         if (!clientId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const jobs = await Job_model_1.default.find({ clientId }).sort({ createdAt: -1 });
+        const jobs = await Job.find({ clientId }).sort({ createdAt: -1 });
         // Calculate proposal counts for each job
         // Dynamically import Proposal to avoid circular dependency issues if any
         const Proposal = require("../models/Proposal.model").default;
@@ -37,11 +31,10 @@ const getClientJobs = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.getClientJobs = getClientJobs;
 // ===================
 // Get All Jobs
 // ===================
-const getAllJobs = async (req, res) => {
+export const getAllJobs = async (req, res) => {
     try {
         const { category, location, jobType, locationType, skills, isExternal, status, limit = 10, page = 1 } = req.query;
         const filter = {};
@@ -62,12 +55,12 @@ const getAllJobs = async (req, res) => {
         if (isExternal !== undefined)
             filter.isExternal = isExternal === 'true';
         const skip = (Number(page) - 1) * Number(limit);
-        const jobs = await Job_model_1.default.find(filter)
+        const jobs = await Job.find(filter)
             .sort({ posted: -1 })
             .limit(Number(limit))
             .skip(skip)
             .populate("clientId", "firstName lastName email");
-        const total = await Job_model_1.default.countDocuments(filter);
+        const total = await Job.countDocuments(filter);
         res.status(200).json({
             success: true,
             data: jobs,
@@ -83,14 +76,13 @@ const getAllJobs = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.getAllJobs = getAllJobs;
 // ===================
 // Get Job by ID
 // ===================
-const getJobById = async (req, res) => {
+export const getJobById = async (req, res) => {
     try {
         const { id } = req.params;
-        const job = await Job_model_1.default.findById(id).populate("clientId", "firstName lastName email");
+        const job = await Job.findById(id).populate("clientId", "firstName lastName email");
         if (!job) {
             return res.status(404).json({ success: false, message: "Job not found" });
         }
@@ -100,11 +92,10 @@ const getJobById = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.getJobById = getJobById;
 // ===================
 // Create Job
 // ===================
-const createJob = async (req, res) => {
+export const createJob = async (req, res) => {
     try {
         const jobData = req.body;
         // Set clientId from authenticated user (use any to avoid TS error)
@@ -113,7 +104,17 @@ const createJob = async (req, res) => {
             return res.status(401).json({ success: false, message: "Unauthorized: No clientId" });
         }
         jobData.clientId = clientId;
-        const newJob = await Job_model_1.default.create(jobData);
+        const newJob = await Job.create(jobData);
+        // Notify matching freelancers via WhatsApp
+        try {
+            // Import dynamically if needed, or rely on top-level import if I add it.
+            // Better to add top-level import.
+            const TwilioService = require('../services/twilio.service').default;
+            TwilioService.notifyMatchingFreelancers(newJob);
+        }
+        catch (notifyErr) {
+            console.error("Failed to notify freelancers:", notifyErr);
+        }
         res.status(201).json({
             success: true,
             message: "Job created successfully",
@@ -124,15 +125,14 @@ const createJob = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.createJob = createJob;
 // ===================
 // Update Job
 // ===================
-const updateJob = async (req, res) => {
+export const updateJob = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const updatedJob = await Job_model_1.default.findByIdAndUpdate(id, updateData, {
+        const updatedJob = await Job.findByIdAndUpdate(id, updateData, {
             new: true,
             runValidators: true,
         });
@@ -149,14 +149,13 @@ const updateJob = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.updateJob = updateJob;
 // ===================
 // Delete Job
 // ===================
-const deleteJob = async (req, res) => {
+export const deleteJob = async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedJob = await Job_model_1.default.findByIdAndDelete(id);
+        const deletedJob = await Job.findByIdAndDelete(id);
         if (!deletedJob) {
             return res.status(404).json({ success: false, message: "Job not found" });
         }
@@ -169,18 +168,17 @@ const deleteJob = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.deleteJob = deleteJob;
 // ===================
 // Get Recommended Jobs (Jobs You May Like)
 // ===================
-const getRecommendedJobs = async (req, res) => {
+export const getRecommendedJobs = async (req, res) => {
     try {
         const { limit = 6 } = req.query;
         // @ts-ignore
         const userId = req.user?._id || req.user?.id;
         let filter = { status: "active" };
         if (userId) {
-            const profile = await Profile_model_1.default.findOne({ user: userId });
+            const profile = await Profile.findOne({ user: userId });
             if (profile) {
                 const orConditions = [];
                 // 1. Match Skills
@@ -211,32 +209,70 @@ const getRecommendedJobs = async (req, res) => {
                 // If onsite, we don't strictly filter to onsite usually, or maybe we do.
             }
         }
-        // Get active jobs, prioritized by match logic if possible, but for now simple filter
-        let jobs = await Job_model_1.default.find(filter)
+        // Get active jobs, prioritized by match logic
+        let jobs = await Job.find(filter)
             .sort({ posted: -1 })
-            .limit(Number(limit))
+            .limit(Number(limit) * 2) // Fetch more to filter
             .populate("clientId", "firstName lastName email");
         // Fallback: If no jobs found with strict filter, return recent jobs
         if (jobs.length === 0) {
-            jobs = await Job_model_1.default.find({ status: "active" })
+            jobs = await Job.find({ status: "active" })
                 .sort({ posted: -1 })
                 .limit(Number(limit))
                 .populate("clientId", "firstName lastName email");
         }
+        // Scoring and Categorization
+        // 1. Calculate Score (Simple overlap match)
+        // 2. Prioritize Internal (!isExternal)
+        const profileSkills = new Set(await Profile.findOne({ user: userId }).then(p => p?.skills || []));
+        let scoredJobs = jobs.map((job) => {
+            let score = 0;
+            let matchCount = 0;
+            // Match Skills
+            if (job.skills && job.skills.length > 0) {
+                job.skills.forEach(s => {
+                    if (profileSkills.has(s))
+                        matchCount++;
+                });
+                score = matchCount / Math.max(job.skills.length, 1);
+            }
+            else {
+                // If job has no skills listed, give a neutral score if title matches?
+                // For now, assume 0.5 baseline for loose matches
+                score = 0.5;
+            }
+            // Boost internal jobs
+            if (!job.isExternal) {
+                score += 0.2; // Internal boost
+            }
+            return { job, score };
+        });
+        // Filter out low scores (< 0.5) UNLESS it's a fallback situation where we need data
+        // The user requirement says "if score < 0.5 do not recommend it"
+        // We strictly follow this unless no jobs remain, effectively empty.
+        // Normalize Score:
+        // Pure skill match is 0.0 - 1.0. 
+        // Internal boost adds 0.2.
+        // So internal jobs with 30% skill match (0.3 + 0.2 = 0.5) pass.
+        // External jobs need 50% skill match to pass.
+        scoredJobs = scoredJobs.filter(item => item.score >= 0.5);
+        // Sort: Higher score first
+        scoredJobs.sort((a, b) => b.score - a.score);
+        // Take limit
+        const finalJobs = scoredJobs.slice(0, Number(limit)).map(item => item.job);
         res.status(200).json({
             success: true,
-            data: jobs,
+            data: finalJobs,
         });
     }
     catch (err) {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.getRecommendedJobs = getRecommendedJobs;
 // ===================
 // Search Jobs
 // ===================
-const searchJobs = async (req, res) => {
+export const searchJobs = async (req, res) => {
     try {
         const { q, limit = 10, page = 1 } = req.query;
         if (!q) {
@@ -252,12 +288,12 @@ const searchJobs = async (req, res) => {
             ],
         };
         const skip = (Number(page) - 1) * Number(limit);
-        const jobs = await Job_model_1.default.find(filter)
+        const jobs = await Job.find(filter)
             .sort({ posted: -1 })
             .limit(Number(limit))
             .skip(skip)
             .populate("clientId", "firstName lastName email");
-        const total = await Job_model_1.default.countDocuments(filter);
+        const total = await Job.countDocuments(filter);
         res.status(200).json({
             success: true,
             data: jobs,
@@ -273,11 +309,10 @@ const searchJobs = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.searchJobs = searchJobs;
 // ===================
 // Save Job
 // ===================
-const saveJob = async (req, res) => {
+export const saveJob = async (req, res) => {
     try {
         const { id } = req.params;
         // @ts-ignore
@@ -285,7 +320,7 @@ const saveJob = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -305,11 +340,10 @@ const saveJob = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.saveJob = saveJob;
 // ===================
 // Unsave Job
 // ===================
-const unsaveJob = async (req, res) => {
+export const unsaveJob = async (req, res) => {
     try {
         const { id } = req.params;
         // @ts-ignore
@@ -317,7 +351,7 @@ const unsaveJob = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
@@ -329,18 +363,17 @@ const unsaveJob = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.unsaveJob = unsaveJob;
 // ===================
 // Get Saved Jobs
 // ===================
-const getSavedJobs = async (req, res) => {
+export const getSavedJobs = async (req, res) => {
     try {
         // @ts-ignore
         const userId = req.user?._id || req.user?.id;
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const user = await user_model_1.default.findById(userId).populate({
+        const user = await User.findById(userId).populate({
             path: "savedJobs",
             populate: { path: "clientId", select: "firstName lastName email" }
         });
@@ -353,4 +386,3 @@ const getSavedJobs = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
-exports.getSavedJobs = getSavedJobs;

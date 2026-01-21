@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadFileToDrive = void 0;
-const uploadFileToDrive = async (req, res) => {
+export const uploadFileToDrive = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "No file uploaded" });
@@ -22,4 +19,3 @@ const uploadFileToDrive = async (req, res) => {
         res.status(500).json({ message: "Failed to upload file", error: error.message });
     }
 };
-exports.uploadFileToDrive = uploadFileToDrive;

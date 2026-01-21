@@ -1,51 +1,12 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.updateMe = exports.changePassword = exports.getMe = exports.unbanUser = exports.banUser = exports.resetPassword = exports.verifyOTP = exports.forgotPassword = exports.googleSignin = exports.updatePushToken = exports.verifyEmail = exports.resendVerificationOTP = exports.googleSignup = exports.signin = exports.signup = exports.getUserById = exports.getUsers = void 0;
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const google_auth_library_1 = require("google-auth-library");
-const user_model_1 = __importDefault(require("../models/user.model"));
-const client = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
+import User from "../models/user.model";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // ===================
 // Get All Users / Search Users
 // ===================
-const getUsers = async (req, res) => {
+export const getUsers = async (req, res) => {
     try {
         const { userType, skills, limit = 50, includeAdmins = 'false' } = req.query;
         const query = {};
@@ -61,10 +22,10 @@ const getUsers = async (req, res) => {
         if (skills) {
             query.skills = { $in: [skills] };
         }
-        const users = await user_model_1.default.find(query)
+        const users = await User.find(query)
             .select('-password') // Exclude password
             .limit(parseInt(limit))
-            .sort({ createdAt: -1 });
+            .sort({ jobSuccessScore: -1, averageRating: -1, createdAt: -1 });
         res.status(200).json({
             success: true,
             count: users.length,
@@ -80,14 +41,13 @@ const getUsers = async (req, res) => {
         });
     }
 };
-exports.getUsers = getUsers;
 // ===================
 // Get User By ID
 // ===================
-const getUserById = async (req, res) => {
+export const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await user_model_1.default.findById(id).select('-password');
+        const user = await User.findById(id).select('-password');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -108,36 +68,35 @@ const getUserById = async (req, res) => {
         });
     }
 };
-exports.getUserById = getUserById;
 // ===================
 // Local Sign Up
 // ===================
-const signup = async (req, res) => {
+export const signup = async (req, res) => {
     try {
         const { firstName, lastName, email, password, userType } = req.body;
         console.log('Signup attempt:', { firstName, lastName, email, userType });
-        const existingUser = await user_model_1.default.findOne({ email });
+        const existingUser = await User.findOne({ email });
         if (existingUser)
             return res.status(400).json({ message: "User already exists" });
-        const hashedPassword = await bcryptjs_1.default.hash(password, 10);
-        const newUser = await user_model_1.default.create({
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await User.create({
             firstName,
             lastName,
             email,
             password: hashedPassword,
             userType,
         });
-        const token = jsonwebtoken_1.default.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         // Generate and send OTP automatically on signup
         try {
             const otp = Math.floor(1000 + Math.random() * 9000).toString();
             const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
             // Manage OTP record
-            const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+            const OTP = (await import('../models/otp.model')).default;
             await OTP.deleteMany({ userId: newUser._id });
             await OTP.create({ userId: newUser._id, otp, expiresAt });
             // Send OTP email
-            const { sendOTPEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+            const { sendOTPEmail } = await import('../services/email.service');
             await sendOTPEmail(newUser.email, otp, newUser.firstName, 'EMAIL_VERIFICATION');
             console.log(`Automatic verification email sent to ${newUser.email}`);
         }
@@ -152,31 +111,29 @@ const signup = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.signup = signup;
 // ===================
 // Local Sign In
 // ===================
-const signin = async (req, res) => {
+export const signin = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await user_model_1.default.findOne({ email });
+        const user = await User.findOne({ email });
         if (!user)
             return res.status(404).json({ message: "User not found" });
-        const isMatch = await bcryptjs_1.default.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch)
             return res.status(401).json({ message: "Invalid credentials" });
-        const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(200).json({ success: true, user, token });
     }
     catch (err) {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.signin = signin;
 // ===================
 // Google Sign Up
 // ===================
-const googleSignup = async (req, res) => {
+export const googleSignup = async (req, res) => {
     try {
         const { tokenId, userType } = req.body;
         const ticket = await client.verifyIdToken({
@@ -187,34 +144,33 @@ const googleSignup = async (req, res) => {
         if (!payload)
             return res.status(400).json({ message: "Invalid Google token" });
         const { email, given_name, family_name } = payload;
-        let user = await user_model_1.default.findOne({ email });
+        let user = await User.findOne({ email });
         if (user)
             return res.status(400).json({ message: "User already exists" });
-        user = await user_model_1.default.create({
+        user = await User.create({
             firstName: given_name,
             lastName: family_name,
             email,
             userType,
             password: "", // no password needed for Google accounts
         });
-        const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({ user, token });
     }
     catch (err) {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.googleSignup = googleSignup;
 // ===================
 // ===================
 // Resend Verification OTP
 // ===================
-const resendVerificationOTP = async (req, res) => {
+export const resendVerificationOTP = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId)
             return res.status(401).json({ message: "Unauthorized" });
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user)
             return res.status(404).json({ message: "User not found" });
         if (user.isVerified) {
@@ -224,11 +180,11 @@ const resendVerificationOTP = async (req, res) => {
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         // Manage OTP record
-        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        const OTP = (await import('../models/otp.model')).default;
         await OTP.deleteMany({ userId: user._id });
         await OTP.create({ userId: user._id, otp, expiresAt });
         // Send OTP email
-        const { sendOTPEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+        const { sendOTPEmail } = await import('../services/email.service');
         const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION');
         if (!result.success) {
             return res.status(500).json({ message: "Failed to send verification email" });
@@ -240,11 +196,10 @@ const resendVerificationOTP = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.resendVerificationOTP = resendVerificationOTP;
 // ===================
 // Verify Email OTP
 // ===================
-const verifyEmail = async (req, res) => {
+export const verifyEmail = async (req, res) => {
     try {
         const userId = req.user?.id;
         const { otp } = req.body;
@@ -252,14 +207,14 @@ const verifyEmail = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized" });
         if (!otp)
             return res.status(400).json({ message: "OTP is required" });
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user)
             return res.status(404).json({ message: "User not found" });
         if (user.isVerified) {
             return res.status(200).json({ success: true, message: "Email already verified" });
         }
         // Verify OTP
-        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        const OTP = (await import('../models/otp.model')).default;
         const otpRecord = await OTP.findOne({ userId: user._id, otp, verified: false });
         if (!otpRecord)
             return res.status(400).json({ message: "Invalid OTP" });
@@ -273,7 +228,7 @@ const verifyEmail = async (req, res) => {
         // Clean up OTP
         await OTP.deleteOne({ _id: otpRecord._id });
         // Send Welcome Email
-        const { sendWelcomeEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+        const { sendWelcomeEmail } = await import('../services/email.service');
         sendWelcomeEmail(user.email, user.firstName).catch(console.error);
         // Send Welcome Notification
         try {
@@ -296,7 +251,7 @@ const verifyEmail = async (req, res) => {
                 type: 'system'
             });
             // Push Notification
-            const notificationService = (await Promise.resolve().then(() => __importStar(require('../services/notification.service')))).default;
+            const notificationService = (await import('../services/notification.service')).default;
             notificationService.sendPushNotification(user._id.toString(), 'Welcome to Connecta! 🚀', 'Your account has been verified. You can now access all features.', { type: 'system' });
         }
         catch (e) {
@@ -310,29 +265,27 @@ const verifyEmail = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.verifyEmail = verifyEmail;
 // ===================
 // Update Push Token
 // ===================
-const updatePushToken = async (req, res) => {
+export const updatePushToken = async (req, res) => {
     try {
         const userId = req.user?.id;
         const { pushToken } = req.body;
         if (!pushToken) {
             return res.status(400).json({ message: "Push token is required" });
         }
-        await user_model_1.default.findByIdAndUpdate(userId, { pushToken });
+        await User.findByIdAndUpdate(userId, { pushToken });
         res.status(200).json({ success: true, message: "Push token updated" });
     }
     catch (err) {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.updatePushToken = updatePushToken;
 // ===================
 // Google Sign In
 // ===================
-const googleSignin = async (req, res) => {
+export const googleSignin = async (req, res) => {
     try {
         const { tokenId } = req.body;
         const ticket = await client.verifyIdToken({
@@ -343,21 +296,20 @@ const googleSignin = async (req, res) => {
         if (!payload)
             return res.status(400).json({ message: "Invalid Google token" });
         const { email } = payload;
-        const user = await user_model_1.default.findOne({ email });
+        const user = await User.findOne({ email });
         if (!user)
             return res.status(404).json({ message: "User not found, please sign up first" });
-        const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(200).json({ success: true, user, token });
     }
     catch (err) {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.googleSignin = googleSignin;
 // ===================
 // Forgot Password - Send OTP
 // ===================
-const forgotPassword = async (req, res) => {
+export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) {
@@ -367,7 +319,7 @@ const forgotPassword = async (req, res) => {
             });
         }
         // Check if user exists
-        const user = await user_model_1.default.findOne({ email });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -379,7 +331,7 @@ const forgotPassword = async (req, res) => {
         // Set expiration to 10 minutes from now
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         // Delete any existing OTPs for this user
-        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        const OTP = (await import('../models/otp.model')).default;
         await OTP.deleteMany({ userId: user._id });
         // Create new OTP
         await OTP.create({
@@ -388,7 +340,7 @@ const forgotPassword = async (req, res) => {
             expiresAt,
         });
         // Send OTP via email
-        const { sendOTPEmail } = await Promise.resolve().then(() => __importStar(require('../services/email.service')));
+        const { sendOTPEmail } = await import('../services/email.service');
         const result = await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET');
         if (!result.success) {
             return res.status(500).json({
@@ -410,11 +362,10 @@ const forgotPassword = async (req, res) => {
         });
     }
 };
-exports.forgotPassword = forgotPassword;
 // ===================
 // Verify OTP
 // ===================
-const verifyOTP = async (req, res) => {
+export const verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
         if (!email || !otp) {
@@ -424,7 +375,7 @@ const verifyOTP = async (req, res) => {
             });
         }
         // Find user
-        const user = await user_model_1.default.findOne({ email });
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -432,7 +383,7 @@ const verifyOTP = async (req, res) => {
             });
         }
         // Find OTP
-        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        const OTP = (await import('../models/otp.model')).default;
         const otpRecord = await OTP.findOne({
             userId: user._id,
             otp,
@@ -456,7 +407,7 @@ const verifyOTP = async (req, res) => {
         otpRecord.verified = true;
         await otpRecord.save();
         // Generate reset token (valid for 15 minutes)
-        const resetToken = jsonwebtoken_1.default.sign({ userId: user._id, otpId: otpRecord._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
+        const resetToken = jwt.sign({ userId: user._id, otpId: otpRecord._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
         res.status(200).json({
             success: true,
             message: "OTP verified successfully",
@@ -472,11 +423,10 @@ const verifyOTP = async (req, res) => {
         });
     }
 };
-exports.verifyOTP = verifyOTP;
 // ===================
 // Reset Password
 // ===================
-const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
     try {
         const { resetToken, newPassword } = req.body;
         if (!resetToken || !newPassword) {
@@ -495,7 +445,7 @@ const resetPassword = async (req, res) => {
         // Verify reset token
         let decoded;
         try {
-            decoded = jsonwebtoken_1.default.verify(resetToken, process.env.JWT_SECRET);
+            decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
         }
         catch (err) {
             return res.status(400).json({
@@ -504,7 +454,7 @@ const resetPassword = async (req, res) => {
             });
         }
         // Find user
-        const user = await user_model_1.default.findById(decoded.userId);
+        const user = await User.findById(decoded.userId);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -512,7 +462,7 @@ const resetPassword = async (req, res) => {
             });
         }
         // Verify OTP was verified
-        const OTP = (await Promise.resolve().then(() => __importStar(require('../models/otp.model')))).default;
+        const OTP = (await import('../models/otp.model')).default;
         const otpRecord = await OTP.findById(decoded.otpId);
         if (!otpRecord || !otpRecord.verified) {
             return res.status(400).json({
@@ -521,7 +471,7 @@ const resetPassword = async (req, res) => {
             });
         }
         // Hash new password
-        const hashedPassword = await bcryptjs_1.default.hash(newPassword, 10);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
         // Update user password
         user.password = hashedPassword;
         await user.save();
@@ -541,14 +491,13 @@ const resetPassword = async (req, res) => {
         });
     }
 };
-exports.resetPassword = resetPassword;
 // ===================
 // Ban User
 // ===================
-const banUser = async (req, res) => {
+export const banUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await user_model_1.default.findById(id);
+        const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -572,14 +521,13 @@ const banUser = async (req, res) => {
         });
     }
 };
-exports.banUser = banUser;
 // ===================
 // Unban User
 // ===================
-const unbanUser = async (req, res) => {
+export const unbanUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await user_model_1.default.findById(id);
+        const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -603,11 +551,10 @@ const unbanUser = async (req, res) => {
         });
     }
 };
-exports.unbanUser = unbanUser;
 // ===================
 // Get Current User
 // ===================
-const getMe = async (req, res) => {
+export const getMe = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -616,7 +563,7 @@ const getMe = async (req, res) => {
                 message: "Unauthorized"
             });
         }
-        const user = await user_model_1.default.findById(userId).select('-password');
+        const user = await User.findById(userId).select('-password');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -637,11 +584,10 @@ const getMe = async (req, res) => {
         });
     }
 };
-exports.getMe = getMe;
 // ===================
 // Change Password
 // ===================
-const changePassword = async (req, res) => {
+export const changePassword = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id;
         const { currentPassword, newPassword } = req.body;
@@ -657,12 +603,12 @@ const changePassword = async (req, res) => {
                 message: "New password must be at least 6 characters"
             });
         }
-        const user = await user_model_1.default.findById(userId).select('+password');
+        const user = await User.findById(userId).select('+password');
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
         // Check current password
-        const isMatch = await bcryptjs_1.default.compare(currentPassword, user.password);
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.status(401).json({ success: false, message: "Incorrect current password" });
         }
@@ -675,7 +621,7 @@ const changePassword = async (req, res) => {
         // For now, let's rely on User model knowing how to hash, OR manually hash.
         // Most likely: user.password = await bcrypt.hash(newPassword, 12);
         // I will check User model NEXT. For now, valid bcrypt check is key.
-        user.password = await bcryptjs_1.default.hash(newPassword, 12);
+        user.password = await bcrypt.hash(newPassword, 12);
         await user.save();
         res.status(200).json({
             success: true,
@@ -687,11 +633,10 @@ const changePassword = async (req, res) => {
         res.status(500).json({ message: "Server error", error: err });
     }
 };
-exports.changePassword = changePassword;
 // ===================
 // Update Push Token
 // ===================
-const updateMe = async (req, res) => {
+export const updateMe = async (req, res) => {
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -713,7 +658,7 @@ const updateMe = async (req, res) => {
         if (email)
             updateData.email = email;
         console.log('UpdateMe updateData:', updateData);
-        const user = await user_model_1.default.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select('-password');
+        const user = await User.findByIdAndUpdate(userId, updateData, { new: true, runValidators: true }).select('-password');
         console.log('UpdateMe result - user email:', user?.email);
         if (!user) {
             return res.status(404).json({
@@ -736,14 +681,13 @@ const updateMe = async (req, res) => {
         });
     }
 };
-exports.updateMe = updateMe;
 // ===================
 // Delete User
 // ===================
-const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await user_model_1.default.findByIdAndDelete(id);
+        const user = await User.findByIdAndDelete(id);
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -764,4 +708,46 @@ const deleteUser = async (req, res) => {
         });
     }
 };
-exports.deleteUser = deleteUser;
+// ===================
+// Switch User Type (Client <-> Freelancer)
+// ===================
+export const switchUserType = async (req, res) => {
+    try {
+        const userId = req.user?.id || req.user?._id;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        // Check if user is premium
+        // Assume we have a method or property to check premium subscription
+        // If not, we should probably implement one or check subscription status
+        const Subscription = require('../models/Subscription.model').default;
+        const activeSubscription = await Subscription.findOne({
+            userId: user._id,
+            status: 'active',
+            plan: { $ne: 'free' },
+            endDate: { $gt: new Date() }
+        });
+        if (!activeSubscription) {
+            return res.status(403).json({
+                success: false,
+                message: "Premium subscription is required to switch user types."
+            });
+        }
+        // Toggle user type
+        user.userType = user.userType === 'freelancer' ? 'client' : 'freelancer';
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: `Switched to ${user.userType} successfully`,
+            data: { userType: user.userType }
+        });
+    }
+    catch (err) {
+        console.error('Switch user type error:', err);
+        res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};

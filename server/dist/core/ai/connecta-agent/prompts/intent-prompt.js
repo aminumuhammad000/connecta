@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.IntentSchema = exports.intentPrompt = void 0;
-const zod_1 = require("zod");
-exports.intentPrompt = `
+import { z } from "zod";
+export const intentPrompt = `
 You are Connecta Assistant, an advanced intelligent AI assistant specializing in freelance career management on the Connecta platform.
 
 ## 🧠 Your Intelligence Capabilities
@@ -570,9 +567,9 @@ Continuously improve by noting:
 
 Remember: You're not just a tool executor—you're an intelligent assistant that understands context, anticipates needs, and provides proactive value!
 `;
-exports.IntentSchema = zod_1.z.object({
-    tool: zod_1.z.string(),
-    responseType: zod_1.z.enum([
+export const IntentSchema = z.object({
+    tool: z.string(),
+    responseType: z.enum([
         "card",
         "text",
         "list",
@@ -580,5 +577,5 @@ exports.IntentSchema = zod_1.z.object({
         "clarification",
         "friendly_message"
     ]),
-    parameters: zod_1.z.record(zod_1.z.string(), zod_1.z.any()),
+    parameters: z.record(z.string(), z.any()),
 });

@@ -1,19 +1,17 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const Dashboard_controller_1 = require("../controllers/Dashboard.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const router = (0, express_1.Router)();
+import { Router } from 'express';
+import { getClientDashboard, getFreelancerDashboard, getTopFreelancers, getRecentMessages, getAdminStats, } from '../controllers/Dashboard.controller';
+import { authenticate } from '../core/middleware/auth.middleware';
+const router = Router();
 // All dashboard routes require authentication
-router.use(auth_middleware_1.authenticate);
+router.use(authenticate);
 // Get client dashboard stats
-router.get('/stats', Dashboard_controller_1.getClientDashboard);
+router.get('/stats', getClientDashboard);
 // Get admin dashboard stats
-router.get('/admin/stats', Dashboard_controller_1.getAdminStats);
+router.get('/admin/stats', getAdminStats);
 // Get freelancer dashboard stats
-router.get('/freelancer/stats', Dashboard_controller_1.getFreelancerDashboard);
+router.get('/freelancer/stats', getFreelancerDashboard);
 // Get top freelancers recommendations
-router.get('/freelancers', Dashboard_controller_1.getTopFreelancers);
+router.get('/freelancers', getTopFreelancers);
 // Get recent messages for dashboard
-router.get('/messages', Dashboard_controller_1.getRecentMessages);
-exports.default = router;
+router.get('/messages', getRecentMessages);
+export default router;

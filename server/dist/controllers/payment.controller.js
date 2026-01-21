@@ -1,23 +1,17 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.saveWithdrawalSettings = exports.getAllPayments = exports.resolveAccount = exports.getBanks = exports.getTransactionHistory = exports.processWithdrawal = exports.getPendingWithdrawals = exports.requestWithdrawal = exports.getWalletBalance = exports.getPaymentHistory = exports.refundPayment = exports.releasePayment = exports.verifyPayment = exports.initializePayment = exports.initializeJobVerification = void 0;
-const Payment_model_1 = __importDefault(require("../models/Payment.model"));
-const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
-const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
-const Withdrawal_model_1 = __importDefault(require("../models/Withdrawal.model"));
-const Project_model_1 = __importDefault(require("../models/Project.model"));
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const user_model_1 = __importDefault(require("../models/user.model"));
-const flutterwave_service_1 = __importDefault(require("../services/flutterwave.service"));
+import Payment from '../models/Payment.model';
+import Transaction from '../models/Transaction.model';
+import Wallet from '../models/Wallet.model';
+import Withdrawal from '../models/Withdrawal.model';
+import Project from '../models/Project.model';
+import Job from '../models/Job.model';
+import User from '../models/user.model';
+import flutterwaveService from '../services/flutterwave.service';
 // Platform fee percentage (e.g., 10%)
 const PLATFORM_FEE_PERCENTAGE = 10;
 /**
  * Initialize job verification payment
  */
-const initializeJobVerification = async (req, res) => {
+export const initializeJobVerification = async (req, res) => {
     try {
         const { jobId, amount, description } = req.body;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
@@ -31,7 +25,7 @@ const initializeJobVerification = async (req, res) => {
             });
         }
         // Verify job exists and belongs to user
-        const job = await Job_model_1.default.findById(jobId);
+        const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found' });
         }
@@ -39,7 +33,7 @@ const initializeJobVerification = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized for this job' });
         }
         // Create payment record for job verification
-        const payment = new Payment_model_1.default({
+        const payment = new Payment({
             jobId,
             payerId: userId,
             payeeId: userId, // Self-payment for verification
@@ -55,12 +49,12 @@ const initializeJobVerification = async (req, res) => {
         await payment.save();
         // Initialize Flutterwave payment
         // Fetch full user details to ensure we have email
-        const user = await user_model_1.default.findById(userId);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
         console.log('Initializing Flutterwave payment for:', user.email, 'Amount:', amount, 'Ref:', payment._id.toString());
-        const flutterwaveResponse = await flutterwave_service_1.default.initializePayment(user.email, amount, payment._id.toString(), // Use payment ID as tx_ref
+        const flutterwaveResponse = await flutterwaveService.initializePayment(user.email, amount, payment._id.toString(), // Use payment ID as tx_ref
         { jobId, userId, type: 'job_verification' });
         // Update payment with gateway reference (using tx_ref which is paymentId)
         payment.gatewayReference = payment._id.toString();
@@ -83,11 +77,10 @@ const initializeJobVerification = async (req, res) => {
         });
     }
 };
-exports.initializeJobVerification = initializeJobVerification;
 /**
  * Initialize payment for a project/milestone
  */
-const initializePayment = async (req, res) => {
+export const initializePayment = async (req, res) => {
     try {
         const { projectId, milestoneId, amount, payeeId, description } = req.body;
         const payerId = req.user?.id || req.user?._id || req.user?.userId;
@@ -101,7 +94,7 @@ const initializePayment = async (req, res) => {
             });
         }
         // Verify project exists
-        const project = await Project_model_1.default.findById(projectId);
+        const project = await Project.findById(projectId);
         if (!project) {
             return res.status(404).json({ success: false, message: 'Project not found' });
         }
@@ -109,7 +102,7 @@ const initializePayment = async (req, res) => {
         const platformFee = (amount * PLATFORM_FEE_PERCENTAGE) / 100;
         const netAmount = amount - platformFee;
         // Check if there's already a pending payment for this project
-        let payment = await Payment_model_1.default.findOne({
+        let payment = await Payment.findOne({
             projectId,
             status: 'pending',
             payerId,
@@ -126,7 +119,7 @@ const initializePayment = async (req, res) => {
         }
         else {
             // Create new payment record
-            payment = new Payment_model_1.default({
+            payment = new Payment({
                 projectId,
                 milestoneId,
                 payerId,
@@ -144,7 +137,7 @@ const initializePayment = async (req, res) => {
         await payment.save();
         // Initialize Flutterwave payment
         const user = req.user;
-        const flutterwaveResponse = await flutterwave_service_1.default.initializePayment(user.email, amount, payment._id.toString(), {
+        const flutterwaveResponse = await flutterwaveService.initializePayment(user.email, amount, payment._id.toString(), {
             projectId,
             milestoneId,
             payerId,
@@ -171,7 +164,6 @@ const initializePayment = async (req, res) => {
         });
     }
 };
-exports.initializePayment = initializePayment;
 /**
  * Verify payment after Flutterwave callback
  */
@@ -179,7 +171,7 @@ exports.initializePayment = initializePayment;
 /**
  * Verify payment after Flutterwave callback
  */
-const verifyPayment = async (req, res) => {
+export const verifyPayment = async (req, res) => {
     try {
         const { reference } = req.params;
         if (!reference) {
@@ -190,13 +182,13 @@ const verifyPayment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Transaction ID is required' });
         }
         // Verify with Flutterwave
-        const flwResponse = await flutterwave_service_1.default.verifyPayment(transactionId);
+        const flwResponse = await flutterwaveService.verifyPayment(transactionId);
         if (flwResponse.status !== 'success' || flwResponse.data.status !== 'successful') {
             return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
         }
         // Find local payment record
         // The reference passed in params was set to payment._id during initialization
-        const payment = await Payment_model_1.default.findById(reference);
+        const payment = await Payment.findById(reference);
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment record not found' });
         }
@@ -211,7 +203,7 @@ const verifyPayment = async (req, res) => {
         await payment.save();
         // Handle Job Verification
         if (payment.paymentType === 'job_verification' && payment.jobId) {
-            const job = await Job_model_1.default.findById(payment.jobId);
+            const job = await Job.findById(payment.jobId);
             if (job) {
                 job.paymentVerified = true;
                 job.paymentStatus = 'escrow'; // Or released/verified depending on flow
@@ -232,15 +224,14 @@ const verifyPayment = async (req, res) => {
         });
     }
 };
-exports.verifyPayment = verifyPayment;
 /**
  * Release payment from escrow (after work approval)
  */
-const releasePayment = async (req, res) => {
+export const releasePayment = async (req, res) => {
     try {
         const { paymentId } = req.params;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const payment = await Payment_model_1.default.findById(paymentId);
+        const payment = await Payment.findById(paymentId);
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment not found' });
         }
@@ -259,7 +250,7 @@ const releasePayment = async (req, res) => {
         payment.releasedAt = new Date();
         await payment.save();
         // Update freelancer wallet
-        const freelancerWallet = await Wallet_model_1.default.findOne({ userId: payment.payeeId });
+        const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
         if (freelancerWallet) {
             freelancerWallet.escrowBalance -= payment.netAmount;
             freelancerWallet.totalEarnings += payment.netAmount;
@@ -279,16 +270,15 @@ const releasePayment = async (req, res) => {
         });
     }
 };
-exports.releasePayment = releasePayment;
 /**
  * Request refund
  */
-const refundPayment = async (req, res) => {
+export const refundPayment = async (req, res) => {
     try {
         const { paymentId } = req.params;
         const { reason } = req.body;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const payment = await Payment_model_1.default.findById(paymentId);
+        const payment = await Payment.findById(paymentId);
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment not found' });
         }
@@ -309,14 +299,14 @@ const refundPayment = async (req, res) => {
         payment.metadata = { ...payment.metadata, refundReason: reason };
         await payment.save();
         // Update freelancer wallet
-        const freelancerWallet = await Wallet_model_1.default.findOne({ userId: payment.payeeId });
+        const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
         if (freelancerWallet) {
             freelancerWallet.escrowBalance -= payment.netAmount;
             freelancerWallet.balance -= payment.netAmount;
             await freelancerWallet.save();
         }
         // Create refund transaction
-        await Transaction_model_1.default.create({
+        await Transaction.create({
             userId: payment.payerId,
             type: 'refund',
             amount: payment.amount,
@@ -340,11 +330,10 @@ const refundPayment = async (req, res) => {
         });
     }
 };
-exports.refundPayment = refundPayment;
 /**
  * Get payment history
  */
-const getPaymentHistory = async (req, res) => {
+export const getPaymentHistory = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { page = 1, limit = 20, status, type } = req.query;
@@ -355,14 +344,14 @@ const getPaymentHistory = async (req, res) => {
             query.status = status;
         if (type)
             query.paymentType = type;
-        const payments = await Payment_model_1.default.find(query)
+        const payments = await Payment.find(query)
             .populate('payerId', 'firstName lastName email')
             .populate('payeeId', 'firstName lastName email')
             .populate('projectId', 'title')
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit));
-        const total = await Payment_model_1.default.countDocuments(query);
+        const total = await Payment.countDocuments(query);
         return res.status(200).json({
             success: true,
             data: payments,
@@ -382,11 +371,10 @@ const getPaymentHistory = async (req, res) => {
         });
     }
 };
-exports.getPaymentHistory = getPaymentHistory;
 /**
  * Get wallet balance with project data
  */
-const getWalletBalance = async (req, res) => {
+export const getWalletBalance = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         // Check if userId exists
@@ -397,18 +385,18 @@ const getWalletBalance = async (req, res) => {
             });
         }
         // Get or create wallet
-        let wallet = await Wallet_model_1.default.findOne({ userId });
+        let wallet = await Wallet.findOne({ userId });
         if (!wallet) {
-            wallet = new Wallet_model_1.default({ userId });
+            wallet = new Wallet({ userId });
             await wallet.save();
         }
         // Fetch ongoing projects for freelancer
-        const ongoingProjects = await Project_model_1.default.find({
+        const ongoingProjects = await Project.find({
             freelancerId: userId,
             status: 'ongoing',
         }).select('title budget status clientName');
         // Fetch payments related to user's projects
-        const payments = await Payment_model_1.default.find({
+        const payments = await Payment.find({
             payeeId: userId,
             status: 'completed',
         }).populate('projectId', 'title').catch(() => []);
@@ -430,7 +418,7 @@ const getWalletBalance = async (req, res) => {
             }
         }
         // Calculate actual escrow balance from payments
-        const escrowPayments = await Payment_model_1.default.find({
+        const escrowPayments = await Payment.find({
             payeeId: userId,
             escrowStatus: 'held',
         }).catch(() => []);
@@ -464,11 +452,10 @@ const getWalletBalance = async (req, res) => {
         });
     }
 };
-exports.getWalletBalance = getWalletBalance;
 /**
  * Request withdrawal
  */
-const requestWithdrawal = async (req, res) => {
+export const requestWithdrawal = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { amount, bankDetails } = req.body;
@@ -480,7 +467,7 @@ const requestWithdrawal = async (req, res) => {
         }
         // Get wallet
         // We need to check if wallet exists and has balance
-        const wallet = await Wallet_model_1.default.findOne({ userId });
+        const wallet = await Wallet.findOne({ userId });
         if (!wallet) {
             return res.status(404).json({ success: false, message: 'Wallet not found' });
         }
@@ -511,7 +498,7 @@ const requestWithdrawal = async (req, res) => {
         const processingFee = amount < 5000 ? 10 : 50;
         const netAmount = amount - processingFee;
         // Create withdrawal request
-        const withdrawal = new Withdrawal_model_1.default({
+        const withdrawal = new Withdrawal({
             userId,
             amount,
             currency: wallet.currency,
@@ -539,13 +526,12 @@ const requestWithdrawal = async (req, res) => {
         });
     }
 };
-exports.requestWithdrawal = requestWithdrawal;
 /**
  * Get pending withdrawals (Admin only)
  */
-const getPendingWithdrawals = async (req, res) => {
+export const getPendingWithdrawals = async (req, res) => {
     try {
-        const withdrawals = await Withdrawal_model_1.default.find({ status: { $in: ['pending', 'processing'] } })
+        const withdrawals = await Withdrawal.find({ status: { $in: ['pending', 'processing'] } })
             .sort({ createdAt: -1 })
             .populate('userId', 'firstName lastName email'); // Ensure User model is populated
         return res.status(200).json({
@@ -562,15 +548,14 @@ const getPendingWithdrawals = async (req, res) => {
         });
     }
 };
-exports.getPendingWithdrawals = getPendingWithdrawals;
 /**
  * Process withdrawal (Admin only)
  */
-const processWithdrawal = async (req, res) => {
+export const processWithdrawal = async (req, res) => {
     try {
         const { withdrawalId } = req.params;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const withdrawal = await Withdrawal_model_1.default.findById(withdrawalId);
+        const withdrawal = await Withdrawal.findById(withdrawalId);
         if (!withdrawal) {
             return res.status(404).json({ success: false, message: 'Withdrawal not found' });
         }
@@ -589,7 +574,7 @@ const processWithdrawal = async (req, res) => {
         // Initiate Flutterwave transfer
         try {
             // Initiate transfer directly (Flutterwave doesn't need separate recipient creation for simple transfers usually, or we use the bank code/account number directly)
-            const transfer = await flutterwave_service_1.default.initiateTransfer(withdrawal.bankDetails.bankCode, withdrawal.bankDetails.accountNumber, withdrawal.netAmount, 'Withdrawal from Connecta', withdrawal._id.toString());
+            const transfer = await flutterwaveService.initiateTransfer(withdrawal.bankDetails.bankCode, withdrawal.bankDetails.accountNumber, withdrawal.netAmount, 'Withdrawal from Connecta', withdrawal._id.toString());
             withdrawal.gatewayReference = transfer.data.id.toString(); // Flutterwave returns numeric ID
             withdrawal.transferCode = transfer.data.id.toString(); // Use ID as code
             withdrawal.gatewayResponse = transfer.data;
@@ -604,7 +589,7 @@ const processWithdrawal = async (req, res) => {
             }
             await withdrawal.save();
             // Create transaction
-            await Transaction_model_1.default.create({
+            await Transaction.create({
                 userId: withdrawal.userId,
                 type: 'withdrawal',
                 amount: -withdrawal.amount,
@@ -637,7 +622,7 @@ const processWithdrawal = async (req, res) => {
             withdrawal.failureReason = error.message;
             await withdrawal.save();
             // Refund to wallet
-            const wallet = await Wallet_model_1.default.findOne({ userId: withdrawal.userId });
+            const wallet = await Wallet.findOne({ userId: withdrawal.userId });
             if (wallet) {
                 wallet.balance += withdrawal.amount;
                 wallet.availableBalance = (wallet.balance || 0) - (wallet.escrowBalance || 0); // Re-calc available
@@ -654,23 +639,22 @@ const processWithdrawal = async (req, res) => {
         });
     }
 };
-exports.processWithdrawal = processWithdrawal;
 /**
  * Get transaction history
  */
-const getTransactionHistory = async (req, res) => {
+export const getTransactionHistory = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { page = 1, limit = 20, type } = req.query;
         const query = { userId };
         if (type)
             query.type = type;
-        const transactions = await Transaction_model_1.default.find(query)
+        const transactions = await Transaction.find(query)
             .populate('projectId', 'title')
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit));
-        const total = await Transaction_model_1.default.countDocuments(query);
+        const total = await Transaction.countDocuments(query);
         return res.status(200).json({
             success: true,
             data: transactions,
@@ -690,16 +674,15 @@ const getTransactionHistory = async (req, res) => {
         });
     }
 };
-exports.getTransactionHistory = getTransactionHistory;
 /**
  * Get list of banks
  */
 /**
  * Get list of banks
  */
-const getBanks = async (req, res) => {
+export const getBanks = async (req, res) => {
     try {
-        const banks = await flutterwave_service_1.default.listBanks();
+        const banks = await flutterwaveService.listBanks();
         return res.status(200).json({
             success: true,
             data: banks.data,
@@ -713,11 +696,10 @@ const getBanks = async (req, res) => {
         });
     }
 };
-exports.getBanks = getBanks;
 /**
  * Resolve bank account
  */
-const resolveAccount = async (req, res) => {
+export const resolveAccount = async (req, res) => {
     try {
         const { accountNumber, bankCode } = req.body;
         if (!accountNumber || !bankCode) {
@@ -726,7 +708,7 @@ const resolveAccount = async (req, res) => {
                 message: 'Account number and bank code are required',
             });
         }
-        const account = await flutterwave_service_1.default.resolveAccount(accountNumber, bankCode);
+        const account = await flutterwaveService.resolveAccount(accountNumber, bankCode);
         return res.status(200).json({
             success: true,
             data: account.data,
@@ -740,11 +722,10 @@ const resolveAccount = async (req, res) => {
         });
     }
 };
-exports.resolveAccount = resolveAccount;
 /**
  * Get all payments (Admin only)
  */
-const getAllPayments = async (req, res) => {
+export const getAllPayments = async (req, res) => {
     try {
         const { status, page = 1, limit = 100 } = req.query;
         const query = {};
@@ -758,14 +739,14 @@ const getAllPayments = async (req, res) => {
                 { payeeId: userId }
             ];
         }
-        const payments = await Payment_model_1.default.find(query)
+        const payments = await Payment.find(query)
             .sort({ createdAt: -1 })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit))
             .populate('payerId', 'firstName lastName email profileImage')
             .populate('payeeId', 'firstName lastName email profileImage')
             .populate('projectId', 'title description');
-        const total = await Payment_model_1.default.countDocuments(query);
+        const total = await Payment.countDocuments(query);
         return res.status(200).json({
             success: true,
             data: payments,
@@ -787,11 +768,10 @@ const getAllPayments = async (req, res) => {
         });
     }
 };
-exports.getAllPayments = getAllPayments;
 /**
  * Save withdrawal settings (bank details)
  */
-const saveWithdrawalSettings = async (req, res) => {
+export const saveWithdrawalSettings = async (req, res) => {
     try {
         const { accountName, accountNumber, bankName, bankCode } = req.body;
         const userId = req.user?._id || req.user?.id || req.user?.userId;
@@ -805,10 +785,10 @@ const saveWithdrawalSettings = async (req, res) => {
             });
         }
         // Find user's wallet
-        let wallet = await Wallet_model_1.default.findOne({ userId });
+        let wallet = await Wallet.findOne({ userId });
         if (!wallet) {
             // Create wallet if it doesn't exist
-            wallet = new Wallet_model_1.default({
+            wallet = new Wallet({
                 userId,
                 balance: 0,
                 currency: 'NGN', // Default to NGN
@@ -837,4 +817,3 @@ const saveWithdrawalSettings = async (req, res) => {
         });
     }
 };
-exports.saveWithdrawalSettings = saveWithdrawalSettings;

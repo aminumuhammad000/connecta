@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetProjectStatusTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetProjectStatusTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetProjectStatusTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_project_status_tool";
@@ -12,4 +9,3 @@ class GetProjectStatusTool extends base_tool_1.BaseTool {
         return this.request(`/api/projects/${params.projectId}`, "GET");
     }
 }
-exports.GetProjectStatusTool = GetProjectStatusTool;

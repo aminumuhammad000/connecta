@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetHelpTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetHelpTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetHelpTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_help_tool";
@@ -12,4 +9,3 @@ class GetHelpTool extends base_tool_1.BaseTool {
         return this.request(`/api/support/help`, "GET", params);
     }
 }
-exports.GetHelpTool = GetHelpTool;

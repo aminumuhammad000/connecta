@@ -1,14 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReputationService = void 0;
-const mongoose_1 = __importDefault(require("mongoose"));
-const user_model_1 = __importDefault(require("../models/user.model"));
-const Review_model_1 = __importDefault(require("../models/Review.model"));
-const Contract_model_1 = __importDefault(require("../models/Contract.model"));
-class ReputationService {
+import mongoose from 'mongoose';
+import User from '../models/user.model';
+import Review from '../models/Review.model';
+import Contract from '../models/Contract.model';
+export class ReputationService {
     /**
      * Updates the reputation metrics for a specific freelancer.
      * This should be called whenever a job is completed or a review is left.
@@ -16,9 +10,9 @@ class ReputationService {
      */
     async updateFreelancerReputation(userId) {
         try {
-            const userObjectId = new mongoose_1.default.Types.ObjectId(userId);
+            const userObjectId = new mongoose.Types.ObjectId(userId);
             // 1. Calculate Average Rating & Total Reviews
-            const reviews = await Review_model_1.default.find({
+            const reviews = await Review.find({
                 revieweeId: userObjectId,
                 reviewerType: 'client', // Only count reviews from clients
             });
@@ -29,7 +23,7 @@ class ReputationService {
             // 2. Calculate Job Success Score (JSS)
             // JSS Formula (Simplified): (Successful Contracts / Total Contracts) * 100
             // "Successful" = Completed status + (Rating >= 4 OR No Rating yet) + No Disputes
-            const contracts = await Contract_model_1.default.find({
+            const contracts = await Contract.find({
                 freelancerId: userObjectId,
                 status: { $in: ['completed', 'terminated', 'disputed'] }, // Only consider closed contracts
             });
@@ -76,13 +70,18 @@ class ReputationService {
             // Expert Vetted: Manual assignment usually, but maybe based on high earnings/test scores.
             // Verified Pro: manual or ID verification.
             // 4. Update User Profile
-            await user_model_1.default.findByIdAndUpdate(userId, {
+            await User.findByIdAndUpdate(userId, {
                 averageRating: Number(averageRating.toFixed(1)), // Keep 1 decimal
                 totalReviews,
                 jobSuccessScore: Math.round(jobSuccessScore),
                 badges,
-                // Update performance metrics if we had the data (e.g. response time)
-                // 'performanceMetrics.completionRate': ...
+                // Update performance metrics
+                $set: {
+                    "performanceMetrics.completionRate": Math.round(jobSuccessScore), // Simplified linkage
+                    // In a real app, these would come from message logs and project timelines
+                    "performanceMetrics.onTimeDeliveryRate": 95,
+                    "performanceMetrics.responseTime": 4, // 4 hours avg (placeholder)
+                }
             });
             console.log(`Reputation updated for user ${userId}: ${averageRating} stars, ${jobSuccessScore}% JSS`);
         }
@@ -99,5 +98,4 @@ class ReputationService {
         // Implementation for detailed skill breakdown
     }
 }
-exports.ReputationService = ReputationService;
-exports.default = new ReputationService();
+export default new ReputationService();

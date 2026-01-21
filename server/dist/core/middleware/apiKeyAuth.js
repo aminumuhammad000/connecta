@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.apiKeyAuth = void 0;
 /**
  * Middleware to validate API key for external services
  */
-const apiKeyAuth = (req, res, next) => {
+export const apiKeyAuth = (req, res, next) => {
     const apiKey = req.headers["x-api-key"] || req.headers["authorization"]?.replace("Bearer ", "");
     if (!apiKey) {
         return res.status(401).json({
@@ -29,4 +26,3 @@ const apiKeyAuth = (req, res, next) => {
     }
     next();
 };
-exports.apiKeyAuth = apiKeyAuth;

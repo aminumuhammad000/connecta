@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetProfileAnalyticsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetProfileAnalyticsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetProfileAnalyticsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_profile_analytics_tool";
@@ -13,4 +10,3 @@ class GetProfileAnalyticsTool extends base_tool_1.BaseTool {
         return this.request(`/api/analytics/profile?userId=${userId}`, "GET");
     }
 }
-exports.GetProfileAnalyticsTool = GetProfileAnalyticsTool;

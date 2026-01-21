@@ -1,31 +1,32 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const Proposal_controller_1 = require("../controllers/Proposal.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const router = (0, express_1.Router)();
+import { Router } from 'express';
+import { getAllProposals, getFreelancerProposals, getProposalById, createProposal, updateProposalStatus, updateProposal, deleteProposal, getProposalStats, getClientAcceptedProposals, getProposalsByJobId, approveProposal, rejectProposal, } from '../controllers/Proposal.controller';
+import { generateCoverLetter } from '../controllers/CoverLetter.controller';
+import { authenticate } from '../core/middleware/auth.middleware';
+const router = Router();
 // Get all proposals (admin/general)
-router.get('/', Proposal_controller_1.getAllProposals);
+router.get('/', getAllProposals);
 // Get accepted proposals for client (protected)
-router.get('/client/accepted', auth_middleware_1.authenticate, Proposal_controller_1.getClientAcceptedProposals);
+router.get('/client/accepted', authenticate, getClientAcceptedProposals);
 // Get proposals for a specific freelancer
-router.get('/freelancer/:freelancerId', Proposal_controller_1.getFreelancerProposals);
+router.get('/freelancer/:freelancerId', getFreelancerProposals);
 // Get proposals for a specific job
-router.get('/job/:jobId', Proposal_controller_1.getProposalsByJobId);
+router.get('/job/:jobId', getProposalsByJobId);
 // Get proposal statistics for a freelancer
-router.get('/stats/:freelancerId', Proposal_controller_1.getProposalStats);
+router.get('/stats/:freelancerId', getProposalStats);
 // Approve a proposal (protected)
-router.put('/:id/approve', auth_middleware_1.authenticate, Proposal_controller_1.approveProposal);
+router.put('/:id/approve', authenticate, approveProposal);
 // Reject a proposal (protected)
-router.put('/:id/reject', auth_middleware_1.authenticate, Proposal_controller_1.rejectProposal);
+router.put('/:id/reject', authenticate, rejectProposal);
 // Get single proposal by ID
-router.get('/:id', Proposal_controller_1.getProposalById);
+router.get('/:id', getProposalById);
 // Create a new proposal (protected)
-router.post('/', auth_middleware_1.authenticate, Proposal_controller_1.createProposal);
+router.post('/', authenticate, createProposal);
+// Generate Cover Letter (protected)
+router.post('/cover-letter', authenticate, generateCoverLetter);
 // Update proposal status (accept/decline)
-router.patch('/:id/status', Proposal_controller_1.updateProposalStatus);
+router.patch('/:id/status', updateProposalStatus);
 // Update proposal
-router.put('/:id', Proposal_controller_1.updateProposal);
+router.put('/:id', updateProposal);
 // Delete proposal
-router.delete('/:id', Proposal_controller_1.deleteProposal);
-exports.default = router;
+router.delete('/:id', deleteProposal);
+export default router;

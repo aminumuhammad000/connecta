@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetUserProposalsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetUserProposalsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetUserProposalsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_user_proposals_tool";
@@ -12,4 +9,3 @@ class GetUserProposalsTool extends base_tool_1.BaseTool {
         return this.request(`/api/proposals/freelancer/${params.userId || this.userId}`, "GET");
     }
 }
-exports.GetUserProposalsTool = GetUserProposalsTool;

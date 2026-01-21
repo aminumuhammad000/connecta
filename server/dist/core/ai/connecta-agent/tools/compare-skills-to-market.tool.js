@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CompareSkillsToMarketTool = void 0;
-const base_tool_1 = require("./base.tool");
-class CompareSkillsToMarketTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class CompareSkillsToMarketTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "compare_skills_to_market_tool";
@@ -12,4 +9,3 @@ class CompareSkillsToMarketTool extends base_tool_1.BaseTool {
         return this.request(`/api/analytics/skills/compare`, "POST", params);
     }
 }
-exports.CompareSkillsToMarketTool = CompareSkillsToMarketTool;

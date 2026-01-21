@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import proposalService from '../services/proposalService';
+import { useInAppAlert } from '../components/InAppAlert';
 
 const ApplyJobScreen: React.FC = () => {
     const c = useThemeColors();
@@ -12,6 +13,7 @@ const ApplyJobScreen: React.FC = () => {
     const navigation = useNavigation();
     const route = useRoute<any>();
     const { jobId, jobTitle, jobBudget } = route.params || {};
+    const { showAlert } = useInAppAlert();
 
     const [coverLetter, setCoverLetter] = useState('');
     const [proposedRate, setProposedRate] = useState(jobBudget ? String(jobBudget) : '');
@@ -21,11 +23,11 @@ const ApplyJobScreen: React.FC = () => {
 
     const handleSubmit = async () => {
         if (!coverLetter.trim()) {
-            Alert.alert('Error', 'Please write a cover letter.');
+            showAlert({ title: 'Missing Info', message: 'Please write a cover letter.', type: 'error' });
             return;
         }
         if (!proposedRate.trim()) {
-            Alert.alert('Error', 'Please enter your proposed rate.');
+            showAlert({ title: 'Missing Info', message: 'Please enter your proposed rate.', type: 'error' });
             return;
         }
 
@@ -48,7 +50,7 @@ const ApplyJobScreen: React.FC = () => {
 
             await proposalService.createProposal({
                 jobId,
-                // description: coverLetter, // Backend might require this but type says no. Removing to fix lint.
+                description: coverLetter,
                 coverLetter: coverLetter,
                 title: jobTitle || 'Job Application',
                 budget: {
@@ -64,12 +66,19 @@ const ApplyJobScreen: React.FC = () => {
                 priceType: 'fixed',
                 status: 'pending'
             });
-            Alert.alert('Success', 'Your proposal has been submitted!', [
-                { text: 'OK', onPress: () => navigation.goBack() }
-            ]);
+            showAlert({
+                title: 'Proposal Submitted',
+                message: 'Good luck! The client will review it shortly.',
+                type: 'success'
+            });
+            setTimeout(() => navigation.goBack(), 1500);
         } catch (error: any) {
             console.error('Submit proposal error:', error);
-            Alert.alert('Error', error.response?.data?.message || 'Failed to submit proposal.');
+            showAlert({
+                title: 'Submission Failed',
+                message: error.response?.data?.message || 'Failed to submit proposal.',
+                type: 'error'
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -82,11 +91,11 @@ const ApplyJobScreen: React.FC = () => {
             if (response && response.coverLetter) {
                 setCoverLetter(response.coverLetter);
             } else {
-                Alert.alert('AI Error', 'Failed to generate cover letter.');
+                showAlert({ title: 'AI Error', message: 'Failed to generate cover letter.', type: 'error' });
             }
         } catch (error) {
             console.error('AI generation error:', error);
-            Alert.alert('Error', 'Failed to generate cover letter. Please try again.');
+            showAlert({ title: 'Error', message: 'Failed to generate cover letter.', type: 'error' });
         } finally {
             setIsGenerating(false);
         }

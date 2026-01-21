@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.FeedbackTool = void 0;
-const base_tool_1 = require("./base.tool");
-class FeedbackTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class FeedbackTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "feedback_tool";
@@ -12,4 +9,3 @@ class FeedbackTool extends base_tool_1.BaseTool {
         return this.request(`/api/support/feedback`, "POST", params);
     }
 }
-exports.FeedbackTool = FeedbackTool;

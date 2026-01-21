@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExplainFeatureTool = void 0;
-const base_tool_1 = require("./base.tool");
-class ExplainFeatureTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class ExplainFeatureTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "explain_feature_tool";
@@ -12,4 +9,3 @@ class ExplainFeatureTool extends base_tool_1.BaseTool {
         return this.request(`/api/support/explain`, "POST", params);
     }
 }
-exports.ExplainFeatureTool = ExplainFeatureTool;

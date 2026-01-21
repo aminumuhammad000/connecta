@@ -1,21 +1,15 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleExpiredProposals = exports.deleteProposalTemplate = exports.useTemplate = exports.getProposalTemplates = exports.createProposalTemplate = exports.respondToCounterOffer = exports.createCounterOffer = exports.withdrawProposal = exports.editProposal = void 0;
-const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
-const ProposalTemplate_model_1 = __importDefault(require("../models/ProposalTemplate.model"));
-const notification_controller_1 = require("./notification.controller");
+import Proposal from '../models/Proposal.model';
+import ProposalTemplate from '../models/ProposalTemplate.model';
+import { createNotification } from './notification.controller';
 /**
  * Edit existing proposal (before accepted)
  */
-const editProposal = async (req, res) => {
+export const editProposal = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { proposalId } = req.params;
         const { title, description, coverLetter, budget, dateRange, level } = req.body;
-        const proposal = await Proposal_model_1.default.findById(proposalId);
+        const proposal = await Proposal.findById(proposalId);
         if (!proposal) {
             return res.status(404).json({ success: false, message: 'Proposal not found' });
         }
@@ -80,16 +74,15 @@ const editProposal = async (req, res) => {
         });
     }
 };
-exports.editProposal = editProposal;
 /**
  * Withdraw proposal
  */
-const withdrawProposal = async (req, res) => {
+export const withdrawProposal = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { proposalId } = req.params;
         const { reason } = req.body;
-        const proposal = await Proposal_model_1.default.findById(proposalId).populate('clientId', 'firstName lastName');
+        const proposal = await Proposal.findById(proposalId).populate('clientId', 'firstName lastName');
         if (!proposal) {
             return res.status(404).json({ success: false, message: 'Proposal not found' });
         }
@@ -110,7 +103,7 @@ const withdrawProposal = async (req, res) => {
         await proposal.save();
         // Notify client if exists
         if (proposal.clientId) {
-            await (0, notification_controller_1.createNotification)({
+            await createNotification({
                 userId: proposal.clientId._id,
                 type: 'system',
                 title: 'Proposal Withdrawn',
@@ -135,16 +128,15 @@ const withdrawProposal = async (req, res) => {
         });
     }
 };
-exports.withdrawProposal = withdrawProposal;
 /**
  * Create counter-offer
  */
-const createCounterOffer = async (req, res) => {
+export const createCounterOffer = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { proposalId } = req.params;
         const { amount, message } = req.body;
-        const proposal = await Proposal_model_1.default.findById(proposalId)
+        const proposal = await Proposal.findById(proposalId)
             .populate('clientId', 'firstName lastName')
             .populate('freelancerId', 'firstName lastName');
         if (!proposal) {
@@ -177,7 +169,7 @@ const createCounterOffer = async (req, res) => {
         // Notify the other party
         const notifyUserId = isClient ? proposal.freelancerId._id : proposal.clientId._id;
         const notifyUserType = isClient ? 'freelancer' : 'client';
-        await (0, notification_controller_1.createNotification)({
+        await createNotification({
             userId: notifyUserId,
             type: 'system',
             title: '💰 Counter-Offer Received',
@@ -202,16 +194,15 @@ const createCounterOffer = async (req, res) => {
         });
     }
 };
-exports.createCounterOffer = createCounterOffer;
 /**
  * Respond to counter-offer
  */
-const respondToCounterOffer = async (req, res) => {
+export const respondToCounterOffer = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { proposalId, offerIndex } = req.params;
         const { accept } = req.body; // true or false
-        const proposal = await Proposal_model_1.default.findById(proposalId);
+        const proposal = await Proposal.findById(proposalId);
         if (!proposal) {
             return res.status(404).json({ success: false, message: 'Proposal not found' });
         }
@@ -247,15 +238,14 @@ const respondToCounterOffer = async (req, res) => {
         });
     }
 };
-exports.respondToCounterOffer = respondToCounterOffer;
 /**
  * Create proposal template
  */
-const createProposalTemplate = async (req, res) => {
+export const createProposalTemplate = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { name, description, coverLetter, priceType, defaultBudget, defaultTimeline, tags } = req.body;
-        const template = await ProposalTemplate_model_1.default.create({
+        const template = await ProposalTemplate.create({
             userId,
             name,
             description,
@@ -280,14 +270,13 @@ const createProposalTemplate = async (req, res) => {
         });
     }
 };
-exports.createProposalTemplate = createProposalTemplate;
 /**
  * Get user's proposal templates
  */
-const getProposalTemplates = async (req, res) => {
+export const getProposalTemplates = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const templates = await ProposalTemplate_model_1.default.find({ userId }).sort({ createdAt: -1 });
+        const templates = await ProposalTemplate.find({ userId }).sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             count: templates.length,
@@ -302,16 +291,15 @@ const getProposalTemplates = async (req, res) => {
         });
     }
 };
-exports.getProposalTemplates = getProposalTemplates;
 /**
  * Use template to create proposal
  */
-const useTemplate = async (req, res) => {
+export const useTemplate = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { templateId } = req.params;
         const customizations = req.body; // Any custom overrides
-        const template = await ProposalTemplate_model_1.default.findById(templateId);
+        const template = await ProposalTemplate.findById(templateId);
         if (!template) {
             return res.status(404).json({ success: false, message: 'Template not found' });
         }
@@ -345,15 +333,14 @@ const useTemplate = async (req, res) => {
         });
     }
 };
-exports.useTemplate = useTemplate;
 /**
  * Delete proposal template
  */
-const deleteProposalTemplate = async (req, res) => {
+export const deleteProposalTemplate = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { templateId } = req.params;
-        const template = await ProposalTemplate_model_1.default.findById(templateId);
+        const template = await ProposalTemplate.findById(templateId);
         if (!template) {
             return res.status(404).json({ success: false, message: 'Template not found' });
         }
@@ -374,14 +361,13 @@ const deleteProposalTemplate = async (req, res) => {
         });
     }
 };
-exports.deleteProposalTemplate = deleteProposalTemplate;
 /**
  * Handle expired proposals (cron job or manual trigger)
  */
-const handleExpiredProposals = async (req, res) => {
+export const handleExpiredProposals = async (req, res) => {
     try {
         const now = new Date();
-        const expiredProposals = await Proposal_model_1.default.updateMany({
+        const expiredProposals = await Proposal.updateMany({
             status: 'pending',
             expiresAt: { $lte: now },
         }, {
@@ -401,4 +387,3 @@ const handleExpiredProposals = async (req, res) => {
         });
     }
 };
-exports.handleExpiredProposals = handleExpiredProposals;

@@ -195,6 +195,13 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
               size="large"
               style={{ marginBottom: 12 }}
             />
+            <Button
+              title="Post Team Project"
+              onPress={() => navigation.navigate('PostCollaboJob')}
+              size="large"
+              variant="outline"
+              style={{ marginBottom: 12 }}
+            />
             <View style={styles.quickActions}>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}

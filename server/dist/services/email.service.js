@@ -1,19 +1,13 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendGigNotificationEmail = exports.verifyEmailConfig = exports.sendBroadcastEmail = exports.sendNewProposalNotificationToClient = exports.sendProposalRejectedEmail = exports.sendProposalAcceptedEmail = exports.sendWelcomeEmail = exports.sendEmail = exports.sendOTPEmail = void 0;
-const nodemailer_1 = __importDefault(require("nodemailer"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const SystemSettings_model_1 = __importDefault(require("../models/SystemSettings.model"));
-const emailTemplates_1 = require("../utils/emailTemplates");
-dotenv_1.default.config();
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+import SystemSettings from '../models/SystemSettings.model';
+import { getBaseTemplate } from '../utils/emailTemplates';
+dotenv.config();
 // Helper to get transporter with latest settings
 const getTransporter = async () => {
     try {
         // Try to get settings from DB
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         // Use DB settings if available and complete, otherwise fallback to env
         const provider = settings?.smtp?.provider || 'other';
         const user = settings?.smtp?.user || process.env.SMTP_USER;
@@ -23,7 +17,7 @@ const getTransporter = async () => {
             return null;
         }
         if (provider === 'gmail') {
-            return nodemailer_1.default.createTransport({
+            return nodemailer.createTransport({
                 service: 'gmail',
                 auth: { user, pass },
             });
@@ -32,7 +26,7 @@ const getTransporter = async () => {
         const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
         const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
         const secure = settings?.smtp?.secure ?? false;
-        return nodemailer_1.default.createTransport({
+        return nodemailer.createTransport({
             host,
             port,
             secure,
@@ -47,12 +41,12 @@ const getTransporter = async () => {
 /**
  * Send OTP email to user
  */
-const sendOTPEmail = async (email, otp, userName, type = 'PASSWORD_RESET') => {
+export const sendOTPEmail = async (email, otp, userName, type = 'PASSWORD_RESET') => {
     try {
         const transporter = await getTransporter();
         if (!transporter)
             return { success: false, error: 'Transporter not available' };
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
         const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
         // For automated emails, we prefer a no-reply address if possible, 
@@ -65,7 +59,7 @@ const sendOTPEmail = async (email, otp, userName, type = 'PASSWORD_RESET') => {
         const message = isVerification
             ? 'Welcome to Connecta! Please use the verification code below to verify your email address:'
             : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
-        const html = (0, emailTemplates_1.getBaseTemplate)({
+        const html = getBaseTemplate({
             title: title,
             subject: subject,
             content: `
@@ -112,22 +106,21 @@ If you didn't request this, please ignore this email.
         return { success: false, error: error.message || error };
     }
 };
-exports.sendOTPEmail = sendOTPEmail;
 /**
  * Send generic email
  */
-const sendEmail = async (to, subject, html, text) => {
+export const sendEmail = async (to, subject, html, text) => {
     try {
         const transporter = await getTransporter();
         if (!transporter)
             return { success: false, error: 'Transporter not available' };
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
         const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
         // Wrap HTML in base template if it's not already a full document
         const finalHtml = html.includes('<!DOCTYPE html>')
             ? html
-            : (0, emailTemplates_1.getBaseTemplate)({
+            : getBaseTemplate({
                 title: subject,
                 subject: subject,
                 content: html
@@ -148,13 +141,12 @@ const sendEmail = async (to, subject, html, text) => {
         return { success: false, error: error.message || error };
     }
 };
-exports.sendEmail = sendEmail;
 /**
  * Send Welcome Email to New User
  */
-const sendWelcomeEmail = async (email, userName) => {
+export const sendWelcomeEmail = async (email, userName) => {
     const subject = 'Welcome to Connecta! 🎉';
-    const html = (0, emailTemplates_1.getBaseTemplate)({
+    const html = getBaseTemplate({
         title: 'Welcome to Connecta! 🚀',
         subject: subject,
         content: `
@@ -177,15 +169,14 @@ const sendWelcomeEmail = async (email, userName) => {
         actionText: 'Get Started'
     });
     const text = `Hi ${userName}, Welcome to Connecta! Your account has been successfully verified. We're thrilled to have you on board.`;
-    return (0, exports.sendEmail)(email, subject, html, text);
+    return sendEmail(email, subject, html, text);
 };
-exports.sendWelcomeEmail = sendWelcomeEmail;
 /**
  * Send Proposal Accepted Email
  */
-const sendProposalAcceptedEmail = async (email, freelancerName, projectName, clientName, projectLink) => {
+export const sendProposalAcceptedEmail = async (email, freelancerName, projectName, clientName, projectLink) => {
     const subject = `Congratulations! You've been hired for ${projectName}`;
-    const html = (0, emailTemplates_1.getBaseTemplate)({
+    const html = getBaseTemplate({
         title: "You've been hired! 🎉",
         subject: subject,
         content: `
@@ -197,15 +188,14 @@ const sendProposalAcceptedEmail = async (email, freelancerName, projectName, cli
         actionText: 'Go to Project Workspace'
     });
     const text = `Hi ${freelancerName}, Great news! ${clientName} has accepted your proposal for ${projectName}. Go to your dashboard to start working.`;
-    return (0, exports.sendEmail)(email, subject, html, text);
+    return sendEmail(email, subject, html, text);
 };
-exports.sendProposalAcceptedEmail = sendProposalAcceptedEmail;
 /**
  * Send Proposal Rejected Email
  */
-const sendProposalRejectedEmail = async (email, freelancerName, clientName, proposalTitle) => {
+export const sendProposalRejectedEmail = async (email, freelancerName, clientName, proposalTitle) => {
     const subject = `Update on your proposal for ${proposalTitle}`;
-    const html = (0, emailTemplates_1.getBaseTemplate)({
+    const html = getBaseTemplate({
         title: 'Proposal Update',
         subject: subject,
         content: `
@@ -216,15 +206,14 @@ const sendProposalRejectedEmail = async (email, freelancerName, clientName, prop
     `
     });
     const text = `Hi ${freelancerName}, Unfortunately, ${clientName} has decided not to move forward with your proposal for ${proposalTitle}. Keep applying to other jobs!`;
-    return (0, exports.sendEmail)(email, subject, html, text);
+    return sendEmail(email, subject, html, text);
 };
-exports.sendProposalRejectedEmail = sendProposalRejectedEmail;
 /**
  * Send New Proposal Notification to Client
  */
-const sendNewProposalNotificationToClient = async (email, clientName, freelancerName, jobTitle, proposalLink) => {
+export const sendNewProposalNotificationToClient = async (email, clientName, freelancerName, jobTitle, proposalLink) => {
     const subject = `New Proposal for ${jobTitle}`;
-    const html = (0, emailTemplates_1.getBaseTemplate)({
+    const html = getBaseTemplate({
         title: 'New Proposal Received! 📄',
         subject: subject,
         content: `
@@ -236,19 +225,18 @@ const sendNewProposalNotificationToClient = async (email, clientName, freelancer
         actionText: 'View Proposal'
     });
     const text = `Hi ${clientName}, ${freelancerName} has submitted a proposal for ${jobTitle}. Check your dashboard to review it.`;
-    return (0, exports.sendEmail)(email, subject, html, text);
+    return sendEmail(email, subject, html, text);
 };
-exports.sendNewProposalNotificationToClient = sendNewProposalNotificationToClient;
 /**
  * Send Broadcast Email to Multiple Recipients
  */
-const sendBroadcastEmail = async (recipients, subject, body) => {
+export const sendBroadcastEmail = async (recipients, subject, body) => {
     try {
         const transporter = await getTransporter();
         if (!transporter) {
             return { success: false, sent: 0, failed: recipients.length, errors: ['Transporter not available'] };
         }
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
         const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
         let sent = 0;
@@ -257,7 +245,7 @@ const sendBroadcastEmail = async (recipients, subject, body) => {
         // Send emails to all recipients
         for (const recipient of recipients) {
             try {
-                const html = (0, emailTemplates_1.getBaseTemplate)({
+                const html = getBaseTemplate({
                     title: subject,
                     subject: subject,
                     content: body.replace(/\n/g, '<br>')
@@ -296,11 +284,10 @@ const sendBroadcastEmail = async (recipients, subject, body) => {
         };
     }
 };
-exports.sendBroadcastEmail = sendBroadcastEmail;
 /**
  * Verify email configuration
  */
-const verifyEmailConfig = async () => {
+export const verifyEmailConfig = async () => {
     try {
         const transporter = await getTransporter();
         if (!transporter)
@@ -314,22 +301,21 @@ const verifyEmailConfig = async () => {
         return false;
     }
 };
-exports.verifyEmailConfig = verifyEmailConfig;
 /**
  * Send Gig Notification Email
  */
-const sendGigNotificationEmail = async (email, userName, jobTitle, jobLink, skills) => {
+export const sendGigNotificationEmail = async (email, userName, jobTitle, jobLink, skills) => {
     try {
         const transporter = await getTransporter();
         if (!transporter)
             return { success: false, error: 'Transporter not available' };
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
         const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
         // Set Reply-To to no-reply for notifications
         const replyTo = 'no-reply@connecta.ng';
         const subject = `New Gig Alert: ${jobTitle}`;
-        const html = (0, emailTemplates_1.getBaseTemplate)({
+        const html = getBaseTemplate({
             title: 'New Gig Alert! 🚀',
             subject: subject,
             content: `
@@ -369,4 +355,3 @@ const sendGigNotificationEmail = async (email, userName, jobTitle, jobLink, skil
         return { success: false, error: error.message || error };
     }
 };
-exports.sendGigNotificationEmail = sendGigNotificationEmail;

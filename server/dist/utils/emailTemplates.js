@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBaseTemplate = void 0;
-const getBaseTemplate = (options) => {
+export const getBaseTemplate = (options) => {
     const { title, content, actionUrl, actionText, subject } = options;
     const year = new Date().getFullYear();
     return `
@@ -169,4 +166,3 @@ const getBaseTemplate = (options) => {
 </html>
   `;
 };
-exports.getBaseTemplate = getBaseTemplate;

@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetGigPerformanceTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetGigPerformanceTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetGigPerformanceTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_gig_performance_tool";
@@ -13,4 +10,3 @@ class GetGigPerformanceTool extends base_tool_1.BaseTool {
         return this.request(`/api/analytics/gigs?userId=${userId}`, "GET");
     }
 }
-exports.GetGigPerformanceTool = GetGigPerformanceTool;

@@ -1,42 +1,7 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importStar(require("mongoose"));
-const SignatureSchema = new mongoose_1.Schema({
+import mongoose, { Schema } from 'mongoose';
+const SignatureSchema = new Schema({
     userId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
     },
@@ -51,7 +16,7 @@ const SignatureSchema = new mongoose_1.Schema({
     ipAddress: String,
     userAgent: String,
 });
-const ContractTermSchema = new mongoose_1.Schema({
+const ContractTermSchema = new Schema({
     title: {
         type: String,
         required: true,
@@ -65,25 +30,25 @@ const ContractTermSchema = new mongoose_1.Schema({
         default: 0,
     },
 });
-const ContractSchema = new mongoose_1.Schema({
+const ContractSchema = new Schema({
     projectId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Project',
         required: true,
         index: true,
     },
     jobId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Job',
     },
     clientId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
         index: true,
     },
     freelancerId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true,
         index: true,
@@ -133,26 +98,26 @@ const ContractSchema = new mongoose_1.Schema({
     clientSignature: SignatureSchema,
     freelancerSignature: SignatureSchema,
     templateId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'ContractTemplate',
     },
     amendments: [{
             description: String,
             amendedBy: {
-                type: mongoose_1.Schema.Types.ObjectId,
+                type: Schema.Types.ObjectId,
                 ref: 'User',
             },
             amendedAt: Date,
             approved: Boolean,
         }],
     terminatedBy: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
     },
     terminationReason: String,
     terminatedAt: Date,
     disputeId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Dispute',
     },
     version: {
@@ -160,7 +125,7 @@ const ContractSchema = new mongoose_1.Schema({
         default: 1,
     },
     previousVersionId: {
-        type: mongoose_1.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Contract',
     },
 }, {
@@ -170,5 +135,5 @@ const ContractSchema = new mongoose_1.Schema({
 ContractSchema.index({ projectId: 1, status: 1 });
 ContractSchema.index({ clientId: 1, status: 1 });
 ContractSchema.index({ freelancerId: 1, status: 1 });
-const Contract = mongoose_1.default.model('Contract', ContractSchema);
-exports.default = Contract;
+const Contract = mongoose.model('Contract', ContractSchema);
+export default Contract;

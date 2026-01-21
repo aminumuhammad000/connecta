@@ -223,7 +223,7 @@ export const getTopFreelancers = async (req: Request, res: Response) => {
       skills: (freelancer as any).skills || ['Mobile Dev', 'React Native'] // Fallback
     }));
 
-    res.status(200).json({ freelancers: freelancersData });
+    res.status(200).json({ success: true, data: freelancersData });
   } catch (error) {
     console.error('Error fetching freelancers:', error);
     res.status(500).json({ message: 'Server error', error });
@@ -290,7 +290,7 @@ export const getRecentMessages = async (req: Request, res: Response) => {
       })
     );
 
-    res.status(200).json({ messages: messagesData });
+    res.status(200).json({ success: true, data: messagesData });
   } catch (error) {
     console.error('Error fetching recent messages:', error);
     res.status(500).json({ message: 'Server error', error });

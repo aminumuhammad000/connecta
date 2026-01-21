@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.UploadPortfolioTool = void 0;
-const base_tool_1 = require("./base.tool");
-class UploadPortfolioTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class UploadPortfolioTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "upload_portfolio_tool";
@@ -13,4 +10,3 @@ class UploadPortfolioTool extends base_tool_1.BaseTool {
         return this.request(`/api/projects`, "POST", params);
     }
 }
-exports.UploadPortfolioTool = UploadPortfolioTool;

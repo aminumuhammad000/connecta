@@ -1,17 +1,13 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.tools = void 0;
-exports.loadTools = loadTools;
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const base_tool_1 = require("./base.tool");
-exports.tools = {};
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { BaseTool } from "./base.tool";
+export const tools = {};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const currentDir = __dirname;
 // Support both TS (dev with ts-node) and JS (built) tool files
-const files = fs_1.default
+const files = fs
     .readdirSync(currentDir)
     .filter((f) => {
     const isTool = f.endsWith(".tool.ts") || f.endsWith(".tool.js");
@@ -20,9 +16,9 @@ const files = fs_1.default
     return isTool && !isIndex && !isBase;
 });
 // Loader function to register tool classes
-async function loadTools() {
+export async function loadTools() {
     for (const file of files) {
-        const modulePath = path_1.default.join(currentDir, file);
+        const modulePath = path.join(currentDir, file);
         // Use require() for CommonJS runtime (ts-node dev) to avoid ESM import.meta
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const imported = require(modulePath);
@@ -30,8 +26,8 @@ async function loadTools() {
             if (typeof exported === "function") {
                 try {
                     const inst = new exported("", "", "", true);
-                    if (inst instanceof base_tool_1.BaseTool) {
-                        exports.tools[inst.name] = exported;
+                    if (inst instanceof BaseTool) {
+                        tools[inst.name] = exported;
                     }
                 }
                 catch {

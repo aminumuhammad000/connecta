@@ -53,6 +53,15 @@ export const getProfileById = async (id: string): Promise<Profile> => {
 };
 
 /**
+ * Get profile by User ID
+ */
+export const getProfileByUserId = async (userId: string): Promise<Profile> => {
+    const response = await get<Profile>(API_ENDPOINTS.PROFILE_BY_USER_ID(userId));
+    const data = unwrapProfile(response);
+    return data as Profile;
+};
+
+/**
  * Create new profile
  */
 export const createProfile = async (profileData: Partial<Profile>): Promise<Profile> => {
@@ -91,6 +100,7 @@ export const updateProfile = async (id: string, profileData: Partial<Profile>): 
 export default {
     getMyProfile,
     getProfileById,
+    getProfileByUserId,
     createProfile,
     updateMyProfile,
     updateProfile,

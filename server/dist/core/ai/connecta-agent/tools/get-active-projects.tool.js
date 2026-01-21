@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetActiveProjectsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetActiveProjectsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetActiveProjectsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_active_projects_tool";
@@ -15,4 +12,3 @@ class GetActiveProjectsTool extends base_tool_1.BaseTool {
         return this.request(path, "GET");
     }
 }
-exports.GetActiveProjectsTool = GetActiveProjectsTool;

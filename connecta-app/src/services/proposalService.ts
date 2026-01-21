@@ -91,8 +91,8 @@ export const updateProposalStatus = async (id: string, status: string): Promise<
  * Generate AI Cover Letter
  */
 export const generateCoverLetter = async (jobId: string): Promise<{ coverLetter: string }> => {
-    const response = await post<{ coverLetter: string }>(API_ENDPOINTS.PROPOSALS + '/cover-letter', { jobId });
-    return (response as any)?.data || response;
+    const response = await post<{ success: boolean; data: string }>(API_ENDPOINTS.PROPOSALS + '/cover-letter', { jobTitle: 'Job Application', jobDesc: 'Job Description' }); // TODO: Pass actual job details
+    return { coverLetter: response.data };
 };
 
 export default {

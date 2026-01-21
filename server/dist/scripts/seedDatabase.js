@@ -1,29 +1,24 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const dotenv_1 = __importDefault(require("dotenv"));
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 // Load environment variables
-dotenv_1.default.config();
+dotenv.config();
 // Import all models
-const user_model_1 = __importDefault(require("../models/user.model"));
-const Profile_model_1 = __importDefault(require("../models/Profile.model"));
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const Project_model_1 = __importDefault(require("../models/Project.model"));
-const Proposal_model_1 = __importDefault(require("../models/Proposal.model"));
-const Contract_model_1 = __importDefault(require("../models/Contract.model"));
-const Payment_model_1 = __importDefault(require("../models/Payment.model"));
-const Review_model_1 = __importDefault(require("../models/Review.model"));
-const Notification_model_1 = __importDefault(require("../models/Notification.model"));
-const subscription_model_1 = __importDefault(require("../models/subscription.model"));
-const Wallet_model_1 = __importDefault(require("../models/Wallet.model"));
-const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
-const Withdrawal_model_1 = __importDefault(require("../models/Withdrawal.model"));
-const Conversation_model_1 = __importDefault(require("../models/Conversation.model"));
-const Message_model_1 = __importDefault(require("../models/Message.model"));
+import User from '../models/user.model';
+import Profile from '../models/Profile.model';
+import Job from '../models/Job.model';
+import Project from '../models/Project.model';
+import Proposal from '../models/Proposal.model';
+import Contract from '../models/Contract.model';
+import Payment from '../models/Payment.model';
+import Review from '../models/Review.model';
+import Notification from '../models/Notification.model';
+import Subscription from '../models/subscription.model';
+import Wallet from '../models/Wallet.model';
+import Transaction from '../models/Transaction.model';
+import Withdrawal from '../models/Withdrawal.model';
+import Conversation from '../models/Conversation.model';
+import Message from '../models/Message.model';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/connecta';
 // Seed data
 const seedData = {
@@ -134,25 +129,25 @@ const seedDatabase = async () => {
     try {
         console.log('🌱 Starting database seeding...\n');
         // Connect to MongoDB
-        await mongoose_1.default.connect(MONGODB_URI);
+        await mongoose.connect(MONGODB_URI);
         console.log('✅ Connected to MongoDB\n');
         // Clear existing data
         console.log('🗑️  Clearing existing data...');
-        await user_model_1.default.deleteMany({});
-        await Profile_model_1.default.deleteMany({});
-        await Job_model_1.default.deleteMany({});
-        await Project_model_1.default.deleteMany({});
-        await Proposal_model_1.default.deleteMany({});
-        await Contract_model_1.default.deleteMany({});
-        await Payment_model_1.default.deleteMany({});
-        await Review_model_1.default.deleteMany({});
-        await Notification_model_1.default.deleteMany({});
-        await subscription_model_1.default.deleteMany({});
-        await Wallet_model_1.default.deleteMany({});
-        await Transaction_model_1.default.deleteMany({});
-        await Withdrawal_model_1.default.deleteMany({});
-        await Conversation_model_1.default.deleteMany({});
-        await Message_model_1.default.deleteMany({});
+        await User.deleteMany({});
+        await Profile.deleteMany({});
+        await Job.deleteMany({});
+        await Project.deleteMany({});
+        await Proposal.deleteMany({});
+        await Contract.deleteMany({});
+        await Payment.deleteMany({});
+        await Review.deleteMany({});
+        await Notification.deleteMany({});
+        await Subscription.deleteMany({});
+        await Wallet.deleteMany({});
+        await Transaction.deleteMany({});
+        await Withdrawal.deleteMany({});
+        await Conversation.deleteMany({});
+        await Message.deleteMany({});
         console.log('✅ Cleared all collections\n');
         // ==========================
         // 1. Seed Users
@@ -160,9 +155,9 @@ const seedDatabase = async () => {
         console.log('👥 Seeding users...');
         const hashedUsers = await Promise.all(seedData.users.map(async (user) => ({
             ...user,
-            password: await bcryptjs_1.default.hash(user.password, 10),
+            password: await bcrypt.hash(user.password, 10),
         })));
-        const users = await user_model_1.default.insertMany(hashedUsers);
+        const users = await User.insertMany(hashedUsers);
         console.log(`✅ Created ${users.length} users\n`);
         // Get specific users for relationships
         const admin = users.find((u) => u.userType === 'admin');
@@ -208,7 +203,7 @@ const seedDatabase = async () => {
                 },
             ],
         }));
-        const profiles = await Profile_model_1.default.insertMany(profilesData);
+        const profiles = await Profile.insertMany(profilesData);
         console.log(`✅ Created ${profiles.length} profiles\n`);
         // ==========================
         // 3. Seed Wallets
@@ -219,7 +214,7 @@ const seedDatabase = async () => {
             balance: index * 5000,
             currency: 'NGN',
         }));
-        const wallets = await Wallet_model_1.default.insertMany(walletsData);
+        const wallets = await Wallet.insertMany(walletsData);
         console.log(`✅ Created ${wallets.length} wallets\n`);
         // ==========================
         // 4. Seed Jobs
@@ -278,7 +273,7 @@ const seedDatabase = async () => {
                 paymentVerified: jobIndex % 2 === 0,
             };
         }));
-        const jobs = await Job_model_1.default.insertMany(jobsData);
+        const jobs = await Job.insertMany(jobsData);
         console.log(`✅ Created ${jobs.length} jobs\n`);
         // ==========================
         // 5. Seed Proposals
@@ -307,7 +302,7 @@ const seedDatabase = async () => {
             views: freelancerIndex + 1,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         })));
-        const proposals = await Proposal_model_1.default.insertMany(proposalsData);
+        const proposals = await Proposal.insertMany(proposalsData);
         console.log(`✅ Created ${proposals.length} proposals\n`);
         // ==========================
         // 6. Seed Projects
@@ -367,7 +362,7 @@ const seedDatabase = async () => {
                 uploads: [],
             };
         });
-        const projects = await Project_model_1.default.insertMany(projectsData);
+        const projects = await Project.insertMany(projectsData);
         console.log(`✅ Created ${projects.length} projects\n`);
         // ==========================
         // 7. Seed Contracts
@@ -414,7 +409,7 @@ const seedDatabase = async () => {
                 ipAddress: '192.168.1.2',
             } : undefined,
         }));
-        const contracts = await Contract_model_1.default.insertMany(contractsData);
+        const contracts = await Contract.insertMany(contractsData);
         console.log(`✅ Created ${contracts.length} contracts\n`);
         // ==========================
         // 8. Seed Payments
@@ -437,7 +432,7 @@ const seedDatabase = async () => {
             paidAt: index % 3 === 1 ? new Date() : undefined,
             releasedAt: index % 3 === 1 ? new Date() : undefined,
         }));
-        const payments = await Payment_model_1.default.insertMany(paymentsData);
+        const payments = await Payment.insertMany(paymentsData);
         console.log(`✅ Created ${payments.length} payments\n`);
         // ==========================
         // 9. Seed Transactions
@@ -471,7 +466,7 @@ const seedDatabase = async () => {
                 gatewayReference: payment.gatewayReference,
             },
         ]);
-        const transactions = await Transaction_model_1.default.insertMany(transactionsData);
+        const transactions = await Transaction.insertMany(transactionsData);
         console.log(`✅ Created ${transactions.length} transactions\n`);
         // ==========================
         // 10. Seed Reviews
@@ -498,7 +493,7 @@ const seedDatabase = async () => {
                 isPublic: true,
             },
         ]);
-        const reviews = await Review_model_1.default.insertMany(reviewsData);
+        const reviews = await Review.insertMany(reviewsData);
         console.log(`✅ Created ${reviews.length} reviews\n`);
         // ==========================
         // 11. Seed Subscriptions
@@ -516,7 +511,7 @@ const seedDatabase = async () => {
             paymentReference: `SUB-${Date.now()}-${index}`,
             autoRenew: index % 2 === 0,
         }));
-        const subscriptions = await subscription_model_1.default.insertMany(subscriptionsData);
+        const subscriptions = await Subscription.insertMany(subscriptionsData);
         console.log(`✅ Created ${subscriptions.length} subscriptions\n`);
         // ==========================
         // 12. Seed Notifications
@@ -548,7 +543,7 @@ const seedDatabase = async () => {
             isRead: notifIndex % 2 === 0,
             link: `/dashboard/${['proposals', 'proposals', 'projects', 'payments', 'messages', 'reviews'][notifIndex % 6]}`,
         })));
-        const notifications = await Notification_model_1.default.insertMany(notificationsData);
+        const notifications = await Notification.insertMany(notificationsData);
         console.log(`✅ Created ${notifications.length} notifications\n`);
         // ==========================
         // 13. Seed Conversations
@@ -565,7 +560,7 @@ const seedDatabase = async () => {
                 [project.freelancerId.toString()]: 1,
             },
         }));
-        const conversations = await Conversation_model_1.default.insertMany(conversationsData);
+        const conversations = await Conversation.insertMany(conversationsData);
         console.log(`✅ Created ${conversations.length} conversations\n`);
         // ==========================
         // 14. Seed Messages
@@ -594,7 +589,7 @@ const seedDatabase = async () => {
                 isRead: false,
             },
         ]);
-        const messages = await Message_model_1.default.insertMany(messagesData);
+        const messages = await Message.insertMany(messagesData);
         console.log(`✅ Created ${messages.length} messages\n`);
         // ==========================
         // 15. Seed Withdrawals
@@ -619,7 +614,7 @@ const seedDatabase = async () => {
                 status: ['pending', 'processing', 'completed'][index % 3],
             };
         });
-        const withdrawals = await Withdrawal_model_1.default.insertMany(withdrawalsData);
+        const withdrawals = await Withdrawal.insertMany(withdrawalsData);
         console.log(`✅ Created ${withdrawals.length} withdrawals\n`);
         // ==========================
         // Summary
@@ -642,13 +637,13 @@ const seedDatabase = async () => {
         console.log(`   • Messages: ${messages.length}`);
         console.log(`   • Withdrawals: ${withdrawals.length}`);
         console.log('\n✅ All data has been seeded successfully!');
-        await mongoose_1.default.disconnect();
+        await mongoose.disconnect();
         console.log('👋 Disconnected from MongoDB\n');
         process.exit(0);
     }
     catch (error) {
         console.error('❌ Error seeding database:', error);
-        await mongoose_1.default.disconnect();
+        await mongoose.disconnect();
         process.exit(1);
     }
 };

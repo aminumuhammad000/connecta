@@ -1,25 +1,22 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const notification_controller_1 = require("../controllers/notification.controller");
-const notification_controller_2 = require("../controllers/notification.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const router = express_1.default.Router();
+import express from 'express';
+import { getAllNotifications } from '../controllers/notification.controller';
+import { getNotifications, getUnreadCount, markAsRead, markAllAsRead, deleteNotification, clearReadNotifications, testWhatsAppNotification } from '../controllers/notification.controller';
+import { authenticate } from '../core/middleware/auth.middleware';
+const router = express.Router();
 // Admin: Get all notifications (no auth)
-router.get('/admin/all', notification_controller_1.getAllNotifications);
+router.get('/admin/all', getAllNotifications);
+// Test WhatsApp (Admin/Public for testing)
+router.post('/test-whatsapp', testWhatsAppNotification);
 // Get all notifications (protected)
-router.get('/', auth_middleware_1.authenticate, notification_controller_2.getNotifications);
+router.get('/', authenticate, getNotifications);
 // Get unread count (protected)
-router.get('/unread-count', auth_middleware_1.authenticate, notification_controller_2.getUnreadCount);
+router.get('/unread-count', authenticate, getUnreadCount);
 // Mark notification as read (protected)
-router.patch('/:notificationId/read', auth_middleware_1.authenticate, notification_controller_2.markAsRead);
+router.patch('/:notificationId/read', authenticate, markAsRead);
 // Mark all as read (protected)
-router.patch('/mark-all-read', auth_middleware_1.authenticate, notification_controller_2.markAllAsRead);
+router.patch('/mark-all-read', authenticate, markAllAsRead);
 // Delete notification (protected)
-router.delete('/:notificationId', auth_middleware_1.authenticate, notification_controller_2.deleteNotification);
+router.delete('/:notificationId', authenticate, deleteNotification);
 // Clear all read notifications (protected)
-router.delete('/clear-read', auth_middleware_1.authenticate, notification_controller_2.clearReadNotifications);
-exports.default = router;
+router.delete('/clear-read', authenticate, clearReadNotifications);
+export default router;

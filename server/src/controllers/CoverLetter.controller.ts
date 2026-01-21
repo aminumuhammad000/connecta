@@ -1,23 +1,25 @@
 import { Request, Response } from 'express';
 import LLMService from '../services/LLM.service';
 import User from '../models/user.model';
-import Job from '../models/Job.model';
+import Profile from '../models/Profile.model';
 
 export const generateCoverLetter = async (req: Request, res: Response) => {
     try {
         const { jobTitle, jobDesc, tone } = req.body;
         const userId = (req as any).user.id;
 
-        // Fetch User Profile
+        // Fetch User and Profile
         const user = await User.findById(userId);
+        const profile = await Profile.findOne({ user: userId });
+
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
         // Prepare details
         const freelancerName = `${user.firstName} ${user.lastName}`;
-        const freelancerSkills = (user as any).skills || [];
-        const freelancerBio = (user as any).bio || '';
+        const freelancerSkills = profile?.skills || [];
+        const freelancerBio = profile?.bio || `I am a skilled ${jobTitle} looking for new opportunities.`;
 
         // If jobId is implied (user might pass jobTitle as ID sometimes, but usually title)
         // Ideally we might want jobId to fetch full desc, but passing desc directly uses less DB calls if context has it.
@@ -31,6 +33,9 @@ export const generateCoverLetter = async (req: Request, res: Response) => {
             freelancerSkills,
             freelancerBio
         );
+
+        console.log('✅ Generated Cover Letter:', coverLetter);
+
 
         res.status(200).json({
             success: true,

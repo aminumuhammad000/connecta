@@ -1,17 +1,12 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose_1 = __importDefault(require("mongoose"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const email_service_1 = require("../services/email.service");
-const db_config_1 = __importDefault(require("../config/db.config"));
-dotenv_1.default.config();
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import { sendEmail } from '../services/email.service';
+import connectDB from '../config/db.config';
+dotenv.config();
 const testBroadcastEmail = async () => {
     try {
         // Connect to database
-        await (0, db_config_1.default)();
+        await connectDB();
         console.log('Connected to database');
         const testEmail = 'aminumuhammad00015@gmail.com';
         const subject = 'Test Broadcast Email';
@@ -22,7 +17,7 @@ const testBroadcastEmail = async () => {
     `;
         const text = 'This is a test email to verify the broadcast email functionality.';
         console.log(`Sending test email to ${testEmail}...`);
-        const result = await (0, email_service_1.sendEmail)(testEmail, subject, html, text);
+        const result = await sendEmail(testEmail, subject, html, text);
         if (result.success) {
             console.log('✅ Test email sent successfully!');
         }
@@ -34,7 +29,7 @@ const testBroadcastEmail = async () => {
         console.error('❌ Error running test:', error);
     }
     finally {
-        await mongoose_1.default.disconnect();
+        await mongoose.disconnect();
         console.log('Disconnected from database');
         process.exit(0);
     }

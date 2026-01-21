@@ -1,27 +1,24 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.upload = void 0;
-const multer_1 = __importDefault(require("multer"));
-const path_1 = __importDefault(require("path"));
-const fs_1 = __importDefault(require("fs"));
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Ensure uploads directory exists
-const uploadDir = path_1.default.join(__dirname, '../../../uploads');
-if (!fs_1.default.existsSync(uploadDir)) {
-    fs_1.default.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = path.join(__dirname, '../../../uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
 }
-const storage = multer_1.default.diskStorage({
+const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path_1.default.extname(file.originalname));
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
-exports.upload = (0, multer_1.default)({
+export const upload = multer({
     storage: storage,
     limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 });

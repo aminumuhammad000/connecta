@@ -1,15 +1,9 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllExternalGigs = exports.deleteExternalGig = exports.createOrUpdateExternalGig = void 0;
-const Job_model_1 = __importDefault(require("../models/Job.model"));
-const mongoose_1 = __importDefault(require("mongoose"));
+import Job from "../models/Job.model";
+import mongoose from "mongoose";
 /**
  * Create or update an external gig
  */
-const createOrUpdateExternalGig = async (req, res) => {
+export const createOrUpdateExternalGig = async (req, res) => {
     try {
         const { external_id, source, title, company, location, job_type, description, apply_url, posted_at, skills = [], category = "External", deadline, } = req.body;
         // Validation
@@ -21,9 +15,9 @@ const createOrUpdateExternalGig = async (req, res) => {
         }
         // Find a system user or admin to assign these gigs to
         // This prevents 500 errors due to missing user reference
-        let systemUserId = new mongoose_1.default.Types.ObjectId("000000000000000000000000");
+        let systemUserId = new mongoose.Types.ObjectId("000000000000000000000000");
         // Try to find an existing admin or system user
-        const User = mongoose_1.default.model("User");
+        const User = mongoose.model("User");
         const systemUser = await User.findOne({
             $or: [{ email: "system@connecta.ng" }, { userType: "admin" }]
         });
@@ -48,7 +42,7 @@ const createOrUpdateExternalGig = async (req, res) => {
             }
         }
         // Check if external gig already exists
-        const existingGig = await Job_model_1.default.findOne({
+        const existingGig = await Job.findOne({
             isExternal: true,
             source,
             externalId: external_id,
@@ -73,7 +67,7 @@ const createOrUpdateExternalGig = async (req, res) => {
             });
         }
         // Create new external gig
-        const newGig = await Job_model_1.default.create({
+        const newGig = await Job.create({
             title,
             company,
             location,
@@ -107,11 +101,10 @@ const createOrUpdateExternalGig = async (req, res) => {
         });
     }
 };
-exports.createOrUpdateExternalGig = createOrUpdateExternalGig;
 /**
  * Delete an external gig by externalId
  */
-const deleteExternalGig = async (req, res) => {
+export const deleteExternalGig = async (req, res) => {
     try {
         const { source, externalId } = req.params;
         if (!source || !externalId) {
@@ -120,7 +113,7 @@ const deleteExternalGig = async (req, res) => {
                 message: "Missing required parameters: source and externalId",
             });
         }
-        const deletedGig = await Job_model_1.default.findOneAndDelete({
+        const deletedGig = await Job.findOneAndDelete({
             isExternal: true,
             source,
             externalId,
@@ -146,17 +139,16 @@ const deleteExternalGig = async (req, res) => {
         });
     }
 };
-exports.deleteExternalGig = deleteExternalGig;
 /**
  * Get all external gigs (optional - for debugging)
  */
-const getAllExternalGigs = async (req, res) => {
+export const getAllExternalGigs = async (req, res) => {
     try {
         const { source, limit = 50 } = req.query;
         const filter = { isExternal: true };
         if (source)
             filter.source = source;
-        const gigs = await Job_model_1.default.find(filter)
+        const gigs = await Job.find(filter)
             .sort({ createdAt: -1 })
             .limit(Number(limit));
         res.status(200).json({
@@ -174,4 +166,3 @@ const getAllExternalGigs = async (req, res) => {
         });
     }
 };
-exports.getAllExternalGigs = getAllExternalGigs;

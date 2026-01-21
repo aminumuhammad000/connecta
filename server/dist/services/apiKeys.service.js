@@ -1,16 +1,10 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getApiKeys = void 0;
-const SystemSettings_model_1 = __importDefault(require("../models/SystemSettings.model"));
+import SystemSettings from '../models/SystemSettings.model';
 /**
  * Get API keys from database settings with fallback to environment variables
  */
-const getApiKeys = async () => {
+export const getApiKeys = async () => {
     try {
-        const settings = await SystemSettings_model_1.default.findOne();
+        const settings = await SystemSettings.findOne();
         return {
             openrouter: settings?.apiKeys?.openrouter || process.env.OPENROUTER_API_KEY || '',
             huggingface: settings?.apiKeys?.huggingface || process.env.HUGGINGFACE_API_KEY || '',
@@ -35,4 +29,3 @@ const getApiKeys = async () => {
         };
     }
 };
-exports.getApiKeys = getApiKeys;

@@ -1,24 +1,19 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const proposalImprovements_controller_1 = require("../controllers/proposalImprovements.controller");
-const auth_middleware_1 = require("../core/middleware/auth.middleware");
-const router = express_1.default.Router();
+import express from 'express';
+import { editProposal, withdrawProposal, createCounterOffer, respondToCounterOffer, createProposalTemplate, getProposalTemplates, useTemplate, deleteProposalTemplate, handleExpiredProposals, } from '../controllers/proposalImprovements.controller';
+import { authenticate } from '../core/middleware/auth.middleware';
+const router = express.Router();
 // Proposal editing
-router.put('/:proposalId/edit', auth_middleware_1.authenticate, proposalImprovements_controller_1.editProposal);
+router.put('/:proposalId/edit', authenticate, editProposal);
 // Proposal withdrawal
-router.post('/:proposalId/withdraw', auth_middleware_1.authenticate, proposalImprovements_controller_1.withdrawProposal);
+router.post('/:proposalId/withdraw', authenticate, withdrawProposal);
 // Counter-offers
-router.post('/:proposalId/counter-offer', auth_middleware_1.authenticate, proposalImprovements_controller_1.createCounterOffer);
-router.post('/:proposalId/counter-offer/:offerIndex/respond', auth_middleware_1.authenticate, proposalImprovements_controller_1.respondToCounterOffer);
+router.post('/:proposalId/counter-offer', authenticate, createCounterOffer);
+router.post('/:proposalId/counter-offer/:offerIndex/respond', authenticate, respondToCounterOffer);
 // Templates
-router.post('/templates', auth_middleware_1.authenticate, proposalImprovements_controller_1.createProposalTemplate);
-router.get('/templates', auth_middleware_1.authenticate, proposalImprovements_controller_1.getProposalTemplates);
-router.post('/templates/:templateId/use', auth_middleware_1.authenticate, proposalImprovements_controller_1.useTemplate);
-router.delete('/templates/:templateId', auth_middleware_1.authenticate, proposalImprovements_controller_1.deleteProposalTemplate);
+router.post('/templates', authenticate, createProposalTemplate);
+router.get('/templates', authenticate, getProposalTemplates);
+router.post('/templates/:templateId/use', authenticate, useTemplate);
+router.delete('/templates/:templateId', authenticate, deleteProposalTemplate);
 // Expiry handling (admin or cron)
-router.post('/expire-old', proposalImprovements_controller_1.handleExpiredProposals);
-exports.default = router;
+router.post('/expire-old', handleExpiredProposals);
+export default router;

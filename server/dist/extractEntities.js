@@ -1,11 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 // Environment variables
 const HF_API_KEY = process.env.HUGGINGFACE_API_KEY || "";
 const MODEL = "dslim/bert-base-NER";
@@ -15,7 +10,7 @@ const MODEL = "dslim/bert-base-NER";
  */
 async function extractEntities(text) {
     try {
-        const response = await axios_1.default.post(`https://api-inference.huggingface.co/models/${MODEL}`, { inputs: text }, {
+        const response = await axios.post(`https://api-inference.huggingface.co/models/${MODEL}`, { inputs: text }, {
             headers: {
                 Authorization: `Bearer ${HF_API_KEY}`,
                 "Content-Type": "application/json",

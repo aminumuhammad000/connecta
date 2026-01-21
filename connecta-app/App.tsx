@@ -123,68 +123,24 @@ import * as storage from './src/utils/storage';
 // ... imports ...
 import * as profileService from './src/services/profileService';
 
+import RootNavigator from './src/navigation/RootNavigator';
+
 function RootNavigation() {
-  const { isAuthenticated, isLoading, user, token } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { setRole } = useRole();
   const c = useThemeColors();
-  const [hasSeenGuide, setHasSeenGuide] = React.useState<boolean | null>(null);
-  const [isCheckingProfile, setIsCheckingProfile] = React.useState(false);
-  const [needsSkills, setNeedsSkills] = React.useState(false);
 
   // Sync user type with role context
   useEffect(() => {
     if (user) {
       setRole(user.userType);
-      checkGuideStatus();
     } else {
       setRole(null);
-      setHasSeenGuide(null); // Reset on logout
-      setNeedsSkills(false);
     }
   }, [user, setRole]);
 
-  // Check if freelancer has skills
-  useEffect(() => {
-    const checkFreelancerSkills = async () => {
-      if (user && user.userType === 'freelancer' && isAuthenticated) {
-        setIsCheckingProfile(true);
-        try {
-          const profile = await profileService.getMyProfile();
-          if (!profile || !profile.skills || profile.skills.length === 0) {
-            setNeedsSkills(true);
-          } else {
-            setNeedsSkills(false);
-          }
-        } catch (error) {
-          console.error('Error checking profile skills:', error);
-          // Fail safe: assume they might need skills if error is 404 (handled in service but here for safety)
-          // Or maybe don't block if network error? 
-          // Let's assume if we can't fetch, we don't block for now to avoid lockout.
-          // But typically if 404 => createProfile => returns null/empty in getMyProfile wrapper?
-        } finally {
-          setIsCheckingProfile(false);
-        }
-      }
-    };
-
-    checkFreelancerSkills();
-  }, [user, isAuthenticated]);
-
-  const checkGuideStatus = async () => {
-    if (!user) return;
-    const seen = await storage.getItem(`@connecta/walkthrough_completed_${user._id}`);
-    setHasSeenGuide(seen === 'true');
-  };
-
-  const handleGuideFinish = async () => {
-    if (user) {
-      await storage.setItem(`@connecta/walkthrough_completed_${user._id}`, 'true');
-      setHasSeenGuide(true);
-    }
-  };
-
-  // Show loading screen while checking auth status OR checking profile
-  if (isLoading || isCheckingProfile || (isAuthenticated && hasSeenGuide === null)) {
+  // Show loading screen while checking auth status
+  if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background }}>
         <ActivityIndicator size="large" color={c.primary} />
@@ -192,48 +148,8 @@ function RootNavigation() {
     );
   }
 
-  // Show auth screens if not authenticated
-  if (!isAuthenticated || !user) {
-    return <AuthNavigator />;
-  }
-
-  // Force email verification
-  if (!user.isVerified) {
-    return <EmailVerificationScreen />;
-  }
-
-  // Force Skills Selection for Freelancers
-  if (needsSkills && user.userType === 'freelancer') {
-    // Must verify token is available to pass, though AuthContext provides it.
-    // We render SkillSelectionScreen directly or via stack? 
-    // Since RootNavigation usually returns a Navigator, we can return SkillSelection inside a simple view/provider context
-    // OR we can use the AuthNavigator but navigate to SkillSelection.
-    // But AuthNavigator is disconnected from here.
-    // Easiest: Render SkillSelectionScreen directly as a "modal" / "interstitial"
-    // But SkillSelectionScreen expects { route, navigation }.
-    // So we wrap it or use a temporary stack.
-    // Actually, let's just use a special "OnboardingNavigator" or render it.
-    // Better: Return a wrapper that provides route/nav mocks or real ones if we make a stack.
-
-    // Let's repurpose SkillSelectionScreen to be usable here.
-    // Note: We need to pass token/user so it can handle the "Save" action which calls loginWithToken (refreshing state).
-
-    return (
-      <AuthNavigatorStackWrapper initialRoute="SkillSelection" initialParams={{ token, user }} />
-    );
-  }
-
-  // Show Onboarding Guide if not seen
-  if (hasSeenGuide === false) {
-    return <GettingStartedGuideScreen onFinish={handleGuideFinish} />;
-  }
-
-  // Show role-based navigator
-  if (user.userType === 'client') {
-    return <ClientNavigator />;
-  }
-
-  return <FreelancerNavigator />;
+  // The RootNavigator handles the Landing -> Auth/App flow
+  return <RootNavigator />;
 }
 
 // Temporary wrapper to re-use AuthNavigator screens without full auth context reset

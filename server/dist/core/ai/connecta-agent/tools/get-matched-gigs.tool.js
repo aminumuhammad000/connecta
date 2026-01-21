@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetMatchedGigsTool = void 0;
-const base_tool_1 = require("./base.tool");
-class GetMatchedGigsTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class GetMatchedGigsTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "get_matched_gigs_tool";
@@ -14,4 +11,3 @@ class GetMatchedGigsTool extends base_tool_1.BaseTool {
         return this.request(`/api/jobs/recommended`, "GET", undefined, query);
     }
 }
-exports.GetMatchedGigsTool = GetMatchedGigsTool;

@@ -1,17 +1,12 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
-const user_model_1 = __importDefault(require("../models/user.model"));
+import axios from 'axios';
+import User from '../models/user.model';
 class NotificationService {
     /**
      * Send Push Notification to a User
      */
     async sendPushNotification(userId, title, body, data) {
         try {
-            const user = await user_model_1.default.findById(userId);
+            const user = await User.findById(userId);
             if (!user || !user.pushToken) {
                 console.log(`No push token for user ${userId}`);
                 return;
@@ -27,7 +22,7 @@ class NotificationService {
                 body,
                 data: data || {},
             };
-            const response = await axios_1.default.post('https://exp.host/--/api/v2/push/send', message, {
+            const response = await axios.post('https://exp.host/--/api/v2/push/send', message, {
                 headers: {
                     'Accept': 'application/json',
                     'Accept-encoding': 'gzip, deflate',
@@ -42,4 +37,4 @@ class NotificationService {
         }
     }
 }
-exports.default = new NotificationService();
+export default new NotificationService();

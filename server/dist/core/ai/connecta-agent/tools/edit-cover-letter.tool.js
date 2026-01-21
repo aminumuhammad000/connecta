@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EditCoverLetterTool = void 0;
-const base_tool_1 = require("./base.tool");
-class EditCoverLetterTool extends base_tool_1.BaseTool {
+import { BaseTool } from "./base.tool";
+export class EditCoverLetterTool extends BaseTool {
     constructor() {
         super(...arguments);
         this.name = "edit_cover_letter_tool";
@@ -12,4 +9,3 @@ class EditCoverLetterTool extends base_tool_1.BaseTool {
         return this.request(`/api/proposals/cover-letter/edit`, "PATCH", params);
     }
 }
-exports.EditCoverLetterTool = EditCoverLetterTool;
