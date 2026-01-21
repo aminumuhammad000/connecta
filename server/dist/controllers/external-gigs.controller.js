@@ -11,12 +11,12 @@ const mongoose_1 = __importDefault(require("mongoose"));
  */
 const createOrUpdateExternalGig = async (req, res) => {
     try {
-        const { external_id, source, title, company, location, job_type, description, apply_url, posted_at, skills = [], category = "External", deadline, } = req.body;
+        const { external_id, source, title, company, location, locationType = "remote", job_type, jobScope = "local", description, apply_url, posted_at, skills = [], category, niche, experience = "Any", deadline, duration, durationType = "months", budget, } = req.body;
         // Validation
-        if (!external_id || !source || !title || !company || !description || !apply_url) {
+        if (!external_id || !source || !title || !company || !description || !apply_url || !category) {
             return res.status(400).json({
                 success: false,
-                message: "Missing required fields: external_id, source, title, company, description, apply_url",
+                message: "Missing required fields: external_id, source, title, company, description, apply_url, category",
             });
         }
         // Find a system user or admin to assign these gigs to
@@ -53,18 +53,28 @@ const createOrUpdateExternalGig = async (req, res) => {
             source,
             externalId: external_id,
         });
+        const now = new Date().toISOString();
         if (existingGig) {
-            // Update existing gig
+            // Update existing gig and update lastScrapedAt
             existingGig.title = title;
             existingGig.company = company;
             existingGig.location = location;
+            existingGig.locationType = locationType;
             existingGig.jobType = job_type || "full-time";
+            existingGig.jobScope = jobScope;
             existingGig.description = description;
             existingGig.applyUrl = apply_url;
             existingGig.skills = skills;
             existingGig.category = category;
+            existingGig.niche = niche;
+            existingGig.experience = experience;
             existingGig.posted = posted_at ? new Date(posted_at) : existingGig.posted;
             existingGig.deadline = deadline ? new Date(deadline) : existingGig.deadline;
+            existingGig.duration = duration;
+            existingGig.durationType = durationType;
+            existingGig.budget = budget;
+            // Update metadata - track when this job was last seen
+            existingGig.lastScrapedAt = now;
             await existingGig.save();
             return res.status(200).json({
                 success: true,
@@ -72,25 +82,33 @@ const createOrUpdateExternalGig = async (req, res) => {
                 data: existingGig,
             });
         }
-        // Create new external gig
+        // Create new external gig with all fields matching client posting flow
         const newGig = await Job_model_1.default.create({
             title,
             company,
             location,
-            locationType: "remote", // Default for external gigs
+            locationType: locationType,
             jobType: job_type || "full-time",
+            jobScope: jobScope,
             description,
             skills,
-            experience: "Any", // Default
+            experience: experience,
             category,
+            niche,
             clientId: systemUserId,
-            isExternal: true,
+            isExternal: true, // CRITICAL: Mark as external
             externalId: external_id,
             source,
             applyUrl: apply_url,
             posted: posted_at ? new Date(posted_at) : new Date(),
             deadline: deadline ? new Date(deadline) : undefined,
+            duration,
+            durationType,
+            budget,
             status: "active",
+            // Add metadata for 14-day deletion policy
+            firstScrapedAt: now,
+            lastScrapedAt: now,
         });
         res.status(201).json({
             success: true,

@@ -104,6 +104,9 @@ const JobSchema = new mongoose_1.Schema({
     externalId: { type: String },
     source: { type: String },
     applyUrl: { type: String },
+    // External gig lifecycle tracking (for 14-day deletion policy)
+    firstScrapedAt: { type: Date },
+    lastScrapedAt: { type: Date },
     // Collabo fields
     jobMode: {
         type: String,
