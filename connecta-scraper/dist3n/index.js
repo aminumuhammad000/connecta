@@ -4,6 +4,7 @@ const cron_1 = require("./scheduler/cron");
 const jobberman_scraper_1 = require("./scrapers/jobberman.scraper");
 const myjobmag_scraper_1 = require("./scrapers/myjobmag.scraper");
 const weworkremotely_scraper_1 = require("./scrapers/weworkremotely.scraper");
+const cleanup_service_1 = require("./services/cleanup.service");
 const logger_1 = require("./utils/logger");
 const env_1 = require("./config/env");
 /**
@@ -23,10 +24,23 @@ async function main() {
     logger_1.logger.info(`📋 Loaded ${scrapers.length} scraper(s): ${scrapers.map((s) => s.name).join(", ")}`);
     // Initialize scheduler (used here just for the runNow wrapper)
     const scheduler = new cron_1.CronScheduler(scrapers);
-    // Run once and exit (PM2 will handle the daily restart)
+    // Initialize cleanup service
+    const cleanupService = new cleanup_service_1.CleanupService();
+    // Run scraping job
     logger_1.logger.info("🔄 Starting scraping job (PM2 managed)...");
     await scheduler.runNow();
-    logger_1.logger.info("✅ Scraping completed. Exiting...");
+    logger_1.logger.info("✅ Scraping completed.");
+    // Run cleanup to enforce 14-day deletion policy
+    logger_1.logger.info("🧹 Running cleanup service...");
+    try {
+        await cleanupService.cleanupStaleExternalGigs();
+        const stats = await cleanupService.getExternalGigStats();
+        logger_1.logger.info(`📊 External Gigs Stats: Total: ${stats.total}, Active (7 days): ${stats.recentlyActive}, Stale (14+ days): ${stats.stale}`);
+    }
+    catch (error) {
+        logger_1.logger.error(`❌ Cleanup failed: ${error.message}`);
+    }
+    logger_1.logger.info("✅ All tasks completed. Exiting...");
     process.exit(0);
 }
 // Error handling

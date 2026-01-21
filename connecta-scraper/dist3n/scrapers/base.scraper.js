@@ -39,9 +39,11 @@ class BaseScraper {
     /**
      * Clean and truncate description
      */
-    cleanDescription(text, maxLength = 500) {
+    cleanDescription(text, maxLength = 2000) {
         return text
-            .replace(/\s+/g, " ")
+            .replace(/<[^>]*>/g, "") // Strip HTML tags
+            .replace(/[ \t]+/g, " ") // Collapse spaces/tabs
+            .replace(/\n\s*\n/g, "\n") // Collapse multiple newlines
             .trim()
             .substring(0, maxLength);
     }

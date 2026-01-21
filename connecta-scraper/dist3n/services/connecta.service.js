@@ -31,7 +31,12 @@ class ConnectaService {
             return false;
         }
         catch (error) {
-            logger_1.logger.error(`❌ Error creating/updating gig: ${error.message}`);
+            if (error.response) {
+                logger_1.logger.error(`❌ Error creating/updating gig: ${error.message} - ${JSON.stringify(error.response.data)}`);
+            }
+            else {
+                logger_1.logger.error(`❌ Error creating/updating gig: ${error.message}`);
+            }
             return false;
         }
     }
