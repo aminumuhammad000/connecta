@@ -128,10 +128,10 @@ export default function Profile() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-light-primary dark:text-dark-primary">
             Admin Profile & Settings
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
+          <p className="text-text-light-secondary dark:text-dark-secondary mt-1">
             Manage your account settings and preferences
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function Profile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Card */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-sm">
               <div className="flex flex-col items-center text-center">
                 <div className="relative group">
                   <div
@@ -177,10 +177,10 @@ export default function Profile() {
                     />
                   </label>
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className="text-lg font-semibold text-text-light-primary dark:text-dark-primary">
                   {adminUser?.firstName || 'Admin'} {adminUser?.lastName || 'User'}
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-sm text-text-light-secondary dark:text-dark-secondary">
                   {adminUser?.email || 'admin@connecta.com'}
                 </p>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary mt-3">
@@ -189,23 +189,23 @@ export default function Profile() {
 
               </div>
 
-              <div className="border-t border-slate-200 dark:border-slate-700 mt-6 pt-6 space-y-3">
+              <div className="border-t border-border-light dark:border-border-dark mt-6 pt-6 space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400">Account Status</span>
+                  <span className="text-text-light-secondary dark:text-dark-secondary">Account Status</span>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                     <Icon name="check_circle" size={12} />
                     Active
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400">Member Since</span>
-                  <span className="text-slate-900 dark:text-white font-medium">
+                  <span className="text-text-light-secondary dark:text-dark-secondary">Member Since</span>
+                  <span className="text-text-light-primary dark:text-dark-primary font-medium">
                     {new Date(adminUser?.createdAt || Date.now()).toLocaleDateString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400">Last Login</span>
-                  <span className="text-slate-900 dark:text-white font-medium">Today</span>
+                  <span className="text-text-light-secondary dark:text-dark-secondary">Last Login</span>
+                  <span className="text-text-light-primary dark:text-dark-primary font-medium">Today</span>
                 </div>
               </div>
             </div>
@@ -214,14 +214,14 @@ export default function Profile() {
           {/* Settings Forms */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Information */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+            <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-sm">
+              <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                 Profile Information
               </h2>
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                       First Name
                     </label>
                     <input
@@ -229,12 +229,12 @@ export default function Profile() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       placeholder="Enter your first name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                       Last Name
                     </label>
                     <input
@@ -242,14 +242,14 @@ export default function Profile() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       placeholder="Enter your last name"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                     Email Address
                   </label>
                   <input
@@ -257,7 +257,7 @@ export default function Profile() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Enter your email"
                   />
                 </div>
@@ -283,13 +283,13 @@ export default function Profile() {
             </div>
 
             {/* Change Password */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
+            <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark shadow-sm">
+              <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary mb-4">
                 Change Password
               </h2>
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                     Current Password
                   </label>
                   <input
@@ -297,13 +297,13 @@ export default function Profile() {
                     name="currentPassword"
                     value={formData.currentPassword}
                     onChange={handleInputChange}
-                    className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Enter current password"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                     New Password
                   </label>
                   <input
@@ -311,13 +311,13 @@ export default function Profile() {
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleInputChange}
-                    className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Enter new password"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
+                  <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                     Confirm New Password
                   </label>
                   <input
@@ -325,7 +325,7 @@ export default function Profile() {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full h-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     placeholder="Confirm new password"
                   />
                 </div>

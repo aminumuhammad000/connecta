@@ -95,13 +95,20 @@ export class JobbermanScraper extends BaseScraper {
                         title: title || "Untitled",
                         company: company || "Unknown",
                         location: location || "Nigeria",
-                        job_type: "full-time",
+                        locationType: location?.toLowerCase().includes("remote") ? "remote" : "onsite",
+                        job_type: "full-time", // Default, will be categorized later
+                        jobScope: location?.toLowerCase().includes("nigeria") || location?.toLowerCase().includes("lagos") ? "local" : "international",
                         description: this.cleanDescription(description || title),
                         apply_url: fullUrl,
                         posted_at: new Date().toISOString(),
-                        skills: [],
-                        category: "General",
-                        deadline: deadline
+                        skills: [], // Could be extracted from description in future
+                        category: "Other", // Will be auto-categorized by CategoryClassifierService
+                        niche: undefined, // Will be auto-categorized by CategoryClassifierService
+                        experience: "Any", // Default - could be extracted from description
+                        deadline: deadline,
+                        duration: undefined, // Not available from Jobberman
+                        durationType: "months",
+                        budget: undefined, // Not available from Jobberman
                     });
 
                     await page.waitForTimeout(500);

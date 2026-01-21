@@ -44,6 +44,10 @@ export interface IJob extends Document {
   source?: string;
   applyUrl?: string;
 
+  // External gig lifecycle tracking (for 14-day deletion policy)
+  firstScrapedAt?: Date;
+  lastScrapedAt?: Date;
+
   // Collabo fields
   jobMode: "individual" | "collabo";
   collaboRoles?: {
@@ -129,6 +133,10 @@ const JobSchema: Schema<IJob> = new Schema(
     externalId: { type: String },
     source: { type: String },
     applyUrl: { type: String },
+
+    // External gig lifecycle tracking (for 14-day deletion policy)
+    firstScrapedAt: { type: Date },
+    lastScrapedAt: { type: Date },
 
     // Collabo fields
     jobMode: {

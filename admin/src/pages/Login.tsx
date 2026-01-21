@@ -67,7 +67,7 @@ export default function Login() {
     <div className="min-h-screen w-full flex items-center justify-center bg-background-light dark:bg-background-dark">
       <div className="absolute inset-0 pointer-events-none [background:radial-gradient(1200px_600px_at_50%_-20%,theme(colors.primary/0.08),transparent_70%)]" />
 
-      <div className="relative z-10 w-full max-w-md mx-auto p-8 bg-white/80 dark:bg-stone-900/70 backdrop-blur border border-stone-200/70 dark:border-stone-800 rounded-xl shadow-xl">
+      <div className="relative z-10 w-full max-w-md mx-auto p-8 bg-card-light dark:bg-card-dark backdrop-blur border border-border-light dark:border-border-dark rounded-xl shadow-xl">
         <div className="flex flex-col items-center gap-4 mb-6">
           <img
             src="/logo.png"
@@ -75,21 +75,21 @@ export default function Login() {
             className="h-12 w-auto"
           />
           <div className="text-center">
-            <h1 className="text-2xl font-bold">Admin Portal</h1>
-            <p className="text-sm text-stone-500 mt-1">Manage your platform with ease</p>
+            <h1 className="text-2xl font-bold text-text-light-primary dark:text-dark-primary">Admin Portal</h1>
+            <p className="text-sm text-text-light-secondary dark:text-dark-secondary mt-1">Manage your platform with ease</p>
           </div>
         </div>
-        <h2 className="text-xl font-semibold mb-1">Sign in</h2>
-        <p className="text-sm text-stone-500 mb-6">Use your admin credentials to access the portal.</p>
+        <h2 className="text-xl font-semibold mb-1 text-text-light-primary dark:text-dark-primary">Sign in</h2>
+        <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-6">Use your admin credentials to access the portal.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1 text-left">Email</label>
-            <div className="flex items-center gap-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-3">
-              <Icon name="mail" className="text-stone-500" />
+            <label className="block text-sm font-medium mb-1 text-left text-text-light-primary dark:text-dark-primary">Email</label>
+            <div className="flex items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3">
+              <Icon name="mail" className="text-text-light-secondary dark:text-dark-secondary" />
               <input
                 type="email"
-                className="w-full h-11 bg-transparent outline-none text-sm"
+                className="w-full h-11 bg-transparent outline-none text-sm text-text-light-primary dark:text-dark-primary placeholder:text-text-light-secondary dark:placeholder:text-dark-secondary"
                 placeholder="admin@connecta.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -99,12 +99,12 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-left">Password</label>
-            <div className="flex items-center gap-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-3">
-              <Icon name="lock" className="text-stone-500" />
+            <label className="block text-sm font-medium mb-1 text-left text-text-light-primary dark:text-dark-primary">Password</label>
+            <div className="flex items-center gap-2 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3">
+              <Icon name="lock" className="text-text-light-secondary dark:text-dark-secondary" />
               <input
                 type={showPassword ? 'text' : 'password'}
-                className="w-full h-11 bg-transparent outline-none text-sm"
+                className="w-full h-11 bg-transparent outline-none text-sm text-text-light-primary dark:text-dark-primary placeholder:text-text-light-secondary dark:placeholder:text-dark-secondary"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -113,7 +113,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="text-stone-500 hover:text-stone-700 dark:hover:text-stone-200"
+                className="text-text-light-secondary dark:text-dark-secondary hover:text-text-light-primary dark:hover:text-dark-primary"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 title={showPassword ? 'Hide password' : 'Show password'}
               >

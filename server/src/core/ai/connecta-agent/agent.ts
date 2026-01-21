@@ -12,6 +12,7 @@ import SystemSettings from "../../../models/SystemSettings.model";
 // Dynamic tool loading
 import { tools, loadTools } from "./tools";
 import { intentPrompt, IntentSchema } from "./prompts/intent-prompt";
+import { getRelatedTasks, formatRelatedTasks } from "./related-tasks";
 
 export interface ConnectaAgentConfig {
   apiBaseUrl: string;
@@ -457,55 +458,58 @@ export class ConnectaAgent {
       }
 
       // --- Small Talk with Personality ---
-      const greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "sup", "yo"];
+      const greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening", "sup", "yo", "greetings"];
       const gratitude = ["thanks", "thank you", "appreciate it", "thx"];
-      const smallTalk = ["how are you", "who are you", "what's your name", "what can you do", "what do you do"];
+      const smallTalk = ["how are you", "who are you", "what's your name", "what can you do", "what do you do", "help"];
 
-      if (greetings.some(g => lowerInput.startsWith(g))) {
-        const userName = this.userContext?.name ? `, ${this.userContext.name}` : "";
-        const timeOfDay = new Date().getHours();
-        const greeting = timeOfDay < 12 ? "Good morning" : timeOfDay < 18 ? "Good afternoon" : "Good evening";
+      if (greetings.some(g => lowerInput.startsWith(g) || lowerInput === g)) {
+        const userName = this.userContext?.name ? ` ${this.userContext.name}` : "";
+        const message = `Hi${userName}! 👋 I'm **Connecta AI** – your freelancing assistant.
 
-        const responses = [
-          `${greeting}${userName}! 👋 I'm Connecta Assistant — here to supercharge your freelance journey.`,
-          `Hey${userName}! 😊 Ready to tackle some gigs or polish your profile?`,
-        ];
+**I can help you with:**
+✅ Find matching gigs
+✅ View your profile  
+✅ Write cover letters
+✅ Track applications
+✅ Explain Connecta features
+✅ Get support contact
 
-        const randomGreeting = responses[Math.floor(Math.random() * responses.length)];
-        const contextNote = this.chatHistory.length > 0
-          ? " Welcome back! Want to continue where we left off?"
-          : " What would you like to accomplish today?";
+What would you like to do?`;
 
-        const message = `${randomGreeting}${contextNote}`;
         return this.createResponse(message, null, true, startTime, [
-          "Find gigs matching my skills",
-          "Show my profile analytics",
-          "Help me write a cover letter",
+          "Find gigs for me",
+          "Show my profile",
+          "Contact support",
         ]);
       }
 
       if (gratitude.some(g => lowerInput.includes(g))) {
-        const responses = [
-          "You're very welcome! 🙌 Always happy to help.",
-          "No problem at all! That's what I'm here for. 😊",
-          "Anytime! Let me know if you need anything else.",
-        ];
-        const message = responses[Math.floor(Math.random() * responses.length)];
+        const message = "You're welcome! 😊 Anything else I can help with?";
         return this.createResponse(message, null, true, startTime);
       }
 
       if (smallTalk.some(q => lowerInput.includes(q))) {
         let message = "";
         if (lowerInput.includes("how are you"))
-          message = "I'm doing fantastic! 😊 Ready to help you succeed on Connecta. How about you?";
+          message = "I'm great! 😊 Ready to help. What do you need?";
         else if (lowerInput.includes("who are you") || lowerInput.includes("what's your name"))
-          message = "I'm Connecta Assistant — your AI-powered partner for freelancing success. Think of me as your personal career coach! 💼";
-        else if (lowerInput.includes("what can you do") || lowerInput.includes("what do you do"))
-          message = "Great question! I can:\n• Find perfect gigs for you\n• Write compelling cover letters\n• Analyze your profile\n• Track applications\n• Give career insights\n\nAnd much more!";
+          message = "I'm **Connecta AI** – your assistant for all things freelancing on Connecta! 🤖";
+        else if (lowerInput.includes("what can you do") || lowerInput.includes("what do you do") || lowerInput.includes("help")) {
+          message = `**Connecta AI Capabilities:**
+
+✅ **Find Gigs** - Discover jobs matching your skills
+✅ **View Profile** - See your profile details & analytics  
+✅ **Cover Letters** - Generate professional cover letters
+✅ **Track Apps** - Monitor your job applications
+✅ **Explain Features** - Learn about Connecta features
+✅ **Get Support** - Contact info for help
+
+Try: "Find gigs for me" or "Show my profile"`;
+        }
 
         return this.createResponse(message, null, true, startTime, [
-          "Show me what you can do with my profile",
           "Find gigs for me",
+          "Show my profile",
         ]);
       }
 
@@ -570,12 +574,32 @@ export class ConnectaAgent {
             return { message: friendly, success: false, data: null };
           }
 
-          this.chatHistory.push({ input, output: JSON.stringify(result), success: true, timestamp: new Date() });
-          // Ensure result has success field and responseType
+          // Get related tasks for this tool
+          const relatedTasks = getRelatedTasks(validatedOutput.tool);
+          const formattedTasks = formatRelatedTasks(relatedTasks);
+
+          // Add related tasks to the message if there is one
+          let enhancedMessage = result.message || result.formatted || "";
+          if (enhancedMessage && relatedTasks.length > 0) {
+            enhancedMessage += formattedTasks;
+          }
+
+          this.chatHistory.push({
+            input,
+            output: JSON.stringify(result),
+            success: true,
+            timestamp: new Date(),
+            toolUsed: validatedOutput.tool
+          });
+
+          // Return enhanced result with related tasks
           return {
             ...result,
+            message: enhancedMessage || result.message,
             success: result.success ?? true,
-            responseType: validatedOutput.responseType
+            responseType: validatedOutput.responseType,
+            relatedTasks: relatedTasks,
+            toolUsed: validatedOutput.tool
           };
         },
       ]);

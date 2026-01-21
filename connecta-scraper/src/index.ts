@@ -2,6 +2,7 @@ import { CronScheduler } from "./scheduler/cron";
 import { JobbermanScraper } from "./scrapers/jobberman.scraper";
 import { MyJobMagScraper } from "./scrapers/myjobmag.scraper";
 import { WeWorkRemotelyScraper } from "./scrapers/weworkremotely.scraper";
+import { CleanupService } from "./services/cleanup.service";
 import { logger } from "./utils/logger";
 import { config } from "./config/env";
 
@@ -26,10 +27,25 @@ async function main() {
     // Initialize scheduler (used here just for the runNow wrapper)
     const scheduler = new CronScheduler(scrapers);
 
-    // Run once and exit (PM2 will handle the daily restart)
+    // Initialize cleanup service
+    const cleanupService = new CleanupService();
+
+    // Run scraping job
     logger.info("🔄 Starting scraping job (PM2 managed)...");
     await scheduler.runNow();
-    logger.info("✅ Scraping completed. Exiting...");
+    logger.info("✅ Scraping completed.");
+
+    // Run cleanup to enforce 14-day deletion policy
+    logger.info("🧹 Running cleanup service...");
+    try {
+        await cleanupService.cleanupStaleExternalGigs();
+        const stats = await cleanupService.getExternalGigStats();
+        logger.info(`📊 External Gigs Stats: Total: ${stats.total}, Active (7 days): ${stats.recentlyActive}, Stale (14+ days): ${stats.stale}`);
+    } catch (error: any) {
+        logger.error(`❌ Cleanup failed: ${error.message}`);
+    }
+
+    logger.info("✅ All tasks completed. Exiting...");
     process.exit(0);
 }
 

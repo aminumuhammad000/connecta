@@ -110,6 +110,17 @@ app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
 });
 
+app.get("/debug/users", async (req, res) => {
+  try {
+    const mongoose = await import('mongoose');
+    const User = mongoose.model('User');
+    const users = await User.find({}, 'email _id firstName');
+    res.json(users);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 // Socket.io connection handling

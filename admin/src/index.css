@@ -8,10 +8,45 @@
 }
 
 body {
-  @apply bg-background-light text-stone-900 dark:bg-background-dark dark:text-stone-100;
+  @apply bg-background-light text-stone-900 dark:bg-background-dark dark:text-stone-100 overflow-x-hidden;
 }
 
 /* Full-height layout baseline */
 /* html, body, #root {
   height: 100%;
 } */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border-light dark:bg-border-dark rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-text-light-secondary dark:bg-text-dark-secondary;
+}

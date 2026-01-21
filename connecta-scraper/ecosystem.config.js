@@ -3,7 +3,7 @@ module.exports = {
         {
             name: "connecta-scraper",
             script: "dist/index.js",
-            cron_restart: "0 0 * * *", // runs every 24 hours at midnight
+            cron_restart: "0 2 * * *", // runs every 24 hours at 2 AM
             autorestart: false,
             watch: false,
             env: {

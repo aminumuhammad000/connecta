@@ -55,15 +55,21 @@ export const getAllJobs = async (req: Request, res: Response) => {
 
     const filter: any = {};
 
-    if (status) filter.status = status;
-    else filter.status = "active";
+    if (status && status !== 'all') filter.status = status;
+    else if (!status) filter.status = "active";
 
     if (category) filter.category = category;
     if (location) filter.location = { $regex: location, $options: "i" };
     if (jobType) filter.jobType = jobType;
     if (locationType) filter.locationType = locationType;
     if (skills) filter.skills = { $in: (skills as string).split(",") };
-    if (isExternal !== undefined) filter.isExternal = isExternal === 'true';
+    if (isExternal !== undefined) {
+      if (isExternal === 'true') {
+        filter.isExternal = true;
+      } else {
+        filter.isExternal = { $ne: true };
+      }
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 

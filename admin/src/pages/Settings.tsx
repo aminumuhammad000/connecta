@@ -132,11 +132,11 @@ export default function Settings() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Settings Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 sticky top-4">
-              <nav className="space-y-1">
+            <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark p-4 sticky top-20 lg:top-24 z-10">
+              <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-2 lg:gap-0 space-y-0 lg:space-y-1 pb-2 lg:pb-0 scrollbar-hide">
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'general'
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'general'
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
                     }`}
@@ -146,7 +146,7 @@ export default function Settings() {
                 </button>
                 <button
                   onClick={() => setActiveTab('payments')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'payments'
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'payments'
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
                     }`}
@@ -156,7 +156,7 @@ export default function Settings() {
                 </button>
                 <button
                   onClick={() => setActiveTab('email')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'email'
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'email'
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
                     }`}
@@ -166,7 +166,7 @@ export default function Settings() {
                 </button>
                 <button
                   onClick={() => setActiveTab('apikeys')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'apikeys'
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'apikeys'
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
                     }`}
@@ -176,7 +176,7 @@ export default function Settings() {
                 </button>
                 <button
                   onClick={() => setActiveTab('security')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'security'
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'security'
                     ? 'bg-primary/10 text-primary'
                     : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
                     }`}
@@ -578,7 +578,7 @@ export default function Settings() {
                           type="text"
                           value={settings.googleCallbackUrl}
                           onChange={(e) => setSettings({ ...settings, googleCallbackUrl: e.target.value })}
-                          placeholder="http://localhost:5000/auth/google/callback"
+                          placeholder="https://api.myconnecta.ng/auth/google/callback"
                           className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                         <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
@@ -696,7 +696,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary mb-1">Environment</p>
-                    <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Development</p>
+                    <p className="text-sm font-medium text-text-light-primary dark:text-dark-primary">Production</p>
                   </div>
                   <div>
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary mb-1">Database</p>
@@ -711,17 +711,17 @@ export default function Settings() {
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
               <button
                 onClick={handleReset}
-                className="flex items-center gap-2 h-11 rounded-lg border border-border-light dark:border-border-dark text-text-light-primary dark:text-dark-primary px-6 font-medium hover:bg-background-light dark:hover:bg-background-dark"
+                className="flex items-center justify-center gap-2 min-h-[44px] sm:h-11 rounded-lg border border-border-light dark:border-border-dark text-text-light-primary dark:text-dark-primary px-6 font-medium hover:bg-background-light dark:hover:bg-background-dark transition-colors"
               >
                 <Icon name="refresh" size={20} />
                 Reset to Defaults
               </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 h-11 rounded-lg bg-primary text-white px-6 font-medium hover:opacity-90"
+                className="flex items-center justify-center gap-2 min-h-[44px] sm:h-11 rounded-lg bg-primary text-white px-6 font-medium hover:opacity-90 transition-opacity"
               >
                 <Icon name="save" size={20} />
                 Save Changes

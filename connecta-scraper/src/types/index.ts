@@ -6,13 +6,24 @@ export interface ExternalGig {
     title: string;
     company: string;
     location: string;
-    job_type: "full-time" | "part-time" | "contract" | "freelance";
+    locationType?: "remote" | "onsite" | "hybrid";
+    job_type: "full-time" | "part-time" | "contract" | "freelance" | "one-time" | "monthly" | "permanent" | "adhoc";
+    jobScope?: "local" | "international";
     description: string;
     apply_url: string;
     posted_at: string;
     skills?: string[];
-    category?: string;
-    deadline?: string; // ISO date string or "Open"
+    category: string; // Required: Technology & Programming, Design & Creative, etc.
+    niche?: string; // Optional: Specific subcategory like "Web Development", "UI/UX Design"
+    experience?: string; // e.g., "Intermediate", "Senior", "Entry Level"
+    deadline?: string; // ISO date string
+    duration?: string; // e.g., "3", "6"
+    durationType?: "days" | "weeks" | "months" | "years";
+    budget?: string; // Optional budget information
+
+    // Metadata for tracking
+    lastScrapedAt?: string; // ISO date string - when this job was last seen by the scraper
+    firstScrapedAt?: string; // ISO date string - when this job was first discovered
 }
 
 export interface ScraperResult {
