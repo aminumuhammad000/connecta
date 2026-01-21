@@ -1,18 +1,25 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export type NotificationType =
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'job_posted'
   | 'proposal_received'
   | 'proposal_accepted'
   | 'proposal_rejected'
   | 'project_started'
   | 'project_completed'
-  | 'milestone_completed'
   | 'payment_received'
   | 'payment_released'
   | 'message_received'
   | 'review_received'
-  | 'deadline_approaching'
+  | 'milestone_completed'
+  | 'contract_signed'
+  | 'gig_matched'
   | 'collabo_invite'
+  | 'collabo_started'
   | 'system';
 
 export interface INotification extends Document {
@@ -54,6 +61,11 @@ const NotificationSchema = new Schema<INotification>(
       type: String,
       required: true,
       enum: [
+        'info',
+        'success',
+        'warning',
+        'error',
+        'job_posted',
         'proposal_received',
         'proposal_accepted',
         'proposal_rejected',
@@ -66,7 +78,10 @@ const NotificationSchema = new Schema<INotification>(
         'message_received',
         'review_received',
         'deadline_approaching',
+        'contract_signed',
+        'gig_matched',
         'collabo_invite',
+        'collabo_started',
         'system',
       ],
     },

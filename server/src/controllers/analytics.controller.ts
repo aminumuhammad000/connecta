@@ -5,7 +5,7 @@ import Proposal from '../models/Proposal.model';
 import Payment from '../models/Payment.model';
 import Contract from '../models/Contract.model';
 import Review from '../models/Review.model';
-import Job from '../models/Job.model';
+import { Job } from '../models/Job.model';
 import Subscription from '../models/subscription.model';
 
 export const getAnalyticsStats = async (req: Request, res: Response) => {
@@ -57,8 +57,8 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
     // Get proposal statistics
     const acceptedProposals = await Proposal.countDocuments({ status: 'accepted' });
     const rejectedProposals = await Proposal.countDocuments({ status: 'rejected' });
-    const proposalSuccessRate = totalProposals > 0 
-      ? Math.round((acceptedProposals / totalProposals) * 100) 
+    const proposalSuccessRate = totalProposals > 0
+      ? Math.round((acceptedProposals / totalProposals) * 100)
       : 0;
 
     // Get weekly revenue from payments (last 7 days)

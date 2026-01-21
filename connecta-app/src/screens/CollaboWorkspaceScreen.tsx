@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject } from '../services/collaboService';
+import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork } from '../services/collaboService';
+import { useInAppAlert } from '../components/InAppAlert';
 import * as Linking from 'expo-linking';
 import * as DocumentPicker from 'expo-document-picker';
 import { API_BASE_URL } from '../utils/constants';
@@ -21,6 +22,7 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     const [messages, setMessages] = useState<any[]>([]);
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const { showAlert } = useInAppAlert();
 
     // Task State
     const [tasks, setTasks] = useState<any[]>([]);
@@ -43,7 +45,10 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
         socket.on('collabo:message', (newMessage: any) => {
             if (newMessage.workspaceId === workspaceId) {
-                setMessages(prev => [...prev, newMessage]);
+                setMessages(prev => {
+                    if (prev.some(m => m._id === newMessage._id)) return prev;
+                    return [...prev, newMessage];
+                });
             }
         });
 
@@ -63,7 +68,10 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
         socket.on('collabo:file_upload', (newFile: any) => {
             if (newFile.workspaceId === workspaceId) {
-                setFiles(prev => [newFile, ...prev]);
+                setFiles(prev => {
+                    if (prev.some(f => f._id === newFile._id)) return prev;
+                    return [newFile, ...prev];
+                });
             }
         });
         return () => {
@@ -129,18 +137,21 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
     const handleFundProject = async () => {
         try {
-            setIsLoading(true);
-            const res = await fundCollaboProject(projectData.project._id);
-            if (res.authorizationUrl) {
-                Linking.openURL(res.authorizationUrl);
-                // In a real app, we would listen for deep link back or poll status
-                alert("Payment initialized. Please check your browser.");
-            }
+            await fundCollaboProject(projectId);
+            showAlert({ title: 'Project funded and activated!', type: 'success' });
+            loadData();
         } catch (error) {
-            console.error("Funding failed", error);
-            alert("Failed to initiate funding");
-        } finally {
-            setIsLoading(false);
+            showAlert({ title: 'Failed to fund project', type: 'error' });
+        }
+    };
+
+    const handleStartWork = async () => {
+        try {
+            await startWork(projectId);
+            showAlert({ title: 'Work started! Team has been notified.', type: 'success' });
+            loadData();
+        } catch (error: any) {
+            showAlert({ title: error.message || 'Failed to start work', type: 'error' });
         }
     };
 
@@ -174,24 +185,97 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                             <Text style={{ color: '#FFF', fontWeight: '700' }}>Fund & Activate Project</Text>
                         </TouchableOpacity>
                     )}
+
+                    {isClient && (projectData?.project?.status === 'active' || projectData?.project?.status === 'in_progress') && (
+                        (() => {
+                            const anyRoleFilled = projectData?.roles?.some((r: any) => r.status === 'filled' && r.freelancerId);
+                            const isInProgress = projectData?.project?.status === 'in_progress';
+
+                            if (anyRoleFilled && !isInProgress) {
+                                return (
+                                    <TouchableOpacity
+                                        onPress={handleStartWork}
+                                        style={{
+                                            marginTop: 16,
+                                            backgroundColor: '#10B981',
+                                            padding: 12,
+                                            borderRadius: 8,
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <Text style={{ color: '#FFF', fontWeight: '700' }}>🚀 Start Work</Text>
+                                    </TouchableOpacity>
+                                );
+                            }
+                            return null;
+                        })()
+                    )}
                 </View>
 
-                <Text style={[styles.sectionTitle, { color: c.text }]}>Team Roles</Text>
-                {projectData?.roles?.map((role: any) => (
-                    <View key={role._id} style={[styles.memberCard, { borderColor: c.border, backgroundColor: c.card }]}>
-                        <View style={styles.avatarPlaceholder}>
-                            <Text style={{ color: '#555' }}>{role.freelancerId ? role.freelancerId.firstName[0] : '?'}</Text>
+                {/* Team Members */}
+                <Text style={{ fontSize: 16, fontWeight: '700', color: c.text, marginBottom: 12 }}>Team Members</Text>
+                {projectData?.roles?.map((role: any, index: number) => {
+                    const isFilled = role.status === 'filled' && role.freelancerId;
+                    const freelancer = role.freelancerId;
+
+                    return (
+                        <View key={index} style={{
+                            backgroundColor: c.card,
+                            padding: 16,
+                            borderRadius: 12,
+                            marginBottom: 12,
+                            borderWidth: 1,
+                            borderColor: c.border
+                        }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>{role.title}</Text>
+                                <View style={{
+                                    backgroundColor: isFilled ? '#10B981' : '#F59E0B',
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 4,
+                                    borderRadius: 6
+                                }}>
+                                    <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>
+                                        {isFilled ? 'Active' : 'Pending'}
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {isFilled ? (
+                                <View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                                        <View style={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 18,
+                                            backgroundColor: c.primary + '20',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            marginRight: 10
+                                        }}>
+                                            <Text style={{ color: c.primary, fontWeight: '700', fontSize: 14 }}>
+                                                {freelancer?.firstName?.[0]}{freelancer?.lastName?.[0]}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ color: c.text, fontWeight: '600', fontSize: 14 }}>
+                                                {freelancer?.firstName} {freelancer?.lastName}
+                                            </Text>
+                                            <Text style={{ color: c.subtext, fontSize: 12 }}>
+                                                ${role.budget}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            ) : (
+                                <Text style={{ color: c.subtext, fontSize: 13, marginTop: 4 }}>
+                                    Waiting for freelancer to accept • ${role.budget}
+                                </Text>
+                            )}
                         </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.memberName, { color: c.text }]}>{role.title}</Text>
-                            <Text style={[styles.memberRole, { color: c.subtext }]}>
-                                {role.freelancerId ? `${role.freelancerId.firstName} ${role.freelancerId.lastName}` : 'Open Position'}
-                            </Text>
-                        </View>
-                        <Text style={{ color: c.primary, fontWeight: '700' }}>${role.budget}</Text>
-                    </View>
-                ))}
-            </ScrollView>
+                    );
+                })}
+            </ScrollView >
         );
     };
 

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import User from "../models/user.model";
 import Profile from "../models/Profile.model";
-import Job from "../models/Job.model";
+import { Job } from "../models/Job.model";
 import { createJob } from "../controllers/Job.controller";
 import { Request, Response } from "express";
 

@@ -157,5 +157,5 @@ const JobSchema: Schema<IJob> = new Schema(
   { timestamps: true }
 );
 
-const Job = mongoose.model<IJob>("Job", JobSchema);
-export default Job;
+// Export named only to avoid ESM default export issues
+export const Job = mongoose.model<IJob>("Job", JobSchema);

@@ -56,7 +56,7 @@ export const getAllProfiles = async (req: Request, res: Response) => {
  * @desc Get profile for authenticated user
  * @route GET /api/profiles/me
  */
-import Job from "../models/Job.model";
+import { Job } from "../models/Job.model";
 
 export const getMyProfile = async (
   req: Request & { user?: { id?: string; _id?: string } },

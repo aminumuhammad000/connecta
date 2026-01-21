@@ -138,6 +138,16 @@ export const getMyProjects = async (req: Request, res: Response) => {
     }
 }
 
+export const getFreelancerProjects = async (req: Request, res: Response) => {
+    try {
+        const freelancerId = (req as any).user._id;
+        const result = await CollaboService.getFreelancerProjects(freelancerId);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to fetch projects', error: error.message });
+    }
+}
+
 export const acceptRole = async (req: Request, res: Response) => {
     try {
         const { roleId } = req.body;
@@ -156,6 +166,40 @@ export const getRole = async (req: Request, res: Response) => {
         res.json(result);
     } catch (error: any) {
         res.status(500).json({ message: 'Failed to get role', error: error.message });
+    }
+}
+
+export const removeFromRole = async (req: Request, res: Response) => {
+    try {
+        const { roleId } = req.params;
+        const clientId = (req as any).user._id;
+        const result = await CollaboService.removeFromRole(roleId, clientId);
+        res.json({ message: 'Freelancer removed successfully', role: result });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to remove freelancer', error: error.message });
+    }
+}
+
+export const inviteToRole = async (req: Request, res: Response) => {
+    try {
+        const { roleId } = req.params;
+        const { freelancerId } = req.body;
+        const clientId = (req as any).user._id;
+        const result = await CollaboService.inviteToRole(roleId, freelancerId, clientId);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to send invitation', error: error.message });
+    }
+}
+
+export const startWork = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const clientId = (req as any).user._id;
+        const result = await CollaboService.startWork(id, clientId);
+        res.json(result);
+    } catch (error: any) {
+        res.status(400).json({ message: error.message || 'Failed to start work' });
     }
 }
 

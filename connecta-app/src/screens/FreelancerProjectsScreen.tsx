@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as projectService from '../services/projectService';
+import * as collaboService from '../services/collaboService';
 import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { Project } from '../types';
@@ -34,9 +35,21 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
     const loadProjects = async () => {
         try {
             if (!user?._id) return;
-            // Fetch FREELANCER projects
-            const data = await projectService.getFreelancerProjects(user._id);
-            setProjects(data);
+            // Fetch BOTH regular and collabo projects
+            const [regularProjects, collaboProjects] = await Promise.all([
+                projectService.getFreelancerProjects(user._id),
+                collaboService.getFreelancerCollaboProjects()
+            ]);
+
+            // Mark collabo projects
+            const markedCollabo = collaboProjects.map((p: any) => ({ ...p, isCollabo: true }));
+
+            // Combine and sort by creation date
+            const combined = [...regularProjects, ...markedCollabo].sort((a: any, b: any) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            setProjects(combined);
         } catch (error) {
             console.error('Error loading projects:', error);
         } finally {
@@ -152,7 +165,13 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
                                     key={p._id}
                                     activeOpacity={0.85}
                                     style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-                                    onPress={() => navigation.navigate('ProjectWorkspace', { id: p._id })}
+                                    onPress={() => {
+                                        if (p.isCollabo) {
+                                            navigation.navigate('CollaboWorkspace', { projectId: p._id });
+                                        } else {
+                                            navigation.navigate('ProjectWorkspace', { id: p._id });
+                                        }
+                                    }}
                                 >
                                     <View style={styles.cardTop}>
                                         <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{p.title}</Text>
@@ -173,10 +192,17 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
                                         </Text>
                                     </View>
                                     <View style={styles.cardBottom}>
-                                        <View style={[styles.pill, pillStyle(mapProjectStatus(p.status))]}>
-                                            <Text style={[styles.pillText, { color: pillStyle(mapProjectStatus(p.status)).color }]}>
-                                                {mapProjectStatus(p.status)}
-                                            </Text>
+                                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                                            <View style={[styles.pill, pillStyle(mapProjectStatus(p.status))]}>
+                                                <Text style={[styles.pillText, { color: pillStyle(mapProjectStatus(p.status)).color }]}>
+                                                    {mapProjectStatus(p.status)}
+                                                </Text>
+                                            </View>
+                                            {p.isCollabo && (
+                                                <View style={[styles.pill, { backgroundColor: 'rgba(139,92,246,0.12)' }]}>
+                                                    <Text style={[styles.pillText, { color: '#7c3aed' }]}>Collabo</Text>
+                                                </View>
+                                            )}
                                         </View>
                                         <MaterialIcons name="chevron-right" size={22} color={c.subtext} />
                                     </View>

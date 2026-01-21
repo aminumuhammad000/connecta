@@ -6,12 +6,14 @@ import Avatar from '../components/Avatar';
 import { useThemeColors } from '../theme/theme';
 import { useFocusEffect } from '@react-navigation/native';
 import * as messageService from '../services/messageService';
+import * as collaboService from '../services/collaboService';
 import { useAuth } from '../context/AuthContext';
 
 export default function ChatsScreen({ navigation }: any) {
     const c = useThemeColors();
     const { user } = useAuth();
     const [conversations, setConversations] = useState<any[]>([]);
+    const [collaboChats, setCollaboChats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -26,11 +28,27 @@ export default function ChatsScreen({ navigation }: any) {
         try {
             if (!user?._id) return;
 
-            const data = await messageService.getUserConversations(user._id);
-            setConversations(Array.isArray(data) ? data : []);
+            // Fetch regular conversations
+            const convData = await messageService.getUserConversations(user._id);
+            setConversations(Array.isArray(convData) ? convData : []);
+
+            // Fetch collabo projects based on user type
+            let collaboData = [];
+            try {
+                if (user.userType === 'client') {
+                    collaboData = await collaboService.getMyCollaboProjects();
+                } else {
+                    collaboData = await collaboService.getFreelancerCollaboProjects();
+                }
+            } catch (collaboError) {
+                console.log('No collabo projects found:', collaboError);
+            }
+
+            setCollaboChats(Array.isArray(collaboData) ? collaboData : []);
         } catch (error) {
             console.error('Error fetching conversations:', error);
             setConversations([]);
+            setCollaboChats([]);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -62,7 +80,18 @@ export default function ChatsScreen({ navigation }: any) {
         });
     };
 
-    const filteredConversations = conversations.filter(conv => {
+    // Combine regular conversations and collabo chats
+    const allChats = [
+        ...conversations.map(c => ({ ...c, type: 'conversation' })),
+        ...collaboChats.map(c => ({ ...c, type: 'collabo' }))
+    ];
+
+    const filteredConversations = allChats.filter(conv => {
+        if (conv.type === 'collabo') {
+            const projectTitle = conv.title || '';
+            return projectTitle.toLowerCase().includes(searchQuery.toLowerCase());
+        }
+
         let otherUser;
         if (conv.participants && conv.participants.length > 0) {
             otherUser = conv.participants.find((p: any) => p._id !== user?._id);
@@ -77,6 +106,39 @@ export default function ChatsScreen({ navigation }: any) {
     });
 
     const renderItem = ({ item }: { item: any }) => {
+        // Handle collabo team chats
+        if (item.type === 'collabo') {
+            const teamSize = item.roles?.filter((r: any) => r.status === 'filled').length || 0;
+            const totalRoles = item.roles?.length || 0;
+
+            return (
+                <TouchableOpacity
+                    style={[styles.conversationItem, { backgroundColor: c.card, borderColor: c.border }]}
+                    onPress={() => navigation.navigate('CollaboWorkspace', { projectId: item._id })}
+                >
+                    <View style={[styles.avatar, { backgroundColor: c.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
+                        <Ionicons name="people" size={28} color={c.primary} />
+                    </View>
+                    <View style={styles.conversationDetails}>
+                        <View style={styles.row}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
+                                <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
+                                <View style={{ backgroundColor: '#8B5CF6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                    <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700' }}>TEAM</Text>
+                                </View>
+                            </View>
+                        </View>
+                        <View style={styles.row}>
+                            <Text numberOfLines={1} style={[styles.lastMessage, { color: c.subtext }]}>
+                                {teamSize}/{totalRoles} members • {item.status || 'Active'}
+                            </Text>
+                        </View>
+                    </View>
+                </TouchableOpacity>
+            );
+        }
+
+        // Regular conversation
         // Determine the other user
         let otherUser;
 

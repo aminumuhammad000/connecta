@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import Button from '../components/Button';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { get } from '../services/api';
-import { acceptCollaboRole } from '../services/collaboService';
+import { getRole, acceptCollaboRole } from '../services/collaboService';
+import { useInAppAlert } from '../components/InAppAlert';
+import { useAuth } from '../context/AuthContext';
 
 export default function CollaboInviteScreen() {
     const c = useThemeColors();
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const { roleId } = route.params || {};
+    const { showAlert } = useInAppAlert();
+    const { user } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
@@ -23,11 +26,11 @@ export default function CollaboInviteScreen() {
 
     const loadData = async () => {
         try {
-            const res = await get(`/collabo/role/${roleId}`);
+            const res = await getRole(roleId);
             setData((res as any).data || res);
         } catch (error) {
-            Alert.alert("Error", "Invite not found or expired.");
-            navigation.goBack();
+            showAlert({ title: 'Invite not found or expired.', type: 'error' });
+            setTimeout(() => navigation.goBack(), 2000);
         } finally {
             setLoading(false);
         }
@@ -37,15 +40,12 @@ export default function CollaboInviteScreen() {
         setAccepting(true);
         try {
             await acceptCollaboRole(roleId);
-            Alert.alert("Welcome to the Team!", "You have successfully joined the project.", [
-                {
-                    text: "Go to Workspace", onPress: () => {
-                        navigation.replace('CollaboWorkspace', { projectId: data.project._id });
-                    }
-                }
-            ]);
+            showAlert({ title: 'Welcome to the team! 🎉', type: 'success' });
+            setTimeout(() => {
+                navigation.replace('CollaboWorkspace', { projectId: data.project._id });
+            }, 1500);
         } catch (error: any) {
-            Alert.alert("Error", "Failed to accept invite.");
+            showAlert({ title: 'Failed to accept invite. Please try again.', type: 'error' });
         } finally {
             setAccepting(false);
         }
@@ -55,18 +55,22 @@ export default function CollaboInviteScreen() {
     if (!data) return null;
 
     const { role, project } = data;
+    const isAlreadyAccepted = role.status === 'filled' && role.freelancerId?._id === user?._id;
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             <ScrollView contentContainerStyle={{ padding: 24, alignItems: 'center' }}>
                 <Image
-                    source={{ uri: 'https://cdn-icons-png.flaticon.com/512/476/476863.png' }} // Party/Team icon
+                    source={{ uri: isAlreadyAccepted ? 'https://cdn-icons-png.flaticon.com/512/5290/5290058.png' : 'https://cdn-icons-png.flaticon.com/512/476/476863.png' }}
                     style={{ width: 100, height: 100, marginBottom: 20 }}
                 />
 
-                <Text style={[styles.title, { color: c.text }]}>You're Invited!</Text>
+                <Text style={[styles.title, { color: c.text }]}>{isAlreadyAccepted ? 'Already on the Team!' : "You're Invited!"}</Text>
                 <Text style={[styles.subtitle, { color: c.subtext }]}>
-                    {project.clientId.firstName} invited you to join their team.
+                    {isAlreadyAccepted
+                        ? "You've already accepted this role."
+                        : `${project.clientId.firstName} invited you to join their team.`
+                    }
                 </Text>
 
                 <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -80,19 +84,29 @@ export default function CollaboInviteScreen() {
                     <Text style={[styles.budget, { color: c.text }]}>Budget: ${role.budget}</Text>
                 </View>
 
-                <Button
-                    title="Accept & Join Team"
-                    onPress={handleAccept}
-                    loading={accepting}
-                    style={{ width: '100%', marginTop: 24 }}
-                />
+                {isAlreadyAccepted ? (
+                    <Button
+                        title="Go to Workspace"
+                        onPress={() => navigation.replace('CollaboWorkspace', { projectId: project._id })}
+                        style={{ width: '100%', marginTop: 24 }}
+                    />
+                ) : (
+                    <>
+                        <Button
+                            title="Accept & Join Team"
+                            onPress={handleAccept}
+                            loading={accepting}
+                            style={{ width: '100%', marginTop: 24 }}
+                        />
 
-                <Button
-                    title="Decline"
-                    variant="outline"
-                    onPress={() => navigation.goBack()}
-                    style={{ width: '100%', marginTop: 12 }}
-                />
+                        <Button
+                            title="Decline"
+                            variant="outline"
+                            onPress={() => navigation.goBack()}
+                            style={{ width: '100%', marginTop: 12 }}
+                        />
+                    </>
+                )}
 
             </ScrollView>
         </SafeAreaView>
