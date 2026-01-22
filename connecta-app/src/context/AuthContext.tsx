@@ -10,9 +10,9 @@ interface AuthContextValue {
     isLoading: boolean;
     login: (credentials: LoginCredentials) => Promise<any>;
     loginWithToken: (token: string, user: User) => Promise<void>;
-    signup: (data: SignupData) => Promise<void>;
+    signup: (data: SignupData, autoLogin?: boolean) => Promise<any>;
     googleLogin: (tokenId: string) => Promise<void>;
-    googleSignup: (tokenId: string, userType: UserType) => Promise<void>;
+    googleSignup: (tokenId: string, userType: UserType, autoLogin?: boolean) => Promise<any>;
     logout: () => Promise<void>;
     updateUser: (user: User) => void;
 }
@@ -71,31 +71,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const signup = async (data: SignupData) => {
+    const signup = async (data: SignupData, autoLogin = true) => {
         try {
             const response = await authService.signup(data);
 
-            // Save token and user data
-            await storage.saveToken(response.token);
-            await storage.saveUserData(response.user);
-            await storage.saveUserRole(response.user.userType);
+            if (autoLogin) {
+                // Save token and user data
+                await storage.saveToken(response.token);
+                await storage.saveUserData(response.user);
+                await storage.saveUserRole(response.user.userType);
 
-            setToken(response.token);
-            setUser(response.user);
+                setToken(response.token);
+                setUser(response.user);
+            }
+            return response;
         } catch (error) {
             console.error('Signup error:', error);
             throw error;
         }
     };
 
-    const googleSignup = async (tokenId: string, userType: UserType) => {
+    const googleSignup = async (tokenId: string, userType: UserType, autoLogin = true) => {
         try {
             const response = await authService.googleSignup(tokenId, userType);
-            await storage.saveToken(response.token);
-            await storage.saveUserData(response.user);
-            await storage.saveUserRole(response.user.userType);
-            setToken(response.token);
-            setUser(response.user);
+
+            if (autoLogin) {
+                await storage.saveToken(response.token);
+                await storage.saveUserData(response.user);
+                await storage.saveUserRole(response.user.userType);
+                setToken(response.token);
+                setUser(response.user);
+            }
+            return response;
         } catch (error) {
             console.error('Google signup error:', error);
             throw error;

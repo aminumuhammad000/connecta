@@ -43,8 +43,17 @@ const SignupScreen: React.FC = () => {
   const handleGoogleSignup = async (token: string) => {
     setIsLoading(true);
     try {
-      await googleSignup(token, selectedRole);
-      showAlert({ title: 'Success', message: 'Account created with Google!', type: 'success' });
+      const autoLogin = selectedRole === 'client';
+      const response = await googleSignup(token, selectedRole, autoLogin);
+
+      if (selectedRole === 'freelancer') {
+        // For Google signup, we skip OTP and go straight to Skills
+        // But wait, if we are deferring login, we need to pass the token/user to the next screen.
+        // googleSignup returns the response object if autoLogin is false.
+        (navigation as any).navigate('SkillSelection', { token: response.token, user: response.user });
+      } else {
+        showAlert({ title: 'Success', message: 'Account created with Google!', type: 'success' });
+      }
     } catch (error: any) {
       showAlert({ title: 'Google Signup Failed', message: error.message || 'Failed to sign up with Google', type: 'error' });
     } finally {
@@ -63,13 +72,15 @@ const SignupScreen: React.FC = () => {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || firstName;
 
+      const autoLogin = selectedRole === 'client';
       await signup({
         email: email.trim(),
         password,
         firstName,
         lastName,
         userType: selectedRole,
-      });
+      }, autoLogin);
+
       showAlert({ title: 'Success', message: 'Account created! Please verify your email.', type: 'success' });
       (navigation as any).navigate('OTPVerification', { email: email.trim(), mode: 'signup', role: selectedRole });
     } catch (error: any) {

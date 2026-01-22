@@ -11,6 +11,7 @@ interface OTPVerificationScreenProps {
     mode?: 'signup' | 'forgotPassword';
     onBackToForgotPassword?: () => void;
     onOTPVerified?: (tokenData: string | { token: string; user: any }) => void;
+    role?: 'client' | 'freelancer';
 }
 
 const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({

@@ -10,8 +10,8 @@ import { getIO } from '../core/utils/socketIO';
 import CollaboFile from '../models/CollaboFile.model';
 import CollaboTask from '../models/CollaboTask.model';
 import User from '../models/user.model';
-// import { sendEmail } from './email.service';
-// import { getBaseTemplate } from '../utils/emailTemplates';
+import { sendEmail } from './email.service';
+import { getBaseTemplate } from '../utils/emailTemplates';
 
 class CollaboService {
     /**
@@ -121,8 +121,8 @@ class CollaboService {
     }
 
     async startWork(projectId: string, clientId: string) {
-        // 1. Get roles for notification purposes
-        const roles = await ProjectRole.find({ projectId });
+        // 1. Get roles and populate freelancer info
+        const roles = await ProjectRole.find({ projectId }).populate('freelancerId', 'firstName lastName email');
 
         // 2. Update project status to in_progress
         const project = await CollaboProject.findByIdAndUpdate(
@@ -132,20 +132,47 @@ class CollaboService {
         ).populate('clientId', 'firstName lastName email');
 
         if (!project) throw new Error("Project not found");
+        const client = project.clientId as any;
 
         // 3. Notify all team members who have accepted
         for (const role of roles) {
             if (role.freelancerId) {
+                const freelancer = role.freelancerId as any;
+
+                // App Notification
                 await Notification.create({
-                    userId: role.freelancerId,
+                    userId: freelancer._id,
                     type: 'collabo_started',
                     title: 'Work Started!',
-                    message: `${(project.clientId as any).firstName} has started work on "${project.title}"`,
+                    message: `${client.firstName} has started work on "${project.title}"`,
                     relatedId: projectId,
                     relatedType: 'project',
                     link: `/collabo/${projectId}`,
                     isRead: false
                 });
+
+                // Email Notification
+                try {
+                    const emailHtml = getBaseTemplate({
+                        title: 'Work Started! 🚀',
+                        subject: `Work has started on ${project.title}`,
+                        content: `
+                            <p>Hi ${freelancer.firstName},</p>
+                            <p><strong>${client.firstName} ${client.lastName}</strong> has officially started the project <strong>${project.title}</strong>.</p>
+                            <p>You can now collaborate with the team and track progress in the workspace.</p>
+                        `,
+                        actionUrl: `${process.env.CLIENT_URL || 'https://connecta.ng'}/collabo/${projectId}`,
+                        actionText: 'Go to Workspace'
+                    });
+
+                    await sendEmail(
+                        freelancer.email,
+                        `Work Started: ${project.title}`,
+                        emailHtml
+                    );
+                } catch (emailError) {
+                    console.error('Failed to send start work email:', emailError);
+                }
             }
         }
 
@@ -236,7 +263,28 @@ class CollaboService {
                 isRead: false
             });
 
-            // TODO: Email notification will be added after fixing circular dependency issue
+            // Email Notification for Acceptance
+            try {
+                const emailHtml = getBaseTemplate({
+                    title: 'New Team Member! 🎉',
+                    subject: `Role Accepted: ${role.title}`,
+                    content: `
+                        <p>Hi ${client.firstName},</p>
+                        <p>Great news! <strong>${freelancer.firstName} ${freelancer.lastName}</strong> has accepted the <strong>${role.title}</strong> role for <strong>${project.title}</strong>.</p>
+                        <p>They have been added to the project workspace.</p>
+                    `,
+                    actionUrl: `${process.env.CLIENT_URL || 'https://connecta.ng'}/collabo/${project._id}`,
+                    actionText: 'Go to Workspace'
+                });
+
+                await sendEmail(
+                    client.email,
+                    `New Team Member: ${project.title}`,
+                    emailHtml
+                );
+            } catch (emailError) {
+                console.error('Failed to send acceptance email:', emailError);
+            }
 
             return role;
         } catch (error) {
@@ -284,8 +332,6 @@ class CollaboService {
                 });
 
                 // Send email
-                // TODO: Re-enable email after fixing circular dependency
-                /*
                 try {
                     const emailHtml = getBaseTemplate({
                         title: 'Team Update',
@@ -305,7 +351,6 @@ class CollaboService {
                 } catch (emailError) {
                     console.error('Failed to send removal email:', emailError);
                 }
-                */
             }
 
             return role;
@@ -344,8 +389,6 @@ class CollaboService {
             });
 
             // Send email
-            // TODO: Re-enable email after fixing circular dependency
-            /*
             try {
                 const emailHtml = getBaseTemplate({
                     title: 'You\'re Invited to Join a Team!',
@@ -355,13 +398,13 @@ class CollaboService {
                         <p><strong>${(project.clientId as any).firstName} ${(project.clientId as any).lastName}</strong> has invited you to join their team!</p>
                         <h3 style="color: #111827; margin: 20px 0;">${project.title}</h3>
                         <p><strong>Role:</strong> ${role.title}</p>
-                        <p><strong>Budget:</strong> $${role.budget}</p>
+                        <p><strong>Budget:</strong> ₦${role.budget.toLocaleString()}</p>
                         <p>Review the invitation and accept to join the team.</p>
                     `,
                     actionUrl: `${process.env.CLIENT_URL || 'https://connecta.ng'}/collabo/invite/${roleId}`,
                     actionText: 'View Invitation'
                 });
-    
+
                 await sendEmail(
                     freelancer.email,
                     `Team Invitation: ${project.title}`,
@@ -370,7 +413,6 @@ class CollaboService {
             } catch (emailError) {
                 console.error('Failed to send invitation email:', emailError);
             }
-            */
 
             return { success: true, message: 'Invitation sent successfully' };
         } catch (error) {
@@ -403,10 +445,6 @@ class CollaboService {
             skills: roleData.skills,
             status: 'open'
         });
-
-        // Update project total budget if needed, or just leave it as initial estimate
-        // project.totalBudget += roleData.budget;
-        // await project.save();
 
         return newRole;
     }
