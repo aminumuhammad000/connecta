@@ -330,7 +330,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                             {job.locationType !== 'remote' && (
                               <Badge label={job.location || 'On-site'} variant="neutral" size="small" />
                             )}
-                            <Badge label={job.budget || 'Negotiable'} variant="custom" customColor={job.isExternal ? '#3B82F6' : '#FF7F50'} size="small" />
+                            <Badge label={job.budget ? `₦${job.budget}` : 'Negotiable'} variant="custom" customColor={job.isExternal ? '#3B82F6' : '#FF7F50'} size="small" />
                           </View>
 
                           {/* Description Preview */}

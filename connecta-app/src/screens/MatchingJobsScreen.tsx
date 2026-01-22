@@ -113,7 +113,7 @@ const MatchingJobsScreen: React.FC<any> = ({ navigation, route }) => {
                     if (answers.minSalary) {
                         // Clean string and convert to number
                         const num = parseInt(answers.minSalary.replace(/[^0-9]/g, ''));
-                        if (!isNaN(num)) profileUpdates.hourlyRate = num / 2000;
+                        if (!isNaN(num)) profileUpdates.hourlyRate = num;
                     }
                     if (answers.remoteType) profileUpdates.remotePreference = answers.remoteType;
                     // Add checks for other fields like location, experience, etc.

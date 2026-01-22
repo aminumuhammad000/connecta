@@ -283,7 +283,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                             <Text style={[styles.reviews, { color: c.subtext }]}>(0 reviews)</Text>
                           </View>
                         </View>
-                        <Text style={[styles.hourlyRate, { color: c.primary }]}>$50/hr</Text>
+                        <Text style={[styles.hourlyRate, { color: c.primary }]}>₦50/hr</Text>
                       </View>
 
                       <View style={styles.freelancerActions}>

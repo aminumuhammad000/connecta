@@ -246,7 +246,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 <MaterialIcons name="attach-money" size={18} color="#F59E0B" />
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>${stats.totalEarnings}</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>₦{stats.totalEarnings}</Text>
                 <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Earned</Text>
               </View>
             </View>
@@ -378,7 +378,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           <Badge label={job.jobType} variant="neutral" size="small" />
                           <Badge label={job.locationType || 'Remote'} variant="neutral" size="small" />
-                          <Badge label={`$${job.budget}`} variant="custom" customColor="#FF7F50" size="small" />
+                          <Badge label={`₦${job.budget}`} variant="custom" customColor="#FF7F50" size="small" />
                         </View>
 
                         {/* Description Preview */}

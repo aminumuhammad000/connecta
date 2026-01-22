@@ -313,32 +313,30 @@ export default function ProfileScreen({ navigation }: any) {
               </View>
             </View>
 
-            {/* Profile Completeness Progress Bar */}
-            <View style={styles.completenessContainer}>
-              <View style={styles.completenessHeader}>
-                <Text style={[styles.completenessTitle, { color: c.text }]}>Profile Completeness</Text>
-                <Text style={[styles.completenessPercent, { color: c.primary }]}>{completeness}%</Text>
+            {/* Ultra-Sleek Profile Completeness */}
+            <View style={styles.ultraSleekCompleteness}>
+              <View style={styles.completenessRow}>
+                <Text style={[styles.tinyLabel, { color: c.subtext }]}>Profile Strength</Text>
+                <Text style={[styles.tinyValue, { color: c.primary }]}>{completeness}%</Text>
               </View>
-              <View style={[styles.progressBarBg, { backgroundColor: c.border }]}>
-                <Animated.View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      backgroundColor: c.primary,
-                      width: `${completeness}%`
-                    }
-                  ]}
+              <View style={[styles.thinTrack, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                <LinearGradient
+                  colors={[c.primary, '#FF9F70']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.thinFill, { width: `${completeness}%` }]}
                 />
               </View>
               {completeness < 100 && (
                 <TouchableOpacity
-                  style={styles.completenessTip}
+                  style={styles.compactTip}
                   onPress={() => navigation.navigate('EditProfile')}
                 >
-                  <Ionicons name="bulb-outline" size={14} color={c.primary} />
-                  <Text style={[styles.completenessTipText, { color: c.primary }]}>
-                    Complete your profile to get 5x more job matches
+                  <Text style={[styles.compactTipText, { color: c.subtext }]} numberOfLines={1}>
+                    <Text style={{ color: c.primary, fontWeight: '800' }}>• </Text>
+                    Add portfolio to reach 100% strength
                   </Text>
+                  <Ionicons name="arrow-forward" size={10} color={c.primary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -792,47 +790,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  completenessContainer: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+  ultraSleekCompleteness: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.02)',
   },
-  completenessHeader: {
+  completenessRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
-  completenessTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  completenessPercent: {
-    fontSize: 14,
+  tinyLabel: {
+    fontSize: 10,
     fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    opacity: 0.6,
   },
-  progressBarBg: {
-    height: 8,
-    borderRadius: 4,
+  tinyValue: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  thinTrack: {
+    height: 3,
+    borderRadius: 1.5,
     width: '100%',
     overflow: 'hidden',
   },
-  progressBarFill: {
+  thinFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 1.5,
   },
-  completenessTip: {
+  compactTip: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    gap: 6,
-    backgroundColor: 'rgba(253, 103, 48, 0.08)',
-    padding: 10,
-    borderRadius: 8,
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 2,
   },
-  completenessTipText: {
-    fontSize: 12,
+  compactTipText: {
+    fontSize: 10,
     fontWeight: '600',
+    flex: 1,
   },
 });

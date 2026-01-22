@@ -162,10 +162,10 @@ const WalletScreen = () => {
             <View style={{ position: 'relative', zIndex: 2 }}>
               <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, userSelect: 'auto' as any }}>Available for Withdrawal</Text>
               <Text style={{ color: '#fff', fontSize: 32, fontWeight: '800', marginTop: 8 }}>
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: wallet?.currency || 'USD' }).format(wallet?.availableBalance || 0)}
+                {new Intl.NumberFormat('en-NG', { style: 'currency', currency: wallet?.currency || 'NGN' }).format(wallet?.availableBalance || 0)}
               </Text>
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 4 }}>
-                Total Balance: {new Intl.NumberFormat('en-US', { style: 'currency', currency: wallet?.currency || 'USD' }).format(wallet?.balance || 0)}
+                Total Balance: {new Intl.NumberFormat('en-NG', { style: 'currency', currency: wallet?.currency || 'NGN' }).format(wallet?.balance || 0)}
               </Text>
             </View>
 
@@ -197,7 +197,7 @@ const WalletScreen = () => {
               <View>
                 <Text style={{ color: c.subtext, fontSize: 12 }}>Pending in Escrow</Text>
                 <Text style={{ color: c.text, fontSize: 18, fontWeight: '700' }}>
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: wallet?.currency || 'USD' }).format(wallet?.escrowBalance || 0)}
+                  {new Intl.NumberFormat('en-NG', { style: 'currency', currency: wallet?.currency || 'NGN' }).format(wallet?.escrowBalance || 0)}
                 </Text>
               </View>
             </View>
@@ -253,7 +253,7 @@ const WalletScreen = () => {
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={[styles.txnAmount, { color }]}>
-                      {isIncome ? '+' : ''}{new Intl.NumberFormat('en-US', { style: 'currency', currency: wallet?.currency || 'USD' }).format(t.amount)}
+                      {isIncome ? '+' : ''}{new Intl.NumberFormat('en-NG', { style: 'currency', currency: wallet?.currency || 'NGN' }).format(t.amount)}
                     </Text>
                     <Text style={[styles.txnStatus, { color: c.subtext }]}>{t.status}</Text>
                   </View>
@@ -322,7 +322,7 @@ const WalletScreen = () => {
             />
 
             <Text style={{ color: c.subtext, fontSize: 12, marginTop: 8, alignSelf: 'flex-start' }}>
-              Available: {new Intl.NumberFormat('en-US', { style: 'currency', currency: wallet?.currency || 'USD' }).format(wallet?.availableBalance || 0)}
+              Available: {new Intl.NumberFormat('en-NG', { style: 'currency', currency: wallet?.currency || 'NGN' }).format(wallet?.availableBalance || 0)}
             </Text>
 
             <TouchableOpacity

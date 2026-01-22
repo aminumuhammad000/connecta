@@ -232,7 +232,7 @@ const JobDetailScreen: React.FC = () => {
               </View>
               <View>
                 <Text style={[styles.statLabel, { color: c.subtext }]}>Budget</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>${job.budget}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>₦{job.budget}</Text>
                 <Text style={{ fontSize: 11, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : 'Fixed'}</Text>
               </View>
             </View>
@@ -402,7 +402,7 @@ const JobDetailScreen: React.FC = () => {
                         {/* Proposal Card Content - Simplified for brevity but keeping logic */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                           <Text style={{ fontWeight: '700', color: c.text }}>{p.freelancerId?.firstName}</Text>
-                          <Text style={{ fontWeight: '700', color: c.primary }}>${p.budget?.amount}</Text>
+                          <Text style={{ fontWeight: '700', color: c.primary }}>₦{p.budget?.amount}</Text>
                         </View>
                         <Text numberOfLines={2} style={{ color: c.subtext, marginTop: 8 }}>{p.description}</Text>
                       </TouchableOpacity>

@@ -233,7 +233,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 <Badge label={job.jobType || job.type || 'Fixed'} variant="neutral" size="small" />
                 <Text style={[styles.cardPrice, { color: c.primary }]}>
                     {typeof job.budget === 'object'
-                        ? `${job.budget.currency || '$'}${job.budget.amount?.toLocaleString() || '0'}`
+                        ? `${job.budget.currency || '₦'}${job.budget.amount?.toLocaleString() || '0'}`
                         : job.budget}
                 </Text>
             </View>
