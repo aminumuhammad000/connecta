@@ -8,7 +8,7 @@ const { width } = Dimensions.get('window');
 
 import { useNavigation } from '@react-navigation/native';
 
-const LandingHero = () => {
+const LandingHero = ({ isDesktop }: { isDesktop?: boolean }) => {
     const navigation = useNavigation<any>();
     const c = useThemeColors();
     const [activeTab, setActiveTab] = useState<'freelancer' | 'jobs'>('freelancer');
@@ -90,8 +90,21 @@ const LandingHero = () => {
             <View style={[styles.blob, styles.blob1]} />
             <View style={[styles.blob, styles.blob2]} />
 
-            {/* Orbit Visuals */}
-            <View style={styles.orbitContainer}>
+            {/* Orbit Visuals (Desktop: Right Side, Mobile: Top Absolute) */}
+            <View style={[styles.orbitContainer, isDesktop && styles.desktopOrbitContainer]}>
+
+                {/* Desktop Header Buttons (Absolute Top Right of Orbit Container) */}
+                {isDesktop && (
+                    <View style={styles.desktopHeaderBtns}>
+                        <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'Login' })}>
+                            <Text style={styles.headerLoginText}>Log In</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.headerJoinBtn} onPress={() => navigation.navigate('Auth', { screen: 'Signup' })}>
+                            <Text style={styles.headerJoinText}>Join Now</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
                 {/* Center Sun/Logo */}
                 <View style={styles.sun}>
                     <LinearGradient colors={['#FD6730', '#FF8F6B']} style={styles.sunGradient} />
@@ -122,21 +135,21 @@ const LandingHero = () => {
             </View>
 
             {/* Content Overlay */}
-            <View style={styles.content}>
+            <View style={[styles.content, isDesktop && styles.desktopContent]}>
                 <View style={styles.titleContainer}>
-                    <Animated.Text style={[styles.title, { opacity: fadeAnim }]}>
+                    <Animated.Text style={[styles.title, { opacity: fadeAnim }, isDesktop && styles.desktopTitle]}>
                         {titles[titleIndex].split(',').map((part, i) => (
                             <Text key={i} style={i === 1 ? { color: '#FD6730' } : {}}>{part}{i === 0 ? '\n' : ''}</Text>
                         ))}
                     </Animated.Text>
                 </View>
 
-                <Text style={styles.subtitle}>
+                <Text style={[styles.subtitle, isDesktop && styles.desktopSubtitle]}>
                     One login, endless gigs. AI-matched projects instantly.
                 </Text>
 
                 {/* Search Box */}
-                <View style={styles.searchCard}>
+                <View style={[styles.searchCard, isDesktop && styles.desktopSearchCard]}>
                     <View style={styles.tabs}>
                         <TouchableOpacity
                             style={[styles.tab, activeTab === 'freelancer' && styles.activeTab]}
@@ -171,7 +184,7 @@ const LandingHero = () => {
                 </View>
 
                 {/* Social Proof */}
-                <View style={styles.socialProof}>
+                <View style={[styles.socialProof, isDesktop && { justifyContent: 'flex-start' }]}>
                     <View style={styles.avatarRow}>
                         {[1, 2, 3].map((i) => (
                             <Image
@@ -200,6 +213,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         overflow: 'hidden',
         minHeight: 600,
+        // Desktop support: On desktop we might want row layout for container if we move orbit to right
+        // But simpler: keep container relative, move content to left, orbit to right absolute
     },
     blob: {
         position: 'absolute',
@@ -432,6 +447,68 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#718096',
         fontWeight: '500',
+    },
+    // Desktop Styles
+    desktopOrbitContainer: {
+        position: 'absolute',
+        left: '50%', // Start from middle
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: '50%', // Take exactly half
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: 1,
+    },
+    desktopContent: {
+        marginTop: 60,
+        width: '50%', // Take left half
+        paddingRight: 60,
+        height: 650, // Ensure height for vertical centering
+        justifyContent: 'center',
+        zIndex: 50, // Ensure on top
+    },
+    desktopTitle: {
+        textAlign: 'left',
+        fontSize: 64,
+        lineHeight: 72,
+    },
+    desktopSubtitle: {
+        textAlign: 'left',
+        fontSize: 20,
+        maxWidth: 500,
+    },
+    desktopSearchCard: {
+        width: 480, // Wider search on desktop
+    },
+    desktopHeaderBtns: {
+        position: 'absolute',
+        top: 40,
+        right: 40,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 24,
+        zIndex: 100,
+    },
+    headerLoginText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#4A5568',
+    },
+    headerJoinBtn: {
+        backgroundColor: '#FD6730',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+        shadowColor: '#FD6730',
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+    headerJoinText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#FFF',
     },
 });
 

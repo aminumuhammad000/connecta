@@ -40,9 +40,9 @@ const features = [
     },
 ];
 
-const LandingFeatures = () => {
-    const renderItem = ({ item }: { item: any }) => (
-        <View style={styles.cardContainer}>
+const LandingFeatures = ({ isDesktop }: { isDesktop?: boolean }) => {
+    const renderItem = ({ item, index }: { item: any, index: number }) => (
+        <View style={[styles.cardContainer, isDesktop && styles.desktopCardContainer]}>
             <View style={styles.card}>
                 <LinearGradient
                     colors={item.gradient}
@@ -74,18 +74,28 @@ const LandingFeatures = () => {
                 </Text>
             </View>
 
-            <FlatList
-                data={features}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id.toString()}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                snapToInterval={width - 48} // Card width + margin
-                snapToAlignment="center"
-                decelerationRate="fast"
-                contentContainerStyle={styles.listContent}
-            />
+            {isDesktop ? (
+                <View style={styles.desktopGrid}>
+                    {features.map((item, index) => (
+                        <View key={item.id} style={styles.desktopCardWrapper}>
+                            {renderItem({ item, index })}
+                        </View>
+                    ))}
+                </View>
+            ) : (
+                <FlatList
+                    data={features}
+                    renderItem={renderItem}
+                    keyExtractor={(item) => item.id.toString()}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    snapToInterval={width - 48} // Card width + margin
+                    snapToAlignment="center"
+                    decelerationRate="fast"
+                    contentContainerStyle={styles.listContent}
+                />
+            )}
         </View>
     );
 };
@@ -172,6 +182,20 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         color: '#CBD5E0',
         letterSpacing: 1,
+    },
+    desktopGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: 24,
+        gap: 24,
+        justifyContent: 'center',
+    },
+    desktopCardWrapper: {
+        width: '48%', // 2 per row
+    },
+    desktopCardContainer: {
+        width: '100%',
+        marginRight: 0,
     },
 });
 

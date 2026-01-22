@@ -11,12 +11,16 @@ import LandingHero from '../components/landing/LandingHero';
 import LandingStats from '../components/landing/LandingStats';
 import LandingFeatures from '../components/landing/LandingFeatures';
 
-const { width } = Dimensions.get('window');
+const { width: windowWidth } = Dimensions.get('window'); // Fallback
+
+import { useWindowDimensions } from 'react-native';
 
 const MobileLandingScreen = () => {
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
     const navigation = useNavigation<any>();
     const c = useThemeColors();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [freelancers, setFreelancers] = useState<any[]>([]);
     const [jobs, setJobs] = useState<any[]>([]);
 
@@ -56,169 +60,173 @@ const MobileLandingScreen = () => {
             <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+                <View style={[styles.mainContainer, isDesktop && styles.desktopContainer]}>
 
-                {/* 1. HERO SECTION (Web Clone) */}
-                <LandingHero />
+                    {/* 1. HERO SECTION (Web Clone) */}
+                    <LandingHero isDesktop={isDesktop} />
 
-                {/* 2. STATS & CATEGORIES (Web Clone) */}
-                <LandingStats />
+                    {/* 2. STATS & CATEGORIES (Web Clone) */}
+                    <LandingStats isDesktop={isDesktop} />
 
-                {/* 3. FREELANCER SPOTLIGHT (Mobile Specific - High Value) */}
-                <View style={styles.sectionContainer}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Top Talent</Text>
-                        <TouchableOpacity onPress={handleJoin}>
-                            <Text style={styles.seeAllText}>View All</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardScroll}>
-                        {freelancers.map((user, i) => (
-                            <TouchableOpacity key={user._id || i} style={styles.freelancerCard} activeOpacity={0.9} onPress={handleJoin}>
-                                <Image
-                                    source={{ uri: user.profilePicture || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random` }}
-                                    style={styles.avatar}
-                                />
-                                {user.isVerified && (
-                                    <View style={styles.verifiedBadge}>
-                                        <Ionicons name="checkmark-circle" size={14} color="#FD6730" />
-                                    </View>
-                                )}
-                                <Text style={styles.userName} numberOfLines={1}>{user.firstName} {user.lastName}</Text>
-                                <Text style={styles.userRole} numberOfLines={1}>{user.profession || 'Freelancer'}</Text>
-                                <View style={styles.ratingRow}>
-                                    <Ionicons name="star" size={12} color="#FFD166" />
-                                    <Text style={styles.ratingText}>4.9</Text>
-                                </View>
+                    {/* 3. FREELANCER SPOTLIGHT (Mobile Specific - High Value) */}
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Top Talent</Text>
+                            <TouchableOpacity onPress={handleJoin}>
+                                <Text style={styles.seeAllText}>View All</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* 4. FEATURES (Web Clone) */}
-                <LandingFeatures />
-
-                {/* 5. CONNECTA AI BANNER */}
-                <TouchableOpacity style={styles.aiBanner} activeOpacity={0.9} onPress={handleJoin}>
-                    <LinearGradient
-                        colors={['#1A202C', '#2D3748']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.aiGradient}
-                    >
-                        <View>
-                            <View style={styles.aiBadge}>
-                                <Text style={styles.aiBadgeText}>NEW</Text>
-                            </View>
-                            <Text style={styles.aiTitle}>Connecta AI</Text>
-                            <Text style={styles.aiSubtitle}>Let AI find your perfect match in seconds.</Text>
                         </View>
-                        <View style={styles.aiIconBox}>
-                            <Feather name="cpu" size={32} color="#FD6730" />
-                        </View>
-                    </LinearGradient>
-                </TouchableOpacity>
-
-                {/* 6. JOBS IN DEMAND */}
-                <View style={styles.sectionContainer}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Jobs In Demand</Text>
-                    </View>
-                    <View style={styles.jobsList}>
-                        {jobs.map((job, i) => (
-                            <TouchableOpacity key={job._id || i} style={styles.leaderboardCard} activeOpacity={0.9} onPress={handleJoin}>
-                                <View style={styles.rankBadge}>
-                                    <Text style={styles.rankText}>#{i + 1}</Text>
-                                </View>
-                                <View style={styles.leaderboardContent}>
-                                    <View style={styles.jobHeader}>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
-                                            <Text style={styles.companyName}>{job.company || 'Confidential'}</Text>
+                        <ScrollView horizontal={!isDesktop} showsHorizontalScrollIndicator={false} contentContainerStyle={isDesktop ? styles.desktopGrid : styles.cardScroll}>
+                            {freelancers.map((user, i) => (
+                                <TouchableOpacity key={user._id || i} style={[styles.freelancerCard, isDesktop && styles.desktopCard]} activeOpacity={0.9} onPress={handleJoin}>
+                                    <Image
+                                        source={{ uri: user.profilePicture || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random` }}
+                                        style={styles.avatar}
+                                    />
+                                    {user.isVerified && (
+                                        <View style={styles.verifiedBadge}>
+                                            <Ionicons name="checkmark-circle" size={14} color="#FD6730" />
                                         </View>
-                                        <Text style={styles.jobBudget}>
-                                            {job.budget ? `₦${job.budget.toLocaleString()}` : 'Negotiable'}
-                                        </Text>
+                                    )}
+                                    <Text style={styles.userName} numberOfLines={1}>{user.firstName} {user.lastName}</Text>
+                                    <Text style={styles.userRole} numberOfLines={1}>{user.profession || 'Freelancer'}</Text>
+                                    <View style={styles.ratingRow}>
+                                        <Ionicons name="star" size={12} color="#FFD166" />
+                                        <Text style={styles.ratingText}>4.9</Text>
                                     </View>
-                                    <View style={styles.tagsRow}>
-                                        {job.skills?.slice(0, 3).map((skill: string, idx: number) => (
-                                            <View key={idx} style={styles.tag}>
-                                                <Text style={styles.tagText}>{skill}</Text>
-                                            </View>
-                                        ))}
-                                        <Text style={styles.postedTime}>🔥 Hot</Text>
-                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+
+                    {/* 4. FEATURES (Web Clone) */}
+                    <LandingFeatures isDesktop={isDesktop} />
+
+                    {/* 5. CONNECTA AI BANNER */}
+                    <TouchableOpacity style={styles.aiBanner} activeOpacity={0.9} onPress={handleJoin}>
+                        <LinearGradient
+                            colors={['#1A202C', '#2D3748']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.aiGradient}
+                        >
+                            <View>
+                                <View style={styles.aiBadge}>
+                                    <Text style={styles.aiBadgeText}>NEW</Text>
                                 </View>
+                                <Text style={styles.aiTitle}>Connecta AI</Text>
+                                <Text style={styles.aiSubtitle}>Let AI find your perfect match in seconds.</Text>
+                            </View>
+                            <View style={styles.aiIconBox}>
+                                <Feather name="cpu" size={32} color="#FD6730" />
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    {/* 6. JOBS IN DEMAND */}
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Jobs In Demand</Text>
+                        </View>
+                        <View style={[styles.jobsList, isDesktop && styles.desktopJobsGrid]}>
+                            {jobs.map((job, i) => (
+                                <TouchableOpacity key={job._id || i} style={[styles.leaderboardCard, isDesktop && styles.desktopJobCard]} activeOpacity={0.9} onPress={handleJoin}>
+                                    <View style={styles.rankBadge}>
+                                        <Text style={styles.rankText}>#{i + 1}</Text>
+                                    </View>
+                                    <View style={styles.leaderboardContent}>
+                                        <View style={styles.jobHeader}>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
+                                                <Text style={styles.companyName}>{job.company || 'Confidential'}</Text>
+                                            </View>
+                                            <Text style={styles.jobBudget}>
+                                                {job.budget ? `₦${job.budget.toLocaleString()}` : 'Negotiable'}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.tagsRow}>
+                                            {job.skills?.slice(0, 3).map((skill: string, idx: number) => (
+                                                <View key={idx} style={styles.tag}>
+                                                    <Text style={styles.tagText}>{skill}</Text>
+                                                </View>
+                                            ))}
+                                            <Text style={styles.postedTime}>🔥 Hot</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* 7. HOW IT WORKS */}
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>How It Works</Text>
+                        </View>
+                        <View style={styles.stepsRow}>
+                            <View style={styles.stepItem}>
+                                <View style={[styles.stepIcon, { backgroundColor: '#FFF5F0' }]}>
+                                    <Feather name="file-text" size={24} color="#FD6730" />
+                                </View>
+                                <Text style={styles.stepLabel}>1. Post</Text>
+                            </View>
+                            <View style={styles.stepLine} />
+                            <View style={styles.stepItem}>
+                                <View style={[styles.stepIcon, { backgroundColor: '#F0FFF4' }]}>
+                                    <Feather name="check-circle" size={24} color="#38A169" />
+                                </View>
+                                <Text style={styles.stepLabel}>2. Match</Text>
+                            </View>
+                            <View style={styles.stepLine} />
+                            <View style={styles.stepItem}>
+                                <View style={[styles.stepIcon, { backgroundColor: '#E6F4FF' }]}>
+                                    <Feather name="credit-card" size={24} color="#0091FF" />
+                                </View>
+                                <Text style={styles.stepLabel}>3. Pay</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* 8. SUPPORT */}
+                    <View style={styles.sectionContainer}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={[styles.sectionTitle, { textAlign: 'center', width: '100%', marginBottom: 10, color: '#A0AEC0', fontSize: 14 }]}>Need Support?</Text>
+                        </View>
+                        <View style={styles.supportGrid}>
+                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#25D366' }]} onPress={() => openSupport('whatsapp')}>
+                                <Ionicons name="logo-whatsapp" size={24} color="#FFF" />
                             </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-
-                {/* 7. HOW IT WORKS */}
-                <View style={styles.sectionContainer}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>How It Works</Text>
-                    </View>
-                    <View style={styles.stepsRow}>
-                        <View style={styles.stepItem}>
-                            <View style={[styles.stepIcon, { backgroundColor: '#FFF5F0' }]}>
-                                <Feather name="file-text" size={24} color="#FD6730" />
-                            </View>
-                            <Text style={styles.stepLabel}>1. Post</Text>
-                        </View>
-                        <View style={styles.stepLine} />
-                        <View style={styles.stepItem}>
-                            <View style={[styles.stepIcon, { backgroundColor: '#F0FFF4' }]}>
-                                <Feather name="check-circle" size={24} color="#38A169" />
-                            </View>
-                            <Text style={styles.stepLabel}>2. Match</Text>
-                        </View>
-                        <View style={styles.stepLine} />
-                        <View style={styles.stepItem}>
-                            <View style={[styles.stepIcon, { backgroundColor: '#E6F4FF' }]}>
-                                <Feather name="credit-card" size={24} color="#0091FF" />
-                            </View>
-                            <Text style={styles.stepLabel}>3. Pay</Text>
+                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#3182CE' }]} onPress={() => openSupport('phone')}>
+                                <Feather name="phone" size={24} color="#FFF" />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#E53E3E' }]} onPress={() => openSupport('email')}>
+                                <Feather name="mail" size={24} color="#FFF" />
+                            </TouchableOpacity>
                         </View>
                     </View>
-                </View>
 
-                {/* 8. SUPPORT */}
-                <View style={styles.sectionContainer}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle} style={{ textAlign: 'center', width: '100%', marginBottom: 10, color: '#A0AEC0', fontSize: 14 }}>Need Support?</Text>
-                    </View>
-                    <View style={styles.supportGrid}>
-                        <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#25D366' }]} onPress={() => openSupport('whatsapp')}>
-                            <Ionicons name="logo-whatsapp" size={24} color="#FFF" />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#3182CE' }]} onPress={() => openSupport('phone')}>
-                            <Feather name="phone" size={24} color="#FFF" />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#E53E3E' }]} onPress={() => openSupport('email')}>
-                            <Feather name="mail" size={24} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
                 </View>
-
             </ScrollView>
 
-            {/* Sticky Bottom CTA */}
-            {isAuthenticated ? (
-                <View style={styles.bottomBar}>
-                    <TouchableOpacity style={styles.dashboardBtn} onPress={() => navigation.navigate(c.role === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}>
-                        <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
-                        <Feather name="arrow-right" size={20} color="#FFF" />
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <View style={[styles.bottomBar, { flexDirection: 'row', gap: 12 }]}>
-                    <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-                        <Text style={styles.loginText}>Log In</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.joinBtn} onPress={handleJoin}>
-                        <Text style={styles.joinText}>Join Now</Text>
-                    </TouchableOpacity>
-                </View>
+            {/* Sticky Bottom CTA (Mobile Only) */}
+            {!isDesktop && (
+                isAuthenticated ? (
+                    <View style={styles.bottomBar}>
+                        <TouchableOpacity style={styles.dashboardBtn} onPress={() => navigation.navigate(user?.userType === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}>
+                            <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
+                            <Feather name="arrow-right" size={20} color="#FFF" />
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <View style={[styles.bottomBar, { flexDirection: 'row', gap: 12 }]}>
+                        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
+                            <Text style={styles.loginText}>Log In</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.joinBtn} onPress={handleJoin}>
+                            <Text style={styles.joinText}>Join Now</Text>
+                        </TouchableOpacity>
+                    </View>
+                )
             )}
         </View>
     );
@@ -284,6 +292,34 @@ const styles = StyleSheet.create({
     joinText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
     dashboardBtn: { height: 50, borderRadius: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', gap: 10 },
     dashboardBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+
+    // Desktop Responsive Styles
+    mainContainer: {
+        width: '100%',
+    },
+    desktopContainer: {
+        maxWidth: 1440,
+        alignSelf: 'center',
+        paddingHorizontal: 0, // Reduced from 40 to 0 for full width feel
+    },
+    desktopGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+        justifyContent: 'space-between', // Try to distribute evenly
+    },
+    desktopCard: {
+        width: '23%', // 4 Cards per row approx
+    },
+    desktopJobsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 16,
+        justifyContent: 'space-between',
+    },
+    desktopJobCard: {
+        width: '48%', // 2 Column Grid
+    },
 });
 
 export default MobileLandingScreen;
