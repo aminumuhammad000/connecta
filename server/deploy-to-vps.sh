@@ -16,6 +16,8 @@ git pull origin main
 echo "📦 Installing dependencies..."
 npm install
 
+
+
 # Delete old PM2 processes
 echo "🗑️  Stopping old PM2 processes..."
 pm2 delete all || pm2 delete server || true
