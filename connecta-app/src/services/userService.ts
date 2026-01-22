@@ -1,15 +1,7 @@
 import { get, put } from './api';
 import { API_ENDPOINTS } from '../utils/constants';
 
-export interface User {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    userType: 'client' | 'freelancer';
-    createdAt?: string;
-    updatedAt?: string;
-}
+import { User } from '../types';
 
 /**
  * User Service

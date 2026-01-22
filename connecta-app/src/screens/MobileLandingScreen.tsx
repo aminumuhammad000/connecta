@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
 import { useNavigation } from '@react-navigation/native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,7 +17,8 @@ const { width } = Dimensions.get('window');
 const MobileLandingScreen = () => {
     const navigation = useNavigation<any>();
     const c = useThemeColors();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
+    const insets = useSafeAreaInsets();
     const [freelancers, setFreelancers] = useState<any[]>([]);
     const [jobs, setJobs] = useState<any[]>([]);
 
@@ -54,6 +56,30 @@ const MobileLandingScreen = () => {
     return (
         <View style={[styles.container, { backgroundColor: '#FFF' }]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
+            {/* Top Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+                <Image source={require('../../assets/logo.png')} style={{ width: 120, height: 40, resizeMode: 'contain' }} />
+
+                {isAuthenticated ? (
+                    <TouchableOpacity
+                        style={styles.headerBtnPrimary}
+                        onPress={() => navigation.navigate(user?.userType === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}
+                    >
+                        <Text style={styles.headerBtnTextPrimary}>Dashboard</Text>
+                        <Feather name="arrow-right" size={16} color="#FFF" />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity onPress={handleLogin} style={styles.headerBtnSecondary}>
+                            <Text style={styles.headerBtnTextSecondary}>Log In</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleJoin} style={styles.headerBtnPrimary}>
+                            <Text style={styles.headerBtnTextPrimary}>Join</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
 
@@ -185,7 +211,7 @@ const MobileLandingScreen = () => {
                 {/* 8. SUPPORT */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle} style={{ textAlign: 'center', width: '100%', marginBottom: 10, color: '#A0AEC0', fontSize: 14 }}>Need Support?</Text>
+                        <Text style={[styles.sectionTitle, { textAlign: 'center', width: '100%', marginBottom: 10, color: '#A0AEC0', fontSize: 14 }]}>Need Support?</Text>
                     </View>
                     <View style={styles.supportGrid}>
                         <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#25D366' }]} onPress={() => openSupport('whatsapp')}>
@@ -202,30 +228,54 @@ const MobileLandingScreen = () => {
 
             </ScrollView>
 
-            {/* Sticky Bottom CTA */}
-            {isAuthenticated ? (
-                <View style={styles.bottomBar}>
-                    <TouchableOpacity style={styles.dashboardBtn} onPress={() => navigation.navigate(c.role === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}>
-                        <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
-                        <Feather name="arrow-right" size={20} color="#FFF" />
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <View style={[styles.bottomBar, { flexDirection: 'row', gap: 12 }]}>
-                    <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-                        <Text style={styles.loginText}>Log In</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.joinBtn} onPress={handleJoin}>
-                        <Text style={styles.joinText}>Join Now</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#EDF2F7',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        zIndex: 100,
+    },
+    headerBtnPrimary: {
+        backgroundColor: '#FD6730',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    headerBtnSecondary: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    headerBtnTextPrimary: {
+        color: '#FFF',
+        fontWeight: '700',
+        fontSize: 13,
+    },
+    headerBtnTextSecondary: {
+        color: '#4A5568',
+        fontWeight: '700',
+        fontSize: 13,
+    },
     sectionContainer: { marginTop: 32, paddingHorizontal: 24 },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     sectionTitle: { fontSize: 20, fontWeight: '800', color: '#1A202C' },
@@ -277,13 +327,13 @@ const styles = StyleSheet.create({
     supportCard: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, elevation: 3 },
 
     // Bottom Bar
-    bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 32, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EDF2F7' },
-    loginBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#EDF2F7', backgroundColor: '#F7FAFC' },
-    loginText: { fontSize: 16, fontWeight: '700', color: '#4A5568' },
-    joinBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', shadowColor: '#FD6730', shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
-    joinText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-    dashboardBtn: { height: 50, borderRadius: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', gap: 10 },
-    dashboardBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    // bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 32, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EDF2F7' },
+    // loginBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#EDF2F7', backgroundColor: '#F7FAFC' },
+    // loginText: { fontSize: 16, fontWeight: '700', color: '#4A5568' },
+    // joinBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', shadowColor: '#FD6730', shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
+    // joinText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    // dashboardBtn: { height: 50, borderRadius: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', gap: 10 },
+    // dashboardBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
 });
 
 export default MobileLandingScreen;

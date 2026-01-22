@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -47,7 +47,6 @@ export default function SettingsScreen({ navigation }: any) {
         await storage.setItem(STORAGE_KEYS.BIOMETRIC_ENABLED, String(value));
         setBiometricEnabled(value);
 
-        // If disabling, clear secure creds 
         if (!value) {
             await storage.removeSecureItem('connecta_secure_email');
             await storage.removeSecureItem('connecta_secure_pass');
@@ -57,7 +56,6 @@ export default function SettingsScreen({ navigation }: any) {
     const handleThemeToggle = () => {
         toggleTheme();
         const newMode = !isDark ? 'dark' : 'light';
-        // Always show an in-app alert for immediate feedback
         showAlert({ title: 'Theme changed', message: `Switched to ${newMode} mode`, type: 'success' });
         if (notificationsEnabled) {
             void scheduleLocalNotification('Theme changed', `Switched to ${newMode} mode`);
@@ -80,125 +78,140 @@ export default function SettingsScreen({ navigation }: any) {
         }
     };
 
+    const SettingItem = ({ icon, color, label, value, onToggle, onPress, type = 'link' }: any) => (
+        <TouchableOpacity
+            style={[styles.settingItem, { borderBottomColor: c.border }]}
+            onPress={type === 'link' ? onPress : undefined}
+            activeOpacity={type === 'link' ? 0.7 : 1}
+        >
+            <View style={styles.settingLeft}>
+                <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+                    <Ionicons name={icon} size={18} color={color} />
+                </View>
+                <Text style={[styles.settingLabel, { color: c.text }]}>{label}</Text>
+            </View>
+            {type === 'toggle' ? (
+                <Switch
+                    value={value}
+                    onValueChange={onToggle}
+                    trackColor={{ false: '#E5E7EB', true: c.primary }}
+                    thumbColor={'#ffffff'}
+                    ios_backgroundColor="#E5E7EB"
+                />
+            ) : (
+                <Ionicons name="chevron-forward" size={20} color={c.subtext} style={{ opacity: 0.5 }} />
+            )}
+        </TouchableOpacity>
+    );
+
+    const SectionHeader = ({ title }: { title: string }) => (
+        <Text style={[styles.sectionHeader, { color: c.subtext }]}>{title}</Text>
+    );
+
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
             <View style={[styles.header, { borderBottomColor: c.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={c.text} />
+                    <Ionicons name="chevron-back" size={28} color={c.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: c.text }]}>Settings</Text>
-                <View style={{ width: 24 }} />
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: c.subtext }]}>Preferences</Text>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-                    <View style={[styles.row, { borderBottomColor: c.border }]}>
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="notifications-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Push Notifications</Text>
-                        </View>
-                        <Switch
+                <View style={styles.sectionContainer}>
+                    <SectionHeader title="Preferences" />
+                    <View style={[styles.sectionCard, { backgroundColor: c.card }]}>
+                        <SettingItem
+                            icon="notifications-outline"
+                            color="#F59E0B"
+                            label="Push Notifications"
+                            type="toggle"
                             value={notificationsEnabled}
-                            onValueChange={setNotificationsEnabled}
-                            trackColor={{ false: '#767577', true: c.primary }}
-                            thumbColor={'#ffffff'}
+                            onToggle={setNotificationsEnabled}
                         />
-                    </View>
-
-                    <View style={[styles.row, { borderBottomColor: c.border }]}>
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="moon-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Dark Mode</Text>
-                        </View>
-                        <Switch
+                        <SettingItem
+                            icon="moon-outline"
+                            color="#6366F1"
+                            label="Dark Mode"
+                            type="toggle"
                             value={isDark}
-                            onValueChange={handleThemeToggle}
-                            trackColor={{ false: '#767577', true: c.primary }}
-                            thumbColor={'#ffffff'}
+                            onToggle={handleThemeToggle}
                         />
-                    </View>
-
-                    <View style={[styles.row, { borderBottomColor: c.border }]}>
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="finger-print-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Biometric Login</Text>
-                        </View>
-                        <Switch
+                        <SettingItem
+                            icon="finger-print-outline"
+                            color="#10B981"
+                            label="Biometric Login"
+                            type="toggle"
                             value={biometricEnabled}
-                            onValueChange={handleBiometricToggle}
-                            trackColor={{ false: '#767577', true: c.primary }}
-                            thumbColor={'#ffffff'}
+                            onToggle={handleBiometricToggle}
+                        />
+                        <SettingItem
+                            icon="briefcase-outline"
+                            color="#FD6730"
+                            label="Job Preferences"
+                            onPress={() => navigation.navigate('JobPreferences')}
                         />
                     </View>
                 </View>
 
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: c.subtext }]}>Account</Text>
-
-                    <TouchableOpacity
-                        style={[styles.row, { borderBottomColor: c.border }]}
-                        onPress={() => navigation.navigate('PersonalInformation')}
-                    >
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="person-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Personal Information</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={c.subtext} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.row, { borderBottomColor: c.border }]}
-                        onPress={() => navigation.navigate('Security')}
-                    >
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="lock-closed-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Security</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={c.subtext} />
-                    </TouchableOpacity>
+                <View style={styles.sectionContainer}>
+                    <SectionHeader title="Account" />
+                    <View style={[styles.sectionCard, { backgroundColor: c.card }]}>
+                        <SettingItem
+                            icon="person-outline"
+                            color="#3B82F6"
+                            label="Edit Profile"
+                            onPress={() => navigation.navigate('EditProfile')}
+                        />
+                        <SettingItem
+                            icon="lock-closed-outline"
+                            color="#EF4444"
+                            label="Security"
+                            onPress={() => navigation.navigate('Security')}
+                        />
+                    </View>
                 </View>
 
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: c.subtext }]}>Support</Text>
-
-                    <TouchableOpacity style={[styles.row, { borderBottomColor: c.border }]} onPress={() => navigation.navigate('HelpSupport')}>
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="help-circle-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Help Center</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={c.subtext} />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={[styles.row, { borderBottomColor: c.border }]} onPress={() => navigation.navigate('ContactSupport')}>
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="mail-outline" size={22} color={c.text} />
-                            <Text style={[styles.rowLabel, { color: c.text }]}>Contact Us</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={c.subtext} />
-                    </TouchableOpacity>
+                <View style={styles.sectionContainer}>
+                    <SectionHeader title="Support" />
+                    <View style={[styles.sectionCard, { backgroundColor: c.card }]}>
+                        <SettingItem
+                            icon="help-circle-outline"
+                            color="#8B5CF6"
+                            label="Help Center"
+                            onPress={() => navigation.navigate('HelpSupport')}
+                        />
+                        <SettingItem
+                            icon="mail-outline"
+                            color="#EC4899"
+                            label="Contact Us"
+                            onPress={() => navigation.navigate('ContactSupport')}
+                        />
+                    </View>
                 </View>
 
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                {user?.email === 'admin@connecta.com' && (
+                    <View style={styles.sectionContainer}>
+                        <SectionHeader title="Admin" />
+                        <View style={[styles.sectionCard, { backgroundColor: c.card }]}>
+                            <SettingItem
+                                icon="shield-checkmark-outline"
+                                color={c.primary}
+                                label="Admin Panel"
+                                onPress={() => navigation.navigate('AdminWithdrawals')}
+                            />
+                        </View>
+                    </View>
+                )}
+
+                <TouchableOpacity style={[styles.logoutButton, { backgroundColor: '#EF444415' }]} onPress={handleLogout}>
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
 
-                {/* Admin Panel (Hidden) */}
-                {user?.email === 'admin@connecta.com' && (
-                    <TouchableOpacity
-                        style={[styles.row, { borderBottomColor: c.border, marginTop: 24 }]}
-                        onPress={() => navigation.navigate('AdminWithdrawals')}
-                    >
-                        <View style={styles.rowLeft}>
-                            <Ionicons name="shield-checkmark" size={22} color={c.primary} />
-                            <Text style={[styles.rowLabel, { color: c.primary, fontWeight: '700' }]}>Admin Panel</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={c.primary} />
-                    </TouchableOpacity>
-                )}
-
-                <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0(2)</Text>
+                <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0 (Build 2)</Text>
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -212,58 +225,75 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        borderBottomWidth: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     backButton: {
         padding: 4,
+        marginRight: 8,
     },
     headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 16, // Reduced from 17
+        fontWeight: '600', // Slightly lighter weight
     },
     content: {
-        padding: 16,
+        padding: 16, // Reduced padding slightly
     },
-    section: {
-        marginBottom: 24,
+    sectionContainer: {
+        marginBottom: 20, // Reduced margin
     },
-    sectionTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 8,
-        marginLeft: 4,
+    sectionHeader: {
+        fontSize: 12, // Reduced from 13
+        fontWeight: '500', // Lighter weight
         textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 6,
+        marginLeft: 12,
     },
-    row: {
+    sectionCard: {
+        borderRadius: 12, // Slightly smaller radius
+        overflow: 'hidden',
+    },
+    settingItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 16,
-        paddingHorizontal: 4,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderBottomWidth: StyleSheet.hairlineWidth,
     },
-    rowLeft: {
+    settingLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
     },
-    rowLabel: {
-        fontSize: 16,
+    iconContainer: {
+        width: 28, // Reduced from 32
+        height: 28, // Reduced from 32
+        borderRadius: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    settingLabel: {
+        fontSize: 14, // Reduced from 16
+        fontWeight: '400', // Lighter weight for cleaner look
     },
     logoutButton: {
-        marginTop: 24,
+        marginTop: 8,
         alignItems: 'center',
-        padding: 16,
+        paddingVertical: 14, // Reduced from 16
+        borderRadius: 12,
     },
     logoutText: {
-        color: '#FF3B30',
-        fontSize: 16,
-        fontWeight: '600',
+        color: '#EF4444',
+        fontSize: 14, // Reduced from 16
+        fontWeight: '500',
     },
     version: {
         textAlign: 'center',
-        marginTop: 16,
-        fontSize: 12,
+        marginTop: 20,
+        fontSize: 11, // Reduced from 12
+        opacity: 0.5,
     },
 });

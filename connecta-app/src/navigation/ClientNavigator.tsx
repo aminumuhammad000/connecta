@@ -1,8 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
 import ClientDashboardScreen from '../screens/ClientDashboardScreen';
@@ -21,7 +22,7 @@ import PaymentScreen from '../screens/PaymentScreen';
 import PaymentCallbackScreen from '../screens/PaymentCallbackScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
-import PersonalInformationScreen from '../screens/PersonalInformationScreen';
+
 import SecurityScreen from '../screens/SecurityScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
 import ContactSupportScreen from '../screens/ContactSupportScreen';
@@ -37,6 +38,7 @@ const Stack = createNativeStackNavigator();
 
 function ClientTabs() {
     const c = useThemeColors();
+    const insets = useSafeAreaInsets();
 
     return (
         <Tab.Navigator
@@ -44,20 +46,39 @@ function ClientTabs() {
                 headerShown: false,
                 tabBarStyle: {
                     backgroundColor: c.card,
-                    borderTopColor: c.border,
+                    borderTopWidth: 0,
+                    height: 60 + insets.bottom,
+                    paddingBottom: insets.bottom + 8,
+                    paddingTop: 8,
+                    elevation: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                },
+                tabBarLabelStyle: {
+                    fontSize: 10,
+                    fontWeight: '600',
+                    marginTop: -4,
                 },
                 tabBarActiveTintColor: c.primary,
                 tabBarInactiveTintColor: c.subtext,
                 tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
-                    let iconName: keyof typeof MaterialIcons.glyphMap = 'home';
+                    let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
 
-                    if (route.name === 'Home') iconName = 'home';
-                    else if (route.name === 'Jobs') iconName = 'work';
-                    else if (route.name === 'Projects') iconName = 'folder';
-                    else if (route.name === 'Messages') iconName = 'chat';
-                    else if (route.name === 'Profile') iconName = 'person';
+                    if (route.name === 'Home') {
+                        iconName = focused ? 'home' : 'home-outline';
+                    } else if (route.name === 'Jobs') {
+                        iconName = focused ? 'briefcase' : 'briefcase-outline';
+                    } else if (route.name === 'Projects') {
+                        iconName = focused ? 'folder-open' : 'folder-open-outline';
+                    } else if (route.name === 'Messages') {
+                        iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+                    } else if (route.name === 'Profile') {
+                        iconName = focused ? 'person' : 'person-outline';
+                    }
 
-                    return <MaterialIcons name={iconName} size={size} color={color} />;
+                    return <Ionicons name={iconName} size={24} color={color} />;
                 },
             })}
         >
@@ -89,7 +110,6 @@ export default function ClientNavigator() {
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
             <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
-            <Stack.Screen name="PersonalInformation" component={PersonalInformationScreen} />
             <Stack.Screen name="Security" component={SecurityScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
 

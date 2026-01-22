@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import aiService from '../services/aiService';
 import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as profileService from '../services/profileService';
@@ -20,6 +21,7 @@ export default function EditProfileScreen({ navigation }: any) {
     const { showAlert } = useInAppAlert();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [isGeneratingBio, setIsGeneratingBio] = useState(false);
 
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [uploadingImage, setUploadingImage] = useState(false);
@@ -69,6 +71,15 @@ export default function EditProfileScreen({ navigation }: any) {
         description: '',
     });
 
+    // Date Picker State
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [datePickerTarget, setDatePickerTarget] = useState<{ form: string, field: string } | null>(null);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i);
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -76,9 +87,31 @@ export default function EditProfileScreen({ navigation }: any) {
         phone: '',
         location: '',
         bio: '',
+        jobTitle: '',
         skills: [] as string[],
         skillsText: '',
     });
+
+    const openDatePicker = (form: string, field: string, currentVal: string) => {
+        setDatePickerTarget({ form, field });
+        if (currentVal) {
+            const [m, y] = currentVal.split(' ');
+            const monthIdx = months.indexOf(m);
+            if (monthIdx !== -1) setSelectedMonth(monthIdx);
+            if (y) setSelectedYear(parseInt(y));
+        }
+        setShowDatePicker(true);
+    };
+
+    const handleConfirmDate = () => {
+        const dateStr = `${months[selectedMonth]} ${selectedYear}`;
+        if (datePickerTarget?.form === 'education') {
+            setEducationForm(prev => ({ ...prev, [datePickerTarget.field]: dateStr }));
+        } else if (datePickerTarget?.form === 'employment') {
+            setEmploymentForm(prev => ({ ...prev, [datePickerTarget.field]: dateStr }));
+        }
+        setShowDatePicker(false);
+    };
 
     useEffect(() => {
         loadUserProfile();
@@ -97,6 +130,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 phone: profile?.phone || '',
                 location: profile?.location || '',
                 bio: profile?.bio || '',
+                jobTitle: profile?.jobTitle || '',
                 skills: profile?.skills || [],
                 skillsText: (profile?.skills || []).join(', '),
             });
@@ -352,6 +386,31 @@ export default function EditProfileScreen({ navigation }: any) {
         setShowEmploymentModal(false);
     };
 
+    const generateAIBio = async () => {
+        try {
+            setIsGeneratingBio(true);
+            const prompt = `Generate a professional summary for a freelancer named ${formData.firstName} with skills: ${formData.skills.join(', ') || 'various skills'}. The summary must be short, between 10 and 20 words. Return ONLY the summary text, no conversational filler.`;
+            const generatedBio = await aiService.sendAIQuery(prompt, user?._id || '', 'freelancer');
+
+            if (generatedBio) {
+                // Typing effect for "writing" feel in the input
+                let currentText = '';
+                const words = generatedBio.split(' ');
+                for (let i = 0; i < words.length; i++) {
+                    currentText += (i === 0 ? '' : ' ') + words[i];
+                    setFormData(prev => ({ ...prev, bio: currentText }));
+                    // Small delay between words
+                    await new Promise(resolve => setTimeout(resolve, 40));
+                }
+            }
+        } catch (error) {
+            console.error('Error generating AI bio:', error);
+            showAlert({ title: 'Error', message: 'Failed to generate AI summary', type: 'error' });
+        } finally {
+            setIsGeneratingBio(false);
+        }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -364,11 +423,10 @@ export default function EditProfileScreen({ navigation }: any) {
 
             // Update profile
             const savedProfile = await profileService.updateMyProfile({
-                firstName: formData.firstName,
-                lastName: formData.lastName,
                 phoneNumber: formData.phone, // Map phone to phoneNumber
                 location: formData.location,
                 bio: formData.bio,
+                jobTitle: formData.jobTitle,
                 skills: finalSkills,
                 avatar: profileImage || undefined,
                 portfolio: portfolio,
@@ -515,12 +573,39 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
                         </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Professional Title</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.jobTitle}
+                                onChangeText={(text) => handleInputChange('jobTitle', text)}
+                                placeholder="e.g. Senior Full Stack Developer"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
                     </Card>
 
                     <Card variant="outlined" style={styles.sectionCard}>
-                        <Text style={[styles.sectionTitle, { color: c.text }]}>Professional Summary</Text>
+                        <View style={styles.bioHeader}>
+                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Professional Summary</Text>
+                            <TouchableOpacity
+                                onPress={generateAIBio}
+                                disabled={isGeneratingBio}
+                                style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                            >
+                                {isGeneratingBio ? (
+                                    <ActivityIndicator size="small" color={c.primary} />
+                                ) : (
+                                    <>
+                                        <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
+                                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
-                            style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                            style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border, marginTop: 16 }]}
                             value={formData.bio}
                             onChangeText={(text) => handleInputChange('bio', text)}
                             multiline
@@ -907,26 +992,32 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Start Date *</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                    value={educationForm.startDate}
-                                    onChangeText={(text) => setEducationForm(prev => ({ ...prev, startDate: text }))}
-                                    placeholder="2020"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <View style={[styles.inputGroup, { flex: 1 }]}>
+                                    <Text style={[styles.label, { color: c.subtext }]}>Start Date *</Text>
+                                    <TouchableOpacity
+                                        style={[styles.dateInput, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}
+                                        onPress={() => openDatePicker('education', 'startDate', educationForm.startDate)}
+                                    >
+                                        <Text style={{ color: educationForm.startDate ? c.text : c.subtext }}>
+                                            {educationForm.startDate || 'Select Date'}
+                                        </Text>
+                                        <Ionicons name="calendar-outline" size={18} color={c.subtext} />
+                                    </TouchableOpacity>
+                                </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>End Date (or leave empty if current)</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                    value={educationForm.endDate}
-                                    onChangeText={(text) => setEducationForm(prev => ({ ...prev, endDate: text }))}
-                                    placeholder="2024"
-                                    placeholderTextColor={c.subtext}
-                                />
+                                <View style={[styles.inputGroup, { flex: 1 }]}>
+                                    <Text style={[styles.label, { color: c.subtext }]}>End Date</Text>
+                                    <TouchableOpacity
+                                        style={[styles.dateInput, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}
+                                        onPress={() => openDatePicker('education', 'endDate', educationForm.endDate)}
+                                    >
+                                        <Text style={{ color: educationForm.endDate ? c.text : c.subtext }}>
+                                            {educationForm.endDate || 'Present'}
+                                        </Text>
+                                        <Ionicons name="calendar-outline" size={18} color={c.subtext} />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
 
                             <Button
@@ -1044,26 +1135,32 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Start Date *</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                    value={employmentForm.startDate}
-                                    onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, startDate: text }))}
-                                    placeholder="Jan 2020"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <View style={[styles.inputGroup, { flex: 1 }]}>
+                                    <Text style={[styles.label, { color: c.subtext }]}>Start Date *</Text>
+                                    <TouchableOpacity
+                                        style={[styles.dateInput, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}
+                                        onPress={() => openDatePicker('employment', 'startDate', employmentForm.startDate)}
+                                    >
+                                        <Text style={{ color: employmentForm.startDate ? c.text : c.subtext }}>
+                                            {employmentForm.startDate || 'Select Date'}
+                                        </Text>
+                                        <Ionicons name="calendar-outline" size={18} color={c.subtext} />
+                                    </TouchableOpacity>
+                                </View>
 
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>End Date (or leave empty if current)</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                    value={employmentForm.endDate}
-                                    onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, endDate: text }))}
-                                    placeholder="Dec 2023"
-                                    placeholderTextColor={c.subtext}
-                                />
+                                <View style={[styles.inputGroup, { flex: 1 }]}>
+                                    <Text style={[styles.label, { color: c.subtext }]}>End Date</Text>
+                                    <TouchableOpacity
+                                        style={[styles.dateInput, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}
+                                        onPress={() => openDatePicker('employment', 'endDate', employmentForm.endDate)}
+                                    >
+                                        <Text style={{ color: employmentForm.endDate ? c.text : c.subtext }}>
+                                            {employmentForm.endDate || 'Present'}
+                                        </Text>
+                                        <Ionicons name="calendar-outline" size={18} color={c.subtext} />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
 
                             <View style={styles.inputGroup}>
@@ -1089,6 +1186,63 @@ export default function EditProfileScreen({ navigation }: any) {
                     </View>
                 </View>
             </Modal>
+
+            {/* Date Picker Modal */}
+            <Modal
+                visible={showDatePicker}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDatePicker(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.datePickerContent, { backgroundColor: c.background }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
+                            <Text style={[styles.modalTitle, { color: c.text }]}>Select Date</Text>
+                            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                <Ionicons name="close" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.pickerRow}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.pickerLabel, { color: c.subtext }]}>Month</Text>
+                                <ScrollView style={{ height: 200 }}>
+                                    {months.map((m, i) => (
+                                        <TouchableOpacity
+                                            key={m}
+                                            style={[styles.pickerItem, selectedMonth === i && { backgroundColor: c.primary + '20' }]}
+                                            onPress={() => setSelectedMonth(i)}
+                                        >
+                                            <Text style={[styles.pickerItemText, { color: selectedMonth === i ? c.primary : c.text }]}>{m}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.pickerLabel, { color: c.subtext }]}>Year</Text>
+                                <ScrollView style={{ height: 200 }}>
+                                    {years.map((y) => (
+                                        <TouchableOpacity
+                                            key={y}
+                                            style={[styles.pickerItem, selectedYear === y && { backgroundColor: c.primary + '20' }]}
+                                            onPress={() => setSelectedYear(y)}
+                                        >
+                                            <Text style={[styles.pickerItemText, { color: selectedYear === y ? c.primary : c.text }]}>{y}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        </View>
+
+                        <Button
+                            title="Confirm"
+                            onPress={handleConfirmDate}
+                            style={{ margin: 20 }}
+                        />
+                    </View>
+                </View>
+            </Modal >
         </>
     );
 }
@@ -1200,6 +1354,23 @@ const styles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 22,
     },
+    bioHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    aiBioBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 6,
+    },
+    aiBioText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -1234,6 +1405,31 @@ const styles = StyleSheet.create({
     portfolioDesc: {
         fontSize: 13,
         lineHeight: 18,
+    },
+    previewImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 12,
+        marginBottom: 12,
+    },
+    changeImageButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+    },
+    uploadButton: {
+        height: 120,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    uploadText: {
+        fontSize: 14,
+        fontWeight: '500',
     },
     listItem: {
         flexDirection: 'row',
@@ -1332,5 +1528,53 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '700',
+    },
+    dateInput: {
+        height: 50,
+        borderRadius: 12,
+        borderWidth: 1,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    datePickerContent: {
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        paddingBottom: 40,
+    },
+    pickerRow: {
+        flexDirection: 'row',
+        padding: 20,
+        gap: 20,
+    },
+    pickerLabel: {
+        fontSize: 12,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    pickerItem: {
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderRadius: 8,
+    },
+    pickerItemText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    radioText: {
+        fontSize: 15,
+        fontWeight: '600',
     },
 });

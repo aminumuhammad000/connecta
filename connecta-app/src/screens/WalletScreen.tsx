@@ -140,7 +140,7 @@ const WalletScreen = () => {
           <Text style={[styles.screenTitle, { color: c.text }]}>Wallet</Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('WithdrawalSetup')}>
-          <MaterialIcons name="settings" size={24} color={c.text} />
+          <MaterialIcons name="add" size={28} color={c.text} />
         </TouchableOpacity>
       </View>
 

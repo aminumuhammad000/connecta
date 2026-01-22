@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Animated, Image, Dimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -12,10 +11,13 @@ import Avatar from '../components/Avatar';
 import dashboardService from '../services/dashboardService';
 import jobService from '../services/jobService';
 import * as profileService from '../services/profileService';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import ProfileCompletionModal from '../components/ProfileCompletionModal';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 interface JobRec {
   id: string;
@@ -28,8 +30,21 @@ interface JobRec {
   postedAgo: string;
 }
 
-const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
+interface Job {
+  _id: string;
+  title: string;
+  company: string;
+  budget: number;
+  type: string;
+  location: string;
+  skills: string[];
+  postedAgo: string;
+}
+
+const FreelancerDashboardScreen: React.FC<any> = () => {
   const c = useThemeColors();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const { user } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -37,6 +52,7 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
+  const [unreadCount, setUnreadCount] = useState(2); // Mocked for now
 
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
@@ -166,104 +182,141 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
           }
         >
-          {/* Header with Gradient */}
-          <View
-            style={[
-              styles.header,
-              {
-                backgroundColor: c.isDark ? '#111827' : c.primary,
-              },
-            ]}
-          >
-            <View style={styles.headerTop}>
-              <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
-                <MaterialIcons name="menu" size={24} color="#fff" />
-              </TouchableOpacity>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('Notifications')}
-                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]}
-                >
-                  <MaterialIcons name="notifications-none" size={20} color="#fff" />
+          {/* Header */}
+          <View style={{ backgroundColor: c.background }}>
+            <View style={[styles.header, {
+              paddingTop: insets.top + 8,
+              paddingBottom: 80, // Increased height for overlap
+              backgroundColor: '#FF7F50', // Coral
+            }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.iconButton}>
+                  <MaterialIcons name="menu" size={24} color="#FFF" />
                 </TouchableOpacity>
-                <AIButton onPress={() => navigation.navigate('ConnectaAI')} size={18} />
+                <View>
+                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>Welcome back 👋</Text>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || 'User'}</Text>
+                </View>
               </View>
-            </View>
-            <View style={styles.headerContent}>
-              <Text style={styles.greeting}>Welcome back,</Text>
-              <Text style={styles.name}>{userName}!</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('ConnectaAI')} style={styles.iconButton}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <MaterialIcons name="auto-awesome" size={20} color="#FFF" />
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconButton}>
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="notifications-outline" size={22} color="#FFF" />
+                    {unreadCount > 0 && (
+                      <View style={{ position: 'absolute', top: 8, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: '#FF7F50' }} />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
-          {/* Stats Cards */}
-          <View style={styles.statsContainer}>
-            <Card variant="elevated" padding={16} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: c.primary + '22' }]}>
-                <MaterialIcons name="description" size={20} color={c.primary} />
+          {/* Stats Overview - Overlapping Header */}
+          <View style={{ flexDirection: 'row', paddingHorizontal: 20, marginTop: -50, marginBottom: 24, gap: 12, zIndex: 20, elevation: 20 }}>
+            {/* Active Proposals */}
+            <View style={{ flex: 1, backgroundColor: c.card, borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: c.border }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(59, 130, 246, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="description" size={18} color="#3B82F6" />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>{stats?.activeProposals || 0}</Text>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Active Proposals</Text>
-            </Card>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{stats.activeProposals}</Text>
+                <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Active</Text>
+              </View>
+            </View>
 
-            <Card variant="elevated" padding={16} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: '#F59E0B22' }]}>
-                <MaterialIcons name="check-circle" size={20} color="#F59E0B" />
+            {/* Completed Jobs */}
+            <View style={{ flex: 1, backgroundColor: c.card, borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: c.border }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="check-circle" size={18} color="#10B981" />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>{stats?.completedJobs || 0}</Text>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Completed Jobs</Text>
-            </Card>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{stats.completedJobs}</Text>
+                <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Completed</Text>
+              </View>
+            </View>
 
-            <Card variant="elevated" padding={16} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: '#10B98122' }]}>
-                <MaterialIcons name="attach-money" size={20} color="#10B981" />
+            {/* Total Earnings */}
+            <View style={{ flex: 1, backgroundColor: c.card, borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: c.border }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(245, 158, 11, 0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialIcons name="attach-money" size={18} color="#F59E0B" />
               </View>
-              <Text style={[styles.statValue, { color: c.text }]}>${stats?.totalEarnings || '0'}</Text>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Total Earnings</Text>
-            </Card>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>${stats.totalEarnings}</Text>
+                <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Earned</Text>
+              </View>
+            </View>
           </View>
 
           {/* Quick Actions */}
-          <View style={styles.section}>
+          <View style={{ marginBottom: 12 }}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
-              <Button
-                title="Browse All Jobs"
-                onPress={() => navigation.navigate('Gigs')}
-                size="small"
-                variant="ghost"
-              />
             </View>
-
-            <View style={styles.quickActions}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+            >
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('Proposals')}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="description" size={20} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>Proposals</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
+                  <Ionicons name="document-text" size={24} color={c.primary} />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('FreelancerProjects')}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="work" size={20} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>My Jobs</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
+                  <Ionicons name="briefcase" size={24} color="#10B981" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('Wallet')}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="account-balance-wallet" size={20} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>My Wallet</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
+                  <Ionicons name="wallet" size={24} color="#F59E0B" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Wallet</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="groups" size={20} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>Team Projects</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
+                  <Ionicons name="people" size={24} color="#6366F1" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
               </TouchableOpacity>
-            </View>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('Settings')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
+                  <Ionicons name="settings" size={24} color="#8B5CF6" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Settings</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
 
           {/* Recommended Jobs */}
@@ -279,79 +332,99 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
               {recommendedJobs.length > 0 ? (
                 recommendedJobs.map((job) => {
                   if (!job) return null;
+                  const isInternal = !job.isExternal;
+                  const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
+
                   return (
-                    <Card key={job._id} variant="elevated" padding={16}>
-                      <View style={styles.jobCard}>
-                        <View style={styles.jobHeader}>
-                          <View style={{ flex: 1 }}>
-                            <View style={styles.jobTitleRow}>
-                              <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
-                                {job.title}
+                    <TouchableOpacity
+                      key={job._id}
+                      activeOpacity={0.7}
+                      onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                      style={{ marginBottom: 4 }}
+                    >
+                      <View style={{
+                        backgroundColor: c.card,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: c.border,
+                        padding: 20,
+                        gap: 16
+                      }}>
+                        {/* Header: Title & Save */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                          <View style={{ flex: 1, gap: 4 }}>
+                            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22 }}>
+                              {job.title}
+                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
+                                {job.company || 'Confidential'} • {new Date(job.createdAt).toLocaleDateString()}
                               </Text>
-                              {job.isExternal ? (
-                                <Badge label={job.source || "External"} variant="info" size="small" />
-                              ) : (
-                                <Badge label="Connecta" variant="success" size="small" />
+                              {isInternal && (
+                                <MaterialIcons name="verified" size={16} color="#FF7F50" />
                               )}
                             </View>
-                            <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
                           </View>
-
                           <TouchableOpacity onPress={() => toggleLikeGig(job._id)}>
-                            <Animated.View style={{ transform: [{ scale: scaleAnims[job._id] || 1 }] }}>
-                              <Ionicons
-                                name={likedGigs.has(job._id) ? "heart" : "heart-outline"}
-                                size={24}
-                                color={likedGigs.has(job._id) ? "#ef4444" : c.subtext}
-                              />
-                            </Animated.View>
+                            <Ionicons
+                              name={likedGigs.has(job._id) ? "bookmark" : "bookmark-outline"}
+                              size={22}
+                              color={likedGigs.has(job._id) ? c.primary : c.subtext}
+                            />
                           </TouchableOpacity>
                         </View>
 
-                        <View style={styles.jobMeta}>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.text }]}>${job.budget}</Text>
-                          </View>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.subtext }]}>{new Date(job.createdAt).toLocaleDateString()}</Text>
-                          </View>
+                        {/* Badges Row */}
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           <Badge label={job.jobType} variant="neutral" size="small" />
+                          <Badge label={job.locationType || 'Remote'} variant="neutral" size="small" />
+                          <Badge label={`$${job.budget}`} variant="custom" customColor="#FF7F50" size="small" />
                         </View>
 
-                        <View style={styles.skillsRow}>
-                          {job.skills.slice(0, 3).map((skill: string, idx: number) => (
-                            <Badge key={idx} label={skill} variant="info" size="small" />
-                          ))}
-                        </View>
+                        {/* Description Preview */}
+                        <Text style={{ fontSize: 13, color: c.subtext, lineHeight: 20 }} numberOfLines={2}>
+                          {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : 'No description available')}
+                        </Text>
 
-                        <View style={styles.jobActions}>
-                          <Button
-                            title="View Details"
+                        {/* Footer: Skills & Apply */}
+                        <View style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingTop: 12,
+                          borderTopWidth: 1,
+                          borderTopColor: c.border,
+                          gap: 12
+                        }}>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>
+                            {job.skills && job.skills.slice(0, 2).map((skill: string, idx: number) => (
+                              <Text key={idx} style={{ fontSize: 11, color: c.subtext, backgroundColor: c.background, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, overflow: 'hidden', fontWeight: '500' }}>
+                                {skill}
+                              </Text>
+                            ))}
+                            {job.skills && job.skills.length > 2 && (
+                              <Text style={{ fontSize: 11, color: c.subtext, paddingVertical: 4 }}>+{job.skills.length - 2} more</Text>
+                            )}
+                          </View>
+
+                          <TouchableOpacity
                             onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                            variant="outline"
-                            size="small"
-                            style={{ flex: 1 }}
-                          />
-                          <Button
-                            title={job.isExternal ? "Visit Job" : "Apply Now"}
-                            onPress={() => {
-                              if (job.isExternal && job.applyUrl) {
-                                import('react-native').then(({ Linking }) => {
-                                  Linking.openURL(job.applyUrl!);
-                                });
-                              } else {
-                                navigation.navigate('JobDetail', { id: job._id });
-                              }
+                            style={{
+                              backgroundColor: '#FF7F50',
+                              paddingHorizontal: 14,
+                              paddingVertical: 8,
+                              borderRadius: 20,
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 6
                             }}
-                            variant="primary"
-                            size="small"
-                            style={{ flex: 1 }}
-                          />
+                          >
+                            <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Apply</Text>
+                            <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
+                          </TouchableOpacity>
                         </View>
                       </View>
-                    </Card>
+                    </TouchableOpacity>
                   );
                 })
               ) : (
@@ -381,16 +454,28 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    backgroundColor: '#FFF', // Fallback
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 5,
+    zIndex: 10,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
   },
   menuBtn: {
     width: 40,
@@ -476,43 +561,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 20,
   },
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   quickAction: {
-    flex: 1,
-    height: 90,
-    borderRadius: 20,
-    borderWidth: 1,
+    alignItems: 'center',
+    width: 70,
+    marginRight: 4,
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    marginBottom: 6,
   },
   quickActionText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
+    letterSpacing: -0.5,
   },
   seeAll: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '500',
   },
   jobCard: {
     gap: 12,

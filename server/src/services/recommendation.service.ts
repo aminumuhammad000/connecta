@@ -114,4 +114,90 @@ export class RecommendationService {
             throw error;
         }
     }
+
+    /**
+     * Match a newly created job against all freelancer profiles.
+     * If relevance > 85%, store the match and potentially send an immediate email.
+     */
+    public async processNewJob(jobId: string) {
+        try {
+            const job = await Job.findById(jobId);
+            if (!job || job.status !== 'active') return;
+
+            // 1. Get all freelancer profiles
+            const profiles = await Profile.find({
+                jobNotificationFrequency: { $in: ['daily', 'weekly', 'relevant_only'] }
+            }).populate('user', 'firstName email');
+
+            const jobSkills = new Set(job.skills || []);
+            const jobCategory = job.category;
+            const jobTitle = job.title.toLowerCase();
+
+            const matches = [];
+            const JobMatch = (await import("../models/JobMatch.model")).default;
+            const { sendGigNotificationEmail } = await import("./email.service");
+
+            for (const profile of profiles) {
+                let score = 0;
+                let maxPossibleScore = 4.0; // Skills (1.0) + Category (0.5) + Title (0.5) + Internal (2.0)
+
+                // 1. Skill Match (0 to 1.0)
+                if (profile.skills && profile.skills.length > 0) {
+                    let matchCount = 0;
+                    job.skills.forEach(s => {
+                        if (profile.skills!.includes(s)) matchCount++;
+                    });
+                    score += (matchCount / Math.max(job.skills.length, 1)) * 1.0;
+                }
+
+                // 2. Category Match (0.5)
+                if (jobCategory && profile.jobCategories?.includes(jobCategory)) {
+                    score += 0.5;
+                }
+
+                // 3. Title Match (0.5)
+                if (profile.jobTitle && jobTitle.includes(profile.jobTitle.toLowerCase())) {
+                    score += 0.5;
+                }
+
+                // 4. Internal Job Boost (2.0)
+                if (!job.isExternal) {
+                    score += 2.0;
+                }
+
+                // Calculate percentage (0 to 100)
+                const relevancePercentage = (score / maxPossibleScore) * 100;
+
+                // Threshold: 85%
+                if (relevancePercentage >= 85) {
+                    const frequency = profile.jobNotificationFrequency || 'relevant_only';
+
+                    // Store the match
+                    await JobMatch.create({
+                        user: profile.user,
+                        job: job._id,
+                        score: relevancePercentage,
+                        notificationFrequency: frequency,
+                        isEmailed: frequency === 'relevant_only' // Will be emailed immediately
+                    });
+
+                    // If 'relevant_only', send email immediately
+                    if (frequency === 'relevant_only') {
+                        const user: any = profile.user;
+                        if (user && user.email) {
+                            await sendGigNotificationEmail(
+                                user.email,
+                                user.firstName || 'Freelancer',
+                                job.title,
+                                `https://myconnecta.ng/jobs/${job._id}`,
+                                job.skills
+                            );
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error in processNewJob:", error);
+        }
+    }
 }

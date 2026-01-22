@@ -165,7 +165,7 @@ const PublicJobDetailScreen: React.FC = () => {
                             <View style={{ flex: 1 }}>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                     <Text style={[styles.clientName, { color: c.text }]}>
-                                        {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || 'Unknown Client')}
+                                        {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? 'External Client' : 'Unknown Client'))}
                                     </Text>
                                     {job.paymentVerified && <MaterialIcons name="verified" size={14} color="#22C55E" />}
                                 </View>

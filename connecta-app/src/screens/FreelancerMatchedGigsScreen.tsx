@@ -12,7 +12,7 @@ import { Job } from '../types';
 const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'internal' | 'external' | 'fixed' | 'hourly' | 'remote'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'internal' | 'external' | 'fixed' | 'hourly' | 'remote' | 'entry' | 'intermediate' | 'expert'>('all');
   const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
   const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
   const [dismissedGigs, setDismissedGigs] = useState<Set<string>>(new Set());
@@ -154,6 +154,9 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
     if (selectedFilter === 'fixed' && job.budgetType !== 'fixed') return false;
     if (selectedFilter === 'hourly' && job.budgetType !== 'hourly') return false;
     if (selectedFilter === 'remote' && job.locationType !== 'remote') return false;
+    if (selectedFilter === 'entry' && job.experienceLevel !== 'Entry') return false;
+    if (selectedFilter === 'intermediate' && job.experienceLevel !== 'Intermediate') return false;
+    if (selectedFilter === 'expert' && job.experienceLevel !== 'Expert') return false;
 
     // Filter by search query
     if (searchQuery) {
@@ -191,7 +194,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 84 }} showsVerticalScrollIndicator={false}>
-          {/* Search Bar */}
+          {/* Search & Filters */}
           <View style={styles.section}>
             <View style={[styles.searchBar, { backgroundColor: c.card, borderColor: c.border }]}>
               <MaterialIcons name="search" size={20} color={c.subtext} />
@@ -209,99 +212,63 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
               )}
             </View>
 
-            {/* Filter Chips */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
-              <View style={styles.filterChips}>
-                {/* All Jobs */}
+            {/* Primary Source Filter (Segmented Control) */}
+            <View style={{
+              flexDirection: 'row',
+              backgroundColor: c.card,
+              borderRadius: 16,
+              padding: 4,
+              marginTop: 16,
+              borderWidth: 1,
+              borderColor: c.border
+            }}>
+              {(['all', 'internal', 'external'] as const).map((filter) => (
                 <TouchableOpacity
-                  style={[
-                    styles.filterChip,
-                    selectedFilter === 'all'
-                      ? { backgroundColor: c.primary, borderWidth: 0 }
-                      : { backgroundColor: c.card, borderColor: c.border }
-                  ]}
-                  onPress={() => setSelectedFilter('all')}
+                  key={filter}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 12,
+                    backgroundColor: selectedFilter === filter ? c.primary : 'transparent',
+                  }}
+                  onPress={() => setSelectedFilter(filter)}
+                  activeOpacity={0.8}
                 >
-                  <Text style={selectedFilter === 'all' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    All
+                  <Text style={{
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: selectedFilter === filter ? '#FFF' : c.subtext,
+                    textTransform: 'capitalize'
+                  }}>
+                    {filter} Jobs
                   </Text>
                 </TouchableOpacity>
+              ))}
+            </View>
 
-                {/* Internal */}
+            {/* Secondary Filters */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ gap: 8 }}>
+              {['fixed', 'hourly', 'remote', 'entry', 'intermediate', 'expert'].map((filter) => (
                 <TouchableOpacity
+                  key={filter}
                   style={[
                     styles.filterChip,
-                    selectedFilter === 'internal'
+                    selectedFilter === filter
                       ? { backgroundColor: c.primary, borderWidth: 0 }
                       : { backgroundColor: c.card, borderColor: c.border }
                   ]}
-                  onPress={() => setSelectedFilter('internal')}
+                  onPress={() => setSelectedFilter(filter as any)}
                 >
-                  <MaterialIcons name="verified-user" size={14} color={selectedFilter === 'internal' ? '#FFF' : c.text} style={{ marginRight: 4 }} />
-                  <Text style={selectedFilter === 'internal' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    Internal
+                  <Text style={selectedFilter === filter ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
                   </Text>
                 </TouchableOpacity>
-
-                {/* External */}
-                <TouchableOpacity
-                  style={[
-                    styles.filterChip,
-                    selectedFilter === 'external'
-                      ? { backgroundColor: c.primary, borderWidth: 0 }
-                      : { backgroundColor: c.card, borderColor: c.border }
-                  ]}
-                  onPress={() => setSelectedFilter('external')}
-                >
-                  <MaterialIcons name="public" size={14} color={selectedFilter === 'external' ? '#FFF' : c.text} style={{ marginRight: 4 }} />
-                  <Text style={selectedFilter === 'external' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    External
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Existing filters */}
-                <TouchableOpacity
-                  style={[
-                    styles.filterChip,
-                    selectedFilter === 'fixed'
-                      ? { backgroundColor: c.primary, borderWidth: 0 }
-                      : { backgroundColor: c.card, borderColor: c.border }
-                  ]}
-                  onPress={() => setSelectedFilter('fixed')}
-                >
-                  <Text style={selectedFilter === 'fixed' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    Fixed Price
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.filterChip,
-                    selectedFilter === 'hourly'
-                      ? { backgroundColor: c.primary, borderWidth: 0 }
-                      : { backgroundColor: c.card, borderColor: c.border }
-                  ]}
-                  onPress={() => setSelectedFilter('hourly')}
-                >
-                  <Text style={selectedFilter === 'hourly' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    Hourly
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.filterChip,
-                    selectedFilter === 'remote'
-                      ? { backgroundColor: c.primary, borderWidth: 0 }
-                      : { backgroundColor: c.card, borderColor: c.border }
-                  ]}
-                  onPress={() => setSelectedFilter('remote')}
-                >
-                  <Text style={selectedFilter === 'remote' ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    Remote
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              ))}
             </ScrollView>
           </View>
+
           {/* Jobs List */}
           <View style={styles.section}>
             <Text style={[styles.resultsText, { color: c.subtext, marginBottom: 12 }]}>{filteredJobs.length} jobs found</Text>
@@ -310,125 +277,107 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
               {filteredJobs.length > 0 ? (
                 filteredJobs.map(job => {
                   if (!job) return null;
+                  const isInternal = !job.isExternal;
+                  const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
+
                   return (
                     <Animated.View
                       key={job._id}
                       style={{ opacity: fadeAnims[job._id] || 1, transform: [{ scale: fadeAnims[job._id] || 1 }] }}
                     >
-                      <Card variant="elevated" padding={16}>
-                        <View style={styles.gigCard}>
-                          <View style={styles.gigHeader}>
-                            <View style={{ flex: 1 }}>
-                              <View style={styles.titleRow}>
-                                <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
-                                  {job.title}
+                      <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => navigation.navigate('JobDetail', { id: job._id })}
+                        style={{ marginBottom: 4 }}
+                      >
+                        <View style={{
+                          backgroundColor: c.card,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor: c.border,
+                          padding: 20,
+                          gap: 16
+                        }}>
+                          {/* Header: Title & Save */}
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                            <View style={{ flex: 1, gap: 4 }}>
+                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22 }}>
+                                {job.title}
+                              </Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
+                                  {job.company || 'Confidential'} • {job.posted ? formatPostedTime(job.posted) : 'Recently'}
                                 </Text>
-                                {job.isExternal ? (
-                                  <Badge label={job.source || "External"} variant="info" size="small" />
-                                ) : (
-                                  <Badge label="Connecta" variant="success" size="small" />
+                                {isInternal && (
+                                  <MaterialIcons name="verified" size={16} color="#FF7F50" />
                                 )}
                               </View>
-                              <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>
                             </View>
-
-                            <View style={{ flexDirection: 'row', gap: 12 }}>
-                              <TouchableOpacity onPress={() => toggleLikeGig(job._id)}>
-                                <Animated.View style={{ transform: [{ scale: scaleAnims[job._id] || 1 }] }}>
-                                  <Ionicons
-                                    name={likedGigs.has(job._id) ? "heart" : "heart-outline"}
-                                    size={24}
-                                    color={likedGigs.has(job._id) ? "#ef4444" : c.subtext}
-                                  />
-                                </Animated.View>
-                              </TouchableOpacity>
-
-                              <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
-                                <MaterialIcons
-                                  name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
-                                  size={24}
-                                  color={savedGigs.has(job._id) ? c.primary : c.subtext}
-                                />
-                              </TouchableOpacity>
-                            </View>
+                            <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
+                              <MaterialIcons
+                                name={savedGigs.has(job._id) ? "bookmark" : "bookmark-border"}
+                                size={26}
+                                color={savedGigs.has(job._id) ? c.primary : c.subtext}
+                              />
+                            </TouchableOpacity>
                           </View>
 
-                          <Text style={[styles.description, { color: c.subtext }]} numberOfLines={2}>
+                          {/* Badges Row */}
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                            {job.budgetType && (
+                              <Badge label={job.budgetType === 'fixed' ? 'Fixed Price' : 'Hourly'} variant="neutral" size="small" />
+                            )}
+                            {job.locationType !== 'remote' && (
+                              <Badge label={job.location || 'On-site'} variant="neutral" size="small" />
+                            )}
+                            <Badge label={job.budget || 'Negotiable'} variant="custom" customColor={job.isExternal ? '#3B82F6' : '#FF7F50'} size="small" />
+                          </View>
+
+                          {/* Description Preview */}
+                          <Text style={{ fontSize: 14, color: c.subtext, lineHeight: 22 }} numberOfLines={2}>
                             {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : 'No description available')}
                           </Text>
 
-                          <View style={styles.gigMeta}>
-                            <View style={styles.metaItem}>
-                              <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                              <Text style={[styles.metaText, { color: c.text }]}>{job.budget || 'N/A'}</Text>
-                            </View>
-                            <View style={styles.metaItem}>
-                              <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                              <Text style={[styles.metaText, { color: c.subtext }]}>
-                                {job.posted ? formatPostedTime(job.posted) : job.postedTime || 'Recently'}
-                              </Text>
-                            </View>
-                            {/* Physical Job Indicator */}
-                            {job.locationType !== 'remote' && (
-                              <View style={styles.metaItem}>
-                                <MaterialIcons name="place" size={16} color={c.primary} />
-                                <Text style={[styles.metaText, { color: c.primary }]}>{job.location || 'On-site'}</Text>
-                              </View>
-                            )}
-
-                            {job.budgetType && (
-                              <Badge
-                                label={job.budgetType === 'fixed' ? 'Fixed' : 'Hourly'}
-                                variant="neutral"
-                                size="small"
-                              />
-                            )}
-                          </View>
-
-                          {/* Category Badge */}
-                          {job.category && (
-                            <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                              <Badge
-                                label={job.category}
-                                variant="custom"
-                                customColor={
-                                  job.category === 'Technology' ? '#3B82F6' : // Blue
-                                    job.category === 'Health' ? '#EF4444' : // Red
-                                      job.category === 'Business' ? '#F59E0B' : // Amber
-                                        job.category === 'Creative' ? '#EC4899' : // Pink
-                                          job.category === 'Finance' ? '#10B981' : // Emerald
-                                            '#8B5CF6' // Default Violet
-                                }
-                                size="small"
-                              />
-                            </View>
-                          )}
-
-                          {job.skills && job.skills.length > 0 && (
-                            <View style={styles.skillsRow}>
-                              {job.skills.slice(0, 3).map((skill, idx) => (
-                                <Badge key={idx} label={skill} variant="info" size="small" />
+                          {/* Footer: Skills & Apply */}
+                          <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingTop: 12,
+                            borderTopWidth: 1,
+                            borderTopColor: c.border,
+                            gap: 12
+                          }}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>
+                              {job.skills && job.skills.slice(0, 2).map((skill, idx) => (
+                                <Text key={idx} style={{ fontSize: 12, color: c.subtext, backgroundColor: c.background, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, overflow: 'hidden', fontWeight: '500' }}>
+                                  {skill}
+                                </Text>
                               ))}
+                              {job.skills && job.skills.length > 2 && (
+                                <Text style={{ fontSize: 12, color: c.subtext, paddingVertical: 6, fontWeight: '500' }}>+{job.skills.length - 2}</Text>
+                              )}
                             </View>
-                          )}
 
-                          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
-                            <Button
-                              title="View Details"
-                              onPress={() => navigation.navigate('JobDetail', { id: job._id })}
-                              variant="outline"
-                              style={{ flex: 1 }}
-                            />
-                            <Button
-                              title="Apply Now"
+                            <TouchableOpacity
                               onPress={() => handleInterested(job._id)}
-                              variant="primary"
-                              style={{ flex: 1 }}
-                            />
+                              style={{
+                                backgroundColor: job.isExternal ? '#3B82F6' : '#FF7F50',
+                                paddingHorizontal: 14,
+                                paddingVertical: 8,
+                                borderRadius: 20,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 6
+                              }}
+                            >
+                              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Apply</Text>
+                              <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
+                            </TouchableOpacity>
                           </View>
-                        </View >
-                      </Card >
-                    </Animated.View >
+                        </View>
+                      </TouchableOpacity>
+                    </Animated.View>
                   );
                 })
               ) : (
@@ -568,6 +517,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 0
+  },
+  cardFooter: {
+    borderTopWidth: 1,
+    marginTop: 8,
   }
 });
 

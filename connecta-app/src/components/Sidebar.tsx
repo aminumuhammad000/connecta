@@ -9,12 +9,16 @@ import {
     TouchableWithoutFeedback,
     ScrollView,
     Modal,
+    Platform,
+    StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "../theme/theme";
 import Avatar from "./Avatar";
 import { useAuth } from "../context/AuthContext";
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 
 interface SidebarProps {
     isVisible: boolean;
@@ -22,11 +26,12 @@ interface SidebarProps {
     navigation: any;
 }
 
-const { width } = Dimensions.get("window");
-const SIDEBAR_WIDTH = width * 0.75;
+const { width, height } = Dimensions.get("window");
+const SIDEBAR_WIDTH = Math.min(width * 0.75, 340);
 
 export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps) {
     const c = useThemeColors();
+    const insets = useSafeAreaInsets();
     const { user, logout } = useAuth();
     const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -34,10 +39,12 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
     useEffect(() => {
         if (isVisible) {
             Animated.parallel([
-                Animated.timing(slideAnim, {
+                Animated.spring(slideAnim, {
                     toValue: 0,
-                    duration: 300,
                     useNativeDriver: true,
+                    damping: 20,
+                    mass: 0.8,
+                    stiffness: 100,
                 }),
                 Animated.timing(fadeAnim, {
                     toValue: 1,
@@ -54,7 +61,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                 }),
                 Animated.timing(fadeAnim, {
                     toValue: 0,
-                    duration: 250,
+                    duration: 200,
                     useNativeDriver: true,
                 }),
             ]).start();
@@ -75,13 +82,13 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
     };
 
     const menuItems = [
-        { icon: "person", label: "My Profile", screen: "Profile" },
-        { icon: "settings", label: "Settings", screen: "Settings" },
-        { icon: "account-balance-wallet", label: "Wallet", screen: user?.userType === "client" ? "ClientPayments" : "Wallet" },
-        { icon: "description", label: "Contracts", screen: user?.userType === "client" ? "Projects" : "FreelancerProjects" },
-        { icon: "help", label: "Help & Support", screen: "HelpSupport" },
-        { icon: "gavel", label: "Terms & Conditions", screen: "Terms" },
-        { icon: "info", label: "About Connecta", screen: "About" },
+        { icon: "person-outline", label: "My Profile", screen: "Profile", color: "#4F46E5" },
+        { icon: "settings-outline", label: "Settings", screen: "Settings", color: "#6B7280" },
+        { icon: "wallet-outline", label: "Wallet", screen: user?.userType === "client" ? "ClientPayments" : "Wallet", color: "#10B981" },
+        { icon: "document-text-outline", label: "Contracts", screen: user?.userType === "client" ? "Projects" : "FreelancerProjects", color: "#F59E0B" },
+        { icon: "help-circle-outline", label: "Help & Support", screen: "HelpSupport", color: "#EC4899" },
+        { icon: "shield-checkmark-outline", label: "Terms & Conditions", screen: "Terms", color: "#8B5CF6" },
+        { icon: "information-circle-outline", label: "About Connecta", screen: "About", color: "#3B82F6" },
     ];
 
     return (
@@ -90,18 +97,15 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
             visible={isVisible}
             onRequestClose={onClose}
             animationType="none"
+            statusBarTranslucent={true}
         >
             <View style={styles.overlay}>
-                {/* Backdrop */}
+                {/* Blur Backdrop */}
                 <TouchableWithoutFeedback onPress={onClose}>
-                    <Animated.View
-                        style={[
-                            styles.backdrop,
-                            {
-                                opacity: fadeAnim,
-                            }
-                        ]}
-                    />
+                    <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
+                        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.3)' }]} />
+                    </Animated.View>
                 </TouchableWithoutFeedback>
 
                 {/* Sidebar Content */}
@@ -112,66 +116,93 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                             width: SIDEBAR_WIDTH,
                             backgroundColor: c.card,
                             transform: [{ translateX: slideAnim }],
-                            borderTopRightRadius: 24,
-                            borderBottomRightRadius: 24,
                         },
                     ]}
                 >
-                    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
-                        <View style={styles.header}>
-                            <View style={styles.headerTop}>
-                                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                                    <MaterialIcons name="close" size={20} color={c.text} />
+                    {/* Header with Gradient */}
+                    <View style={styles.headerContainer}>
+                        <LinearGradient
+                            colors={c.gradients.primary}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
+                        >
+                            <View style={styles.headerContent}>
+                                <View style={styles.headerTopRow}>
+                                    <TouchableOpacity
+                                        onPress={onClose}
+                                        style={styles.closeButton}
+                                    >
+                                        <Ionicons name="close" size={24} color="white" />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={styles.profileSection}
+                                    onPress={() => { onClose(); navigation.navigate('Profile'); }}
+                                    activeOpacity={0.9}
+                                >
+                                    <View style={styles.avatarWrapper}>
+                                        <Avatar uri={user?.profileImage || user?.avatar} name={user?.firstName} size={52} />
+                                        <View style={styles.onlineBadge} />
+                                    </View>
+                                    <View style={styles.userInfo}>
+                                        <Text style={styles.userName} numberOfLines={1}>
+                                            {user?.firstName || 'User'}
+                                        </Text>
+                                        <View style={styles.roleBadge}>
+                                            <Text style={styles.roleText}>
+                                                {user?.userType === 'client' ? 'Client' : 'Freelancer'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
                                 </TouchableOpacity>
                             </View>
-                            <TouchableOpacity onPress={() => { onClose(); navigation.navigate('Profile'); }}>
-                                <View style={[styles.userInfo, { borderBottomColor: c.border }]}>
-                                    <View style={styles.avatarContainer}>
-                                        <Avatar uri={user?.profileImage || user?.avatar} name={user?.firstName} size={52} />
-                                        <View style={[styles.onlineIndicator, { backgroundColor: '#10B981' }]} />
-                                    </View>
-                                    <View style={{ marginLeft: 12, flex: 1 }}>
-                                        <Text style={[styles.userName, { color: c.text }]} numberOfLines={1}>
-                                            {user?.firstName || 'User'} {user?.lastName || ''}
-                                        </Text>
-                                        <Text style={[styles.userRole, { color: c.primary }]}>
-                                            {user?.userType === 'client' ? 'Client' : 'Freelancer'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
+                        </LinearGradient>
+                    </View>
 
-                        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 8 }}>
-                            {menuItems.map((item, index) => (
-                                <TouchableOpacity
-                                    key={`menu-item-${index}`}
-                                    style={styles.menuItem}
-                                    onPress={() => {
-                                        onClose();
-                                        if (item.screen) navigation.navigate(item.screen);
-                                    }}
-                                >
-                                    <MaterialIcons
+                    {/* Menu Items */}
+                    <ScrollView
+                        style={styles.menuScroll}
+                        contentContainerStyle={styles.menuContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {menuItems.map((item, index) => (
+                            <TouchableOpacity
+                                key={`menu-item-${index}`}
+                                style={[styles.menuItem, { borderBottomColor: c.border }]}
+                                onPress={() => {
+                                    onClose();
+                                    if (item.screen) navigation.navigate(item.screen);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.iconContainer, { backgroundColor: item.color + '15' }]}>
+                                    <Ionicons
                                         name={item.icon as any}
-                                        size={22}
-                                        color={c.subtext}
+                                        size={18}
+                                        color={item.color}
                                     />
-                                    <Text style={[styles.menuLabel, { color: c.text }]}>
-                                        {item.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-
-                        <View style={[styles.footer, { borderTopColor: c.border }]}>
-                            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-                                <MaterialIcons name="logout" size={20} color="#EF4444" />
-                                <Text style={[styles.menuLabel, { color: "#EF4444" }]}>Log Out</Text>
+                                </View>
+                                <Text style={[styles.menuLabel, { color: c.text }]}>
+                                    {item.label}
+                                </Text>
+                                <Ionicons name="chevron-forward" size={16} color={c.subtext} style={{ opacity: 0.5 }} />
                             </TouchableOpacity>
-                            <Text style={[styles.version, { color: c.subtext }]}>v1.0.0</Text>
-                        </View>
-                    </SafeAreaView>
+                        ))}
+                    </ScrollView>
+
+                    {/* Footer */}
+                    <View style={[styles.footer, { borderTopColor: c.border }]}>
+                        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                            <View style={[styles.iconContainer, { backgroundColor: '#EF444415', width: 32, height: 32, borderRadius: 10 }]}>
+                                <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+                            </View>
+                            <Text style={styles.logoutText}>Log Out</Text>
+                        </TouchableOpacity>
+                        <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0</Text>
+                    </View>
                 </Animated.View>
             </View>
         </Modal>
@@ -185,89 +216,141 @@ const styles = StyleSheet.create({
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(0,0,0,0.4)",
     },
     sidebar: {
         height: '100%',
         shadowColor: "#000",
-        shadowOffset: { width: 4, height: 0 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 10,
+        shadowOffset: { width: 10, height: 0 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 20,
+        borderTopRightRadius: 24,
+        borderBottomRightRadius: 24,
+        overflow: 'hidden',
     },
-    header: {
-        paddingHorizontal: 16,
-        paddingBottom: 8,
-        paddingTop: 8,
+    headerContainer: {
+        width: '100%',
     },
-    headerTop: {
+    headerGradient: {
+        width: '100%',
+        paddingBottom: 16,
+        // paddingTop handled dynamically via style prop
+    },
+    headerSafeArea: {
+        width: '100%',
+    },
+    headerContent: {
+        paddingHorizontal: 20,
+    },
+    headerTopRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     closeButton: {
         width: 32,
         height: 32,
         borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.2)',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.05)',
     },
-    userInfo: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingBottom: 16,
-        borderBottomWidth: StyleSheet.hairlineWidth,
+    profileSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
     },
-    avatarContainer: {
+    avatarWrapper: {
         position: 'relative',
+        marginRight: 12,
+        padding: 2,
+        backgroundColor: 'rgba(255,255,255,0.3)',
+        borderRadius: 40,
     },
-    onlineIndicator: {
+    onlineBadge: {
         position: 'absolute',
-        bottom: 0,
-        right: 0,
+        bottom: 2,
+        right: 2,
         width: 12,
         height: 12,
         borderRadius: 6,
+        backgroundColor: '#10B981',
         borderWidth: 2,
         borderColor: '#fff',
     },
-    userName: {
-        fontSize: 16,
-        fontWeight: "700",
-        marginBottom: 1,
-        letterSpacing: -0.3,
+    userInfo: {
+        flex: 1,
     },
-    userRole: {
+    userName: {
+        fontSize: 17,
+        fontWeight: "700",
+        color: 'white',
+        marginBottom: 2,
+        textShadowColor: 'rgba(0,0,0,0.1)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+    },
+    roleBadge: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+        alignSelf: 'flex-start',
+    },
+    roleText: {
         fontSize: 11,
+        fontWeight: '600',
+        color: 'white',
         textTransform: "uppercase",
-        letterSpacing: 0.8,
-        fontWeight: '700',
+        letterSpacing: 0.5,
+    },
+    menuScroll: {
+        flex: 1,
+    },
+    menuContent: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
     },
     menuItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        marginHorizontal: 12,
-        marginVertical: 2,
-        borderRadius: 24,
+        paddingVertical: 10,
+        marginBottom: 2,
+        borderRadius: 12,
+    },
+    iconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
     },
     menuLabel: {
         fontSize: 14,
-        marginLeft: 16,
         fontWeight: "500",
+        flex: 1,
     },
     footer: {
+        paddingVertical: 8, // Reduced from 12
+        paddingHorizontal: 20,
+        paddingBottom: Platform.OS === 'ios' ? 20 : 12, // Further reduced
         borderTopWidth: StyleSheet.hairlineWidth,
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        marginBottom: 8,
+    },
+    logoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6, // Reduced from 8
+    },
+    logoutText: {
+        fontSize: 15, // Reduced from 16
+        fontWeight: "600",
+        color: '#EF4444',
     },
     version: {
         textAlign: "center",
-        fontSize: 10,
-        marginTop: 8,
+        fontSize: 10, // Reduced from 11
+        marginTop: 4, // Reduced from 8
         fontWeight: '500',
         opacity: 0.4,
     },
