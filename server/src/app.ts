@@ -8,7 +8,6 @@ import connectDB from "./config/db.config";
 import agentRoute from "./routes/agentRoute"
 // import { initCronJobs } from "./services/cron.service";
 
-
 // routes 
 import userRoutes from "./routes/user.routes";
 import profileRoutes from "./routes/Profile.routes";
