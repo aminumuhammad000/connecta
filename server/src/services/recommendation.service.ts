@@ -1,6 +1,6 @@
 import User from "../models/user.model";
 import Profile from "../models/Profile.model";
-import Job from "../models/Job.model";
+import { Job } from "../models/Job.model";
 import { TFIDF } from "../utils/tfidf";
 
 export class RecommendationService {

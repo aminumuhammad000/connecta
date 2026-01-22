@@ -20,13 +20,43 @@ export const fundCollaboProject = async (id: string) => {
     return (response as any)?.data || response;
 };
 
+export const startWork = async (id: string) => {
+    const response = await post(`/api/collabo/${id}/start`, {});
+    return (response as any)?.data || response;
+};
+
+export const removeFromRole = async (roleId: string) => {
+    const response = await post(`/api/collabo/role/${roleId}/remove`, {});
+    return (response as any)?.data || response;
+};
+
+export const inviteToRole = async (roleId: string, freelancerId: string) => {
+    const response = await post(`/api/collabo/role/${roleId}/invite`, { freelancerId });
+    return (response as any)?.data || response;
+};
+
+export const addRole = async (projectId: string, roleData: { title: string; description: string; budget: number; skills: string[] }) => {
+    const response = await post(`/api/collabo/${projectId}/role`, roleData);
+    return (response as any)?.data || response;
+};
+
 export const getMyCollaboProjects = async () => {
     const response = await get('/api/collabo/my-projects');
     return (response as any)?.data || response;
 };
 
+export const getFreelancerCollaboProjects = async () => {
+    const response = await get('/api/collabo/freelancer-projects');
+    return (response as any)?.data || response;
+};
+
 export const acceptCollaboRole = async (roleId: string) => {
     const response = await post('/api/collabo/accept-role', { roleId });
+    return (response as any)?.data || response;
+};
+
+export const getRole = async (roleId: string) => {
+    const response = await get(`/api/collabo/role/${roleId}`);
     return (response as any)?.data || response;
 };
 

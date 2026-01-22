@@ -9,6 +9,9 @@ import CollaboMessage from '../models/CollaboMessage.model';
 import { getIO } from '../core/utils/socketIO';
 import CollaboFile from '../models/CollaboFile.model';
 import CollaboTask from '../models/CollaboTask.model';
+import User from '../models/user.model';
+// import { sendEmail } from './email.service';
+// import { getBaseTemplate } from '../utils/emailTemplates';
 
 class CollaboService {
     /**
@@ -117,6 +120,38 @@ class CollaboService {
         return project;
     }
 
+    async startWork(projectId: string, clientId: string) {
+        // 1. Get roles for notification purposes
+        const roles = await ProjectRole.find({ projectId });
+
+        // 2. Update project status to in_progress
+        const project = await CollaboProject.findByIdAndUpdate(
+            projectId,
+            { status: 'in_progress' },
+            { new: true }
+        ).populate('clientId', 'firstName lastName email');
+
+        if (!project) throw new Error("Project not found");
+
+        // 3. Notify all team members who have accepted
+        for (const role of roles) {
+            if (role.freelancerId) {
+                await Notification.create({
+                    userId: role.freelancerId,
+                    type: 'collabo_started',
+                    title: 'Work Started!',
+                    message: `${(project.clientId as any).firstName} has started work on "${project.title}"`,
+                    relatedId: projectId,
+                    relatedType: 'project',
+                    link: `/collabo/${projectId}`,
+                    isRead: false
+                });
+            }
+        }
+
+        return project;
+    }
+
     async autoInviteFreelancers(projectId: string) {
         try {
             const roles = await ProjectRole.find({ projectId, status: 'open' });
@@ -151,6 +186,19 @@ class CollaboService {
         return CollaboProject.find({ clientId }).populate('clientId', 'firstName lastName avatar').sort({ createdAt: -1 });
     }
 
+    async getFreelancerProjects(freelancerId: string) {
+        // Find all roles where this freelancer is assigned
+        const roles = await ProjectRole.find({ freelancerId, status: 'filled' });
+        const projectIds = roles.map(r => r.projectId);
+
+        // Get the projects
+        const projects = await CollaboProject.find({ _id: { $in: projectIds } })
+            .populate('clientId', 'firstName lastName avatar')
+            .sort({ createdAt: -1 });
+
+        return projects;
+    }
+
     async acceptRole(roleId: string, freelancerId: string) {
         // Transactions removed for standalone MongoDB compatibility
         try {
@@ -158,9 +206,13 @@ class CollaboService {
                 { _id: roleId, status: 'open' },
                 { freelancerId, status: 'filled' },
                 { new: true }
-            );
+            ).populate('freelancerId', 'firstName lastName email');
 
             if (!role) throw new Error("Role not found or already filled");
+
+            // Get project and client info
+            const project = await CollaboProject.findById(role.projectId).populate('clientId', 'firstName lastName email');
+            if (!project) throw new Error("Project not found");
 
             // Add to workspace channel (General)
             await CollaboWorkspace.findOneAndUpdate(
@@ -169,9 +221,160 @@ class CollaboService {
                 { arrayFilters: [{ "elem.name": "General" }] }
             );
 
+            // Notify client about acceptance
+            const freelancer = role.freelancerId as any;
+            const client = project.clientId as any;
+
+            await Notification.create({
+                userId: client._id,
+                type: 'proposal_accepted',
+                title: 'Team Member Joined!',
+                message: `${freelancer.firstName} ${freelancer.lastName} has accepted the ${role.title} position for "${project.title}"`,
+                relatedId: project._id,
+                relatedType: 'project',
+                link: `/collabo/${project._id}`,
+                isRead: false
+            });
+
+            // TODO: Email notification will be added after fixing circular dependency issue
+
             return role;
         } catch (error) {
             console.error("Accept Role Error:", error);
+            throw error;
+        }
+    }
+
+    async removeFromRole(roleId: string, clientId: string) {
+        try {
+            const role = await ProjectRole.findById(roleId).populate('freelancerId', 'firstName lastName email');
+            if (!role) throw new Error("Role not found");
+
+            const project = await CollaboProject.findById(role.projectId).populate('clientId', 'firstName lastName email');
+            if (!project) throw new Error("Project not found");
+
+            // Verify client owns this project
+            if (project.clientId._id.toString() !== clientId) {
+                throw new Error("Unauthorized: Only project owner can remove team members");
+            }
+
+            const removedFreelancer = role.freelancerId as any;
+
+            // Remove from role
+            role.freelancerId = undefined;
+            role.status = 'open';
+            await role.save();
+
+            // Remove from workspace channels
+            await CollaboWorkspace.findOneAndUpdate(
+                { projectId: role.projectId },
+                { $pull: { "channels.$[].roleIds": role._id } }
+            );
+
+            // Notify removed freelancer
+            if (removedFreelancer) {
+                await Notification.create({
+                    userId: removedFreelancer._id,
+                    type: 'system',
+                    title: 'Removed from Team',
+                    message: `You've been removed from "${project.title}"`,
+                    relatedId: project._id,
+                    relatedType: 'project',
+                    isRead: false
+                });
+
+                // Send email
+                // TODO: Re-enable email after fixing circular dependency
+                /*
+                try {
+                    const emailHtml = getBaseTemplate({
+                        title: 'Team Update',
+                        subject: 'Removed from project team',
+                        content: `
+                            <p>Hi ${removedFreelancer.firstName},</p>
+                            <p>You have been removed from the team for <strong>${project.title}</strong>.</p>
+                            <p>Thank you for your time on this project.</p>
+                        `
+                    });
+
+                    await sendEmail(
+                        removedFreelancer.email,
+                        `Removed from ${project.title}`,
+                        emailHtml
+                    );
+                } catch (emailError) {
+                    console.error('Failed to send removal email:', emailError);
+                }
+                */
+            }
+
+            return role;
+        } catch (error) {
+            console.error("Remove From Role Error:", error);
+            throw error;
+        }
+    }
+
+    async inviteToRole(roleId: string, freelancerId: string, clientId: string) {
+        try {
+            const role = await ProjectRole.findById(roleId);
+            if (!role) throw new Error("Role not found");
+
+            const project = await CollaboProject.findById(role.projectId).populate('clientId', 'firstName lastName email');
+            if (!project) throw new Error("Project not found");
+
+            // Verify client owns this project
+            if (project.clientId._id.toString() !== clientId) {
+                throw new Error("Unauthorized: Only project owner can invite team members");
+            }
+
+            const freelancer = await User.findById(freelancerId);
+            if (!freelancer) throw new Error("Freelancer not found");
+
+            // Create notification
+            await Notification.create({
+                userId: freelancerId,
+                type: 'collabo_invite',
+                title: 'Team Invitation',
+                message: `${(project.clientId as any).firstName} invited you to join "${project.title}" as ${role.title}`,
+                relatedId: roleId,
+                relatedType: 'project',
+                link: `/collabo/invite/${roleId}`,
+                isRead: false
+            });
+
+            // Send email
+            // TODO: Re-enable email after fixing circular dependency
+            /*
+            try {
+                const emailHtml = getBaseTemplate({
+                    title: 'You\'re Invited to Join a Team!',
+                    subject: `Invitation to join ${project.title}`,
+                    content: `
+                        <p>Hi ${freelancer.firstName},</p>
+                        <p><strong>${(project.clientId as any).firstName} ${(project.clientId as any).lastName}</strong> has invited you to join their team!</p>
+                        <h3 style="color: #111827; margin: 20px 0;">${project.title}</h3>
+                        <p><strong>Role:</strong> ${role.title}</p>
+                        <p><strong>Budget:</strong> $${role.budget}</p>
+                        <p>Review the invitation and accept to join the team.</p>
+                    `,
+                    actionUrl: `${process.env.CLIENT_URL || 'https://connecta.ng'}/collabo/invite/${roleId}`,
+                    actionText: 'View Invitation'
+                });
+    
+                await sendEmail(
+                    freelancer.email,
+                    `Team Invitation: ${project.title}`,
+                    emailHtml
+                );
+            } catch (emailError) {
+                console.error('Failed to send invitation email:', emailError);
+            }
+            */
+
+            return { success: true, message: 'Invitation sent successfully' };
+        } catch (error) {
+            console.error("Invite To Role Error:", error);
             throw error;
         }
     }
@@ -182,6 +385,30 @@ class CollaboService {
         if (!role) throw new Error("Role not found");
         const project = await CollaboProject.findById(role.projectId).populate('clientId', 'firstName lastName avatar');
         return { role, project };
+    }
+
+    async addRole(projectId: string, clientId: string, roleData: { title: string; description: string; budget: number; skills: string[] }) {
+        const project = await CollaboProject.findById(projectId);
+        if (!project) throw new Error("Project not found");
+
+        if (project.clientId.toString() !== clientId) {
+            throw new Error("Unauthorized: Only project owner can add roles");
+        }
+
+        const newRole = await ProjectRole.create({
+            projectId: project._id,
+            title: roleData.title,
+            description: roleData.description,
+            budget: roleData.budget,
+            skills: roleData.skills,
+            status: 'open'
+        });
+
+        // Update project total budget if needed, or just leave it as initial estimate
+        // project.totalBudget += roleData.budget;
+        // await project.save();
+
+        return newRole;
     }
 
     async sendMessage(workspaceId: string, channelName: string, senderId: string, senderRole: string, content: string) {

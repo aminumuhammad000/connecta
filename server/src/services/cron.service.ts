@@ -1,5 +1,7 @@
 import * as cron from "node-cron";
-import Job from "../models/Job.model";
+import mongoose from "mongoose";
+import "../models/Job.model";
+const Job = mongoose.model("Job");
 
 /**
  * Initialize cron jobs

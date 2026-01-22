@@ -90,19 +90,256 @@ export default function PostCollaboJobScreen({ navigation }: any) {
     };
 
     const renderBasicsStep = () => (
-        <ScrollView style={{ flex: 1, padding: 20 }}>
-            {/* ... */}
-            {/* Skipping to button part for replace ... */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+            <Text style={[styles.title, { color: c.text }]}>Let's Start Your Project</Text>
+            <Text style={[styles.subtitle, { color: c.subtext }]}>
+                Choose the category and details that best match your vision.
+            </Text>
+
+            {/* Category Selection */}
+            <View style={{ marginBottom: 28 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <MaterialIcons name="category" size={20} color={c.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.label, { color: c.text }]}>Category</Text>
+                    <Text style={{ color: '#EF4444', marginLeft: 4, fontSize: 16 }}>*</Text>
+                </View>
+                <View style={{ gap: 10 }}>
+                    {JOB_CATEGORIES.map((cat) => {
+                        const isSelected = selectedCategoryId === cat.id;
+                        return (
+                            <TouchableOpacity
+                                key={cat.id}
+                                onPress={() => setSelectedCategoryId(cat.id)}
+                                style={[
+                                    {
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        padding: 16,
+                                        borderRadius: 12,
+                                        borderWidth: 2,
+                                        backgroundColor: isSelected ? c.primary + '10' : c.card,
+                                        borderColor: isSelected ? c.primary : c.border,
+                                    }
+                                ]}
+                            >
+                                <View style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 24,
+                                    backgroundColor: isSelected ? c.primary : c.border,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginRight: 12
+                                }}>
+                                    <MaterialIcons
+                                        name={cat.icon as any}
+                                        size={24}
+                                        color={isSelected ? '#FFF' : c.text}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{
+                                        color: isSelected ? c.primary : c.text,
+                                        fontWeight: '700',
+                                        fontSize: 16
+                                    }}>
+                                        {cat.label}
+                                    </Text>
+                                    <Text style={{ color: c.subtext, fontSize: 13, marginTop: 2 }}>
+                                        {cat.id === 'tech' ? 'Software, Apps & Web' :
+                                            cat.id === 'design' ? 'Graphics, UI/UX & Branding' :
+                                                cat.id === 'writing' ? 'Content & Copywriting' :
+                                                    cat.id === 'marketing' ? 'Digital Marketing & SEO' :
+                                                        'Other professional services'}
+                                    </Text>
+                                </View>
+                                {isSelected && (
+                                    <MaterialIcons name="check-circle" size={24} color={c.primary} />
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
+
+            {/* Sub-category */}
+            <View style={{ marginBottom: 28 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <MaterialIcons name="label" size={20} color={c.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.label, { color: c.text }]}>Specialization</Text>
+                    <Text style={{ color: c.subtext, marginLeft: 4, fontSize: 12 }}>(Optional)</Text>
+                </View>
+                <View style={[{
+                    backgroundColor: c.card,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: c.border,
+                    padding: 16,
+                }]}>
+                    <TextInput
+                        style={{ color: c.text, fontSize: 15 }}
+                        placeholder="e.g. Mobile App Development, Logo Design, SEO..."
+                        placeholderTextColor={c.subtext}
+                        value={subCategory}
+                        onChangeText={setSubCategory}
+                    />
+                </View>
+            </View>
+
+            {/* Project Type */}
+            <View style={{ marginBottom: 28 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <MaterialIcons name="work" size={20} color={c.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.label, { color: c.text }]}>Project Type</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    {JOB_TYPES.map((type) => {
+                        const isSelected = projectType === type.value;
+                        return (
+                            <TouchableOpacity
+                                key={type.value}
+                                onPress={() => setProjectType(type.value)}
+                                style={{
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 16,
+                                    borderRadius: 12,
+                                    borderWidth: 2,
+                                    backgroundColor: isSelected ? c.primary + '10' : c.card,
+                                    borderColor: isSelected ? c.primary : c.border,
+                                }}
+                            >
+                                <MaterialIcons
+                                    name={type.icon as any}
+                                    size={22}
+                                    color={isSelected ? c.primary : c.text}
+                                    style={{ marginRight: 8 }}
+                                />
+                                <Text style={{
+                                    color: isSelected ? c.primary : c.text,
+                                    fontWeight: '700',
+                                    fontSize: 14
+                                }}>
+                                    {type.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
+
+            {/* Scope */}
+            <View style={{ marginBottom: 28 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <MaterialIcons name="public" size={20} color={c.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.label, { color: c.text }]}>Work Location</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    {LOCATION_SCOPES.map((s) => {
+                        const isSelected = scope === s.value;
+                        return (
+                            <TouchableOpacity
+                                key={s.value}
+                                onPress={() => setScope(s.value)}
+                                style={{
+                                    flex: 1,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 16,
+                                    borderRadius: 12,
+                                    borderWidth: 2,
+                                    backgroundColor: isSelected ? c.primary + '10' : c.card,
+                                    borderColor: isSelected ? c.primary : c.border,
+                                }}
+                            >
+                                <MaterialIcons
+                                    name={s.icon as any}
+                                    size={22}
+                                    color={isSelected ? c.primary : c.text}
+                                    style={{ marginRight: 8 }}
+                                />
+                                <Text style={{
+                                    color: isSelected ? c.primary : c.text,
+                                    fontWeight: '700',
+                                    fontSize: 14
+                                }}>
+                                    {s.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
+
+            {/* Duration */}
+            <View style={{ marginBottom: 32 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <MaterialIcons name="schedule" size={20} color={c.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.label, { color: c.text }]}>Estimated Duration</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{
+                        flex: 1,
+                        backgroundColor: c.card,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: c.border,
+                        padding: 16,
+                    }}>
+                        <TextInput
+                            style={{ color: c.text, fontSize: 15, fontWeight: '600' }}
+                            placeholder="e.g. 3"
+                            placeholderTextColor={c.subtext}
+                            keyboardType="numeric"
+                            value={durationValue}
+                            onChangeText={setDurationValue}
+                        />
+                    </View>
+                    <View style={{ flex: 2, flexDirection: 'row', gap: 8 }}>
+                        {DURATION_TYPES.map((dt) => {
+                            const isSelected = durationType === dt.value;
+                            return (
+                                <TouchableOpacity
+                                    key={dt.value}
+                                    onPress={() => setDurationType(dt.value)}
+                                    style={{
+                                        flex: 1,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: 16,
+                                        borderRadius: 12,
+                                        borderWidth: 2,
+                                        backgroundColor: isSelected ? c.primary + '10' : c.card,
+                                        borderColor: isSelected ? c.primary : c.border,
+                                    }}
+                                >
+                                    <Text style={{
+                                        color: isSelected ? c.primary : c.text,
+                                        fontWeight: '700',
+                                        fontSize: 13
+                                    }}>
+                                        {dt.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </View>
+            </View>
+
             <Button
-                title="Continue to Project Details"
+                title="Continue to AI Analysis →"
                 onPress={() => {
                     if (!selectedCategoryId) {
-                        showAlert({ title: 'Required', message: 'Please select a category.', type: 'warning' });
+                        showAlert({ title: 'Required', message: 'Please select a category to continue.', type: 'warning' });
                         return;
                     }
                     setStep('chat');
                 }}
-                style={{ marginTop: 24 }}
+                style={{ marginTop: 8 }}
             />
         </ScrollView>
     );

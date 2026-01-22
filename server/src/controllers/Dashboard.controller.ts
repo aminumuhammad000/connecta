@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Job from '../models/Job.model';
+import { Job } from '../models/Job.model';
 import Project from '../models/Project.model';
 import Message from '../models/Message.model';
 import User from '../models/user.model';

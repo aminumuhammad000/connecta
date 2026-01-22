@@ -1,26 +1,32 @@
 import express from 'express';
 import { authenticate } from '../core/middleware/auth.middleware';
 import * as CollaboController from '../controllers/Collabo.controller';
+import { upload } from '../core/utils/fileUpload';
 
 const router = express.Router();
 
 router.post('/create', authenticate, CollaboController.createCollaboProject);
 router.post('/scope', authenticate, CollaboController.scopeProject);
 router.get('/my-projects', authenticate, CollaboController.getMyProjects);
+router.get('/freelancer-projects', authenticate, CollaboController.getFreelancerProjects);
 router.post('/accept-role', authenticate, CollaboController.acceptRole);
-router.post('/:id/fund', authenticate, CollaboController.fundProject);
-router.post('/:id/activate', authenticate, CollaboController.activateProject);
-router.get('/:id', authenticate, CollaboController.getCollaboProject);
-router.get('/role/:id', authenticate, CollaboController.getRole);
 router.post('/message', authenticate, CollaboController.sendMessage);
 router.get('/messages', authenticate, CollaboController.getMessages);
 router.post('/task', authenticate, CollaboController.createTask);
 router.get('/tasks', authenticate, CollaboController.getTasks);
 router.patch('/task/:id', authenticate, CollaboController.updateTask);
 
-// Files
-import { upload } from '../core/utils/fileUpload';
+// Files (must be before /:id route)
 router.post('/file', authenticate, upload.single('file'), CollaboController.uploadFile);
 router.get('/files', authenticate, CollaboController.getFiles);
+
+router.post('/:id/fund', authenticate, CollaboController.fundProject);
+router.post('/:id/activate', authenticate, CollaboController.activateProject);
+router.post('/:id/start', authenticate, CollaboController.startWork);
+router.post('/role/:roleId/remove', authenticate, CollaboController.removeFromRole);
+router.post('/role/:roleId/invite', authenticate, CollaboController.inviteToRole);
+router.post('/:id/role', authenticate, CollaboController.addRole);
+router.get('/:id', authenticate, CollaboController.getCollaboProject);
+router.get('/role/:id', authenticate, CollaboController.getRole);
 
 export default router;

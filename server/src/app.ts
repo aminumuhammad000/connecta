@@ -62,11 +62,11 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// import { seedFreelancersIfMissing } from "./utils/seeder";
+import { seedFreelancersIfMissing } from "./utils/seeder";
 
 // Connect to Database
 connectDB().then(() => {
-  // seedFreelancersIfMissing();
+  seedFreelancersIfMissing();
 });
 
 // Routes
@@ -116,6 +116,29 @@ app.get("/debug/users", async (req, res) => {
     const User = mongoose.model('User');
     const users = await User.find({}, 'email _id firstName');
     res.json(users);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/debug/notifications", async (req, res) => {
+  try {
+    const mongoose = await import('mongoose');
+    const Notification = mongoose.model('Notification');
+    const User = mongoose.model('User');
+
+    const emails = ['a@gmail.com', 'b@gmail.com', 'd@gmail.com', 'f@gmail.com'];
+    const results = [];
+
+    for (const email of emails) {
+      const user = await User.findOne({ email });
+      if (user) {
+        const notifs = await Notification.find({ userId: user._id }).populate('relatedId');
+        results.push({ email, userId: user._id, count: notifs.length, notifications: notifs });
+      }
+    }
+
+    res.json(results);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

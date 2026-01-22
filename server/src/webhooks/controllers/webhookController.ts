@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import Payment from '../../models/Payment.model';
-import Job from '../../models/Job.model';
+import { Job } from '../../models/Job.model';
 import flutterwaveService from '../../services/flutterwave.service';
 
 /**

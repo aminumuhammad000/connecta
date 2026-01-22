@@ -89,14 +89,31 @@ export default function NotificationsScreen({ navigation }: Props) {
     // 2. Navigate based on type/relatedType
     const { type, relatedId, relatedType } = item;
 
+    // Collabo invite -> Check role status first
+    if (type === 'collabo_invite' && relatedId) {
+      try {
+        // Fetch role to check if already accepted
+        const { getRole } = await import('../services/collaboService');
+        const roleData = await getRole(relatedId);
+        const role = (roleData as any)?.role || roleData;
+        const project = (roleData as any)?.project || {};
+
+        // If already accepted by current user, go directly to workspace
+        if (role.status === 'filled' && role.freelancerId?._id === (item as any).userId) {
+          navigation.navigate('CollaboWorkspace', { projectId: project._id });
+        } else {
+          // Otherwise show invite screen
+          navigation.navigate('CollaboInvite', { roleId: relatedId });
+        }
+      } catch (error) {
+        // If error, still try to show invite screen
+        navigation.navigate('CollaboInvite', { roleId: relatedId });
+      }
+      return;
+    }
+
     // Project / Payment related -> Project Detail
     if ((relatedType === 'project' || type === 'project_started' || type === 'payment_released' || type === 'proposal_accepted') && relatedId) {
-      // Ideally for proposal_accepted, relatedId is proposalId, but we might need projectId. 
-      // If relatedType is 'proposal', strict navigation might fail if we don't have projectId. 
-      // But assuming 'project_started' has relatedId = projectId.
-      // Let's try to navigate to ProjectDetail if we have an ID that looks like a project, or rely on fetching.
-      // For now, if type is proposal_accepted, usually relatedId is proposal._id. 
-      // We might need to fetch proposal to get projectId, or notification should have projectId.
       navigation.navigate('ProjectDetail', { id: relatedId });
       return;
     }
@@ -107,14 +124,11 @@ export default function NotificationsScreen({ navigation }: Props) {
     }
 
     if (relatedType === 'proposal' && relatedId) {
-      // If client -> Proposal Detail (to see freelancer's proposal)
-      // If freelancer -> My Proposals or Proposal Detail
       navigation.navigate('ProposalDetail', { id: relatedId });
       return;
     }
 
     if (relatedType === 'message' || type === 'message_received') {
-      // relatedId is usually conversationId
       if (relatedId) navigation.navigate('MessagesDetail', { conversationId: relatedId });
       return;
     }

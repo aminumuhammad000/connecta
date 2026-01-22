@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Job from "../models/Job.model";
+import { Job } from "../models/Job.model";
 import User from "../models/user.model";
 import Profile from "../models/Profile.model";
 
@@ -20,7 +20,8 @@ export const getClientJobs = async (req: Request, res: Response) => {
 
     // Calculate proposal counts for each job
     // Dynamically import Proposal to avoid circular dependency issues if any
-    const Proposal = require("../models/Proposal.model").default;
+    const ProposalModule = await import("../models/Proposal.model");
+    const Proposal = ProposalModule.default;
 
     const jobsWithCounts = await Promise.all(jobs.map(async (job) => {
       const count = await Proposal.countDocuments({ jobId: job._id });

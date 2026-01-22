@@ -49,6 +49,40 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 // ===================
+// Get All Freelancers
+// ===================
+export const getFreelancers = async (req: Request, res: Response) => {
+  try {
+    const { skills, limit = 50 } = req.query;
+    const query: any = { userType: 'freelancer' };
+
+    if (skills) {
+      // If skills is a comma-separated string, split it
+      const skillsList = (skills as string).split(',').map(s => s.trim());
+      query.skills = { $in: skillsList };
+    }
+
+    const freelancers = await User.find(query)
+      .select('-password')
+      .limit(parseInt(limit as string))
+      .sort({ jobSuccessScore: -1, averageRating: -1, createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: freelancers.length,
+      data: freelancers
+    });
+  } catch (err) {
+    console.error('Get freelancers error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err
+    });
+  }
+};
+
+// ===================
 // Get User By ID
 // ===================
 export const getUserById = async (req: Request, res: Response) => {

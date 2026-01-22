@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import User from '../models/user.model';
 import Profile from '../models/Profile.model';
-import Job from '../models/Job.model';
+import { Job } from '../models/Job.model';
 import CollaboProject from '../models/CollaboProject.model';
 import ProjectRole from '../models/ProjectRole.model';
 import CollaboWorkspace from '../models/CollaboWorkspace.model';

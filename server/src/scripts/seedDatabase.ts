@@ -8,7 +8,7 @@ dotenv.config();
 // Import all models
 import User from '../models/user.model';
 import Profile from '../models/Profile.model';
-import Job from '../models/Job.model';
+import { Job } from '../models/Job.model';
 import Project from '../models/Project.model';
 import Proposal from '../models/Proposal.model';
 import Contract from '../models/Contract.model';

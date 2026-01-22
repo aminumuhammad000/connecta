@@ -4,7 +4,7 @@ import Transaction from '../models/Transaction.model';
 import Wallet from '../models/Wallet.model';
 import Withdrawal from '../models/Withdrawal.model';
 import Project from '../models/Project.model';
-import Job from '../models/Job.model';
+import { Job } from '../models/Job.model';
 import User from '../models/user.model';
 import flutterwaveService from '../services/flutterwave.service';
 import paystackService from '../services/paystack.service';
