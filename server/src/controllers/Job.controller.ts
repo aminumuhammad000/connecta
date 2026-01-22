@@ -74,7 +74,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const jobs = await Job.find(filter)
-      .sort({ posted: -1 })
+      .sort({ isExternal: 1, posted: -1 }) // Prioritize internal (false=0, true=1)
       .limit(Number(limit))
       .skip(skip)
       .populate("clientId", "firstName lastName email");
@@ -261,49 +261,48 @@ export const getRecommendedJobs = async (req: Request, res: Response) => {
         .populate("clientId", "firstName lastName email");
     }
 
-    // Scoring and Categorization
-    // 1. Calculate Score (Simple overlap match)
-    // 2. Prioritize Internal (!isExternal)
-    const profileSkills = new Set(await Profile.findOne({ user: userId }).then(p => p?.skills || []));
+    const profile = await Profile.findOne({ user: userId });
+    const profileSkills = new Set(profile?.skills || []);
+    const userCategories = new Set(profile?.jobCategories || []);
+    const userTitle = profile?.jobTitle?.toLowerCase() || "";
 
     let scoredJobs = jobs.map((job) => {
       let score = 0;
       let matchCount = 0;
 
-      // Match Skills
+      // 1. Match Skills (Baseline)
       if (job.skills && job.skills.length > 0) {
         job.skills.forEach(s => {
           if (profileSkills.has(s)) matchCount++;
         });
         score = matchCount / Math.max(job.skills.length, 1);
-      } else {
-        // If job has no skills listed, give a neutral score if title matches?
-        // For now, assume 0.5 baseline for loose matches
-        score = 0.5;
       }
 
-      // Boost internal jobs
+      // 2. Match Categories (Boost)
+      if (job.category && userCategories.has(job.category)) {
+        score += 0.3;
+      }
+
+      // 3. Match Job Title (Boost)
+      if (userTitle && job.title.toLowerCase().includes(userTitle)) {
+        score += 0.3;
+      }
+
+      // 4. Prioritize Internal Jobs (Major Boost)
       if (!job.isExternal) {
-        score += 0.2; // Internal boost
+        score += 0.5; // Strong preference for internal jobs
       }
 
       return { job, score };
     });
 
-    // Filter out low scores (< 0.5) UNLESS it's a fallback situation where we need data
-    // The user requirement says "if score < 0.5 do not recommend it"
-    // We strictly follow this unless no jobs remain, effectively empty.
-
-    // Normalize Score:
-    // Pure skill match is 0.0 - 1.0. 
-    // Internal boost adds 0.2.
-    // So internal jobs with 30% skill match (0.3 + 0.2 = 0.5) pass.
-    // External jobs need 50% skill match to pass.
-
-    scoredJobs = scoredJobs.filter(item => item.score >= 0.5);
-
     // Sort: Higher score first
     scoredJobs.sort((a, b) => b.score - a.score);
+
+    // Filter out very low matches if we have enough data
+    if (scoredJobs.length > Number(limit)) {
+      scoredJobs = scoredJobs.filter(item => item.score >= 0.3);
+    }
 
     // Take limit
     const finalJobs = scoredJobs.slice(0, Number(limit)).map(item => item.job);

@@ -16,7 +16,7 @@ class LLMService {
 
         this.model = new ChatGoogleGenerativeAI({
             apiKey: apiKey,
-            model: "gemini-flash-latest",
+            model: "gemini-1.5-flash",
             maxOutputTokens: 2048,
             temperature: 0.7,
         });

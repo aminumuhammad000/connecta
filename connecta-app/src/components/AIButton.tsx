@@ -11,7 +11,7 @@ interface AIButtonProps {
 
 export const AIButton: React.FC<AIButtonProps> = ({
     onPress,
-    size = 22,
+    size = 18,
     color = '#fff',
 }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -99,9 +99,9 @@ export const AIButton: React.FC<AIButtonProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        width: 32,
+        height: 32,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden', // Ensure gradient respects border radius

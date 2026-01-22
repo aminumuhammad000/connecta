@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated, StatusBar, SafeAreaView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Animated, StatusBar, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import Logo from '../components/Logo';
 import Button from '../components/Button';

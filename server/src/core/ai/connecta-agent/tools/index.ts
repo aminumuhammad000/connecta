@@ -22,21 +22,25 @@ const files = fs
 // Loader function to register tool classes
 export async function loadTools() {
   for (const file of files) {
-    const modulePath = path.join(currentDir, file);
-    // Use require() for CommonJS runtime (ts-node dev) to avoid ESM import.meta
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const imported = require(modulePath);
-    for (const exported of Object.values(imported)) {
-      if (typeof exported === "function") {
-        try {
-          const inst = new (exported as any)("", "", "", true);
-          if (inst instanceof BaseTool) {
-            tools[inst.name] = exported;
+    try {
+      const modulePath = path.join(currentDir, file);
+      // Use dynamic import for ESM compatibility
+      const moduleUrl = `file://${modulePath}`;
+      const imported = await import(moduleUrl);
+      for (const exported of Object.values(imported)) {
+        if (typeof exported === "function") {
+          try {
+            const inst = new (exported as any)("", "", "", true);
+            if (inst instanceof BaseTool) {
+              tools[inst.name] = exported;
+            }
+          } catch {
+            // skip if cannot instantiate with mock args
           }
-        } catch {
-          // skip if cannot instantiate with mock args
         }
       }
+    } catch (err) {
+      console.error(`❌ Failed to load tool file ${file}:`, err);
     }
   }
 }

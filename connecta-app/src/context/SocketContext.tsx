@@ -18,7 +18,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!user || !token) {
+        if (!user || !token || !API_BASE_URL) {
+            if (!API_BASE_URL && user && token) {
+                console.warn('[Socket] API_BASE_URL is not defined, skipping socket initialization');
+            }
             if (socket) {
                 socket.disconnect();
                 setSocket(null);

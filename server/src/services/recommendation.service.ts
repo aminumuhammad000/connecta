@@ -59,12 +59,9 @@ export class RecommendationService {
             // 4. Prepare Documents for TF-IDF
             const tfidf = new TFIDF();
 
-            // We need to keep track of job IDs to map back from indices
-            const jobIds = jobs.map(job => job._id);
-
             jobs.forEach(job => {
-                // Combine job title, description, skills, requirements
-                let jobText = `${job.title} ${job.description} `;
+                // Combine job title, description, skills, requirements, category
+                let jobText = `${job.title} ${job.description} ${job.category || ""} `;
                 if (job.skills && job.skills.length > 0) {
                     jobText += job.skills.join(" ") + " ";
                 }
@@ -76,22 +73,41 @@ export class RecommendationService {
 
             // 5. Calculate TF-IDF and Get Recommendations
             tfidf.calculateTFIDF();
-            const recommendations = tfidf.getRecommendations(userProfileText, limit);
+            const recommendations = tfidf.getRecommendations(userProfileText, limit * 3); // Get more to re-rank
 
-            // 6. Map indices back to Job objects
-            const recommendedJobs = recommendations.map(rec => {
+            // 6. Re-rank based on business logic (Internal first, Category match)
+            const userCategories = new Set(profile.jobCategories || []);
+            const userTitle = profile.jobTitle?.toLowerCase() || "";
+
+            const scoredJobs = recommendations.map(rec => {
                 const job = jobs[rec.index];
-                return {
-                    ...job.toObject(),
-                    matchScore: rec.score // Optional: include score for debugging/display
-                };
+                let score = rec.score;
+
+                // Boost internal jobs
+                if (!job.isExternal) {
+                    score += 0.5;
+                }
+
+                // Boost category match
+                if (job.category && userCategories.has(job.category)) {
+                    score += 0.3;
+                }
+
+                // Boost title match
+                if (userTitle && job.title.toLowerCase().includes(userTitle)) {
+                    score += 0.3;
+                }
+
+                return { job, score };
             });
 
-            // Filter out jobs with 0 score if desired, or keep them
-            // For now, we return the top matches. 
-            // If the user has no relevant profile data, scores might be 0.
+            // Sort by new score
+            scoredJobs.sort((a, b) => b.score - a.score);
 
-            return recommendedJobs;
+            return scoredJobs.slice(0, limit).map(item => ({
+                ...item.job.toObject(),
+                matchScore: item.score
+            }));
 
         } catch (error) {
             console.error("Error generating recommendations:", error);

@@ -171,26 +171,28 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
             style={[
               styles.header,
               {
-                backgroundColor: c.isDark ? '#1F2937' : c.primary,
+                backgroundColor: c.isDark ? '#111827' : c.primary,
               },
             ]}
           >
             <View style={styles.headerTop}>
-              <TouchableOpacity onPress={() => setSidebarVisible(true)}>
-                <MaterialIcons name="menu" size={32} color="#fff" />
+              <TouchableOpacity onPress={() => setSidebarVisible(true)} style={styles.menuBtn}>
+                <MaterialIcons name="menu" size={24} color="#fff" />
               </TouchableOpacity>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('Notifications')}
-                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+                  style={[styles.headerBtn, { backgroundColor: 'rgba(255,255,255,0.15)' }]}
                 >
-                  <MaterialIcons name="notifications" size={22} color="#fff" />
+                  <MaterialIcons name="notifications-none" size={20} color="#fff" />
                 </TouchableOpacity>
-                <AIButton onPress={() => navigation.navigate('ConnectaAI')} />
+                <AIButton onPress={() => navigation.navigate('ConnectaAI')} size={18} />
               </View>
             </View>
-            <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.name}>{userName}!</Text>
+            <View style={styles.headerContent}>
+              <Text style={styles.greeting}>Welcome back,</Text>
+              <Text style={styles.name}>{userName}!</Text>
+            </View>
           </View>
 
           {/* Stats Cards */}
@@ -222,12 +224,16 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 
           {/* Quick Actions */}
           <View style={styles.section}>
-            <Button
-              title="Browse All Jobs"
-              onPress={() => navigation.navigate('Gigs')}
-              size="large"
-              style={{ marginBottom: 12 }}
-            />
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
+              <Button
+                title="Browse All Jobs"
+                onPress={() => navigation.navigate('Gigs')}
+                size="small"
+                variant="ghost"
+              />
+            </View>
+
             <View style={styles.quickActions}>
               <TouchableOpacity
                 style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
@@ -282,6 +288,11 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
                               <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>
                                 {job.title}
                               </Text>
+                              {job.isExternal ? (
+                                <Badge label={job.source || "External"} variant="info" size="small" />
+                              ) : (
+                                <Badge label="Connecta" variant="success" size="small" />
+                              )}
                             </View>
                             <Text style={[styles.company, { color: c.subtext }]}>{job.category}</Text>
                           </View>
@@ -370,20 +381,31 @@ const FreelancerDashboardScreen: React.FC<any> = ({ navigation }) => {
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 24,
   },
-  headerBtn: {
+  menuBtn: {
     width: 40,
     height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerContent: {
+    marginTop: 4,
+  },
+  headerBtn: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -391,30 +413,33 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -2,
+    right: -2,
     backgroundColor: '#EF4444',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   badgeText: {
     color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 8,
+    fontWeight: '800',
   },
   greeting: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '600',
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
   name: {
-    fontSize: 20,
+    fontSize: 24,
     color: '#fff',
-    fontWeight: '700',
-    marginTop: 4,
+    fontWeight: '800',
+    marginTop: 2,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -425,6 +450,9 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   statIcon: {
     width: 48,
@@ -454,16 +482,23 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     flex: 1,
-    height: 80,
-    borderRadius: 12,
+    height: 90,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   quickActionText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
+    textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
