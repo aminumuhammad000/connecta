@@ -323,11 +323,10 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                                 <Text style={[styles.gigTitle, { color: c.text }]} numberOfLines={2}>
                                   {job.title}
                                 </Text>
-                                {job.status === 'active' && !job.isExternal && (
-                                  <Badge label="Active" variant="success" size="small" />
-                                )}
-                                {job.isExternal && (
+                                {job.isExternal ? (
                                   <Badge label={job.source || "External"} variant="info" size="small" />
+                                ) : (
+                                  <Badge label="Connecta" variant="success" size="small" />
                                 )}
                               </View>
                               <Text style={[styles.company, { color: c.subtext }]}>{job.company || 'Company'}</Text>

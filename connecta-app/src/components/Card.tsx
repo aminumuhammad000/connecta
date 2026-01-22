@@ -15,7 +15,7 @@ export default function Card({ children, variant = 'default', padding = 16, styl
     const getCardStyle = () => {
         const baseStyle: ViewStyle = {
             backgroundColor: c.card,
-            borderRadius: 12,
+            borderRadius: 16,
             padding,
         };
 
@@ -23,6 +23,13 @@ export default function Card({ children, variant = 'default', padding = 16, styl
             case 'elevated':
                 return {
                     ...baseStyle,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 12,
+                    elevation: 3,
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,0,0,0.03)',
                 };
             case 'outlined':
                 return {
@@ -31,7 +38,11 @@ export default function Card({ children, variant = 'default', padding = 16, styl
                     borderColor: c.border,
                 };
             default:
-                return baseStyle;
+                return {
+                    ...baseStyle,
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,0,0,0.02)',
+                };
         }
     };
 

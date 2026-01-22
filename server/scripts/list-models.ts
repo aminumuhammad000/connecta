@@ -17,7 +17,7 @@ async function listModels() {
         // Unfortunately standard SDK doesn't expose listModels easily in node,
         // but we can try a simple fetch if SDK fails.
         // Let's try to just generate content with a "safe" model first.
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent("Hello");
         console.log("Response:", result.response.text());
     } catch (error: any) {

@@ -6,7 +6,7 @@ import http from "http";
 import { Server } from "socket.io";
 import connectDB from "./config/db.config";
 import agentRoute from "./routes/agentRoute"
-import { initCronJobs } from "./services/cron.service";
+// import { initCronJobs } from "./services/cron.service";
 
 
 // routes 
@@ -245,6 +245,6 @@ server.listen(PORT, () => {
   console.log(`🔌 Socket.io ready for real-time messaging`);
 
   // Initialize cron jobs
-  initCronJobs();
+  // initCronJobs();
 });
 

@@ -64,9 +64,10 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
             const response = await agentService.sendMessageToAgent(text, user._id, user.userType);
 
-            if (response.success && response.result.success) {
+            if (response.success && response.result) {
                 const result = response.result;
-                const responseText = result.message || (typeof result.data === 'string' ? result.data : "Here is what I found:");
+                // Show message even if result.success is false (e.g. tool error explained by AI)
+                const responseText = result.message || (typeof result.data === 'string' ? result.data : "I'm sorry, I couldn't process that request.");
 
                 const aiMsg: Message = {
                     id: (Date.now() + 1).toString(),
@@ -101,7 +102,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
     const renderJobCard = (job: any) => (
         <Card
-            key={job._id || job.id}
+            key={job.key || job._id || job.id}
             variant="elevated"
             style={[styles.card, { backgroundColor: c.card, borderColor: c.border, width: 260 }]}
         >
@@ -169,7 +170,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
                     return (
                         <View style={{ marginTop: 8 }}>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                                {gigs.map((gig: any) => renderJobCard(gig))}
+                                {gigs.map((gig: any, idx: number) => renderJobCard({ ...gig, key: gig._id || gig.id || `gig-${idx}` }))}
                             </ScrollView>
                         </View>
                     );

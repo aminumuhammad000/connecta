@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Activi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import Badge from '../components/Badge';
 import jobService from '../services/jobService';
 import { Job } from '../types';
 
@@ -196,8 +197,15 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
                 <View style={{ gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: c.subtext, fontSize: 13 }}>{item.company || 'Unknown Company'}</Text>
-                      <Text style={{ color: c.text, fontSize: 16, fontWeight: '800', marginTop: 2 }}>{item.title}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <Text style={{ color: c.subtext, fontSize: 13 }}>{item.company || 'Unknown Company'}</Text>
+                        {item.isExternal ? (
+                          <Badge label={item.source || "External"} variant="info" size="small" />
+                        ) : (
+                          <Badge label="Connecta" variant="success" size="small" />
+                        )}
+                      </View>
+                      <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>{item.title}</Text>
                     </View>
                     <TouchableOpacity onPress={() => handleUnsave(item._id)}>
                       <MaterialIcons name="bookmark" size={22} color={c.primary} />

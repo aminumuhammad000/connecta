@@ -99,11 +99,14 @@ export class ConnectaAgent {
     // Prioritize Gemini if key is present, unless explicitly set to 'openai' in DB settings
     const useGemini = (aiConfig.provider === 'gemini') || (geminiKey && aiConfig.provider !== 'openai');
 
+    let modelName = aiConfig.model || "gemini-1.5-flash";
+    if (modelName === "gemini-pro") modelName = "gemini-1.5-flash";
+
     if (useGemini && geminiKey) {
       console.log("🤖 Initializing Connecta Agent with Gemini (Google Generative AI)");
       this.model = new ChatGoogleGenerativeAI({
         apiKey: geminiKey,
-        model: aiConfig.model || "gemini-pro",
+        model: modelName,
         maxOutputTokens: 2048,
         temperature: this.config.temperature ?? 0.3,
       });
@@ -515,9 +518,7 @@ Try: "Find gigs for me" or "Show my profile"`;
 
       // --- Intent Detection with Enhanced Context ---
       const promptTemplate = ChatPromptTemplate.fromMessages([
-        SystemMessagePromptTemplate.fromTemplate(intentPrompt),
-        SystemMessagePromptTemplate.fromTemplate("User context:\n{userContext}"),
-        SystemMessagePromptTemplate.fromTemplate("Conversation history:\n{history}"),
+        SystemMessagePromptTemplate.fromTemplate(`${intentPrompt}\n\nUser context:\n{userContext}\n\nConversation history:\n{history}`),
         HumanMessagePromptTemplate.fromTemplate("{input}"),
       ]);
 
@@ -772,9 +773,10 @@ Try: "Find gigs for me" or "Show my profile"`;
 
   private async explainError(tool: string, error: string): Promise<string> {
     try {
-      const prompt = ChatPromptTemplate.fromTemplate(
-        "You are a helpful assistant. Explain this error in ONE friendly sentence and suggest ONE action. Tool: {tool}. Error: {error}."
-      );
+      const prompt = ChatPromptTemplate.fromMessages([
+        SystemMessagePromptTemplate.fromTemplate("You are a helpful assistant."),
+        HumanMessagePromptTemplate.fromTemplate("Explain this error in ONE friendly sentence and suggest ONE action. Tool: {tool}. Error: {error}.")
+      ]);
       const chain = RunnableSequence.from([
         prompt,
         this.model,

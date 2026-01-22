@@ -25,20 +25,25 @@ const derivedHostBaseUrl = deriveExpoHostBaseUrl();
 const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
 
 const getBaseUrl = () => {
-    // Force production server usage
-    // let url = derivedHostBaseUrl || platformDefaultBaseUrl;
-    // let url = platformDefaultBaseUrl;
-    let url = derivedHostBaseUrl || 'http://10.0.2.2:5000'; // Default to Android Emulator localhost
+    // 1. Try derived host (LAN IP for physical devices)
+    if (derivedHostBaseUrl) return derivedHostBaseUrl;
+
+    // 2. Try explicit URL from app.json or env
+    if (explicitBaseUrl) return explicitBaseUrl;
+
+    // 3. Platform defaults for emulators
+    let url = 'http://10.0.2.2:5000'; // Default to Android Emulator localhost
 
     // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
-    // For iOS physical device, derivedHostBaseUrl usually works (it's the LAN IP of the host)
-    if (Platform.OS === 'ios' && (url?.includes('10.0.2.2'))) {
-        return 'http://localhost:5000';
+    if (Platform.OS === 'ios') {
+        url = 'http://localhost:5000';
     }
+
     return url;
 };
 
 export const API_BASE_URL = getBaseUrl();
+console.log('[API] Base URL:', API_BASE_URL);
 
 // AsyncStorage Keys
 export const STORAGE_KEYS = {

@@ -10,6 +10,9 @@ import * as userService from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadImage } from '../services/uploadService';
 import { PortfolioItem } from '../types';
+import Card from '../components/Card';
+import Button from '../components/Button';
+import Avatar from '../components/Avatar';
 
 export default function EditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
@@ -425,62 +428,71 @@ export default function EditProfileScreen({ navigation }: any) {
     return (
         <>
             <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-                <View style={[styles.header, { borderBottomColor: c.border }]}>
+                <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color={c.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
-                    <View style={{ width: 24 }} />
+                    <TouchableOpacity onPress={handleSave} disabled={saving}>
+                        {saving ? (
+                            <ActivityIndicator size="small" color={c.primary} />
+                        ) : (
+                            <Text style={{ color: c.primary, fontWeight: '700', fontSize: 16 }}>Save</Text>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Profile Photo Section */}
                     <View style={styles.photoSection}>
-                        {profileImage ? (
-                            <Image source={{ uri: profileImage }} style={styles.profileImage} />
-                        ) : (
-                            <View style={[styles.photoPlaceholder, { backgroundColor: c.card }]}>
-                                <Ionicons name="person" size={40} color={c.subtext} />
-                            </View>
-                        )}
-                        <TouchableOpacity
-                            style={[styles.editPhotoButton, { backgroundColor: c.primary }]}
-                            onPress={handlePickImage}
-                            disabled={uploadingImage}
-                        >
-                            {uploadingImage ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <Ionicons name="camera" size={16} color="white" />
-                            )}
-                        </TouchableOpacity>
+                        <View style={styles.avatarWrapper}>
+                            <Avatar uri={profileImage || undefined} name={formData.firstName} size={110} />
+                            <TouchableOpacity
+                                style={[styles.editPhotoButton, { backgroundColor: c.primary }]}
+                                onPress={handlePickImage}
+                                disabled={uploadingImage}
+                            >
+                                {uploadingImage ? (
+                                    <ActivityIndicator size="small" color="white" />
+                                ) : (
+                                    <Ionicons name="camera" size={18} color="white" />
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={[styles.photoHint, { color: c.subtext }]}>Tap to change profile picture</Text>
                     </View>
 
-                    <View style={styles.section}>
+                    <Card variant="outlined" style={styles.sectionCard}>
                         <Text style={[styles.sectionTitle, { color: c.text }]}>Personal Information</Text>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>First Name</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                value={formData.firstName}
-                                onChangeText={(text) => handleInputChange('firstName', text)}
-                            />
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                                <Text style={[styles.label, { color: c.subtext }]}>First Name</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                    value={formData.firstName}
+                                    onChangeText={(text) => handleInputChange('firstName', text)}
+                                    placeholder="First Name"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
+
+                            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                                <Text style={[styles.label, { color: c.subtext }]}>Last Name</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                    value={formData.lastName}
+                                    onChangeText={(text) => handleInputChange('lastName', text)}
+                                    placeholder="Last Name"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Last Name</Text>
+                            <Text style={[styles.label, { color: c.subtext }]}>Email Address</Text>
                             <TextInput
-                                style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                value={formData.lastName}
-                                onChangeText={(text) => handleInputChange('lastName', text)}
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Email</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                 value={formData.email}
                                 onChangeText={(text) => handleInputChange('email', text)}
                                 keyboardType="email-address"
@@ -490,57 +502,56 @@ export default function EditProfileScreen({ navigation }: any) {
                             />
                         </View>
 
-
-
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                value={formData.location}
-                                onChangeText={(text) => handleInputChange('location', text)}
-                                placeholder="City, Country"
-                                placeholderTextColor={c.subtext}
-                            />
+                            <View style={[styles.inputWithIcon, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
+                                <Ionicons name="location-outline" size={20} color={c.subtext} style={{ marginLeft: 12 }} />
+                                <TextInput
+                                    style={[styles.inputNoBorder, { color: c.text }]}
+                                    value={formData.location}
+                                    onChangeText={(text) => handleInputChange('location', text)}
+                                    placeholder="City, Country"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
                         </View>
-                    </View>
+                    </Card>
 
-                    <View style={styles.section}>
+                    <Card variant="outlined" style={styles.sectionCard}>
                         <Text style={[styles.sectionTitle, { color: c.text }]}>Professional Summary</Text>
                         <TextInput
-                            style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                            style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                             value={formData.bio}
                             onChangeText={(text) => handleInputChange('bio', text)}
                             multiline
                             numberOfLines={4}
-                            placeholder="Write a brief summary about yourself..."
+                            placeholder="Write a professional summary that highlights your expertise and what you offer to clients..."
                             placeholderTextColor={c.subtext}
                         />
-                    </View>
+                    </Card>
 
-                    <View style={styles.section}>
+                    <Card variant="outlined" style={styles.sectionCard}>
                         <Text style={[styles.sectionTitle, { color: c.text }]}>Skills</Text>
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Your Skills</Text>
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                                 {formData.skills.map((skill, index) => (
-                                    <View key={index} style={[styles.skillChip, { backgroundColor: c.primary + '20' }]}>
+                                    <View key={index} style={[styles.skillChip, { backgroundColor: c.primary + '15' }]}>
                                         <Text style={[styles.skillChipText, { color: c.primary }]}>{skill}</Text>
                                         <TouchableOpacity onPress={() => {
                                             const newSkills = [...formData.skills];
                                             newSkills.splice(index, 1);
                                             setFormData(prev => ({ ...prev, skills: newSkills, skillsText: newSkills.join(', ') }));
                                         }}>
-                                            <Ionicons name="close-circle" size={16} color={c.primary} style={{ marginLeft: 4 }} />
+                                            <Ionicons name="close-circle" size={16} color={c.primary} style={{ marginLeft: 6 }} />
                                         </TouchableOpacity>
                                     </View>
                                 ))}
                             </View>
-                            <View style={[styles.skillInputContainer, { backgroundColor: c.card, borderColor: c.border }]}>
+                            <View style={[styles.skillInputContainer, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
                                 <TextInput
                                     style={[styles.skillInput, { color: c.text }]}
                                     value={formData.skillsText}
                                     onChangeText={(text) => {
-                                        // If ends with comma, add as chip
                                         if (text.endsWith(',')) {
                                             const newSkill = text.slice(0, -1).trim();
                                             if (newSkill && !formData.skills.includes(newSkill)) {
@@ -548,10 +559,10 @@ export default function EditProfileScreen({ navigation }: any) {
                                                 setFormData(prev => ({
                                                     ...prev,
                                                     skills: newSkills,
-                                                    skillsText: '' // Clear input
+                                                    skillsText: ''
                                                 }));
                                             } else {
-                                                setFormData(prev => ({ ...prev, skillsText: '' })); // Just clear if empty or duplicate
+                                                setFormData(prev => ({ ...prev, skillsText: '' }));
                                             }
                                         } else {
                                             setFormData(prev => ({ ...prev, skillsText: text }));
@@ -568,7 +579,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                             }));
                                         }
                                     }}
-                                    placeholder="Type a skill and press comma or enter..."
+                                    placeholder="Add a skill (e.g. React, UI Design)..."
                                     placeholderTextColor={c.subtext}
                                     blurOnSubmit={false}
                                 />
@@ -585,193 +596,156 @@ export default function EditProfileScreen({ navigation }: any) {
                                             }));
                                         }
                                     }}
-                                    style={{ padding: 8 }}
+                                    style={{ padding: 10 }}
                                 >
-                                    <Ionicons name="add-circle" size={24} color={c.primary} />
+                                    <Ionicons name="add-circle" size={26} color={c.primary} />
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </View>
+                    </Card>
 
                     {/* Portfolio Section */}
-                    <View style={styles.section}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <Card variant="outlined" style={styles.sectionCard}>
+                        <View style={styles.sectionHeader}>
                             <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Portfolio</Text>
-                            <TouchableOpacity
-                                style={[styles.addButton, { backgroundColor: c.primary }]}
+                            <Button
+                                title="Add Work"
                                 onPress={handleAddPortfolio}
-                            >
-                                <Ionicons name="add" size={20} color="white" />
-                                <Text style={{ color: 'white', marginLeft: 4, fontWeight: '600' }}>Add Item</Text>
-                            </TouchableOpacity>
+                                variant="outline"
+                                size="small"
+                                style={{ height: 32, paddingHorizontal: 12 }}
+                            />
                         </View>
 
                         {portfolio.length > 0 ? (
-                            <View style={{ gap: 12 }}>
+                            <View style={{ gap: 16, marginTop: 12 }}>
                                 {portfolio.map((item, index) => (
-                                    <View key={index} style={[styles.portfolioItem, { backgroundColor: c.card, borderColor: c.border }]}>
-                                        {item.imageUrl && (
+                                    <View key={index} style={[styles.portfolioItem, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
+                                        {item.imageUrl ? (
                                             <Image source={{ uri: item.imageUrl }} style={styles.portfolioImage} />
+                                        ) : (
+                                            <View style={[styles.portfolioImagePlaceholder, { backgroundColor: c.border }]}>
+                                                <Ionicons name="image-outline" size={24} color={c.subtext} />
+                                            </View>
                                         )}
                                         <View style={{ flex: 1 }}>
-                                            <Text style={[styles.portfolioTitle, { color: c.text }]}>{item.title}</Text>
+                                            <Text style={[styles.portfolioTitle, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
                                             <Text style={[styles.portfolioDesc, { color: c.subtext }]} numberOfLines={2}>
                                                 {item.description}
                                             </Text>
-                                            {item.tags && item.tags.length > 0 && (
-                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                                                    {item.tags.map((tag, i) => (
-                                                        <View key={i} style={[styles.tag, { backgroundColor: c.primary + '20' }]}>
-                                                            <Text style={[styles.tagText, { color: c.primary }]}>{tag}</Text>
-                                                        </View>
-                                                    ))}
-                                                </View>
-                                            )}
                                         </View>
-                                        <View style={{ flexDirection: 'row', gap: 8 }}>
-                                            <TouchableOpacity onPress={() => handleEditPortfolio(index)}>
-                                                <Ionicons name="pencil" size={20} color={c.primary} />
+                                        <View style={styles.itemActions}>
+                                            <TouchableOpacity onPress={() => handleEditPortfolio(index)} style={styles.actionIcon}>
+                                                <Ionicons name="pencil" size={18} color={c.primary} />
                                             </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDeletePortfolio(index)}>
-                                                <Ionicons name="trash" size={20} color="#ff4444" />
+                                            <TouchableOpacity onPress={() => handleDeletePortfolio(index)} style={styles.actionIcon}>
+                                                <Ionicons name="trash" size={18} color="#EF4444" />
                                             </TouchableOpacity>
                                         </View>
                                     </View>
                                 ))}
                             </View>
                         ) : (
-                            <Text style={[styles.emptyText, { color: c.subtext }]}>
-                                No portfolio items yet. Add your work to showcase your skills!
-                            </Text>
+                            <View style={styles.emptyState}>
+                                <Ionicons name="briefcase-outline" size={40} color={c.border} />
+                                <Text style={[styles.emptyText, { color: c.subtext }]}>
+                                    Showcase your best work to attract clients.
+                                </Text>
+                            </View>
                         )}
-                    </View>
+                    </Card>
 
                     {/* Education Section */}
-                    <View style={styles.section}>
+                    <Card variant="outlined" style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: c.text }]}>Education</Text>
-                            <TouchableOpacity onPress={handleAddEducation}>
-                                <Ionicons name="add-circle" size={28} color={c.primary} />
-                            </TouchableOpacity>
+                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Education</Text>
+                            <Button
+                                title="Add"
+                                onPress={handleAddEducation}
+                                variant="outline"
+                                size="small"
+                                style={{ height: 32, paddingHorizontal: 12 }}
+                            />
                         </View>
                         {education.length > 0 ? (
-                            <View style={{ gap: 12 }}>
+                            <View style={{ gap: 12, marginTop: 12 }}>
                                 {education.map((item, index) => (
-                                    <View key={index} style={[styles.portfolioItem, { backgroundColor: c.card, borderColor: c.border }]}>
+                                    <View key={index} style={[styles.listItem, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
                                         <View style={{ flex: 1 }}>
-                                            <Text style={[styles.portfolioTitle, { color: c.text }]}>{item.degree} in {item.fieldOfStudy}</Text>
-                                            <Text style={[styles.portfolioDesc, { color: c.subtext }]}>{item.institution}</Text>
-                                            <Text style={[styles.portfolioTags, { color: c.subtext }]}>
-                                                {item.startDate} - {item.endDate || 'Present'}
+                                            <Text style={[styles.itemTitle, { color: c.text }]}>{item.degree}</Text>
+                                            <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.institution}</Text>
+                                            <Text style={[styles.itemMeta, { color: c.subtext }]}>
+                                                {item.startDate} — {item.endDate || 'Present'}
                                             </Text>
                                         </View>
-                                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                                            <TouchableOpacity onPress={() => handleEditEducation(index)}>
-                                                <Ionicons name="pencil" size={20} color={c.primary} />
+                                        <View style={styles.itemActions}>
+                                            <TouchableOpacity onPress={() => handleEditEducation(index)} style={styles.actionIcon}>
+                                                <Ionicons name="pencil" size={18} color={c.primary} />
                                             </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDeleteEducation(index)}>
-                                                <Ionicons name="trash" size={20} color="#ff4444" />
+                                            <TouchableOpacity onPress={() => handleDeleteEducation(index)} style={styles.actionIcon}>
+                                                <Ionicons name="trash" size={18} color="#EF4444" />
                                             </TouchableOpacity>
                                         </View>
                                     </View>
                                 ))}
                             </View>
                         ) : (
-                            <Text style={[styles.emptyText, { color: c.subtext }]}>
-                                No education added yet.
-                            </Text>
-                        )}
-                    </View>
-
-                    {/* Languages Section */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: c.text }]}>Languages</Text>
-                            <TouchableOpacity onPress={handleAddLanguage}>
-                                <Ionicons name="add-circle" size={28} color={c.primary} />
-                            </TouchableOpacity>
-                        </View>
-                        {languages.length > 0 ? (
-                            <View style={{ gap: 12 }}>
-                                {languages.map((item, index) => (
-                                    <View key={index} style={[styles.portfolioItem, { backgroundColor: c.card, borderColor: c.border }]}>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[styles.portfolioTitle, { color: c.text }]}>{item.language}</Text>
-                                            <Text style={[styles.portfolioDesc, { color: c.subtext }]}>
-                                                {item.proficiency.charAt(0).toUpperCase() + item.proficiency.slice(1)}
-                                            </Text>
-                                        </View>
-                                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                                            <TouchableOpacity onPress={() => handleEditLanguage(index)}>
-                                                <Ionicons name="pencil" size={20} color={c.primary} />
-                                            </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDeleteLanguage(index)}>
-                                                <Ionicons name="trash" size={20} color="#ff4444" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
-                                ))}
+                            <View style={styles.emptyState}>
+                                <Ionicons name="school-outline" size={40} color={c.border} />
+                                <Text style={[styles.emptyText, { color: c.subtext }]}>Add your academic background.</Text>
                             </View>
-                        ) : (
-                            <Text style={[styles.emptyText, { color: c.subtext }]}>
-                                No languages added yet.
-                            </Text>
                         )}
-                    </View>
+                    </Card>
 
                     {/* Employment Section */}
-                    <View style={styles.section}>
+                    <Card variant="outlined" style={styles.sectionCard}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: c.text }]}>Work Experience</Text>
-                            <TouchableOpacity onPress={handleAddEmployment}>
-                                <Ionicons name="add-circle" size={28} color={c.primary} />
-                            </TouchableOpacity>
+                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Work Experience</Text>
+                            <Button
+                                title="Add"
+                                onPress={handleAddEmployment}
+                                variant="outline"
+                                size="small"
+                                style={{ height: 32, paddingHorizontal: 12 }}
+                            />
                         </View>
                         {employment.length > 0 ? (
-                            <View style={{ gap: 12 }}>
+                            <View style={{ gap: 12, marginTop: 12 }}>
                                 {employment.map((item, index) => (
-                                    <View key={index} style={[styles.portfolioItem, { backgroundColor: c.card, borderColor: c.border }]}>
+                                    <View key={index} style={[styles.listItem, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
                                         <View style={{ flex: 1 }}>
-                                            <Text style={[styles.portfolioTitle, { color: c.text }]}>{item.position}</Text>
-                                            <Text style={[styles.portfolioDesc, { color: c.subtext }]}>{item.company}</Text>
-                                            <Text style={[styles.portfolioTags, { color: c.subtext }]}>
-                                                {item.startDate} - {item.endDate || 'Present'}
+                                            <Text style={[styles.itemTitle, { color: c.text }]}>{item.position}</Text>
+                                            <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.company}</Text>
+                                            <Text style={[styles.itemMeta, { color: c.subtext }]}>
+                                                {item.startDate} — {item.endDate || 'Present'}
                                             </Text>
-                                            {item.description && (
-                                                <Text style={[styles.portfolioDesc, { color: c.subtext, marginTop: 4 }]}>
-                                                    {item.description}
-                                                </Text>
-                                            )}
                                         </View>
-                                        <View style={{ flexDirection: 'row', gap: 12 }}>
-                                            <TouchableOpacity onPress={() => handleEditEmployment(index)}>
-                                                <Ionicons name="pencil" size={20} color={c.primary} />
+                                        <View style={styles.itemActions}>
+                                            <TouchableOpacity onPress={() => handleEditEmployment(index)} style={styles.actionIcon}>
+                                                <Ionicons name="pencil" size={18} color={c.primary} />
                                             </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => handleDeleteEmployment(index)}>
-                                                <Ionicons name="trash" size={20} color="#ff4444" />
+                                            <TouchableOpacity onPress={() => handleDeleteEmployment(index)} style={styles.actionIcon}>
+                                                <Ionicons name="trash" size={18} color="#EF4444" />
                                             </TouchableOpacity>
                                         </View>
                                     </View>
                                 ))}
                             </View>
                         ) : (
-                            <Text style={[styles.emptyText, { color: c.subtext }]}>
-                                No work experience added yet.
-                            </Text>
+                            <View style={styles.emptyState}>
+                                <Ionicons name="business-outline" size={40} color={c.border} />
+                                <Text style={[styles.emptyText, { color: c.subtext }]}>Add your professional experience.</Text>
+                            </View>
                         )}
-                    </View>
+                    </Card>
 
-                    <TouchableOpacity
-                        style={[styles.saveButton, { backgroundColor: c.primary }]}
+                    <Button
+                        title="Update Profile"
                         onPress={handleSave}
-                        disabled={saving}
-                    >
-                        {saving ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={styles.saveButtonText}>Save Changes</Text>
-                        )}
-                    </TouchableOpacity>
+                        loading={saving}
+                        size="large"
+                        style={{ marginTop: 8, marginBottom: 40 }}
+                    />
 
                 </ScrollView>
             </SafeAreaView>
@@ -851,7 +825,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Project URL</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={portfolioForm.projectUrl}
                                     onChangeText={(text) => setPortfolioForm(prev => ({ ...prev, projectUrl: text }))}
                                     placeholder="https://example.com"
@@ -863,7 +837,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Tags (comma separated)</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={portfolioForm.tags}
                                     onChangeText={(text) => setPortfolioForm(prev => ({ ...prev, tags: text }))}
                                     placeholder="React, Design, Mobile"
@@ -871,14 +845,12 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
 
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: c.primary, marginTop: 8 }]}
+                            <Button
+                                title={editingPortfolioIndex !== null ? 'Update Item' : 'Add Item'}
                                 onPress={handleSavePortfolioItem}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {editingPortfolioIndex !== null ? 'Update Item' : 'Add Item'}
-                                </Text>
-                            </TouchableOpacity>
+                                size="large"
+                                style={{ marginTop: 16 }}
+                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -905,7 +877,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Institution *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={educationForm.institution}
                                     onChangeText={(text) => setEducationForm(prev => ({ ...prev, institution: text }))}
                                     placeholder="University name"
@@ -916,7 +888,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Degree *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={educationForm.degree}
                                     onChangeText={(text) => setEducationForm(prev => ({ ...prev, degree: text }))}
                                     placeholder="Bachelor's, Master's, etc."
@@ -927,7 +899,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Field of Study *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={educationForm.fieldOfStudy}
                                     onChangeText={(text) => setEducationForm(prev => ({ ...prev, fieldOfStudy: text }))}
                                     placeholder="Computer Science, Business, etc."
@@ -938,7 +910,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Start Date *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={educationForm.startDate}
                                     onChangeText={(text) => setEducationForm(prev => ({ ...prev, startDate: text }))}
                                     placeholder="2020"
@@ -949,7 +921,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>End Date (or leave empty if current)</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={educationForm.endDate}
                                     onChangeText={(text) => setEducationForm(prev => ({ ...prev, endDate: text }))}
                                     placeholder="2024"
@@ -957,14 +929,12 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
 
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: c.primary, marginTop: 8 }]}
+                            <Button
+                                title={editingEducationIndex !== null ? 'Update' : 'Add'}
                                 onPress={handleSaveEducation}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {editingEducationIndex !== null ? 'Update' : 'Add'}
-                                </Text>
-                            </TouchableOpacity>
+                                size="large"
+                                style={{ marginTop: 16 }}
+                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -991,7 +961,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Language *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={languageForm.language}
                                     onChangeText={(text) => setLanguageForm(prev => ({ ...prev, language: text }))}
                                     placeholder="English, Spanish, French, etc."
@@ -1007,7 +977,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                             key={level}
                                             style={[
                                                 styles.radioOption,
-                                                { backgroundColor: c.card, borderColor: c.border },
+                                                { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border },
                                                 languageForm.proficiency === level && { borderColor: c.primary, borderWidth: 2 }
                                             ]}
                                             onPress={() => setLanguageForm(prev => ({ ...prev, proficiency: level }))}
@@ -1023,14 +993,12 @@ export default function EditProfileScreen({ navigation }: any) {
                                 </View>
                             </View>
 
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: c.primary, marginTop: 8 }]}
+                            <Button
+                                title={editingLanguageIndex !== null ? 'Update' : 'Add'}
                                 onPress={handleSaveLanguage}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {editingLanguageIndex !== null ? 'Update' : 'Add'}
-                                </Text>
-                            </TouchableOpacity>
+                                size="large"
+                                style={{ marginTop: 16 }}
+                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -1057,7 +1025,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Company *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={employmentForm.company}
                                     onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, company: text }))}
                                     placeholder="Company name"
@@ -1068,7 +1036,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Position *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={employmentForm.position}
                                     onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, position: text }))}
                                     placeholder="Job title"
@@ -1079,7 +1047,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Start Date *</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={employmentForm.startDate}
                                     onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, startDate: text }))}
                                     placeholder="Jan 2020"
@@ -1090,7 +1058,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>End Date (or leave empty if current)</Text>
                                 <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={employmentForm.endDate}
                                     onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, endDate: text }))}
                                     placeholder="Dec 2023"
@@ -1101,7 +1069,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Description</Text>
                                 <TextInput
-                                    style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                                    style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={employmentForm.description}
                                     onChangeText={(text) => setEmploymentForm(prev => ({ ...prev, description: text }))}
                                     placeholder="Describe your responsibilities and achievements..."
@@ -1111,14 +1079,12 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
 
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: c.primary, marginTop: 8 }]}
+                            <Button
+                                title={editingEmploymentIndex !== null ? 'Update' : 'Add'}
                                 onPress={handleSaveEmployment}
-                            >
-                                <Text style={styles.saveButtonText}>
-                                    {editingEmploymentIndex !== null ? 'Update' : 'Add'}
-                                </Text>
-                            </TouchableOpacity>
+                                size="large"
+                                style={{ marginTop: 16 }}
+                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -1140,129 +1106,196 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        borderBottomWidth: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     backButton: {
         padding: 4,
     },
     headerTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
     scrollContent: {
-        padding: 24,
+        padding: 16,
     },
     photoSection: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginVertical: 24,
     },
-    photoPlaceholder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
+    avatarWrapper: {
+        position: 'relative',
     },
-    profileImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+    photoHint: {
+        fontSize: 12,
+        marginTop: 12,
+        fontWeight: '500',
     },
     editPhotoButton: {
         position: 'absolute',
         bottom: 0,
-        right: '35%',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        right: 0,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 2,
+        borderWidth: 3,
         borderColor: 'white',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
     },
-    section: {
-        marginBottom: 32,
+    sectionCard: {
+        marginBottom: 20,
+        padding: 20,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 16,
+        fontSize: 17,
+        fontWeight: '700',
+        marginBottom: 20,
+        letterSpacing: -0.3,
+    },
+    row: {
+        flexDirection: 'row',
     },
     inputGroup: {
-        marginBottom: 16,
+        marginBottom: 20,
     },
     label: {
-        fontSize: 14,
+        fontSize: 13,
+        fontWeight: '600',
         marginBottom: 8,
+        marginLeft: 2,
     },
     input: {
-        height: 48,
-        borderRadius: 8,
+        height: 50,
+        borderRadius: 12,
         borderWidth: 1,
         paddingHorizontal: 16,
+        fontSize: 15,
+    },
+    inputWithIcon: {
+        height: 50,
+        borderRadius: 12,
+        borderWidth: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    inputNoBorder: {
+        flex: 1,
+        height: 50,
+        paddingHorizontal: 12,
+        fontSize: 15,
     },
     textArea: {
-        minHeight: 100,
-        borderRadius: 8,
+        minHeight: 120,
+        borderRadius: 12,
         borderWidth: 1,
         padding: 16,
         textAlignVertical: 'top',
+        fontSize: 15,
+        lineHeight: 22,
     },
-    saveButton: {
-        height: 56,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 32,
-    },
-    saveButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    addButton: {
+    sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        justifyContent: 'space-between',
+        marginBottom: 16,
     },
     portfolioItem: {
         flexDirection: 'row',
         padding: 12,
-        borderRadius: 8,
+        borderRadius: 12,
         borderWidth: 1,
+        alignItems: 'center',
         gap: 12,
     },
     portfolioImage: {
-        width: 80,
-        height: 80,
+        width: 60,
+        height: 60,
         borderRadius: 8,
     },
+    portfolioImagePlaceholder: {
+        width: 60,
+        height: 60,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     portfolioTitle: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     portfolioDesc: {
+        fontSize: 13,
+        lineHeight: 18,
+    },
+    listItem: {
+        flexDirection: 'row',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+    },
+    itemTitle: {
+        fontSize: 15,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    itemSubtitle: {
         fontSize: 14,
-        lineHeight: 20,
+        marginBottom: 4,
     },
-    tag: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-    },
-    tagText: {
+    itemMeta: {
         fontSize: 12,
         fontWeight: '500',
+    },
+    itemActions: {
+        flexDirection: 'row',
+        gap: 4,
+    },
+    actionIcon: {
+        padding: 8,
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 24,
+        gap: 12,
     },
     emptyText: {
         fontSize: 14,
         textAlign: 'center',
-        fontStyle: 'italic',
-        padding: 20,
+        maxWidth: '80%',
+    },
+    skillChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    skillChipText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    skillInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingRight: 4,
+    },
+    skillInput: {
+        flex: 1,
+        height: 50,
+        paddingHorizontal: 16,
+        fontSize: 15,
     },
     modalOverlay: {
         flex: 1,
@@ -1270,90 +1303,34 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
         maxHeight: '90%',
+        paddingBottom: 20,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
-        borderBottomWidth: 1,
+        padding: 24,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
     modalBody: {
-        padding: 20,
+        padding: 24,
     },
-    previewImage: {
-        width: '100%',
-        height: 200,
-        borderRadius: 8,
-        marginBottom: 8,
-    },
-    changeImageButton: {
-        padding: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-    },
-    uploadButton: {
-        padding: 40,
-        borderRadius: 8,
-        borderWidth: 2,
-        borderStyle: 'dashed',
+    saveButton: {
+        height: 54,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    uploadText: {
-        marginTop: 8,
-        fontSize: 14,
-    },
-    radioOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-    },
-    radioText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 12,
-    },
-    portfolioTags: {
-        fontSize: 12,
-        marginTop: 4,
-    },
-    skillChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-    },
-    skillChipText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    skillInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 8,
-        paddingRight: 8,
-    },
-    skillInput: {
-        flex: 1,
-        height: 48,
-        paddingHorizontal: 16,
+    saveButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });

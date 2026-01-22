@@ -8,6 +8,7 @@ import jobService from '../services/jobService';
 import proposalService from '../services/proposalService';
 import { useAuth } from '../context/AuthContext';
 import SuccessModal from '../components/SuccessModal';
+import Badge from '../components/Badge';
 
 const JobDetailScreen: React.FC = () => {
   const c = useThemeColors();
@@ -201,7 +202,14 @@ const JobDetailScreen: React.FC = () => {
       <ScrollView contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
           {/* Header */}
-          <Text style={[styles.title, { color: c.text }]}>{job.title}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Text style={[styles.title, { color: c.text, flex: 1 }]}>{job.title}</Text>
+            {job.isExternal ? (
+              <Badge label={job.source || "External"} variant="info" size="small" />
+            ) : (
+              <Badge label="Connecta" variant="success" size="small" />
+            )}
+          </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <MaterialIcons name="schedule" size={14} color={c.subtext} />

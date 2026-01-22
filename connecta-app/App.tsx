@@ -7,7 +7,7 @@ import { RoleProvider, useRole } from './src/context/RoleContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { SocketProvider } from './src/context/SocketContext';
 import { useThemeColors } from './src/theme/theme';
-import { configureNotifications, registerForPushNotificationsAsync } from './src/utils/notifications';
+import { configureNotifications, registerForPushNotificationsAsync, areNotificationsAvailable } from './src/utils/notifications';
 import { InAppAlertProvider, useInAppAlert } from './src/components/InAppAlert';
 import authService from './src/services/authService';
 import EmailVerificationScreen from './src/screens/EmailVerificationScreen';
@@ -82,21 +82,25 @@ function AppContent() {
         }
 
         // Try to setup notification listeners (only if notifications are available)
-        try {
-          const Notifications = await import('expo-notifications');
+        if (areNotificationsAvailable()) {
+          try {
+            const Notifications = await import('expo-notifications');
 
-          receivedSub = Notifications.addNotificationReceivedListener((notification: any) => {
-            const title = notification.request.content.title ?? 'Notification';
-            const body = notification.request.content.body ?? '';
-            showAlert({ title, message: body, type: 'info' });
-          });
+            receivedSub = Notifications.addNotificationReceivedListener((notification: any) => {
+              const title = notification.request.content.title ?? 'Notification';
+              const body = notification.request.content.body ?? '';
+              showAlert({ title, message: body, type: 'info' });
+            });
 
-          responseSub = Notifications.addNotificationResponseReceivedListener(() => {
-            // Handle taps if needed
-          });
-        } catch (importError) {
-          // Notifications module not available - continue without listeners
-          console.log('[App] Notification listeners not available');
+            responseSub = Notifications.addNotificationResponseReceivedListener(() => {
+              // Handle taps if needed
+            });
+          } catch (importError) {
+            // Notifications module not available - continue without listeners
+            console.log('[App] Notification listeners not available');
+          }
+        } else {
+          console.log('[App] Skipping notification listeners - not available in this environment');
         }
       } catch (error) {
         console.error('[App] Error setting up notifications:', error);

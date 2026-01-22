@@ -10,17 +10,27 @@
     "strict": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@langchain/core/*": ["./node_modules/@langchain/core/dist/*"]
+      "@langchain/core/*": [
+        "./node_modules/@langchain/core/dist/*"
+      ]
     }
   },
   "ts-node": {
     "esm": true,
+    "swc": true,
     "experimentalSpecifierResolution": "node",
-    "require": ["tsconfig-paths/register"]
+    "require": [
+      "tsconfig-paths/register"
+    ]
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

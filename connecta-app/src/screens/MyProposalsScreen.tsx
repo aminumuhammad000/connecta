@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
+import Badge from '../components/Badge';
 import proposalService from '../services/proposalService';
 
 interface ProposalCard {
@@ -42,6 +43,8 @@ const MyProposalsScreen: React.FC = () => {
         company: p.jobId?.company || (p.clientId ? (p.clientId.firstName + ' ' + p.clientId.lastName) : 'Unknown Client'),
         status: p.status,
         submitted: `Submitted ${new Date(p.createdAt).toLocaleDateString()}`,
+        isExternal: p.jobId?.isExternal || false,
+        source: p.jobId?.source || null,
       }));
       setProposals(mapped);
     } catch (error) {
@@ -126,7 +129,14 @@ const MyProposalsScreen: React.FC = () => {
               >
                 <View style={styles.cardHeader}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                      {p.isExternal ? (
+                        <Badge label={p.source || "External"} variant="info" size="small" />
+                      ) : (
+                        <Badge label="Connecta" variant="success" size="small" />
+                      )}
+                    </View>
                     <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
                   </View>
                   <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
