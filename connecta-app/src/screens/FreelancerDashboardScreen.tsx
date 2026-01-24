@@ -16,6 +16,7 @@ import ProfileCompletionModal from '../components/ProfileCompletionModal';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSocket } from '../context/SocketContext';
 
 const { width } = Dimensions.get('window');
 
@@ -58,6 +59,32 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    loadDashboardData();
+    checkProfileStatus();
+  }, []);
+
+  useEffect(() => {
+    if (socket) {
+      const handleUpdate = () => {
+        console.log('[FreelancerDashboard] Refreshing due to socket event');
+        loadDashboardData();
+      };
+
+      socket.on('conversation:update', handleUpdate);
+      socket.on('notification:new', handleUpdate);
+      socket.on('message:receive', handleUpdate);
+
+      return () => {
+        socket.off('conversation:update', handleUpdate);
+        socket.off('notification:new', handleUpdate);
+        socket.off('message:receive', handleUpdate);
+      };
+    }
+  }, [socket]);
 
   useFocusEffect(
     useCallback(() => {

@@ -293,25 +293,37 @@ export const getTopFreelancers = async (req: Request, res: Response) => {
     });
 
     // Deduplicate just in case
-    const uniqueProfiles = Array.from(new Map(profiles.map(p => [(p.user as any)._id.toString(), p])).values());
+    const uniqueProfiles = Array.from(new Map(profiles.map(p => {
+      const userIdStr = p.user?._id ? p.user._id.toString() : p.user?.toString();
+      return [userIdStr, p];
+    })).values());
 
     // 5. Map to response
     const freelancersData = uniqueProfiles.slice(0, 10).map((p) => {
       const u = p.user as any;
+
+      // Ensure we have user data
+      if (!u) return null;
+
+      const firstName = u.firstName || 'Unknown';
+      const lastName = u.lastName || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+
       return {
-        id: u._id,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        name: `${u.firstName} ${u.lastName}`,
+        id: u._id || p.user,
+        firstName: firstName,
+        lastName: lastName,
+        name: fullName,
         role: p.jobTitle || 'Freelancer',
         rating: u.averageRating || 0,
         reviews: u.totalReviews || 0,
         jobSuccessScore: u.jobSuccessScore,
-        avatar: u.profileImage || p.avatar || `https://ui-avatars.com/api/?name=${u.firstName}+${u.lastName}`,
+        hourlyRate: p.hourlyRate, // Ensure hourlyRate is passed
+        avatar: u.profileImage || p.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`,
         skills: p.skills || [],
         location: p.location
       };
-    });
+    }).filter(Boolean); // Remove nulls
 
     res.status(200).json({ success: true, data: freelancersData });
   } catch (error) {

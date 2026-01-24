@@ -72,6 +72,7 @@ export const API_ENDPOINTS = {
     MESSAGES_BETWEEN: (userId1: string, userId2: string) => `/api/messages/between/${userId1}/${userId2}`,
     SEND_MESSAGE: '/api/messages',
     MARK_READ: '/api/messages/read',
+    UNREAD_COUNT_TOTAL: (userId: string) => `/api/messages/unread-count/${userId}`,
 
     // Dashboard
     DASHBOARD_STATS: '/api/dashboard/stats',

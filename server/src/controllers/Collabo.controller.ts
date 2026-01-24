@@ -319,3 +319,14 @@ export const deleteTask = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Failed to delete task', error: error.message });
     }
 }
+
+export const markRead = async (req: Request, res: Response) => {
+    try {
+        const { workspaceId } = req.body;
+        const userId = (req as any).user._id;
+        await CollaboService.markWorkspaceRead(workspaceId, userId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to mark read', error: error.message });
+    }
+}

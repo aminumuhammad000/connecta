@@ -163,6 +163,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
             const updatedUser = await userService.updateMe({
                 firstName: formData.firstName,
                 lastName: formData.lastName,
+                email: formData.email,
                 profileImage: profileImage || undefined,
             });
 

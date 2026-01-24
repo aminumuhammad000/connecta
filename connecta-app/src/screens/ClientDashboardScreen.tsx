@@ -18,6 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import EmailVerificationModal from '../components/EmailVerificationModal';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
+import { useSocket } from '../context/SocketContext';
 
 const { width } = Dimensions.get('window');
 
@@ -43,11 +44,32 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [collaboProjects, setCollaboProjects] = useState<any[]>([]);
   const [selectedCollaboProject, setSelectedCollaboProject] = useState<any>(null);
 
+  const { socket } = useSocket();
+
   useEffect(() => {
     loadDashboardData();
     checkProfileStatus();
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    if (socket) {
+      const handleUpdate = () => {
+        console.log('[Dashboard] Refreshing due to socket event');
+        loadDashboardData();
+      };
+
+      socket.on('conversation:update', handleUpdate);
+      socket.on('notification:new', handleUpdate);
+      socket.on('message:receive', handleUpdate);
+
+      return () => {
+        socket.off('conversation:update', handleUpdate);
+        socket.off('notification:new', handleUpdate);
+        socket.off('message:receive', handleUpdate);
+      };
+    }
+  }, [socket]);
 
   useFocusEffect(
     useCallback(() => {

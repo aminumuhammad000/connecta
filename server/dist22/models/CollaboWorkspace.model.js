@@ -7,5 +7,10 @@ const CollaboWorkspaceSchema = new Schema({
         }],
     tasks: [{ type: Schema.Types.Mixed }], // Define stricter schema later
     files: [{ type: Schema.Types.Mixed }],
+    unreadCount: {
+        type: Map,
+        of: Number,
+        default: {},
+    },
 }, { timestamps: true });
 export default mongoose.model("CollaboWorkspace", CollaboWorkspaceSchema);

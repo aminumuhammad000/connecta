@@ -154,6 +154,8 @@ export default function ChatsScreen({ navigation }: any) {
             const teamSize = item.roles?.filter((r: any) => r.status === 'filled').length || 0;
             const totalRoles = item.roles?.length || 0;
 
+            const unread = item.workspaceId?.unreadCount?.[user?._id || ''] || 0;
+
             return (
                 <TouchableOpacity
                     style={[styles.conversationItem, { backgroundColor: c.card, borderColor: c.border }]}
@@ -175,6 +177,11 @@ export default function ChatsScreen({ navigation }: any) {
                             <Text numberOfLines={1} style={[styles.lastMessage, { color: c.subtext }]}>
                                 {teamSize}/{totalRoles} members • {item.status || 'Active'}
                             </Text>
+                            {unread > 0 && (
+                                <View style={[styles.unreadBadge, { backgroundColor: c.primary }]}>
+                                    <Text style={styles.unreadText}>{unread}</Text>
+                                </View>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>

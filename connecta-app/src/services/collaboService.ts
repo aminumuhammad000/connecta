@@ -70,6 +70,11 @@ export const getMessages = async (workspaceId: string, channelName: string) => {
     return (response as any)?.data || response;
 };
 
+export const markWorkspaceRead = async (workspaceId: string) => {
+    const response = await post('/api/collabo/mark-read', { workspaceId });
+    return (response as any)?.data || response;
+};
+
 export const createTask = async (data: any) => {
     const response = await post('/api/collabo/task', data);
     return (response as any)?.data || response;

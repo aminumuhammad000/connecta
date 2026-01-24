@@ -1,9 +1,10 @@
 import express from 'express';
-import { getOrCreateConversation, getUserConversations, getConversationMessages, sendMessage, markMessagesAsRead, getMessagesBetweenUsers, deleteMessage, summarizeConversation, } from '../controllers/Message.controller';
+import { getOrCreateConversation, getUserConversations, getConversationMessages, sendMessage, markMessagesAsRead, getMessagesBetweenUsers, deleteMessage, summarizeConversation, getUnreadCount, } from '../controllers/Message.controller';
 const router = express.Router();
 // Conversation routes
 router.post('/conversations', getOrCreateConversation);
 router.get('/user/:userId/conversations', getUserConversations); // Get all conversations for a user
+router.get('/unread-count/:userId', getUnreadCount); // Get total unread count for a user
 router.get('/conversations/:userId', getUserConversations); // Legacy route
 router.get('/conversations/:conversationId/messages', getConversationMessages);
 // Extra route used by agent

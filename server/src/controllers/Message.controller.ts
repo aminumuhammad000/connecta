@@ -419,3 +419,63 @@ export const summarizeConversation = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// Get total unread count for a user
+export const getUnreadCount = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    // Find all conversations where user is a participant
+    const conversations = await Conversation.find({
+      $or: [
+        { clientId: userId },
+        { freelancerId: userId },
+        { participants: userId }
+      ],
+    });
+
+    let totalUnread = 0;
+    conversations.forEach((conv: any) => {
+      // unreadCount is a Map in the schema
+      if (conv.unreadCount) {
+        const count = conv.unreadCount.get ? conv.unreadCount.get(userId) : conv.unreadCount[userId];
+        totalUnread += Number(count) || 0;
+      }
+    });
+
+    // Also check CollaboWorkspaces
+    // We need to find workspaces where the user has an unread count entry
+    // Since unreadCount is a Map, we can't easily query keys in MongoDB directly without knowing the key
+    // But we can find workspaces where `unreadCount.userId` exists and is > 0
+    const CollaboWorkspace = mongoose.model('CollaboWorkspace');
+    const collaboWorkspaces = await CollaboWorkspace.find({
+      [`unreadCount.${userId}`]: { $gt: 0 }
+    });
+
+    collaboWorkspaces.forEach((ws: any) => {
+      if (ws.unreadCount) {
+        const count = ws.unreadCount.get ? ws.unreadCount.get(userId) : ws.unreadCount[userId];
+        totalUnread += Number(count) || 0;
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { unreadCount: totalUnread },
+    });
+  } catch (error: any) {
+    console.error('Error in getUnreadCount:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching unread count',
+      error: error.message,
+    });
+  }
+};

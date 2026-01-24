@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import reviewService from '../services/reviewService';
+import * as reviewService from '../services/reviewService';
 
 function Stars({ value, onChange, size = 28 }: { value: number; onChange: (v: number) => void; size?: number }) {
   const c = useThemeColors();
@@ -46,6 +46,7 @@ const ClientWriteReviewScreen: React.FC<any> = ({ navigation, route }) => {
       await reviewService.createReview({
         projectId,
         revieweeId,
+        reviewerType: 'client',
         rating: overall,
         comment: text,
       });

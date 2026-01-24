@@ -319,6 +319,12 @@ export const updateMyProfile = async (
       console.log('✅ Profile updated:', profile);
     }
 
+    // Sync with User model if avatar was updated
+    if (avatar) {
+      await User.findByIdAndUpdate(userId, { profileImage: avatar });
+      console.log('🔄 Synced avatar to User profileImage');
+    }
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',

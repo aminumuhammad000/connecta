@@ -4,6 +4,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Debug: Check if Cloudinary env vars are loaded
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.error('❌ Cloudinary environment variables are missing!');
+    console.log('Available Env Vars:', Object.keys(process.env).filter(key => key.startsWith('CLOUDINARY')));
+} else {
+    console.log('✅ Cloudinary environment variables loaded');
+}
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,

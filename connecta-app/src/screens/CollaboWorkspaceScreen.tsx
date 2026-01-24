@@ -5,7 +5,7 @@ const { width } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, deleteTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole } from '../services/collaboService';
+import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, deleteTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole, markWorkspaceRead } from '../services/collaboService';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Linking from 'expo-linking';
 import * as DocumentPicker from 'expo-document-picker';
@@ -70,8 +70,12 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     useEffect(() => {
         if (activeTab === 'chat') {
             setUnreadCount(0);
+            if (projectData?.workspace?._id) {
+                // Mark as read on server
+                markWorkspaceRead(projectData.workspace._id).catch(console.error);
+            }
         }
-    }, [activeTab]);
+    }, [activeTab, projectData]);
 
     useEffect(() => {
         if (!socket || !projectData?.workspace) return;

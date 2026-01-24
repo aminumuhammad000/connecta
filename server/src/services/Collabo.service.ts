@@ -233,7 +233,10 @@ class CollaboService {
     }
 
     async getClientProjectsWithRoles(clientId: string) {
-        const projects = await CollaboProject.find({ clientId }).populate('clientId', 'firstName lastName avatar').sort({ createdAt: -1 });
+        const projects = await CollaboProject.find({ clientId })
+            .populate('clientId', 'firstName lastName avatar')
+            .populate('workspaceId')
+            .sort({ createdAt: -1 });
         const projectsWithRoles = await Promise.all(projects.map(async (project) => {
             const roles = await ProjectRole.find({ projectId: project._id });
             return { ...project.toObject(), roles };
@@ -249,6 +252,7 @@ class CollaboService {
         // Get the projects
         const projects = await CollaboProject.find({ _id: { $in: projectIds } })
             .populate('clientId', 'firstName lastName avatar')
+            .populate('workspaceId')
             .sort({ createdAt: -1 });
 
         return projects;
@@ -488,10 +492,53 @@ class CollaboService {
 
         await message.populate('senderId', 'firstName lastName avatar');
 
+        // Update unread counts
         try {
+            const workspace = await CollaboWorkspace.findById(workspaceId);
+            if (workspace) {
+                const project = await CollaboProject.findById(workspace.projectId);
+                if (project) {
+                    const recipients = new Set<string>();
+
+                    // Add Client
+                    if (project.clientId.toString() !== senderId) {
+                        recipients.add(project.clientId.toString());
+                    }
+
+                    // Add Freelancers in the channel
+                    const channel = workspace.channels.find(c => c.name === channelName);
+                    if (channel) {
+                        const roles = await ProjectRole.find({
+                            _id: { $in: channel.roleIds },
+                            status: 'filled'
+                        });
+
+                        roles.forEach(role => {
+                            if (role.freelancerId && role.freelancerId.toString() !== senderId) {
+                                recipients.add(role.freelancerId.toString());
+                            }
+                        });
+                    }
+
+                    // Increment unread count for recipients
+                    const updateOps: any = {};
+                    recipients.forEach(userId => {
+                        updateOps[`unreadCount.${userId}`] = 1;
+                    });
+
+                    if (Object.keys(updateOps).length > 0) {
+                        await CollaboWorkspace.findByIdAndUpdate(workspaceId, {
+                            $inc: updateOps
+                        });
+                    }
+                }
+            }
+
             getIO().to(workspaceId).emit('collabo:message', message);
+            // Emit conversation update to trigger badge refresh
+            getIO().to(workspaceId).emit('conversation:update');
         } catch (e) {
-            console.error("Socket emit failed", e);
+            console.error("Socket emit or unread update failed", e);
         }
 
         return message;
@@ -551,6 +598,19 @@ class CollaboService {
 
         try {
             getIO().to(task.workspaceId.toString()).emit('collabo:task_delete', taskId);
+        } catch (e) { console.log("Socket emit error", e) }
+
+        return { success: true };
+    }
+
+    async markWorkspaceRead(workspaceId: string, userId: string) {
+        await CollaboWorkspace.findByIdAndUpdate(workspaceId, {
+            [`unreadCount.${userId}`]: 0
+        });
+
+        // Emit conversation update to refresh badge
+        try {
+            getIO().to(userId).emit('conversation:update');
         } catch (e) { console.log("Socket emit error", e) }
 
         return { success: true };
