@@ -10,13 +10,13 @@ import ReputationService from '../services/Reputation.service';
 export const createReview = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
-    const { projectId, rating, comment, tags } = req.body;
+    const { projectId, revieweeId: bodyRevieweeId, reviewerType: bodyReviewerType, rating, comment, tags } = req.body;
 
     // Validate input
-    if (!projectId || !rating || !comment) {
+    if (!rating || !comment) {
       return res.status(400).json({
         success: false,
-        message: 'Project ID, rating, and comment are required',
+        message: 'Rating and comment are required',
       });
     }
 
@@ -27,47 +27,60 @@ export const createReview = async (req: Request, res: Response) => {
       });
     }
 
-    // Get project
-    const project = await Project.findById(projectId);
-    if (!project) {
-      return res.status(404).json({ success: false, message: 'Project not found' });
-    }
-
-    // Check if project is completed
-    if (project.status !== 'completed') {
-      return res.status(400).json({
-        success: false,
-        message: 'Can only review completed projects',
-      });
-    }
-
-    // Determine reviewer type and reviewee
-    let reviewerType: 'client' | 'freelancer';
     let revieweeId: any;
+    let reviewerType: 'client' | 'freelancer';
 
-    if (project.clientId.toString() === userId) {
-      reviewerType = 'client';
-      revieweeId = project.freelancerId;
-    } else if (project.freelancerId.toString() === userId) {
-      reviewerType = 'freelancer';
-      revieweeId = project.clientId;
+    if (projectId) {
+      // Get project
+      const project = await Project.findById(projectId);
+      if (!project) {
+        return res.status(404).json({ success: false, message: 'Project not found' });
+      }
+
+      // Check if project is completed
+      if (project.status !== 'completed') {
+        return res.status(400).json({
+          success: false,
+          message: 'Can only review completed projects',
+        });
+      }
+
+      // Determine reviewer type and reviewee
+      if (project.clientId.toString() === userId) {
+        reviewerType = 'client';
+        revieweeId = project.freelancerId;
+      } else if (project.freelancerId.toString() === userId) {
+        reviewerType = 'freelancer';
+        revieweeId = project.clientId;
+      } else {
+        return res.status(403).json({
+          success: false,
+          message: 'You are not part of this project',
+        });
+      }
     } else {
-      return res.status(403).json({
-        success: false,
-        message: 'You are not part of this project',
-      });
+      // General review
+      if (!bodyRevieweeId || !bodyReviewerType) {
+        return res.status(400).json({
+          success: false,
+          message: 'Reviewee ID and reviewer type are required for general reviews',
+        });
+      }
+      revieweeId = bodyRevieweeId;
+      reviewerType = bodyReviewerType;
     }
 
-    // Check if review already exists
-    const existingReview = await Review.findOne({
-      projectId,
-      reviewerId: userId,
-    });
+    // Check if review already exists (prevent spam)
+    const query: any = { reviewerId: userId, revieweeId };
+    if (projectId) query.projectId = projectId;
+    // else query.projectId = { $exists: false }; // Allow multiple general reviews or just one? Let's say one per user pair if no project.
+
+    const existingReview = await Review.findOne(query);
 
     if (existingReview) {
       return res.status(400).json({
         success: false,
-        message: 'You have already reviewed this project',
+        message: 'You have already reviewed this user in this context',
       });
     }
 

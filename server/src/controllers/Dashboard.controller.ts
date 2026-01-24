@@ -8,6 +8,7 @@ import Proposal from '../models/Proposal.model';
 import Payment from '../models/Payment.model';
 import Wallet from '../models/Wallet.model';
 import mongoose from 'mongoose';
+import CollaboProject from '../models/CollaboProject.model';
 
 // Get Admin Dashboard Data
 export const getAdminStats = async (req: Request, res: Response) => {
@@ -84,19 +85,18 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     // Get active jobs count
     const activeJobsCount = await Job.countDocuments({
       clientId: userId,
-      status: 'active',
+      status: { $in: ['active', 'in_progress'] },
     });
 
-    // Get total candidates (applicants across all jobs)
-    const totalCandidatesResult = await Job.aggregate([
-      { $match: { clientId: new mongoose.Types.ObjectId(userId) } },
-      { $group: { _id: null, total: { $sum: '$applicants' } } },
-    ]);
-    const totalCandidates = totalCandidatesResult[0]?.total || 0;
+    // Get active collabo projects count
+    const activeCollaboCount = await CollaboProject.countDocuments({
+      clientId: userId,
+      status: { $in: ['active', 'planning', 'in_progress'] },
+    });
+
+    const totalActiveProjects = activeJobsCount + activeCollaboCount;
 
     // Get unread messages count
-
-    // Find conversations where user is either client or freelancer
     const conversations = await Conversation.find({
       $or: [
         { clientId: userId },
@@ -124,10 +124,23 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     ]);
     const pendingPayments = pendingPaymentsResult[0]?.total || 0;
 
+    // Get total spent (completed payments)
+    const totalSpentResult = await Payment.aggregate([
+      {
+        $match: {
+          payerId: new mongoose.Types.ObjectId(userId),
+          status: 'completed'
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalSpent = totalSpentResult[0]?.total || 0;
+
     res.status(200).json({
-      activeProjects: activeJobsCount,
+      activeProjects: totalActiveProjects,
       pendingPayments: pendingPayments,
       newMessages: unreadMessagesCount,
+      totalSpent: totalSpent
     });
   } catch (error) {
     console.error('Error fetching client dashboard:', error);
@@ -203,25 +216,102 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
   }
 };
 
+import Profile from '../models/Profile.model';
+
 // Get Top Freelancers (AI-powered recommendations)
 export const getTopFreelancers = async (req: Request, res: Response) => {
   try {
-    // Get freelancers with profiles and high ratings
-    const freelancers = await User.find({ userType: 'freelancer' })
-      .select('firstName lastName email profileImage jobSuccessScore averageRating totalReviews')
-      .sort({ jobSuccessScore: -1, averageRating: -1 })
-      .limit(10);
+    const userId = (req as any).user?.id;
 
-    const freelancersData = freelancers.map((freelancer) => ({
-      id: freelancer._id,
-      name: `${freelancer.firstName} ${freelancer.lastName}`,
-      role: 'Freelancer', // This could come from profile data
-      rating: freelancer.averageRating || 0,
-      reviews: freelancer.totalReviews || 0,
-      jobSuccessScore: freelancer.jobSuccessScore,
-      avatar: freelancer.profileImage || `https://ui-avatars.com/api/?name=${freelancer.firstName}+${freelancer.lastName}`,
-      skills: (freelancer as any).skills || ['Mobile Dev', 'React Native'] // Fallback
-    }));
+    // 1. Check for active job to personalize
+    let matchQuery: any = {};
+
+    if (userId) {
+      const latestJob = await Job.findOne({
+        clientId: userId,
+        status: { $in: ['active', 'open'] }
+      }).sort({ createdAt: -1 });
+
+      if (latestJob) {
+        const skills = latestJob.skills || [];
+        const category = latestJob.category;
+
+        if (skills.length > 0 || category) {
+          matchQuery = {
+            $or: [
+              { skills: { $in: skills } },
+              { jobCategories: category }
+            ]
+          };
+        }
+      }
+    }
+
+    // 2. Find Profiles matching criteria
+    // We limit to 20 to allow for filtering
+    let profiles: any[] = [];
+
+    if (Object.keys(matchQuery).length > 0) {
+      profiles = await Profile.find(matchQuery)
+        .populate({
+          path: 'user',
+          match: { userType: 'freelancer' },
+          select: 'firstName lastName email profileImage jobSuccessScore averageRating totalReviews'
+        })
+        .limit(20);
+
+      // Filter out where user is null (mismatch or not freelancer)
+      profiles = profiles.filter(p => p.user);
+    }
+
+    // 3. Fallback if no matches or new client
+    if (profiles.length < 5) {
+      // Fetch top rated freelancers to fill the gap
+      const excludeIds = profiles.map(p => (p.user as any)._id);
+
+      const topUsers = await User.find({
+        userType: 'freelancer',
+        _id: { $nin: excludeIds }
+      })
+        .sort({ jobSuccessScore: -1, averageRating: -1 })
+        .limit(10);
+
+      const topProfiles = await Profile.find({ user: { $in: topUsers.map(u => u._id) } })
+        .populate('user', 'firstName lastName email profileImage jobSuccessScore averageRating totalReviews');
+
+      // Filter out any null users again just in case
+      const validTopProfiles = topProfiles.filter(p => p.user);
+      profiles = [...profiles, ...validTopProfiles];
+    }
+
+    // 4. Sort by relevance (if matched) or rating
+    // Simple sort: Job Success Score descending
+    profiles.sort((a, b) => {
+      const userA = a.user as any;
+      const userB = b.user as any;
+      return (userB.jobSuccessScore || 0) - (userA.jobSuccessScore || 0);
+    });
+
+    // Deduplicate just in case
+    const uniqueProfiles = Array.from(new Map(profiles.map(p => [(p.user as any)._id.toString(), p])).values());
+
+    // 5. Map to response
+    const freelancersData = uniqueProfiles.slice(0, 10).map((p) => {
+      const u = p.user as any;
+      return {
+        id: u._id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        name: `${u.firstName} ${u.lastName}`,
+        role: p.jobTitle || 'Freelancer',
+        rating: u.averageRating || 0,
+        reviews: u.totalReviews || 0,
+        jobSuccessScore: u.jobSuccessScore,
+        avatar: u.profileImage || p.avatar || `https://ui-avatars.com/api/?name=${u.firstName}+${u.lastName}`,
+        skills: p.skills || [],
+        location: p.location
+      };
+    });
 
     res.status(200).json({ success: true, data: freelancersData });
   } catch (error) {

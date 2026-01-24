@@ -61,11 +61,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
-import { seedFreelancersIfMissing } from "./utils/seeder";
-
 // Connect to Database
 connectDB().then(() => {
-  seedFreelancersIfMissing();
+  console.log("🚀 Database connected and ready.");
 });
 
 // Routes
@@ -104,6 +102,9 @@ app.use("/api/external-gigs", externalGigsRoutes);
 
 import collaboRoutes from "./routes/Collabo.routes";
 app.use("/api/collabo", collaboRoutes);
+
+import avatarRoutes from "./routes/avatar.routes";
+app.use("/api/avatars", avatarRoutes);
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
@@ -239,8 +240,8 @@ io.on("connection", (socket) => {
 });
 
 // Start Server
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+server.listen(Number(PORT), "0.0.0.0", () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`🔌 Socket.io ready for real-time messaging`);
 
   // Initialize cron jobs

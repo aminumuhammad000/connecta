@@ -17,6 +17,7 @@ export interface IUser extends Document {
   isVerified?: boolean;
   pushToken?: string;
   isSubscribedToGigs?: boolean;
+  emailFrequency?: "daily" | "weekly" | "monthly";
 
   // Reputation & Badges
   averageRating: number;
@@ -68,6 +69,11 @@ const UserSchema: Schema<IUser> = new Schema(
     isVerified: { type: Boolean, default: false },
     pushToken: { type: String, required: false },
     isSubscribedToGigs: { type: Boolean, default: true },
+    emailFrequency: {
+      type: String,
+      enum: ["daily", "weekly", "monthly"],
+      default: "daily",
+    },
 
     // Reputation & Badges
     averageRating: { type: Number, default: 0 },

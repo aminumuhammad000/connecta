@@ -3,6 +3,30 @@ import Profile from '../models/Profile.model';
 import User from '../models/user.model';
 
 /**
+ * Upload a portfolio image to Cloudinary
+ */
+export const uploadPortfolioImage = async (req: Request, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+
+        const imageUrl = (req.file as any).path;
+
+        return res.status(200).json({
+            success: true,
+            message: 'Portfolio image uploaded successfully',
+            data: {
+                url: imageUrl
+            }
+        });
+    } catch (error: any) {
+        console.error('Portfolio Upload Error:', error);
+        return res.status(500).json({ success: false, message: 'Failed to upload portfolio image', error: error.message });
+    }
+};
+
+/**
  * Add a portfolio item
  */
 export const addPortfolioItem = async (req: Request, res: Response) => {

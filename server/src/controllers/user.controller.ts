@@ -132,6 +132,7 @@ export const signup = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       userType,
+      profileImage: `https://i.pravatar.cc/300?u=${email}`
     });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -207,6 +208,7 @@ export const googleSignup = async (req: Request, res: Response) => {
       email,
       userType,
       password: "", // no password needed for Google accounts
+      profileImage: `https://i.pravatar.cc/300?u=${email}`
     });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -780,6 +782,7 @@ export const updateMe = async (req: Request, res: Response) => {
     if (lastName) updateData.lastName = lastName;
     if (profileImage !== undefined) updateData.profileImage = profileImage;
     if (email) updateData.email = email;
+    if (req.body.emailFrequency) updateData.emailFrequency = req.body.emailFrequency;
 
     console.log('UpdateMe updateData:', updateData);
 

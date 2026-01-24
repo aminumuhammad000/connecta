@@ -8,20 +8,20 @@ export interface IReview extends Document {
   rating: number; // 1-5 stars
   comment: string;
   tags?: string[]; // e.g., ['Professional', 'On Time', 'Great Communication']
-  
+
   // Response from reviewee
   response?: string;
   respondedAt?: Date;
-  
+
   // Moderation
   isPublic: boolean;
   isFlagged: boolean;
   flagReason?: string;
-  
+
   // Helpful votes
   helpfulCount: number;
   notHelpfulCount: number;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +31,6 @@ const ReviewSchema = new Schema<IReview>(
     projectId: {
       type: Schema.Types.ObjectId,
       ref: 'Project',
-      required: true,
     },
     reviewerId: {
       type: Schema.Types.ObjectId,

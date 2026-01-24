@@ -65,7 +65,7 @@ export const sendOTPEmail = async (
     // For automated emails, we prefer a no-reply address if possible, 
     // but we must send FROM the authenticated user to avoid spam filters/errors.
     // We set the Reply-To to a no-reply address.
-    const replyTo = 'no-reply@connecta.ng';
+    const replyTo = 'no-reply@myconnecta.ng';
 
     const isVerification = type === 'EMAIL_VERIFICATION';
     const subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
@@ -193,7 +193,7 @@ export const sendWelcomeEmail = async (
           If you have any questions, feel free to reply to this email.
       </p>
     `,
-    actionUrl: process.env.CLIENT_URL || 'https://connecta.ng',
+    actionUrl: process.env.CLIENT_URL || 'https://app.myconnecta.ng',
     actionText: 'Get Started'
   });
   const text = `Hi ${userName}, Welcome to Connecta! Your account has been successfully verified. We're thrilled to have you on board.`;
@@ -382,7 +382,7 @@ export const sendGigNotificationEmail = async (
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
 
     // Set Reply-To to no-reply for notifications
-    const replyTo = 'no-reply@connecta.ng';
+    const replyTo = 'no-reply@myconnecta.ng';
 
     const subject = `New Gig Alert: ${jobTitle}`;
     const html = getBaseTemplate({

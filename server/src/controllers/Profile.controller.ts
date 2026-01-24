@@ -171,9 +171,16 @@ export const getMyProfile = async (
  * @desc Get profile by ID
  * @route GET /api/profiles/:id
  */
+/**
+ * @desc Get profile by ID
+ * @route GET /api/profiles/:id
+ */
 export const getProfileById = async (req: Request, res: Response) => {
   try {
-    const profile = await Profile.findById(req.params.id).populate("user", "firstName lastName email userType");
+    const profile = await Profile.findById(req.params.id).populate(
+      "user",
+      "firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate averageRating totalReviews jobSuccessScore badges performanceMetrics"
+    );
 
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
@@ -191,7 +198,10 @@ export const getProfileById = async (req: Request, res: Response) => {
  */
 export const getProfileByUserId = async (req: Request, res: Response) => {
   try {
-    const profile = await Profile.findOne({ user: req.params.userId }).populate("user", "firstName lastName email userType");
+    const profile = await Profile.findOne({ user: req.params.userId }).populate(
+      "user",
+      "firstName lastName email profileImage userType isPremium subscriptionTier subscriptionStatus premiumExpiryDate averageRating totalReviews jobSuccessScore badges performanceMetrics"
+    );
 
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });

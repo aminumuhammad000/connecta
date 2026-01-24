@@ -165,6 +165,7 @@ const seedDatabase = async () => {
       seedData.users.map(async (user) => ({
         ...user,
         password: await bcrypt.hash(user.password, 10),
+        profileImage: `https://i.pravatar.cc/300?u=${user.email}`
       }))
     );
     const users = await User.insertMany(hashedUsers);

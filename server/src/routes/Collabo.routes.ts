@@ -15,6 +15,7 @@ router.get('/messages', authenticate, CollaboController.getMessages);
 router.post('/task', authenticate, CollaboController.createTask);
 router.get('/tasks', authenticate, CollaboController.getTasks);
 router.patch('/task/:id', authenticate, CollaboController.updateTask);
+router.delete('/task/:id', authenticate, CollaboController.deleteTask);
 
 // Files (must be before /:id route)
 router.post('/file', authenticate, upload.single('file'), CollaboController.uploadFile);

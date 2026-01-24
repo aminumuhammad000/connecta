@@ -2,24 +2,32 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import dotenv from 'dotenv';
+import SystemSettings from '../models/SystemSettings.model';
 
 dotenv.config();
 
 class LLMService {
-    private model: ChatGoogleGenerativeAI;
 
-    constructor() {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            console.warn("⚠️ GEMINI_API_KEY is missing. LLM features will fail.");
+    private async getModel(): Promise<ChatGoogleGenerativeAI | null> {
+        try {
+            const settings = await SystemSettings.getSettings();
+            const apiKey = settings.ai.geminiApiKey || process.env.GEMINI_API_KEY;
+
+            if (!apiKey) {
+                console.warn("⚠️ GEMINI_API_KEY is missing in System Settings and Environment.");
+                return null;
+            }
+
+            return new ChatGoogleGenerativeAI({
+                apiKey: apiKey,
+                model: settings.ai.model || "gemini-2.0-flash",
+                maxOutputTokens: 2048,
+                temperature: 0.7,
+            });
+        } catch (error) {
+            console.error("Error fetching system settings for LLM:", error);
+            return null;
         }
-
-        this.model = new ChatGoogleGenerativeAI({
-            apiKey: apiKey,
-            model: "gemini-1.5-flash",
-            maxOutputTokens: 2048,
-            temperature: 0.7,
-        });
     }
 
     /**
@@ -27,51 +35,37 @@ class LLMService {
      */
     async scopeProject(description: string): Promise<any> {
         try {
+            const model = await this.getModel();
+
+            if (!model) {
+                console.warn("LLM Model not available, using fallback.");
+                return this.getFallbackScope(description);
+            }
+
             const prompt = ChatPromptTemplate.fromMessages([
-                ["system", `You are an expert Senior Project Manager and CTO.
-                Your goal is to actively scope a software project based on a high-level description. You must output a STRICT JSON object.
+                ["system", `You are a Senior Project Architect. Scope the software project based on the user's input.
 
-                Analyze the user's request and generate:
-                1. A comprehensive team structure (Roles).
-                2. A realistic budget estimate (in USD).
-                3. A phased delivery timeline.
-                4. A suitable modern tech stack.
+### 📋 REQUIREMENTS CATEGORIES
+1. **TEAM STRUCTURE**: Define roles (title, description, budget, skills, count).
+2. **BUDGET**: Market-realistic estimate in USD.
+3. **TIMELINE**: Phased roadmap with action-oriented milestones.
+4. **TECH STACK**: Modern, suitable tools matching the roles.
 
-                Output JSON Structure:
-                {{
-                    "roles": [
-                        {{
-                            "title": "e.g. Senior Backend Engineer",
-                            "description": "Specific responsibilities for this project.",
-                            "budget": 1500,
-                            "skills": ["Node.js", "TypeScript", "PostgreSQL"],
-                            "count": 1
-                        }}
-                    ],
-                    "totalEstimatedBudget": 5000,
-                    "timeline": "e.g. 6 weeks",
-                    "milestones": [
-                        {{ 
-                            "title": "Phase 1: MVP Core", 
-                            "description": "Implementation of user auth and database setup.", 
-                            "duration": "2 weeks",
-                            "deliverables": ["API Documentation", "User Login Flow"] 
-                        }}
-                    ],
-                    "recommendedStack": ["React Native", "NestJS", "MongoDB"],
-                    "risks": ["Potential integration complexity with 3rd party APIs"]
-                }}
+### 📋 OUTPUT SCHEMA (STRICT JSON)
+{{
+    "roles": [{{ "title": "...", "description": "...", "budget": 0, "skills": [], "count": 1 }}],
+    "totalEstimatedBudget": 0,
+    "timeline": "...",
+    "milestones": [{{ "title": "...", "description": "...", "duration": "...", "deliverables": [] }}],
+    "recommendedStack": [],
+    "risks": []
+}}
 
-                Constraints:
-                - Roles must match the recommended stack (e.g. if React is chosen, include a Frontend Dev with React skills).
-                - milestone titles should be action-oriented.
-                - budget should be market-realistic for a freelance team.
-                - Return ONLY raw JSON. No markdown formatting.
-                `],
+Return ONLY raw JSON. No markdown.`],
                 ["human", "{description}"]
             ]);
 
-            const chain = prompt.pipe(this.model).pipe(new StringOutputParser());
+            const chain = prompt.pipe(model).pipe(new StringOutputParser());
             const response = await chain.invoke({ description });
 
             // robust JSON parsing
@@ -89,46 +83,68 @@ class LLMService {
 
         } catch (error) {
             console.error("LLM Scoping Error:", error);
-            // Fallback to basic structure on error to prevent crashing
-            return {
-                roles: [
-                    { title: "Full Stack Developer", description: "Core development", budget: 1000, skills: ["JavaScript"], count: 1 }
-                ],
-                totalEstimatedBudget: 1000,
-                timeline: "4 weeks"
-            };
+            return this.getFallbackScope(description);
         }
+    }
+
+    private getFallbackScope(description: string) {
+        const lowerDesc = description.toLowerCase();
+        let estimatedBudget = 2000;
+        let timeline = "4 weeks";
+
+        // Simple heuristic for budget
+        if (lowerDesc.includes('app') || lowerDesc.includes('mobile') || lowerDesc.includes('ios') || lowerDesc.includes('android')) {
+            estimatedBudget = 4500;
+            timeline = "6 weeks";
+        } else if (lowerDesc.includes('web') || lowerDesc.includes('platform') || lowerDesc.includes('saas') || lowerDesc.includes('dashboard')) {
+            estimatedBudget = 3800;
+            timeline = "5 weeks";
+        }
+
+        // Return empty roles as requested by user if AI fails
+        return {
+            roles: [],
+            totalEstimatedBudget: estimatedBudget,
+            timeline: timeline,
+            milestones: [],
+            recommendedStack: [],
+            risks: []
+        };
     }
     /**
      * Generates a personalized cover letter.
      */
     async generateCoverLetter(jobTitle: string, jobDescription: string, freelancerName: string, freelancerSkills: string[], freelancerBio: string): Promise<string> {
         try {
+            const model = await this.getModel();
+
+            if (!model) {
+                return `Dear Hiring Manager,\n\nI am writing to express my interest in the ${jobTitle} position. With my background in ${freelancerSkills[0] || 'software development'}, I am confident I can contribute effectively to your project.\n\nThank you for considering my application.\n\nSincerely,\n${freelancerName}`;
+            }
+
             const prompt = ChatPromptTemplate.fromMessages([
-                ["system", `You are an expert career coach and professional copywriter.
-                Your goal is to write a compelling, professional, and personalized cover letter for a freelancer applying to a job.
-                
-                The cover letter should:
-                1. Addressed to the Hiring Manager (or specific name if known).
-                2. Highlight relevant skills matching the job description.
-                3. Be enthusiastic but professional.
-                4. keep it concise (under 250 words).
-                
-                Freelancer Profile:
-                - Name: {freelancerName}
-                - Bio: {freelancerBio}
-                - Skills: {freelancerSkills}
-                
-                Job Details:
-                - Title: {jobTitle}
-                - Description: {jobDescription}
-                
-                Output ONLY the raw cover letter text. No markdown blocks, no "Here is your cover letter:".
-                `],
+                ["system", `You are a Professional Career Coach. Write a concise, personalized cover letter.
+
+### 📋 REQUIREMENTS
+1. **TONE**: Professional, enthusiastic, and confident.
+2. **CONTENT**: Match freelancer's bio/skills to the job description.
+3. **LENGTH**: Under 200 words.
+4. **FORMAT**: Standard professional letter format.
+
+### 👤 FREELANCER
+- Name: {freelancerName}
+- Bio: {freelancerBio}
+- Skills: {freelancerSkills}
+
+### 💼 JOB
+- Title: {jobTitle}
+- Description: {jobDescription}
+
+Output ONLY the raw cover letter text.`],
                 ["human", "Write the cover letter."]
             ]);
 
-            const chain = prompt.pipe(this.model).pipe(new StringOutputParser());
+            const chain = prompt.pipe(model).pipe(new StringOutputParser());
             const response = await chain.invoke({
                 freelancerName,
                 freelancerBio,
