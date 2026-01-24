@@ -1,5 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 import dotenv from 'dotenv';
 dotenv.config();
 // Debug: Check if Cloudinary env vars are loaded

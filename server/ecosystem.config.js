@@ -2,8 +2,8 @@ module.exports = {
     apps: [
         {
             name: 'connecta-server',
-            script: 'tsx',
-            args: 'src/app.ts',
+            script: 'npm',
+            args: 'start',
             cwd: '/var/www/connecta/server',
             instances: 1,
             autorestart: true,
