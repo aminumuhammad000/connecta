@@ -179,7 +179,7 @@ export const createProposal = async (req, res) => {
                     const freelancer = req.user;
                     if (client && client.email) {
                         const freelancerName = freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'A freelancer';
-                        const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/jobs/${job._id}`;
+                        const link = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/jobs/${job._id}`;
                         await emailService.sendNewProposalNotificationToClient(client.email, client.firstName || 'Client', freelancerName, job.title, link);
                     }
                     // Also send Socket Notification to Client
@@ -562,7 +562,7 @@ export const approveProposal = async (req, res) => {
             const freelancerUser = await User.findById(actualFreelancerId);
             if (freelancerUser && freelancerUser.email) {
                 const emailService = require('../services/email.service');
-                const projectLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
+                const projectLink = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
                 await emailService.sendProposalAcceptedEmail(freelancerUser.email, freelancerUser.firstName || 'Freelancer', project.title, clientName, projectLink);
             }
         }
