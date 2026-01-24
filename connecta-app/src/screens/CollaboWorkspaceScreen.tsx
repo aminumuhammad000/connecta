@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, TextInput, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole } from '../services/collaboService';
+import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, deleteTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole } from '../services/collaboService';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Linking from 'expo-linking';
 import * as DocumentPicker from 'expo-document-picker';
 import { API_BASE_URL } from '../utils/constants';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     const { projectId } = route.params;
@@ -23,11 +26,14 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const { showAlert } = useInAppAlert();
+    const [unreadCount, setUnreadCount] = useState(0);
 
     // Task State
     const [tasks, setTasks] = useState<any[]>([]);
     const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
-    const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [isEditingTask, setIsEditingTask] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<any>(null);
+    const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'medium', assigneeId: '' });
     const [activeTaskTab, setActiveTaskTab] = useState('todo'); // For mobile tabs view instead of horizontal scroll if preferred, but let's try columns first. 
     // File State
     const [files, setFiles] = useState<any[]>([]);
@@ -62,6 +68,12 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     }, [route.params?.selectedFreelancer, route.params?.targetRoleId]);
 
     useEffect(() => {
+        if (activeTab === 'chat') {
+            setUnreadCount(0);
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
         if (!socket || !projectData?.workspace) return;
 
         const workspaceId = projectData.workspace._id;
@@ -73,6 +85,9 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                     if (prev.some(m => m._id === newMessage._id)) return prev;
                     return [...prev, newMessage];
                 });
+                if (activeTab !== 'chat') {
+                    setUnreadCount(prev => prev + 1);
+                }
             }
         });
 
@@ -90,6 +105,10 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
             }
         });
 
+        socket.on('collabo:task_delete', (deletedTaskId: string) => {
+            setTasks(prev => prev.filter(t => t._id !== deletedTaskId));
+        });
+
         socket.on('collabo:file_upload', (newFile: any) => {
             if (newFile.workspaceId === workspaceId) {
                 setFiles(prev => {
@@ -102,9 +121,10 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
             socket.emit('room:leave', workspaceId);
             socket.off('collabo:message');
             socket.off('collabo:task_update');
+            socket.off('collabo:task_delete');
             socket.off('collabo:file_upload');
         };
-    }, [socket, projectData]);
+    }, [socket, projectData, activeTab]);
 
     const loadData = async () => {
         try {
@@ -359,55 +379,93 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     const renderChat = () => (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             style={{ flex: 1 }}
         >
             <FlatList
                 data={messages}
                 keyExtractor={item => item._id}
-                contentContainerStyle={{ padding: 16 }}
+                contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+                showsVerticalScrollIndicator={false}
                 renderItem={({ item }) => {
                     const isMe = item.senderId._id === user?._id;
                     return (
                         <View style={{
                             alignSelf: isMe ? 'flex-end' : 'flex-start',
-                            maxWidth: '80%',
-                            marginBottom: 12
+                            maxWidth: '85%',
+                            marginBottom: 16,
+                            flexDirection: 'row',
+                            alignItems: 'flex-end',
+                            gap: 8
                         }}>
-                            {!isMe && <Text style={{ fontSize: 10, color: c.subtext, marginBottom: 2 }}>{item.senderId.firstName}</Text>}
-                            <View style={{
-                                backgroundColor: isMe ? c.primary : c.card,
-                                padding: 12,
-                                borderRadius: 12,
-                                borderWidth: isMe ? 0 : 1,
-                                borderColor: c.border
-                            }}>
-                                <Text style={{ color: isMe ? '#FFF' : c.text }}>{item.content}</Text>
+                            {!isMe && (
+                                <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: c.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Text style={{ fontSize: 12, fontWeight: '700', color: c.primary }}>{item.senderId.firstName?.[0]}</Text>
+                                </View>
+                            )}
+                            <View style={{ flexShrink: 1 }}>
+                                {!isMe && <Text style={{ fontSize: 11, color: c.subtext, marginBottom: 4, marginLeft: 4 }}>{item.senderId.firstName} • {item.senderRole}</Text>}
+                                <View style={{
+                                    backgroundColor: isMe ? c.primary : c.card,
+                                    padding: 12,
+                                    paddingHorizontal: 16,
+                                    borderRadius: 20,
+                                    borderBottomRightRadius: isMe ? 4 : 20,
+                                    borderBottomLeftRadius: isMe ? 20 : 4,
+                                    borderWidth: isMe ? 0 : 1,
+                                    borderColor: c.border,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 1 },
+                                    shadowOpacity: 0.05,
+                                    shadowRadius: 2,
+                                    elevation: 1
+                                }}>
+                                    <Text style={{ color: isMe ? '#FFF' : c.text, fontSize: 15, lineHeight: 20 }}>{item.content}</Text>
+                                </View>
+                                <Text style={{ fontSize: 10, color: c.subtext, marginTop: 4, alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
+                                    {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
                             </View>
-                            <Text style={{ fontSize: 10, color: c.subtext, marginTop: 2, alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
-                                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </Text>
                         </View>
                     );
                 }}
             />
-            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: c.border, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ padding: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: c.border, flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, paddingBottom: Platform.OS === 'ios' ? 20 : 12 }}>
+                <TouchableOpacity style={{ marginRight: 12 }}>
+                    <MaterialIcons name="add-circle-outline" size={24} color={c.subtext} />
+                </TouchableOpacity>
                 <TextInput
                     style={{
                         flex: 1,
-                        backgroundColor: c.card,
+                        backgroundColor: c.background,
                         padding: 12,
+                        paddingHorizontal: 16,
                         borderRadius: 24,
                         color: c.text,
                         borderWidth: 1,
-                        borderColor: c.border
+                        borderColor: c.border,
+                        fontSize: 15
                     }}
                     placeholder="Type a message..."
                     placeholderTextColor={c.subtext}
                     value={inputText}
                     onChangeText={setInputText}
+                    multiline
                 />
-                <TouchableOpacity onPress={handleSend} style={{ marginLeft: 12, backgroundColor: c.primary, padding: 12, borderRadius: 24 }}>
-                    <MaterialIcons name="send" size={20} color="#FFF" />
+                <TouchableOpacity
+                    onPress={handleSend}
+                    disabled={!inputText.trim()}
+                    style={{
+                        marginLeft: 12,
+                        backgroundColor: inputText.trim() ? c.primary : c.subtext + '40',
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    <MaterialIcons name="send" size={22} color="#FFF" />
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
@@ -415,21 +473,53 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
     // ... rest of the file
 
-    const handleCreateTask = async () => {
-        if (!newTaskTitle.trim()) return;
+    const handleSaveTask = async () => {
+        if (!taskForm.title.trim()) return;
         try {
-            const newTask = await createTask({
-                workspaceId: projectData.workspace._id,
-                title: newTaskTitle,
-                status: 'todo',
-                priority: 'medium'
-            });
-            setTasks(prev => [newTask, ...prev]);
-            setNewTaskTitle('');
+            if (isEditingTask && selectedTask) {
+                const updated = await updateTask(selectedTask._id, taskForm);
+                setTasks(prev => prev.map(t => t._id === selectedTask._id ? updated : t));
+                showAlert({ title: 'Task updated', type: 'success' });
+            } else {
+                const newTask = await createTask({
+                    workspaceId: projectData.workspace._id,
+                    ...taskForm,
+                    status: 'todo'
+                });
+                setTasks(prev => [newTask, ...prev]);
+                showAlert({ title: 'Task created', type: 'success' });
+            }
+            setTaskForm({ title: '', description: '', priority: 'medium', assigneeId: '' });
             setIsTaskModalVisible(false);
+            setIsEditingTask(false);
+            setSelectedTask(null);
         } catch (error) {
             console.error(error);
+            showAlert({ title: 'Failed to save task', type: 'error' });
         }
+    };
+
+    const handleDeleteTask = async (taskId: string) => {
+        Alert.alert(
+            "Delete Task",
+            "Are you sure you want to delete this task?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteTask(taskId);
+                            setTasks(prev => prev.filter(t => t._id !== taskId));
+                            showAlert({ title: 'Task deleted', type: 'success' });
+                        } catch (error) {
+                            showAlert({ title: 'Failed to delete task', type: 'error' });
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
@@ -444,17 +534,24 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
     const renderTasks = () => {
         const columns = [
-            { id: 'todo', title: 'To Do', color: '#64748B' },
-            { id: 'in_progress', title: 'In Progress', color: '#3B82F6' },
-            { id: 'review', title: 'Review', color: '#F59E0B' },
-            { id: 'done', title: 'Done', color: '#10B981' }
+            { id: 'todo', title: 'To Do', color: '#64748B', icon: 'list' },
+            { id: 'in_progress', title: 'In Progress', color: '#3B82F6', icon: 'trending-up' },
+            { id: 'review', title: 'Review', color: '#F59E0B', icon: 'visibility' },
+            { id: 'done', title: 'Done', color: '#10B981', icon: 'check-circle' }
         ];
+
+        const teamMembers = projectData?.roles?.filter((r: any) => r.status === 'filled').map((r: any) => r.freelancerId) || [];
 
         return (
             <View style={{ flex: 1 }}>
-                <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'flex-end' }}>
+                <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>Project Tasks</Text>
                     <TouchableOpacity
-                        onPress={() => setIsTaskModalVisible(true)}
+                        onPress={() => {
+                            setIsEditingTask(false);
+                            setTaskForm({ title: '', description: '', priority: 'medium', assigneeId: '' });
+                            setIsTaskModalVisible(true);
+                        }}
                         style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 }}
                     >
                         <MaterialIcons name="add" size={20} color="#FFF" />
@@ -462,44 +559,95 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView horizontal pagingEnabled style={{ flex: 1 }}>
+                <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
                     {columns.map(col => (
-                        <View key={col.id} style={{ width: 340, padding: 8, height: '100%' }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingHorizontal: 8 }}>
-                                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: col.color, marginRight: 8 }} />
-                                <Text style={{ color: c.text, fontWeight: '700', fontSize: 16 }}>{col.title}</Text>
-                                <View style={{ backgroundColor: c.border, borderRadius: 10, paddingHorizontal: 8, marginLeft: 8 }}>
-                                    <Text style={{ fontSize: 12, color: c.subtext }}>
+                        <View key={col.id} style={{ width: width - 40, marginHorizontal: 20, paddingVertical: 8, height: '100%' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingHorizontal: 4 }}>
+                                <MaterialIcons name={col.icon as any} size={20} color={col.color} style={{ marginRight: 8 }} />
+                                <Text style={{ color: c.text, fontWeight: '700', fontSize: 16, flex: 1 }}>{col.title}</Text>
+                                <View style={{ backgroundColor: col.color + '20', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 2 }}>
+                                    <Text style={{ fontSize: 12, color: col.color, fontWeight: '700' }}>
                                         {tasks.filter(t => t.status === col.id).length}
                                     </Text>
                                 </View>
                             </View>
 
-                            <ScrollView style={{ flex: 1, backgroundColor: c.background === '#000' ? '#111' : '#F8FAFC', borderRadius: 12 }}>
+                            <ScrollView style={{ flex: 1, backgroundColor: c.isDark ? '#111' : '#F8FAFC', borderRadius: 16, padding: 8 }}>
                                 {tasks.filter(t => t.status === col.id).map(task => (
-                                    <TouchableOpacity
+                                    <View
                                         key={task._id}
-                                        onPress={() => {
-                                            // Simple rotation for demo: todo -> in_progress -> review -> done
-                                            const nextWrapper: any = { todo: 'in_progress', in_progress: 'review', review: 'done', done: 'todo' };
-                                            handleUpdateTaskStatus(task._id, nextWrapper[task.status]);
+                                        style={{
+                                            backgroundColor: c.card,
+                                            padding: 16,
+                                            marginBottom: 12,
+                                            borderRadius: 12,
+                                            borderWidth: 1,
+                                            borderColor: c.border,
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: 0.05,
+                                            shadowRadius: 4,
+                                            elevation: 2
                                         }}
-                                        style={{ backgroundColor: c.card, padding: 12, margin: 8, borderRadius: 8, borderWidth: 1, borderColor: c.border }}
                                     >
-                                        <Text style={{ color: c.text, fontWeight: '600', marginBottom: 4 }}>{task.title}</Text>
-                                        {task.assigneeId && (
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                                                <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: 'purple', alignItems: 'center', justifyContent: 'center', marginRight: 6 }}>
-                                                    <Text style={{ color: '#FFF', fontSize: 10 }}>{task.assigneeId.firstName?.[0]}</Text>
-                                                </View>
-                                                <Text style={{ fontSize: 12, color: c.subtext }}>{task.assigneeId.firstName}</Text>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={{ color: c.text, fontWeight: '700', fontSize: 15, marginBottom: 4 }}>{task.title}</Text>
+                                                {task.description ? <Text style={{ color: c.subtext, fontSize: 13 }} numberOfLines={2}>{task.description}</Text> : null}
                                             </View>
-                                        )}
-                                    </TouchableOpacity>
+                                            <View style={{ flexDirection: 'row', gap: 4 }}>
+                                                <TouchableOpacity onPress={() => {
+                                                    setSelectedTask(task);
+                                                    setTaskForm({
+                                                        title: task.title,
+                                                        description: task.description || '',
+                                                        priority: task.priority || 'medium',
+                                                        assigneeId: task.assigneeId?._id || ''
+                                                    });
+                                                    setIsEditingTask(true);
+                                                    setIsTaskModalVisible(true);
+                                                }}>
+                                                    <MaterialIcons name="edit" size={18} color={c.subtext} />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity onPress={() => handleDeleteTask(task._id)}>
+                                                    <MaterialIcons name="delete-outline" size={18} color="#EF4444" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                {task.assigneeId ? (
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: c.primary + '20', alignItems: 'center', justifyContent: 'center', marginRight: 6 }}>
+                                                            <Text style={{ color: c.primary, fontSize: 10, fontWeight: '700' }}>{task.assigneeId.firstName?.[0]}</Text>
+                                                        </View>
+                                                        <Text style={{ fontSize: 12, color: c.subtext }}>{task.assigneeId.firstName}</Text>
+                                                    </View>
+                                                ) : (
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <MaterialIcons name="person-outline" size={14} color={c.subtext} style={{ marginRight: 4 }} />
+                                                        <Text style={{ fontSize: 12, color: c.subtext }}>Unassigned</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+
+                                            <TouchableOpacity
+                                                onPress={() => {
+                                                    const nextWrapper: any = { todo: 'in_progress', in_progress: 'review', review: 'done', done: 'todo' };
+                                                    handleUpdateTaskStatus(task._id, nextWrapper[task.status]);
+                                                }}
+                                                style={{ backgroundColor: c.border, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                                            >
+                                                <Text style={{ fontSize: 11, color: c.text, fontWeight: '600' }}>Move Next</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
                                 ))}
                                 {tasks.filter(t => t.status === col.id).length === 0 && (
-                                    <View style={{ padding: 20, alignItems: 'center' }}>
-                                        <Text style={{ color: c.subtext, fontSize: 12 }}>No tasks</Text>
+                                    <View style={{ padding: 40, alignItems: 'center' }}>
+                                        <MaterialIcons name="inbox" size={40} color={c.subtext + '40'} />
+                                        <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8 }}>No tasks here</Text>
                                     </View>
                                 )}
                             </ScrollView>
@@ -510,28 +658,97 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                 <Modal
                     visible={isTaskModalVisible}
                     transparent
-                    animationType="slide"
+                    animationType="fade"
                     onRequestClose={() => setIsTaskModalVisible(false)}
                 >
-                    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
-                        <View style={{ backgroundColor: c.card, borderRadius: 16, padding: 20 }}>
-                            <Text style={{ fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 16 }}>New Task</Text>
-                            <TextInput
-                                style={{ backgroundColor: c.background, padding: 12, borderRadius: 8, color: c.text, borderWidth: 1, borderColor: c.border, marginBottom: 16 }}
-                                placeholder="Task Title"
-                                placeholderTextColor={c.subtext}
-                                value={newTaskTitle}
-                                onChangeText={setNewTaskTitle}
-                            />
-                            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
-                                <TouchableOpacity onPress={() => setIsTaskModalVisible(false)} style={{ padding: 10 }}>
-                                    <Text style={{ color: c.subtext }}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={handleCreateTask} style={{ backgroundColor: c.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 }}>
-                                    <Text style={{ color: '#FFF', fontWeight: '600' }}>Create</Text>
-                                </TouchableOpacity>
+                    <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 20 }}>
+                        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                            <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 24, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 10 }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                                    <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>{isEditingTask ? 'Edit Task' : 'New Task'}</Text>
+                                    <TouchableOpacity onPress={() => setIsTaskModalVisible(false)}>
+                                        <MaterialIcons name="close" size={24} color={c.subtext} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text style={{ color: c.text, fontWeight: '600', marginBottom: 8 }}>Title</Text>
+                                <TextInput
+                                    style={{ backgroundColor: c.background, padding: 12, borderRadius: 12, color: c.text, borderWidth: 1, borderColor: c.border, marginBottom: 16 }}
+                                    placeholder="What needs to be done?"
+                                    placeholderTextColor={c.subtext}
+                                    value={taskForm.title}
+                                    onChangeText={(text) => setTaskForm({ ...taskForm, title: text })}
+                                />
+
+                                <Text style={{ color: c.text, fontWeight: '600', marginBottom: 8 }}>Description (Optional)</Text>
+                                <TextInput
+                                    style={{ backgroundColor: c.background, padding: 12, borderRadius: 12, color: c.text, borderWidth: 1, borderColor: c.border, marginBottom: 16, minHeight: 80 }}
+                                    placeholder="Add more details..."
+                                    placeholderTextColor={c.subtext}
+                                    value={taskForm.description}
+                                    onChangeText={(text) => setTaskForm({ ...taskForm, description: text })}
+                                    multiline
+                                    textAlignVertical="top"
+                                />
+
+                                <Text style={{ color: c.text, fontWeight: '600', marginBottom: 8 }}>Assign To</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setTaskForm({ ...taskForm, assigneeId: '' })}
+                                        style={{
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 8,
+                                            borderRadius: 20,
+                                            backgroundColor: taskForm.assigneeId === '' ? c.primary : c.background,
+                                            borderWidth: 1,
+                                            borderColor: taskForm.assigneeId === '' ? c.primary : c.border,
+                                            marginRight: 8
+                                        }}
+                                    >
+                                        <Text style={{ color: taskForm.assigneeId === '' ? '#FFF' : c.text, fontSize: 13, fontWeight: '600' }}>Unassigned</Text>
+                                    </TouchableOpacity>
+                                    {teamMembers.map((member: any) => (
+                                        <TouchableOpacity
+                                            key={member._id}
+                                            onPress={() => setTaskForm({ ...taskForm, assigneeId: member._id })}
+                                            style={{
+                                                paddingHorizontal: 16,
+                                                paddingVertical: 8,
+                                                borderRadius: 20,
+                                                backgroundColor: taskForm.assigneeId === member._id ? c.primary : c.background,
+                                                borderWidth: 1,
+                                                borderColor: taskForm.assigneeId === member._id ? c.primary : c.border,
+                                                marginRight: 8,
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                gap: 6
+                                            }}
+                                        >
+                                            <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: taskForm.assigneeId === member._id ? 'rgba(255,255,255,0.3)' : c.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                                                <Text style={{ color: taskForm.assigneeId === member._id ? '#FFF' : c.primary, fontSize: 9, fontWeight: '700' }}>{member.firstName?.[0]}</Text>
+                                            </View>
+                                            <Text style={{ color: taskForm.assigneeId === member._id ? '#FFF' : c.text, fontSize: 13, fontWeight: '600' }}>{member.firstName}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+
+                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                    <TouchableOpacity
+                                        onPress={() => setIsTaskModalVisible(false)}
+                                        style={{ flex: 1, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: c.border }}
+                                    >
+                                        <Text style={{ color: c.subtext, fontWeight: '600' }}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveTask}
+                                        disabled={!taskForm.title.trim()}
+                                        style={{ flex: 2, backgroundColor: taskForm.title.trim() ? c.primary : c.subtext + '40', padding: 14, borderRadius: 12, alignItems: 'center' }}
+                                    >
+                                        <Text style={{ color: '#FFF', fontWeight: '700' }}>{isEditingTask ? 'Update Task' : 'Create Task'}</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                        </View>
+                        </KeyboardAvoidingView>
                     </View>
                 </Modal>
             </View>
@@ -644,25 +861,65 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <MaterialIcons name="arrow-back" size={24} color={c.text} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text }]}>{projectData?.project?.title || "Collabo"}</Text>
+                <View>
+                    <Text style={[styles.headerTitle, { color: c.text }]}>{projectData?.project?.title || "Collabo"}</Text>
+                    {projectData?.project?.teamName && (
+                        <Text style={{ fontSize: 12, color: c.subtext }}>{projectData.project.teamName}</Text>
+                    )}
+                </View>
                 <View style={{ width: 24 }} />
             </View>
 
-            <View style={styles.tabBar}>
-                {['dashboard', 'chat', 'tasks', 'files'].map((tab) => (
+            <View style={[styles.tabBar, { borderBottomColor: c.border, backgroundColor: c.card }]}>
+                {[
+                    { id: 'dashboard', label: 'Dashboard', icon: 'grid-view' },
+                    { id: 'chat', label: 'Chat', icon: 'chat-bubble-outline' },
+                    { id: 'tasks', label: 'Tasks', icon: 'assignment' },
+                    { id: 'files', label: 'Files', icon: 'folder-open' }
+                ].map((tab) => (
                     <TouchableOpacity
-                        key={tab}
+                        key={tab.id}
                         style={[
                             styles.tabItem,
-                            { borderBottomColor: activeTab === tab ? c.primary : 'transparent' }
+                            { borderBottomColor: activeTab === tab.id ? c.primary : 'transparent' }
                         ]}
-                        onPress={() => setActiveTab(tab as any)}
+                        onPress={() => setActiveTab(tab.id as any)}
                     >
+                        <View style={{ position: 'relative' }}>
+                            <MaterialIcons
+                                name={tab.icon as any}
+                                size={22}
+                                color={activeTab === tab.id ? c.primary : c.subtext}
+                            />
+                            {tab.id === 'chat' && unreadCount > 0 && (
+                                <View style={{
+                                    position: 'absolute',
+                                    top: -6,
+                                    right: -10,
+                                    backgroundColor: '#EF4444',
+                                    minWidth: 18,
+                                    height: 18,
+                                    borderRadius: 9,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderWidth: 2,
+                                    borderColor: c.card,
+                                    paddingHorizontal: 4
+                                }}>
+                                    <Text style={{ color: '#FFF', fontSize: 9, fontWeight: '800' }}>{unreadCount}</Text>
+                                </View>
+                            )}
+                        </View>
                         <Text style={[
                             styles.tabText,
-                            { color: activeTab === tab ? c.primary : c.subtext }
+                            {
+                                color: activeTab === tab.id ? c.primary : c.subtext,
+                                fontSize: 10,
+                                marginTop: 4,
+                                fontWeight: activeTab === tab.id ? '700' : '500'
+                            }
                         ]}>
-                            {tab.toUpperCase()}
+                            {tab.label}
                         </Text>
                     </TouchableOpacity>
                 ))}

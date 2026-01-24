@@ -13,6 +13,7 @@ interface TxnItem {
   purpose: string;
   date: string;
   amount: string;
+  rawAmount: number;
   status: 'Completed' | 'Pending' | 'Failed' | 'Refunded';
   avatar: string;
 }
@@ -65,6 +66,7 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
         purpose: project ? `For: ${project.title}` : 'Project Payment',
         date: new Date(p.createdAt).toLocaleDateString(),
         amount: `$${p.amount.toLocaleString()}`,
+        rawAmount: p.amount,
         status: p.status.charAt(0).toUpperCase() + p.status.slice(1) as any,
         avatar: payee?.profileImage || `https://ui-avatars.com/api/?name=${payee?.firstName}+${payee?.lastName}&background=random`,
       };
@@ -77,6 +79,19 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
       !s || t.who.toLowerCase().includes(s) || t.purpose.toLowerCase().includes(s)
     ));
   }, [mappedTransactions, q, filter]);
+
+  const handleTransactionClick = (t: TxnItem) => {
+    if (t.status === 'Pending') {
+      navigation.navigate('Payment', {
+        amount: t.rawAmount,
+        reference: t.purpose,
+        paymentId: t.id
+      });
+    } else {
+      // For completed/other, maybe show details or invoice
+      // navigation.navigate('PaymentDetails', { id: t.id });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -106,85 +121,117 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
           }
         >
-          {/* Stats */}
-          <View style={{ padding: 16, gap: 12 }}>
-            <View style={[styles.statCard, { backgroundColor: c.card }]}>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Total Spent</Text>
-              <Text style={[styles.statValue, { color: c.text }]}>
-                ${wallet?.totalSpent?.toLocaleString() || '0.00'}
-              </Text>
-            </View>
-            <View style={[styles.statCard, { backgroundColor: c.card }]}>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Available Balance</Text>
-              <Text style={[styles.statValue, { color: c.text }]}>
-                ${wallet?.availableBalance?.toLocaleString() || '0.00'}
-              </Text>
-            </View>
-            <View style={[styles.statCardWide, { backgroundColor: c.card }]}>
-              <Text style={[styles.statLabel, { color: c.subtext }]}>Pending Payments (Escrow)</Text>
-              <Text style={[styles.statValue, { color: c.primary }]}>
-                ${wallet?.escrowBalance?.toLocaleString() || '0.00'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Search */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
-            <View style={[styles.searchWrap, { backgroundColor: c.isDark ? '#111827' : '#F3F4F6' }]}>
+          {/* Search & Filter Section */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }}>
+            <View style={[styles.searchWrap, { backgroundColor: c.card, borderWidth: 1, borderColor: c.border, marginBottom: 12 }]}>
               <MaterialIcons name="search" size={22} color={c.subtext} style={{ marginLeft: 12 }} />
               <TextInput
                 value={q}
                 onChangeText={setQ}
-                placeholder="Search by freelancer or project"
+                placeholder="Search transactions..."
                 placeholderTextColor={c.subtext}
                 style={[styles.searchInput, { color: c.text }]}
               />
             </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              <Chip label={range} active onPress={() => setRange(range)} />
+              <Chip label="Completed" active={filter === 'Completed'} onPress={() => setFilter(filter === 'Completed' ? 'All' : 'Completed')} />
+              <Chip label="Pending" active={filter === 'Pending'} onPress={() => setFilter(filter === 'Pending' ? 'All' : 'Pending')} />
+            </ScrollView>
           </View>
 
-          {/* Chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 12 }}>
-            <Chip label={range} active onPress={() => setRange(range)} />
-            <Chip label="Completed" onPress={() => setFilter(filter === 'Completed' ? 'All' : 'Completed')} />
-            <Chip label="Pending" onPress={() => setFilter(filter === 'Pending' ? 'All' : 'Pending')} />
-          </ScrollView>
+          {/* Stats Section */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={[styles.statCard, { backgroundColor: c.card, flex: 1, borderColor: c.border, borderWidth: 1 }]}>
+                <View style={[styles.iconBox, { backgroundColor: c.primary + '15' }]}>
+                  <MaterialIcons name="account-balance-wallet" size={20} color={c.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.statValue, { color: c.text }]}>
+                    ${wallet?.totalSpent?.toLocaleString() || '0.00'}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: c.subtext }]}>Total Spent</Text>
+                </View>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: c.card, flex: 1, borderColor: c.border, borderWidth: 1 }]}>
+                <View style={[styles.iconBox, { backgroundColor: '#10B98115' }]}>
+                  <MaterialIcons name="savings" size={20} color="#10B981" />
+                </View>
+                <View>
+                  <Text style={[styles.statValue, { color: c.text }]}>
+                    ${wallet?.availableBalance?.toLocaleString() || '0.00'}
+                  </Text>
+                  <Text style={[styles.statLabel, { color: c.subtext }]}>Balance</Text>
+                </View>
+              </View>
+            </View>
 
-          {/* Section */}
-          <Text style={[styles.sectionTitle, { color: c.text }]}>Transactions</Text>
+            <View style={[styles.statCardWide, { backgroundColor: c.card, marginTop: 12, borderColor: c.border, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={[styles.iconBox, { backgroundColor: '#F59E0B15' }]}>
+                  <MaterialIcons name="pending" size={20} color="#F59E0B" />
+                </View>
+                <View>
+                  <Text style={[styles.statLabel, { color: c.subtext }]}>Escrow (Pending)</Text>
+                  <Text style={[styles.statValue, { color: c.text, fontSize: 18 }]}>
+                    ${wallet?.escrowBalance?.toLocaleString() || '0.00'}
+                  </Text>
+                </View>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={c.subtext} />
+            </View>
+          </View>
 
-          {/* List */}
-          <View style={{ paddingHorizontal: 16, gap: 12 }}>
-            {filtered.length === 0 ? (
-              <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No transactions found</Text>
-            ) : (
-              filtered.map(t => (
-                <View key={t.id} style={[styles.card, { backgroundColor: c.card }]}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <Image source={{ uri: t.avatar }} style={styles.avatar} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.txnTitle, { color: c.text }]}>{t.who}</Text>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>{t.purpose}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                        <View style={[styles.pill, pillStyle(t.status)]}>
-                          <Text style={[styles.pillText, { color: pillStyle(t.status).color }]}>{t.status}</Text>
-                        </View>
-                        <Text style={{ color: c.subtext, fontSize: 12 }}>{t.date}</Text>
+          {/* Transactions List */}
+          <View style={{ paddingHorizontal: 16 }}>
+            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 12 }]}>Recent Transactions</Text>
+
+            <View style={{ gap: 12 }}>
+              {filtered.length === 0 ? (
+                <View style={{ alignItems: 'center', padding: 40 }}>
+                  <MaterialIcons name="receipt-long" size={48} color={c.border} />
+                  <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 12 }}>No transactions found</Text>
+                </View>
+              ) : (
+                filtered.map(t => (
+                  <TouchableOpacity
+                    key={t.id}
+                    style={[styles.card, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
+                    onPress={() => handleTransactionClick(t)}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <Image source={{ uri: t.avatar }} style={styles.avatar} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.txnTitle, { color: c.text }]} numberOfLines={1}>{t.who}</Text>
+                        <Text style={{ color: c.subtext, fontSize: 12, marginTop: 2 }} numberOfLines={1}>{t.purpose}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={[styles.amount, { color: t.status === 'Completed' ? c.text : c.subtext }]}>{t.amount}</Text>
+                        <Text style={{ fontSize: 11, color: pillStyle(t.status).color, fontWeight: '600', marginTop: 2 }}>{t.status}</Text>
                       </View>
                     </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={[styles.amount, { color: c.text }]}>{t.amount}</Text>
-                      <TouchableOpacity>
-                        <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>View Invoice</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border }}>
+                      <Text style={{ fontSize: 12, color: c.subtext }}>{t.date}</Text>
+                      <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                        onPress={() => handleTransactionClick(t)}
+                      >
+                        <Text style={{ color: c.primary, fontSize: 12, fontWeight: '600' }}>
+                          {t.status === 'Pending' ? 'Pay Now' : 'Invoice'}
+                        </Text>
+                        <MaterialIcons name="arrow-forward" size={14} color={c.primary} />
                       </TouchableOpacity>
                     </View>
-                  </View>
-                </View>
-              ))
-            )}
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
 
-            <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: c.isDark ? '#111827' : '#F3F4F6' }]}>
+            <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1, marginTop: 24 }]}>
               <MaterialIcons name="download" size={20} color={c.text} />
-              <Text style={[styles.downloadText, { color: c.text }]}>Download Report</Text>
+              <Text style={[styles.downloadText, { color: c.text }]}>Download Full Report</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -233,6 +280,7 @@ const styles = StyleSheet.create({
   downloadText: { fontSize: 14, fontWeight: '700' },
   chip: { height: 40, borderRadius: 999, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 4 },
   chipText: { fontSize: 12, fontWeight: '700' },
+  iconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
 });
 
 export default ClientPaymentsScreen;

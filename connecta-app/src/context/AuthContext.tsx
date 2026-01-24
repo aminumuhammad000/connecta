@@ -57,14 +57,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const response = await authService.signin(credentials);
 
-            // Save token and user data
-            await storage.saveToken(response.token);
-            await storage.saveUserData(response.user);
-            await storage.saveUserRole(response.user.userType);
+            // Handle potential nested response structure
+            const token = response.token || (response as any).data?.token;
+            const user = response.user || (response as any).data?.user;
 
-            setToken(response.token);
-            setUser(response.user);
-            return response.user;
+            if (token && user) {
+                // Save token and user data
+                await storage.saveToken(token);
+                await storage.saveUserData(user);
+                await storage.saveUserRole(user.userType);
+
+                setToken(token);
+                setUser(user);
+                return user;
+            } else {
+                console.error('Login response missing token/user:', response);
+                throw new Error('Login failed: Invalid response from server');
+            }
         } catch (error) {
             console.error('Login error:', error);
             throw error;
@@ -76,13 +85,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const response = await authService.signup(data);
 
             if (autoLogin) {
-                // Save token and user data
-                await storage.saveToken(response.token);
-                await storage.saveUserData(response.user);
-                await storage.saveUserRole(response.user.userType);
+                // Handle potential nested response structure
+                const token = response.token || (response as any).data?.token;
+                const user = response.user || (response as any).data?.user;
 
-                setToken(response.token);
-                setUser(response.user);
+                if (token && user) {
+                    // Save token and user data
+                    await storage.saveToken(token);
+                    await storage.saveUserData(user);
+                    await storage.saveUserRole(user.userType);
+
+                    setToken(token);
+                    setUser(user);
+                } else {
+                    console.warn('Signup successful but token/user missing in response:', response);
+                }
             }
             return response;
         } catch (error) {

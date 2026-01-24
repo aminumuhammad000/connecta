@@ -201,7 +201,7 @@ export const createProposal = async (req: Request, res: Response) => {
 
           if (client && client.email) {
             const freelancerName = freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'A freelancer';
-            const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/jobs/${job._id}`;
+            const link = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/jobs/${job._id}`;
 
             await emailService.sendNewProposalNotificationToClient(
               client.email,
@@ -654,7 +654,7 @@ export const approveProposal = async (req: Request, res: Response) => {
 
       if (freelancerUser && freelancerUser.email) {
         const emailService = require('../services/email.service');
-        const projectLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
+        const projectLink = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
 
         await emailService.sendProposalAcceptedEmail(
           freelancerUser.email,

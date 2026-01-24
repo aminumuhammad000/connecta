@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { verifyOTP, sendPasswordResetOTP, verifyEmail } from '../services/authService';
+import { verifyOTP, sendPasswordResetOTP, verifyEmail, resendVerification, signup } from '../services/authService';
 import CustomAlert, { AlertType } from '../components/CustomAlert';
+import { useNavigation } from '@react-navigation/native';
 
 interface OTPVerificationScreenProps {
     email: string;
@@ -12,14 +13,18 @@ interface OTPVerificationScreenProps {
     onBackToForgotPassword?: () => void;
     onOTPVerified?: (tokenData: string | { token: string; user: any }) => void;
     role?: 'client' | 'freelancer';
+    signupData?: any;
 }
 
 const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
     email,
     mode = 'forgotPassword',
     onBackToForgotPassword,
-    onOTPVerified
+    onOTPVerified,
+    signupData
 }) => {
+    const navigation = useNavigation();
+    // ... existing state ...
     const c = useThemeColors();
     const [otp, setOtp] = useState(['', '', '', '']);
     const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +51,7 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
         }
     };
 
-    // ... (useEffect remains same) ...
+    // ... useEffect ...
     useEffect(() => {
         // Auto-focus first input
         if (inputRefs.current[0]) {
@@ -105,16 +110,28 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
         try {
             if (mode === 'signup') {
                 // Email Verification Flow
-                const response = await verifyEmail(code);
+                const response = await verifyEmail(code, email);
+                console.log('Verify Email Response:', JSON.stringify(response, null, 2));
                 const data = response as any;
 
-                if (data.token) {
-                    onOTPVerified?.({ token: data.token, user: data.user });
+                // Handle various response structures
+                const token = data.token || data.data?.token || (response as any).token;
+                const user = data.user || data.data?.user || (response as any).user;
+
+                if (token) {
+                    // onOTPVerified?.({ token, user }); // This usually logs in
+
+                    // Navigate to Interest Form (SkillSelection)
+                    showAlert('Success', 'Email verified successfully!', 'success', () => {
+                        (navigation as any).navigate('SkillSelection', { token, user });
+                    });
                 } else {
                     // Should not happen if successful
                     if (response.success) {
-                        // Fallback
-                        showAlert('Error', 'Verification successful but login failed. Please login manually.', 'error');
+                        // Fallback: Verification worked but no token returned. Send to login.
+                        showAlert('Success', 'Email verified successfully! Please log in.', 'success', () => {
+                            (navigation as any).navigate('Login');
+                        });
                     } else {
                         throw new Error('Verification failed');
                     }
@@ -130,7 +147,7 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
             }
         } catch (error: any) {
             console.error('Verify OTP Error:', error);
-            showAlert('Error', error.response?.data?.message || 'Invalid verification code. Please try again.', 'error');
+            showAlert('Error', error.response?.data?.message || error.message || 'Invalid verification code. Please try again.', 'error');
             setOtp(['', '', '', '']);
             inputRefs.current[0]?.focus();
         } finally {
@@ -142,7 +159,11 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({
         if (resendTimer > 0) return;
 
         try {
-            await sendPasswordResetOTP(email);
+            if (mode === 'signup') {
+                await resendVerification();
+            } else {
+                await sendPasswordResetOTP(email);
+            }
 
             showAlert('Success', 'A new verification code has been sent to your email.', 'success');
             setResendTimer(60);

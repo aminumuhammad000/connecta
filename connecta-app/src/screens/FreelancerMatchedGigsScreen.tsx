@@ -279,6 +279,8 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                   if (!job) return null;
                   const isInternal = !job.isExternal;
                   const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
+                  const dateStr = job.createdAt || job.posted;
+                  const isNew = dateStr ? new Date(dateStr).getTime() > (Date.now() - 3 * 24 * 60 * 60 * 1000) : false; // New if < 3 days old
 
                   return (
                     <Animated.View
@@ -301,9 +303,16 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                           {/* Header: Title & Save */}
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                             <View style={{ flex: 1, gap: 4 }}>
-                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22 }}>
-                                {job.title}
-                              </Text>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
+                                  {job.title}
+                                </Text>
+                                {isNew && (
+                                  <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                                  </View>
+                                )}
+                              </View>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
                                   {job.company || 'Confidential'} • {job.posted ? formatPostedTime(job.posted) : 'Recently'}
@@ -330,7 +339,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                             {job.locationType !== 'remote' && (
                               <Badge label={job.location || 'On-site'} variant="neutral" size="small" />
                             )}
-                            <Badge label={job.budget ? `₦${job.budget}` : 'Negotiable'} variant="custom" customColor={job.isExternal ? '#3B82F6' : '#FF7F50'} size="small" />
+                            <Badge label={job.budget ? `₦${job.budget}${job.budgetType === 'hourly' ? '/hr' : ' / project'}` : 'Negotiable'} variant="custom" customColor={job.isExternal ? '#3B82F6' : '#FF7F50'} size="small" />
                           </View>
 
                           {/* Description Preview */}
@@ -402,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 1,
   },
   headerTitle: {

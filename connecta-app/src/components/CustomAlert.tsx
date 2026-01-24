@@ -68,7 +68,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
 
     const getColor = () => {
         switch (type) {
-            case 'success': return '#22C55E'; // Green
+            case 'success': return '#FF7F50'; // Coral
             case 'error': return '#EF4444'; // Red
             case 'warning': return '#F59E0B'; // Amber
             default: return c.primary;

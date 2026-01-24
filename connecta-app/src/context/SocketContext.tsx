@@ -30,12 +30,14 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             return;
         }
 
+        console.log('[Socket] Connecting to:', API_BASE_URL);
         const socketInstance = io(API_BASE_URL, {
             auth: {
                 token: token,
                 userId: user._id
             },
-            transports: ['websocket'],
+            transports: ['polling'], // Force polling for better stability on emulator
+            timeout: 10000,
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,

@@ -1,52 +1,23 @@
-import { get, post } from './api';
-import { API_ENDPOINTS } from '../utils/constants';
-import { Review, ReviewStats } from '../types';
+import { post, get } from './api';
 
-/**
- * Review Service
- * Handles review and rating-related API calls
- */
-
-/**
- * Create a review
- */
-export const createReview = async (reviewData: {
-    projectId: string;
-    revieweeId: string;
+export const createReview = async (data: {
+    projectId?: string;
+    revieweeId?: string;
+    reviewerType?: 'client' | 'freelancer';
     rating: number;
     comment: string;
-}): Promise<Review> => {
-    const response = await post<Review>(API_ENDPOINTS.REVIEWS, reviewData);
-    return response.data!;
+    tags?: string[];
+}) => {
+    const response = await post('/api/reviews', data);
+    return (response as any)?.data || response;
 };
 
-/**
- * Get reviews for a user
- */
-export const getUserReviews = async (userId: string): Promise<Review[]> => {
-    const response = await get<Review[]>(API_ENDPOINTS.USER_REVIEWS(userId));
-    return Array.isArray(response) ? response : (response as any)?.data || [];
+export const getUserReviews = async (userId: string, page = 1, limit = 10) => {
+    const response = await get(`/api/reviews/user/${userId}?page=${page}&limit=${limit}`);
+    return (response as any)?.data || response;
 };
 
-/**
- * Get review statistics for a user
- */
-export const getReviewStats = async (userId: string): Promise<ReviewStats> => {
-    const response = await get<ReviewStats>(API_ENDPOINTS.REVIEW_STATS(userId));
-    return response.data!;
-};
-
-/**
- * Respond to a review
- */
-export const respondToReview = async (reviewId: string, response: string): Promise<Review> => {
-    const result = await post<Review>(`${API_ENDPOINTS.REVIEWS}/${reviewId}/respond`, { response });
-    return result.data!;
-};
-
-export default {
-    createReview,
-    getUserReviews,
-    getReviewStats,
-    respondToReview,
+export const getUserReviewStats = async (userId: string) => {
+    const response = await get(`/api/reviews/user/${userId}/stats`);
+    return (response as any)?.data || response;
 };

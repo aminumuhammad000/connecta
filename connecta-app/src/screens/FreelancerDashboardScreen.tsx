@@ -46,6 +46,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
@@ -185,7 +186,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Header */}
           <View style={{ backgroundColor: c.background }}>
             <View style={[styles.header, {
-              paddingTop: insets.top + 8,
+              paddingTop: 10,
               paddingBottom: 80, // Increased height for overlap
               backgroundColor: '#FF7F50', // Coral
             }]}>
@@ -224,8 +225,11 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 <MaterialIcons name="description" size={18} color="#3B82F6" />
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{stats.activeProposals}</Text>
-                <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Active</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{stats?.activeProposals || 0}</Text>
+                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>Active Proposals</Text>
+                {(!stats?.activeProposals || stats.activeProposals === 0) && (
+                  <Text style={{ fontSize: 9, color: c.subtext, textAlign: 'center', marginTop: 2 }}>Apply to start</Text>
+                )}
               </View>
             </View>
 
@@ -235,8 +239,11 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 <MaterialIcons name="check-circle" size={18} color="#10B981" />
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{stats.completedJobs}</Text>
-                <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Completed</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{stats?.completedJobs || 0}</Text>
+                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>Completed Jobs</Text>
+                {(!stats?.completedJobs || stats.completedJobs === 0) && (
+                  <Text style={{ fontSize: 9, color: c.subtext, textAlign: 'center', marginTop: 2 }}>No jobs yet</Text>
+                )}
               </View>
             </View>
 
@@ -246,8 +253,11 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 <MaterialIcons name="attach-money" size={18} color="#F59E0B" />
               </View>
               <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>₦{stats.totalEarnings}</Text>
-                <Text style={{ fontSize: 11, color: c.subtext, fontWeight: '500' }}>Earned</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>₦{stats?.totalEarnings || 0}</Text>
+                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>Total Earnings</Text>
+                {(!stats?.totalEarnings || stats.totalEarnings === 0) && (
+                  <Text style={{ fontSize: 9, color: c.subtext, textAlign: 'center', marginTop: 2 }}>Start earning</Text>
+                )}
               </View>
             </View>
           </View>
@@ -264,17 +274,6 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
             >
               <TouchableOpacity
                 style={styles.quickAction}
-                onPress={() => navigation.navigate('Proposals')}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
-                  <Ionicons name="document-text" size={24} color={c.primary} />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.quickAction}
                 onPress={() => navigation.navigate('FreelancerProjects')}
                 activeOpacity={0.7}
               >
@@ -282,6 +281,17 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="briefcase" size={24} color="#10B981" />
                 </View>
                 <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('Proposals')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
+                  <Ionicons name="document-text" size={24} color={c.primary} />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -302,6 +312,9 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
               >
                 <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
                   <Ionicons name="people" size={24} color="#6366F1" />
+                  <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#EF4444', paddingHorizontal: 4, borderRadius: 4 }}>
+                    <Text style={{ fontSize: 8, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                  </View>
                 </View>
                 <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
               </TouchableOpacity>
@@ -334,6 +347,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   if (!job) return null;
                   const isInternal = !job.isExternal;
                   const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
+                  const isNew = new Date(job.createdAt) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); // New if < 3 days old
 
                   return (
                     <TouchableOpacity
@@ -353,15 +367,25 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                         {/* Header: Title & Save */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                           <View style={{ flex: 1, gap: 4 }}>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22 }}>
-                              {job.title}
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
+                                {job.title}
+                              </Text>
+                              {isNew && (
+                                <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                  <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                                </View>
+                              )}
+                            </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                               <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
                                 {job.company || 'Confidential'} • {new Date(job.createdAt).toLocaleDateString()}
                               </Text>
                               {isInternal && (
-                                <MaterialIcons name="verified" size={16} color="#FF7F50" />
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                                  <MaterialIcons name="verified" size={16} color="#FF7F50" />
+                                  <Text style={{ fontSize: 11, color: '#FF7F50', fontWeight: '600' }}>Verified</Text>
+                                </View>
                               )}
                             </View>
                           </View>
@@ -378,7 +402,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           <Badge label={job.jobType} variant="neutral" size="small" />
                           <Badge label={job.locationType || 'Remote'} variant="neutral" size="small" />
-                          <Badge label={`₦${job.budget}`} variant="custom" customColor="#FF7F50" size="small" />
+                          <Badge label={`₦${job.budget} / project`} variant="custom" customColor="#FF7F50" size="small" />
                         </View>
 
                         {/* Description Preview */}

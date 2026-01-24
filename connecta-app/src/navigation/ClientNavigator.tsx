@@ -103,6 +103,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
             <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />
+            <Stack.Screen name="ClientProfile" component={ClientProfileScreen} />
             <Stack.Screen name="ClientPayments" component={ClientPaymentsScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="PaymentCallback" component={PaymentCallbackScreen} />

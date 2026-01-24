@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import * as jobService from '../services/jobService';
+import * as collaboService from '../services/collaboService';
 import { Job } from '../types';
 
 interface ClientJob {
@@ -20,8 +21,8 @@ interface ClientJob {
 
 const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
-  const [tab, setTab] = useState<'All' | 'Open' | 'Closed'>('All');
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [tab, setTab] = useState<'All' | 'Open' | 'In Progress' | 'Closed'>('All');
+  const [jobs, setJobs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -31,8 +32,25 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
 
   const loadJobs = async () => {
     try {
-      const data = await jobService.getMyJobs();
-      setJobs(data);
+      const [jobsData, collaboData] = await Promise.all([
+        jobService.getMyJobs(),
+        collaboService.getMyCollaboProjects().catch(() => [])
+      ]);
+
+      // Normalize Collabo projects to match Job interface roughly
+      const normalizedCollabo = collaboData.map((p: any) => ({
+        _id: p._id,
+        title: p.title,
+        status: p.status === 'planning' ? 'open' : p.status, // Map status
+        proposalsCount: p.roles?.reduce((acc: number, r: any) => acc + (r.candidates?.length || 0), 0) || 0,
+        budget: p.totalBudget,
+        postedAt: p.createdAt,
+        isCollabo: true,
+        description: p.description,
+        teamName: p.teamName
+      }));
+
+      setJobs([...jobsData, ...normalizedCollabo].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()));
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
@@ -58,23 +76,28 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
     return `${Math.floor(diff / 30)} months ago`;
   };
 
-  const mapJobStatus = (status: string): 'Open' | 'In Progress' | 'Closed' => {
+  const mapJobStatus = (status: string): string => {
     if (status === 'open') return 'Open';
+    if (status === 'active') return 'Open';
     if (status === 'in_progress') return 'In Progress';
-    return 'Closed';
+    if (status === 'completed') return 'Completed';
+    if (status === 'cancelled') return 'Cancelled';
+    return status;
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === 'open' || status === 'active') return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981' };
+    if (status === 'in_progress') return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6' };
+    if (status === 'completed') return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' };
+    return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' };
   };
 
   const filtered = useMemo(() => {
     if (tab === 'All') return jobs;
-    if (tab === 'Open') return jobs.filter((j) => j && (j.status === 'open' || j.status === 'in_progress'));
-    return jobs.filter((j) => j && (j.status === 'completed' || j.status === 'cancelled'));
+    if (tab === 'Open') return jobs.filter((j) => j && (j.status === 'active' || j.status === 'open'));
+    if (tab === 'In Progress') return jobs.filter((j) => j && j.status === 'in_progress');
+    return jobs.filter((j) => j && (j.status === 'closed' || j.status === 'draft' || j.status === 'completed'));
   }, [jobs, tab]);
-
-  const getStatusVariant = (status: string): 'success' | 'info' | 'neutral' => {
-    if (status === 'open') return 'success';
-    if (status === 'in_progress') return 'info';
-    return 'neutral';
-  };
 
   if (isLoading) {
     return (
@@ -95,8 +118,11 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
             <MaterialIcons name="arrow-back" size={24} color={c.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: c.text }]}>My Jobs</Text>
-          <TouchableOpacity style={styles.iconBtn}>
-            <MaterialIcons name="search" size={24} color={c.text} />
+          <TouchableOpacity
+            onPress={() => navigation.navigate('PostJob')}
+            style={[styles.iconBtn, { backgroundColor: c.primary + '15' }]}
+          >
+            <MaterialIcons name="add" size={24} color={c.primary} />
           </TouchableOpacity>
         </View>
 
@@ -107,40 +133,39 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
           }
         >
-          {/* Post Job Button */}
-          <View style={styles.section}>
-            <Button
-              title="Post a New Job"
-              onPress={() => navigation.navigate('PostJob')}
-              size="large"
-              style={{ marginBottom: 16 }}
-            />
-          </View>
+          {/* Search & Filter */}
+          <View style={{ padding: 16, paddingBottom: 8 }}>
+            <View style={[styles.searchWrap, { backgroundColor: c.card, borderWidth: 1, borderColor: c.border, marginBottom: 12 }]}>
+              <MaterialIcons name="search" size={22} color={c.subtext} style={{ marginLeft: 12 }} />
+              <TextInput
+                placeholder="Search jobs..."
+                placeholderTextColor={c.subtext}
+                style={[styles.searchInput, { color: c.text }]}
+              />
+            </View>
 
-          {/* Tabs */}
-          <View style={[styles.tabsContainer, { borderBottomColor: c.border }]}>
-            <TouchableOpacity
-              onPress={() => setTab('All')}
-              style={[styles.tab, { borderBottomColor: tab === 'All' ? c.primary : 'transparent' }]}
-            >
-              <Text style={[styles.tabText, { color: tab === 'All' ? c.primary : c.subtext }]}>All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setTab('Open')}
-              style={[styles.tab, { borderBottomColor: tab === 'Open' ? c.primary : 'transparent' }]}
-            >
-              <Text style={[styles.tabText, { color: tab === 'Open' ? c.primary : c.subtext }]}>Open</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setTab('Closed')}
-              style={[styles.tab, { borderBottomColor: tab === 'Closed' ? c.primary : 'transparent' }]}
-            >
-              <Text style={[styles.tabText, { color: tab === 'Closed' ? c.primary : c.subtext }]}>Closed</Text>
-            </TouchableOpacity>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {['All', 'Open', 'In Progress', 'Closed'].map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => setTab(t as any)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: tab === t ? c.primary + '15' : c.card,
+                      borderColor: tab === t ? c.primary : c.border,
+                      borderWidth: 1
+                    }
+                  ]}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: tab === t ? c.primary : c.subtext }}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
 
           {/* Jobs List */}
-          <View style={styles.section}>
+          <View style={{ paddingHorizontal: 16, gap: 16 }}>
             {filtered.length === 0 ? (
               <View style={styles.emptyState}>
                 <MaterialIcons name="work-outline" size={64} color={c.subtext} />
@@ -150,58 +175,102 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
                 </Text>
               </View>
             ) : (
-              <View style={{ gap: 12 }}>
-                {filtered.map((j: any) => {
-                  if (!j) return null;
-                  return (
-                    <Card key={j._id} variant="elevated" padding={16}>
-                      <View style={styles.jobCard}>
-                        <View style={styles.jobHeader}>
-                          <View style={{ flex: 1 }}>
-                            <Text style={[styles.jobTitle, { color: c.text }]}>{j?.title || 'Untitled Job'}</Text>
-                            <Badge label={mapJobStatus(j.status)} variant={getStatusVariant(j.status)} size="small" style={{ marginTop: 8 }} />
-                          </View>
-                          <TouchableOpacity>
-                            <MaterialIcons name="more-vert" size={24} color={c.subtext} />
-                          </TouchableOpacity>
-                        </View>
+              filtered.map((j: any) => {
+                if (!j) return null;
+                const isCollabo = j.isCollabo;
 
-                        <View style={styles.jobMeta}>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="description" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.text }]}>{j.proposalsCount || 0} Proposals</Text>
-                          </View>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="account-balance-wallet" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.text }]}>₦{j.budget?.toLocaleString() || '0'}</Text>
-                          </View>
-                          <View style={styles.metaItem}>
-                            <MaterialIcons name="schedule" size={16} color={c.subtext} />
-                            <Text style={[styles.metaText, { color: c.subtext }]}>{formatDate(j.postedAt || j.createdAt)}</Text>
-                          </View>
+                return (
+                  <TouchableOpacity
+                    key={j._id}
+                    activeOpacity={0.9}
+                    onPress={() => isCollabo ? navigation.navigate('CollaboWorkspace', { projectId: j._id }) : navigation.navigate('JobDetail', { id: j._id })}
+                    style={[styles.jobCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
+                  >
+                    <View style={styles.jobHeader}>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          {isCollabo && (
+                            <View style={{ backgroundColor: '#8B5CF620', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                              <Text style={{ color: '#8B5CF6', fontSize: 10, fontWeight: '700' }}>COLLABO</Text>
+                            </View>
+                          )}
+                          <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={2}>{j?.title || 'Untitled Job'}</Text>
                         </View>
+                        <Text style={{ fontSize: 13, color: c.subtext, marginTop: 4 }}>
+                          Posted {formatDate(j.postedAt || j.createdAt)}
+                        </Text>
+                      </View>
+                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(j.status).bg }]}>
+                        <Text style={[styles.statusText, { color: getStatusColor(j.status).text }]}>
+                          {mapJobStatus(j.status)}
+                        </Text>
+                      </View>
+                    </View>
 
-                        <View style={styles.jobActions}>
-                          <Button
-                            title="View Proposals"
-                            onPress={() => navigation.navigate('JobDetail', { id: j._id })}
-                            variant="outline"
-                            size="small"
-                            style={{ flex: 1 }}
-                          />
-                          <Button
-                            title="Edit Job"
-                            onPress={() => navigation.navigate('PostJob', { jobId: j._id, mode: 'edit' })}
-                            variant="primary"
-                            size="small"
-                            style={{ flex: 1 }}
-                          />
+                    <View style={[styles.divider, { backgroundColor: c.border }]} />
+
+                    <View style={styles.jobMeta}>
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name={isCollabo ? "groups" : "description"} size={18} color={c.primary} />
+                        <View>
+                          <Text style={[styles.metaValue, { color: c.text }]}>{j.proposalsCount || 0}</Text>
+                          <Text style={[styles.metaLabel, { color: c.subtext }]}>{isCollabo ? 'Candidates' : 'Proposals'}</Text>
                         </View>
                       </View>
-                    </Card>
-                  );
-                })}
-              </View>
+
+                      <View style={[styles.verticalDivider, { backgroundColor: c.border }]} />
+
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name="account-balance-wallet" size={18} color="#10B981" />
+                        <View>
+                          <Text style={[styles.metaValue, { color: c.text }]}>₦{j.budget?.toLocaleString() || '0'}</Text>
+                          <Text style={[styles.metaLabel, { color: c.subtext }]}>{j.budgetType || 'Fixed'}</Text>
+                        </View>
+                      </View>
+
+                      <View style={[styles.verticalDivider, { backgroundColor: c.border }]} />
+
+                      <View style={styles.metaItem}>
+                        <MaterialIcons name="visibility" size={18} color="#F59E0B" />
+                        <View>
+                          <Text style={[styles.metaValue, { color: c.text }]}>{j.views || 0}</Text>
+                          <Text style={[styles.metaLabel, { color: c.subtext }]}>Views</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={[styles.divider, { backgroundColor: c.border }]} />
+
+                    <View style={styles.jobActions}>
+                      {!isCollabo && (
+                        <TouchableOpacity
+                          style={[styles.actionBtn, { borderColor: c.border }]}
+                          onPress={() => navigation.navigate('ClientRecommended', { jobId: j._id })}
+                        >
+                          <MaterialIcons name="person-add-alt" size={18} color={c.text} />
+                          <Text style={[styles.actionText, { color: c.text }]}>Invite</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { borderColor: c.border }]}
+                        onPress={() => isCollabo ? navigation.navigate('PostCollaboJob', { projectId: j._id, mode: 'edit' }) : navigation.navigate('PostJob', { jobId: j._id, mode: 'edit' })}
+                      >
+                        <MaterialIcons name="edit" size={18} color={c.text} />
+                        <Text style={[styles.actionText, { color: c.text }]}>Edit</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.actionBtnPrimary, { backgroundColor: c.primary }]}
+                        onPress={() => isCollabo ? navigation.navigate('CollaboWorkspace', { projectId: j._id }) : navigation.navigate('JobDetail', { id: j._id })}
+                      >
+                        <Text style={[styles.actionTextPrimary]}>{isCollabo ? 'Workspace' : 'View Details'}</Text>
+                        <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
             )}
           </View>
         </ScrollView>
@@ -250,6 +319,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  searchWrap: {
+    height: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 4,
+  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 48,
@@ -265,34 +351,90 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   jobCard: {
-    gap: 12,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
   },
   jobHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    gap: 12,
   },
   jobTitle: {
     fontSize: 16,
     fontWeight: '800',
+    lineHeight: 22,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  divider: {
+    height: 1,
+    marginVertical: 16,
   },
   jobMeta: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
+    flex: 1,
   },
-  metaText: {
-    fontSize: 13,
+  verticalDivider: {
+    width: 1,
+    height: 32,
+    marginHorizontal: 8,
+  },
+  metaValue: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  metaLabel: {
+    fontSize: 11,
     fontWeight: '600',
   },
   jobActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+  },
+  actionBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  actionBtnPrimary: {
+    flex: 1.5,
+    height: 40,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionTextPrimary: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFF',
   },
 });
 

@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   appIcon: { width: 48, height: 40, alignItems: 'center', justifyContent: 'center' },

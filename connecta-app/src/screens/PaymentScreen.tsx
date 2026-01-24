@@ -60,7 +60,7 @@ export default function PaymentScreen({ navigation, route }: any) {
                 "Success",
                 "Payment successful! Funds added to escrow.",
                 [
-                    { text: "OK", onPress: () => navigation.navigate('PaymentCallback', { status: 'success', reference: 'mock-ref' }) }
+                    { text: "OK", onPress: () => navigation.goBack() }
                 ]
             );
         }, 2000);

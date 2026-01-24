@@ -6,6 +6,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
+import { resendVerification } from '../services/authService';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Logo from '../components/Logo';
@@ -72,7 +73,9 @@ const SignupScreen: React.FC = () => {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || firstName;
 
-      const autoLogin = selectedRole === 'client';
+      const autoLogin = true; // Always login to get token for verification
+
+      // Create account
       await signup({
         email: email.trim(),
         password,
@@ -81,8 +84,14 @@ const SignupScreen: React.FC = () => {
         userType: selectedRole,
       }, autoLogin);
 
+      // Removed automatic resend to prevent invalidating the signup OTP
+
       showAlert({ title: 'Success', message: 'Account created! Please verify your email.', type: 'success' });
-      (navigation as any).navigate('OTPVerification', { email: email.trim(), mode: 'signup', role: selectedRole });
+      (navigation as any).navigate('OTPVerification', {
+        email: email.trim(),
+        mode: 'signup',
+        role: selectedRole
+      });
     } catch (error: any) {
       showAlert({ title: 'Signup Failed', message: error.message || 'Failed to create account', type: 'error' });
     } finally {

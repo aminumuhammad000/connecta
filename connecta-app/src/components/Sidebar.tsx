@@ -27,7 +27,7 @@ interface SidebarProps {
 }
 
 const { width, height } = Dimensions.get("window");
-const SIDEBAR_WIDTH = Math.min(width * 0.75, 340);
+const SIDEBAR_WIDTH = Math.min(width * 0.7, 280);
 
 export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps) {
     const c = useThemeColors();
@@ -83,13 +83,16 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
 
     const menuItems = [
         { icon: "person-outline", label: "My Profile", screen: "Profile", color: "#4F46E5" },
-        { icon: "settings-outline", label: "Settings", screen: "Settings", color: "#6B7280" },
         { icon: "wallet-outline", label: "Wallet", screen: user?.userType === "client" ? "ClientPayments" : "Wallet", color: "#10B981" },
+        user?.userType === 'client'
+            ? { icon: "add-circle-outline", label: "Post a Job", screen: "PostJob", color: "#6366F1" }
+            : { icon: "options-outline", label: "Job Preferences", screen: "JobPreferences", color: "#6366F1" },
         { icon: "document-text-outline", label: "Contracts", screen: user?.userType === "client" ? "Projects" : "FreelancerProjects", color: "#F59E0B" },
+        { icon: "settings-outline", label: "Settings", screen: "Settings", color: "#6B7280" },
         { icon: "help-circle-outline", label: "Help & Support", screen: "HelpSupport", color: "#EC4899" },
         { icon: "shield-checkmark-outline", label: "Terms & Conditions", screen: "Terms", color: "#8B5CF6" },
         { icon: "information-circle-outline", label: "About Connecta", screen: "About", color: "#3B82F6" },
-    ];
+    ].filter(Boolean);
 
     return (
         <Modal
@@ -116,6 +119,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                             width: SIDEBAR_WIDTH,
                             backgroundColor: c.card,
                             transform: [{ translateX: slideAnim }],
+                            paddingTop: insets.top,
                         },
                     ]}
                 >
@@ -125,7 +129,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                             colors={c.gradients.primary}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
-                            style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
+                            style={[styles.headerGradient, { paddingTop: 10 }]}
                         >
                             <View style={styles.headerContent}>
                                 <View style={styles.headerTopRow}>
@@ -194,7 +198,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                     </ScrollView>
 
                     {/* Footer */}
-                    <View style={[styles.footer, { borderTopColor: c.border }]}>
+                    <View style={[styles.footer, { borderTopColor: c.border, paddingBottom: Math.max(insets.bottom, 20) }]}>
                         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                             <View style={[styles.iconContainer, { backgroundColor: '#EF444415', width: 32, height: 32, borderRadius: 10 }]}>
                                 <Ionicons name="log-out-outline" size={18} color="#EF4444" />
@@ -218,14 +222,15 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
     },
     sidebar: {
+        flex: 1,
         height: '100%',
         shadowColor: "#000",
         shadowOffset: { width: 10, height: 0 },
         shadowOpacity: 0.2,
         shadowRadius: 20,
         elevation: 20,
-        borderTopRightRadius: 24,
-        borderBottomRightRadius: 24,
+        borderTopRightRadius: 16,
+        borderBottomRightRadius: 16,
         overflow: 'hidden',
     },
     headerContainer: {
@@ -234,10 +239,6 @@ const styles = StyleSheet.create({
     headerGradient: {
         width: '100%',
         paddingBottom: 16,
-        // paddingTop handled dynamically via style prop
-    },
-    headerSafeArea: {
-        width: '100%',
     },
     headerContent: {
         paddingHorizontal: 20,
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     userName: {
-        fontSize: 17,
+        fontSize: 15,
         fontWeight: "700",
         color: 'white',
         marginBottom: 2,
@@ -327,30 +328,29 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     menuLabel: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: "500",
         flex: 1,
     },
     footer: {
-        paddingVertical: 8, // Reduced from 12
+        paddingVertical: 12,
         paddingHorizontal: 20,
-        paddingBottom: Platform.OS === 'ios' ? 20 : 12, // Further reduced
         borderTopWidth: StyleSheet.hairlineWidth,
     },
     logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 6, // Reduced from 8
+        paddingVertical: 2,
     },
     logoutText: {
-        fontSize: 15, // Reduced from 16
+        fontSize: 15,
         fontWeight: "600",
         color: '#EF4444',
     },
     version: {
         textAlign: "center",
-        fontSize: 10, // Reduced from 11
-        marginTop: 4, // Reduced from 8
+        fontSize: 10,
+        marginTop: 4,
         fontWeight: '500',
         opacity: 0.4,
     },
