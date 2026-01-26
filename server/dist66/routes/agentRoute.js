@@ -40,7 +40,13 @@ router.post("/", async (req, res) => {
             });
         }
         const agent = await createAgent(userId, token, userType);
-        const result = await agent.process(input);
+        // Add timeout to prevent hanging requests
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("AI Service Timeout")), 25000) // 25s timeout
+        );
+        const result = await Promise.race([
+            agent.process(input),
+            timeoutPromise
+        ]);
         console.log("✅ Agent response:", { success: result.success, hasData: !!result.data });
         return res.json({
             success: true,
@@ -54,10 +60,14 @@ router.post("/", async (req, res) => {
             name: error.name,
             cause: error.cause,
         });
+        let errorMessage = error.message || "Internal Server Error";
+        if (errorMessage.includes("Gemini") || errorMessage.includes("API configuration") || errorMessage.includes("Timeout")) {
+            errorMessage = "I'm having a temporary connection issue. Please try again in a moment.";
+        }
         return res.status(500).json({
             success: false,
-            message: error.message || "Internal Server Error",
-            error: error.message || "Internal Server Error",
+            message: errorMessage,
+            error: errorMessage,
         });
     }
 });

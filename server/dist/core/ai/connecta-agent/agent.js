@@ -488,7 +488,7 @@ Try: "Find gigs for me" or "Show my profile"`;
         catch (error) {
             console.error("❌ Error processing request:", error);
             this.sessionMetrics.failedRequests++;
-            return this.createResponse("System processing error (Code: 500-LLM-INTENT). Please retry in a moment.", null, false, startTime);
+            return this.createResponse("I'm having trouble processing that request right now. Please try again in a moment.", null, false, startTime);
         }
     }
     // Load user context with optional tokenless fallback
@@ -554,6 +554,10 @@ Try: "Find gigs for me" or "Show my profile"`;
      * Create standardized response object and record history
      */
     createResponse(message, data, success, startTime, suggestions = [], toolUsed, responseType) {
+        // Sanitize message to be end-user centered
+        if (message && (message.includes("Gemini") || message.includes("API configuration") || message.includes("processing your request with"))) {
+            message = "I'm having a temporary connection issue. Please try again in a moment.";
+        }
         const response = {
             message,
             data,

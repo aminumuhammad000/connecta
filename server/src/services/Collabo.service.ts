@@ -603,6 +603,17 @@ class CollaboService {
         return { success: true };
     }
 
+    async deleteFile(fileId: string) {
+        const file = await CollaboFile.findByIdAndDelete(fileId);
+        if (!file) throw new Error("File not found");
+
+        try {
+            getIO().to(file.workspaceId.toString()).emit('collabo:file_delete', fileId);
+        } catch (e) { console.log("Socket emit error", e) }
+
+        return { success: true };
+    }
+
     async markWorkspaceRead(workspaceId: string, userId: string) {
         await CollaboWorkspace.findByIdAndUpdate(workspaceId, {
             [`unreadCount.${userId}`]: 0

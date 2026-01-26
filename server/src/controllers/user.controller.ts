@@ -173,12 +173,23 @@ export const signin = async (req: Request, res: Response) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Check if user has a password (if signed up via Google, password might be empty)
+    if (!user.password) {
+      return res.status(400).json({ message: "This account uses Google Sign-In. Please sign in with Google." });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is missing in environment variables");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
     res.status(200).json({ success: true, user, token });
   } catch (err) {
+    console.error("Signin error:", err);
     res.status(500).json({ message: "Server error", error: err });
   }
 };

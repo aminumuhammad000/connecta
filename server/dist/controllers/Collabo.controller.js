@@ -302,6 +302,16 @@ export const deleteTask = async (req, res) => {
         res.status(500).json({ message: 'Failed to delete task', error: error.message });
     }
 };
+export const deleteFile = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await CollaboService.deleteFile(id);
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to delete file', error: error.message });
+    }
+};
 export const markRead = async (req, res) => {
     try {
         const { workspaceId } = req.body;

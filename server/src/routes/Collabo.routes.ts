@@ -21,6 +21,7 @@ router.delete('/task/:id', authenticate, CollaboController.deleteTask);
 // Files (must be before /:id route)
 router.post('/file', authenticate, upload.single('file'), CollaboController.uploadFile);
 router.get('/files', authenticate, CollaboController.getFiles);
+router.delete('/file/:id', authenticate, CollaboController.deleteFile);
 
 router.post('/:id/fund', authenticate, CollaboController.fundProject);
 router.post('/:id/activate', authenticate, CollaboController.activateProject);

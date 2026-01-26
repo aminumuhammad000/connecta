@@ -636,7 +636,7 @@ Try: "Find gigs for me" or "Show my profile"`;
 
       this.sessionMetrics.failedRequests++;
       return this.createResponse(
-        "System processing error (Code: 500-LLM-INTENT). Please retry in a moment.",
+        "I'm having trouble processing that request right now. Please try again in a moment.",
         null,
         false,
         startTime
@@ -715,6 +715,11 @@ Try: "Find gigs for me" or "Show my profile"`;
     toolUsed?: string,
     responseType?: string
   ): AgentResponse {
+    // Sanitize message to be end-user centered
+    if (message && (message.includes("Gemini") || message.includes("API configuration") || message.includes("processing your request with"))) {
+      message = "I'm having a temporary connection issue. Please try again in a moment.";
+    }
+
     const response: AgentResponse = {
       message,
       data,
