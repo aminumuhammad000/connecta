@@ -53,8 +53,8 @@ const MobileLandingScreen = () => {
     const handleSearch = () => navigation.navigate('PublicSearch');
 
     const openSupport = (type: 'whatsapp' | 'phone' | 'email') => {
-        if (type === 'whatsapp') Linking.openURL('https://wa.me/2341234567890');
-        if (type === 'phone') Linking.openURL('tel:+2341234567890');
+        if (type === 'whatsapp') Linking.openURL('whatsapp://send?phone=2348128655555');
+        if (type === 'phone') Linking.openURL('tel:08128655555');
         if (type === 'email') Linking.openURL('mailto:support@myconnecta.ng');
     };
 

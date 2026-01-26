@@ -15,7 +15,8 @@ import {
     Linking,
     LayoutAnimation,
     UIManager,
-    Dimensions
+    Dimensions,
+    useWindowDimensions
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -44,13 +45,11 @@ interface Message {
     data?: any;
 }
 
-const { width } = Dimensions.get('window');
+const { width: staticWidth } = Dimensions.get('window');
 
 import * as storage from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
 import { Modal } from 'react-native';
-
-// ...
 
 interface ChatSession {
     id: string;
@@ -64,6 +63,8 @@ export default function ConnectaAIScreen({ navigation }: any) {
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
     const { showAlert } = useInAppAlert();
+    const { width: screenWidth } = useWindowDimensions();
+    const isDesktop = screenWidth > 768;
 
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState<string>(Date.now().toString());
@@ -97,9 +98,6 @@ export default function ConnectaAIScreen({ navigation }: any) {
                     messages: s.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
                 }));
                 setSessions(formatted);
-
-                // If there are sessions, load the latest one? 
-                // Or just start fresh but keep them in history.
             }
         } catch (e) {
             console.error('Failed to load sessions', e);
@@ -233,7 +231,7 @@ export default function ConnectaAIScreen({ navigation }: any) {
                 <Badge label={job.jobType || job.type || 'Fixed'} variant="neutral" size="small" />
                 <Text style={[styles.cardPrice, { color: c.primary }]}>
                     {typeof job.budget === 'object'
-                        ? `${job.budget.currency || '$'}${job.budget.amount?.toLocaleString() || '0'}`
+                        ? `${job.budget.currency || '₦'}${job.budget.amount?.toLocaleString() || '0'}`
                         : job.budget}
                 </Text>
             </View>
@@ -277,13 +275,9 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
     const cleanText = (text: string) => {
         if (!text) return '';
-        // Remove bold/italic markers (* or **)
         let cleaned = text.replace(/\*\*/g, '').replace(/\*/g, '');
-        // Remove headers (#)
         cleaned = cleaned.replace(/^#+\s/gm, '');
-        // Remove other common markdown like `
         cleaned = cleaned.replace(/`/g, '');
-        // Remove common AI symbols like ✦ or ✨ if they appear as artifacts
         cleaned = cleaned.replace(/[✦✨]/g, '');
         return cleaned.trim();
     };
@@ -300,7 +294,6 @@ export default function ConnectaAIScreen({ navigation }: any) {
 
         const renderContent = () => {
             if (item.responseType === 'card' && item.data) {
-                // ... existing card logic ...
                 if (Array.isArray(item.data) || (item.data.gigs && Array.isArray(item.data.gigs))) {
                     const gigs = Array.isArray(item.data) ? item.data : item.data.gigs;
                     return (
@@ -472,12 +465,30 @@ export default function ConnectaAIScreen({ navigation }: any) {
             {/* History Modal */}
             <Modal
                 visible={showHistory}
-                animationType="slide"
+                animationType={isDesktop ? 'fade' : 'slide'}
                 transparent={true}
                 onRequestClose={() => setShowHistory(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                <View style={[
+                    styles.modalOverlay,
+                    isDesktop && { justifyContent: 'center', alignItems: 'center' }
+                ]}>
+                    <View style={[
+                        styles.modalContent,
+                        { backgroundColor: c.background },
+                        isDesktop && {
+                            width: 600,
+                            height: '70%',
+                            maxHeight: 700,
+                            borderRadius: 24,
+                            // Add shadow for desktop popover feel
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 12,
+                            elevation: 5
+                        }
+                    ]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
                             <Text style={[styles.modalTitle, { color: c.text }]}>Chat History</Text>
                             <TouchableOpacity onPress={() => setShowHistory(false)}>

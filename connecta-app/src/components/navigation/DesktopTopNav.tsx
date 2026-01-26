@@ -10,19 +10,19 @@ const DesktopTopNav = () => {
     const c = useThemeColors();
     const navigation = useNavigation<any>();
     const { user } = useAuth();
+    const isClient = user?.userType === 'client';
 
     // Get the current route name to highlight the active tab
-    // We look into the FreelancerTabs navigator state if possible
     const activeRouteName = useNavigationState(state => {
-        const route = state.routes[state.index];
-        if (route.name === 'FreelancerTabs' && route.state) {
-            // If inside tabs, get the active tab name
-            return route.state.routes[route.state.index].name;
+        let route = state.routes[state.index];
+        // Traverse nested navigators to find the active leaf route
+        while (route.state && route.state.index !== undefined) {
+            route = route.state.routes[route.state.index];
         }
         return route.name;
     });
 
-    const navItems = [
+    const freelancerNavItems = [
         { label: 'Home', icon: 'home', route: 'Home' },
         { label: 'Gigs', icon: 'briefcase', route: 'Gigs' },
         { label: 'Proposals', icon: 'document-text', route: 'Proposals' },
@@ -30,8 +30,25 @@ const DesktopTopNav = () => {
         { label: 'Profile', icon: 'person', route: 'Profile' },
     ];
 
+    const clientNavItems = [
+        { label: 'Dashboard', icon: 'home', route: 'Home' },
+        { label: 'My Jobs', icon: 'briefcase', route: 'Jobs' },
+        { label: 'Projects', icon: 'folder-open', route: 'Projects' },
+        { label: 'Messages', icon: 'chatbubble-ellipses', route: 'Messages' },
+        { label: 'Profile', icon: 'person', route: 'Profile' },
+    ];
+
+    const navItems = isClient ? clientNavItems : freelancerNavItems;
+
     const handleNav = (route: string) => {
-        navigation.navigate('FreelancerTabs', { screen: route });
+        if (isClient) {
+            navigation.navigate('ClientTabs', { screen: route });
+        } else {
+            navigation.navigate('FreelancerMain', {
+                screen: 'FreelancerTabs',
+                params: { screen: route }
+            });
+        }
     };
 
     return (
@@ -44,7 +61,7 @@ const DesktopTopNav = () => {
                     <View style={[styles.searchBar, { backgroundColor: c.background }]}>
                         <Ionicons name="search" size={18} color={c.subtext} style={{ marginLeft: 12 }} />
                         <TextInput
-                            placeholder="Search jobs, people, posts..."
+                            placeholder={isClient ? "Search freelancers..." : "Search jobs, people..."}
                             placeholderTextColor={c.subtext}
                             style={[styles.searchInput, { color: c.text }]}
                         />
@@ -91,10 +108,10 @@ const DesktopTopNav = () => {
 
                     <TouchableOpacity
                         style={styles.profileItem}
-                        onPress={() => navigation.navigate('FreelancerTabs', { screen: 'Profile' })}
+                        onPress={() => handleNav('Profile')}
                     >
                         <Avatar
-                            uri={(user as any)?.profilePicture}
+                            uri={(user as any)?.profilePicture || (user as any)?.profileImage}
                             name={user?.firstName}
                             size={32}
                         />

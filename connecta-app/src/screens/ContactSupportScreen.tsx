@@ -14,13 +14,13 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
     try {
       switch (type) {
         case 'whatsapp':
-          await Linking.openURL('whatsapp://send?phone=15551234567');
+          await Linking.openURL('whatsapp://send?phone=2348128655555');
           break;
         case 'email':
-          await Linking.openURL('mailto:support@connecta.com');
+          await Linking.openURL('mailto:support@myconnecta.ng');
           break;
         case 'call':
-          await Linking.openURL('tel:+15551234567');
+          await Linking.openURL('tel:08128655555');
           break;
       }
     } catch (error) {
@@ -68,7 +68,7 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.contactLabel, { color: c.text }]}>Email</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>support@connecta.com</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>support@myconnecta.ng</Text>
               </View>
               <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
             </TouchableOpacity>
@@ -82,7 +82,7 @@ const ContactSupportScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.contactLabel, { color: c.text }]}>Call Us</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>+1 (555) 123-4567</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>08128655555</Text>
               </View>
               <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
             </TouchableOpacity>

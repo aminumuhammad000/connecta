@@ -8,11 +8,12 @@ import CollaboProject from '../models/CollaboProject.model';
 export const createCollaboProject = async (req: Request, res: Response) => {
     try {
         const clientId = (req as any).user._id;
-        const { title, description, totalBudget, roles, milestones, recommendedStack, risks, category, niche, projectType, scope, duration, durationType } = req.body;
+        const { title, teamName, description, totalBudget, roles, milestones, recommendedStack, risks, category, niche, projectType, scope, duration, durationType } = req.body;
         console.log("Creating Collabo Project:", JSON.stringify(req.body, null, 2));
 
         const result = await CollaboService.createCollaboProject(clientId, {
             title,
+            teamName,
             description,
             totalBudget,
             roles,
@@ -131,7 +132,7 @@ export const activateProject = async (req: Request, res: Response) => {
 export const getMyProjects = async (req: Request, res: Response) => {
     try {
         const clientId = (req as any).user._id;
-        const result = await CollaboService.getClientProjects(clientId);
+        const result = await CollaboService.getClientProjectsWithRoles(clientId);
         res.json(result);
     } catch (error: any) {
         res.status(500).json({ message: 'Failed to fetch projects', error: error.message });
@@ -307,5 +308,25 @@ export const getFiles = async (req: Request, res: Response) => {
         res.json(files);
     } catch (error: any) {
         res.status(500).json({ message: 'Failed to fetch files', error: error.message });
+    }
+}
+export const deleteTask = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        await CollaboService.deleteTask(id);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to delete task', error: error.message });
+    }
+}
+
+export const markRead = async (req: Request, res: Response) => {
+    try {
+        const { workspaceId } = req.body;
+        const userId = (req as any).user._id;
+        await CollaboService.markWorkspaceRead(workspaceId, userId);
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Failed to mark read', error: error.message });
     }
 }

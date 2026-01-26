@@ -55,7 +55,7 @@ const ApplyJobScreen: React.FC = () => {
                 title: jobTitle || 'Job Application',
                 budget: {
                     amount: Number(proposedRate),
-                    currency: '$'
+                    currency: '₦'
                 },
                 dateRange: {
                     startDate: startDate,
@@ -116,7 +116,7 @@ const ApplyJobScreen: React.FC = () => {
                     <Text style={[styles.jobTitle, { color: c.text }]}>Applying to: {jobTitle || 'Unknown Job'}</Text>
 
                     <View style={{ marginTop: 20 }}>
-                        <Text style={[styles.label, { color: c.text }]}>Proposed Rate ($)</Text>
+                        <Text style={[styles.label, { color: c.text }]}>Proposed Rate (₦)</Text>
                         <TextInput
                             style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
                             value={proposedRate}

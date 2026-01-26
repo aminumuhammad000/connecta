@@ -164,9 +164,9 @@ export const getBaseTemplate = (options: EmailTemplateOptions) => {
 
         <div class="footer">
             <div class="footer-links">
-                <a href="https://connecta.ng" class="footer-link">Website</a>
-                <a href="https://connecta.ng/privacy" class="footer-link">Privacy Policy</a>
-                <a href="https://connecta.ng/support" class="footer-link">Support</a>
+                <a href="https://myconnecta.ng" class="footer-link">Website</a>
+                <a href="https://myconnecta.ng/privacy" class="footer-link">Privacy Policy</a>
+                <a href="https://myconnecta.ng/support" class="footer-link">Support</a>
             </div>
             <p>&copy; ${year} Connecta Inc. All rights reserved.</p>
             <p>You received this email because you are a member of Connecta.</p>

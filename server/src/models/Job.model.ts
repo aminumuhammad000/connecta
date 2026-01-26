@@ -97,7 +97,7 @@ const JobSchema: Schema<IJob> = new Schema(
     salary: {
       min: { type: Number },
       max: { type: Number },
-      currency: { type: String, default: "USD" },
+      currency: { type: String, default: "NGN" },
     },
     description: { type: String, required: true },
     requirements: [{ type: String }],

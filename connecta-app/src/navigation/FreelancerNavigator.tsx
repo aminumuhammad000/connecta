@@ -34,12 +34,53 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 import DesktopLayout from '../components/layout/DesktopLayout';
+import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
+import { getTotalUnreadCount } from '../services/messageService';
+import { useState, useEffect } from 'react';
 
 function FreelancerTabs() {
     const c = useThemeColors();
     const { width } = useWindowDimensions();
     const isDesktop = width > 768;
     const insets = useSafeAreaInsets();
+    const { user } = useAuth();
+    const { socket } = useSocket();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (user?._id) {
+            // Initial fetch
+            getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewMessage = () => {
+            if (user?._id) {
+                getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
+            }
+        };
+
+        const handleMessageRead = () => {
+            if (user?._id) {
+                getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
+            }
+        };
+
+        // Listen for message events that should trigger a count update
+        socket.on('message:receive', handleNewMessage);
+        socket.on('conversation:update', handleNewMessage);
+        socket.on('message:read', handleMessageRead);
+
+        return () => {
+            socket.off('message:receive', handleNewMessage);
+            socket.off('conversation:update', handleNewMessage);
+            socket.off('message:read', handleMessageRead);
+        };
+    }, [socket, user]);
 
     return (
         <Tab.Navigator
@@ -82,6 +123,13 @@ function FreelancerTabs() {
 
                     return <Ionicons name={iconName} size={24} color={color} />;
                 },
+                tabBarBadge: route.name === 'Messages' && unreadCount > 0 ? unreadCount : undefined,
+                tabBarBadgeStyle: {
+                    backgroundColor: '#EF4444', // Red color
+                    color: 'white',
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                }
             })}
         >
             <Tab.Screen name="Home" component={FreelancerDashboardScreen} />

@@ -12,19 +12,21 @@ console.log('AuthService Module Loaded');
 /**
  * Sign up a new user
  */
-export const signup = async (data: SignupData): Promise<AuthResponse> => {
-    const response = await post<AuthResponse>(API_ENDPOINTS.SIGNUP, data);
-    return response;
+export const signup = async (data: SignupData, autoLogin?: boolean): Promise<AuthResponse> => {
+    const response = await post<AuthResponse>(API_ENDPOINTS.SIGNUP, { ...data, autoLogin });
+    // Handle both { data: { token... } } and { token... } structures
+    const authData = response.data || response;
+    return authData as AuthResponse;
 };
 
 export const googleSignup = async (tokenId: string, userType: UserType): Promise<AuthResponse> => {
     const response = await post<AuthResponse>(API_ENDPOINTS.GOOGLE_SIGNUP, { tokenId, userType });
-    return response;
+    return response.data as AuthResponse;
 };
 
 export const googleSignin = async (tokenId: string): Promise<AuthResponse> => {
     const response = await post<AuthResponse>(API_ENDPOINTS.GOOGLE_SIGNIN, { tokenId });
-    return response;
+    return response.data as AuthResponse;
 };
 
 /**
@@ -32,7 +34,9 @@ export const googleSignin = async (tokenId: string): Promise<AuthResponse> => {
  */
 export const signin = async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await post<AuthResponse>(API_ENDPOINTS.SIGNIN, credentials);
-    return response as AuthResponse;
+    // Handle both { data: { token... } } and { token... } structures
+    const authData = response.data || response;
+    return authData as AuthResponse;
 };
 
 
@@ -61,13 +65,13 @@ export const resetPassword = async (resetToken: string, newPassword: string): Pr
     return response;
 };
 
-export const verifyEmail = async (otp: string): Promise<ApiResponse> => {
-    const response = await post<ApiResponse>('/api/users/verify-email', { otp });
+export const verifyEmail = async (otp: string, email?: string): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/verify-email', { otp, email });
     return response;
 };
 
-export const resendVerification = async (): Promise<ApiResponse> => {
-    const response = await post<ApiResponse>('/api/users/resend-verification', {});
+export const resendVerification = async (email?: string): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/resend-verification', { email });
     return response;
 };
 

@@ -84,7 +84,7 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
             { opacity },
           ]}
         >
-          <View pointerEvents="box-none" style={{ paddingTop: insets.top + 12, paddingHorizontal: 16 }}>
+          <View pointerEvents="box-none" style={{ paddingTop: insets.top + 12, paddingHorizontal: 16, alignItems: 'center' }}>
             <Animated.View
               style={[
                 styles.card,
@@ -95,6 +95,8 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
                   borderColor: type === 'info' ? c.border : 'transparent',
                   shadowColor: '#000',
                   transform: [{ translateY }],
+                  width: '100%',
+                  maxWidth: 400,
                 },
               ]}
             >

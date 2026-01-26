@@ -8,6 +8,9 @@ export interface ICollaboWorkspace extends Document {
     }[];
     tasks: any[]; // KanBan tasks placeholder
     files: any[]; // Files placeholder
+    unreadCount: {
+        [userId: string]: number;
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -19,8 +22,13 @@ const CollaboWorkspaceSchema: Schema = new Schema(
             name: { type: String, required: true },
             roleIds: [{ type: Schema.Types.ObjectId, ref: "ProjectRole" }]
         }],
-        tasks: [{ type: Object }], // Define stricter schema later
-        files: [{ type: Object }],
+        tasks: [{ type: Schema.Types.Mixed }], // Define stricter schema later
+        files: [{ type: Schema.Types.Mixed }],
+        unreadCount: {
+            type: Map,
+            of: Number,
+            default: {},
+        },
     },
     { timestamps: true }
 );

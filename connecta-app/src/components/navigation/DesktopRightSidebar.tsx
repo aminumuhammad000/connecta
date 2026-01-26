@@ -114,7 +114,8 @@ const DesktopRightSidebar = () => {
                             }
 
                             const name = `${otherUser?.firstName || 'User'} ${otherUser?.lastName || ''}`;
-                            const lastMsg = conv.lastMessage || 'Start a conversation';
+                            const lastMsgText = conv.lastMessage?.text || 'Start a conversation';
+                            const isMe = conv.lastMessage?.senderId === user?._id;
 
                             return (
                                 <TouchableOpacity key={conv._id} style={styles.messageItem} onPress={() => handleChatPress(conv)}>
@@ -126,7 +127,7 @@ const DesktopRightSidebar = () => {
                                     <View style={{ flex: 1 }}>
                                         <Text style={[styles.msgName, { color: c.text }]} numberOfLines={1}>{name}</Text>
                                         <Text style={[styles.msgPreview, { color: c.subtext }]} numberOfLines={1}>
-                                            {conv.lastSenderId === user?._id ? 'You: ' : ''}{lastMsg}
+                                            {isMe ? 'You: ' : ''}{lastMsgText}
                                         </Text>
                                     </View>
                                     {(conv.unreadCount?.[user?._id || ''] || 0) > 0 && (

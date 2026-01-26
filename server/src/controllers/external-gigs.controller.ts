@@ -44,7 +44,7 @@ export const createOrUpdateExternalGig = async (req: Request, res: Response) => 
         // Try to find an existing admin or system user
         const User = mongoose.model("User");
         const systemUser = await User.findOne({
-            $or: [{ email: "system@connecta.ng" }, { userType: "admin" }]
+            $or: [{ email: "system@myconnecta.ng" }, { userType: "admin" }]
         });
 
         if (systemUser) {
@@ -55,7 +55,7 @@ export const createOrUpdateExternalGig = async (req: Request, res: Response) => 
                 const newSystemUser = await User.create({
                     firstName: "System",
                     lastName: "Scraper",
-                    email: "system@connecta.ng",
+                    email: "system@myconnecta.ng",
                     password: "system_password_secure_hash", // Placeholder
                     userType: "admin",
                     isVerified: true

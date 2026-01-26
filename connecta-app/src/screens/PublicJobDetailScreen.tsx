@@ -102,7 +102,7 @@ const PublicJobDetailScreen: React.FC = () => {
                     <View style={[styles.keyInfoWrap, { borderTopColor: c.border, borderBottomColor: c.border }]}>
                         <View style={styles.keyInfoItem}>
                             <Text style={[styles.keyLabel, { color: c.subtext }]}>Budget</Text>
-                            <Text style={[styles.keyValue, { color: c.text }]}>${job.budget}</Text>
+                            <Text style={[styles.keyValue, { color: c.text }]}>₦{job.budget}</Text>
                             <Text style={{ fontSize: 10, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : 'Fixed Price'}</Text>
                         </View>
                         <View style={styles.keyInfoItem}>

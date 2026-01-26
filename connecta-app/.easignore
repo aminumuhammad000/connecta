@@ -1,0 +1,13 @@
+# Ignore native folders (let EAS generate them)
+android/
+ios/
+
+# Ignore build artifacts
+node_modules/
+dist/
+web-build/
+.expo/
+
+# Ignore local env
+.env
+.env.local

@@ -132,6 +132,7 @@ export const signup = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       userType,
+      profileImage: `https://i.pravatar.cc/300?u=${email}`
     });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -167,17 +168,35 @@ export const signup = async (req: Request, res: Response) => {
 // ===================
 export const signin = async (req: Request, res: Response) => {
   try {
+    console.log('Signin Attempt:', req.body);
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      console.log('Missing email or password');
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
     const user = await User.findOne({ email });
+    console.log('User found:', user ? user._id : 'null');
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match:', isMatch);
+
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is missing!');
+      throw new Error('JWT_SECRET is missing');
+    }
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
+    console.log('Token generated successfully');
+
     res.status(200).json({ success: true, user, token });
   } catch (err) {
+    console.error('Signin CRASH:', err);
     res.status(500).json({ message: "Server error", error: err });
   }
 };
@@ -207,6 +226,7 @@ export const googleSignup = async (req: Request, res: Response) => {
       email,
       userType,
       password: "", // no password needed for Google accounts
+      profileImage: `https://i.pravatar.cc/300?u=${email}`
     });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -780,6 +800,7 @@ export const updateMe = async (req: Request, res: Response) => {
     if (lastName) updateData.lastName = lastName;
     if (profileImage !== undefined) updateData.profileImage = profileImage;
     if (email) updateData.email = email;
+    if (req.body.emailFrequency) updateData.emailFrequency = req.body.emailFrequency;
 
     console.log('UpdateMe updateData:', updateData);
 

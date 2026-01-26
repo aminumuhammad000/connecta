@@ -1,4 +1,4 @@
-import { post, get, patch, uploadFile as uploadFileApi } from './api';
+import { post, get, patch, del, uploadFile as uploadFileApi } from './api';
 
 export const createCollaboProject = async (data: any) => {
     const response = await post('/api/collabo/create', data);
@@ -70,6 +70,11 @@ export const getMessages = async (workspaceId: string, channelName: string) => {
     return (response as any)?.data || response;
 };
 
+export const markWorkspaceRead = async (workspaceId: string) => {
+    const response = await post('/api/collabo/mark-read', { workspaceId });
+    return (response as any)?.data || response;
+};
+
 export const createTask = async (data: any) => {
     const response = await post('/api/collabo/task', data);
     return (response as any)?.data || response;
@@ -92,5 +97,9 @@ export const uploadFile = async (data: FormData) => {
 
 export const getFiles = async (workspaceId: string) => {
     const response = await get(`/api/collabo/files?workspaceId=${workspaceId}`);
+    return (response as any)?.data || response;
+};
+export const deleteTask = async (taskId: string) => {
+    const response = await del(`/api/collabo/task/${taskId}`);
     return (response as any)?.data || response;
 };

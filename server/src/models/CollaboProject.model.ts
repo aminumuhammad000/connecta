@@ -4,6 +4,7 @@ export interface ICollaboProject extends Document {
     title: string;
     description: string;
     clientId: mongoose.Types.ObjectId;
+    teamName?: string;
     totalBudget: number;
     category?: string;
     niche?: string;
@@ -25,6 +26,7 @@ const CollaboProjectSchema: Schema = new Schema(
         title: { type: String, required: true },
         description: { type: String, required: true },
         clientId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        teamName: { type: String },
         totalBudget: { type: Number, required: true },
         category: { type: String },
         niche: { type: String },

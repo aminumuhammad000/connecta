@@ -16,6 +16,7 @@ import ProfileCompletionModal from '../components/ProfileCompletionModal';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSocket } from '../context/SocketContext';
 
 import { useWindowDimensions } from 'react-native';
 
@@ -50,6 +51,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([]);
@@ -61,6 +63,32 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    loadDashboardData();
+    checkProfileStatus();
+  }, []);
+
+  useEffect(() => {
+    if (socket) {
+      const handleUpdate = () => {
+        console.log('[FreelancerDashboard] Refreshing due to socket event');
+        loadDashboardData();
+      };
+
+      socket.on('conversation:update', handleUpdate);
+      socket.on('notification:new', handleUpdate);
+      socket.on('message:receive', handleUpdate);
+
+      return () => {
+        socket.off('conversation:update', handleUpdate);
+        socket.off('notification:new', handleUpdate);
+        socket.off('message:receive', handleUpdate);
+      };
+    }
+  }, [socket]);
 
   useFocusEffect(
     useCallback(() => {
@@ -189,7 +217,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Header */}
           <View style={{ backgroundColor: c.background }}>
             <View style={[styles.header, {
-              paddingTop: insets.top + 8,
+              paddingTop: 10,
               paddingBottom: 80, // Increased height for overlap
               backgroundColor: '#FF7F50', // Coral
             }]}>
@@ -274,72 +302,77 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
             )}
           </View>
 
-          {/* Quick Actions */}
-          <View style={{ marginBottom: 12 }}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
+
+          {!isDesktop && (
+            <View style={{ marginBottom: 12 }}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+              >
+                <TouchableOpacity
+                  style={styles.quickAction}
+                  onPress={() => navigation.navigate('FreelancerProjects')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
+                    <Ionicons name="briefcase" size={24} color="#10B981" />
+                  </View>
+                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickAction}
+                  onPress={() => navigation.navigate('Proposals')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
+                    <Ionicons name="document-text" size={24} color={c.primary} />
+                  </View>
+                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickAction}
+                  onPress={() => navigation.navigate('Wallet')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
+                    <Ionicons name="wallet" size={24} color="#F59E0B" />
+                  </View>
+                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Wallet</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickAction}
+                  onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
+                    <Ionicons name="people" size={24} color="#6366F1" />
+                    <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#EF4444', paddingHorizontal: 4, borderRadius: 4 }}>
+                      <Text style={{ fontSize: 8, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.quickAction}
+                  onPress={() => navigation.navigate('Settings')}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
+                    <Ionicons name="settings" size={24} color="#8B5CF6" />
+                  </View>
+                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Settings</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
-            >
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => navigation.navigate('Proposals')}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
-                  <Ionicons name="document-text" size={24} color={c.primary} />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => navigation.navigate('FreelancerProjects')}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
-                  <Ionicons name="briefcase" size={24} color="#10B981" />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => navigation.navigate('Wallet')}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
-                  <Ionicons name="wallet" size={24} color="#F59E0B" />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Wallet</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
-                  <Ionicons name="people" size={24} color="#6366F1" />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => navigation.navigate('Settings')}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
-                  <Ionicons name="settings" size={24} color="#8B5CF6" />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Settings</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
+          )}
 
           {/* Recommended Jobs */}
           <View style={styles.section}>
@@ -356,6 +389,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   if (!job) return null;
                   const isInternal = !job.isExternal;
                   const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
+                  const isNew = new Date(job.createdAt) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); // New if < 3 days old
 
                   return (
                     <TouchableOpacity
@@ -375,15 +409,25 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                         {/* Header: Title & Save */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                           <View style={{ flex: 1, gap: 4 }}>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22 }}>
-                              {job.title}
-                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
+                                {job.title}
+                              </Text>
+                              {isNew && (
+                                <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                  <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                                </View>
+                              )}
+                            </View>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                               <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
                                 {job.company || 'Confidential'} • {new Date(job.createdAt).toLocaleDateString()}
                               </Text>
                               {isInternal && (
-                                <MaterialIcons name="verified" size={16} color="#FF7F50" />
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                                  <MaterialIcons name="verified" size={16} color="#FF7F50" />
+                                  <Text style={{ fontSize: 11, color: '#FF7F50', fontWeight: '600' }}>Verified</Text>
+                                </View>
                               )}
                             </View>
                           </View>
@@ -400,7 +444,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                           <Badge label={job.jobType} variant="neutral" size="small" />
                           <Badge label={job.locationType || 'Remote'} variant="neutral" size="small" />
-                          <Badge label={`$${job.budget}`} variant="custom" customColor="#FF7F50" size="small" />
+                          <Badge label={`₦${job.budget} / project`} variant="custom" customColor="#FF7F50" size="small" />
                         </View>
 
                         {/* Description Preview */}

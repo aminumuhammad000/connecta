@@ -232,7 +232,7 @@ const JobDetailScreen: React.FC = () => {
               </View>
               <View>
                 <Text style={[styles.statLabel, { color: c.subtext }]}>Budget</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>${job.budget}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>₦{job.budget}</Text>
                 <Text style={{ fontSize: 11, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : 'Fixed'}</Text>
               </View>
             </View>
@@ -333,13 +333,22 @@ const JobDetailScreen: React.FC = () => {
           {!isJobOwner && (
             <View style={{ marginTop: 32 }}>
               <Text style={[styles.sectionTitle, { color: c.text }]}>About the Client</Text>
-              <View style={{
-                backgroundColor: c.card,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: c.border,
-                padding: 20
-              }}>
+              <TouchableOpacity
+                activeOpacity={job.isExternal ? 1 : 0.7}
+                onPress={() => {
+                  if (!job.isExternal && job.clientId) {
+                    const clientId = job.clientId._id || job.clientId;
+                    (navigation as any).navigate('ClientProfile', { userId: clientId });
+                  }
+                }}
+                style={{
+                  backgroundColor: c.card,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                  padding: 20
+                }}
+              >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
                   <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
@@ -357,6 +366,9 @@ const JobDetailScreen: React.FC = () => {
                       Member since {new Date(job.createdAt).getFullYear()}
                     </Text>
                   </View>
+                  {!job.isExternal && (
+                    <MaterialIcons name="chevron-right" size={24} color={c.subtext} />
+                  )}
                 </View>
 
                 <View style={{ flexDirection: 'row', gap: 24, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 16 }}>
@@ -373,7 +385,7 @@ const JobDetailScreen: React.FC = () => {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -402,7 +414,7 @@ const JobDetailScreen: React.FC = () => {
                         {/* Proposal Card Content - Simplified for brevity but keeping logic */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                           <Text style={{ fontWeight: '700', color: c.text }}>{p.freelancerId?.firstName}</Text>
-                          <Text style={{ fontWeight: '700', color: c.primary }}>${p.budget?.amount}</Text>
+                          <Text style={{ fontWeight: '700', color: c.primary }}>₦{p.budget?.amount}</Text>
                         </View>
                         <Text numberOfLines={2} style={{ color: c.subtext, marginTop: 8 }}>{p.description}</Text>
                       </TouchableOpacity>

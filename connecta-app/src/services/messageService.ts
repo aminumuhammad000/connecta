@@ -64,6 +64,14 @@ export const markMessagesAsRead = async (conversationId: string, userId: string)
     await patch(API_ENDPOINTS.MARK_READ, { conversationId, userId });
 };
 
+/**
+ * Get total unread messages count for a user
+ */
+export const getTotalUnreadCount = async (userId: string): Promise<number> => {
+    const response = await get<{ unreadCount: number }>(API_ENDPOINTS.UNREAD_COUNT_TOTAL(userId));
+    return (response as any)?.data?.unreadCount || 0;
+};
+
 export default {
     getOrCreateConversation,
     getUserConversations,
@@ -71,4 +79,5 @@ export default {
     getMessagesBetween,
     sendMessage,
     markMessagesAsRead,
+    getTotalUnreadCount,
 };

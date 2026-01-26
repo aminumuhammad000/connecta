@@ -185,3 +185,4 @@ function AuthNavigatorStackWrapper({ initialRoute, initialParams }: any) {
     </Stack.Navigator>
   );
 }
+

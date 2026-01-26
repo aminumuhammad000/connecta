@@ -9,7 +9,7 @@ import { useInAppAlert } from '../components/InAppAlert';
 import * as profileService from '../services/profileService';
 import * as userService from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
-import { uploadImage } from '../services/uploadService';
+import { uploadImage, uploadAvatar, uploadPortfolioImage } from '../services/uploadService';
 import { PortfolioItem } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -48,6 +48,7 @@ export default function EditProfileScreen({ navigation }: any) {
         fieldOfStudy: '',
         startDate: '',
         endDate: '',
+        category: 'University',
     });
 
     // Languages state
@@ -175,7 +176,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 setUploadingImage(true);
 
                 try {
-                    const uploadedUrl = await uploadImage(imageUri);
+                    const uploadedUrl = await uploadAvatar(imageUri);
                     setProfileImage(uploadedUrl);
                     showAlert({
                         title: 'Success',
@@ -263,7 +264,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 setUploadingImage(true);
 
                 try {
-                    const uploadedUrl = await uploadImage(imageUri);
+                    const uploadedUrl = await uploadPortfolioImage(imageUri);
                     setPortfolioForm(prev => ({ ...prev, imageUrl: uploadedUrl }));
                 } catch (uploadError: any) {
                     console.error('Upload error:', uploadError);
@@ -280,7 +281,7 @@ export default function EditProfileScreen({ navigation }: any) {
 
     // Education handlers
     const handleAddEducation = () => {
-        setEducationForm({ institution: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '' });
+        setEducationForm({ institution: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '', category: 'University' });
         setEditingEducationIndex(null);
         setShowEducationModal(true);
     };
@@ -293,6 +294,7 @@ export default function EditProfileScreen({ navigation }: any) {
             fieldOfStudy: item.fieldOfStudy,
             startDate: item.startDate,
             endDate: item.endDate || '',
+            category: item.category || 'University',
         });
         setEditingEducationIndex(index);
         setShowEducationModal(true);
@@ -491,13 +493,7 @@ export default function EditProfileScreen({ navigation }: any) {
                         <Ionicons name="arrow-back" size={24} color={c.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
-                    <TouchableOpacity onPress={handleSave} disabled={saving}>
-                        {saving ? (
-                            <ActivityIndicator size="small" color={c.primary} />
-                        ) : (
-                            <Text style={{ color: c.primary, fontWeight: '700', fontSize: 16 }}>Save</Text>
-                        )}
-                    </TouchableOpacity>
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -757,7 +753,12 @@ export default function EditProfileScreen({ navigation }: any) {
                                 {education.map((item, index) => (
                                     <View key={index} style={[styles.listItem, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
                                         <View style={{ flex: 1 }}>
-                                            <Text style={[styles.itemTitle, { color: c.text }]}>{item.degree}</Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                                <View style={[styles.roleCountBadge, { backgroundColor: c.primary + '15', paddingVertical: 2 }]}>
+                                                    <Text style={{ color: c.primary, fontSize: 9, fontWeight: '800' }}>{item.category?.toUpperCase() || 'UNIVERSITY'}</Text>
+                                                </View>
+                                                <Text style={[styles.itemTitle, { color: c.text, marginBottom: 0 }]}>{item.degree}</Text>
+                                            </View>
                                             <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.institution}</Text>
                                             <Text style={[styles.itemMeta, { color: c.subtext }]}>
                                                 {item.startDate} — {item.endDate || 'Present'}
@@ -824,15 +825,16 @@ export default function EditProfileScreen({ navigation }: any) {
                         )}
                     </Card>
 
+                </ScrollView>
+
+                <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border }]}>
                     <Button
-                        title="Update Profile"
+                        title="Save Changes"
                         onPress={handleSave}
                         loading={saving}
                         size="large"
-                        style={{ marginTop: 8, marginBottom: 40 }}
                     />
-
-                </ScrollView>
+                </View>
             </SafeAreaView>
 
             {/* Portfolio Modal */}
@@ -845,11 +847,16 @@ export default function EditProfileScreen({ navigation }: any) {
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: c.background }]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
-                            <Text style={[styles.modalTitle, { color: c.text }]}>
-                                {editingPortfolioIndex !== null ? 'Edit Portfolio Item' : 'Add Portfolio Item'}
-                            </Text>
                             <TouchableOpacity onPress={() => setShowPortfolioModal(false)}>
-                                <Ionicons name="close" size={24} color={c.text} />
+                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <Text style={[styles.modalTitle, { color: c.text }]}>
+                                {editingPortfolioIndex !== null ? 'Edit Portfolio' : 'Add Portfolio'}
+                            </Text>
+                            <TouchableOpacity onPress={handleSavePortfolioItem}>
+                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
+                                    {editingPortfolioIndex !== null ? 'Done' : 'Add'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
@@ -929,13 +936,6 @@ export default function EditProfileScreen({ navigation }: any) {
                                     placeholderTextColor={c.subtext}
                                 />
                             </View>
-
-                            <Button
-                                title={editingPortfolioIndex !== null ? 'Update Item' : 'Add Item'}
-                                onPress={handleSavePortfolioItem}
-                                size="large"
-                                style={{ marginTop: 16 }}
-                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -951,32 +951,47 @@ export default function EditProfileScreen({ navigation }: any) {
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: c.background }]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
+                            <TouchableOpacity onPress={() => setShowEducationModal(false)}>
+                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
                             <Text style={[styles.modalTitle, { color: c.text }]}>
                                 {editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}
                             </Text>
-                            <TouchableOpacity onPress={() => setShowEducationModal(false)}>
-                                <Ionicons name="close" size={24} color={c.text} />
+                            <TouchableOpacity onPress={handleSaveEducation}>
+                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
+                                    {editingEducationIndex !== null ? 'Done' : 'Add'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.modalBody}>
+                            <View style={styles.inputGroup}>
+                                <Text style={[styles.label, { color: c.subtext }]}>Degree / Certification *</Text>
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                    {['High School', 'Diploma', 'Associate', "Bachelor's", "Master's", 'Doctorate', 'Bootcamp', 'Certification'].map((level) => (
+                                        <TouchableOpacity
+                                            key={level}
+                                            onPress={() => setEducationForm(prev => ({ ...prev, degree: level, category: level }))}
+                                            style={[
+                                                styles.nicheChip,
+                                                {
+                                                    backgroundColor: educationForm.degree === level ? c.primary : c.card,
+                                                    borderColor: educationForm.degree === level ? c.primary : c.border
+                                                }
+                                            ]}
+                                        >
+                                            <Text style={[styles.nicheText, { color: educationForm.degree === level ? '#FFF' : c.text }]}>{level}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </View>
+
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Institution *</Text>
                                 <TextInput
                                     style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                                     value={educationForm.institution}
                                     onChangeText={(text) => setEducationForm(prev => ({ ...prev, institution: text }))}
-                                    placeholder="University name"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Degree *</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                    value={educationForm.degree}
-                                    onChangeText={(text) => setEducationForm(prev => ({ ...prev, degree: text }))}
-                                    placeholder="Bachelor's, Master's, etc."
+                                    placeholder="University or School name"
                                     placeholderTextColor={c.subtext}
                                 />
                             </View>
@@ -1019,13 +1034,6 @@ export default function EditProfileScreen({ navigation }: any) {
                                     </TouchableOpacity>
                                 </View>
                             </View>
-
-                            <Button
-                                title={editingEducationIndex !== null ? 'Update' : 'Add'}
-                                onPress={handleSaveEducation}
-                                size="large"
-                                style={{ marginTop: 16 }}
-                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -1041,11 +1049,16 @@ export default function EditProfileScreen({ navigation }: any) {
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: c.background }]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
+                            <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
                             <Text style={[styles.modalTitle, { color: c.text }]}>
                                 {editingLanguageIndex !== null ? 'Edit Language' : 'Add Language'}
                             </Text>
-                            <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
-                                <Ionicons name="close" size={24} color={c.text} />
+                            <TouchableOpacity onPress={handleSaveLanguage}>
+                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
+                                    {editingLanguageIndex !== null ? 'Done' : 'Add'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.modalBody}>
@@ -1083,13 +1096,6 @@ export default function EditProfileScreen({ navigation }: any) {
                                     ))}
                                 </View>
                             </View>
-
-                            <Button
-                                title={editingLanguageIndex !== null ? 'Update' : 'Add'}
-                                onPress={handleSaveLanguage}
-                                size="large"
-                                style={{ marginTop: 16 }}
-                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -1105,11 +1111,16 @@ export default function EditProfileScreen({ navigation }: any) {
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: c.background }]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
-                            <Text style={[styles.modalTitle, { color: c.text }]}>
-                                {editingEmploymentIndex !== null ? 'Edit Work Experience' : 'Add Work Experience'}
-                            </Text>
                             <TouchableOpacity onPress={() => setShowEmploymentModal(false)}>
-                                <Ionicons name="close" size={24} color={c.text} />
+                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <Text style={[styles.modalTitle, { color: c.text }]}>
+                                {editingEmploymentIndex !== null ? 'Edit Work' : 'Add Work'}
+                            </Text>
+                            <TouchableOpacity onPress={handleSaveEmployment}>
+                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
+                                    {editingEmploymentIndex !== null ? 'Done' : 'Add'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                         <ScrollView style={styles.modalBody}>
@@ -1175,13 +1186,6 @@ export default function EditProfileScreen({ navigation }: any) {
                                     numberOfLines={4}
                                 />
                             </View>
-
-                            <Button
-                                title={editingEmploymentIndex !== null ? 'Update' : 'Add'}
-                                onPress={handleSaveEmployment}
-                                size="large"
-                                style={{ marginTop: 16 }}
-                            />
                         </ScrollView>
                     </View>
                 </View>
@@ -1575,6 +1579,28 @@ const styles = StyleSheet.create({
     },
     radioText: {
         fontSize: 15,
+        fontWeight: '500',
+    },
+    footer: {
+        padding: 16,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        paddingBottom: 16,
+    },
+    roleCountBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginRight: 6,
+    },
+    nicheChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        marginBottom: 8,
+    },
+    nicheText: {
+        fontSize: 13,
         fontWeight: '600',
     },
 });

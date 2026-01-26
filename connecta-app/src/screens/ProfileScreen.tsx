@@ -365,6 +365,60 @@ export default function ProfileScreen({ navigation }: any) {
                   </TouchableOpacity>
                 )}
               </View>
+              <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
+
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                  onPress={() => navigation.navigate('EditProfile')}
+                >
+                  <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                  <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                  onPress={() => navigation.navigate('JobPreferences')}
+                >
+                  <Ionicons name="options-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                  <Text style={[styles.profileActionText, { color: c.text }]}>Preferences</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                  onPress={() => navigation.navigate('ManageSubscription')}
+                >
+                  <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Ultra-Sleek Profile Completeness */}
+            <View style={styles.ultraSleekCompleteness}>
+              <View style={styles.completenessRow}>
+                <Text style={[styles.tinyLabel, { color: c.subtext }]}>Profile Strength</Text>
+                <Text style={[styles.tinyValue, { color: c.primary }]}>{completeness}%</Text>
+              </View>
+              <View style={[styles.thinTrack, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                <LinearGradient
+                  colors={[c.primary, '#FF9F70']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.thinFill, { width: `${completeness}%` }]}
+                />
+              </View>
+              {completeness < 100 && (
+                <TouchableOpacity
+                  style={styles.compactTip}
+                  onPress={() => navigation.navigate('EditProfile')}
+                >
+                  <Text style={[styles.compactTipText, { color: c.subtext }]} numberOfLines={1}>
+                    <Text style={{ color: c.primary, fontWeight: '800' }}>• </Text>
+                    Add portfolio to reach 100% strength
+                  </Text>
+                  <Ionicons name="arrow-forward" size={10} color={c.primary} />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -816,47 +870,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  completenessContainer: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(0,0,0,0.05)',
+  ultraSleekCompleteness: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.02)',
   },
-  completenessHeader: {
+  completenessRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 6,
   },
-  completenessTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  completenessPercent: {
-    fontSize: 14,
+  tinyLabel: {
+    fontSize: 10,
     fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    opacity: 0.6,
   },
-  progressBarBg: {
-    height: 8,
-    borderRadius: 4,
+  tinyValue: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  thinTrack: {
+    height: 3,
+    borderRadius: 1.5,
     width: '100%',
     overflow: 'hidden',
   },
-  progressBarFill: {
+  thinFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 1.5,
   },
-  completenessTip: {
+  compactTip: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    gap: 6,
-    backgroundColor: 'rgba(253, 103, 48, 0.08)',
-    padding: 10,
-    borderRadius: 8,
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 2,
   },
-  completenessTipText: {
-    fontSize: 12,
+  compactTipText: {
+    fontSize: 10,
     fontWeight: '600',
+    flex: 1,
   },
 });

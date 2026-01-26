@@ -1,4 +1,4 @@
-import React from 'react';
+import { useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,9 +36,55 @@ import VideoCallScreen from '../screens/VideoCallScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
+import { getTotalUnreadCount } from '../services/messageService';
+import { useState, useEffect } from 'react';
+
+
+
 function ClientTabs() {
     const c = useThemeColors();
     const insets = useSafeAreaInsets();
+    const { user } = useAuth();
+    const { socket } = useSocket();
+    const [unreadCount, setUnreadCount] = useState(0);
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
+    useEffect(() => {
+        if (user?._id) {
+            // Initial fetch
+            getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewMessage = () => {
+            if (user?._id) {
+                getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
+            }
+        };
+
+        const handleMessageRead = () => {
+            if (user?._id) {
+                getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
+            }
+        };
+
+        // Listen for message events that should trigger a count update
+        socket.on('message:receive', handleNewMessage);
+        socket.on('conversation:update', handleNewMessage);
+        socket.on('message:read', handleMessageRead);
+
+        return () => {
+            socket.off('message:receive', handleNewMessage);
+            socket.off('conversation:update', handleNewMessage);
+            socket.off('message:read', handleMessageRead);
+        };
+    }, [socket, user]);
 
     return (
         <Tab.Navigator
@@ -55,6 +101,7 @@ function ClientTabs() {
                     shadowOffset: { width: 0, height: -2 },
                     shadowOpacity: 0.05,
                     shadowRadius: 8,
+                    display: isDesktop ? 'none' : 'flex',
                 },
                 tabBarLabelStyle: {
                     fontSize: 10,
@@ -80,6 +127,13 @@ function ClientTabs() {
 
                     return <Ionicons name={iconName} size={24} color={color} />;
                 },
+                tabBarBadge: route.name === 'Messages' && unreadCount > 0 ? unreadCount : undefined,
+                tabBarBadgeStyle: {
+                    backgroundColor: '#EF4444', // Red color
+                    color: 'white',
+                    fontSize: 10,
+                    fontWeight: 'bold',
+                }
             })}
         >
             <Tab.Screen name="Home" component={ClientDashboardScreen} />
@@ -91,8 +145,14 @@ function ClientTabs() {
     );
 }
 
+import DesktopLayout from '../components/layout/DesktopLayout';
+
+
 export default function ClientNavigator() {
-    return (
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
+    const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="ClientTabs" component={ClientTabs} />
             <Stack.Screen name="PostJob" component={PostJobScreen} />
@@ -103,6 +163,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
             <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />
+            <Stack.Screen name="ClientProfile" component={ClientProfileScreen} />
             <Stack.Screen name="ClientPayments" component={ClientPaymentsScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />
             <Stack.Screen name="PaymentCallback" component={PaymentCallbackScreen} />
@@ -124,4 +185,10 @@ export default function ClientNavigator() {
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
         </Stack.Navigator>
     );
+
+    if (isDesktop) {
+        return <DesktopLayout>{stack}</DesktopLayout>;
+    }
+
+    return stack;
 }

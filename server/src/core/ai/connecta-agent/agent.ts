@@ -99,8 +99,7 @@ export class ConnectaAgent {
     // Prioritize Gemini
     const useGemini = (aiConfig.provider !== 'openai') || !!geminiKey;
 
-    let modelName = (aiConfig as any).model || "gemini-1.5-flash-8b";
-    if (modelName === "gemini-pro" || modelName === "gemini-1.5-flash") modelName = "gemini-1.5-flash-8b";
+    let modelName = (aiConfig as any).model || "gemini-2.0-flash";
 
     if (useGemini && geminiKey) {
       console.log("🤖 Initializing Connecta Agent with Gemini (Google Generative AI)");
@@ -637,7 +636,7 @@ Try: "Find gigs for me" or "Show my profile"`;
 
       this.sessionMetrics.failedRequests++;
       return this.createResponse(
-        "I encountered an error processing your request with Gemini. Please check your API configuration.",
+        "System processing error (Code: 500-LLM-INTENT). Please retry in a moment.",
         null,
         false,
         startTime

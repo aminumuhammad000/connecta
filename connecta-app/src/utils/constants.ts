@@ -29,20 +29,21 @@ const getBaseUrl = () => {
     if (derivedHostBaseUrl) return derivedHostBaseUrl;
 
     // 2. Try explicit URL from app.json or env
-    if (explicitBaseUrl) return explicitBaseUrl;
+    // if (explicitBaseUrl) return explicitBaseUrl;
 
     // 3. Platform defaults for emulators
-    let url = 'http://10.0.2.2:5000'; // Default to Android Emulator localhost
+    let url = 'http://localhost:5000';
 
     // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
-    if (Platform.OS === 'ios') {
-        url = 'http://localhost:5000';
+    // Android Emulator often needs 10.0.2.2
+    if (Platform.OS === 'android') {
+        url = 'http://10.0.2.2:5000';
     }
 
     return url;
 };
 
-export const API_BASE_URL = 'https://api.myconnecta.ng';// getBaseUrl();
+export const API_BASE_URL = getBaseUrl();
 console.log('[API] Base URL:', API_BASE_URL);
 
 // AsyncStorage Keys
@@ -108,6 +109,7 @@ export const API_ENDPOINTS = {
     MESSAGES_BETWEEN: (userId1: string, userId2: string) => `/api/messages/between/${userId1}/${userId2}`,
     SEND_MESSAGE: '/api/messages',
     MARK_READ: '/api/messages/read',
+    UNREAD_COUNT_TOTAL: (userId: string) => `/api/messages/unread-count/${userId}`,
 
     // Dashboard
     DASHBOARD_STATS: '/api/dashboard/stats',
@@ -159,6 +161,8 @@ export const API_ENDPOINTS = {
 
     // Uploads
     UPLOAD_FILE: '/api/uploads/upload',
+    UPLOAD_AVATAR: '/api/avatars/upload',
+    UPLOAD_PORTFOLIO_IMAGE: '/api/portfolio/upload',
 } as const;
 
 // Default Values

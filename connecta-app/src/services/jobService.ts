@@ -91,6 +91,13 @@ export const unsaveJob = async (id: string): Promise<any> => {
     return await del(`${API_ENDPOINTS.JOBS}/${id}/save`);
 };
 
+/**
+ * Invite freelancer to job
+ */
+export const inviteFreelancer = async (jobId: string, freelancerId: string): Promise<any> => {
+    return await post(`${API_ENDPOINTS.JOBS}/${jobId}/invite`, { freelancerId });
+};
+
 export default {
     getAllJobs,
     getMyJobs,
@@ -99,7 +106,8 @@ export default {
     getJobById,
     createJob,
     updateJob,
-    getSavedJobs, // Export new method
-    saveJob,      // Export new method
-    unsaveJob,    // Export new method
+    getSavedJobs,
+    saveJob,
+    unsaveJob,
+    inviteFreelancer,
 };

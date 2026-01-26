@@ -15,6 +15,7 @@ export interface User {
     premiumExpiryDate?: string;
     isVerified?: boolean;
     savedJobs?: string[];
+    emailFrequency?: 'daily' | 'weekly' | 'monthly';
     createdAt: string;
     updatedAt: string;
 }
@@ -122,6 +123,8 @@ export interface Job {
     jobType: JobType;
     duration?: string;
     experienceLevel?: string;
+    experience?: string;
+    deadline?: string;
     status: JobStatus;
     proposalCount?: number;
     location?: string;
@@ -366,6 +369,7 @@ export interface DashboardStats {
     activeProjects: number;
     pendingPayments: number;
     newMessages: number;
+    totalSpent?: number;
     totalEarnings?: number;
     completedJobs?: number;
     activeProposals?: number;

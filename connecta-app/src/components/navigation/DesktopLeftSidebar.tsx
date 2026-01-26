@@ -1,16 +1,53 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useThemeColors } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getMyProfile } from '../../services/profileService';
+import { Profile } from '../../types';
 
 const DesktopLeftSidebar = ({ navigation }: any) => {
     const c = useThemeColors();
     const { user } = useAuth();
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [loading, setLoading] = useState(true);
+    const isClient = user?.userType === 'client';
 
-    // Ensure we have a default navigation object if none provided (though it usually is)
-    // or handle internal navigation if needed.
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchProfile = async () => {
+            if (!user?._id) return;
+            try {
+                // If client, we might use a different service or same. Assuming getMyProfile works for both or returns user.
+                const data = await getMyProfile();
+                if (isMounted) setProfile(data);
+            } catch (err) {
+                console.error('Failed to fetch profile in sidebar:', err);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchProfile();
+        return () => { isMounted = false; };
+    }, [user?._id]);
+
+    const displayTitle = isClient
+        ? ((user as any)?.companyName || 'Client Account')
+        : (profile?.jobTitle || (user as any)?.profession || 'Freelancer');
+
+    const location = profile?.location || (user as any)?.location || 'Global';
+
+    // Stats Logic
+    const stats = isClient ? [
+        { label: 'Active Jobs', value: (user as any)?.activeJobsCount || '0' },
+        { label: 'Total Hires', value: (user as any)?.totalHires || '0' },
+    ] : [
+        { label: 'Profile views', value: (user as any)?.views || 142 },
+        { label: 'Job Success', value: `${profile?.rating ? Math.round((profile.rating / 5) * 100) : 100}%` },
+    ];
 
     return (
         <View style={styles.container}>
@@ -19,7 +56,7 @@ const DesktopLeftSidebar = ({ navigation }: any) => {
                 {/* Cover Banner with Gradient */}
                 <View style={styles.bannerContainer}>
                     <LinearGradient
-                        colors={[c.primary, '#7C3AED']}
+                        colors={isClient ? [c.primary, '#2563EB'] : [c.primary, '#7C3AED']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.banner}
@@ -29,7 +66,7 @@ const DesktopLeftSidebar = ({ navigation }: any) => {
                 {/* Avatar */}
                 <View style={[styles.avatarContainer, { backgroundColor: c.card, borderColor: c.card }]}>
                     <Image
-                        source={{ uri: (user as any)?.profilePicture || 'https://via.placeholder.com/150' }}
+                        source={{ uri: (user as any)?.profilePicture || profile?.avatar || (user as any)?.profileImage || 'https://via.placeholder.com/150' }}
                         style={styles.avatar}
                     />
                 </View>
@@ -40,29 +77,28 @@ const DesktopLeftSidebar = ({ navigation }: any) => {
                         {user?.firstName} {user?.lastName}
                     </Text>
                     <Text style={[styles.headline, { color: c.subtext }]}>
-                        {(user as any)?.profession || 'Connecta Freelancer'}
+                        {displayTitle}
                     </Text>
-                    <Text style={[styles.location, { color: c.subtext }]}>{(user as any)?.location || 'Global'}</Text>
+                    <View style={styles.locationRow}>
+                        <Ionicons name="location-sharp" size={12} color={c.subtext} />
+                        <Text style={[styles.location, { color: c.subtext }]}>{location}</Text>
+                    </View>
                 </View>
 
                 {/* Stats */}
                 <View style={[styles.statsContainer, { borderTopColor: c.border }]}>
-                    <TouchableOpacity style={styles.statItem}>
-                        <View>
-                            <Text style={[styles.statLabel, { color: c.subtext }]}>Profile views</Text>
-                        </View>
-                        <Text style={[styles.statValue, { color: c.primary }]}>{(user as any)?.views || 142}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.statItem}>
-                        <View>
-                            <Text style={[styles.statLabel, { color: c.subtext }]}>Job Success</Text>
-                        </View>
-                        <Text style={[styles.statValue, { color: c.primary }]}>{(user as any)?.jobSuccessScore || 100}%</Text>
-                    </TouchableOpacity>
+                    {stats.map((stat, i) => (
+                        <TouchableOpacity key={i} style={styles.statItem}>
+                            <View>
+                                <Text style={[styles.statLabel, { color: c.subtext }]}>{stat.label}</Text>
+                            </View>
+                            <Text style={[styles.statValue, { color: c.primary }]}>{stat.value}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
 
-                {/* Premium Upsell */}
-                {!user?.isPremium && (
+                {/* Premium Upsell (Freelancer Only usually) */}
+                {!isClient && !user?.isPremium && (
                     <TouchableOpacity style={[styles.premiumRow, { borderTopColor: c.border, backgroundColor: c.primary + '10' }]}>
                         <LinearGradient
                             colors={['#F59E0B', '#D97706']}
@@ -77,38 +113,100 @@ const DesktopLeftSidebar = ({ navigation }: any) => {
                     </TouchableOpacity>
                 )}
 
-                {/* My Items */}
-                <TouchableOpacity style={[styles.myItemBtn, { borderTopColor: c.border }]}>
-                    <Ionicons name="bookmark" size={18} color={c.subtext} />
-                    <Text style={[styles.myItemText, { color: c.text }]}>Saved Jobs</Text>
+                {/* My Items Action */}
+                <TouchableOpacity
+                    style={[styles.myItemBtn, { borderTopColor: c.border }]}
+                    onPress={() => {
+                        if (isClient) {
+                            navigation.navigate('PostJob');
+                        } else {
+                            navigation.navigate('FreelancerMain', { screen: 'FreelancerProjects' });
+                        }
+                    }}
+                >
+                    <Ionicons name={isClient ? "add-circle-outline" : "briefcase-outline"} size={18} color={c.subtext} />
+                    <Text style={[styles.myItemText, { color: c.text }]}>
+                        {isClient ? "Post a New Job" : "My Jobs"}
+                    </Text>
                 </TouchableOpacity>
             </View>
 
-            {/* Sticky/Recent Card */}
-            <View style={[styles.card, { paddingVertical: 12, paddingHorizontal: 0, backgroundColor: c.card, borderColor: c.border }]}>
-                <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Featured</Text>
-                </View>
+            {/* Shortcuts Card */}
+            <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, paddingVertical: 8 }]}>
+                {!isClient ? (
+                    <>
+                        <TouchableOpacity
+                            style={styles.shortcutItem}
+                            onPress={() => navigation.navigate('FreelancerMain', { screen: 'FreelancerTabs', params: { screen: 'Proposals' } })}
+                        >
+                            <View style={[styles.shortcutIcon, { backgroundColor: c.primary + '15' }]}>
+                                <Ionicons name="document-text" size={16} color={c.primary} />
+                            </View>
+                            <Text style={[styles.shortcutText, { color: c.text }]}>Proposals</Text>
+                        </TouchableOpacity>
 
-                {['Connecta AI', 'Collabo Teams', 'Skill Verification', 'Escrow Payments'].map((tag, idx) => (
-                    <TouchableOpacity key={idx} style={styles.recentItem}>
-                        <Feather name="hash" size={14} color={c.subtext} />
-                        <Text style={[styles.recentText, { color: c.subtext }]} numberOfLines={1}>{tag}</Text>
-                    </TouchableOpacity>
-                ))}
+                        <TouchableOpacity
+                            style={styles.shortcutItem}
+                            onPress={() => navigation.navigate('FreelancerMain', { screen: 'Wallet' })}
+                        >
+                            <View style={[styles.shortcutIcon, { backgroundColor: '#F59E0B15' }]}>
+                                <Ionicons name="wallet" size={16} color="#F59E0B" />
+                            </View>
+                            <Text style={[styles.shortcutText, { color: c.text }]}>Wallet</Text>
+                        </TouchableOpacity>
+                    </>
+                ) : (
+                    <>
+                        <TouchableOpacity
+                            style={styles.shortcutItem}
+                            onPress={() => navigation.navigate('ClientPayments')}
+                        >
+                            <View style={[styles.shortcutIcon, { backgroundColor: '#10B98115' }]}>
+                                <Ionicons name="card" size={16} color="#10B981" />
+                            </View>
+                            <Text style={[styles.shortcutText, { color: c.text }]}>Billing & Payments</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.shortcutItem}
+                            onPress={() => navigation.navigate('ClientEditProfile')}
+                        >
+                            <View style={[styles.shortcutIcon, { backgroundColor: '#3B82F615' }]}>
+                                <Ionicons name="business" size={16} color="#3B82F6" />
+                            </View>
+                            <Text style={[styles.shortcutText, { color: c.text }]}>Company Profile</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
 
-                <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
-                    <Text style={[styles.sectionTitle, { color: c.primary }]}>My Communities</Text>
-                </View>
-                {['Freelance Developers', 'Connecta Official'].map((tag, idx) => (
-                    <TouchableOpacity key={idx} style={styles.recentItem}>
-                        <Feather name="users" size={14} color={c.subtext} />
-                        <Text style={[styles.recentText, { color: c.subtext }]} numberOfLines={1}>{tag}</Text>
-                    </TouchableOpacity>
-                ))}
+                <TouchableOpacity
+                    style={styles.shortcutItem}
+                    // For client, navigating to settings or collabo is fine. Assuming Collabo is shared.
+                    onPress={() => {
+                        if (isClient) {
+                            // Navigate to Projects tab where Collabo projects are listed
+                            navigation.navigate('ClientTabs', { screen: 'Projects' });
+                        } else {
+                            navigation.navigate('FreelancerMain', { screen: 'FreelancerProjects', params: { tab: 'collabo' } });
+                        }
+                    }}
+                >
+                    <View style={[styles.shortcutIcon, { backgroundColor: '#6366F115' }]}>
+                        <Ionicons name="people" size={16} color="#6366F1" />
+                    </View>
+                    <Text style={[styles.shortcutText, { color: c.text }]}>Collabo Team</Text>
+                    <View style={styles.newBadge}>
+                        <Text style={styles.newBadgeText}>NEW</Text>
+                    </View>
+                </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.discoverBtn, { borderTopColor: c.border }]}>
-                    <Text style={[styles.discoverText, { color: c.subtext }]}>Discover more</Text>
+                <TouchableOpacity
+                    style={styles.shortcutItem}
+                    onPress={() => navigation.navigate('Settings')}
+                >
+                    <View style={[styles.shortcutIcon, { backgroundColor: '#8B5CF615' }]}>
+                        <Ionicons name="settings" size={16} color="#8B5CF6" />
+                    </View>
+                    <Text style={[styles.shortcutText, { color: c.text }]}>Settings</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -170,10 +268,16 @@ const styles = StyleSheet.create({
         fontSize: 13,
         textAlign: 'center',
         lineHeight: 18,
+        marginBottom: 4,
+    },
+    locationRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginTop: 2,
     },
     location: {
         fontSize: 12,
-        marginTop: 4,
     },
     statsContainer: {
         paddingVertical: 12,
@@ -254,6 +358,36 @@ const styles = StyleSheet.create({
     discoverText: {
         fontSize: 14,
         fontWeight: '600',
+    },
+    shortcutItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        gap: 12,
+    },
+    shortcutIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    shortcutText: {
+        fontSize: 13,
+        fontWeight: '500',
+        flex: 1,
+    },
+    newBadge: {
+        backgroundColor: '#EF4444',
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+        borderRadius: 4,
+    },
+    newBadgeText: {
+        color: '#FFF',
+        fontSize: 9,
+        fontWeight: '700',
     }
 });
 

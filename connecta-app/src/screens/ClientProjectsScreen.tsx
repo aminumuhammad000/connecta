@@ -48,7 +48,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
         title: p.title,
         budget: p.totalBudget,
         status: p.status === 'planning' ? 'review' : (p.status === 'active' ? 'in_progress' : p.status),
-        freelancerId: { firstName: 'Collabo', lastName: 'Team', profileImage: 'https://ui-avatars.com/api/?name=Team&background=8B5CF6&color=fff' },
+        freelancerId: { firstName: p.teamName || 'Collabo', lastName: 'Team', profileImage: 'https://ui-avatars.com/api/?name=Team&background=8B5CF6&color=fff' },
         isCollabo: true,
         createdAt: p.createdAt
       })) : [];
@@ -56,7 +56,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
       const allProjects = [...(Array.isArray(standardProjects) ? standardProjects : []), ...normalizedCollabo]
         .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-      setProjects(allProjects);
+      setProjects(allProjects as any);
     } catch (error) {
       console.error('Error loading projects:', error);
     } finally {
@@ -100,21 +100,23 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
       <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
         {/* Top App Bar */}
-        <View style={styles.appBar}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 4 }}>
-              <MaterialIcons name="arrow-back" size={24} color={c.text} />
-            </TouchableOpacity>
-            <Text style={[styles.h1, { color: c.text }]}>My Projects</Text>
-          </View>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Notifications" style={styles.iconBtn}>
-            <MaterialIcons name="notifications" size={24} color={c.text} />
+        <View style={[styles.appBar, { borderBottomColor: c.border }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+            <MaterialIcons name="arrow-back" size={24} color={c.text} />
+          </TouchableOpacity>
+          <Text style={[styles.h1, { color: c.text }]}>My Projects</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('PostJob')}
+            style={[styles.iconBtn, { backgroundColor: c.primary + '15' }]}
+            accessibilityLabel="Add project"
+          >
+            <MaterialIcons name="add" size={24} color={c.primary} />
           </TouchableOpacity>
         </View>
 
-        {/* Search */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <View style={[styles.searchWrap, { backgroundColor: c.card }]}>
+        {/* Search & Filter */}
+        <View style={{ padding: 16, paddingBottom: 8 }}>
+          <View style={[styles.searchWrap, { backgroundColor: c.card, borderWidth: 1, borderColor: c.border, marginBottom: 12 }]}>
             <MaterialIcons name="search" size={22} color={c.subtext} style={{ marginLeft: 12 }} />
             <TextInput
               value={q}
@@ -124,117 +126,156 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
               style={[styles.searchInput, { color: c.text }]}
             />
           </View>
-        </View>
 
-        {/* Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingTop: 12 }}
-        >
-          {chips.map(ch => {
-            const active = filter === ch.key;
-            return (
-              <TouchableOpacity
-                key={ch.key}
-                onPress={() => setFilter(ch.key)}
-                style={[styles.chip, { backgroundColor: active ? c.primary : c.card }]}
-              >
-                <Text style={[styles.chipText, { color: active ? '#fff' : c.text }]}>{ch.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {chips.map(ch => {
+              const active = filter === ch.key;
+              return (
+                <TouchableOpacity
+                  key={ch.key}
+                  onPress={() => setFilter(ch.key)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? c.primary + '15' : c.card,
+                      borderColor: active ? c.primary : c.border,
+                      borderWidth: 1
+                    }
+                  ]}
+                >
+                  <Text style={[styles.chipText, { color: active ? c.primary : c.subtext }]}>{ch.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         {/* List */}
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 96 + insets.bottom, gap: 12 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 96 + insets.bottom, gap: 16 }}
           refreshControl={
             <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.primary]} />
           }
         >
           {filtered.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingTop: 40 }}>
-              <MaterialIcons name="folder-open" size={64} color={c.subtext} />
-              <Text style={{ color: c.text, fontSize: 18, marginTop: 16 }}>No projects found</Text>
-              <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8 }}>Your projects will appear here</Text>
+            <View style={{ alignItems: 'center', paddingTop: 60 }}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <MaterialIcons name="folder-open" size={40} color={c.subtext} />
+              </View>
+              <Text style={{ color: c.text, fontSize: 18, fontWeight: '700' }}>No projects found</Text>
+              <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8, textAlign: 'center' }}>
+                {filter === 'All' ? 'Your active projects will appear here' : `No ${filter.toLowerCase()} projects found`}
+              </Text>
             </View>
           ) : (
             filtered.map((p: any) => {
               if (!p) return null;
+              const status = mapProjectStatus(p.status);
+              const statusColor = pillStyle(status);
+
               return (
                 <TouchableOpacity
                   key={p._id}
-                  activeOpacity={0.85}
-                  style={[styles.card, { backgroundColor: c.card }]}
+                  activeOpacity={0.9}
+                  style={[styles.card, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
                   onPress={() => (p as any).isCollabo
                     ? navigation.navigate('CollaboWorkspace', { projectId: p._id })
                     : navigation.navigate('ProjectWorkspace', { id: p._id })
                   }
                 >
-                  <View style={styles.cardTop}>
-                    <Text style={[styles.cardTitle, { color: c.text }]}>{p.title || 'Untitled Project'}</Text>
-                    <Text style={[styles.cardPrice, { color: c.primary }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
-                  </View>
-                  <View style={styles.cardMiddle}>
-                    <Image
-                      source={{ uri: p.freelancerId?.profileImage || `https://ui-avatars.com/api/?name=${p.freelancerId?.firstName}+${p.freelancerId?.lastName}&background=random` }}
-                      style={styles.avatar}
-                    />
-                    <Text style={{ color: c.subtext, fontSize: 13 }}>{p.freelancerId ? `${p.freelancerId.firstName} ${p.freelancerId.lastName}` : 'Freelancer'}</Text>
-                  </View>
-                  <View style={styles.cardBottom}>
-                    <View style={[styles.pill, pillStyle(mapProjectStatus(p.status))]}>
-                      <Text style={[styles.pillText, { color: pillStyle(mapProjectStatus(p.status)).color }]}>
-                        {mapProjectStatus(p.status)}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <View style={{ flex: 1, marginRight: 12 }}>
+                      <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={2}>{p.title || 'Untitled Project'}</Text>
+                      <Text style={{ fontSize: 12, color: c.subtext, marginTop: 4 }}>
+                        Started {new Date(p.createdAt).toLocaleDateString()}
                       </Text>
                     </View>
-                    <MaterialIcons name="chevron-right" size={22} color={c.subtext} />
+                    <View style={[styles.pill, { backgroundColor: statusColor.backgroundColor }]}>
+                      <Text style={[styles.pillText, { color: statusColor.color }]}>{status}</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ height: 1, backgroundColor: c.border, marginVertical: 12 }} />
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Image
+                        source={{ uri: p.freelancerId?.profileImage || `https://ui-avatars.com/api/?name=${p.freelancerId?.firstName}+${p.freelancerId?.lastName}&background=random` }}
+                        style={styles.avatar}
+                      />
+                      <View>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>
+                          {p.freelancerId ? `${p.freelancerId.firstName} ${p.freelancerId.lastName}` : 'Freelancer'}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: c.subtext }}>Freelancer</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[styles.cardPrice, { color: c.text }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
+                      <Text style={{ fontSize: 11, color: c.subtext }}>Budget</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ marginTop: 12 }}>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: c.primary,
+                        borderRadius: 8,
+                        paddingVertical: 8,
+                        paddingHorizontal: 16,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        alignSelf: 'flex-start',
+                        gap: 6
+                      }}
+                      onPress={() => (p as any).isCollabo
+                        ? navigation.navigate('CollaboWorkspace', { projectId: p._id })
+                        : navigation.navigate('ProjectWorkspace', { id: p._id })
+                      }
+                    >
+                      <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>Open Workspace</Text>
+                      <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
+                    </TouchableOpacity>
                   </View>
                 </TouchableOpacity>
               );
             })
           )}
         </ScrollView>
-
-        {/* FAB */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate('PostJob')}
-          style={[styles.fab, { backgroundColor: c.primary, bottom: 24 + insets.bottom }]}
-          accessibilityRole="button"
-          accessibilityLabel="Add project"
-        >
-          <MaterialIcons name="add" size={28} color="#fff" />
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
 function pillStyle(status: ProjectItem['status']) {
-  if (status === 'In Progress') return { backgroundColor: 'rgba(59,130,246,0.12)', color: '#2563eb' };
-  if (status === 'Completed') return { backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' };
-  return { backgroundColor: 'rgba(234,179,8,0.12)', color: '#a16207' };
+  if (status === 'In Progress') return { backgroundColor: 'rgba(59,130,246,0.1)', color: '#3B82F6' };
+  if (status === 'Completed') return { backgroundColor: 'rgba(16,185,129,0.1)', color: '#10B981' };
+  return { backgroundColor: 'rgba(245,158,11,0.1)', color: '#F59E0B' };
 }
 
 const styles = StyleSheet.create({
-  appBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
-  h1: { fontSize: 22, fontWeight: '800' },
+  appBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1
+  },
+  h1: { fontSize: 18, fontWeight: '700' },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-  searchWrap: { height: 48, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
-  searchInput: { flex: 1, paddingHorizontal: 10, fontSize: 16 },
-  chip: { height: 40, borderRadius: 12, paddingHorizontal: 16, alignItems: 'center', justifyContent: 'center' },
-  chipText: { fontSize: 13, fontWeight: '700' },
-  card: { padding: 12, borderRadius: 12 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardTitle: { fontSize: 16, fontWeight: '800' },
-  cardPrice: { fontSize: 16, fontWeight: '800' },
-  cardMiddle: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  avatar: { width: 32, height: 32, borderRadius: 999, backgroundColor: '#ddd' },
-  cardBottom: { marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  pillText: { fontSize: 12, fontWeight: '700' },
-  fab: { position: 'absolute', right: 20, width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  searchWrap: { height: 44, borderRadius: 8, flexDirection: 'row', alignItems: 'center' },
+  searchInput: { flex: 1, paddingHorizontal: 10, fontSize: 15 },
+  chip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8, marginRight: 4 },
+  chipText: { fontSize: 13, fontWeight: '600' },
+  card: { padding: 16, borderRadius: 12, marginBottom: 4 },
+  cardTitle: { fontSize: 15, fontWeight: '600', lineHeight: 20 },
+  cardPrice: { fontSize: 15, fontWeight: '700' },
+  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f0f0f0' },
+  pill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  pillText: { fontSize: 11, fontWeight: '600' },
 });
 
 export default ClientProjectsScreen;

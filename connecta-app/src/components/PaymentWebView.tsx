@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -36,13 +36,14 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
     };
 
     return (
-        <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+        <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
             <View style={[styles.container, { backgroundColor: c.background }]}>
-                <View style={[styles.header, { borderBottomColor: c.border }]}>
-                    <Text style={[styles.headerTitle, { color: c.text }]}>Secure Payment</Text>
-                    <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
-                        <MaterialIcons name="close" size={24} color={c.text} />
+                <View style={[styles.header, { borderBottomColor: c.border, paddingTop: Platform.OS === 'ios' ? 50 : 16 }]}>
+                    <TouchableOpacity onPress={onCancel} style={styles.backBtn}>
+                        <MaterialIcons name="arrow-back" size={24} color={c.text} />
                     </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: c.text }]}>Secure Payment</Text>
+                    <View style={{ width: 40 }} /> {/* Spacer to center title */}
                 </View>
 
                 {loading && (
@@ -79,8 +80,9 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
     },
-    closeBtn: {
+    backBtn: {
         padding: 8,
+        width: 40,
     },
     loadingContainer: {
         position: 'absolute',

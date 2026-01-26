@@ -12,10 +12,13 @@ type Notification = {
     time: string;
 };
 
-type Props = {
-    navigation: NativeStackNavigationProp<any, any>;
-    route: { params: { notification: Notification } };
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+    NotificationDetail: { notification: Notification };
 };
+
+type Props = NativeStackScreenProps<RootStackParamList, 'NotificationDetail'>;
 
 export default function NotificationDetailScreen({ navigation, route }: Props) {
     const c = useThemeColors();

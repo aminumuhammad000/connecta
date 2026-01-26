@@ -38,7 +38,11 @@ export class ReputationService {
 
             // Map contracts to reviews to check specific job ratings
             const contractReviewMap = new Map();
-            reviews.forEach(r => contractReviewMap.set(r.projectId.toString(), r));
+            reviews.forEach(r => {
+                if (r.projectId) {
+                    contractReviewMap.set(r.projectId.toString(), r);
+                }
+            });
 
             for (const contract of contracts) {
                 let isSuccess = false;

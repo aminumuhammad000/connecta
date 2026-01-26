@@ -185,6 +185,7 @@ export class RecommendationService {
                     if (frequency === 'relevant_only') {
                         const user: any = profile.user;
                         if (user && user.email) {
+                            // Send Email
                             await sendGigNotificationEmail(
                                 user.email,
                                 user.firstName || 'Freelancer',
@@ -192,6 +193,20 @@ export class RecommendationService {
                                 `https://myconnecta.ng/jobs/${job._id}`,
                                 job.skills
                             );
+
+                            // Create In-App Notification
+                            const Notification = (await import("../models/Notification.model")).default;
+                            await Notification.create({
+                                userId: user._id,
+                                type: 'gig_matched',
+                                title: 'New Relevant Gig Found!',
+                                message: `We found a new gig that matches your skills: "${job.title}". Check it out now!`,
+                                relatedId: job._id,
+                                relatedType: 'job',
+                                link: `/jobs/${job._id}`,
+                                priority: 'high',
+                                icon: 'auto-awesome'
+                            });
                         }
                     }
                 }

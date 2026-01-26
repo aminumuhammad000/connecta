@@ -8,6 +8,10 @@ import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as profileService from '../services/profileService';
 import * as userService from '../services/userService';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImage, uploadAvatar } from '../services/uploadService';
+import Card from '../components/Card';
+import Avatar from '../components/Avatar';
 
 export default function ClientEditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
@@ -15,10 +19,14 @@ export default function ClientEditProfileScreen({ navigation }: any) {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [isGeneratingBio, setIsGeneratingBio] = useState(false);
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
+
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const [formData, setFormData] = useState({
-        fullName: '',
+        firstName: '',
+        lastName: '',
         email: '',
         phone: '',
         location: '',
@@ -34,25 +42,25 @@ export default function ClientEditProfileScreen({ navigation }: any) {
     const loadProfileData = async () => {
         try {
             setLoading(true);
-            console.log('🔄 Loading profile data...');
 
-            const [user, profile] = await Promise.all([
+            const [userData, profile] = await Promise.all([
                 userService.getMe(),
                 profileService.getMyProfile()
             ]);
 
-            console.log('✅ User data loaded:', { firstName: user.firstName, lastName: user.lastName, email: user.email });
-            console.log('✅ Profile data loaded:', profile);
-
             setFormData({
-                fullName: `${user.firstName} ${user.lastName}`,
-                email: user.email,
+                firstName: userData.firstName || '',
+                lastName: userData.lastName || '',
+                email: userData.email || '',
                 phone: profile?.phoneNumber || '',
                 location: profile?.location || '',
                 companyName: profile?.companyName || '',
                 website: profile?.website || '',
                 bio: profile?.bio || '',
             });
+
+            setProfileImage(profile?.avatar || userData?.profileImage || null);
+
         } catch (error: any) {
             console.error('❌ Failed to load profile:', error);
             showAlert({
@@ -69,10 +77,52 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handlePickImage = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images' as any,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+            });
+
+            if (!result.canceled && result.assets && result.assets[0]) {
+                const imageUri = result.assets[0].uri;
+                setUploadingImage(true);
+
+                try {
+                    const uploadedUrl = await uploadAvatar(imageUri);
+                    setProfileImage(uploadedUrl);
+                    showAlert({
+                        title: 'Success',
+                        message: 'Profile picture uploaded!',
+                        type: 'success'
+                    });
+                } catch (uploadError: any) {
+                    console.error('Upload error:', uploadError);
+                    showAlert({
+                        title: 'Error',
+                        message: 'Failed to upload image',
+                        type: 'error'
+                    });
+                } finally {
+                    setUploadingImage(false);
+                }
+            }
+        } catch (error: any) {
+            console.error('Image picker error:', error);
+            showAlert({
+                title: 'Error',
+                message: 'Failed to pick image',
+                type: 'error'
+            });
+        }
+    };
+
     const generateAIBio = async () => {
         try {
             setIsGeneratingBio(true);
-            const prompt = `Generate a professional company bio for ${formData.companyName || formData.fullName}. The bio should be professional and short, between 10 and 20 words. Return ONLY the bio text, no conversational filler.`;
+            const prompt = `Generate a professional company bio for ${formData.companyName || formData.firstName}. The bio should be professional and short, between 10 and 20 words. Return ONLY the bio text, no conversational filler.`;
             const generatedBio = await aiService.sendAIQuery(prompt, user?._id || '', 'client');
 
             if (generatedBio) {
@@ -99,32 +149,33 @@ export default function ClientEditProfileScreen({ navigation }: any) {
             setSaving(true);
 
             // Validate required fields
-            if (!formData.fullName.trim() || !formData.email.trim()) {
+            if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim()) {
                 showAlert({
                     title: 'Validation Error',
-                    message: 'Full name and email are required',
+                    message: 'Name and email are required',
                     type: 'error',
                 });
                 setSaving(false);
                 return;
             }
 
-            console.log('💾 Saving profile data...', formData);
-
-            // Split full name into first and last name
-            const nameParts = formData.fullName.trim().split(' ');
-            const firstName = nameParts[0];
-            const lastName = nameParts.slice(1).join(' ') || firstName;
-
-            console.log('👤 Updating user:', { firstName, lastName });
-
-            // Update user data (firstName, lastName)
+            // Update user data
             const updatedUser = await userService.updateMe({
-                firstName,
-                lastName,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                profileImage: profileImage || undefined,
             });
 
-            console.log('✅ User updated:', updatedUser);
+            if (user) {
+                updateUser({
+                    ...user,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    email: formData.email,
+                    profileImage: profileImage || user.profileImage,
+                });
+            }
 
             // Update profile data
             const profileData = {
@@ -133,13 +184,10 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 companyName: formData.companyName.trim(),
                 website: formData.website.trim(),
                 bio: formData.bio.trim(),
+                avatar: profileImage || undefined,
             };
 
-            console.log('📝 Updating profile:', profileData);
-
-            const updatedProfile = await profileService.updateMyProfile(profileData);
-
-            console.log('✅ Profile updated:', updatedProfile);
+            await profileService.updateMyProfile(profileData);
 
             // Show success message
             showAlert({
@@ -152,7 +200,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
             // Wait a moment for the success message to show, then go back
             setTimeout(() => {
                 navigation.goBack();
-            }, 2500);
+            }, 1000);
 
         } catch (error: any) {
             console.error('❌ Failed to save profile:', error);
@@ -176,51 +224,76 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-            <View style={[styles.header, { borderBottomColor: c.border }]}>
+            <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={c.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
-                <View style={{ width: 24 }} />
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Profile Photo Section */}
                 <View style={styles.photoSection}>
-                    <View style={[styles.photoPlaceholder, { backgroundColor: c.card }]}>
-                        <Ionicons name="person" size={40} color={c.subtext} />
+                    <View style={styles.avatarWrapper}>
+                        <Avatar uri={profileImage || undefined} name={formData.firstName} size={110} />
+                        <TouchableOpacity
+                            style={[styles.editPhotoButton, { backgroundColor: c.primary }]}
+                            onPress={handlePickImage}
+                            disabled={uploadingImage}
+                        >
+                            {uploadingImage ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Ionicons name="camera" size={18} color="white" />
+                            )}
+                        </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={[styles.editPhotoButton, { backgroundColor: c.primary }]}>
-                        <Ionicons name="pencil" size={16} color="white" />
-                    </TouchableOpacity>
+                    <Text style={[styles.photoHint, { color: c.subtext }]}>Tap to change profile picture</Text>
                 </View>
 
-                <View style={styles.section}>
+                <Card variant="outlined" style={styles.sectionCard}>
                     <Text style={[styles.sectionTitle, { color: c.text }]}>Personal Information</Text>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Full Name</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                            value={formData.fullName}
-                            onChangeText={(text) => handleInputChange('fullName', text)}
-                        />
+                    <View style={styles.row}>
+                        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                            <Text style={[styles.label, { color: c.subtext }]}>First Name</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.firstName}
+                                onChangeText={(text) => handleInputChange('firstName', text)}
+                                placeholder="First Name"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
+
+                        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Last Name</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.lastName}
+                                onChangeText={(text) => handleInputChange('lastName', text)}
+                                placeholder="Last Name"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
                     </View>
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.subtext }]}>Email</Text>
                         <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                             value={formData.email}
                             onChangeText={(text) => handleInputChange('email', text)}
                             keyboardType="email-address"
+                            autoCapitalize="none"
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.subtext }]}>Phone</Text>
                         <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                             value={formData.phone}
                             onChangeText={(text) => handleInputChange('phone', text)}
                             keyboardType="phone-pad"
@@ -229,33 +302,42 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                            value={formData.location}
-                            onChangeText={(text) => handleInputChange('location', text)}
-                        />
+                        <View style={[styles.inputWithIcon, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
+                            <Ionicons name="location-outline" size={20} color={c.subtext} style={{ marginLeft: 12 }} />
+                            <TextInput
+                                style={[styles.inputNoBorder, { color: c.text }]}
+                                value={formData.location}
+                                onChangeText={(text) => handleInputChange('location', text)}
+                                placeholder="City, Country"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
                     </View>
-                </View>
+                </Card>
 
-                <View style={styles.section}>
+                <Card variant="outlined" style={styles.sectionCard}>
                     <Text style={[styles.sectionTitle, { color: c.text }]}>Company Details</Text>
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.subtext }]}>Company Name</Text>
                         <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                             value={formData.companyName}
                             onChangeText={(text) => handleInputChange('companyName', text)}
+                            placeholder="e.g. Acme Corp"
+                            placeholderTextColor={c.subtext}
                         />
                     </View>
 
                     <View style={styles.inputGroup}>
                         <Text style={[styles.label, { color: c.subtext }]}>Website</Text>
                         <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
                             value={formData.website}
                             onChangeText={(text) => handleInputChange('website', text)}
                             autoCapitalize="none"
+                            placeholder="https://example.com"
+                            placeholderTextColor={c.subtext}
                         />
                     </View>
 
@@ -278,7 +360,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                             </TouchableOpacity>
                         </View>
                         <TextInput
-                            style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border, marginTop: 12 }]}
+                            style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border, marginTop: 12 }]}
                             value={formData.bio}
                             onChangeText={(text) => handleInputChange('bio', text)}
                             multiline
@@ -287,7 +369,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                             placeholderTextColor={c.subtext}
                         />
                     </View>
-                </View>
+                </Card>
 
                 <TouchableOpacity
                     style={[styles.saveButton, { backgroundColor: c.primary }]}
@@ -330,23 +412,19 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     scrollContent: {
-        padding: 24,
+        padding: 20,
     },
     photoSection: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 24,
     },
-    photoPlaceholder: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        alignItems: 'center',
-        justifyContent: 'center',
+    avatarWrapper: {
+        position: 'relative',
     },
     editPhotoButton: {
         position: 'absolute',
         bottom: 0,
-        right: '35%',
+        right: 0,
         width: 32,
         height: 32,
         borderRadius: 16,
@@ -355,12 +433,21 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'white',
     },
-    section: {
-        marginBottom: 32,
+    photoHint: {
+        fontSize: 12,
+        marginTop: 8,
+    },
+    sectionCard: {
+        marginBottom: 20,
+        padding: 16,
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+        marginBottom: 16,
+    },
+    row: {
+        flexDirection: 'row',
         marginBottom: 16,
     },
     inputGroup: {
@@ -369,19 +456,35 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         marginBottom: 8,
+        fontWeight: '500',
     },
     input: {
         height: 48,
-        borderRadius: 8,
+        borderRadius: 12,
         borderWidth: 1,
         paddingHorizontal: 16,
+        fontSize: 15,
+    },
+    inputWithIcon: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 48,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    inputNoBorder: {
+        flex: 1,
+        height: '100%',
+        paddingHorizontal: 12,
+        fontSize: 15,
     },
     textArea: {
         minHeight: 100,
-        borderRadius: 8,
+        borderRadius: 12,
         borderWidth: 1,
         padding: 16,
         textAlignVertical: 'top',
+        fontSize: 15,
     },
     bioHeader: {
         flexDirection: 'row',
@@ -402,10 +505,18 @@ const styles = StyleSheet.create({
     },
     saveButton: {
         height: 56,
-        borderRadius: 12,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 32,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 4.65,
+        elevation: 8,
     },
     saveButtonText: {
         color: 'white',

@@ -20,3 +20,7 @@ export async function registerForPushNotificationsAsync(): Promise<PushRegistrat
 export async function scheduleLocalNotification(title: string, body: string) {
     console.log('[Notifications] Web platform - local notifications not supported', { title, body });
 }
+
+export function areNotificationsAvailable(): boolean {
+    return false;
+}

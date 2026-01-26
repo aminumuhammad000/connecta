@@ -5,6 +5,7 @@ import { useThemeColors } from '../theme/theme';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Button from '../components/Button';
 import * as profileService from '../services/profileService';
+import * as userService from '../services/userService';
 import { useInAppAlert } from '../components/InAppAlert';
 import { Profile } from '../types';
 
@@ -97,6 +98,11 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                 }),
                 jobNotificationFrequency: freqMap[frequency] || frequency,
             };
+
+            // Also update user email frequency preference
+            await userService.updateMe({
+                emailFrequency: freqMap[frequency] || frequency
+            });
 
             console.log('[Preferences] Sending updates to server:', updates);
             await profileService.updateMyProfile(updates);
