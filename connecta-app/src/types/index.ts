@@ -65,7 +65,7 @@ export interface Profile {
     jobNotificationFrequency?: 'daily' | 'weekly' | 'relevant_only';
 
     portfolio?: PortfolioItem[];
-    experience?: Experience[];
+    employment?: Experience[];
     education?: Education[];
     languages?: string[];
     availability?: string;

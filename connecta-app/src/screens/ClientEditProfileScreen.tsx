@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import aiService from '../services/aiService';
+import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as profileService from '../services/profileService';
 import * as userService from '../services/userService';
@@ -12,6 +14,8 @@ export default function ClientEditProfileScreen({ navigation }: any) {
     const { showAlert } = useInAppAlert();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [isGeneratingBio, setIsGeneratingBio] = useState(false);
+    const { user } = useAuth();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -31,7 +35,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         try {
             setLoading(true);
             console.log('🔄 Loading profile data...');
-            
+
             const [user, profile] = await Promise.all([
                 userService.getMe(),
                 profileService.getMyProfile()
@@ -63,6 +67,31 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 
     const handleInputChange = (name: string, value: string) => {
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const generateAIBio = async () => {
+        try {
+            setIsGeneratingBio(true);
+            const prompt = `Generate a professional company bio for ${formData.companyName || formData.fullName}. The bio should be professional and short, between 10 and 20 words. Return ONLY the bio text, no conversational filler.`;
+            const generatedBio = await aiService.sendAIQuery(prompt, user?._id || '', 'client');
+
+            if (generatedBio) {
+                // Typing effect for "writing" feel in the input
+                let currentText = '';
+                const words = generatedBio.split(' ');
+                for (let i = 0; i < words.length; i++) {
+                    currentText += (i === 0 ? '' : ' ') + words[i];
+                    setFormData(prev => ({ ...prev, bio: currentText }));
+                    // Small delay between words
+                    await new Promise(resolve => setTimeout(resolve, 40));
+                }
+            }
+        } catch (error) {
+            console.error('Error generating AI bio:', error);
+            showAlert({ title: 'Error', message: 'Failed to generate AI bio', type: 'error' });
+        } finally {
+            setIsGeneratingBio(false);
+        }
     };
 
     const handleSave = async () => {
@@ -170,7 +199,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     <Text style={[styles.sectionTitle, { color: c.text }]}>Personal Information</Text>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.textDim }]}>Full Name</Text>
+                        <Text style={[styles.label, { color: c.subtext }]}>Full Name</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
                             value={formData.fullName}
@@ -179,7 +208,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.textDim }]}>Email</Text>
+                        <Text style={[styles.label, { color: c.subtext }]}>Email</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
                             value={formData.email}
@@ -189,7 +218,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.textDim }]}>Phone</Text>
+                        <Text style={[styles.label, { color: c.subtext }]}>Phone</Text>
                         <TextInput
                             style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
                             value={formData.phone}
@@ -231,9 +260,25 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>About / Bio</Text>
+                        <View style={styles.bioHeader}>
+                            <Text style={[styles.label, { color: c.subtext, marginBottom: 0 }]}>About / Bio</Text>
+                            <TouchableOpacity
+                                onPress={generateAIBio}
+                                disabled={isGeneratingBio}
+                                style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                            >
+                                {isGeneratingBio ? (
+                                    <ActivityIndicator size="small" color={c.primary} />
+                                ) : (
+                                    <>
+                                        <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
+                                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </View>
                         <TextInput
-                            style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
+                            style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border, marginTop: 12 }]}
                             value={formData.bio}
                             onChangeText={(text) => handleInputChange('bio', text)}
                             multiline
@@ -337,6 +382,23 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         padding: 16,
         textAlignVertical: 'top',
+    },
+    bioHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    aiBioBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 12,
+        gap: 6,
+    },
+    aiBioText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
     saveButton: {
         height: 56,

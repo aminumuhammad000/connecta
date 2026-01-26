@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar,
 import { useNavigation } from '@react-navigation/native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../utils/constants';
 
 // Components
 import LandingHero from '../components/landing/LandingHero';
@@ -21,6 +23,7 @@ const MobileLandingScreen = () => {
     const navigation = useNavigation<any>();
     const c = useThemeColors();
     const { isAuthenticated, user } = useAuth();
+    const insets = useSafeAreaInsets();
     const [freelancers, setFreelancers] = useState<any[]>([]);
     const [jobs, setJobs] = useState<any[]>([]);
 
@@ -31,12 +34,12 @@ const MobileLandingScreen = () => {
     const fetchData = async () => {
         try {
             // Fetch Freelancers
-            const usersRes = await fetch('https://api.myconnecta.ng/api/users?userType=freelancer&limit=5');
+            const usersRes = await fetch(`${API_BASE_URL}/api/users?userType=freelancer&limit=5`);
             const usersData = await usersRes.json();
             if (usersData.success) setFreelancers(usersData.data);
 
             // Fetch Jobs
-            const jobsRes = await fetch('https://api.myconnecta.ng/api/jobs?limit=5&sort=posted&status=active');
+            const jobsRes = await fetch(`${API_BASE_URL}/api/jobs?limit=5&sort=posted&status=active`);
             const jobsData = await jobsRes.json();
             if (jobsData.success) setJobs(jobsData.data);
 
@@ -58,6 +61,30 @@ const MobileLandingScreen = () => {
     return (
         <View style={[styles.container, { backgroundColor: '#FFF' }]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+
+            {/* Top Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+                <Image source={require('../../assets/logo.png')} style={{ width: 120, height: 40, resizeMode: 'contain' }} />
+
+                {isAuthenticated ? (
+                    <TouchableOpacity
+                        style={styles.headerBtnPrimary}
+                        onPress={() => navigation.navigate(user?.userType === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}
+                    >
+                        <Text style={styles.headerBtnTextPrimary}>Dashboard</Text>
+                        <Feather name="arrow-right" size={16} color="#FFF" />
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity onPress={handleLogin} style={styles.headerBtnSecondary}>
+                            <Text style={styles.headerBtnTextSecondary}>Log In</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleJoin} style={styles.headerBtnPrimary}>
+                            <Text style={styles.headerBtnTextPrimary}>Join</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 <View style={[styles.mainContainer, isDesktop && styles.desktopContainer]}>
@@ -205,6 +232,7 @@ const MobileLandingScreen = () => {
                         </View>
                     </View>
 
+
                 </View>
             </ScrollView>
 
@@ -234,6 +262,48 @@ const MobileLandingScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#EDF2F7',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        zIndex: 100,
+    },
+    headerBtnPrimary: {
+        backgroundColor: '#FD6730',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    headerBtnSecondary: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    headerBtnTextPrimary: {
+        color: '#FFF',
+        fontWeight: '700',
+        fontSize: 13,
+    },
+    headerBtnTextSecondary: {
+        color: '#4A5568',
+        fontWeight: '700',
+        fontSize: 13,
+    },
     sectionContainer: { marginTop: 32, paddingHorizontal: 24 },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     sectionTitle: { fontSize: 20, fontWeight: '800', color: '#1A202C' },
@@ -284,6 +354,7 @@ const styles = StyleSheet.create({
     supportGrid: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 40 },
     supportCard: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, elevation: 3 },
 
+    // Bottom Bar
     // Bottom Bar
     bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 32, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EDF2F7' },
     loginBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#EDF2F7', backgroundColor: '#F7FAFC' },

@@ -1,21 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl, Animated, Dimensions, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import profileService from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import aiService from '../services/aiService';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen({ navigation }: any) {
   const c = useThemeColors();
   const { user } = useAuth();
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth > 768;
   const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isGeneratingBio, setIsGeneratingBio] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadProfile();
@@ -31,7 +39,6 @@ export default function ProfileScreen({ navigation }: any) {
     try {
       setIsLoading(true);
       const data = await profileService.getMyProfile();
-      // Merge with auth user basics so name/email show even if profile payload is sparse
       const merged = {
         firstName: user?.firstName,
         lastName: user?.lastName,
@@ -55,487 +62,801 @@ export default function ProfileScreen({ navigation }: any) {
 
   const onBack = () => navigation.goBack?.();
 
-  if (isLoading && !profile) { // Only show loading indicator if profile is null and still loading
+  const generateAIBio = async () => {
+    if (!profile) return;
+    try {
+      setIsGeneratingBio(true);
+      const prompt = `Generate a professional summary for a freelancer named ${profile.firstName} with job title "${profile.jobTitle || profile.title || 'Freelancer'}" and skills: ${profile.skills?.join(', ') || 'various skills'}. The summary must be short, between 10 and 20 words. Return ONLY the summary text, no conversational filler.`;
+      const generatedBio = await aiService.sendAIQuery(prompt, user?._id || '', 'freelancer');
+
+      if (generatedBio) {
+        // Typing effect for "writing" feel
+        let currentText = '';
+        const words = generatedBio.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          currentText += (i === 0 ? '' : ' ') + words[i];
+          setProfile((prev: any) => ({ ...prev, bio: currentText }));
+          // Small delay between words
+          await new Promise(resolve => setTimeout(resolve, 40));
+        }
+        // Update server after typing finishes
+        await profileService.updateMyProfile({ bio: generatedBio });
+      }
+    } catch (error) {
+      console.error('Error generating AI bio:', error);
+    } finally {
+      setIsGeneratingBio(false);
+    }
+  };
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  if (isLoading && !profile) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={c.primary} />
-      </SafeAreaView>
+      </View>
     );
   }
+
+  const calculateCompleteness = () => {
+    if (!profile) return 0;
+    let score = 0;
+    const totalFields = 8;
+
+    if (profile.avatar) score++;
+    if (profile.bio && profile.bio.length > 20) score++;
+    if (profile.skills && profile.skills.length > 0) score++;
+    if (profile.jobTitle) score++;
+    if (profile.education && profile.education.length > 0) score++;
+    if (profile.employment && profile.employment.length > 0) score++;
+    if (profile.portfolio && profile.portfolio.length > 0) score++;
+    if (profile.jobCategories && profile.jobCategories.length > 0) score++;
+
+    return Math.round((score / totalFields) * 100);
+  };
+
+  const completeness = calculateCompleteness();
 
   if (!profile && !isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
         <View style={[styles.emptyState, { backgroundColor: c.card, borderColor: c.border }]}>
-          <MaterialIcons name="person-outline" size={36} color={c.subtext} />
+          <Ionicons name="person-outline" size={48} color={c.subtext} />
           <Text style={[styles.emptyTitle, { color: c.text }]}>No profile yet</Text>
-          <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 12 }}>
+          <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 20 }}>
             {errorMessage || 'Set up your profile to start getting matched with jobs.'}
           </Text>
           <TouchableOpacity
-            style={[styles.actionBtn, { backgroundColor: c.primary, width: '100%' }]}
+            style={[styles.primaryBtn, { backgroundColor: c.primary }]}
             onPress={() => navigation.navigate('EditProfile')}
           >
-            <Text style={[styles.btnText, { color: 'white' }]}>Create Profile</Text>
+            <Text style={styles.btnTextWhite}>Create Profile</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
+
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-      {/* Top App Bar */}
-      <View style={[styles.appBar, { borderBottomColor: c.border }]}>
-        <TouchableOpacity onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" style={styles.iconBtn}>
-          <MaterialIcons name="arrow-back" size={24} color={c.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: c.text }]}>My Profile</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Settings')} accessibilityRole="button" accessibilityLabel="Settings" style={styles.iconBtn}>
-          <MaterialIcons name="settings" size={24} color={c.text} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 80 }}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} />
-        }
-      >
-        {errorMessage && (
-          <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-            <Text style={{ color: c.subtext }}>{errorMessage}</Text>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
+      {/* Animated Header */}
+      <Animated.View style={[styles.header, {
+        backgroundColor: c.background,
+        borderBottomColor: c.border,
+        opacity: headerOpacity,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        maxWidth: isDesktop ? 1200 : '100%',
+        width: '100%',
+        alignSelf: 'center',
+        left: isDesktop ? (windowWidth - Math.min(windowWidth, 1200)) / 2 : 0,
+      }]}>
+        <SafeAreaView edges={['top']} style={{ width: '100%' }}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
+              <Ionicons name="chevron-back" size={24} color={c.text} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: c.text }]}>{profile?.firstName}'s Profile</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.iconBtn}>
+              <Ionicons name="settings-outline" size={24} color={c.text} />
+            </TouchableOpacity>
           </View>
+        </SafeAreaView>
+      </Animated.View>
+
+      {/* Floating Back Button (Visible when header is transparent) */}
+      <Animated.View style={[
+        styles.floatingHeader,
+        { opacity: scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' }) },
+        {
+          maxWidth: isDesktop ? 1200 : '100%',
+          width: '100%',
+          alignSelf: 'center',
+          left: isDesktop ? (windowWidth - Math.min(windowWidth, 1200)) / 2 : 0,
+        }
+      ]}>
+        <SafeAreaView edges={['top']} style={{ width: '100%' }}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onBack} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+              <Ionicons name="chevron-back" size={24} color="#FFF" />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+              <Ionicons name="settings-outline" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Animated.View>
+
+      <Animated.ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
         )}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} tintColor={c.primary} />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ flex: 1, maxWidth: isDesktop ? 1200 : '100%', width: '100%', alignSelf: 'center' }}>
+          {/* Cover Image Area */}
+          <View style={styles.coverContainer}>
+            <LinearGradient
+              colors={['#FF7F50', '#f39170ff']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.coverGradient}
+            />
+            <View style={styles.coverOverlay} />
+          </View>
 
-        {/* Profile Header */}
-        <View style={[styles.sectionPad, profile?.isPremium && { backgroundColor: c.isDark ? '#3D2800' : '#FFFBEB', paddingBottom: 24, paddingTop: 20 }]}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.avatarContainer, profile?.isPremium && styles.premiumBorder]}>
-                <Image source={{ uri: profile?.avatar || AVATAR }} style={styles.avatar} accessibilityLabel="Profile picture" />
-                {profile?.isPremium && (
-                  <View style={styles.premiumIconBadge}>
-                    <MaterialIcons name="workspace-premium" size={14} color="#FFF" />
-                  </View>
-                )}
-              </View>
-              <View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-
-                  {/* Rating Star */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginLeft: 8 }}>
-                    <MaterialIcons name="star" size={14} color="#F59E0B" />
-                    <Text style={{ fontSize: 12, fontWeight: '800', color: '#B45309', marginLeft: 2 }}>{profile?.averageRating || '5.0'}</Text>
-                  </View>
-
+          {/* Profile Info Card */}
+          <View style={styles.profileCardContainer}>
+            <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
+              <View style={styles.avatarRow}>
+                <View style={[styles.avatarContainer, { borderColor: c.card, backgroundColor: c.primary }]}>
+                  {profile?.avatar ? (
+                    <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
+                      <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
+                        {profile?.firstName?.charAt(0).toUpperCase() || '?'}
+                      </Text>
+                    </View>
+                  )}
                   {profile?.isPremium && (
-                    <MaterialIcons name="verified" size={20} color="#F59E0B" style={{ marginLeft: 6 }} />
+                    <View style={styles.premiumBadge}>
+                      <Ionicons name="star" size={12} color="#FFF" />
+                    </View>
                   )}
                 </View>
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.completedJobs || '0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.totalHours || '0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
+                  </View>
+                </View>
+              </View>
 
-                {profile?.isPremium && (
-                  <View style={styles.premiumBadge}>
-                    <MaterialIcons name="star" size={12} color="#FFF" />
-                    <Text style={styles.premiumText}>PREMIUM MEMBER</Text>
+              <View style={styles.infoSection}>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                  {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
+                </View>
+                <Text style={[styles.role, { color: c.primary }]}>{profile?.jobTitle || profile?.title || 'Freelancer'}</Text>
+
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="location-outline" size={14} color={c.subtext} />
+                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+                  </View>
+                  <View style={styles.detailDivider} />
+                  <View style={styles.detailItem}>
+                    <Ionicons name="ribbon-outline" size={14} color={c.subtext} />
+                    <Text style={[styles.detailText, { color: c.subtext }]}>
+                      {profile?.yearsOfExperience !== undefined ? `${profile.yearsOfExperience}+ yrs` : 'No exp.'}
+                    </Text>
+                  </View>
+                </View>
+
+                {profile?.engagementTypes && profile.engagementTypes.length > 0 && (
+                  <View style={styles.engagementContainer}>
+                    {profile.engagementTypes.map((type: string, idx: number) => {
+                      const engMap: any = { 'full_time': 'Full-time', 'part_time': 'Part-time', 'contract': 'Contract', 'freelance': 'Freelance', 'internship': 'Internship' };
+                      const label = engMap[type] || type;
+                      return (
+                        <View key={idx} style={[styles.engagementBadge, { backgroundColor: c.primary + '15' }]}>
+                          <Text style={[styles.engagementText, { color: c.primary }]}>{label}</Text>
+                        </View>
+                      );
+                    })}
                   </View>
                 )}
 
-                <Text style={[styles.role, { color: c.subtext }]}>{profile?.title || 'Freelancer'}</Text>
-                <View style={styles.verifiedRow}>
-                  <MaterialIcons name="location-on" size={14} color={c.subtext} />
-                  <Text style={[styles.location, { color: c.subtext }]}>{profile?.location || 'Location not set'}</Text>
+                <View style={styles.bioHeader}>
+                  <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
+                  <TouchableOpacity
+                    onPress={generateAIBio}
+                    disabled={isGeneratingBio}
+                    style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                  >
+                    {isGeneratingBio ? (
+                      <ActivityIndicator size="small" color={c.primary} />
+                    ) : (
+                      <>
+                        <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
+                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 </View>
-                <View style={[styles.verifiedRow, { marginTop: 4 }]}>
-                  <MaterialIcons name="verified" size={16} color="#22c55e" />
-                  <Text style={styles.verifiedText}>Skills Verified</Text>
+                <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
+
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                    onPress={() => navigation.navigate('EditProfile')}
+                  >
+                    <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                    onPress={() => navigation.navigate('JobPreferences')}
+                  >
+                    <Ionicons name="options-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Preferences</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                    onPress={() => navigation.navigate('ManageSubscription')}
+                  >
+                    <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
+                  </TouchableOpacity>
                 </View>
+              </View>
+
+              {/* Profile Completeness Progress Bar */}
+              <View style={styles.completenessContainer}>
+                <View style={styles.completenessHeader}>
+                  <Text style={[styles.completenessTitle, { color: c.text }]}>Profile Completeness</Text>
+                  <Text style={[styles.completenessPercent, { color: c.primary }]}>{completeness}%</Text>
+                </View>
+                <View style={[styles.progressBarBg, { backgroundColor: c.border }]}>
+                  <Animated.View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        backgroundColor: c.primary,
+                        width: `${completeness}%`
+                      }
+                    ]}
+                  />
+                </View>
+                {completeness < 100 && (
+                  <TouchableOpacity
+                    style={styles.completenessTip}
+                    onPress={() => navigation.navigate('EditProfile')}
+                  >
+                    <Ionicons name="bulb-outline" size={14} color={c.primary} />
+                    <Text style={[styles.completenessTipText, { color: c.primary }]}>
+                      Complete your profile to get 5x more job matches
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+          {/* Skills Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>Skills</Text>
+            <View style={styles.skillsContainer}>
+              {profile?.skills?.length > 0 ? (
+                profile.skills.map((s: string, index: number) => (
+                  <View key={index} style={[styles.skillChip, { backgroundColor: c.isDark ? '#333' : '#F3F4F6' }]}>
+                    <Text style={[styles.skillText, { color: c.text }]}>{s}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={{ color: c.subtext, fontSize: 14 }}>No skills added yet.</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Tabs */}
+          <View style={[styles.tabContainer, { borderBottomColor: c.border }]}>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: c.primary }]}
-              onPress={() => navigation.navigate('EditProfile')}
-            >
-              <Text style={[styles.btnText, { color: 'white' }]}>Edit Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
-              onPress={() => navigation.navigate('ManageSubscription')}
-            >
-              <MaterialIcons
-                name={profile?.isPremium ? "settings" : "workspace-premium"}
-                size={16}
-                color={c.primary}
-              />
-              <Text style={[styles.btnText, { color: c.text, marginLeft: 4 }]}>
-                {profile?.isPremium ? 'Manage Premium' : 'Upgrade'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Profile Completeness */}
-        {profile && (
-          <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>Profile Completeness</Text>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: c.primary }}>
-                {(() => {
-                  let score = 0;
-                  if (profile.avatar) score += 10;
-                  if (profile.title) score += 10;
-                  if (profile.bio) score += 20;
-                  if (profile.skills?.length > 0) score += 20;
-                  if (profile.portfolio?.length > 0) score += 20;
-                  if (profile.location) score += 10;
-                  if (profile.experience?.length > 0 || profile.education?.length > 0) score += 10;
-                  return Math.min(score, 100);
-                })()}%
-              </Text>
-            </View>
-            <View style={{ height: 6, backgroundColor: c.border, borderRadius: 3, overflow: 'hidden' }}>
-              <View style={{
-                width: `${(() => {
-                  let score = 0;
-                  if (profile.avatar) score += 10;
-                  if (profile.title) score += 10;
-                  if (profile.bio) score += 20;
-                  if (profile.skills?.length > 0) score += 20;
-                  if (profile.portfolio?.length > 0) score += 20;
-                  if (profile.location) score += 10;
-                  if ((profile.experience && profile.experience.length > 0) || (profile.education && profile.education.length > 0)) score += 10;
-                  return Math.min(score, 100);
-                })()}%`,
-                height: '100%',
-                backgroundColor: c.primary
-              }} />
-            </View>
-          </View>
-        )}
-
-        {/* Reputation & Badges */}
-        <View style={styles.sectionPad}>
-          <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 20 }]}>
-
-            {/* JSS Removed as requested */}
-
-            {/* Responsiveness & Activity Removed */}
-
-            {/* Badges Removed */}
-
-            {/* Metrics Breakdown */}
-            <View style={{ paddingTop: 20, borderTopWidth: 1, borderTopColor: c.border }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <MaterialIcons name="schedule" size={18} color={c.subtext} />
-                  <Text style={{ color: c.text, fontWeight: '600' }}>On-Time Delivery</Text>
-                </View>
-                <Text style={{ color: c.primary, fontWeight: '700' }}>{profile?.performanceMetrics?.onTimeDeliveryRate || 100}%</Text>
-              </View>
-              <View style={{ height: 6, backgroundColor: c.border, borderRadius: 3, marginBottom: 16, overflow: 'hidden' }}>
-                <View style={{ width: `${profile?.performanceMetrics?.onTimeDeliveryRate || 100}%`, height: '100%', backgroundColor: '#22c55e', borderRadius: 3 }} />
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <MaterialIcons name="speed" size={18} color={c.subtext} />
-                  <Text style={{ color: c.text, fontWeight: '600' }}>Completion Rate</Text>
-                </View>
-                <Text style={{ color: c.primary, fontWeight: '700' }}>{profile?.performanceMetrics?.completionRate || 100}%</Text>
-              </View>
-              <View style={{ height: 6, backgroundColor: c.border, borderRadius: 3, overflow: 'hidden' }}>
-                <View style={{ width: `${profile?.performanceMetrics?.completionRate || 100}%`, height: '100%', backgroundColor: '#3B82F6', borderRadius: 3 }} />
-              </View>
-            </View>
-
-          </View>
-        </View>
-
-        {/* Stats */}
-        <View style={[styles.sectionPad, styles.rowWrap, { gap: 12 }]}>
-          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[styles.statLabel, { color: c.subtext }]}>Earnings</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>${profile?.totalEarnings || '0'}</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs Done</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>{profile?.completedJobs || '0'}</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
-            <Text style={[styles.statValue, { color: c.text }]}>{profile?.totalHours || '0'}</Text>
-          </View>
-        </View>
-
-        {/* About */}
-        <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
-          <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>About</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
-            <MaterialIcons name="edit" size={20} color={c.primary} />
-          </TouchableOpacity>
-        </View>
-        <Text style={[styles.about, { color: c.subtext }]}>{profile?.bio || 'No bio added yet.'}</Text>
-
-        {/* Skills */}
-        <View style={[styles.sectionHeaderRow, { paddingHorizontal: 16, paddingTop: 16 }]}>
-          <Text style={[styles.sectionTitle, { paddingHorizontal: 0, paddingTop: 0, color: c.text }]}>Skills</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
-            <MaterialIcons name="edit" size={20} color={c.primary} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.skillsRow}>
-          {profile?.skills?.length > 0 ? (
-            profile.skills.map((s: string) => (
-              <View key={s} style={[styles.skillChip, { backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                <Text style={{ color: c.primary, fontSize: 13, fontWeight: '700' }}>{s}</Text>
-                {/* Visual Skill Verification Check */}
-                <MaterialIcons name="check-circle" size={12} color={c.primary} />
-              </View>
-            ))
-          ) : (
-            <Text style={{ color: c.subtext, paddingHorizontal: 16 }}>No skills added yet</Text>
-          )}
-        </View>
-
-        {/* Tabs */}
-        <View style={[styles.tabs, { borderBottomColor: c.border }]}>
-          <View style={styles.tabList} accessibilityRole="tablist">
-            <TouchableOpacity
-              accessibilityRole="tab"
-              accessibilityState={{ selected: activeTab === 'portfolio' }}
-              onPress={() => setActiveTab('portfolio')}
               style={[styles.tabItem, activeTab === 'portfolio' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('portfolio')}
             >
               <Text style={[styles.tabText, { color: activeTab === 'portfolio' ? c.primary : c.subtext }]}>Portfolio</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              accessibilityRole="tab"
-              accessibilityState={{ selected: activeTab === 'reviews' }}
-              onPress={() => setActiveTab('reviews')}
               style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('reviews')}
             >
               <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Content */}
-        <View style={styles.sectionPad}>
-          {activeTab === 'portfolio' ? (
-            <View>
-              <TouchableOpacity
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 12,
-                  backgroundColor: c.isDark ? '#2C2C2E' : '#F3F4F6',
-                  borderRadius: 12,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: c.border,
-                  borderStyle: 'dashed'
-                }}
-                onPress={() => navigation.navigate('AddPortfolio')}
-              >
-                <MaterialIcons name="add" size={24} color={c.primary} />
-                <Text style={{ color: c.text, fontWeight: '600', marginLeft: 8 }}>Add New Project</Text>
-              </TouchableOpacity>
+          {/* Tab Content */}
+          <View style={styles.contentContainer}>
+            {activeTab === 'portfolio' ? (
+              <View>
+                <TouchableOpacity style={[styles.addProjectBtn, { borderColor: c.border, borderStyle: 'dashed' }]} onPress={() => navigation.navigate('AddPortfolio')}>
+                  <Ionicons name="add" size={24} color={c.subtext} />
+                  <Text style={{ color: c.subtext, marginLeft: 8, fontWeight: '500' }}>Add Project</Text>
+                </TouchableOpacity>
 
-              {profile?.portfolio?.length > 0 ? (
-                profile.portfolio.map((item: any, index: number) => {
-                  if (!item) return null;
-                  return (
-                    <PortfolioCard
-                      key={index}
-                      title={item.title || 'Untitled Project'}
-                      category={item.description || ''}
-                      image={item.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image'}
-                    />
-                  );
-                })
-              ) : (
-                <View style={{ alignItems: 'center', padding: 40 }}>
-                  <MaterialIcons name="work-outline" size={48} color={c.subtext} style={{ marginBottom: 12 }} />
-                  <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 20, fontSize: 16 }}>
-                    No portfolio items yet
-                  </Text>
-                  <TouchableOpacity
-                    style={{
-                      backgroundColor: c.primary,
-                      paddingHorizontal: 24,
-                      paddingVertical: 12,
-                      borderRadius: 8,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
-                    onPress={() => navigation.navigate('EditProfile')}
-                  >
-                    <MaterialIcons name="add" size={20} color="white" />
-                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                      Create Portfolio
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          ) : (
-            profile?.reviews?.length > 0 ? (
-              profile.reviews.map((review: any, index: number) => {
-                if (!review) return null;
-                return (
-                  <ReviewCard
-                    key={index}
-                    author={review.author || 'Anonymous'}
-                    rating={review.rating || 0}
-                    comment={review.comment || ''}
-                  />
-                );
-              })
+                {profile?.portfolio?.length > 0 ? (
+                  <View style={styles.portfolioGrid}>
+                    {profile.portfolio.map((item: any, index: number) => (
+                      <TouchableOpacity key={index} style={[styles.portfolioItem, { backgroundColor: c.card }]} activeOpacity={0.9}>
+                        <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/300' }} style={styles.portfolioImage} />
+                        <View style={styles.portfolioOverlay}>
+                          <Text style={styles.portfolioTitle} numberOfLines={1}>{item.title}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={{ color: c.subtext }}>No projects yet.</Text>
+                  </View>
+                )}
+              </View>
             ) : (
-              <Text style={{ color: c.subtext, textAlign: 'center', padding: 20 }}>No reviews yet</Text>
-            )
-          )}
+              <View>
+                {profile?.reviews?.length > 0 ? (
+                  profile.reviews.map((review: any, index: number) => (
+                    <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
+                        <View style={styles.ratingRow}>
+                          <Ionicons name="star" size={14} color="#F59E0B" />
+                          <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={{ color: c.subtext }}>No reviews yet.</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+
         </View>
-      </ScrollView>
-
-      {/* Bottom Navigation */}
-    </SafeAreaView>
-  );
-}
-
-function PortfolioCard({ title, category, image }: { title: string; category: string; image: string }) {
-  const c = useThemeColors();
-  return (
-    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 0, overflow: 'hidden' }]}>
-      <Image source={{ uri: image }} style={{ width: '100%', height: 160 }} />
-      <View style={{ padding: 12 }}>
-        <Text style={[styles.cardTitle, { color: c.text }]}>{title}</Text>
-        <Text style={[styles.cardDesc, { color: c.subtext, marginTop: 2 }]}>{category}</Text>
-      </View>
-    </View>
-  );
-}
-
-function ReviewCard({ author, rating, comment }: { author: string; rating: number; comment: string }) {
-  const c = useThemeColors();
-  return (
-    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-      <View style={[styles.metaRow, { marginBottom: 4 }]}>
-        <Text style={[styles.cardTitle, { color: c.text, fontSize: 14 }]}>{author}</Text>
-        <View style={{ flexDirection: 'row', marginLeft: 'auto' }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <MaterialIcons key={i} name={i < rating ? 'star' : 'star-border'} size={16} color={i < rating ? '#f59e0b' : c.subtext} />
-          ))}
-        </View>
-      </View>
-      <Text style={[styles.cardDesc, { color: c.subtext }]}>{comment}</Text>
+      </Animated.ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  appBar: {
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingBottom: 10,
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 11,
+    paddingBottom: 10,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    height: 44,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   iconBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 999,
   },
-  title: { fontSize: 18, fontWeight: '700' },
-  sectionPad: { paddingHorizontal: 16, paddingTop: 12 },
-  headerRow: { flexDirection: 'row', gap: 12, alignItems: 'center', justifyContent: 'space-between' },
-  headerLeft: { flexDirection: 'row', gap: 12, alignItems: 'center', flex: 1 },
-  avatar: { width: 80, height: 80, borderRadius: 999, backgroundColor: '#ddd' },
-  name: { fontSize: 22, fontWeight: '800' },
-  role: { fontSize: 14, marginTop: 2, fontWeight: '500' },
-  location: { fontSize: 13, marginLeft: 4 },
-  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  verifiedText: { color: '#22c55e', fontSize: 12, fontWeight: '600' },
-  actionBtn: { flex: 1, height: 40, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  btnText: { fontSize: 13, fontWeight: '700' },
-  rowWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  statCard: { flexBasis: '30%', flexGrow: 1, borderRadius: 12, padding: 12, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center' },
-  statLabel: { fontSize: 12 },
-  statValue: { fontSize: 18, fontWeight: '800', marginTop: 2 },
-  sectionTitle: { paddingHorizontal: 16, paddingTop: 16, fontSize: 18, fontWeight: '800' },
-  emptyState: { margin: 16, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 20, alignItems: 'center', gap: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: '700' },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  about: { paddingHorizontal: 16, paddingTop: 6, fontSize: 14, lineHeight: 20 },
-  skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingTop: 8 },
-  skillChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, fontSize: 13, fontWeight: '700' },
-  tabs: { marginTop: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  tabList: { flexDirection: 'row', paddingHorizontal: 16 },
-  tabItem: { paddingVertical: 12, marginRight: 18, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabText: { fontSize: 13, fontWeight: '700' },
-  card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 12, marginBottom: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '700' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  cardDesc: { fontSize: 13, marginTop: 6, lineHeight: 18 },
-  avatarContainer: {
+  coverContainer: {
+    height: 180,
+    width: '100%',
     position: 'relative',
   },
-  premiumBorder: {
-    borderWidth: 3,
-    borderColor: '#F59E0B',
-    borderRadius: 999,
-    padding: 2,
+  coverGradient: {
+    flex: 1,
   },
-  premiumIconBadge: {
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  profileCardContainer: {
+    paddingHorizontal: 16,
+    marginTop: -40,
+  },
+  profileCard: {
+    borderRadius: 20,
+    padding: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  avatarRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 4,
+    position: 'relative',
+    marginTop: -42, // Pull avatar up
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+  },
+  premiumBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     backgroundColor: '#F59E0B',
-    borderRadius: 999,
     width: 24,
     height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFF',
   },
-  premiumBadge: {
+  statsRow: {
+    flex: 1,
     flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 4,
-    alignSelf: 'flex-start',
+    paddingBottom: 8,
   },
-  premiumText: {
-    color: '#FFF',
-    fontSize: 10,
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
     fontWeight: '700',
-    marginLeft: 2,
   },
-  badge: {
+  statLabel: {
+    fontSize: 12,
+  },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
+  },
+  infoSection: {
+    marginTop: 8,
+  },
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
+    marginBottom: 4,
+  },
+  name: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  role: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
-  badgeText: {
+  detailText: {
+    fontSize: 13,
+  },
+  detailDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#E5E7EB',
+  },
+  engagementContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 16,
+  },
+  engagementBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  engagementText: {
     fontSize: 11,
     fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  bioHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bioTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  aiBioBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  aiBioText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  bio: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
+  },
+  primaryBtn: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  btnTextWhite: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  sectionContainer: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  skillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  skillChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  skillText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+  },
+  tabItem: {
+    marginRight: 24,
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  contentContainer: {
+    padding: 20,
+  },
+  addProjectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  portfolioGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  portfolioItem: {
+    width: (width - 52) / 2, // 2 columns with padding
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  portfolioImage: {
+    width: '100%',
+    height: '100%',
+  },
+  portfolioOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  portfolioTitle: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  emptyTabState: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  reviewCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  reviewAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  reviewComment: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  emptyState: {
+    margin: 20,
+    padding: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  profileActionBtn: {
+    flex: 1,
+    height: 32,
+    flexDirection: 'row',
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  profileActionIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  profileActionText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  completenessContainer: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  completenessHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  completenessTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  completenessPercent: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  completenessTip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 6,
+    backgroundColor: 'rgba(253, 103, 48, 0.08)',
+    padding: 10,
+    borderRadius: 8,
+  },
+  completenessTipText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

@@ -142,6 +142,15 @@ export const getMyProfile = async (
       jobsPosted,
       totalSpend: 0,
       avgRate: 0,
+      // Preferences
+      remoteWorkType: profileData.remoteWorkType,
+      minimumSalary: profileData.minimumSalary,
+      workLocationPreferences: profileData.workLocationPreferences,
+      jobTitle: profileData.jobTitle,
+      jobCategories: profileData.jobCategories,
+      yearsOfExperience: profileData.yearsOfExperience,
+      engagementTypes: profileData.engagementTypes,
+      jobNotificationFrequency: profileData.jobNotificationFrequency,
     };
 
     console.log('📤 Profile fields:', {
@@ -248,7 +257,12 @@ export const updateMyProfile = async (
     const userId = req.user?._id || req.user?.id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const { phoneNumber, location, companyName, website, bio, avatar, skills, education, languages, employment, resume, portfolio } = req.body;
+    const {
+      phoneNumber, location, companyName, website, bio, avatar, skills,
+      education, languages, employment, resume, portfolio,
+      remoteWorkType, minimumSalary, workLocationPreferences, jobTitle,
+      jobCategories, yearsOfExperience, engagementTypes, jobNotificationFrequency
+    } = req.body;
 
     console.log('📝 Update profile request:', { phoneNumber, location, website, bio, avatar, portfolio });
 
@@ -265,6 +279,14 @@ export const updateMyProfile = async (
     if (employment !== undefined) updateData.employment = employment;
     if (resume !== undefined) updateData.resume = resume;
     if (portfolio !== undefined) updateData.portfolio = portfolio;
+    if (remoteWorkType !== undefined) updateData.remoteWorkType = remoteWorkType;
+    if (minimumSalary !== undefined) updateData.minimumSalary = minimumSalary;
+    if (workLocationPreferences !== undefined) updateData.workLocationPreferences = workLocationPreferences;
+    if (jobTitle !== undefined) updateData.jobTitle = jobTitle;
+    if (jobCategories !== undefined) updateData.jobCategories = jobCategories;
+    if (yearsOfExperience !== undefined) updateData.yearsOfExperience = yearsOfExperience;
+    if (engagementTypes !== undefined) updateData.engagementTypes = engagementTypes;
+    if (jobNotificationFrequency !== undefined) updateData.jobNotificationFrequency = jobNotificationFrequency;
 
     console.log('💾 Data to save:', updateData);
 

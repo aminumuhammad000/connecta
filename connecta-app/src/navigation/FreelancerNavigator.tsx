@@ -1,11 +1,16 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWindowDimensions, View } from 'react-native';
 
 // Screens
 import FreelancerDashboardScreen from '../screens/FreelancerDashboardScreen';
+import DesktopTopNav from '../components/navigation/DesktopTopNav';
+import DesktopLeftSidebar from '../components/navigation/DesktopLeftSidebar';
+import DesktopRightSidebar from '../components/navigation/DesktopRightSidebar';
 import FreelancerMatchedGigsScreen from '../screens/FreelancerMatchedGigsScreen';
 import MyProposalsScreen from '../screens/MyProposalsScreen';
 import ChatsScreen from '../screens/ChatsScreen';
@@ -28,8 +33,13 @@ import VideoCallScreen from '../screens/VideoCallScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+import DesktopLayout from '../components/layout/DesktopLayout';
+
 function FreelancerTabs() {
     const c = useThemeColors();
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+    const insets = useSafeAreaInsets();
 
     return (
         <Tab.Navigator
@@ -37,20 +47,40 @@ function FreelancerTabs() {
                 headerShown: false,
                 tabBarStyle: {
                     backgroundColor: c.card,
-                    borderTopColor: c.border,
+                    borderTopWidth: 0,
+                    height: 60 + insets.bottom,
+                    paddingBottom: insets.bottom + 8,
+                    paddingTop: 8,
+                    elevation: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                    display: isDesktop ? 'none' : 'flex',
+                },
+                tabBarLabelStyle: {
+                    fontSize: 10,
+                    fontWeight: '600',
+                    marginTop: -4,
                 },
                 tabBarActiveTintColor: c.primary,
                 tabBarInactiveTintColor: c.subtext,
                 tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
-                    let iconName: keyof typeof MaterialIcons.glyphMap = 'home';
+                    let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
 
-                    if (route.name === 'Home') iconName = 'home';
-                    else if (route.name === 'Gigs') iconName = 'search';
-                    else if (route.name === 'Proposals') iconName = 'description';
-                    else if (route.name === 'Messages') iconName = 'chat';
-                    else if (route.name === 'Profile') iconName = 'person';
+                    if (route.name === 'Home') {
+                        iconName = focused ? 'home' : 'home-outline';
+                    } else if (route.name === 'Gigs') {
+                        iconName = focused ? 'briefcase' : 'briefcase-outline';
+                    } else if (route.name === 'Proposals') {
+                        iconName = focused ? 'document-text' : 'document-text-outline';
+                    } else if (route.name === 'Messages') {
+                        iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+                    } else if (route.name === 'Profile') {
+                        iconName = focused ? 'person' : 'person-outline';
+                    }
 
-                    return <MaterialIcons name={iconName} size={size} color={color} />;
+                    return <Ionicons name={iconName} size={24} color={color} />;
                 },
             })}
         >
@@ -64,7 +94,10 @@ function FreelancerTabs() {
 }
 
 export default function FreelancerNavigator() {
-    return (
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
+    const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="FreelancerTabs" component={FreelancerTabs} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
@@ -79,7 +112,6 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="MessagesDetail" component={MessagesScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
-            <Stack.Screen name="PersonalInformation" component={require('../screens/PersonalInformationScreen').default} />
             <Stack.Screen name="Security" component={require('../screens/SecurityScreen').default} />
             <Stack.Screen name="HelpSupport" component={require('../screens/HelpSupportScreen').default} />
             <Stack.Screen name="ContactSupport" component={require('../screens/ContactSupportScreen').default} />
@@ -95,6 +127,13 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
             <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
+            <Stack.Screen name="JobPreferences" component={require('../screens/JobPreferencesScreen').default} />
         </Stack.Navigator>
     );
+
+    if (isDesktop) {
+        return <DesktopLayout>{stack}</DesktopLayout>;
+    }
+
+    return stack;
 }

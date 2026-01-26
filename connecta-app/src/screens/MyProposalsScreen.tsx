@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
@@ -23,6 +23,8 @@ const MyProposalsScreen: React.FC = () => {
   const [tab, setTab] = useState<'all' | 'pending' | 'accepted' | 'rejected' | 'withdrawn'>('all');
   const [proposals, setProposals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
 
   useEffect(() => {
     loadProposals();
@@ -59,15 +61,7 @@ const MyProposalsScreen: React.FC = () => {
     return proposals.filter(d => d.status === tab);
   }, [tab, proposals]);
 
-  const chipStyle = (active: boolean) => [
-    styles.tabItem,
-    { borderBottomColor: active ? c.primary : 'transparent' },
-  ];
 
-  const chipTextStyle = (active: boolean) => [
-    styles.tabText,
-    { color: active ? c.primary : c.subtext },
-  ];
 
   const statusPill = (s: ProposalCard['status']) => {
     switch (s) {
@@ -108,52 +102,82 @@ const MyProposalsScreen: React.FC = () => {
       </View>
 
       {/* Tabs */}
-      <View style={[styles.tabsBar, { borderBottomColor: c.border }]}>
-        {(['all', 'pending', 'accepted', 'rejected', 'withdrawn'] as const).map(k => (
-          <TouchableOpacity key={k} onPress={() => setTab(k)} style={chipStyle(tab === k)}>
-            <Text style={chipTextStyle(tab === k)}>{k.charAt(0).toUpperCase() + k.slice(1)}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+        >
+          {(['all', 'pending', 'accepted', 'rejected', 'withdrawn'] as const).map(k => {
+            const isActive = tab === k;
+            return (
+              <TouchableOpacity
+                key={k}
+                onPress={() => setTab(k)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  backgroundColor: isActive ? c.primary : c.card,
+                  borderWidth: 1,
+                  borderColor: isActive ? c.primary : c.border,
+                }}
+              >
+                <Text style={{
+                  fontSize: 13,
+                  fontWeight: '600',
+                  color: isActive ? '#FFF' : c.text,
+                  textTransform: 'capitalize'
+                }}>
+                  {k}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* List */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12 }}>
-        {filtered.length > 0 ? (
-          filtered.map(p => {
-            const pill = statusPill(p.status);
-            return (
-              <TouchableOpacity
-                key={p.id}
-                onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
-                style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                      {p.isExternal ? (
-                        <Badge label={p.source || "External"} variant="info" size="small" />
-                      ) : (
-                        <Badge label="Connecta" variant="success" size="small" />
-                      )}
+      <View style={{ flex: 1, maxWidth: isDesktop ? '100%' : 800, alignSelf: 'center', width: '100%' }}>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12, flexDirection: isDesktop ? 'row' : 'column', flexWrap: isDesktop ? 'wrap' : 'nowrap' }}>
+          {filtered.length > 0 ? (
+            filtered.map(p => {
+              const pill = statusPill(p.status);
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
+                  style={[styles.card, { backgroundColor: c.card, borderColor: c.border }, isDesktop && { width: '48%' }]}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                        {p.isExternal ? (
+                          <Badge label={p.source || "External"} variant="info" size="small" />
+                        ) : (
+                          <Badge label="Connecta" variant="success" size="small" />
+                        )}
+                      </View>
+                      <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
                     </View>
-                    <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
+                    <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-                </View>
-                <View style={styles.cardFooter}>
-                  <View style={[styles.pill, { backgroundColor: pill.bg }]}>
-                    <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                  <View style={styles.cardFooter}>
+                    <View style={[styles.pill, { backgroundColor: pill.bg }]}>
+                      <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                    </View>
+                    <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
                   </View>
-                  <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        ) : (
-          <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+          )}
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };
@@ -169,15 +193,6 @@ const styles = StyleSheet.create({
   },
   appIcon: { width: 48, height: 40, alignItems: 'center', justifyContent: 'center' },
   appTitle: { fontSize: 18, fontWeight: '700' },
-
-  tabsBar: {
-    flexDirection: 'row',
-    gap: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  tabItem: { paddingTop: 12, paddingBottom: 10, borderBottomWidth: 3 },
-  tabText: { fontSize: 14, fontWeight: '800' },
 
   card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 12 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },

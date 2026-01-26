@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
@@ -190,42 +190,70 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
           </View>
 
           {/* Quick Actions */}
-          <View style={styles.section}>
+          <View style={{ marginBottom: 24 }}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <Button
-                  title="Post Job"
-                  onPress={() => navigation.navigate('PostJob')}
-                  size="small"
-                  variant="ghost"
-                />
-              </View>
             </View>
-
-            <View style={styles.quickActions}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+            >
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('Jobs')}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="work-outline" size={24} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>My Jobs</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
+                  <Ionicons name="briefcase" size={24} color={c.primary} />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('Projects')}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="folder-open" size={24} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>Projects</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
+                  <Ionicons name="folder-open" size={24} color="#10B981" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Projects</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.quickAction, { backgroundColor: c.card, borderColor: c.border }]}
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('ClientPayments')}
+                activeOpacity={0.7}
               >
-                <MaterialIcons name="account-balance-wallet" size={24} color={c.primary} />
-                <Text style={[styles.quickActionText, { color: c.text }]}>Payments</Text>
+                <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
+                  <Ionicons name="card" size={24} color="#F59E0B" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Payments</Text>
               </TouchableOpacity>
-            </View>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('PostJob')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
+                  <Ionicons name="add-circle" size={24} color="#6366F1" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Post Job</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('Settings')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
+                  <Ionicons name="settings" size={24} color="#8B5CF6" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Settings</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
 
           {/* Recommended Freelancers */}
@@ -413,43 +441,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 24,
   },
-  quickActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
   quickAction: {
-    flex: 1,
-    height: 90,
-    borderRadius: 20,
-    borderWidth: 1,
+    alignItems: 'center',
+    width: 70,
+    marginRight: 4,
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    marginBottom: 6,
   },
   quickActionText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
     textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+    paddingHorizontal: 20,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
+    letterSpacing: -0.5,
   },
   seeAll: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '500',
   },
   freelancerCard: {
     gap: 12,

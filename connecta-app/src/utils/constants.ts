@@ -22,7 +22,7 @@ const explicitBaseUrl =
 
 const derivedHostBaseUrl = deriveExpoHostBaseUrl();
 // const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
+const platformDefaultBaseUrl = 'http://localhost:5000';
 
 const getBaseUrl = () => {
     // 1. Try derived host (LAN IP for physical devices)
@@ -42,7 +42,7 @@ const getBaseUrl = () => {
     return url;
 };
 
-export const API_BASE_URL = getBaseUrl();
+export const API_BASE_URL = 'https://api.myconnecta.ng';// getBaseUrl();
 console.log('[API] Base URL:', API_BASE_URL);
 
 // AsyncStorage Keys
@@ -52,6 +52,7 @@ export const STORAGE_KEYS = {
     USER_ROLE: '@connecta/user_role',
     THEME_MODE: '@connecta/theme_mode',
     BIOMETRIC_ENABLED: '@connecta/biometric_enabled',
+    AI_CHAT_HISTORY: '@connecta/ai_chat_history',
 } as const;
 
 // API Endpoints

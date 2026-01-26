@@ -90,17 +90,17 @@ export class ConnectaAgent {
 
   async initialize() {
     const settings = await SystemSettings.findOne();
-    const aiConfig = settings?.ai || { provider: 'openai', openaiApiKey: '', geminiApiKey: '' };
+    const aiConfig = settings?.ai || { provider: 'gemini', openaiApiKey: '', geminiApiKey: '' };
 
     // Fallback to env or config if DB settings are empty
     const openaiKey = aiConfig.openaiApiKey || process.env.OPENROUTER_API_KEY || this.config.openaiApiKey;
     const geminiKey = aiConfig.geminiApiKey || process.env.GEMINI_API_KEY;
 
-    // Prioritize Gemini if key is present, unless explicitly set to 'openai' in DB settings
-    const useGemini = (aiConfig.provider === 'gemini') || (geminiKey && aiConfig.provider !== 'openai');
+    // Prioritize Gemini
+    const useGemini = (aiConfig.provider !== 'openai') || !!geminiKey;
 
-    let modelName = aiConfig.model || "gemini-1.5-flash";
-    if (modelName === "gemini-pro") modelName = "gemini-1.5-flash";
+    let modelName = (aiConfig as any).model || "gemini-1.5-flash-8b";
+    if (modelName === "gemini-pro" || modelName === "gemini-1.5-flash") modelName = "gemini-1.5-flash-8b";
 
     if (useGemini && geminiKey) {
       console.log("🤖 Initializing Connecta Agent with Gemini (Google Generative AI)");
@@ -559,6 +559,14 @@ Try: "Find gigs for me" or "Show my profile"`;
           const validatedOutput = IntentSchema.parse(parsedOutput);
 
           if (validatedOutput.tool === "none" || !this.toolMap[validatedOutput.tool]) {
+            // If the model provided a message in parameters, use it
+            if (validatedOutput.parameters?.message) {
+              const message = validatedOutput.parameters.message;
+              this.chatHistory.push({ input, output: message, success: true, timestamp: new Date() });
+              return { message, success: true, data: null, responseType: validatedOutput.responseType };
+            }
+
+            // Fallback for truly unknown intents
             const fallbackMessage =
               "⚠️ Sorry, I can only help with Connecta-related tasks — like updating your profile, writing cover letters, or finding gigs.";
             this.chatHistory.push({ input, output: fallbackMessage, success: false, timestamp: new Date() });
@@ -624,13 +632,12 @@ Try: "Find gigs for me" or "Show my profile"`;
       }
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error processing request:", error);
-      this.sessionMetrics.failedRequests++;
 
-      // Return a proper error response instead of throwing
+      this.sessionMetrics.failedRequests++;
       return this.createResponse(
-        "I encountered an error processing your request. Please try again.",
+        "I encountered an error processing your request with Gemini. Please check your API configuration.",
         null,
         false,
         startTime

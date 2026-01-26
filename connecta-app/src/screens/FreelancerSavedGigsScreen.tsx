@@ -194,7 +194,11 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
           {filteredGigs.length > 0 ? (
             filteredGigs.map(item => (
               <View key={item._id} style={[styles.card, { backgroundColor: c.card, shadowColor: '#000' }]}>
-                <View style={{ gap: 6 }}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('JobDetail', { id: item._id })}
+                  style={{ gap: 6 }}
+                >
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
@@ -208,50 +212,57 @@ const FreelancerSavedGigsScreen: React.FC<any> = ({ navigation }) => {
                       <Text style={{ color: c.text, fontSize: 16, fontWeight: '800' }}>{item.title}</Text>
                     </View>
                     <TouchableOpacity onPress={() => handleUnsave(item._id)}>
-                      <MaterialIcons name="bookmark" size={22} color={c.primary} />
+                      <MaterialIcons name="bookmark" size={24} color={c.primary} />
                     </TouchableOpacity>
                   </View>
-                  <Text style={{ color: c.subtext, fontSize: 13 }} numberOfLines={3}>{item.description}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  <Text style={{ color: c.subtext, fontSize: 13, lineHeight: 20 }} numberOfLines={2}>{item.description}</Text>
+                </TouchableOpacity>
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
                   {item.budget && (
                     <View style={[styles.pill, { backgroundColor: c.primary + '1A' }]}>
-                      <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>
+                      <Text style={{ color: c.primary, fontSize: 11, fontWeight: '700' }}>
                         {item.budgetType === 'hourly' ? 'Hourly' : 'Fixed'}: {item.budget}
                       </Text>
                     </View>
                   )}
                   {item.locationType && (
                     <View style={[styles.pill, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
-                      <Text style={{ color: c.subtext, fontSize: 12, fontWeight: '700' }}>{item.locationType}</Text>
+                      <Text style={{ color: c.subtext, fontSize: 11, fontWeight: '700' }}>{item.locationType}</Text>
                     </View>
                   )}
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-                  <Text style={{ color: c.isDark ? '#6B7280' : '#9CA3AF', fontSize: 12 }}>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border }}>
+                  <Text style={{ color: c.subtext, fontSize: 12 }}>
                     Posted {new Date(item.createdAt || Date.now()).toLocaleDateString()}
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <TouchableOpacity onPress={() => navigation.navigate('JobDetail', { id: item._id })} style={[styles.btn, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6' }]}>
-                      <Text style={{ color: c.text, fontSize: 13, fontWeight: '700' }}>View Details</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (item.isExternal && item.applyUrl) {
-                          import('react-native').then(({ Linking }) => {
-                            Linking.openURL(item.applyUrl!);
-                          });
-                        } else {
-                          navigation.navigate('JobDetail', { id: item._id });
-                        }
-                      }}
-                      style={[styles.btn, { backgroundColor: c.primary }]}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
-                        {item.isExternal ? 'Visit Job' : 'Apply Now'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (item.isExternal && item.applyUrl) {
+                        import('react-native').then(({ Linking }) => {
+                          Linking.openURL(item.applyUrl!);
+                        });
+                      } else {
+                        navigation.navigate('JobDetail', { id: item._id });
+                      }
+                    }}
+                    style={{
+                      backgroundColor: item.isExternal ? '#3B82F6' : '#FF7F50',
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
+                      {item.isExternal ? 'Visit Job' : 'Apply Now'}
+                    </Text>
+                    <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
+                  </TouchableOpacity>
                 </View>
               </View>
             ))
