@@ -9,7 +9,7 @@ import {
   deleteMessage,
   summarizeConversation,
   getUnreadCount,
-} from '../controllers/Message.controller';
+} from '../controllers/Message.controller.js';
 
 const router = express.Router();
 

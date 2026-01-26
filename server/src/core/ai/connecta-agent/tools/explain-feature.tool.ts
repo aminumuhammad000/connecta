@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class ExplainFeatureTool extends BaseTool {
   name = "explain_feature_tool";

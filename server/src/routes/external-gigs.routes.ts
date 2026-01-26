@@ -3,8 +3,8 @@ import {
     createOrUpdateExternalGig,
     deleteExternalGig,
     getAllExternalGigs,
-} from "../controllers/external-gigs.controller";
-import { apiKeyAuth } from "../core/middleware/apiKeyAuth";
+} from "../controllers/external-gigs.controller.js";
+import { apiKeyAuth } from "../core/middleware/apiKeyAuth.js";
 
 const router = Router();
 

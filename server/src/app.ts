@@ -4,9 +4,10 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
+import mongoose from "mongoose";
 import connectDB from "./config/db.config.js";
 import agentRoute from "./routes/agentRoute.js"
-// import { initCronJobs } from "./services/cron.service";
+// import { initCronJobs } from "./services/cron.service.js";
 
 // routes 
 import userRoutes from "./routes/user.routes.js";
@@ -62,9 +63,7 @@ app.use(cors({
 app.use(express.json());
 
 // Connect to Database
-connectDB().then(() => {
-  console.log("🚀 Database connected and ready.");
-});
+// Database connection moved to end of file to ensure server starts only after DB is ready
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -105,6 +104,26 @@ app.use("/api/collabo", collaboRoutes);
 
 import avatarRoutes from "./routes/avatar.routes.js";
 app.use("/api/avatars", avatarRoutes);
+
+app.get("/health", (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const stateMap = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
+  };
+
+  const isHealthy = dbState === 1;
+
+  res.status(isHealthy ? 200 : 503).json({
+    status: isHealthy ? "ok" : "error",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    dbState: stateMap[dbState] || "unknown",
+    dbHost: mongoose.connection.host
+  });
+});
 
 app.get("/", (req, res) => {
   res.send("✅ Connecta backend is running!");
@@ -240,11 +259,19 @@ io.on("connection", (socket) => {
 });
 
 // Start Server
-server.listen(Number(PORT), "0.0.0.0", () => {
-  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-  console.log(`🔌 Socket.io ready for real-time messaging`);
+// Connect to Database and then Start Server
+connectDB().then(() => {
+  console.log("🚀 Database connected and ready.");
 
-  // Initialize cron jobs
-  // initCronJobs();
+  server.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🔌 Socket.io ready for real-time messaging`);
+
+    // Initialize cron jobs
+    // initCronJobs();
+  });
+}).catch(err => {
+  console.error("❌ Failed to connect to database:", err);
+  process.exit(1);
 });
 

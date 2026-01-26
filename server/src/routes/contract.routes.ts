@@ -7,8 +7,8 @@ import {
   signContract,
   terminateContract,
   getContractTemplate,
-} from '../controllers/contract.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/contract.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = express.Router();
 

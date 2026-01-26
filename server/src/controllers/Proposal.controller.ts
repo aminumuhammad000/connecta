@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Proposal from '../models/Proposal.model';
+import Proposal from '../models/Proposal.model.js';
 import mongoose from 'mongoose';
 
 // Get all proposals for a freelancer

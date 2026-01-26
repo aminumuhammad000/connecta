@@ -1,4 +1,4 @@
-// import { BaseTool, ToolParams, ToolResponse } from "./base.tool";
+// import { BaseTool, ToolParams, ToolResponse } from "./base.tool.js";
 
 // export class AnalyzeProfileStrengthTool extends BaseTool {
 //   name = "analyze_profile_strength_tool";

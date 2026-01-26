@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import Proposal from '../models/Proposal.model';
-import ProposalTemplate from '../models/ProposalTemplate.model';
-import { createNotification } from './notification.controller';
+import Proposal from '../models/Proposal.model.js';
+import ProposalTemplate from '../models/ProposalTemplate.model.js';
+import { createNotification } from './notification.controller.js';
 
 /**
  * Edit existing proposal (before accepted)

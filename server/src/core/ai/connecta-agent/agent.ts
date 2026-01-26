@@ -7,12 +7,12 @@ import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables
 import { StringOutputParser } from "@langchain/core/output_parsers";
 // import { z } from "zod";
 import axios from "axios";
-import SystemSettings from "../../../models/SystemSettings.model";
+import SystemSettings from "../../../models/SystemSettings.model.js";
 
 // Dynamic tool loading
-import { tools, loadTools } from "./tools";
-import { intentPrompt, IntentSchema } from "./prompts/intent-prompt";
-import { getRelatedTasks, formatRelatedTasks } from "./related-tasks";
+import { loadTools, tools } from "./tools/index.js";
+import { intentPrompt, IntentSchema } from "./prompts/intent-prompt.js";
+import { getRelatedTasks, formatRelatedTasks } from "./related-tasks.js";
 
 export interface ConnectaAgentConfig {
   apiBaseUrl: string;

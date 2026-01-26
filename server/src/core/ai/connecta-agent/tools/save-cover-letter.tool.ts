@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class SaveCoverLetterTool extends BaseTool {
   name = "save_cover_letter_tool";

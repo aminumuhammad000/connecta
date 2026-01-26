@@ -17,8 +17,8 @@ import {
   getPendingWithdrawals,
   getAllWithdrawals,
   getAllWallets,
-} from '../controllers/payment.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/payment.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 

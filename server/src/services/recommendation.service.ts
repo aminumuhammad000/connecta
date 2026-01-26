@@ -1,7 +1,7 @@
-import User from "../models/user.model";
-import Profile from "../models/Profile.model";
-import { Job } from "../models/Job.model";
-import { TFIDF } from "../utils/tfidf";
+import User from "../models/user.model.js";
+import Profile from "../models/Profile.model.js";
+import { Job } from "../models/Job.model.js";
+import { TFIDF } from "../utils/tfidf.js";
 
 export class RecommendationService {
     /**

@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetMatchedGigsTool extends BaseTool {
   name = "get_matched_gigs_tool";

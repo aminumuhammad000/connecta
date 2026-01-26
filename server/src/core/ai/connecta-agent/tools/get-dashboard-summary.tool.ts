@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetDashboardSummaryTool extends BaseTool {
   name = "get_dashboard_summary_tool";

@@ -1,6 +1,6 @@
 import express from 'express';
-import { sendBroadcastEmail } from '../services/email.service';
-import User from '../models/user.model';
+import { sendBroadcastEmail } from '../services/email.service.js';
+import User from '../models/user.model.js';
 
 const router = express.Router();
 

@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import TwilioService from '../../services/twilio.service';
-import Profile from '../../models/Profile.model';
+import TwilioService from '../../services/twilio.service.js';
+import Profile from '../../models/Profile.model.js';
 import axios from 'axios';
-import { ConnectaAgent } from '../../core/ai/connecta-agent/agent';
-import { getApiKeys } from '../../services/apiKeys.service';
-import User from '../../models/user.model';
+import { ConnectaAgent } from '../../core/ai/connecta-agent/agent.js';
+import { getApiKeys } from '../../services/apiKeys.service.js';
+import User from '../../models/user.model.js';
 
 /**
  * Handle Twilio WhatsApp Webhook

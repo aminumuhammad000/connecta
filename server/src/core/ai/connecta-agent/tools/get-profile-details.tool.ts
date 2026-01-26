@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetProfileDetailsTool extends BaseTool {
   name = "get_profile_details_tool";

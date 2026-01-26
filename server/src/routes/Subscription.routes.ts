@@ -4,8 +4,8 @@ import {
     initializeUpgradePayment,
     verifyUpgradePayment,
     cancelSubscription,
-} from '../controllers/Subscription.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/Subscription.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ import {
     adminCancelSubscription,
     adminReactivateSubscription,
     adminDeleteSubscription
-} from '../controllers/Subscription.controller';
+} from '../controllers/Subscription.controller.js';
 
 router.get('/admin/all', getAllSubscriptions);
 router.get('/admin/stats', getSubscriptionStats);

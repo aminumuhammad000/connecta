@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class TrackGigApplicationsTool extends BaseTool {
   name = "track_gig_applications_tool";

@@ -1,8 +1,8 @@
 // src/routes/agent.routes.ts
 import { Router, Request, Response } from "express";
-import { loadTools } from "../core/ai/connecta-agent/tools";
-import { ConnectaAgent } from "../core/ai/connecta-agent/agent";
-import { getApiKeys } from "../services/apiKeys.service";
+import { loadTools } from "../core/ai/connecta-agent/tools/index.js";
+import { ConnectaAgent } from "../core/ai/connecta-agent/agent.js";
+import { getApiKeys } from "../services/apiKeys.service.js";
 
 const router = Router();
 

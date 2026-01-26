@@ -1,7 +1,7 @@
 import express from 'express';
-import { authenticate } from '../core/middleware/auth.middleware';
-import * as CollaboController from '../controllers/Collabo.controller';
-import { upload } from '../core/utils/fileUpload';
+import { authenticate } from '../core/middleware/auth.middleware.js';
+import * as CollaboController from '../controllers/Collabo.controller.js';
+import { upload } from '../core/utils/fileUpload.js';
 
 const router = express.Router();
 

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import User from '../models/user.model';
+import User from '../models/user.model.js';
 
 class NotificationService {
     /**

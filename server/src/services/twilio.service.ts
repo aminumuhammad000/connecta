@@ -1,6 +1,6 @@
 import twilio from 'twilio';
-import Profile from '../models/Profile.model';
-import { IJob } from '../models/Job.model';
+import Profile from '../models/Profile.model.js';
+import { IJob } from '../models/Job.model.js';
 
 class TwilioService {
     private client: any;

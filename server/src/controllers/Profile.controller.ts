@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import Profile from "../models/Profile.model";
-import User from "../models/user.model";
-import Review from "../models/Review.model";
+import Profile from "../models/Profile.model.js";
+import User from "../models/user.model.js";
+import Review from "../models/Review.model.js";
 
 /**
  * @desc Create a new profile
@@ -57,7 +57,7 @@ export const getAllProfiles = async (req: Request, res: Response) => {
  * @desc Get profile for authenticated user
  * @route GET /api/profiles/me
  */
-import { Job } from "../models/Job.model";
+import { Job } from "../models/Job.model.js";
 
 export const getMyProfile = async (
   req: Request & { user?: { id?: string; _id?: string } },

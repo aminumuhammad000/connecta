@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import User from '../models/user.model';
-import Profile from '../models/Profile.model';
-import { Job } from '../models/Job.model';
-import CollaboProject from '../models/CollaboProject.model';
-import ProjectRole from '../models/ProjectRole.model';
-import CollaboWorkspace from '../models/CollaboWorkspace.model';
-import Notification from '../models/Notification.model';
+import User from '../models/user.model.js';
+import Profile from '../models/Profile.model.js';
+import { Job } from '../models/Job.model.js';
+import CollaboProject from '../models/CollaboProject.model.js';
+import ProjectRole from '../models/ProjectRole.model.js';
+import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
+import Notification from '../models/Notification.model.js';
 
 const freelancersData = [
     {

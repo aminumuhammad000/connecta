@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class SaveGigTool extends BaseTool {
   name = "save_gig_tool";

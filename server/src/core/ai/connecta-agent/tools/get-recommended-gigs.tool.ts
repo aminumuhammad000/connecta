@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetRecommendedGigsTool extends BaseTool {
   name = "get_recommended_gigs_tool";

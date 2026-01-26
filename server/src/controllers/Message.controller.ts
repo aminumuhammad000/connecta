@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import Message from '../models/Message.model';
-import Conversation from '../models/Conversation.model';
+import Message from '../models/Message.model.js';
+import Conversation from '../models/Conversation.model.js';
 import mongoose from 'mongoose';
 // Import io from app (singleton pattern)
-import { getIO } from '../core/utils/socketIO';
+import { getIO } from '../core/utils/socketIO.js';
 
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req: Request, res: Response) => {

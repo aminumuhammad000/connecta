@@ -8,8 +8,8 @@ import {
   deleteProfile,
   getMyProfile,
   updateMyProfile,
-} from "../controllers/Profile.controller";
-import { authenticate } from "../core/middleware/auth.middleware";
+} from "../controllers/Profile.controller.js";
+import { authenticate } from "../core/middleware/auth.middleware.js";
 
 const router = express.Router();
 

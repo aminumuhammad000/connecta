@@ -9,8 +9,8 @@ import {
   useTemplate,
   deleteProposalTemplate,
   handleExpiredProposals,
-} from '../controllers/proposalImprovements.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/proposalImprovements.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = express.Router();
 

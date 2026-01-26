@@ -1,17 +1,17 @@
-import CollaboProject, { ICollaboProject } from '../models/CollaboProject.model';
-import ProjectRole, { IProjectRole } from '../models/ProjectRole.model';
-import CollaboWorkspace from '../models/CollaboWorkspace.model';
+import CollaboProject, { ICollaboProject } from '../models/CollaboProject.model.js';
+import ProjectRole, { IProjectRole } from '../models/ProjectRole.model.js';
+import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
 import mongoose from 'mongoose';
-import Notification from '../models/Notification.model';
-import Profile from '../models/Profile.model';
-import LLMService from './LLM.service';
-import CollaboMessage from '../models/CollaboMessage.model';
-import { getIO } from '../core/utils/socketIO';
-import CollaboFile from '../models/CollaboFile.model';
-import CollaboTask from '../models/CollaboTask.model';
-import User from '../models/user.model';
-import { sendEmail } from './email.service';
-import { getBaseTemplate } from '../utils/emailTemplates';
+import Notification from '../models/Notification.model.js';
+import Profile from '../models/Profile.model.js';
+import LLMService from './LLM.service.js';
+import CollaboMessage from '../models/CollaboMessage.model.js';
+import { getIO } from '../core/utils/socketIO.js';
+import CollaboFile from '../models/CollaboFile.model.js';
+import CollaboTask from '../models/CollaboTask.model.js';
+import User from '../models/user.model.js';
+import { sendEmail } from './email.service.js';
+import { getBaseTemplate } from '../utils/emailTemplates.js';
 
 class CollaboService {
     /**

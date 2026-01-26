@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GenerateWeeklyReportTool extends BaseTool {
   name = "generate_weekly_report_tool";

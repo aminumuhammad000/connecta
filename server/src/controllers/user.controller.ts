@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import User from "../models/user.model";
+import User from "../models/user.model.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 

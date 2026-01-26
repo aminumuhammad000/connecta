@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import SystemSettings from '../models/SystemSettings.model';
-import { verifyEmailConfig } from '../services/email.service';
+import SystemSettings from '../models/SystemSettings.model.js';
+import { verifyEmailConfig } from '../services/email.service.js';
 
 /**
  * Get system settings

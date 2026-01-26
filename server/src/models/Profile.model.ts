@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { IUser } from "./user.model";
+import { IUser } from "./user.model.js";
 
 export interface IEducation {
   institution: string;

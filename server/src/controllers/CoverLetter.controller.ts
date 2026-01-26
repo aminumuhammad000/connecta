@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import LLMService from '../services/LLM.service';
-import User from '../models/user.model';
-import Profile from '../models/Profile.model';
+import LLMService from '../services/LLM.service.js';
+import User from '../models/user.model.js';
+import Profile from '../models/Profile.model.js';
 
 export const generateCoverLetter = async (req: Request, res: Response) => {
     try {

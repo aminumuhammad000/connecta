@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import Payment from '../../models/Payment.model';
-import { Job } from '../../models/Job.model';
-import flutterwaveService from '../../services/flutterwave.service';
+import Payment from '../../models/Payment.model.js';
+import { Job } from '../../models/Job.model.js';
+import flutterwaveService from '../../services/flutterwave.service.js';
 
 /**
  * Handle Flutterwave Webhook

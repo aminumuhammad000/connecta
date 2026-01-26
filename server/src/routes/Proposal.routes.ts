@@ -12,9 +12,9 @@ import {
   getProposalsByJobId,
   approveProposal,
   rejectProposal,
-} from '../controllers/Proposal.controller';
-import { generateCoverLetter } from '../controllers/CoverLetter.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/Proposal.controller.js';
+import { generateCoverLetter } from '../controllers/CoverLetter.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import CollaboService from '../services/Collabo.service';
-import Payment from '../models/Payment.model';
-import flutterwaveService from '../services/flutterwave.service';
-import User from '../models/user.model';
-import CollaboProject from '../models/CollaboProject.model';
+import CollaboService from '../services/Collabo.service.js';
+import Payment from '../models/Payment.model.js';
+import flutterwaveService from '../services/flutterwave.service.js';
+import User from '../models/user.model.js';
+import CollaboProject from '../models/CollaboProject.model.js';
 
 export const createCollaboProject = async (req: Request, res: Response) => {
     try {
