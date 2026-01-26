@@ -111,8 +111,8 @@ export class RecommendationService {
             const jobCategory = job.category;
             const jobTitle = job.title.toLowerCase();
             const matches = [];
-            const JobMatch = (await import("../models/JobMatch.model")).default;
-            const { sendGigNotificationEmail } = await import("./email.service");
+            const JobMatch = (await import("../models/JobMatch.model.js")).default;
+            const { sendGigNotificationEmail } = await import("./email.service.js");
             for (const profile of profiles) {
                 let score = 0;
                 let maxPossibleScore = 4.0; // Skills (1.0) + Category (0.5) + Title (0.5) + Internal (2.0)
@@ -157,7 +157,7 @@ export class RecommendationService {
                             // Send Email
                             await sendGigNotificationEmail(user.email, user.firstName || 'Freelancer', job.title, `https://myconnecta.ng/jobs/${job._id}`, job.skills);
                             // Create In-App Notification
-                            const Notification = (await import("../models/Notification.model")).default;
+                            const Notification = (await import("../models/Notification.model.js")).default;
                             await Notification.create({
                                 userId: user._id,
                                 type: 'gig_matched',

@@ -226,7 +226,7 @@ export const sendMessage = async (req, res) => {
             type: 'message_received'
         });
         // Send Push Notification
-        const notificationService = (await import('../services/notification.service')).default;
+        const notificationService = (await import('../services/notification.service.js')).default;
         notificationService.sendPushNotification(receiverId, 'New Message', `${senderName}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`, { conversationId: targetConversationId, type: 'message' });
         // Emit message to receiver for real-time chat
         io.to(receiverId).emit('message:receive', message);

@@ -254,7 +254,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     });
 
     // Send Push Notification
-    const notificationService = (await import('../services/notification.service')).default;
+    const notificationService = (await import('../services/notification.service.js')).default;
     notificationService.sendPushNotification(
       receiverId,
       'New Message',

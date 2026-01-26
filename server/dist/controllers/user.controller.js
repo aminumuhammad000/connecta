@@ -124,11 +124,11 @@ export const signup = async (req, res) => {
             const otp = Math.floor(1000 + Math.random() * 9000).toString();
             const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
             // Manage OTP record
-            const OTP = (await import('../models/otp.model')).default;
+            const OTP = (await import('../models/otp.model.js')).default;
             await OTP.deleteMany({ userId: newUser._id });
             await OTP.create({ userId: newUser._id, otp, expiresAt });
             // Send OTP email
-            const { sendOTPEmail } = await import('../services/email.service');
+            const { sendOTPEmail } = await import('../services/email.service.js');
             await sendOTPEmail(newUser.email, otp, newUser.firstName, 'EMAIL_VERIFICATION');
             console.log(`Automatic verification email sent to ${newUser.email}`);
         }
@@ -222,11 +222,11 @@ export const resendVerificationOTP = async (req, res) => {
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         // Manage OTP record
-        const OTP = (await import('../models/otp.model')).default;
+        const OTP = (await import('../models/otp.model.js')).default;
         await OTP.deleteMany({ userId: user._id });
         await OTP.create({ userId: user._id, otp, expiresAt });
         // Send OTP email
-        const { sendOTPEmail } = await import('../services/email.service');
+        const { sendOTPEmail } = await import('../services/email.service.js');
         const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION');
         if (!result.success) {
             return res.status(500).json({ message: "Failed to send verification email" });
@@ -256,7 +256,7 @@ export const verifyEmail = async (req, res) => {
             return res.status(200).json({ success: true, message: "Email already verified" });
         }
         // Verify OTP
-        const OTP = (await import('../models/otp.model')).default;
+        const OTP = (await import('../models/otp.model.js')).default;
         const otpRecord = await OTP.findOne({ userId: user._id, otp, verified: false });
         if (!otpRecord)
             return res.status(400).json({ message: "Invalid OTP" });
@@ -270,12 +270,13 @@ export const verifyEmail = async (req, res) => {
         // Clean up OTP
         await OTP.deleteOne({ _id: otpRecord._id });
         // Send Welcome Email
-        const { sendWelcomeEmail } = await import('../services/email.service');
+        const { sendWelcomeEmail } = await import('../services/email.service.js');
         sendWelcomeEmail(user.email, user.firstName).catch(console.error);
         // Send Welcome Notification
         try {
-            const mongoose = require('mongoose');
-            const io = require('../core/utils/socketIO').getIO();
+            const mongoose = (await import('mongoose')).default;
+            const { getIO } = await import('../core/utils/socketIO.js');
+            const io = getIO();
             await mongoose.model('Notification').create({
                 userId: user._id,
                 type: 'system',
@@ -293,7 +294,7 @@ export const verifyEmail = async (req, res) => {
                 type: 'system'
             });
             // Push Notification
-            const notificationService = (await import('../services/notification.service')).default;
+            const notificationService = (await import('../services/notification.service.js')).default;
             notificationService.sendPushNotification(user._id.toString(), 'Welcome to Connecta! 🚀', 'Your account has been verified. You can now access all features.', { type: 'system' });
         }
         catch (e) {
@@ -373,7 +374,7 @@ export const forgotPassword = async (req, res) => {
         // Set expiration to 10 minutes from now
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         // Delete any existing OTPs for this user
-        const OTP = (await import('../models/otp.model')).default;
+        const OTP = (await import('../models/otp.model.js')).default;
         await OTP.deleteMany({ userId: user._id });
         // Create new OTP
         await OTP.create({
@@ -382,7 +383,7 @@ export const forgotPassword = async (req, res) => {
             expiresAt,
         });
         // Send OTP via email
-        const { sendOTPEmail } = await import('../services/email.service');
+        const { sendOTPEmail } = await import('../services/email.service.js');
         const result = await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET');
         if (!result.success) {
             return res.status(500).json({
@@ -425,7 +426,7 @@ export const verifyOTP = async (req, res) => {
             });
         }
         // Find OTP
-        const OTP = (await import('../models/otp.model')).default;
+        const OTP = (await import('../models/otp.model.js')).default;
         const otpRecord = await OTP.findOne({
             userId: user._id,
             otp,
@@ -504,7 +505,7 @@ export const resetPassword = async (req, res) => {
             });
         }
         // Verify OTP was verified
-        const OTP = (await import('../models/otp.model')).default;
+        const OTP = (await import('../models/otp.model.js')).default;
         const otpRecord = await OTP.findById(decoded.otpId);
         if (!otpRecord || !otpRecord.verified) {
             return res.status(400).json({

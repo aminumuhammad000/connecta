@@ -175,7 +175,7 @@ export const createProposal = async (req: Request, res: Response) => {
       // Try to get job title from Job model if jobId is provided
       if (proposalData.jobId) {
         try {
-          const Job = require('../models/Job.model').default;
+          const Job = (await import('../models/Job.model.js')).default;
           const job = await Job.findById(proposalData.jobId);
           proposalData.title = job ? job.title : 'Job Application';
         } catch (e) {
@@ -190,9 +190,9 @@ export const createProposal = async (req: Request, res: Response) => {
     // Notify Client of new proposal
     try {
       if (proposalData.jobId) {
-        const Job = require('../models/Job.model').default;
-        const User = require('../models/user.model').default;
-        const emailService = require('../services/email.service');
+        const Job = (await import('../models/Job.model.js')).default;
+        const User = (await import('../models/user.model.js')).default;
+        const emailService = await import('../services/email.service.js');
 
         const job = await Job.findById(proposalData.jobId);
         if (job && job.clientId) {
@@ -213,8 +213,9 @@ export const createProposal = async (req: Request, res: Response) => {
           }
 
           // Also send Socket Notification to Client
-          const io = require('../core/utils/socketIO').getIO();
-          const mongoose = require('mongoose');
+          const { getIO } = await import('../core/utils/socketIO.js');
+          const io = getIO();
+          const mongoose = (await import('mongoose')).default;
 
           await mongoose.model('Notification').create({
             userId: job.clientId,
@@ -235,7 +236,7 @@ export const createProposal = async (req: Request, res: Response) => {
           });
 
           // Send Push Notification
-          const notificationService = (await import('../services/notification.service')).default;
+          const notificationService = (await import('../services/notification.service.js')).default;
           notificationService.sendPushNotification(
             job.clientId.toString(),
             'New Proposal',
@@ -493,7 +494,7 @@ export const approveProposal = async (req: Request, res: Response) => {
 
 
     // Create a project
-    const Project = require('../models/Project.model').default;
+    const Project = (await import('../models/Project.model.js')).default;
     const freelancer = proposal.freelancerId as any;
     const client = proposal.clientId as any;
 
@@ -508,7 +509,7 @@ export const approveProposal = async (req: Request, res: Response) => {
 
     if (!client?.firstName) {
       // Fetch client info if not populated
-      const User = require('../models/user.model').default;
+      const User = (await import('../models/user.model.js')).default;
       const clientUser = await User.findById(actualClientId);
       if (clientUser) {
         clientName = `${clientUser.firstName} ${clientUser.lastName}`;
@@ -554,7 +555,7 @@ export const approveProposal = async (req: Request, res: Response) => {
     let paymentReference = '';
 
     if (proposal.jobId) {
-      const Job = require('../models/Job.model').default;
+      const Job = (await import('../models/Job.model.js')).default;
       const job = await Job.findById(proposal.jobId);
       if (job && job.paymentVerified && job.paymentStatus === 'escrow') {
         paymentStatus = 'completed'; // Payment is already collected
@@ -564,7 +565,7 @@ export const approveProposal = async (req: Request, res: Response) => {
     }
 
     // Create a payment record for the project
-    const Payment = require('../models/Payment.model').default;
+    const Payment = (await import('../models/Payment.model.js')).default;
     const pendingPayment = await Payment.create({
       projectId: project._id,
       payerId: actualClientId,
@@ -584,7 +585,7 @@ export const approveProposal = async (req: Request, res: Response) => {
 
     // If payment is already held in escrow, we should update the Freelancer's wallet escrow balance immediately
     if (paymentEscrowStatus === 'held') {
-      const Wallet = require('../models/Wallet.model').default;
+      const Wallet = (await import('../models/Wallet.model.js')).default;
       let freelancerWallet = await Wallet.findOne({ userId: actualFreelancerId });
       if (!freelancerWallet) {
         freelancerWallet = await Wallet.create({ userId: actualFreelancerId });
@@ -612,7 +613,8 @@ export const approveProposal = async (req: Request, res: Response) => {
 
     // Notify Freelancer
     try {
-      const io = require('../core/utils/socketIO').getIO(); // Import here to avoid circular dependency issues if any
+      const { getIO } = await import('../core/utils/socketIO.js');
+      const io = getIO(); // Import here to avoid circular dependency issues if any
 
       // Create notification record
       await mongoose.model('Notification').create({
@@ -635,7 +637,7 @@ export const approveProposal = async (req: Request, res: Response) => {
       });
 
       // Send Push Notification
-      const notificationService = (await import('../services/notification.service')).default;
+      const notificationService = (await import('../services/notification.service.js')).default;
       notificationService.sendPushNotification(
         actualFreelancerId.toString(),
         'Proposal Accepted',
@@ -649,11 +651,11 @@ export const approveProposal = async (req: Request, res: Response) => {
 
     // Send Email to Freelancer
     try {
-      const User = require('../models/user.model').default;
+      const User = (await import('../models/user.model.js')).default;
       const freelancerUser = await User.findById(actualFreelancerId);
 
       if (freelancerUser && freelancerUser.email) {
-        const emailService = require('../services/email.service');
+        const emailService = await import('../services/email.service.js');
         const projectLink = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
 
         await emailService.sendProposalAcceptedEmail(
@@ -717,8 +719,9 @@ export const rejectProposal = async (req: Request, res: Response) => {
       const clientName = client?.firstName ? `${client.firstName} ${client.lastName}` : 'Client';
 
       if (freelancer?._id) {
-        const mongoose = require('mongoose');
-        const io = require('../core/utils/socketIO').getIO();
+        const mongoose = (await import('mongoose')).default;
+        const { getIO } = await import('../core/utils/socketIO.js');
+        const io = getIO();
 
         // 1. DB Notification
         await mongoose.model('Notification').create({
@@ -741,7 +744,7 @@ export const rejectProposal = async (req: Request, res: Response) => {
         });
 
         // Send Push Notification
-        const notificationService = (await import('../services/notification.service')).default;
+        const notificationService = (await import('../services/notification.service.js')).default;
         notificationService.sendPushNotification(
           freelancer._id.toString(),
           'Proposal Declined',
@@ -751,7 +754,7 @@ export const rejectProposal = async (req: Request, res: Response) => {
 
         // 3. Email Notification
         if (freelancer.email) {
-          const emailService = require('../services/email.service');
+          const emailService = await import('../services/email.service.js');
           await emailService.sendProposalRejectedEmail(
             freelancer.email,
             freelancer.firstName || 'Freelancer',
