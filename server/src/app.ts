@@ -4,26 +4,26 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import connectDB from "./config/db.config";
-import agentRoute from "./routes/agentRoute"
+import connectDB from "./config/db.config.js";
+import agentRoute from "./routes/agentRoute.js"
 // import { initCronJobs } from "./services/cron.service";
 
 // routes 
-import userRoutes from "./routes/user.routes";
-import profileRoutes from "./routes/Profile.routes";
-import projectRoutes from "./routes/Project.routes";
-import jobRoutes from "./routes/Job.routes";
-import messageRoutes from "./routes/Message.routes";
-import proposalRoutes from "./routes/Proposal.routes";
-import dashboardRoutes from "./routes/Dashboard.routes";
-import uploadRoutes from "./routes/upload.routes";
-import contractRoutes from "./routes/contract.routes";
-import paymentRoutes from "./routes/payment.routes";
-import reviewRoutes from "./routes/review.routes";
-import gigsRoutes from "./routes/gigs.routes";
-import notificationRoutes from "./routes/notification.routes";
-import insightsRoutes from "./routes/insights.routes";
-import portfolioRoutes from "./routes/portfolio.routes";
+import userRoutes from "./routes/user.routes.js";
+import profileRoutes from "./routes/Profile.routes.js";
+import projectRoutes from "./routes/Project.routes.js";
+import jobRoutes from "./routes/Job.routes.js";
+import messageRoutes from "./routes/Message.routes.js";
+import proposalRoutes from "./routes/Proposal.routes.js";
+import dashboardRoutes from "./routes/Dashboard.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
+import contractRoutes from "./routes/contract.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
+import gigsRoutes from "./routes/gigs.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
+import insightsRoutes from "./routes/insights.routes.js";
+import portfolioRoutes from "./routes/portfolio.routes.js";
 dotenv.config();
 
 const app = express();
@@ -33,7 +33,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
 // Initialize Socket.io
-import { setIO } from './core/utils/socketIO';
+import { setIO } from './core/utils/socketIO.js';
 const io = new Server(server, {
   cors: {
     origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "http://172.20.10.3:5000", "*"],
@@ -82,28 +82,28 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/gigs", gigsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/portfolio", portfolioRoutes);
-import analyticsRoutes from "./routes/analytics.routes";
+import analyticsRoutes from "./routes/analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
-import subscriptionRoutes from "./routes/Subscription.routes";
+import subscriptionRoutes from "./routes/Subscription.routes.js";
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/analytics", insightsRoutes);
 
-import settingsRoutes from "./routes/settings.routes";
+import settingsRoutes from "./routes/settings.routes.js";
 app.use("/api/settings", settingsRoutes);
 
-import webhookRoutes from "./webhooks/routes/webhook";
+import webhookRoutes from "./webhooks/routes/webhook.js";
 app.use("/api/webhooks", webhookRoutes);
 
-import broadcastRoutes from "./routes/broadcast.routes";
+import broadcastRoutes from "./routes/broadcast.routes.js";
 app.use("/api/broadcast", broadcastRoutes);
 
-import externalGigsRoutes from "./routes/external-gigs.routes";
+import externalGigsRoutes from "./routes/external-gigs.routes.js";
 app.use("/api/external-gigs", externalGigsRoutes);
 
-import collaboRoutes from "./routes/Collabo.routes";
+import collaboRoutes from "./routes/Collabo.routes.js";
 app.use("/api/collabo", collaboRoutes);
 
-import avatarRoutes from "./routes/avatar.routes";
+import avatarRoutes from "./routes/avatar.routes.js";
 app.use("/api/avatars", avatarRoutes);
 
 app.get("/", (req, res) => {

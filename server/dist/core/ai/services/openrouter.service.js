@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { OPENROUTER_CONFIG, getOpenRouterHeaders } from '../config/openrouter';
+import { OPENROUTER_CONFIG, getOpenRouterHeaders } from '../config/openrouter.js';
 export class OpenRouterClient {
     constructor() { }
     static getInstance() {

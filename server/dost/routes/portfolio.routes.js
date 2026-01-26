@@ -2,7 +2,7 @@ import express from 'express';
 import { authenticate } from '../core/middleware/auth.middleware';
 import { addPortfolioItem, deletePortfolioItem, getPortfolioItems, uploadPortfolioImage } from '../controllers/portfolio.controller';
 import multer from 'multer';
-import { portfolioStorage } from '../config/cloudinary.config';
+import { portfolioStorage } from '../config/cloudinary.config.js';
 const router = express.Router();
 const upload = multer({ storage: portfolioStorage });
 // Upload portfolio image
