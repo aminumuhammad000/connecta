@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetUserProposalsTool extends BaseTool {
   name = "get_user_proposals_tool";

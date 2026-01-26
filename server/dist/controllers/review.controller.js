@@ -1,6 +1,6 @@
-import Review from '../models/Review.model';
-import Project from '../models/Project.model';
-import ReputationService from '../services/Reputation.service';
+import Review from '../models/Review.model.js';
+import Project from '../models/Project.model.js';
+import ReputationService from '../services/Reputation.service.js';
 /**
  * Create a review for a completed project
  */

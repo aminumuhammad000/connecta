@@ -6,7 +6,7 @@ import {
   getSavedGigs,
   trackApplications,
   getRecommendedGigs,
-} from "../controllers/gigs.controller";
+} from "../controllers/gigs.controller.js";
 
 const router = express.Router();
 

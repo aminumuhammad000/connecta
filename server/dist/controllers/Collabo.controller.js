@@ -1,8 +1,8 @@
-import CollaboService from '../services/Collabo.service';
-import Payment from '../models/Payment.model';
-import flutterwaveService from '../services/flutterwave.service';
-import User from '../models/user.model';
-import CollaboProject from '../models/CollaboProject.model';
+import CollaboService from '../services/Collabo.service.js';
+import Payment from '../models/Payment.model.js';
+import flutterwaveService from '../services/flutterwave.service.js';
+import User from '../models/user.model.js';
+import CollaboProject from '../models/CollaboProject.model.js';
 export const createCollaboProject = async (req, res) => {
     try {
         const clientId = req.user._id;
@@ -300,6 +300,16 @@ export const deleteTask = async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ message: 'Failed to delete task', error: error.message });
+    }
+};
+export const deleteFile = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await CollaboService.deleteFile(id);
+        res.json({ success: true });
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to delete file', error: error.message });
     }
 };
 export const markRead = async (req, res) => {

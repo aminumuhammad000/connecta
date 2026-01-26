@@ -1,8 +1,8 @@
 // src/routes/Job.routes.ts
 import express from "express";
-import { getAllJobs, getJobById, createJob, updateJob, deleteJob, getRecommendedJobs, searchJobs, getClientJobs, saveJob, unsaveJob, getSavedJobs } from "../controllers/Job.controller";
-import { authenticate } from "../core/middleware/auth.middleware";
-import { isAdmin } from "../core/middleware/admin.middleware";
+import { getAllJobs, getJobById, createJob, updateJob, deleteJob, getRecommendedJobs, searchJobs, getClientJobs, saveJob, unsaveJob, getSavedJobs } from "../controllers/Job.controller.js";
+import { authenticate } from "../core/middleware/auth.middleware.js";
+import { isAdmin } from "../core/middleware/admin.middleware.js";
 const router = express.Router();
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", authenticate, getClientJobs);

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import Profile from '../models/Profile.model';
-import User from '../models/user.model';
+import Profile from '../models/Profile.model.js';
+import User from '../models/user.model.js';
 
 /**
  * Upload a portfolio image to Cloudinary

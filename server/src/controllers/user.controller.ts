@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import User from "../models/user.model";
+import User from "../models/user.model.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 
@@ -143,12 +143,12 @@ export const signup = async (req: Request, res: Response) => {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
       // Manage OTP record
-      const OTP = (await import('../models/otp.model')).default;
+      const OTP = (await import('../models/otp.model.js')).default;
       await OTP.deleteMany({ userId: newUser._id });
       await OTP.create({ userId: newUser._id, otp, expiresAt });
 
       // Send OTP email
-      const { sendOTPEmail } = await import('../services/email.service');
+      const { sendOTPEmail } = await import('../services/email.service.js');
       await sendOTPEmail(newUser.email, otp, newUser.firstName, 'EMAIL_VERIFICATION');
       console.log(`Automatic verification email sent to ${newUser.email}`);
     } catch (otpErr) {
@@ -181,14 +181,19 @@ export const signin = async (req: Request, res: Response) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Check if user has a password (if signed up via Google, password might be empty)
+    if (!user.password) {
+      return res.status(400).json({ message: "This account uses Google Sign-In. Please sign in with Google." });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     console.log('Password match:', isMatch);
 
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
     if (!process.env.JWT_SECRET) {
-      console.error('CRITICAL: JWT_SECRET is missing!');
-      throw new Error('JWT_SECRET is missing');
+      console.error("JWT_SECRET is missing in environment variables");
+      return res.status(500).json({ message: "Server configuration error" });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -196,7 +201,7 @@ export const signin = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, user, token });
   } catch (err) {
-    console.error('Signin CRASH:', err);
+    console.error("Signin error:", err);
     res.status(500).json({ message: "Server error", error: err });
   }
 };
@@ -257,12 +262,12 @@ export const resendVerificationOTP = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // Manage OTP record
-    const OTP = (await import('../models/otp.model')).default;
+    const OTP = (await import('../models/otp.model.js')).default;
     await OTP.deleteMany({ userId: user._id });
     await OTP.create({ userId: user._id, otp, expiresAt });
 
     // Send OTP email
-    const { sendOTPEmail } = await import('../services/email.service');
+    const { sendOTPEmail } = await import('../services/email.service.js');
     const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION');
 
     if (!result.success) {
@@ -295,7 +300,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     }
 
     // Verify OTP
-    const OTP = (await import('../models/otp.model')).default;
+    const OTP = (await import('../models/otp.model.js')).default;
     const otpRecord = await OTP.findOne({ userId: user._id, otp, verified: false });
 
     if (!otpRecord) return res.status(400).json({ message: "Invalid OTP" });
@@ -312,13 +317,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await OTP.deleteOne({ _id: otpRecord._id });
 
     // Send Welcome Email
-    const { sendWelcomeEmail } = await import('../services/email.service');
+    const { sendWelcomeEmail } = await import('../services/email.service.js');
     sendWelcomeEmail(user.email, user.firstName).catch(console.error);
 
     // Send Welcome Notification
     try {
-      const mongoose = require('mongoose');
-      const io = require('../core/utils/socketIO').getIO();
+      const mongoose = (await import('mongoose')).default;
+      const { getIO } = await import('../core/utils/socketIO.js');
+      const io = getIO();
 
       await mongoose.model('Notification').create({
         userId: user._id,
@@ -339,7 +345,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
       });
 
       // Push Notification
-      const notificationService = (await import('../services/notification.service')).default;
+      const notificationService = (await import('../services/notification.service.js')).default;
       notificationService.sendPushNotification(
         user._id.toString(),
         'Welcome to Connecta! 🚀',
@@ -432,7 +438,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // Delete any existing OTPs for this user
-    const OTP = (await import('../models/otp.model')).default;
+    const OTP = (await import('../models/otp.model.js')).default;
     await OTP.deleteMany({ userId: user._id });
 
     // Create new OTP
@@ -443,7 +449,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     });
 
     // Send OTP via email
-    const { sendOTPEmail } = await import('../services/email.service');
+    const { sendOTPEmail } = await import('../services/email.service.js');
     const result = await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET');
 
     if (!result.success) {
@@ -491,7 +497,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
     }
 
     // Find OTP
-    const OTP = (await import('../models/otp.model')).default;
+    const OTP = (await import('../models/otp.model.js')).default;
     const otpRecord = await OTP.findOne({
       userId: user._id,
       otp,
@@ -583,7 +589,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     // Verify OTP was verified
-    const OTP = (await import('../models/otp.model')).default;
+    const OTP = (await import('../models/otp.model.js')).default;
     const otpRecord = await OTP.findById(decoded.otpId);
     if (!otpRecord || !otpRecord.verified) {
       return res.status(400).json({

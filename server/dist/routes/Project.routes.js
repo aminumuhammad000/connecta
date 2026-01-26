@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getAllProjects, getFreelancerProjects, getClientProjects, getMyProjects, getProjectById, createProject, updateProject, updateProjectStatus, addProjectUpload, addProjectActivity, submitProject, deleteProject, getProjectStats, } from '../controllers/Project.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getAllProjects, getFreelancerProjects, getClientProjects, getMyProjects, getProjectById, createProject, updateProject, updateProjectStatus, addProjectUpload, addProjectActivity, submitProject, deleteProject, getProjectStats, } from '../controllers/Project.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = Router();
 // Get all projects (admin)
 router.get('/', getAllProjects);

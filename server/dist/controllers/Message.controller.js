@@ -1,8 +1,8 @@
-import Message from '../models/Message.model';
-import Conversation from '../models/Conversation.model';
+import Message from '../models/Message.model.js';
+import Conversation from '../models/Conversation.model.js';
 import mongoose from 'mongoose';
 // Import io from app (singleton pattern)
-import { getIO } from '../core/utils/socketIO';
+import { getIO } from '../core/utils/socketIO.js';
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req, res) => {
     try {
@@ -226,7 +226,7 @@ export const sendMessage = async (req, res) => {
             type: 'message_received'
         });
         // Send Push Notification
-        const notificationService = (await import('../services/notification.service')).default;
+        const notificationService = (await import('../services/notification.service.js')).default;
         notificationService.sendPushNotification(receiverId, 'New Message', `${senderName}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`, { conversationId: targetConversationId, type: 'message' });
         // Emit message to receiver for real-time chat
         io.to(receiverId).emit('message:receive', message);

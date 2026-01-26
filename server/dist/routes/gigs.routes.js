@@ -1,5 +1,5 @@
 import express from "express";
-import { getMatchedGigs, applyToGig, saveGig, getSavedGigs, trackApplications, getRecommendedGigs, } from "../controllers/gigs.controller";
+import { getMatchedGigs, applyToGig, saveGig, getSavedGigs, trackApplications, getRecommendedGigs, } from "../controllers/gigs.controller.js";
 const router = express.Router();
 router.get("/matched", getMatchedGigs);
 router.post("/:gigId/apply", applyToGig);

@@ -1,6 +1,6 @@
 import * as cron from "node-cron";
 import mongoose from "mongoose";
-import "../models/Job.model";
+import "../models/Job.model.js";
 const Job = mongoose.model("Job");
 
 /**
@@ -42,9 +42,9 @@ export const initCronJobs = () => {
 async function sendBatchJobMatchEmails(frequency: 'daily' | 'weekly') {
     console.log(`⏰ Running ${frequency} job match email batch...`);
     try {
-        const JobMatch = (await import("../models/JobMatch.model")).default;
-        const { sendEmail } = await import("./email.service");
-        const { getBaseTemplate } = await import("../utils/emailTemplates");
+        const JobMatch = (await import("../models/JobMatch.model.js")).default;
+        const { sendEmail } = await import("./email.service.js");
+        const { getBaseTemplate } = await import("../utils/emailTemplates.js");
 
         // 1. Find all un-emailed matches for this frequency
         const matches = await JobMatch.find({

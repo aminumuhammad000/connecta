@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import Profile from "../models/Profile.model";
-import User from "../models/user.model";
+import Profile from "../models/Profile.model.js";
+import User from "../models/user.model.js";
+import Review from "../models/Review.model.js";
 
 /**
  * @desc Create a new profile
@@ -56,7 +57,7 @@ export const getAllProfiles = async (req: Request, res: Response) => {
  * @desc Get profile for authenticated user
  * @route GET /api/profiles/me
  */
-import { Job } from "../models/Job.model";
+import { Job } from "../models/Job.model.js";
 
 export const getMyProfile = async (
   req: Request & { user?: { id?: string; _id?: string } },
@@ -91,6 +92,16 @@ export const getMyProfile = async (
     // Fetch jobs posted by this client
     const jobs = await Job.find({ clientId: userId }).sort({ createdAt: -1 });
     const jobsPosted = jobs.length;
+
+    // Fetch reviews for this user
+    const reviews = await Review.find({
+      revieweeId: userId,
+      isPublic: true,
+      isFlagged: false
+    })
+      .sort({ createdAt: -1 })
+      .populate('reviewerId', 'firstName lastName profileImage')
+      .populate('projectId', 'title');
 
     // Convert to plain object and add extra data
     const profileData = profile.toObject();
@@ -140,6 +151,7 @@ export const getMyProfile = async (
       // Additional data
       jobs,
       jobsPosted,
+      reviews, // Add reviews here
       totalSpend: 0,
       avgRate: 0,
       // Preferences
@@ -186,7 +198,22 @@ export const getProfileById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Profile not found" });
     }
 
-    res.status(200).json(profile);
+    // Fetch reviews
+    const reviews = await Review.find({
+      revieweeId: (profile.user as any)._id,
+      isPublic: true,
+      isFlagged: false
+    })
+      .sort({ createdAt: -1 })
+      .populate('reviewerId', 'firstName lastName profileImage')
+      .populate('projectId', 'title');
+
+    const responseData = {
+      ...profile.toObject(),
+      reviews
+    };
+
+    res.status(200).json(responseData);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
@@ -207,7 +234,28 @@ export const getProfileByUserId = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Profile not found" });
     }
 
-    res.status(200).json(profile);
+    // Fetch reviews
+    // Fetch reviews
+    const revieweeId = (profile.user as any)._id;
+    console.log('Fetching reviews for revieweeId:', revieweeId);
+
+    const reviews = await Review.find({
+      revieweeId: revieweeId,
+      isPublic: true,
+      isFlagged: false
+    })
+      .sort({ createdAt: -1 })
+      .populate('reviewerId', 'firstName lastName profileImage')
+      .populate('projectId', 'title');
+
+    console.log('Found reviews:', reviews.length);
+
+    const responseData = {
+      ...profile.toObject(),
+      reviews
+    };
+
+    res.status(200).json(responseData);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

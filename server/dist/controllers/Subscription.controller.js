@@ -1,5 +1,5 @@
-import User from '../models/user.model';
-import Subscription from '../models/subscription.model';
+import User from '../models/user.model.js';
+import Subscription from '../models/subscription.model.js';
 /**
  * @desc Get current user's subscription
  * @route GET /api/subscriptions/me
@@ -46,7 +46,7 @@ export const getMySubscription = async (req, res) => {
  * @desc Upgrade user subscription
  * @route POST /api/subscriptions/upgrade
  */
-import flutterwaveService from '../services/flutterwave.service';
+import flutterwaveService from '../services/flutterwave.service.js';
 /**
  * @desc Initialize subscription upgrade payment
  * @route POST /api/subscriptions/initialize-upgrade

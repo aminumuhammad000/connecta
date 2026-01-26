@@ -1,1 +1,1 @@
-export * from './connecta-agent/prompts/intent-prompt';
+export * from './connecta-agent/prompts/intent-prompt.js';

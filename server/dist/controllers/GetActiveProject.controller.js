@@ -1,4 +1,4 @@
-// import Project from "../models/Project.model";
+// import Project from "../models/Project.model.js";
 // export const getActiveProjects = async (req: Request, res: Response) => {
 //   try {
 //     const projects = await Project.find({ user: req.query.userId, status: "active" });

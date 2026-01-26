@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { Job } from "../models/Job.model";
-import Profile from "../models/Profile.model";
+import { Job } from "../models/Job.model.js";
+import Profile from "../models/Profile.model.js";
 
 export const getMatchedGigs = async (req: Request, res: Response) => {
   try {

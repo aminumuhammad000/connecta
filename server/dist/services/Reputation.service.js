@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import User from '../models/user.model';
-import Review from '../models/Review.model';
-import Contract from '../models/Contract.model';
+import User from '../models/user.model.js';
+import Review from '../models/Review.model.js';
+import Contract from '../models/Contract.model.js';
 export class ReputationService {
     /**
      * Updates the reputation metrics for a specific freelancer.

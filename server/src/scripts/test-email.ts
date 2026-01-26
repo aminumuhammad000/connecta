@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { sendEmail } from '../services/email.service';
-import connectDB from '../config/db.config';
+import { sendEmail } from '../services/email.service.js';
+import connectDB from '../config/db.config.js';
 
 dotenv.config();
 

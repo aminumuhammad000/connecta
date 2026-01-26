@@ -1,6 +1,6 @@
-import Contract from '../models/Contract.model';
-import Project from '../models/Project.model';
-import { createNotification } from './notification.controller';
+import Contract from '../models/Contract.model.js';
+import Project from '../models/Project.model.js';
+import { createNotification } from './notification.controller.js';
 /**
  * Create a new contract
  */

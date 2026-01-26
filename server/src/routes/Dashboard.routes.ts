@@ -5,8 +5,8 @@ import {
   getTopFreelancers,
   getRecentMessages,
   getAdminStats,
-} from '../controllers/Dashboard.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/Dashboard.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 

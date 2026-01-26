@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class CompareSkillsToMarketTool extends BaseTool {
   name = "compare_skills_to_market_tool";

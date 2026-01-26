@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import SystemSettings from '../models/SystemSettings.model';
-import { sendEmail } from '../services/email.service';
+import SystemSettings from '../models/SystemSettings.model.js';
+import { sendEmail } from '../services/email.service.js';
 
 dotenv.config();
 

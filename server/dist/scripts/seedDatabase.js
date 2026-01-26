@@ -4,21 +4,21 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 // Import all models
-import User from '../models/user.model';
-import Profile from '../models/Profile.model';
-import { Job } from '../models/Job.model';
-import Project from '../models/Project.model';
-import Proposal from '../models/Proposal.model';
-import Contract from '../models/Contract.model';
-import Payment from '../models/Payment.model';
-import Review from '../models/Review.model';
-import Notification from '../models/Notification.model';
-import Subscription from '../models/subscription.model';
-import Wallet from '../models/Wallet.model';
-import Transaction from '../models/Transaction.model';
-import Withdrawal from '../models/Withdrawal.model';
-import Conversation from '../models/Conversation.model';
-import Message from '../models/Message.model';
+import User from '../models/user.model.js';
+import Profile from '../models/Profile.model.js';
+import { Job } from '../models/Job.model.js';
+import Project from '../models/Project.model.js';
+import Proposal from '../models/Proposal.model.js';
+import Contract from '../models/Contract.model.js';
+import Payment from '../models/Payment.model.js';
+import Review from '../models/Review.model.js';
+import Notification from '../models/Notification.model.js';
+import Subscription from '../models/subscription.model.js';
+import Wallet from '../models/Wallet.model.js';
+import Transaction from '../models/Transaction.model.js';
+import Withdrawal from '../models/Withdrawal.model.js';
+import Conversation from '../models/Conversation.model.js';
+import Message from '../models/Message.model.js';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/connecta';
 // Seed data
 const seedData = {

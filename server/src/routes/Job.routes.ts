@@ -12,9 +12,9 @@ import {
   saveJob,
   unsaveJob,
   getSavedJobs
-} from "../controllers/Job.controller";
-import { authenticate } from "../core/middleware/auth.middleware";
-import { isAdmin } from "../core/middleware/admin.middleware";
+} from "../controllers/Job.controller.js";
+import { authenticate } from "../core/middleware/auth.middleware.js";
+import { isAdmin } from "../core/middleware/admin.middleware.js";
 
 const router = express.Router();
 

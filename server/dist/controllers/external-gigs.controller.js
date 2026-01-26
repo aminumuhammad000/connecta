@@ -1,4 +1,4 @@
-import { Job } from "../models/Job.model";
+import { Job } from "../models/Job.model.js";
 import mongoose from "mongoose";
 /**
  * Create or update an external gig

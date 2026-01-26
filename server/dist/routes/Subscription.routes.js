@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getMySubscription, initializeUpgradePayment, verifyUpgradePayment, cancelSubscription, } from '../controllers/Subscription.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getMySubscription, initializeUpgradePayment, verifyUpgradePayment, cancelSubscription, } from '../controllers/Subscription.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = Router();
 // All subscription routes require authentication
 router.use(authenticate);
@@ -13,7 +13,7 @@ router.post('/verify-upgrade', verifyUpgradePayment);
 // Cancel subscription
 router.post('/cancel', cancelSubscription);
 // Admin routes
-import { getAllSubscriptions, getSubscriptionStats, adminCancelSubscription, adminReactivateSubscription, adminDeleteSubscription } from '../controllers/Subscription.controller';
+import { getAllSubscriptions, getSubscriptionStats, adminCancelSubscription, adminReactivateSubscription, adminDeleteSubscription } from '../controllers/Subscription.controller.js';
 router.get('/admin/all', getAllSubscriptions);
 router.get('/admin/stats', getSubscriptionStats);
 router.patch('/:id/cancel', adminCancelSubscription);

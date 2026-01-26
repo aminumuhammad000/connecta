@@ -4,7 +4,7 @@ import {
   getGigPerformance,
   compareSkillsToMarket,
   generateWeeklyReport,
-} from "../controllers/insights.controller";
+} from "../controllers/insights.controller.js";
 
 const router = express.Router();
 

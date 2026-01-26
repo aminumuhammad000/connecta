@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getSettings, updateSmtpSettings, updateApiKeys } from '../controllers/settings.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getSettings, updateSmtpSettings, updateApiKeys } from '../controllers/settings.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 

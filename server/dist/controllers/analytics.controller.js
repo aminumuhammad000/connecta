@@ -1,11 +1,11 @@
-import User from '../models/user.model';
-import Project from '../models/Project.model';
-import Proposal from '../models/Proposal.model';
-import Payment from '../models/Payment.model';
-import Contract from '../models/Contract.model';
-import Review from '../models/Review.model';
-import { Job } from '../models/Job.model';
-import Subscription from '../models/subscription.model';
+import User from '../models/user.model.js';
+import Project from '../models/Project.model.js';
+import Proposal from '../models/Proposal.model.js';
+import Payment from '../models/Payment.model.js';
+import Contract from '../models/Contract.model.js';
+import Review from '../models/Review.model.js';
+import { Job } from '../models/Job.model.js';
+import Subscription from '../models/subscription.model.js';
 export const getAnalyticsStats = async (req, res) => {
     try {
         // Get total counts

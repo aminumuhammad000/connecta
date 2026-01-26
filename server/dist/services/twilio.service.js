@@ -1,5 +1,5 @@
 import twilio from 'twilio';
-import Profile from '../models/Profile.model';
+import Profile from '../models/Profile.model.js';
 class TwilioService {
     constructor() {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;

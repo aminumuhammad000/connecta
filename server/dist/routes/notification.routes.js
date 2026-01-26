@@ -1,7 +1,7 @@
 import express from 'express';
-import { getAllNotifications } from '../controllers/notification.controller';
-import { getNotifications, getUnreadCount, markAsRead, markAllAsRead, deleteNotification, clearReadNotifications, testWhatsAppNotification } from '../controllers/notification.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getAllNotifications } from '../controllers/notification.controller.js';
+import { getNotifications, getUnreadCount, markAsRead, markAllAsRead, deleteNotification, clearReadNotifications, testWhatsAppNotification } from '../controllers/notification.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = express.Router();
 // Admin: Get all notifications (no auth)
 router.get('/admin/all', getAllNotifications);

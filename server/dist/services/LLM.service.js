@@ -2,7 +2,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import dotenv from 'dotenv';
-import SystemSettings from '../models/SystemSettings.model';
+import SystemSettings from '../models/SystemSettings.model.js';
 dotenv.config();
 class LLMService {
     async getModel() {

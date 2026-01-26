@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 /**
  * Get Support Contact Information
  * Returns Connecta support contact details

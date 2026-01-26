@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { initializePayment, initializeJobVerification, verifyPayment, releasePayment, refundPayment, getPaymentHistory, getAllPayments, getWalletBalance, requestWithdrawal, processWithdrawal, getTransactionHistory, getBanks, resolveAccount, saveWithdrawalSettings, getPendingWithdrawals, getAllWithdrawals, getAllWallets, } from '../controllers/payment.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { initializePayment, initializeJobVerification, verifyPayment, releasePayment, refundPayment, getPaymentHistory, getAllPayments, getWalletBalance, requestWithdrawal, processWithdrawal, getTransactionHistory, getBanks, resolveAccount, saveWithdrawalSettings, getPendingWithdrawals, getAllWithdrawals, getAllWallets, } from '../controllers/payment.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = Router();
 // Admin route - Get all payments (no auth)
 router.get('/admin/all', getAllPayments);

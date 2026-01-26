@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import SystemSettings from '../models/SystemSettings.model';
-import { getBaseTemplate } from '../utils/emailTemplates';
+import SystemSettings from '../models/SystemSettings.model.js';
+import { getBaseTemplate } from '../utils/emailTemplates.js';
 dotenv.config();
 // Helper to get transporter with latest settings
 const getTransporter = async () => {

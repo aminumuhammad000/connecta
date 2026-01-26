@@ -1,6 +1,6 @@
 import express from 'express';
-import { createContract, getContractById, getUserContracts, getAllContracts, signContract, terminateContract, getContractTemplate, } from '../controllers/contract.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { createContract, getContractById, getUserContracts, getAllContracts, signContract, terminateContract, getContractTemplate, } from '../controllers/contract.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = express.Router();
 // Admin route - Get all contracts (no auth)
 router.get('/admin/all', getAllContracts);

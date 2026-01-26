@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 export class SaveGigTool extends BaseTool {
     constructor() {
         super(...arguments);

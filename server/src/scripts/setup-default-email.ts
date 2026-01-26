@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import SystemSettings from '../models/SystemSettings.model';
+import SystemSettings from '../models/SystemSettings.model.js';
 
 dotenv.config();
 

@@ -1,6 +1,6 @@
 import express from "express";
-import { createProfile, getAllProfiles, getProfileById, getProfileByUserId, updateProfile, deleteProfile, getMyProfile, updateMyProfile, } from "../controllers/Profile.controller";
-import { authenticate } from "../core/middleware/auth.middleware";
+import { createProfile, getAllProfiles, getProfileById, getProfileByUserId, updateProfile, deleteProfile, getMyProfile, updateMyProfile, } from "../controllers/Profile.controller.js";
+import { authenticate } from "../core/middleware/auth.middleware.js";
 const router = express.Router();
 router.post("/", createProfile);
 router.get("/", getAllProfiles);

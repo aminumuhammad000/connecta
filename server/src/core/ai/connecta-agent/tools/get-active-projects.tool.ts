@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetActiveProjectsTool extends BaseTool {
   name = "get_active_projects_tool";

@@ -1,5 +1,5 @@
 import express from "express";
-import { explainFeature, getHelp, sendFeedback, onboarding } from "../controllers/support.controller";
+import { explainFeature, getHelp, sendFeedback, onboarding } from "../controllers/support.controller.js";
 const router = express.Router();
 router.post("/explain", explainFeature);
 router.get("/help", getHelp);

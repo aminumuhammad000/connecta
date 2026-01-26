@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class SuggestProfileImprovementsTool extends BaseTool {
   name = "suggest_profile_improvements_tool";

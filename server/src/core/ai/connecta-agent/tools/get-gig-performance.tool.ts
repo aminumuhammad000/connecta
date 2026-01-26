@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetGigPerformanceTool extends BaseTool {
   name = "get_gig_performance_tool";

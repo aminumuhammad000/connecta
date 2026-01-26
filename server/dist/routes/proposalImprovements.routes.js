@@ -1,6 +1,6 @@
 import express from 'express';
-import { editProposal, withdrawProposal, createCounterOffer, respondToCounterOffer, createProposalTemplate, getProposalTemplates, useTemplate, deleteProposalTemplate, handleExpiredProposals, } from '../controllers/proposalImprovements.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { editProposal, withdrawProposal, createCounterOffer, respondToCounterOffer, createProposalTemplate, getProposalTemplates, useTemplate, deleteProposalTemplate, handleExpiredProposals, } from '../controllers/proposalImprovements.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = express.Router();
 // Proposal editing
 router.put('/:proposalId/edit', authenticate, editProposal);

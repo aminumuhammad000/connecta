@@ -1,4 +1,4 @@
-import SystemSettings from '../models/SystemSettings.model';
+import SystemSettings from '../models/SystemSettings.model.js';
 
 /**
  * Get API keys from database settings with fallback to environment variables

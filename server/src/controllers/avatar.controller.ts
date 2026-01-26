@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import User from '../models/user.model';
-import Profile from '../models/Profile.model';
+import User from '../models/user.model.js';
+import Profile from '../models/Profile.model.js';
 
 export const uploadAvatar = async (req: Request, res: Response) => {
     try {

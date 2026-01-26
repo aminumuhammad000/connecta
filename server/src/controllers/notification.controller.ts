@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import Notification, { NotificationType } from '../models/Notification.model';
-import { getIO } from '../core/utils/socketIO';
+import Notification, { NotificationType } from '../models/Notification.model.js';
+import { getIO } from '../core/utils/socketIO.js';
 
 /**
  * Get all notifications for the authenticated user

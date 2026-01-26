@@ -1,5 +1,5 @@
 import express from 'express';
-import { getOrCreateConversation, getUserConversations, getConversationMessages, sendMessage, markMessagesAsRead, getMessagesBetweenUsers, deleteMessage, summarizeConversation, getUnreadCount, } from '../controllers/Message.controller';
+import { getOrCreateConversation, getUserConversations, getConversationMessages, sendMessage, markMessagesAsRead, getMessagesBetweenUsers, deleteMessage, summarizeConversation, getUnreadCount, } from '../controllers/Message.controller.js';
 const router = express.Router();
 // Conversation routes
 router.post('/conversations', getOrCreateConversation);

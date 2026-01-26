@@ -1,11 +1,11 @@
-import Payment from '../models/Payment.model';
-import Transaction from '../models/Transaction.model';
-import Wallet from '../models/Wallet.model';
-import Withdrawal from '../models/Withdrawal.model';
-import Project from '../models/Project.model';
-import { Job } from '../models/Job.model';
-import User from '../models/user.model';
-import flutterwaveService from '../services/flutterwave.service';
+import Payment from '../models/Payment.model.js';
+import Transaction from '../models/Transaction.model.js';
+import Wallet from '../models/Wallet.model.js';
+import Withdrawal from '../models/Withdrawal.model.js';
+import Project from '../models/Project.model.js';
+import { Job } from '../models/Job.model.js';
+import User from '../models/user.model.js';
+import flutterwaveService from '../services/flutterwave.service.js';
 // Platform fee percentage (e.g., 10%)
 const PLATFORM_FEE_PERCENTAGE = 10;
 /**

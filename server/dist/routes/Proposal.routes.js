@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { getAllProposals, getFreelancerProposals, getProposalById, createProposal, updateProposalStatus, updateProposal, deleteProposal, getProposalStats, getClientAcceptedProposals, getProposalsByJobId, approveProposal, rejectProposal, } from '../controllers/Proposal.controller';
-import { generateCoverLetter } from '../controllers/CoverLetter.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getAllProposals, getFreelancerProposals, getProposalById, createProposal, updateProposalStatus, updateProposal, deleteProposal, getProposalStats, getClientAcceptedProposals, getProposalsByJobId, approveProposal, rejectProposal, } from '../controllers/Proposal.controller.js';
+import { generateCoverLetter } from '../controllers/CoverLetter.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = Router();
 // Get all proposals (admin/general)
 router.get('/', getAllProposals);

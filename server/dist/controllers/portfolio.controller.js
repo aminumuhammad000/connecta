@@ -1,4 +1,4 @@
-import Profile from '../models/Profile.model';
+import Profile from '../models/Profile.model.js';
 /**
  * Upload a portfolio image to Cloudinary
  */

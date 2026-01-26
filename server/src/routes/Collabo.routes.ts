@@ -1,7 +1,7 @@
 import express from 'express';
-import { authenticate } from '../core/middleware/auth.middleware';
-import * as CollaboController from '../controllers/Collabo.controller';
-import { upload } from '../core/utils/fileUpload';
+import { authenticate } from '../core/middleware/auth.middleware.js';
+import * as CollaboController from '../controllers/Collabo.controller.js';
+import { upload } from '../core/utils/fileUpload.js';
 
 const router = express.Router();
 
@@ -21,6 +21,7 @@ router.delete('/task/:id', authenticate, CollaboController.deleteTask);
 // Files (must be before /:id route)
 router.post('/file', authenticate, upload.single('file'), CollaboController.uploadFile);
 router.get('/files', authenticate, CollaboController.getFiles);
+router.delete('/file/:id', authenticate, CollaboController.deleteFile);
 
 router.post('/:id/fund', authenticate, CollaboController.fundProject);
 router.post('/:id/activate', authenticate, CollaboController.activateProject);

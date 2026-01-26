@@ -13,8 +13,8 @@ import {
   submitProject,
   deleteProject,
   getProjectStats,
-} from '../controllers/Project.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+} from '../controllers/Project.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 

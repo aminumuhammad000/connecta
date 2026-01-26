@@ -1,4 +1,4 @@
-import { BaseTool } from "./base.tool";
+import { BaseTool } from "./base.tool.js";
 
 export class GetUserMessagesTool extends BaseTool {
   name = "get_user_messages_tool";

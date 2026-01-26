@@ -1,6 +1,6 @@
-import { Job } from "../models/Job.model";
-import User from "../models/user.model";
-import Profile from "../models/Profile.model";
+import { Job } from "../models/Job.model.js";
+import User from "../models/user.model.js";
+import Profile from "../models/Profile.model.js";
 // ===================
 // Get Jobs for Current Client
 // ===================
@@ -17,7 +17,7 @@ export const getClientJobs = async (req, res) => {
         const jobs = await Job.find({ clientId }).sort({ createdAt: -1 });
         // Calculate proposal counts for each job
         // Dynamically import Proposal to avoid circular dependency issues if any
-        const ProposalModule = await import("../models/Proposal.model");
+        const ProposalModule = await import("../models/Proposal.model.js");
         const Proposal = ProposalModule.default;
         const jobsWithCounts = await Promise.all(jobs.map(async (job) => {
             const count = await Proposal.countDocuments({ jobId: job._id });
@@ -114,9 +114,9 @@ export const createJob = async (req, res) => {
         const newJob = await Job.create(jobData);
         // Notify matching freelancers via WhatsApp and Email
         try {
-            const TwilioService = require('../services/twilio.service').default;
+            const TwilioService = (await import('../services/twilio.service.js')).default;
             TwilioService.notifyMatchingFreelancers(newJob);
-            const { RecommendationService } = require('../services/recommendation.service');
+            const { RecommendationService } = await import('../services/recommendation.service.js');
             const recService = new RecommendationService();
             recService.processNewJob(newJob._id);
         }

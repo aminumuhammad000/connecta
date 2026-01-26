@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getClientDashboard, getFreelancerDashboard, getTopFreelancers, getRecentMessages, getAdminStats, } from '../controllers/Dashboard.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getClientDashboard, getFreelancerDashboard, getTopFreelancers, getRecentMessages, getAdminStats, } from '../controllers/Dashboard.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = Router();
 // All dashboard routes require authentication
 router.use(authenticate);

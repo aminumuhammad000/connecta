@@ -1,5 +1,5 @@
-import User from '../models/user.model';
-import Profile from '../models/Profile.model';
+import User from '../models/user.model.js';
+import Profile from '../models/Profile.model.js';
 export const uploadAvatar = async (req, res) => {
     try {
         console.log('🚀 Avatar Upload Started');

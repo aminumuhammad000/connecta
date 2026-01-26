@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
-import { Job } from '../models/Job.model';
-import Project from '../models/Project.model';
-import Message from '../models/Message.model';
-import User from '../models/user.model';
-import Conversation from '../models/Conversation.model';
-import Proposal from '../models/Proposal.model';
-import Payment from '../models/Payment.model';
-import Wallet from '../models/Wallet.model';
+import { Job } from '../models/Job.model.js';
+import Project from '../models/Project.model.js';
+import Message from '../models/Message.model.js';
+import User from '../models/user.model.js';
+import Conversation from '../models/Conversation.model.js';
+import Proposal from '../models/Proposal.model.js';
+import Payment from '../models/Payment.model.js';
+import Wallet from '../models/Wallet.model.js';
 import mongoose from 'mongoose';
-import CollaboProject from '../models/CollaboProject.model';
+import CollaboProject from '../models/CollaboProject.model.js';
 
 // Get Admin Dashboard Data
 export const getAdminStats = async (req: Request, res: Response) => {
@@ -216,7 +216,7 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
   }
 };
 
-import Profile from '../models/Profile.model';
+import Profile from '../models/Profile.model.js';
 
 // Get Top Freelancers (AI-powered recommendations)
 export const getTopFreelancers = async (req: Request, res: Response) => {

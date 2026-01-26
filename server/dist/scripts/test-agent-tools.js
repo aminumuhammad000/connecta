@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { ConnectaAgent } from '../core/ai/connecta-agent/agent';
-import User from '../models/user.model';
+import { ConnectaAgent } from '../core/ai/connecta-agent/agent.js';
+import User from '../models/user.model.js';
 dotenv.config();
 async function testAgent() {
     try {

@@ -1,5 +1,5 @@
-import { Job } from "../models/Job.model";
-import Profile from "../models/Profile.model";
+import { Job } from "../models/Job.model.js";
+import Profile from "../models/Profile.model.js";
 export const getMatchedGigs = async (req, res) => {
     try {
         const userId = req.query.userId || req.user?._id;

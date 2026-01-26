@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { getApiKeys } from '../../../services/apiKeys.service';
+import { getApiKeys } from '../../../services/apiKeys.service.js';
 dotenv.config();
 let cachedApiKey = null;
 export const getOpenRouterApiKey = async () => {

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { drive } from "../config/google.config";
+import { drive } from "../config/google.config.js";
 import fs from "fs";
 
 export const uploadFileToDrive = async (req: Request, res: Response) => {

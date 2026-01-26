@@ -1,7 +1,7 @@
-import User from "../models/user.model";
-import Profile from "../models/Profile.model";
-import { Job } from "../models/Job.model";
-import { TFIDF } from "../utils/tfidf";
+import User from "../models/user.model.js";
+import Profile from "../models/Profile.model.js";
+import { Job } from "../models/Job.model.js";
+import { TFIDF } from "../utils/tfidf.js";
 
 export class RecommendationService {
     /**
@@ -134,8 +134,8 @@ export class RecommendationService {
             const jobTitle = job.title.toLowerCase();
 
             const matches = [];
-            const JobMatch = (await import("../models/JobMatch.model")).default;
-            const { sendGigNotificationEmail } = await import("./email.service");
+            const JobMatch = (await import("../models/JobMatch.model.js")).default;
+            const { sendGigNotificationEmail } = await import("./email.service.js");
 
             for (const profile of profiles) {
                 let score = 0;
@@ -195,7 +195,7 @@ export class RecommendationService {
                             );
 
                             // Create In-App Notification
-                            const Notification = (await import("../models/Notification.model")).default;
+                            const Notification = (await import("../models/Notification.model.js")).default;
                             await Notification.create({
                                 userId: user._id,
                                 type: 'gig_matched',

@@ -1,7 +1,7 @@
 import express from 'express';
-import { getAllReviews } from '../controllers/review.controller';
-import { createReview, getUserReviews, getUserReviewStats, respondToReview, voteReview, flagReview, updateReview, } from '../controllers/review.controller';
-import { authenticate } from '../core/middleware/auth.middleware';
+import { getAllReviews } from '../controllers/review.controller.js';
+import { createReview, getUserReviews, getUserReviewStats, respondToReview, voteReview, flagReview, updateReview, } from '../controllers/review.controller.js';
+import { authenticate } from '../core/middleware/auth.middleware.js';
 const router = express.Router();
 // Admin: Get all reviews (no auth)
 router.get('/admin/all', getAllReviews);

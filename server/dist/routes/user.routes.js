@@ -1,6 +1,6 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, switchUserType } from "../controllers/user.controller";
-import { authenticate } from "../core/middleware/auth.middleware";
+import { signup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, switchUserType } from "../controllers/user.controller.js";
+import { authenticate } from "../core/middleware/auth.middleware.js";
 const router = express.Router();
 // Auth routes
 router.post("/signup", signup);
