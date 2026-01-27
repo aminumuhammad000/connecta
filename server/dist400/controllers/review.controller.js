@@ -64,9 +64,11 @@ export const createReview = async (req, res) => {
             reviewerType = bodyReviewerType;
         }
         // Check if review already exists (prevent spam)
-        const query = { reviewerId: userId, revieweeId };
-        if (projectId)
-            query.projectId = projectId;
+        const query = {
+            reviewerId: userId,
+            revieweeId,
+            projectId: projectId || null
+        };
         // else query.projectId = { $exists: false }; // Allow multiple general reviews or just one? Let's say one per user pair if no project.
         const existingReview = await Review.findOne(query);
         if (existingReview) {

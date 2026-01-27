@@ -63,7 +63,7 @@ const ReviewSchema = new Schema({
 ReviewSchema.index({ revieweeId: 1, createdAt: -1 });
 ReviewSchema.index({ projectId: 1 });
 ReviewSchema.index({ rating: 1 });
-// Prevent duplicate reviews for same project
-ReviewSchema.index({ projectId: 1, reviewerId: 1 }, { unique: true });
+// Prevent duplicate reviews for same project/context
+ReviewSchema.index({ projectId: 1, reviewerId: 1, revieweeId: 1 }, { unique: true });
 const Review = mongoose.model('Review', ReviewSchema);
 export default Review;
