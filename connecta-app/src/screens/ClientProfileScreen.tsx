@@ -615,349 +615,350 @@ export default function ClientProfileScreen({ navigation, route }: any) {
           </View>
         </Modal>
       </View>
-      );
+    </View>
+  );
 }
 
-      const styles = StyleSheet.create({
-        container: {flex: 1 },
-      header: {
-        position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 10,
-      paddingBottom: 10,
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    paddingBottom: 10,
   },
-      floatingHeader: {
-        position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 11,
-      paddingBottom: 10,
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 11,
+    paddingBottom: 10,
   },
-      headerContent: {
-        flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      height: 44,
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 44,
   },
-      headerTitle: {
-        fontSize: 16,
-      fontWeight: '600',
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
   },
-      iconBtn: {
-        width: 36,
-      height: 36,
-      borderRadius: 18,
-      alignItems: 'center',
-      justifyContent: 'center',
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-      coverContainer: {
-        height: 180,
-      width: '100%',
-      position: 'relative',
+  coverContainer: {
+    height: 180,
+    width: '100%',
+    position: 'relative',
   },
-      coverGradient: {
-        flex: 1,
+  coverGradient: {
+    flex: 1,
   },
-      coverOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.1)',
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
-      profileCardContainer: {
-        paddingHorizontal: 16,
-      marginTop: -40,
+  profileCardContainer: {
+    paddingHorizontal: 16,
+    marginTop: -40,
   },
-      profileCard: {
-        borderRadius: 20,
-      padding: 20,
-      shadowOffset: {width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 5,
+  profileCard: {
+    borderRadius: 20,
+    padding: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
-      avatarRow: {
-        flexDirection: 'row',
-      alignItems: 'flex-end',
-      marginBottom: 16,
+  avatarRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 16,
   },
-      avatarContainer: {
-        width: 84,
-      height: 84,
-      borderRadius: 42,
-      borderWidth: 4,
-      position: 'relative',
-      marginTop: -42,
+  avatarContainer: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 4,
+    position: 'relative',
+    marginTop: -42,
   },
-      avatar: {
-        width: '100%',
-      height: '100%',
-      borderRadius: 40,
+  avatar: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
   },
-      premiumBadge: {
-        position: 'absolute',
-      bottom: 0,
-      right: 0,
-      backgroundColor: '#F59E0B',
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: '#FFF',
+  premiumBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#F59E0B',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
-      statsRow: {
-        flex: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      paddingBottom: 8,
+  statsRow: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingBottom: 8,
   },
-      statItem: {
-        alignItems: 'center',
+  statItem: {
+    alignItems: 'center',
   },
-      statValue: {
-        fontSize: 16,
-      fontWeight: '700',
+  statValue: {
+    fontSize: 16,
+    fontWeight: '700',
   },
-      statLabel: {
-        fontSize: 12,
+  statLabel: {
+    fontSize: 12,
   },
-      statDivider: {
-        width: 1,
-      height: 24,
-      backgroundColor: '#E5E7EB',
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E7EB',
   },
-      infoSection: {
-        marginTop: 8,
+  infoSection: {
+    marginTop: 8,
   },
-      nameRow: {
-        flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 4,
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-      name: {
-        fontSize: 22,
-      fontWeight: '700',
+  name: {
+    fontSize: 22,
+    fontWeight: '700',
   },
-      role: {
-        fontSize: 14,
-      fontWeight: '600',
-      marginBottom: 16,
+  role: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 16,
   },
-      detailsRow: {
-        flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-      gap: 8,
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
   },
-      detailItem: {
-        flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-      detailText: {
-        fontSize: 13,
+  detailText: {
+    fontSize: 13,
   },
-      detailDivider: {
-        width: 1,
-      height: 12,
-      backgroundColor: '#E5E7EB',
+  detailDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: '#E5E7EB',
   },
-      bioHeader: {
-        flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
+  bioHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-      bioTitle: {
-        fontSize: 11,
-      fontWeight: '700',
-      letterSpacing: 1,
+  bioTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
-      aiBioBtn: {
-        flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 12,
-      gap: 4,
+  aiBioBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-      aiBioText: {
-        fontSize: 11,
-      fontWeight: '600',
+  aiBioText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
-      bio: {
-        fontSize: 14,
-      lineHeight: 20,
-      marginBottom: 20,
+  bio: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 20,
   },
-      actionButtons: {
-        flexDirection: 'row',
-      gap: 8,
-      marginTop: 4,
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 4,
   },
-      primaryBtn: {
-        paddingVertical: 12,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
+  primaryBtn: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-      btnTextWhite: {
-        color: '#FFF',
-      fontSize: 14,
-      fontWeight: '600',
+  btnTextWhite: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
-      tabContainer: {
-        flexDirection: 'row',
-      paddingHorizontal: 20,
-      borderBottomWidth: 1,
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
   },
-      tabItem: {
-        marginRight: 24,
-      paddingVertical: 12,
-      borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
+  tabItem: {
+    marginRight: 24,
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-      tabText: {
-        fontSize: 15,
-      fontWeight: '600',
+  tabText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
-      contentContainer: {
-        padding: 20,
+  contentContainer: {
+    padding: 20,
   },
-      jobCard: {
-        borderRadius: 16,
-      padding: 16,
-      marginBottom: 12,
-      borderWidth: 1,
+  jobCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
   },
-      jobHeader: {
-        flexDirection: 'row',
-      alignItems: 'center',
+  jobHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-      iconBox: {
-        width: 40,
-      height: 40,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-      jobTitle: {
-        fontSize: 16,
-      fontWeight: '700',
-      marginBottom: 2,
+  jobTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
   },
-      jobBudget: {
-        fontSize: 12,
+  jobBudget: {
+    fontSize: 12,
   },
-      statusBadge: {
-        paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 8,
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
-      statusText: {
-        fontSize: 12,
-      fontWeight: '700',
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
-      emptyTabState: {
-        padding: 40,
-      alignItems: 'center',
+  emptyTabState: {
+    padding: 40,
+    alignItems: 'center',
   },
-      reviewCard: {
-        padding: 16,
-      borderRadius: 12,
-      borderWidth: 1,
-      marginBottom: 12,
+  reviewCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
   },
-      reviewHeader: {
-        flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 8,
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-      reviewAuthor: {
-        fontSize: 14,
-      fontWeight: '600',
+  reviewAuthor: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-      ratingRow: {
-        flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-      ratingText: {
-        fontSize: 12,
-      fontWeight: '600',
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
-      reviewComment: {
-        fontSize: 13,
-      lineHeight: 18,
+  reviewComment: {
+    fontSize: 13,
+    lineHeight: 18,
   },
-      emptyState: {
-        margin: 20,
-      padding: 40,
-      borderRadius: 20,
-      alignItems: 'center',
-      borderWidth: 1,
+  emptyState: {
+    margin: 20,
+    padding: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
   },
-      emptyTitle: {
-        fontSize: 20,
-      fontWeight: '700',
-      marginTop: 16,
-      marginBottom: 8,
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
   },
-      profileActionBtn: {
-        flex: 1,
-      height: 32,
-      flexDirection: 'row',
-      borderRadius: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
+  profileActionBtn: {
+    flex: 1,
+    height: 32,
+    flexDirection: 'row',
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
-      profileActionIconBtn: {
-        width: 32,
-      height: 32,
-      borderRadius: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
+  profileActionIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
-      profileActionText: {
-        fontSize: 12,
-      fontWeight: '500',
+  profileActionText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
-      ultraSleekCompleteness: {
-        marginTop: 14,
-      paddingTop: 14,
-      borderTopWidth: 1,
-      borderTopColor: 'rgba(0,0,0,0.02)',
+  ultraSleekCompleteness: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.02)',
   },
-      completenessRow: {
-        flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 6,
+  completenessRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
   },
-      tinyLabel: {
-        fontSize: 10,
-      fontWeight: '700',
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
+  tinyLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-      tinyValue: {
-        fontSize: 10,
-      fontWeight: '800',
+  tinyValue: {
+    fontSize: 10,
+    fontWeight: '800',
   },
-      thinTrack: {
-        height: 3,
-      borderRadius: 1.5,
-      overflow: 'hidden',
+  thinTrack: {
+    height: 3,
+    borderRadius: 1.5,
+    overflow: 'hidden',
   },
-      thinFill: {
-        height: '100%',
-      borderRadius: 1.5,
+  thinFill: {
+    height: '100%',
+    borderRadius: 1.5,
   },
 });
