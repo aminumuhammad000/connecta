@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useThemeColors } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -7,7 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getMyProfile } from '../../services/profileService';
 import { Profile } from '../../types';
 
-const DesktopLeftSidebar = ({ navigation }: any) => {
+const DesktopLeftSidebar = () => {
+    const navigation = useNavigation<any>();
     const c = useThemeColors();
     const { user } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);

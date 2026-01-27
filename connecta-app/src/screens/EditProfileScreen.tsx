@@ -511,11 +511,13 @@ export default function EditProfileScreen({ navigation }: any) {
                                 {uploadingImage ? (
                                     <ActivityIndicator size="small" color="white" />
                                 ) : (
-                                    <Ionicons name="camera" size={18} color="white" />
+                                    <Ionicons name="camera" size={20} color="white" />
                                 )}
                             </TouchableOpacity>
                         </View>
-                        <Text style={[styles.photoHint, { color: c.subtext }]}>Tap to change profile picture</Text>
+                        <Text style={[styles.photoHint, { color: c.text, fontWeight: '600' }]}>
+                            {uploadingImage ? 'Uploading your photo...' : 'Tap to change profile picture'}
+                        </Text>
                     </View>
 
                     <Card variant="outlined" style={styles.sectionCard}>
@@ -908,14 +910,25 @@ export default function EditProfileScreen({ navigation }: any) {
                                     </View>
                                 ) : (
                                     <TouchableOpacity
-                                        style={[styles.uploadButton, { backgroundColor: c.card, borderColor: c.border }]}
+                                        style={[
+                                            styles.uploadButton, 
+                                            { 
+                                                backgroundColor: c.primary + '05', 
+                                                borderColor: c.primary,
+                                                borderWidth: 2,
+                                                borderStyle: 'dashed'
+                                            }
+                                        ]}
                                         onPress={handlePickPortfolioImage}
                                         disabled={uploadingImage}
                                     >
-                                        <Ionicons name="cloud-upload-outline" size={32} color={c.subtext} />
-                                        <Text style={[styles.uploadText, { color: c.subtext }]}>
-                                            {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                                        <View style={{ backgroundColor: c.primary + '15', padding: 15, borderRadius: 40, marginBottom: 10 }}>
+                                            <Ionicons name="cloud-upload" size={36} color={c.primary} />
+                                        </View>
+                                        <Text style={[styles.uploadText, { color: c.primary, fontWeight: '700' }]}>
+                                            {uploadingImage ? 'Uploading...' : 'Upload Project Image'}
                                         </Text>
+                                        <Text style={{ fontSize: 12, color: c.subtext }}>PNG, JPG or WEBP (Max 5MB)</Text>
                                     </TouchableOpacity>
                                 )}
                             </View>

@@ -253,8 +253,11 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Stats Overview - Overlapping Header (Desktop: Grid, Mobile: Row) */}
           <View style={[
             isDesktop ? styles.desktopStatsGrid : styles.statsContainer,
-            // Only overlap on mobile if desired, or keep generic. Let's keep overlap for consistency.
-            { marginTop: -50, paddingHorizontal: isDesktop ? 40 : 20 }
+            { 
+              marginTop: -50, 
+              paddingHorizontal: isDesktop ? 40 : 20,
+              zIndex: 20, // Ensure it's over the header
+            }
           ]}>
             {/* Active Proposals */}
             <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>
@@ -606,6 +609,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.05)',
     padding: 16,
     gap: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   desktopStatsGrid: {
     flexDirection: 'row',

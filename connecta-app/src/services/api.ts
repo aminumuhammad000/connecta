@@ -124,7 +124,13 @@ export const del = async <T = any>(url: string): Promise<ApiResponse<T>> => {
  * Upload file with multipart/form-data
  */
 export const uploadFile = async (url: string, formData: FormData): Promise<ApiResponse> => {
-    return apiClient.post(url, formData);
+    const token = await getToken();
+    return axios.post(`${API_BASE_URL}${url}`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
 };
 
 // Event for handling 401 Unauthorized
