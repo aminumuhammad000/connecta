@@ -9,6 +9,7 @@ import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
 import mongoose from 'mongoose';
 import CollaboProject from '../models/CollaboProject.model.js';
+import Profile from '../models/Profile.model.js';
 
 // Get Admin Dashboard Data
 export const getAdminStats = async (req: Request, res: Response) => {
@@ -298,7 +299,7 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
   }
 };
 
-import Profile from '../models/Profile.model.js';
+
 
 // Get Top Freelancers (AI-powered recommendations)
 export const getTopFreelancers = async (req: Request, res: Response) => {

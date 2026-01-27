@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import User from "../models/user.model.js";
+import OTP from "../models/otp.model.js";
+import { sendOTPEmail, sendWelcomeEmail } from "../services/email.service.js";
+import notificationService from "../services/notification.service.js";
+import mongoose from "mongoose";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 
@@ -143,12 +147,10 @@ export const signup = async (req: Request, res: Response) => {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
       // Manage OTP record
-      const OTP = (await import('../models/otp.model.js')).default;
       await OTP.deleteMany({ userId: newUser._id });
       await OTP.create({ userId: newUser._id, otp, expiresAt });
 
       // Send OTP email
-      const { sendOTPEmail } = await import('../services/email.service.js');
       await sendOTPEmail(newUser.email, otp, newUser.firstName, 'EMAIL_VERIFICATION');
       console.log(`Automatic verification email sent to ${newUser.email}`);
     } catch (otpErr) {
@@ -250,12 +252,10 @@ export const resendVerificationOTP = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // Manage OTP record
-    const OTP = (await import('../models/otp.model.js')).default;
     await OTP.deleteMany({ userId: user._id });
     await OTP.create({ userId: user._id, otp, expiresAt });
 
     // Send OTP email
-    const { sendOTPEmail } = await import('../services/email.service.js');
     const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION');
 
     if (!result.success) {
@@ -288,7 +288,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
     }
 
     // Verify OTP
-    const OTP = (await import('../models/otp.model.js')).default;
     const otpRecord = await OTP.findOne({ userId: user._id, otp, verified: false });
 
     if (!otpRecord) return res.status(400).json({ message: "Invalid OTP" });
@@ -305,12 +304,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await OTP.deleteOne({ _id: otpRecord._id });
 
     // Send Welcome Email
-    const { sendWelcomeEmail } = await import('../services/email.service.js');
     sendWelcomeEmail(user.email, user.firstName).catch(console.error);
 
     // Send Welcome Notification
     try {
-      const mongoose = (await import('mongoose')).default;
       const { getIO } = await import('../core/utils/socketIO.js');
       const io = getIO();
 
@@ -333,7 +330,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
       });
 
       // Push Notification
-      const notificationService = (await import('../services/notification.service.js')).default;
       notificationService.sendPushNotification(
         user._id.toString(),
         'Welcome to Connecta! 🚀',
@@ -426,7 +422,6 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     // Delete any existing OTPs for this user
-    const OTP = (await import('../models/otp.model.js')).default;
     await OTP.deleteMany({ userId: user._id });
 
     // Create new OTP
@@ -437,7 +432,6 @@ export const forgotPassword = async (req: Request, res: Response) => {
     });
 
     // Send OTP via email
-    const { sendOTPEmail } = await import('../services/email.service.js');
     const result = await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET');
 
     if (!result.success) {
@@ -485,7 +479,6 @@ export const verifyOTP = async (req: Request, res: Response) => {
     }
 
     // Find OTP
-    const OTP = (await import('../models/otp.model.js')).default;
     const otpRecord = await OTP.findOne({
       userId: user._id,
       otp,
@@ -577,7 +570,6 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     // Verify OTP was verified
-    const OTP = (await import('../models/otp.model.js')).default;
     const otpRecord = await OTP.findById(decoded.otpId);
     if (!otpRecord || !otpRecord.verified) {
       return res.status(400).json({

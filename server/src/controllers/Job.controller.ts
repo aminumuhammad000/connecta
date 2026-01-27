@@ -3,6 +3,8 @@ import { Job } from "../models/Job.model.js";
 import User from "../models/user.model.js";
 import Profile from "../models/Profile.model.js";
 import Proposal from "../models/Proposal.model.js";
+import TwilioService from "../services/twilio.service.js";
+import { RecommendationService } from "../services/recommendation.service.js";
 
 // ===================
 // Get Jobs for Current Client
@@ -128,10 +130,8 @@ export const createJob = async (req: Request, res: Response) => {
 
     // Notify matching freelancers via WhatsApp and Email
     try {
-      const TwilioService = (await import('../services/twilio.service.js')).default;
       TwilioService.notifyMatchingFreelancers(newJob);
 
-      const { RecommendationService } = await import('../services/recommendation.service.js');
       const recService = new RecommendationService();
       recService.processNewJob(newJob._id);
     } catch (notifyErr) {
