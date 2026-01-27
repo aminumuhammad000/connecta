@@ -314,7 +314,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
 
         // 2. Match Skills (at least one)
         const skillMatch = f.skills?.some((s: string) =>
-          selectedJob.skills?.some(js => js.toLowerCase() === s.toLowerCase())
+          selectedJob.skills?.some((js: string) => js.toLowerCase() === s.toLowerCase())
         );
 
         return titleMatch || skillMatch;
@@ -549,77 +549,77 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
                       key={`${item.type}-${item._id}`}
                       onPress={() => setInviteSelectedJob(item)}
                       style={{
-                          padding: 16,
-                          borderRadius: 12,
-                          borderWidth: 1.5,
-                          borderColor: inviteSelectedJob?._id === item._id ? c.primary : c.border,
-                          backgroundColor: inviteSelectedJob?._id === item._id ? c.primary + '08' : c.card,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.05,
-                          shadowRadius: 2,
-                          elevation: 1
+                        padding: 16,
+                        borderRadius: 12,
+                        borderWidth: 1.5,
+                        borderColor: inviteSelectedJob?._id === item._id ? c.primary : c.border,
+                        backgroundColor: inviteSelectedJob?._id === item._id ? c.primary + '08' : c.card,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 2,
+                        elevation: 1
                       }}
                     >
                       <View style={{ flex: 1 }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                              <View style={{ 
-                                  paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, 
-                                  backgroundColor: item.type === 'collabo' ? '#8B5CF6' + '20' : '#10B981' + '20',
-                                  borderWidth: 1,
-                                  borderColor: item.type === 'collabo' ? '#8B5CF6' : '#10B981'
-                              }}>
-                                  <Text style={{ 
-                                      color: item.type === 'collabo' ? '#8B5CF6' : '#10B981', 
-                                      fontSize: 10, fontWeight: '800', letterSpacing: 0.5 
-                                  }}>
-                                      {item.type === 'collabo' ? 'COLLABO' : 'JOB'}
-                                  </Text>
-                              </View>
-                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, flex: 1 }} numberOfLines={1}>
-                                  {item.title}
-                              </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <View style={{
+                            paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+                            backgroundColor: item.type === 'collabo' ? '#8B5CF6' + '20' : '#10B981' + '20',
+                            borderWidth: 1,
+                            borderColor: item.type === 'collabo' ? '#8B5CF6' : '#10B981'
+                          }}>
+                            <Text style={{
+                              color: item.type === 'collabo' ? '#8B5CF6' : '#10B981',
+                              fontSize: 10, fontWeight: '800', letterSpacing: 0.5
+                            }}>
+                              {item.type === 'collabo' ? 'COLLABO' : 'JOB'}
+                            </Text>
                           </View>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              <MaterialIcons name={item.type === 'collabo' ? 'groups' : 'work'} size={14} color={c.subtext} />
-                              <Text style={{ fontSize: 13, color: c.subtext, flex: 1 }} numberOfLines={1}>
-                                  {item.subtitle}
-                              </Text>
-                          </View>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                              <MaterialIcons name="payments" size={14} color={c.primary} />
-                              <Text style={{ fontSize: 13, color: c.primary, fontWeight: '600' }}>
-                                  {item.budget ? `₦${item.budget.toLocaleString()}` : 'Budget Negotiable'}
-                              </Text>
-                          </View>
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, flex: 1 }} numberOfLines={1}>
+                            {item.title}
+                          </Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <MaterialIcons name={item.type === 'collabo' ? 'groups' : 'work'} size={14} color={c.subtext} />
+                          <Text style={{ fontSize: 13, color: c.subtext, flex: 1 }} numberOfLines={1}>
+                            {item.subtitle}
+                          </Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                          <MaterialIcons name="payments" size={14} color={c.primary} />
+                          <Text style={{ fontSize: 13, color: c.primary, fontWeight: '600' }}>
+                            {item.budget ? `₦${item.budget.toLocaleString()}` : 'Budget Negotiable'}
+                          </Text>
+                        </View>
                       </View>
                       <View style={{ marginLeft: 12 }}>
-                          <View style={{
-                              width: 24, height: 24, borderRadius: 12,
-                              borderWidth: 2,
-                              borderColor: inviteSelectedJob?._id === item._id ? c.primary : c.border,
-                              alignItems: 'center', justifyContent: 'center',
-                              backgroundColor: inviteSelectedJob?._id === item._id ? c.primary : 'transparent'
-                          }}>
-                              {inviteSelectedJob?._id === item._id && <MaterialIcons name="check" size={16} color="#FFF" />}
-                          </View>
+                        <View style={{
+                          width: 24, height: 24, borderRadius: 12,
+                          borderWidth: 2,
+                          borderColor: inviteSelectedJob?._id === item._id ? c.primary : c.border,
+                          alignItems: 'center', justifyContent: 'center',
+                          backgroundColor: inviteSelectedJob?._id === item._id ? c.primary : 'transparent'
+                        }}>
+                          {inviteSelectedJob?._id === item._id && <MaterialIcons name="check" size={16} color="#FFF" />}
+                        </View>
                       </View>
                     </TouchableOpacity>
                   ))
                 ) : (
                   <View style={{ padding: 30, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                      <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: c.border + '30', alignItems: 'center', justifyContent: 'center' }}>
-                          <MaterialIcons name="work-off" size={28} color={c.subtext} />
-                      </View>
-                      <Text style={{ textAlign: 'center', color: c.text, fontSize: 16, fontWeight: '600' }}>
-                          No Active Jobs or Projects
-                      </Text>
-                      <Text style={{ textAlign: 'center', color: c.subtext, fontSize: 14, maxWidth: 240 }}>
-                          You need to post a job or create a Collabo project before you can invite freelancers.
-                      </Text>
+                    <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: c.border + '30', alignItems: 'center', justifyContent: 'center' }}>
+                      <MaterialIcons name="work-off" size={28} color={c.subtext} />
+                    </View>
+                    <Text style={{ textAlign: 'center', color: c.text, fontSize: 16, fontWeight: '600' }}>
+                      No Active Jobs or Projects
+                    </Text>
+                    <Text style={{ textAlign: 'center', color: c.subtext, fontSize: 14, maxWidth: 240 }}>
+                      You need to post a job or create a Collabo project before you can invite freelancers.
+                    </Text>
                   </View>
                 )}
               </ScrollView>
