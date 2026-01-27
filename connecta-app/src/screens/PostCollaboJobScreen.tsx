@@ -61,6 +61,8 @@ export default function PostCollaboJobScreen({ navigation }: any) {
     const [teamName, setTeamName] = useState('');
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [useAI, setUseAI] = useState(true);
+
     const [scopingData, setScopingData] = useState<any>(null);
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -92,7 +94,7 @@ export default function PostCollaboJobScreen({ navigation }: any) {
             const finalDescription = description.trim() || `Project Title: ${title}. Category: ${JOB_CATEGORIES.find(c => c.id === selectedCategoryId)?.label}. Niche: ${subCategory}.`;
 
             // Call the backend scoping endpoint
-            const response = await post('/api/collabo/scope', { description: finalDescription });
+            const response = await post('/api/collabo/scope', { description: finalDescription, useAI });
             setScopingData((response as any).data || response);
             setCurrentStep(3);
         } catch (error: any) {
@@ -170,116 +172,6 @@ export default function PostCollaboJobScreen({ navigation }: any) {
             setIsLoading(false);
         }
     };
-
-    const renderBasics = () => (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-            <View style={styles.stepHeader}>
-                <Text style={[styles.stepMainTitle, { color: c.text }]} adjustsFontSizeToFit numberOfLines={1}>Project Basics</Text>
-                <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Give your project a name and choose its category.</Text>
-            </View>
-
-            {/* Project Title */}
-            <View style={styles.refinedInputGroup}>
-                <Text style={[styles.refinedLabel, { color: c.text }]}>PROJECT TITLE</Text>
-                <View style={[styles.inputWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
-                    <MaterialIcons name="business-center" size={18} color={c.subtext} style={{ marginRight: 10 }} />
-                    <TextInput
-                        style={[styles.refinedTextInput, { color: c.text }]}
-                        placeholder="e.g. Build a FinTech Mobile App"
-                        placeholderTextColor={c.subtext}
-                        value={title}
-                        onChangeText={(t) => { setTitle(t); clearError('title'); }}
-                    />
-                </View>
-                {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-            </View>
-
-            {/* Category Selection */}
-            <View style={styles.refinedInputGroup}>
-                <View style={styles.labelRow}>
-                    <Text style={[styles.refinedLabel, { color: c.text }]}>CATEGORY</Text>
-                    <Text style={{ color: '#EF4444', fontSize: 12 }}>* Required</Text>
-                </View>
-                <View style={styles.categoryGrid}>
-                    {JOB_CATEGORIES.map((cat) => {
-                        const isSelected = selectedCategoryId === cat.id;
-                        return (
-                            <TouchableOpacity
-                                key={cat.id}
-                                onPress={() => {
-                                    setSelectedCategoryId(cat.id);
-                                    setSubCategory('');
-                                }}
-                                style={[
-                                    styles.categoryCard,
-                                    {
-                                        backgroundColor: c.card,
-                                        borderColor: isSelected ? c.primary : c.border,
-                                        borderWidth: isSelected ? 2 : 1,
-                                    }
-                                ]}
-                            >
-                                <View style={[styles.catIconCircle, { backgroundColor: isSelected ? c.primary + '15' : c.border + '30' }]}>
-                                    <MaterialIcons name={cat.icon as any} size={22} color={isSelected ? c.primary : c.subtext} />
-                                </View>
-                                <View style={styles.catTextWrapper}>
-                                    <Text style={[styles.catCardText, { color: isSelected ? c.text : c.subtext, fontWeight: isSelected ? '800' : '600' }]}>
-                                        {cat.label}
-                                    </Text>
-                                </View>
-                                {isSelected && (
-                                    <View style={[styles.selectionIndicator, { backgroundColor: c.primary }]} />
-                                )}
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-                {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
-            </View>
-
-            {/* Specialization */}
-            {selectedCategoryId && JOB_CATEGORIES.find(cat => cat.id === selectedCategoryId)?.subcategories.length ? (
-                <View style={styles.refinedInputGroup}>
-                    <Text style={[styles.refinedLabel, { color: c.text }]}>SPECIALIZATION</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-                        {JOB_CATEGORIES.find(cat => cat.id === selectedCategoryId)?.subcategories.map(sub => (
-                            <TouchableOpacity
-                                key={sub}
-                                onPress={() => setSubCategory(sub)}
-                                style={[
-                                    styles.nicheChip,
-                                    {
-                                        backgroundColor: subCategory === sub ? c.primary : c.card,
-                                        borderColor: subCategory === sub ? c.primary : c.border
-                                    }
-                                ]}
-                            >
-                                <Text style={[styles.nicheText, { color: subCategory === sub ? '#FFF' : c.text }]}>{sub}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            ) : null}
-
-            <View style={{ alignItems: 'flex-end', marginTop: 12 }}>
-                <Button
-                    title="Next Step"
-                    onPress={() => {
-                        const newErrors: Record<string, string> = {};
-                        if (!title.trim()) newErrors.title = 'Project title is required';
-                        if (!selectedCategoryId) newErrors.category = 'Please select a category';
-
-                        if (Object.keys(newErrors).length > 0) {
-                            setErrors(newErrors);
-                            return;
-                        }
-                        setCurrentStep(1);
-                    }}
-                    style={styles.smallNextBtn}
-                />
-            </View>
-        </ScrollView>
-    );
 
     const renderDetails = () => (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
@@ -530,6 +422,116 @@ export default function PostCollaboJobScreen({ navigation }: any) {
         </ScrollView>
     );
 
+    const renderBasics = () => (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+            <View style={styles.stepHeader}>
+                <Text style={[styles.stepMainTitle, { color: c.text }]} adjustsFontSizeToFit numberOfLines={1}>Project Basics</Text>
+                <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Give your project a name and choose its category.</Text>
+            </View>
+
+            {/* Project Title */}
+            <View style={styles.refinedInputGroup}>
+                <Text style={[styles.refinedLabel, { color: c.text }]}>PROJECT TITLE</Text>
+                <View style={[styles.inputWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
+                    <MaterialIcons name="business-center" size={18} color={c.subtext} style={{ marginRight: 10 }} />
+                    <TextInput
+                        style={[styles.refinedTextInput, { color: c.text }]}
+                        placeholder="e.g. Build a FinTech Mobile App"
+                        placeholderTextColor={c.subtext}
+                        value={title}
+                        onChangeText={(t) => { setTitle(t); clearError('title'); }}
+                    />
+                </View>
+                {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+            </View>
+
+            {/* Category Selection */}
+            <View style={styles.refinedInputGroup}>
+                <View style={styles.labelRow}>
+                    <Text style={[styles.refinedLabel, { color: c.text }]}>CATEGORY</Text>
+                    <Text style={{ color: '#EF4444', fontSize: 12 }}>* Required</Text>
+                </View>
+                <View style={styles.categoryGrid}>
+                    {JOB_CATEGORIES.map((cat) => {
+                        const isSelected = selectedCategoryId === cat.id;
+                        return (
+                            <TouchableOpacity
+                                key={cat.id}
+                                onPress={() => {
+                                    setSelectedCategoryId(cat.id);
+                                    setSubCategory('');
+                                }}
+                                style={[
+                                    styles.categoryCard,
+                                    {
+                                        backgroundColor: c.card,
+                                        borderColor: isSelected ? c.primary : c.border,
+                                        borderWidth: isSelected ? 2 : 1,
+                                    }
+                                ]}
+                            >
+                                <View style={[styles.catIconCircle, { backgroundColor: isSelected ? c.primary + '15' : c.border + '30' }]}>
+                                    <MaterialIcons name={cat.icon as any} size={22} color={isSelected ? c.primary : c.subtext} />
+                                </View>
+                                <View style={styles.catTextWrapper}>
+                                    <Text style={[styles.catCardText, { color: isSelected ? c.text : c.subtext, fontWeight: isSelected ? '800' : '600' }]}>
+                                        {cat.label}
+                                    </Text>
+                                </View>
+                                {isSelected && (
+                                    <View style={[styles.selectionIndicator, { backgroundColor: c.primary }]} />
+                                )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+                {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+            </View>
+
+            {/* Specialization */}
+            {selectedCategoryId && JOB_CATEGORIES.find(cat => cat.id === selectedCategoryId)?.subcategories.length ? (
+                <View style={styles.refinedInputGroup}>
+                    <Text style={[styles.refinedLabel, { color: c.text }]}>SPECIALIZATION</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                        {JOB_CATEGORIES.find(cat => cat.id === selectedCategoryId)?.subcategories.map(sub => (
+                            <TouchableOpacity
+                                key={sub}
+                                onPress={() => setSubCategory(sub)}
+                                style={[
+                                    styles.nicheChip,
+                                    {
+                                        backgroundColor: subCategory === sub ? c.primary : c.card,
+                                        borderColor: subCategory === sub ? c.primary : c.border
+                                    }
+                                ]}
+                            >
+                                <Text style={[styles.nicheText, { color: subCategory === sub ? '#FFF' : c.text }]}>{sub}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            ) : null}
+
+            <View style={{ alignItems: 'flex-end', marginTop: 12 }}>
+                <Button
+                    title="Next Step"
+                    onPress={() => {
+                        const newErrors: Record<string, string> = {};
+                        if (!title.trim()) newErrors.title = 'Project title is required';
+                        if (!selectedCategoryId) newErrors.category = 'Please select a category';
+
+                        if (Object.keys(newErrors).length > 0) {
+                            setErrors(newErrors);
+                            return;
+                        }
+                        setCurrentStep(1);
+                    }}
+                    style={styles.smallNextBtn}
+                />
+            </View>
+        </ScrollView>
+    );
+
     const renderChatStep = () => (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
             <View style={styles.stepHeader}>
@@ -537,27 +539,69 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                 <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Describe your vision. Our AI will architect the team, budget, and timeline.</Text>
             </View>
 
+            {/* AI Toggle */}
+            <TouchableOpacity
+                onPress={() => setUseAI(!useAI)}
+                style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: c.card,
+                    padding: 16,
+                    borderRadius: 12,
+                    marginBottom: 20,
+                    borderWidth: 1,
+                    borderColor: useAI ? c.primary : c.border
+                }}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{
+                        width: 40, height: 40,
+                        borderRadius: 20,
+                        backgroundColor: useAI ? c.primary + '15' : c.border + '30',
+                        alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <MaterialIcons name="auto-awesome" size={20} color={useAI ? c.primary : c.subtext} />
+                    </View>
+                    <View>
+                        <Text style={{ color: c.text, fontWeight: '700', fontSize: 16 }}>AI Architect</Text>
+                        <Text style={{ color: c.subtext, fontSize: 12 }}>{useAI ? "Enabled (Recommended)" : "Disabled (Manual Mode)"}</Text>
+                    </View>
+                </View>
+                <View style={{
+                    width: 48, height: 28,
+                    borderRadius: 14,
+                    backgroundColor: useAI ? c.primary : c.border,
+                    padding: 2,
+                    alignItems: useAI ? 'flex-end' : 'flex-start'
+                }}>
+                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#FFF' }} />
+                </View>
+            </TouchableOpacity>
+
             {/* How it works guide */}
-            <View style={[styles.guideBox, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
-                <View style={styles.guideItem}>
-                    <View style={[styles.guideNumber, { backgroundColor: c.primary }]}>
-                        <Text style={styles.guideNumberText}>1</Text>
+            {useAI && (
+                <View style={[styles.guideBox, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
+                    <View style={styles.guideItem}>
+                        <View style={[styles.guideNumber, { backgroundColor: c.primary }]}>
+                            <Text style={styles.guideNumberText}>1</Text>
+                        </View>
+                        <Text style={[styles.guideText, { color: c.text }]}>Describe your project in plain English.</Text>
                     </View>
-                    <Text style={[styles.guideText, { color: c.text }]}>Describe your project in plain English.</Text>
-                </View>
-                <View style={styles.guideItem}>
-                    <View style={[styles.guideNumber, { backgroundColor: c.primary }]}>
-                        <Text style={styles.guideNumberText}>2</Text>
+                    <View style={styles.guideItem}>
+                        <View style={[styles.guideNumber, { backgroundColor: c.primary }]}>
+                            <Text style={styles.guideNumberText}>2</Text>
+                        </View>
+                        <Text style={[styles.guideText, { color: c.text }]}>AI analyzes and builds your team plan.</Text>
                     </View>
-                    <Text style={[styles.guideText, { color: c.text }]}>AI analyzes and builds your team plan.</Text>
                 </View>
-            </View>
+            )}
 
             <View style={[styles.notionBox, { backgroundColor: c.card, borderColor: errors.description ? '#EF4444' : c.border }]}>
                 <View style={styles.notionHeader}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <MaterialIcons name="auto-awesome" size={14} color={c.subtext} />
-                        <Text style={[styles.notionLabel, { color: c.subtext }]}>AI ARCHITECT (OPTIONAL)</Text>
+                        <MaterialIcons name={useAI ? "auto-awesome" : "edit"} size={14} color={c.subtext} />
+                        <Text style={[styles.notionLabel, { color: c.subtext }]}>{useAI ? "AI ARCHITECT (OPTIONAL)" : "PROJECT DESCRIPTION"}</Text>
                     </View>
                     {description.length > 0 && (
                         <TouchableOpacity onPress={() => setDescription('')}>
@@ -568,7 +612,7 @@ export default function PostCollaboJobScreen({ navigation }: any) {
 
                 <TextInput
                     style={[styles.notionInput, { color: c.text }]}
-                    placeholder="Type your project vision here (or leave blank)..."
+                    placeholder={useAI ? "Type your project vision here (or leave blank)..." : "Describe your project requirements..."}
                     placeholderTextColor={c.subtext + '80'}
                     multiline
                     value={description}
@@ -580,7 +624,7 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={[styles.statusDotSmall, { backgroundColor: description.length > 0 ? c.primary : c.border }]} />
                         <Text style={[styles.notionHint, { color: c.subtext }]}>
-                            {description.length === 0 ? "Using title & category" : "Ready to architect"}
+                            {description.length === 0 ? "Using title & category" : (useAI ? "Ready to architect" : "Ready to proceed")}
                         </Text>
                     </View>
                     <Text style={[styles.notionCharCount, { color: c.subtext }]}>{description.length} characters</Text>
@@ -588,36 +632,38 @@ export default function PostCollaboJobScreen({ navigation }: any) {
             </View>
 
             {/* Quick Prompts */}
-            <View style={{ marginTop: 24 }}>
-                <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 12 }]}>QUICK INSPIRATION</Text>
-                <View style={{ gap: 8 }}>
-                    {(STUDIO_PROMPTS[selectedCategoryId] || STUDIO_PROMPTS.default).map((prompt: any) => (
-                        <TouchableOpacity
-                            key={prompt.id}
-                            onPress={() => {
-                                setDescription(prompt.text);
-                                clearError('description');
-                            }}
-                            style={[
-                                styles.promptChip,
-                                {
-                                    backgroundColor: c.card,
-                                    borderColor: c.border,
-                                }
-                            ]}
-                        >
-                            <MaterialIcons name={prompt.icon as any} size={16} color={c.primary} />
-                            <Text
-                                style={[styles.promptText, { color: c.text }]}
-                                numberOfLines={1}
-                                adjustsFontSizeToFit
+            {useAI && (
+                <View style={{ marginTop: 24 }}>
+                    <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 12 }]}>QUICK INSPIRATION</Text>
+                    <View style={{ gap: 8 }}>
+                        {(STUDIO_PROMPTS[selectedCategoryId] || STUDIO_PROMPTS.default).map((prompt: any) => (
+                            <TouchableOpacity
+                                key={prompt.id}
+                                onPress={() => {
+                                    setDescription(prompt.text);
+                                    clearError('description');
+                                }}
+                                style={[
+                                    styles.promptChip,
+                                    {
+                                        backgroundColor: c.card,
+                                        borderColor: c.border,
+                                    }
+                                ]}
                             >
-                                {prompt.text}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                                <MaterialIcons name={prompt.icon as any} size={16} color={c.primary} />
+                                <Text
+                                    style={[styles.promptText, { color: c.text }]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                >
+                                    {prompt.text}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
                 </View>
-            </View>
+            )}
 
             <View style={{ alignItems: 'flex-end', marginTop: 32 }}>
                 <TouchableOpacity
@@ -632,8 +678,8 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                         <ActivityIndicator color="#FFF" size="small" />
                     ) : (
                         <>
-                            <Text style={styles.launchBtnText}>Analyze & Architect</Text>
-                            <MaterialIcons name="rocket-launch" size={18} color="#FFF" />
+                            <Text style={styles.launchBtnText}>{useAI ? "Analyze & Architect" : "Continue to Review"}</Text>
+                            <MaterialIcons name={useAI ? "rocket-launch" : "arrow-forward"} size={18} color="#FFF" />
                         </>
                     )}
                 </TouchableOpacity>

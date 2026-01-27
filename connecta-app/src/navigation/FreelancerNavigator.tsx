@@ -34,6 +34,7 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 import DesktopLayout from '../components/layout/DesktopLayout';
+import { useTheme } from '../context/ThemeContext';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { getTotalUnreadCount } from '../services/messageService';
@@ -144,6 +145,13 @@ function FreelancerTabs() {
 export default function FreelancerNavigator() {
     const { width } = useWindowDimensions();
     const isDesktop = width > 768;
+    const { setThemeMode } = useTheme();
+
+    useEffect(() => {
+        if (isDesktop) {
+            setThemeMode('light'); // Enforce light mode on Desktop
+        }
+    }, [isDesktop, setThemeMode]);
 
     const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>

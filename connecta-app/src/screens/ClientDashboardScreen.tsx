@@ -408,7 +408,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                   <TouchableOpacity
                     key={f._id || f.id || `freelancer-${index}`}
                     activeOpacity={0.7}
-                    onPress={() => navigation.navigate('ClientProfile', { userId: f._id || f.id })}
+                    onPress={() => navigation.navigate('FreelancerPublicProfile', { id: f._id || f.id })}
                     style={{
                       backgroundColor: c.card,
                       borderRadius: 12,
@@ -550,7 +550,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 {!selectedCollaboProject ? (
                   <>
                     {/* Individual Jobs Section */}
-                    {myJobs.length > 0 && (
+                    {myJobs.length > 0 ? (
                       <View style={{ marginBottom: 8 }}>
                         <Text style={{ fontSize: 12, fontWeight: '700', color: c.subtext, marginBottom: 8, textTransform: 'uppercase' }}>Individual Jobs</Text>
                         {myJobs.filter(j => j.status === 'active' || j.status === 'Open').map((job) => (
@@ -578,6 +578,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                           </TouchableOpacity>
                         ))}
                       </View>
+                    ) : (
+                      <Text style={{ textAlign: 'center', color: c.subtext, padding: 20, display: collaboProjects.length === 0 ? 'flex' : 'none' }}>No active individual jobs found.</Text>
                     )}
 
                     {/* Collabo Projects Section */}

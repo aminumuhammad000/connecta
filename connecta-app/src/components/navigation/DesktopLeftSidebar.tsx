@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useThemeColors } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -7,7 +8,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getMyProfile } from '../../services/profileService';
 import { Profile } from '../../types';
 
-const DesktopLeftSidebar = ({ navigation }: any) => {
+const DesktopLeftSidebar = () => {
+    const navigation = useNavigation<any>();
     const c = useThemeColors();
     const { user } = useAuth();
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -99,7 +101,10 @@ const DesktopLeftSidebar = ({ navigation }: any) => {
 
                 {/* Premium Upsell (Freelancer Only usually) */}
                 {!isClient && !user?.isPremium && (
-                    <TouchableOpacity style={[styles.premiumRow, { borderTopColor: c.border, backgroundColor: c.primary + '10' }]}>
+                    <TouchableOpacity
+                        style={[styles.premiumRow, { borderTopColor: c.border, backgroundColor: c.primary + '10' }]}
+                        onPress={() => navigation.navigate('FreelancerMain', { screen: 'ManageSubscription' })}
+                    >
                         <LinearGradient
                             colors={['#F59E0B', '#D97706']}
                             style={styles.premiumIcon}

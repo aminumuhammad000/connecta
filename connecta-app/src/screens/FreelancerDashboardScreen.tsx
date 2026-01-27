@@ -298,7 +298,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <MaterialIcons name="work" size={24} color="#8B5CF6" />
                 </View>
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>12</Text>
+                  <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>{stats?.totalProjects || 0}</Text>
                   <Text style={styles.statLabel}>Total Projects</Text>
                 </View>
               </View>

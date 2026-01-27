@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MobileLandingScreen from '../screens/MobileLandingScreen';
 import PublicJobSearchScreen from '../screens/PublicJobSearchScreen';
@@ -17,8 +18,10 @@ export default function RootNavigator() {
     const { isAuthenticated, user } = useAuth();
     const { role } = useRole();
 
+    const initialRoute = Platform.OS === 'web' ? 'Auth' : 'Landing';
+
     return (
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Landing">
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
             <Stack.Screen name="Landing" component={MobileLandingScreen} />
             <Stack.Screen name="PublicSearch" component={PublicJobSearchScreen} />
             <Stack.Screen name="PublicFreelancerSearch" component={PublicFreelancerSearchScreen} />

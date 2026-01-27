@@ -198,7 +198,14 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                   <View style={{ height: 1, backgroundColor: c.border, marginVertical: 12 }} />
 
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                      onPress={() => {
+                        if (p.freelancerId && (p.freelancerId._id || p.freelancerId.id)) {
+                          navigation.navigate('FreelancerPublicProfile', { id: p.freelancerId._id || p.freelancerId.id });
+                        }
+                      }}
+                    >
                       <Image
                         source={{ uri: p.freelancerId?.profileImage || `https://ui-avatars.com/api/?name=${p.freelancerId?.firstName}+${p.freelancerId?.lastName}&background=random` }}
                         style={styles.avatar}
@@ -209,7 +216,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                         </Text>
                         <Text style={{ fontSize: 11, color: c.subtext }}>Freelancer</Text>
                       </View>
-                    </View>
+                    </TouchableOpacity>
 
                     <View style={{ alignItems: 'flex-end' }}>
                       <Text style={[styles.cardPrice, { color: c.text }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
