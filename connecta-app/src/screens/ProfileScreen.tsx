@@ -310,13 +310,13 @@ export default function ProfileScreen({ navigation }: any) {
                 </View>
                 <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
-                <View style={styles.actionButtons}>
+                <View style={[styles.actionButtons, { marginBottom: 16 }]}>
                   <TouchableOpacity
                     style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
                     onPress={() => navigation.navigate('EditProfile')}
                   >
                     <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Edit</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -324,101 +324,51 @@ export default function ProfileScreen({ navigation }: any) {
                     onPress={() => navigation.navigate('JobPreferences')}
                   >
                     <Ionicons name="options-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Preferences</Text>
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Prefs</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                    onPress={() => navigation.navigate('ManageSubscription')}
-                  >
-                    <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Profile Completeness Progress Bar */}
-              <View style={styles.completenessContainer}>
-                <View style={styles.completenessHeader}>
-                  <Text style={[styles.completenessTitle, { color: c.text }]}>Profile Completeness</Text>
-                  <Text style={[styles.completenessPercent, { color: c.primary }]}>{completeness}%</Text>
-                </View>
-                <View style={[styles.progressBarBg, { backgroundColor: c.border }]}>
-                  <Animated.View
                     style={[
-                      styles.progressBarFill,
+                      styles.profileActionBtn,
                       {
-                        backgroundColor: c.primary,
-                        width: `${completeness}%`
+                        borderColor: profile?.isPremium ? '#F59E0B' : c.border,
+                        backgroundColor: profile?.isPremium ? '#F59E0B15' : c.card,
+                        borderWidth: profile?.isPremium ? 1.5 : 1
                       }
                     ]}
-                  />
-                </View>
-                {completeness < 100 && (
-                  <TouchableOpacity
-                    style={styles.completenessTip}
-                    onPress={() => navigation.navigate('EditProfile')}
+                    onPress={() => navigation.navigate('ManageSubscription')}
                   >
-                    <Ionicons name="bulb-outline" size={14} color={c.primary} />
-                    <Text style={[styles.completenessTipText, { color: c.primary }]}>
-                      Complete your profile to get 5x more job matches
+                    <Ionicons
+                      name={profile?.isPremium ? "diamond" : "star-outline"}
+                      size={14}
+                      color={profile?.isPremium ? '#F59E0B' : c.text}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={[styles.profileActionText, { color: profile?.isPremium ? '#F59E0B' : c.text, fontWeight: '700' }]}>
+                      {profile?.isPremium ? 'Premium' : 'Go Pro'}
                     </Text>
                   </TouchableOpacity>
-                )}
-              </View>
-              <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
+                </View>
 
-              <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                  onPress={() => navigation.navigate('EditProfile')}
-                >
-                  <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                  <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                  onPress={() => navigation.navigate('JobPreferences')}
-                >
-                  <Ionicons name="options-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                  <Text style={[styles.profileActionText, { color: c.text }]}>Preferences</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                  onPress={() => navigation.navigate('ManageSubscription')}
-                >
-                  <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
-                </TouchableOpacity>
+                {/* Profile Strength with Description */}
+                <View style={{ marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <View>
+                      <Text style={{ fontSize: 12, color: c.text, fontWeight: '700' }}>Profile Strength</Text>
+                      <Text style={{ fontSize: 10, color: c.subtext }}>Complete your profile to unlock more jobs</Text>
+                    </View>
+                    <Text style={{ fontSize: 14, color: c.primary, fontWeight: '800' }}>{completeness}%</Text>
+                  </View>
+                  <View style={{ height: 8, backgroundColor: c.border, borderRadius: 4, overflow: 'hidden' }}>
+                    <LinearGradient
+                      colors={[c.primary, '#FF9F70']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ width: `${completeness}%`, height: '100%' }}
+                    />
+                  </View>
+                </View>
               </View>
-            </View>
-
-            {/* Ultra-Sleek Profile Completeness */}
-            <View style={styles.ultraSleekCompleteness}>
-              <View style={styles.completenessRow}>
-                <Text style={[styles.tinyLabel, { color: c.subtext }]}>Profile Strength</Text>
-                <Text style={[styles.tinyValue, { color: c.primary }]}>{completeness}%</Text>
-              </View>
-              <View style={[styles.thinTrack, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
-                <LinearGradient
-                  colors={[c.primary, '#FF9F70']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.thinFill, { width: `${completeness}%` }]}
-                />
-              </View>
-              {completeness < 100 && (
-                <TouchableOpacity
-                  style={styles.compactTip}
-                  onPress={() => navigation.navigate('EditProfile')}
-                >
-                  <Text style={[styles.compactTipText, { color: c.subtext }]} numberOfLines={1}>
-                    <Text style={{ color: c.primary, fontWeight: '800' }}>• </Text>
-                    Add portfolio to reach 100% strength
-                  </Text>
-                  <Ionicons name="arrow-forward" size={10} color={c.primary} />
-                </TouchableOpacity>
-              )}
             </View>
           </View>
 

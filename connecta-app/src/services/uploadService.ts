@@ -36,21 +36,31 @@ export const uploadImage = async (uri: string): Promise<string> => {
  * @returns URL of the uploaded avatar
  */
 export const uploadAvatar = async (uri: string): Promise<string> => {
+    console.log('📤 Starting avatar upload for URI:', uri);
     const formData = new FormData();
-    const filename = uri.split('/').pop();
-    const match = /\.(\w+)$/.exec(filename || '');
+    const filename = uri.split('/').pop() || 'avatar.jpg';
+    const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-    formData.append('avatar', {
-        uri,
+    // In React Native, the object must have uri, name, and type
+    const fileToUpload = {
+        uri: uri,
         name: filename,
-        type,
-    } as any);
+        type: type,
+    };
 
-    const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_AVATAR, formData);
+    console.log('FormData file object:', fileToUpload);
 
-    // Backend returns { success: true, data: { url: "https://res.cloudinary.com/..." } }
-    return response.data?.url;
+    formData.append('avatar', fileToUpload as any);
+
+    try {
+        const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_AVATAR, formData);
+        console.log('✅ Upload response:', response.data);
+        return response.data?.url;
+    } catch (error) {
+        console.error('❌ Upload service error:', error);
+        throw error;
+    }
 };
 
 /**
@@ -59,19 +69,28 @@ export const uploadAvatar = async (uri: string): Promise<string> => {
  * @returns URL of the uploaded image
  */
 export const uploadPortfolioImage = async (uri: string): Promise<string> => {
+    console.log('📤 Starting portfolio upload for URI:', uri);
     const formData = new FormData();
-    const filename = uri.split('/').pop();
-    const match = /\.(\w+)$/.exec(filename || '');
+    const filename = uri.split('/').pop() || 'portfolio.jpg';
+    const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-    formData.append('file', {
-        uri,
+    const fileToUpload = {
+        uri: uri,
         name: filename,
-        type,
-    } as any);
+        type: type,
+    };
 
-    const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_PORTFOLIO_IMAGE, formData);
+    console.log('FormData file object:', fileToUpload);
 
-    // Backend returns { success: true, data: { url: "https://res.cloudinary.com/..." } }
-    return response.data?.url;
+    formData.append('file', fileToUpload as any);
+
+    try {
+        const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_PORTFOLIO_IMAGE, formData);
+        console.log('✅ Upload response:', response.data);
+        return response.data?.url;
+    } catch (error) {
+        console.error('❌ Upload service error:', error);
+        throw error;
+    }
 };

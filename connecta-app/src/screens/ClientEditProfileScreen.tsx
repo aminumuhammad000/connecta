@@ -238,18 +238,20 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     <View style={styles.avatarWrapper}>
                         <Avatar uri={profileImage || undefined} name={formData.firstName} size={110} />
                         <TouchableOpacity
-                            style={[styles.editPhotoButton, { backgroundColor: c.primary }]}
+                            style={[styles.editPhotoButton, { backgroundColor: c.primary, width: 40, height: 40, borderRadius: 20 }]}
                             onPress={handlePickImage}
                             disabled={uploadingImage}
                         >
                             {uploadingImage ? (
                                 <ActivityIndicator size="small" color="white" />
                             ) : (
-                                <Ionicons name="camera" size={18} color="white" />
+                                <Ionicons name="camera" size={22} color="white" />
                             )}
                         </TouchableOpacity>
                     </View>
-                    <Text style={[styles.photoHint, { color: c.subtext }]}>Tap to change profile picture</Text>
+                    <Text style={[styles.photoHint, { color: c.text, fontWeight: '600' }]}>
+                        {uploadingImage ? 'Uploading your photo...' : 'Tap to change profile picture'}
+                    </Text>
                 </View>
 
                 <Card variant="outlined" style={styles.sectionCard}>

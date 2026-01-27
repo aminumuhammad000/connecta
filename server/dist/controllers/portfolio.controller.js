@@ -5,6 +5,9 @@ import Profile from '../models/Profile.model.js';
 export const uploadPortfolioImage = async (req, res) => {
     try {
         if (!req.file) {
+            console.log('❌ Portfolio Upload: No file in request');
+            console.log('Request Headers:', req.headers);
+            console.log('Request Body:', req.body);
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
         const imageUrl = req.file.path;
