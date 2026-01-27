@@ -5,6 +5,7 @@ import {
   getTopFreelancers,
   getRecentMessages,
   getAdminStats,
+  getActiveProjects,
 } from '../controllers/Dashboard.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 
@@ -15,6 +16,9 @@ router.use(authenticate);
 
 // Get client dashboard stats
 router.get('/stats', getClientDashboard);
+
+// Get active projects for client
+router.get('/active-projects', getActiveProjects);
 
 // Get admin dashboard stats
 router.get('/admin/stats', getAdminStats);
