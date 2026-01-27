@@ -4,6 +4,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { API_BASE_URL } from '../utils/constants';
 
 const PublicFreelancerSearchScreen = () => {
     const navigation = useNavigation<any>();
@@ -26,9 +27,7 @@ const PublicFreelancerSearchScreen = () => {
         setLoading(true);
         setHasSearched(true);
         try {
-            // Adjust API endpoint as needed for search. Using generic list with search param if available or client filtering if not.
-            // Assuming /api/users supports ?search= or ?q= or similar. Using q generic convention.
-            const res = await fetch(`https://api.myconnecta.ng/api/users?userType=freelancer&search=${encodeURIComponent(q)}`);
+            const res = await fetch(`${API_BASE_URL}/api/users?userType=freelancer&search=${encodeURIComponent(q)}`);
             const data = await res.json();
             if (data.success) {
                 setFreelancers(data.data);

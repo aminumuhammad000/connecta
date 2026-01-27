@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Animated, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Animated, Linking, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -171,6 +171,9 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
     return true;
   });
 
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
+
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: c.background, justifyContent: 'center', alignItems: 'center' }}>
@@ -181,7 +184,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-      <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
+      <View style={{ flex: 1, maxWidth: isDesktop ? '100%' : 600, alignSelf: 'center', width: '100%' }}>
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: c.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
@@ -273,7 +276,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
           <View style={styles.section}>
             <Text style={[styles.resultsText, { color: c.subtext, marginBottom: 12 }]}>{filteredJobs.length} jobs found</Text>
 
-            <View style={{ gap: 12 }}>
+            <View style={[isDesktop && styles.desktopGrid, { gap: 12 }]}>
               {filteredJobs.length > 0 ? (
                 filteredJobs.map(job => {
                   if (!job) return null;
@@ -285,7 +288,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                   return (
                     <Animated.View
                       key={job._id}
-                      style={{ opacity: fadeAnims[job._id] || 1, transform: [{ scale: fadeAnims[job._id] || 1 }] }}
+                      style={[{ opacity: fadeAnims[job._id] || 1, transform: [{ scale: fadeAnims[job._id] || 1 }] }, isDesktop && styles.desktopCard]}
                     >
                       <TouchableOpacity
                         activeOpacity={0.7}
@@ -530,6 +533,14 @@ const styles = StyleSheet.create({
   cardFooter: {
     borderTopWidth: 1,
     marginTop: 8,
+  },
+  desktopGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  desktopCard: {
+    width: '48%',
   }
 });
 

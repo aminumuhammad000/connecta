@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
@@ -251,170 +251,175 @@ export default function ChatsScreen({ navigation }: any) {
         );
     };
 
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-            <View style={[styles.header, { borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={24} color={c.text} />
+            <View style={{ flex: 1, maxWidth: isDesktop ? 1200 : '100%', width: '100%', alignSelf: 'center' }}>
+                <View style={[styles.header, { borderBottomColor: c.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <Ionicons name="arrow-back" size={24} color={c.text} />
+                        </TouchableOpacity>
+                        <Text style={[styles.headerTitle, { color: c.text }]}>Chats</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => user?.userType === 'freelancer' ? setShowNewChatModal(true) : navigation.navigate('PublicFreelancerSearch')}
+                        style={[styles.newChatBtn, { backgroundColor: c.primary }]}
+                    >
+                        <Ionicons name="add" size={24} color="#FFF" />
                     </TouchableOpacity>
-                    <Text style={[styles.headerTitle, { color: c.text }]}>Chats</Text>
                 </View>
-                <TouchableOpacity
-                    onPress={() => user?.userType === 'freelancer' ? setShowNewChatModal(true) : navigation.navigate('PublicFreelancerSearch')}
-                    style={[styles.newChatBtn, { backgroundColor: c.primary }]}
-                >
-                    <Ionicons name="add" size={24} color="#FFF" />
-                </TouchableOpacity>
-            </View>
 
-            <View style={styles.searchContainer}>
-                <View style={[styles.searchBox, { backgroundColor: c.card, borderColor: c.border }]}>
-                    <Ionicons name="search" size={20} color={c.subtext} />
-                    <TextInput
-                        style={[styles.searchInput, { color: c.text }]}
-                        placeholder="Search conversations..."
-                        placeholderTextColor={c.subtext}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-            </View>
-
-            {user?.userType === 'freelancer' && clients.length > 0 && (
-                <View style={styles.quickChatContainer}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Start a Conversation</Text>
-                    <FlatList
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        data={clients}
-                        keyExtractor={item => `quick-${item._id}`}
-                        contentContainerStyle={styles.quickChatList}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity
-                                style={styles.quickChatItem}
-                                onPress={() => startNewChat(item)}
-                            >
-                                <View style={styles.quickAvatarWrapper}>
-                                    <Avatar
-                                        uri={item.profileImage || item.avatar}
-                                        name={`${item.firstName} ${item.lastName}`}
-                                        size={60}
-                                    />
-                                    <View style={[styles.onlineIndicator, { backgroundColor: '#10B981', borderColor: c.background }]} />
-                                </View>
-                                <Text style={[styles.quickName, { color: c.text }]} numberOfLines={1}>
-                                    {item.firstName}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-            )}
-
-            {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color={c.primary} />
-                </View>
-            ) : (
-                <FlatList
-                    data={filteredConversations}
-                    renderItem={renderItem}
-                    keyExtractor={item => item._id}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[c.primary]} />
-                    }
-                    ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="chatbubbles-outline" size={48} color={c.subtext} />
-                            <Text style={[styles.emptyText, { color: c.subtext }]}>No conversations yet</Text>
-                        </View>
-                    }
-                />
-            )
-            }
-
-            {/* New Chat Modal */}
-            <Modal
-                visible={showNewChatModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowNewChatModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: c.background }]}>
-                        <BlurView intensity={80} tint={c.isDark ? 'dark' : 'light'} style={styles.modalHeaderBlur}>
-                            <LinearGradient
-                                colors={[c.primary, c.primary + 'CC']}
-                                style={styles.modalHeaderGradient}
-                            >
-                                <View style={styles.modalHeaderRow}>
-                                    <Text style={styles.modalTitle}>New Chat</Text>
-                                    <TouchableOpacity
-                                        onPress={() => setShowNewChatModal(false)}
-                                        style={styles.closeBtn}
-                                    >
-                                        <Ionicons name="close" size={24} color="#FFF" />
-                                    </TouchableOpacity>
-                                </View>
-
-                                <View style={styles.modalSearchBox}>
-                                    <Ionicons name="search" size={20} color="rgba(255,255,255,0.7)" />
-                                    <TextInput
-                                        style={styles.modalSearchInput}
-                                        placeholder="Search clients..."
-                                        placeholderTextColor="rgba(255,255,255,0.5)"
-                                        value={clientSearch}
-                                        onChangeText={setClientSearch}
-                                    />
-                                </View>
-                            </LinearGradient>
-                        </BlurView>
-
-                        <View style={styles.clientListContainer}>
-                            <Text style={[styles.sectionLabel, { color: c.subtext }]}>CLIENTS FROM PROPOSALS</Text>
-
-                            {loadingClients ? (
-                                <ActivityIndicator size="small" color={c.primary} style={{ marginTop: 20 }} />
-                            ) : (
-                                <FlatList
-                                    data={clients.filter(cl =>
-                                        `${cl.firstName} ${cl.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())
-                                    )}
-                                    keyExtractor={item => item._id}
-                                    renderItem={({ item }) => (
-                                        <TouchableOpacity
-                                            style={styles.clientItem}
-                                            onPress={() => startNewChat(item)}
-                                        >
-                                            <Avatar
-                                                uri={item.profileImage || item.avatar}
-                                                name={`${item.firstName} ${item.lastName}`}
-                                                size={44}
-                                            />
-                                            <View style={styles.clientInfo}>
-                                                <Text style={[styles.clientName, { color: c.text }]}>
-                                                    {item.firstName} {item.lastName}
-                                                </Text>
-                                                <Text style={[styles.clientSub, { color: c.subtext }]}>
-                                                    {item.email}
-                                                </Text>
-                                            </View>
-                                            <Ionicons name="chevron-forward" size={20} color={c.border} />
-                                        </TouchableOpacity>
-                                    )}
-                                    ListEmptyComponent={
-                                        <View style={styles.emptyClients}>
-                                            <Text style={{ color: c.subtext }}>No clients found</Text>
-                                        </View>
-                                    }
-                                />
-                            )}
-                        </View>
+                <View style={styles.searchContainer}>
+                    <View style={[styles.searchBox, { backgroundColor: c.card, borderColor: c.border }]}>
+                        <Ionicons name="search" size={20} color={c.subtext} />
+                        <TextInput
+                            style={[styles.searchInput, { color: c.text }]}
+                            placeholder="Search conversations..."
+                            placeholderTextColor={c.subtext}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
                     </View>
                 </View>
-            </Modal>
+
+                {user?.userType === 'freelancer' && clients.length > 0 && (
+                    <View style={styles.quickChatContainer}>
+                        <Text style={[styles.sectionTitle, { color: c.text }]}>Start a Conversation</Text>
+                        <FlatList
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            data={clients}
+                            keyExtractor={item => `quick-${item._id}`}
+                            contentContainerStyle={styles.quickChatList}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.quickChatItem}
+                                    onPress={() => startNewChat(item)}
+                                >
+                                    <View style={styles.quickAvatarWrapper}>
+                                        <Avatar
+                                            uri={item.profileImage || item.avatar}
+                                            name={`${item.firstName} ${item.lastName}`}
+                                            size={60}
+                                        />
+                                        <View style={[styles.onlineIndicator, { backgroundColor: '#10B981', borderColor: c.background }]} />
+                                    </View>
+                                    <Text style={[styles.quickName, { color: c.text }]} numberOfLines={1}>
+                                        {item.firstName}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                )}
+
+                {loading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={c.primary} />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredConversations}
+                        renderItem={renderItem}
+                        keyExtractor={item => item._id}
+                        contentContainerStyle={styles.listContent}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+                        }
+                        ListEmptyComponent={
+                            <View style={styles.emptyState}>
+                                <Ionicons name="chatbubbles-outline" size={48} color={c.subtext} />
+                                <Text style={[styles.emptyText, { color: c.subtext }]}>No conversations yet</Text>
+                            </View>
+                        }
+                    />
+                )
+                }
+
+                {/* New Chat Modal */}
+                <Modal
+                    visible={showNewChatModal}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setShowNewChatModal(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                            <BlurView intensity={80} tint={c.isDark ? 'dark' : 'light'} style={styles.modalHeaderBlur}>
+                                <LinearGradient
+                                    colors={[c.primary, c.primary + 'CC']}
+                                    style={styles.modalHeaderGradient}
+                                >
+                                    <View style={styles.modalHeaderRow}>
+                                        <Text style={styles.modalTitle}>New Chat</Text>
+                                        <TouchableOpacity
+                                            onPress={() => setShowNewChatModal(false)}
+                                            style={styles.closeBtn}
+                                        >
+                                            <Ionicons name="close" size={24} color="#FFF" />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <View style={styles.modalSearchBox}>
+                                        <Ionicons name="search" size={20} color="rgba(255,255,255,0.7)" />
+                                        <TextInput
+                                            style={styles.modalSearchInput}
+                                            placeholder="Search clients..."
+                                            placeholderTextColor="rgba(255,255,255,0.5)"
+                                            value={clientSearch}
+                                            onChangeText={setClientSearch}
+                                        />
+                                    </View>
+                                </LinearGradient>
+                            </BlurView>
+
+                            <View style={styles.clientListContainer}>
+                                <Text style={[styles.sectionLabel, { color: c.subtext }]}>CLIENTS FROM PROPOSALS</Text>
+
+                                {loadingClients ? (
+                                    <ActivityIndicator size="small" color={c.primary} style={{ marginTop: 20 }} />
+                                ) : (
+                                    <FlatList
+                                        data={clients.filter(cl =>
+                                            `${cl.firstName} ${cl.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())
+                                        )}
+                                        keyExtractor={item => item._id}
+                                        renderItem={({ item }) => (
+                                            <TouchableOpacity
+                                                style={styles.clientItem}
+                                                onPress={() => startNewChat(item)}
+                                            >
+                                                <Avatar
+                                                    uri={item.profileImage || item.avatar}
+                                                    name={`${item.firstName} ${item.lastName}`}
+                                                    size={44}
+                                                />
+                                                <View style={styles.clientInfo}>
+                                                    <Text style={[styles.clientName, { color: c.text }]}>
+                                                        {item.firstName} {item.lastName}
+                                                    </Text>
+                                                    <Text style={[styles.clientSub, { color: c.subtext }]}>
+                                                        {item.email}
+                                                    </Text>
+                                                </View>
+                                                <Ionicons name="chevron-forward" size={20} color={c.border} />
+                                            </TouchableOpacity>
+                                        )}
+                                        ListEmptyComponent={
+                                            <View style={styles.emptyClients}>
+                                                <Text style={{ color: c.subtext }}>No clients found</Text>
+                                            </View>
+                                        }
+                                    />
+                                )}
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            </View>
         </SafeAreaView>
     );
 }

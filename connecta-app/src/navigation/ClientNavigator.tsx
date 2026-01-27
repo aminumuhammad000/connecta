@@ -1,4 +1,4 @@
-import React from 'react';
+import { useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,12 +41,16 @@ import { useAuth } from '../context/AuthContext';
 import { getTotalUnreadCount } from '../services/messageService';
 import { useState, useEffect } from 'react';
 
+
+
 function ClientTabs() {
     const c = useThemeColors();
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
     const { socket } = useSocket();
     const [unreadCount, setUnreadCount] = useState(0);
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
 
     useEffect(() => {
         if (user?._id) {
@@ -97,6 +101,7 @@ function ClientTabs() {
                     shadowOffset: { width: 0, height: -2 },
                     shadowOpacity: 0.05,
                     shadowRadius: 8,
+                    display: isDesktop ? 'none' : 'flex',
                 },
                 tabBarLabelStyle: {
                     fontSize: 10,
@@ -140,8 +145,14 @@ function ClientTabs() {
     );
 }
 
+import DesktopLayout from '../components/layout/DesktopLayout';
+
+
 export default function ClientNavigator() {
-    return (
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
+    const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="ClientTabs" component={ClientTabs} />
             <Stack.Screen name="PostJob" component={PostJobScreen} />
@@ -174,4 +185,10 @@ export default function ClientNavigator() {
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
         </Stack.Navigator>
     );
+
+    if (isDesktop) {
+        return <DesktopLayout>{stack}</DesktopLayout>;
+    }
+
+    return stack;
 }

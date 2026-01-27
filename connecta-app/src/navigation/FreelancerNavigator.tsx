@@ -4,9 +4,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWindowDimensions, View } from 'react-native';
 
 // Screens
 import FreelancerDashboardScreen from '../screens/FreelancerDashboardScreen';
+import DesktopTopNav from '../components/navigation/DesktopTopNav';
+import DesktopLeftSidebar from '../components/navigation/DesktopLeftSidebar';
+import DesktopRightSidebar from '../components/navigation/DesktopRightSidebar';
 import FreelancerMatchedGigsScreen from '../screens/FreelancerMatchedGigsScreen';
 import MyProposalsScreen from '../screens/MyProposalsScreen';
 import ChatsScreen from '../screens/ChatsScreen';
@@ -29,6 +33,7 @@ import VideoCallScreen from '../screens/VideoCallScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+import DesktopLayout from '../components/layout/DesktopLayout';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { getTotalUnreadCount } from '../services/messageService';
@@ -36,6 +41,8 @@ import { useState, useEffect } from 'react';
 
 function FreelancerTabs() {
     const c = useThemeColors();
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
     const { socket } = useSocket();
@@ -90,6 +97,7 @@ function FreelancerTabs() {
                     shadowOffset: { width: 0, height: -2 },
                     shadowOpacity: 0.05,
                     shadowRadius: 8,
+                    display: isDesktop ? 'none' : 'flex',
                 },
                 tabBarLabelStyle: {
                     fontSize: 10,
@@ -134,7 +142,10 @@ function FreelancerTabs() {
 }
 
 export default function FreelancerNavigator() {
-    return (
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
+    const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="FreelancerTabs" component={FreelancerTabs} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
@@ -167,4 +178,10 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="JobPreferences" component={require('../screens/JobPreferencesScreen').default} />
         </Stack.Navigator>
     );
+
+    if (isDesktop) {
+        return <DesktopLayout>{stack}</DesktopLayout>;
+    }
+
+    return stack;
 }

@@ -4,6 +4,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { API_BASE_URL } from '../utils/constants';
 
 const PublicJobSearchScreen = () => {
     const navigation = useNavigation<any>();
@@ -25,7 +26,7 @@ const PublicJobSearchScreen = () => {
         setLoading(true);
         setHasSearched(true);
         try {
-            const res = await fetch(`https://api.myconnecta.ng/api/jobs/search?q=${encodeURIComponent(q)}&isExternal=false`);
+            const res = await fetch(`${API_BASE_URL}/api/jobs/search?q=${encodeURIComponent(q)}&isExternal=false`);
             const data = await res.json();
             if (data.success) {
                 setJobs(data.data);

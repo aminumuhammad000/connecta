@@ -2,8 +2,45 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 // API Configuration
+// Resolve the API host dynamically so emulator, simulator, and devices work without edits.
+const deriveExpoHostBaseUrl = () => {
+    const hostUri =
+        Constants.expoConfig?.hostUri ||
+        (Constants as any)?.manifest?.hostUri ||
+        (Constants as any)?.manifest2?.extra?.expoClient?.hostUri ||
+        '';
+    if (!hostUri) return undefined;
+    const host = hostUri.replace(/^https?:\/\//, '').split(':')[0];
+    if (!host) return undefined;
+    return `http://${host}:5000`;
+};
+
+const explicitBaseUrl =
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    Constants.expoConfig?.extra?.apiBaseUrl ||
+    (Constants as any)?.manifest?.extra?.apiBaseUrl;
+
+const derivedHostBaseUrl = deriveExpoHostBaseUrl();
+// const platformDefaultBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+const platformDefaultBaseUrl = 'http://localhost:5000';
+
 const getBaseUrl = () => {
-    return 'https://api.myconnecta.ng';
+    // 1. Try explicit URL from app.json or env (PRIORITY)
+    if (explicitBaseUrl) return explicitBaseUrl;
+
+    // 2. Try derived host (LAN IP for physical devices)
+    if (derivedHostBaseUrl) return derivedHostBaseUrl;
+
+    // 3. Platform defaults for emulators
+    let url = 'http://localhost:5000';
+
+    // Fix: iOS Simulator cannot reach 10.0.2.2, force localhost
+    // Android Emulator often needs 10.0.2.2
+    if (Platform.OS === 'android') {
+        url = 'http://10.0.2.2:5000';
+    }
+
+    return url;
 };
 
 export const API_BASE_URL = getBaseUrl();

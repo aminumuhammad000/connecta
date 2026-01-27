@@ -16,7 +16,7 @@ const categories = [
     { label: "Business", icon: "briefcase", iconLib: Feather, desc: "Scale operations" },
 ];
 
-const LandingStats = () => {
+const LandingStats = ({ isDesktop }: { isDesktop?: boolean }) => {
     const [stats, setStats] = useState({
         totalUsers: 12500,
         freelancersCount: 4800,
@@ -92,15 +92,28 @@ const LandingStats = () => {
             </View>
 
             {/* Stats Grid */}
-            <View style={styles.grid}>
-                <View style={styles.row}>
-                    <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} />
-                    <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} />
-                </View>
-                <View style={styles.row}>
-                    <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} />
-                    <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} />
-                </View>
+            <View style={[styles.grid, isDesktop && styles.desktopGrid]}>
+                {isDesktop ? (
+                    // Desktop: Single Row of 4
+                    <View style={styles.desktopRowFull}>
+                        <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} />
+                        <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} />
+                        <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} />
+                        <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} />
+                    </View>
+                ) : (
+                    // Mobile: 2x2 Grid using Rows
+                    <>
+                        <View style={styles.row}>
+                            <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} />
+                            <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} />
+                        </View>
+                        <View style={styles.row}>
+                            <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} />
+                            <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} />
+                        </View>
+                    </>
+                )}
             </View>
         </View>
     );
@@ -249,6 +262,18 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#718096',
     },
+    desktopGrid: {
+        width: '100%',
+    },
+    desktopRowFull: {
+        flexDirection: 'row',
+        gap: 24,
+        width: '100%',
+    },
+    desktopRow: {
+        flex: 1,
+        gap: 16,
+    }
 });
 
 export default LandingStats;

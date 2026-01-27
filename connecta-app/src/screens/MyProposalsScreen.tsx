@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
@@ -23,6 +23,8 @@ const MyProposalsScreen: React.FC = () => {
   const [tab, setTab] = useState<'all' | 'pending' | 'accepted' | 'rejected' | 'withdrawn'>('all');
   const [proposals, setProposals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
 
   useEffect(() => {
     loadProposals();
@@ -136,43 +138,46 @@ const MyProposalsScreen: React.FC = () => {
       </View>
 
       {/* List */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12 }}>
-        {filtered.length > 0 ? (
-          filtered.map(p => {
-            const pill = statusPill(p.status);
-            return (
-              <TouchableOpacity
-                key={p.id}
-                onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
-                style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                      <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                      {p.isExternal ? (
-                        <Badge label={p.source || "External"} variant="info" size="small" />
-                      ) : (
-                        <Badge label="Connecta" variant="success" size="small" />
-                      )}
+      <View style={{ flex: 1, maxWidth: isDesktop ? '100%' : 800, alignSelf: 'center', width: '100%' }}>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12, flexDirection: isDesktop ? 'row' : 'column', flexWrap: isDesktop ? 'wrap' : 'nowrap' }}>
+          {filtered.length > 0 ? (
+            filtered.map(p => {
+              const pill = statusPill(p.status);
+              return (
+                <TouchableOpacity
+                  key={p.id}
+                  onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
+                  style={[styles.card, { backgroundColor: c.card, borderColor: c.border }, isDesktop && { width: '48%' }]}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                        {p.isExternal ? (
+                          <Badge label={p.source || "External"} variant="info" size="small" />
+                        ) : (
+                          <Badge label="Connecta" variant="success" size="small" />
+                        )}
+                      </View>
+                      <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
                     </View>
-                    <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
+                    <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
                   </View>
-                  <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-                </View>
-                <View style={styles.cardFooter}>
-                  <View style={[styles.pill, { backgroundColor: pill.bg }]}>
-                    <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                  <View style={styles.cardFooter}>
+                    <View style={[styles.pill, { backgroundColor: pill.bg }]}>
+                      <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                    </View>
+                    <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
                   </View>
-                  <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        ) : (
-          <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+          )}
         )}
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 };

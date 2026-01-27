@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, RefreshControl, Animated, Dimensions, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,8 @@ const { width } = Dimensions.get('window');
 export default function ProfileScreen({ navigation }: any) {
   const c = useThemeColors();
   const { user } = useAuth();
+  const { width: windowWidth } = useWindowDimensions();
+  const isDesktop = windowWidth > 768;
   const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -140,10 +142,21 @@ export default function ProfileScreen({ navigation }: any) {
     );
   }
 
+
+
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Animated Header */}
-      <Animated.View style={[styles.header, { backgroundColor: c.background, borderBottomColor: c.border, opacity: headerOpacity, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+      <Animated.View style={[styles.header, {
+        backgroundColor: c.background,
+        borderBottomColor: c.border,
+        opacity: headerOpacity,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        maxWidth: isDesktop ? 1200 : '100%',
+        width: '100%',
+        alignSelf: 'center',
+        left: isDesktop ? (windowWidth - Math.min(windowWidth, 1200)) / 2 : 0,
+      }]}>
         <SafeAreaView edges={['top']} style={{ width: '100%' }}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
@@ -158,7 +171,16 @@ export default function ProfileScreen({ navigation }: any) {
       </Animated.View>
 
       {/* Floating Back Button (Visible when header is transparent) */}
-      <Animated.View style={[styles.floatingHeader, { opacity: scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' }) }]}>
+      <Animated.View style={[
+        styles.floatingHeader,
+        { opacity: scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' }) },
+        {
+          maxWidth: isDesktop ? 1200 : '100%',
+          width: '100%',
+          alignSelf: 'center',
+          left: isDesktop ? (windowWidth - Math.min(windowWidth, 1200)) / 2 : 0,
+        }
+      ]}>
         <SafeAreaView edges={['top']} style={{ width: '100%' }}>
           <View style={styles.headerContent}>
             <TouchableOpacity onPress={onBack} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
@@ -184,106 +206,164 @@ export default function ProfileScreen({ navigation }: any) {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Cover Image Area */}
-        <View style={styles.coverContainer}>
-          <LinearGradient
-            colors={['#FF7F50', '#f39170ff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.coverGradient}
-          />
-          <View style={styles.coverOverlay} />
-        </View>
+        <View style={{ flex: 1, maxWidth: isDesktop ? 1200 : '100%', width: '100%', alignSelf: 'center' }}>
+          {/* Cover Image Area */}
+          <View style={styles.coverContainer}>
+            <LinearGradient
+              colors={['#FF7F50', '#f39170ff']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.coverGradient}
+            />
+            <View style={styles.coverOverlay} />
+          </View>
 
-        {/* Profile Info Card */}
-        <View style={styles.profileCardContainer}>
-          <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
-            <View style={styles.avatarRow}>
-              <View style={[styles.avatarContainer, { borderColor: c.card, backgroundColor: c.primary }]}>
-                {profile?.avatar ? (
-                  <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-                ) : (
-                  <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
-                    <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
-                      {profile?.firstName?.charAt(0).toUpperCase() || '?'}
+          {/* Profile Info Card */}
+          <View style={styles.profileCardContainer}>
+            <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
+              <View style={styles.avatarRow}>
+                <View style={[styles.avatarContainer, { borderColor: c.card, backgroundColor: c.primary }]}>
+                  {profile?.avatar ? (
+                    <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
+                      <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
+                        {profile?.firstName?.charAt(0).toUpperCase() || '?'}
+                      </Text>
+                    </View>
+                  )}
+                  {profile?.isPremium && (
+                    <View style={styles.premiumBadge}>
+                      <Ionicons name="star" size={12} color="#FFF" />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.statsRow}>
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.completedJobs || '0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.totalHours || '0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.infoSection}>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                  {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
+                </View>
+                <Text style={[styles.role, { color: c.primary }]}>{profile?.jobTitle || profile?.title || 'Freelancer'}</Text>
+
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="location-outline" size={14} color={c.subtext} />
+                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+                  </View>
+                  <View style={styles.detailDivider} />
+                  <View style={styles.detailItem}>
+                    <Ionicons name="ribbon-outline" size={14} color={c.subtext} />
+                    <Text style={[styles.detailText, { color: c.subtext }]}>
+                      {profile?.yearsOfExperience !== undefined ? `${profile.yearsOfExperience}+ yrs` : 'No exp.'}
                     </Text>
                   </View>
-                )}
-                {profile?.isPremium && (
-                  <View style={styles.premiumBadge}>
-                    <Ionicons name="star" size={12} color="#FFF" />
+                </View>
+
+                {profile?.engagementTypes && profile.engagementTypes.length > 0 && (
+                  <View style={styles.engagementContainer}>
+                    {profile.engagementTypes.map((type: string, idx: number) => {
+                      const engMap: any = { 'full_time': 'Full-time', 'part_time': 'Part-time', 'contract': 'Contract', 'freelance': 'Freelance', 'internship': 'Internship' };
+                      const label = engMap[type] || type;
+                      return (
+                        <View key={idx} style={[styles.engagementBadge, { backgroundColor: c.primary + '15' }]}>
+                          <Text style={[styles.engagementText, { color: c.primary }]}>{label}</Text>
+                        </View>
+                      );
+                    })}
                   </View>
                 )}
-              </View>
-              <View style={styles.statsRow}>
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: c.text }]}>{profile?.completedJobs || '0'}</Text>
-                  <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
-                  <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: c.text }]}>{profile?.totalHours || '0'}</Text>
-                  <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
-                </View>
-              </View>
-            </View>
 
-            <View style={styles.infoSection}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-                {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
+                <View style={styles.bioHeader}>
+                  <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
+                  <TouchableOpacity
+                    onPress={generateAIBio}
+                    disabled={isGeneratingBio}
+                    style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                  >
+                    {isGeneratingBio ? (
+                      <ActivityIndicator size="small" color={c.primary} />
+                    ) : (
+                      <>
+                        <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
+                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
+
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                    onPress={() => navigation.navigate('EditProfile')}
+                  >
+                    <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                    onPress={() => navigation.navigate('JobPreferences')}
+                  >
+                    <Ionicons name="options-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Preferences</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                    onPress={() => navigation.navigate('ManageSubscription')}
+                  >
+                    <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <Text style={[styles.role, { color: c.primary }]}>{profile?.jobTitle || profile?.title || 'Freelancer'}</Text>
 
-              <View style={styles.detailsRow}>
-                <View style={styles.detailItem}>
-                  <Ionicons name="location-outline" size={14} color={c.subtext} />
-                  <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+              {/* Profile Completeness Progress Bar */}
+              <View style={styles.completenessContainer}>
+                <View style={styles.completenessHeader}>
+                  <Text style={[styles.completenessTitle, { color: c.text }]}>Profile Completeness</Text>
+                  <Text style={[styles.completenessPercent, { color: c.primary }]}>{completeness}%</Text>
                 </View>
-                <View style={styles.detailDivider} />
-                <View style={styles.detailItem}>
-                  <Ionicons name="ribbon-outline" size={14} color={c.subtext} />
-                  <Text style={[styles.detailText, { color: c.subtext }]}>
-                    {profile?.yearsOfExperience !== undefined ? `${profile.yearsOfExperience}+ yrs` : 'No exp.'}
-                  </Text>
+                <View style={[styles.progressBarBg, { backgroundColor: c.border }]}>
+                  <Animated.View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        backgroundColor: c.primary,
+                        width: `${completeness}%`
+                      }
+                    ]}
+                  />
                 </View>
-              </View>
-
-              {profile?.engagementTypes && profile.engagementTypes.length > 0 && (
-                <View style={styles.engagementContainer}>
-                  {profile.engagementTypes.map((type: string, idx: number) => {
-                    const engMap: any = { 'full_time': 'Full-time', 'part_time': 'Part-time', 'contract': 'Contract', 'freelance': 'Freelance', 'internship': 'Internship' };
-                    const label = engMap[type] || type;
-                    return (
-                      <View key={idx} style={[styles.engagementBadge, { backgroundColor: c.primary + '15' }]}>
-                        <Text style={[styles.engagementText, { color: c.primary }]}>{label}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-
-              <View style={styles.bioHeader}>
-                <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
-                <TouchableOpacity
-                  onPress={generateAIBio}
-                  disabled={isGeneratingBio}
-                  style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
-                >
-                  {isGeneratingBio ? (
-                    <ActivityIndicator size="small" color={c.primary} />
-                  ) : (
-                    <>
-                      <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
-                      <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                {completeness < 100 && (
+                  <TouchableOpacity
+                    style={styles.completenessTip}
+                    onPress={() => navigation.navigate('EditProfile')}
+                  >
+                    <Ionicons name="bulb-outline" size={14} color={c.primary} />
+                    <Text style={[styles.completenessTipText, { color: c.primary }]}>
+                      Complete your profile to get 5x more job matches
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
@@ -341,90 +421,90 @@ export default function ProfileScreen({ navigation }: any) {
               )}
             </View>
           </View>
-        </View>
 
-        {/* Skills Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>Skills</Text>
-          <View style={styles.skillsContainer}>
-            {profile?.skills?.length > 0 ? (
-              profile.skills.map((s: string, index: number) => (
-                <View key={index} style={[styles.skillChip, { backgroundColor: c.isDark ? '#333' : '#F3F4F6' }]}>
-                  <Text style={[styles.skillText, { color: c.text }]}>{s}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={{ color: c.subtext, fontSize: 14 }}>No skills added yet.</Text>
-            )}
-          </View>
-        </View>
-
-        {/* Tabs */}
-        <View style={[styles.tabContainer, { borderBottomColor: c.border }]}>
-          <TouchableOpacity
-            style={[styles.tabItem, activeTab === 'portfolio' && { borderBottomColor: c.primary }]}
-            onPress={() => setActiveTab('portfolio')}
-          >
-            <Text style={[styles.tabText, { color: activeTab === 'portfolio' ? c.primary : c.subtext }]}>Portfolio</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
-            onPress={() => setActiveTab('reviews')}
-          >
-            <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tab Content */}
-        <View style={styles.contentContainer}>
-          {activeTab === 'portfolio' ? (
-            <View>
-              <TouchableOpacity style={[styles.addProjectBtn, { borderColor: c.border, borderStyle: 'dashed' }]} onPress={() => navigation.navigate('AddPortfolio')}>
-                <Ionicons name="add" size={24} color={c.subtext} />
-                <Text style={{ color: c.subtext, marginLeft: 8, fontWeight: '500' }}>Add Project</Text>
-              </TouchableOpacity>
-
-              {profile?.portfolio?.length > 0 ? (
-                <View style={styles.portfolioGrid}>
-                  {profile.portfolio.map((item: any, index: number) => (
-                    <TouchableOpacity key={index} style={[styles.portfolioItem, { backgroundColor: c.card }]} activeOpacity={0.9}>
-                      <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/300' }} style={styles.portfolioImage} />
-                      <View style={styles.portfolioOverlay}>
-                        <Text style={styles.portfolioTitle} numberOfLines={1}>{item.title}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.emptyTabState}>
-                  <Text style={{ color: c.subtext }}>No projects yet.</Text>
-                </View>
-              )}
-            </View>
-          ) : (
-            <View>
-              {profile?.reviews?.length > 0 ? (
-                profile.reviews.map((review: any, index: number) => (
-                  <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                    <View style={styles.reviewHeader}>
-                      <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
-                      <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={14} color="#F59E0B" />
-                        <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
+          {/* Skills Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>Skills</Text>
+            <View style={styles.skillsContainer}>
+              {profile?.skills?.length > 0 ? (
+                profile.skills.map((s: string, index: number) => (
+                  <View key={index} style={[styles.skillChip, { backgroundColor: c.isDark ? '#333' : '#F3F4F6' }]}>
+                    <Text style={[styles.skillText, { color: c.text }]}>{s}</Text>
                   </View>
                 ))
               ) : (
-                <View style={styles.emptyTabState}>
-                  <Text style={{ color: c.subtext }}>No reviews yet.</Text>
-                </View>
+                <Text style={{ color: c.subtext, fontSize: 14 }}>No skills added yet.</Text>
               )}
             </View>
-          )}
-        </View>
+          </View>
 
+          {/* Tabs */}
+          <View style={[styles.tabContainer, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              style={[styles.tabItem, activeTab === 'portfolio' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('portfolio')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'portfolio' ? c.primary : c.subtext }]}>Portfolio</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('reviews')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tab Content */}
+          <View style={styles.contentContainer}>
+            {activeTab === 'portfolio' ? (
+              <View>
+                <TouchableOpacity style={[styles.addProjectBtn, { borderColor: c.border, borderStyle: 'dashed' }]} onPress={() => navigation.navigate('AddPortfolio')}>
+                  <Ionicons name="add" size={24} color={c.subtext} />
+                  <Text style={{ color: c.subtext, marginLeft: 8, fontWeight: '500' }}>Add Project</Text>
+                </TouchableOpacity>
+
+                {profile?.portfolio?.length > 0 ? (
+                  <View style={styles.portfolioGrid}>
+                    {profile.portfolio.map((item: any, index: number) => (
+                      <TouchableOpacity key={index} style={[styles.portfolioItem, { backgroundColor: c.card }]} activeOpacity={0.9}>
+                        <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/300' }} style={styles.portfolioImage} />
+                        <View style={styles.portfolioOverlay}>
+                          <Text style={styles.portfolioTitle} numberOfLines={1}>{item.title}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={{ color: c.subtext }}>No projects yet.</Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View>
+                {profile?.reviews?.length > 0 ? (
+                  profile.reviews.map((review: any, index: number) => (
+                    <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
+                        <View style={styles.ratingRow}>
+                          <Ionicons name="star" size={14} color="#F59E0B" />
+                          <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Text style={{ color: c.subtext }}>No reviews yet.</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+
+        </View>
       </Animated.ScrollView>
     </View>
   );

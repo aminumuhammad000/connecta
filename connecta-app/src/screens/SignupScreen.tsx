@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,6 +12,8 @@ import Input from '../components/Input';
 import Logo from '../components/Logo';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ThemeContext } from '../context/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,6 +28,9 @@ const SignupScreen: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
@@ -48,9 +53,7 @@ const SignupScreen: React.FC = () => {
       const response = await googleSignup(token, selectedRole, autoLogin);
 
       if (selectedRole === 'freelancer') {
-        // For Google signup, we skip OTP and go straight to Skills
-        // But wait, if we are deferring login, we need to pass the token/user to the next screen.
-        // googleSignup returns the response object if autoLogin is false.
+        // For Google signup, send to Skills
         (navigation as any).navigate('SkillSelection', { token: response.token, user: response.user });
       } else {
         showAlert({ title: 'Success', message: 'Account created with Google!', type: 'success' });
@@ -99,6 +102,177 @@ const SignupScreen: React.FC = () => {
     }
   };
 
+  const renderSignupForm = () => (
+    <View style={[styles.mainContent, isDesktop && styles.desktopFormContent]}>
+
+      {/* Mobile Header: Logo + Title */}
+      {!isDesktop && (
+        <View style={styles.topSection}>
+          <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
+            <Logo size={42} />
+          </View>
+          <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta today.</Text>
+        </View>
+      )}
+
+      {/* Desktop Header: Just Title */}
+      {isDesktop && (
+        <View style={styles.desktopHeader}>
+          <Text style={[styles.title, { color: c.text, fontSize: 32 }]}>Create Account</Text>
+          <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta today.</Text>
+        </View>
+      )}
+
+      {/* Role Switcher */}
+      <View style={styles.roleContainer}>
+        <TouchableOpacity
+          style={[
+            styles.roleBtn,
+            selectedRole === 'freelancer' && { backgroundColor: c.primary, borderColor: c.primary },
+            selectedRole !== 'freelancer' && { borderColor: c.border, backgroundColor: c.card }
+          ]}
+          onPress={() => setSelectedRole('freelancer')}
+        >
+          <Text style={[
+            styles.roleText,
+            { color: selectedRole === 'freelancer' ? '#fff' : c.subtext }
+          ]}>Freelancer</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.roleBtn,
+            selectedRole === 'client' && { backgroundColor: c.primary, borderColor: c.primary },
+            selectedRole !== 'client' && { borderColor: c.border, backgroundColor: c.card }
+          ]}
+          onPress={() => setSelectedRole('client')}
+        >
+          <Text style={[
+            styles.roleText,
+            { color: selectedRole === 'client' ? '#fff' : c.subtext }
+          ]}>Client</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Form */}
+      <View style={styles.form}>
+        <Input
+          value={name}
+          onChangeText={setName}
+          placeholder="Full Name"
+          icon="person-outline"
+          containerStyle={styles.inputSpacing}
+        />
+        <Input
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email Address"
+          keyboardType="email-address"
+          containerStyle={styles.inputSpacing}
+          autoCapitalize="none"
+          icon="mail-outline"
+        />
+        <View style={styles.inputSpacing}>
+          <Input
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            icon="lock-outline"
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Button
+        title="Sign Up"
+        onPress={handleCreateAccount}
+        loading={isLoading}
+        variant="primary"
+        size="large"
+        style={styles.mainBtn}
+      />
+
+      {/* Social Login */}
+      <View style={styles.dividerRow}>
+        <View style={[styles.divider, { backgroundColor: c.border }]} />
+        <Text style={[styles.orText, { color: c.subtext }]}>OR</Text>
+        <View style={[styles.divider, { backgroundColor: c.border }]} />
+      </View>
+
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
+        onPress={() => promptAsync()}
+        disabled={!request}
+      >
+        <MaterialCommunityIcons name="google" size={20} color={c.text} />
+        <Text style={[styles.googleText, { color: c.text }]}>Continue with Google</Text>
+      </TouchableOpacity>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
+        <TouchableOpacity onPress={() => (navigation as any).navigate('Login')}>
+          <Text style={{ color: c.primary, fontWeight: '700' }}>Log In</Text>
+        </TouchableOpacity>
+      </View>
+
+    </View>
+  );
+
+  if (isDesktop) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: '#ffffff' }]}>
+        <StatusBar barStyle="dark-content" />
+        <ThemeContext.Provider value={{ isDark: false, toggleTheme: () => { }, setThemeMode: () => { }, themeMode: 'light' }}>
+          <View style={styles.desktopContainer}>
+            {/* Left Panel - Hero (LIGHT THEMED) */}
+            <LinearGradient
+              colors={['#ffffff', '#f0f5ff']}
+              style={styles.desktopHero}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.heroContent}>
+                <View style={styles.heroLogoWrap}>
+                  {/* Show original logo without tint */}
+                  <Logo size={120} />
+                </View>
+                <Text style={[styles.heroTitle, { color: '#1a1a1a' }]}>Connecta</Text>
+                <Text style={[styles.heroSubtitle, { color: '#555' }]}>
+                  Join the future of work.{'\n'}Client or Freelancer, we have you covered.
+                </Text>
+              </View>
+              <View style={styles.heroFooter}>
+                <Text style={[styles.heroFooterText, { color: '#999' }]}>© 2026 Connecta Global</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Right Panel - Signup Form */}
+            <View style={styles.desktopRightPanel}>
+              <View style={styles.desktopCard}>
+                <ScrollView
+                  contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderSignupForm()}
+                </ScrollView>
+              </View>
+            </View>
+          </View>
+        </ThemeContext.Provider>
+      </SafeAreaView>
+    );
+  }
+
+  // MOBILE VIEW
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
@@ -116,118 +290,7 @@ const SignupScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.mainContent}>
-
-            {/* Logo & Title */}
-            <View style={styles.topSection}>
-              <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
-                <Logo size={42} />
-              </View>
-              <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
-              <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta today.</Text>
-            </View>
-
-            {/* Role Switcher - Simple & Clean */}
-            <View style={styles.roleContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.roleBtn,
-                  selectedRole === 'freelancer' && { backgroundColor: c.primary, borderColor: c.primary },
-                  selectedRole !== 'freelancer' && { borderColor: c.border, backgroundColor: c.card }
-                ]}
-                onPress={() => setSelectedRole('freelancer')}
-              >
-                <Text style={[
-                  styles.roleText,
-                  { color: selectedRole === 'freelancer' ? '#fff' : c.subtext }
-                ]}>Freelancer</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.roleBtn,
-                  selectedRole === 'client' && { backgroundColor: c.primary, borderColor: c.primary },
-                  selectedRole !== 'client' && { borderColor: c.border, backgroundColor: c.card }
-                ]}
-                onPress={() => setSelectedRole('client')}
-              >
-                <Text style={[
-                  styles.roleText,
-                  { color: selectedRole === 'client' ? '#fff' : c.subtext }
-                ]}>Client</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Form */}
-            <View style={styles.form}>
-              <Input
-                value={name}
-                onChangeText={setName}
-                placeholder="Full Name"
-                icon="person-outline"
-                containerStyle={styles.inputSpacing}
-              />
-              <Input
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Email Address"
-                keyboardType="email-address"
-                containerStyle={styles.inputSpacing}
-                autoCapitalize="none"
-                icon="mail-outline"
-              />
-              <View style={styles.inputSpacing}>
-                <Input
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  icon="lock-outline"
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <Button
-              title="Sign Up"
-              onPress={handleCreateAccount}
-              loading={isLoading}
-              variant="primary"
-              size="large"
-              style={styles.mainBtn}
-            />
-
-            {/* Social Login */}
-            <View style={styles.dividerRow}>
-              <View style={[styles.divider, { backgroundColor: c.border }]} />
-              <Text style={[styles.orText, { color: c.subtext }]}>OR</Text>
-              <View style={[styles.divider, { backgroundColor: c.border }]} />
-            </View>
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
-              onPress={() => promptAsync()}
-              disabled={!request}
-            >
-              <MaterialCommunityIcons name="google" size={20} color={c.text} />
-              <Text style={[styles.googleText, { color: c.text }]}>Continue with Google</Text>
-            </TouchableOpacity>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => (navigation as any).navigate('Login')}>
-                <Text style={{ color: c.primary, fontWeight: '700' }}>Log In</Text>
-              </TouchableOpacity>
-            </View>
-
-          </View>
+          {renderSignupForm()}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -251,7 +314,75 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     paddingVertical: 10,
+    width: '100%',
   },
+  // Desktop Styles
+  desktopContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+    height: '100%',
+  },
+  desktopHero: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 60,
+    position: 'relative',
+  },
+  heroContent: {
+    maxWidth: 600,
+  },
+  heroLogoWrap: {
+    marginBottom: 32,
+  },
+  heroTitle: {
+    fontSize: 48,
+    fontWeight: '800',
+    letterSpacing: -1,
+    marginBottom: 16,
+  },
+  heroSubtitle: {
+    fontSize: 24,
+    lineHeight: 34,
+    fontWeight: '500',
+  },
+  heroFooter: {
+    position: 'absolute',
+    bottom: 40,
+    left: 60,
+  },
+  heroFooterText: {
+    fontSize: 14,
+  },
+  desktopRightPanel: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  desktopCard: {
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 40,
+    paddingVertical: 40,
+    borderRadius: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 5,
+    maxHeight: '90%',
+  },
+  desktopFormContent: {
+    paddingVertical: 0,
+  },
+  desktopHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  // Common Styles
   topSection: {
     alignItems: 'center',
     marginBottom: 24,
