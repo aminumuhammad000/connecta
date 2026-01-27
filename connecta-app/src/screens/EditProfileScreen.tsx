@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Modal, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -17,6 +17,8 @@ import Avatar from '../components/Avatar';
 
 export default function EditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
     const { user, updateUser } = useAuth();
     const { showAlert } = useInAppAlert();
     const [loading, setLoading] = useState(true);
@@ -846,8 +848,12 @@ export default function EditProfileScreen({ navigation }: any) {
                 transparent={true}
                 onRequestClose={() => setShowPortfolioModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                    <View style={[
+                        styles.modalContent,
+                        { backgroundColor: c.background },
+                        isDesktop && { width: '100%', maxWidth: 500, borderRadius: 24, paddingBottom: 0 }
+                    ]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
                             <TouchableOpacity onPress={() => setShowPortfolioModal(false)}>
                                 <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
@@ -961,8 +967,12 @@ export default function EditProfileScreen({ navigation }: any) {
                 transparent={true}
                 onRequestClose={() => setShowEducationModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                    <View style={[
+                        styles.modalContent,
+                        { backgroundColor: c.background },
+                        isDesktop && { width: '100%', maxWidth: 500, borderRadius: 24, paddingBottom: 0 }
+                    ]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
                             <TouchableOpacity onPress={() => setShowEducationModal(false)}>
                                 <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
@@ -1059,8 +1069,12 @@ export default function EditProfileScreen({ navigation }: any) {
                 transparent={true}
                 onRequestClose={() => setShowLanguageModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                    <View style={[
+                        styles.modalContent,
+                        { backgroundColor: c.background },
+                        isDesktop && { width: '100%', maxWidth: 400, borderRadius: 24, paddingBottom: 0 }
+                    ]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
                             <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
                                 <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
@@ -1121,8 +1135,12 @@ export default function EditProfileScreen({ navigation }: any) {
                 transparent={true}
                 onRequestClose={() => setShowEmploymentModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                    <View style={[
+                        styles.modalContent,
+                        { backgroundColor: c.background },
+                        isDesktop && { width: '100%', maxWidth: 500, borderRadius: 24, paddingBottom: 0 }
+                    ]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
                             <TouchableOpacity onPress={() => setShowEmploymentModal(false)}>
                                 <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
@@ -1211,8 +1229,12 @@ export default function EditProfileScreen({ navigation }: any) {
                 animationType="fade"
                 onRequestClose={() => setShowDatePicker(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.datePickerContent, { backgroundColor: c.background }]}>
+                <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                    <View style={[
+                        styles.datePickerContent,
+                        { backgroundColor: c.background },
+                        isDesktop && { width: '100%', maxWidth: 400, borderRadius: 24, paddingBottom: 20 }
+                    ]}>
                         <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
                             <Text style={[styles.modalTitle, { color: c.text }]}>Select Date</Text>
                             <TouchableOpacity onPress={() => setShowDatePicker(false)}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, ScrollView, Image, Alert, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -10,6 +10,8 @@ import { post } from '../services/api';
 const AddPortfolioScreen = () => {
     const c = useThemeColors();
     const navigation = useNavigation();
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -87,67 +89,69 @@ const AddPortfolioScreen = () => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-            <View style={[styles.header, { borderBottomColor: c.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <MaterialIcons name="arrow-back" size={24} color={c.text} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text }]}>Add to Portfolio</Text>
-                <View style={{ width: 40 }} />
+            <View style={{ flex: 1, maxWidth: isDesktop ? 700 : '100%', width: '100%', alignSelf: 'center' }}>
+                <View style={[styles.header, { borderBottomColor: c.border }]}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <MaterialIcons name="arrow-back" size={24} color={c.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: c.text }]}>Add to Portfolio</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+
+                <ScrollView contentContainerStyle={{ padding: 24 }}>
+                    <TouchableOpacity onPress={pickImage} style={[styles.imagePicker, { backgroundColor: c.card, borderColor: c.border }]}>
+                        {image ? (
+                            <Image source={{ uri: image }} style={{ width: '100%', height: '100%', borderRadius: 12 }} resizeMode="cover" />
+                        ) : (
+                            <View style={{ alignItems: 'center' }}>
+                                <MaterialIcons name="add-photo-alternate" size={48} color={c.primary} />
+                                <Text style={{ color: c.subtext, marginTop: 8 }}>Add Cover Image</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Project Title</Text>
+                    <TextInput
+                        style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
+                        placeholder="e.g. E-commerce Website"
+                        placeholderTextColor={c.subtext}
+                        value={title}
+                        onChangeText={setTitle}
+                    />
+
+                    <Text style={[styles.label, { color: c.text, marginTop: 16 }]}>Description</Text>
+                    <TextInput
+                        style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text, height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
+                        placeholder="Describe what you did..."
+                        placeholderTextColor={c.subtext}
+                        multiline
+                        value={description}
+                        onChangeText={setDescription}
+                    />
+
+                    <Text style={[styles.label, { color: c.text, marginTop: 16 }]}>Project URL (Optional)</Text>
+                    <TextInput
+                        style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
+                        placeholder="https://..."
+                        placeholderTextColor={c.subtext}
+                        autoCapitalize="none"
+                        value={projectUrl}
+                        onChangeText={setProjectUrl}
+                    />
+
+                    <TouchableOpacity
+                        style={[styles.saveBtn, { backgroundColor: c.primary, marginTop: 40 }]}
+                        onPress={handleSave}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.saveBtnText}>Save Project</Text>
+                        )}
+                    </TouchableOpacity>
+                </ScrollView>
             </View>
-
-            <ScrollView contentContainerStyle={{ padding: 24 }}>
-                <TouchableOpacity onPress={pickImage} style={[styles.imagePicker, { backgroundColor: c.card, borderColor: c.border }]}>
-                    {image ? (
-                        <Image source={{ uri: image }} style={{ width: '100%', height: '100%', borderRadius: 12 }} resizeMode="cover" />
-                    ) : (
-                        <View style={{ alignItems: 'center' }}>
-                            <MaterialIcons name="add-photo-alternate" size={48} color={c.primary} />
-                            <Text style={{ color: c.subtext, marginTop: 8 }}>Add Cover Image</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-
-                <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Project Title</Text>
-                <TextInput
-                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
-                    placeholder="e.g. E-commerce Website"
-                    placeholderTextColor={c.subtext}
-                    value={title}
-                    onChangeText={setTitle}
-                />
-
-                <Text style={[styles.label, { color: c.text, marginTop: 16 }]}>Description</Text>
-                <TextInput
-                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text, height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
-                    placeholder="Describe what you did..."
-                    placeholderTextColor={c.subtext}
-                    multiline
-                    value={description}
-                    onChangeText={setDescription}
-                />
-
-                <Text style={[styles.label, { color: c.text, marginTop: 16 }]}>Project URL (Optional)</Text>
-                <TextInput
-                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
-                    placeholder="https://..."
-                    placeholderTextColor={c.subtext}
-                    autoCapitalize="none"
-                    value={projectUrl}
-                    onChangeText={setProjectUrl}
-                />
-
-                <TouchableOpacity
-                    style={[styles.saveBtn, { backgroundColor: c.primary, marginTop: 40 }]}
-                    onPress={handleSave}
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text style={styles.saveBtnText}>Save Project</Text>
-                    )}
-                </TouchableOpacity>
-            </ScrollView>
         </SafeAreaView>
     );
 };

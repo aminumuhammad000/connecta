@@ -224,6 +224,15 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+<<<<<<< HEAD
+            <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
+                <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={c.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
+                    <View style={{ width: 40 }} />
+=======
             <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={c.text} />
@@ -252,140 +261,162 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     <Text style={[styles.photoHint, { color: c.text, fontWeight: '600' }]}>
                         {uploadingImage ? 'Uploading your photo...' : 'Tap to change profile picture'}
                     </Text>
+>>>>>>> 461b1b45f48a78fbbab5a02cf146e7ffe4ce163f
                 </View>
 
-                <Card variant="outlined" style={styles.sectionCard}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Personal Information</Text>
-
-                    <View style={styles.row}>
-                        <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                            <Text style={[styles.label, { color: c.subtext }]}>First Name</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                value={formData.firstName}
-                                onChangeText={(text) => handleInputChange('firstName', text)}
-                                placeholder="First Name"
-                                placeholderTextColor={c.subtext}
-                            />
-                        </View>
-
-                        <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Last Name</Text>
-                            <TextInput
-                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                                value={formData.lastName}
-                                onChangeText={(text) => handleInputChange('lastName', text)}
-                                placeholder="Last Name"
-                                placeholderTextColor={c.subtext}
-                            />
-                        </View>
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Email</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                            value={formData.email}
-                            onChangeText={(text) => handleInputChange('email', text)}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Phone</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                            value={formData.phone}
-                            onChangeText={(text) => handleInputChange('phone', text)}
-                            keyboardType="phone-pad"
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
-                        <View style={[styles.inputWithIcon, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
-                            <Ionicons name="location-outline" size={20} color={c.subtext} style={{ marginLeft: 12 }} />
-                            <TextInput
-                                style={[styles.inputNoBorder, { color: c.text }]}
-                                value={formData.location}
-                                onChangeText={(text) => handleInputChange('location', text)}
-                                placeholder="City, Country"
-                                placeholderTextColor={c.subtext}
-                            />
-                        </View>
-                    </View>
-                </Card>
-
-                <Card variant="outlined" style={styles.sectionCard}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Company Details</Text>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Company Name</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                            value={formData.companyName}
-                            onChangeText={(text) => handleInputChange('companyName', text)}
-                            placeholder="e.g. Acme Corp"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={[styles.label, { color: c.subtext }]}>Website</Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
-                            value={formData.website}
-                            onChangeText={(text) => handleInputChange('website', text)}
-                            autoCapitalize="none"
-                            placeholder="https://example.com"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={styles.inputGroup}>
-                        <View style={styles.bioHeader}>
-                            <Text style={[styles.label, { color: c.subtext, marginBottom: 0 }]}>About / Bio</Text>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    {/* Profile Photo Section */}
+                    <View style={styles.photoSection}>
+                        <View style={styles.avatarWrapper}>
+                            <Avatar uri={profileImage || undefined} name={formData.firstName} size={110} />
                             <TouchableOpacity
-                                onPress={generateAIBio}
-                                disabled={isGeneratingBio}
-                                style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                                style={[styles.editPhotoButton, { backgroundColor: c.primary }]}
+                                onPress={handlePickImage}
+                                disabled={uploadingImage}
                             >
-                                {isGeneratingBio ? (
-                                    <ActivityIndicator size="small" color={c.primary} />
+                                {uploadingImage ? (
+                                    <ActivityIndicator size="small" color="white" />
                                 ) : (
-                                    <>
-                                        <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                                    </>
+                                    <Ionicons name="camera" size={18} color="white" />
                                 )}
                             </TouchableOpacity>
                         </View>
-                        <TextInput
-                            style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border, marginTop: 12 }]}
-                            value={formData.bio}
-                            onChangeText={(text) => handleInputChange('bio', text)}
-                            multiline
-                            numberOfLines={4}
-                            placeholder="Tell freelancers about your company..."
-                            placeholderTextColor={c.subtext}
-                        />
+                        <Text style={[styles.photoHint, { color: c.subtext }]}>Tap to change profile picture</Text>
                     </View>
-                </Card>
 
-                <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: c.primary }]}
-                    onPress={handleSave}
-                    disabled={saving}
-                >
-                    {saving ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text style={styles.saveButtonText}>Save Changes</Text>
-                    )}
-                </TouchableOpacity>
+                    <Card variant="outlined" style={styles.sectionCard}>
+                        <Text style={[styles.sectionTitle, { color: c.text }]}>Personal Information</Text>
 
-            </ScrollView>
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                                <Text style={[styles.label, { color: c.subtext }]}>First Name</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                    value={formData.firstName}
+                                    onChangeText={(text) => handleInputChange('firstName', text)}
+                                    placeholder="First Name"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
+
+                            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                                <Text style={[styles.label, { color: c.subtext }]}>Last Name</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                    value={formData.lastName}
+                                    onChangeText={(text) => handleInputChange('lastName', text)}
+                                    placeholder="Last Name"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Email</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.email}
+                                onChangeText={(text) => handleInputChange('email', text)}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Phone</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.phone}
+                                onChangeText={(text) => handleInputChange('phone', text)}
+                                keyboardType="phone-pad"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
+                            <View style={[styles.inputWithIcon, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
+                                <Ionicons name="location-outline" size={20} color={c.subtext} style={{ marginLeft: 12 }} />
+                                <TextInput
+                                    style={[styles.inputNoBorder, { color: c.text }]}
+                                    value={formData.location}
+                                    onChangeText={(text) => handleInputChange('location', text)}
+                                    placeholder="City, Country"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
+                        </View>
+                    </Card>
+
+                    <Card variant="outlined" style={styles.sectionCard}>
+                        <Text style={[styles.sectionTitle, { color: c.text }]}>Company Details</Text>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Company Name</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.companyName}
+                                onChangeText={(text) => handleInputChange('companyName', text)}
+                                placeholder="e.g. Acme Corp"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Website</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.website}
+                                onChangeText={(text) => handleInputChange('website', text)}
+                                autoCapitalize="none"
+                                placeholder="https://example.com"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <View style={styles.bioHeader}>
+                                <Text style={[styles.label, { color: c.subtext, marginBottom: 0 }]}>About / Bio</Text>
+                                <TouchableOpacity
+                                    onPress={generateAIBio}
+                                    disabled={isGeneratingBio}
+                                    style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                                >
+                                    {isGeneratingBio ? (
+                                        <ActivityIndicator size="small" color={c.primary} />
+                                    ) : (
+                                        <>
+                                            <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
+                                            <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                            <TextInput
+                                style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border, marginTop: 12 }]}
+                                value={formData.bio}
+                                onChangeText={(text) => handleInputChange('bio', text)}
+                                multiline
+                                numberOfLines={4}
+                                placeholder="Tell freelancers about your company..."
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
+                    </Card>
+
+                    <TouchableOpacity
+                        style={[styles.saveButton, { backgroundColor: c.primary }]}
+                        onPress={handleSave}
+                        disabled={saving}
+                    >
+                        {saving ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.saveButtonText}>Save Changes</Text>
+                        )}
+                    </TouchableOpacity>
+
+                </ScrollView>
+            </View>
         </SafeAreaView>
     );
 }

@@ -175,7 +175,6 @@ const MyProposalsScreen: React.FC = () => {
           ) : (
             <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
           )}
-        )}
         </ScrollView>
       </View>
     </SafeAreaView>

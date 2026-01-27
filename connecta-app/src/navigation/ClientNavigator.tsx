@@ -146,11 +146,19 @@ function ClientTabs() {
 }
 
 import DesktopLayout from '../components/layout/DesktopLayout';
+import { useTheme } from '../context/ThemeContext';
 
 
 export default function ClientNavigator() {
     const { width } = useWindowDimensions();
     const isDesktop = width > 768;
+    const { setThemeMode } = useTheme();
+
+    useEffect(() => {
+        if (isDesktop) {
+            setThemeMode('light'); // Enforce light mode on Desktop
+        }
+    }, [isDesktop, setThemeMode]);
 
     const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>

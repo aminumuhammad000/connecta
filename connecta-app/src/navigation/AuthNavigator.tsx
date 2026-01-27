@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
@@ -19,8 +20,10 @@ import MobileLandingScreen from '../screens/MobileLandingScreen';
 const Stack = createNativeStackNavigator();
 
 export default function AuthNavigator() {
+    const initialRoute = Platform.OS === 'web' ? 'Login' : 'Welcome';
+
     return (
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Welcome">
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
             <Stack.Screen name="Onboarding" component={OnboardingWrapper} />
             <Stack.Screen name="Welcome" component={WelcomeWrapper} />
             <Stack.Screen name="Login" component={LoginWrapper} />

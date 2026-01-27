@@ -346,8 +346,12 @@ export default function ChatsScreen({ navigation }: any) {
                     transparent={true}
                     onRequestClose={() => setShowNewChatModal(false)}
                 >
-                    <View style={styles.modalOverlay}>
-                        <View style={[styles.modalContent, { backgroundColor: c.background }]}>
+                    <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                        <View style={[
+                            styles.modalContent,
+                            { backgroundColor: c.background },
+                            isDesktop && { width: '100%', maxWidth: 500, height: '70%', borderRadius: 24 }
+                        ]}>
                             <BlurView intensity={80} tint={c.isDark ? 'dark' : 'light'} style={styles.modalHeaderBlur}>
                                 <LinearGradient
                                     colors={[c.primary, c.primary + 'CC']}

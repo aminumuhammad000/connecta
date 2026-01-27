@@ -168,7 +168,7 @@ const ApplyJobScreen: React.FC = () => {
                             placeholderTextColor={c.subtext}
                         />
                         <Text style={{ fontSize: 11, color: c.subtext, marginTop: 4, textAlign: 'right' }}>
-                            Powered by Gemini AI • You can edit the text above.
+                            Powered by Connecta AI • You can edit the text above.
                         </Text>
                     </View>
                 </ScrollView>
