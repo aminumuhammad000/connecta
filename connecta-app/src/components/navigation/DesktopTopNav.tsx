@@ -42,7 +42,10 @@ const DesktopTopNav = () => {
 
     const handleNav = (route: string) => {
         if (isClient) {
-            navigation.navigate('ClientTabs', { screen: route });
+            navigation.navigate('ClientMain', {
+                screen: 'ClientTabs',
+                params: { screen: route }
+            });
         } else {
             navigation.navigate('FreelancerMain', {
                 screen: 'FreelancerTabs',

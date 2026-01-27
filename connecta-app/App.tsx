@@ -1,7 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { useColorScheme, ActivityIndicator, View, Platform } from 'react-native';
+import { useColorScheme, ActivityIndicator, View, Platform, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+LogBox.ignoreAllLogs(); // Ignore all log notifications
 import { NavigationContainer } from '@react-navigation/native';
 import { RoleProvider, useRole } from './src/context/RoleContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
