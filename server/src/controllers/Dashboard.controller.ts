@@ -91,10 +91,16 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     // Get active collabo projects count
     const activeCollaboCount = await CollaboProject.countDocuments({
       clientId: userId,
-      status: { $in: ['active', 'planning', 'in_progress'] },
+      status: { $in: ['active', 'planning'] },
     });
 
-    const totalActiveProjects = activeJobsCount + activeCollaboCount;
+    // Get active projects count (from Project model)
+    const activeProjectsCount = await Project.countDocuments({
+      clientId: userId,
+      status: 'ongoing',
+    });
+
+    const totalActiveProjects = activeJobsCount + activeCollaboCount + activeProjectsCount;
 
     // Get unread messages count
     const conversations = await Conversation.find({
@@ -144,6 +150,82 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching client dashboard:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Get Active Projects for Client Dashboard
+export const getActiveProjects = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // 1. Fetch active jobs
+    const activeJobs = await Job.find({
+      clientId: userId,
+      status: { $in: ['active', 'in_progress'] },
+    }).sort({ createdAt: -1 });
+
+    // 2. Fetch active collabo projects
+    const activeCollabos = await CollaboProject.find({
+      clientId: userId,
+      status: { $in: ['active', 'planning'] },
+    }).sort({ createdAt: -1 });
+
+    // 3. Fetch ongoing projects (from Project model)
+    const ongoingProjects = await Project.find({
+      clientId: userId,
+      status: 'ongoing',
+    }).sort({ createdAt: -1 });
+
+    // Combine and format
+    const allActiveProjects = [
+      ...activeJobs.map(job => ({
+        _id: job._id,
+        title: job.title,
+        description: job.description,
+        status: job.status,
+        budget: job.budget,
+        createdAt: job.createdAt,
+        projectType: 'job'
+      })),
+      ...activeCollabos.map(collabo => ({
+        _id: collabo._id,
+        title: collabo.title,
+        description: collabo.description,
+        status: collabo.status,
+        budget: collabo.totalBudget,
+        teamName: collabo.teamName,
+        createdAt: collabo.createdAt,
+        projectType: 'collabo'
+      })),
+      ...ongoingProjects.map(project => ({
+        _id: project._id,
+        title: project.title,
+        description: project.description,
+        status: project.status,
+        budget: project.budget?.amount,
+        createdAt: project.createdAt,
+        projectType: 'project'
+      }))
+    ];
+
+    // Sort by date
+    allActiveProjects.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.posted || 0).getTime();
+      const dateB = new Date(b.createdAt || b.posted || 0).getTime();
+      return dateB - dateA;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: allActiveProjects
+    });
+  } catch (error) {
+    console.error('Error fetching active projects:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

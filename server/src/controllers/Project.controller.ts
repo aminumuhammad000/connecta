@@ -176,7 +176,7 @@ export const getProjectById = async (req: Request, res: Response) => {
     }
 
     // Fetch payment info
-    const Payment = require('../models/Payment.model').default;
+    const Payment = (await import('../models/Payment.model.js')).default;
     const payment = await Payment.findOne({ projectId: id });
 
     res.status(200).json({
