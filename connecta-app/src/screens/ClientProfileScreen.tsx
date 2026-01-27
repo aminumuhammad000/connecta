@@ -212,751 +212,752 @@ export default function ClientProfileScreen({ navigation, route }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: c.background }]}>
-      {/* Animated Header */}
-      <Animated.View style={[styles.header, { backgroundColor: c.background, borderBottomColor: c.border, opacity: headerOpacity, borderBottomWidth: StyleSheet.hairlineWidth }]}>
-        <SafeAreaView edges={['top']} style={{ width: '100%' }}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
-              <Ionicons name="chevron-back" size={24} color={c.text} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: c.text }]}>{profile?.firstName}'s Profile</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.iconBtn}>
-              <Ionicons name="settings-outline" size={24} color={c.text} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Animated.View>
-
-      {/* Floating Back Button */}
-      <Animated.View style={[styles.floatingHeader, { opacity: scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' }) }]}>
-        <SafeAreaView edges={['top']} style={{ width: '100%' }}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity onPress={onBack} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-              <Ionicons name="chevron-back" size={24} color="#FFF" />
-            </TouchableOpacity>
-            <View style={{ flex: 1 }} />
-            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
-              <Ionicons name="settings-outline" size={24} color="#FFF" />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Animated.View>
-
-      <Animated.ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} tintColor={c.primary} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Cover Image Area */}
-        <View style={styles.coverContainer}>
-          <LinearGradient
-            colors={['#FF7F50', '#f39170ff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.coverGradient}
-          />
-          <View style={styles.coverOverlay} />
-        </View>
-
-        {/* Profile Info Card */}
-        <View style={styles.profileCardContainer}>
-          <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
-            <View style={styles.avatarRow}>
-              <View style={[styles.avatarContainer, { borderColor: c.card, backgroundColor: c.primary }]}>
-                {profile?.avatar ? (
-                  <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-                ) : (
-                  <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
-                    <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
-                      {profile?.firstName?.charAt(0).toUpperCase() || '?'}
-                    </Text>
-                  </View>
-                )}
-                {profile?.isPremium && (
-                  <View style={styles.premiumBadge}>
-                    <Ionicons name="star" size={12} color="#FFF" />
-                  </View>
-                )}
-              </View>
-              <View style={styles.statsRow}>
-                {profile?.userType === 'freelancer' ? (
-                  <>
-                    <View style={styles.statItem}>
-                      <Text style={[styles.statValue, { color: c.text }]}>₦{profile?.hourlyRate || '0'}</Text>
-                      <Text style={[styles.statLabel, { color: c.subtext }]}>/hr</Text>
-                    </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
-                      <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsCompleted || '0'}</Text>
-                      <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.statItem}>
-                      <Text style={[styles.statValue, { color: c.text }]}>₦{profile?.totalSpend?.toLocaleString() || '0'}</Text>
-                      <Text style={[styles.statLabel, { color: c.subtext }]}>Spend</Text>
-                    </View>
-                    <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
-                      <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsPosted || '0'}</Text>
-                      <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
-                    </View>
-                  </>
-                )}
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
-                  <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
-                </View>
-              </View>
+      <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%', position: 'relative' }}>
+        {/* Animated Header */}
+        <Animated.View style={[styles.header, { backgroundColor: c.background, borderBottomColor: c.border, opacity: headerOpacity, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+          <SafeAreaView edges={['top']} style={{ width: '100%' }}>
+            <View style={styles.headerContent}>
+              <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
+                <Ionicons name="chevron-back" size={24} color={c.text} />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { color: c.text }]}>{profile?.firstName}'s Profile</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.iconBtn}>
+                <Ionicons name="settings-outline" size={24} color={c.text} />
+              </TouchableOpacity>
             </View>
+          </SafeAreaView>
+        </Animated.View>
 
-            <View style={styles.infoSection}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-                {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
-              </View>
-              <Text style={[styles.role, { color: c.primary }]}>
-                {profile?.userType === 'freelancer'
-                  ? (profile?.jobTitle || 'Freelancer')
-                  : (profile?.companyName || 'Individual Client')}
-              </Text>
+        {/* Floating Back Button */}
+        <Animated.View style={[styles.floatingHeader, { opacity: scrollY.interpolate({ inputRange: [0, 100], outputRange: [1, 0], extrapolate: 'clamp' }) }]}>
+          <SafeAreaView edges={['top']} style={{ width: '100%' }}>
+            <View style={styles.headerContent}>
+              <TouchableOpacity onPress={onBack} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+                <Ionicons name="chevron-back" size={24} color="#FFF" />
+              </TouchableOpacity>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={[styles.iconBtn, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
+                <Ionicons name="settings-outline" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+          </SafeAreaView>
+        </Animated.View>
 
-              <View style={styles.detailsRow}>
-                <View style={styles.detailItem}>
-                  <Ionicons name="location-outline" size={14} color={c.subtext} />
-                  <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+        <Animated.ScrollView
+          contentContainerStyle={{ paddingBottom: 100 }}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={loadProfile} colors={[c.primary]} tintColor={c.primary} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Cover Image Area */}
+          <View style={styles.coverContainer}>
+            <LinearGradient
+              colors={['#FF7F50', '#f39170ff']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.coverGradient}
+            />
+            <View style={styles.coverOverlay} />
+          </View>
+
+          {/* Profile Info Card */}
+          <View style={styles.profileCardContainer}>
+            <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
+              <View style={styles.avatarRow}>
+                <View style={[styles.avatarContainer, { borderColor: c.card, backgroundColor: c.primary }]}>
+                  {profile?.avatar ? (
+                    <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
+                      <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
+                        {profile?.firstName?.charAt(0).toUpperCase() || '?'}
+                      </Text>
+                    </View>
+                  )}
+                  {profile?.isPremium && (
+                    <View style={styles.premiumBadge}>
+                      <Ionicons name="star" size={12} color="#FFF" />
+                    </View>
+                  )}
                 </View>
-                <View style={styles.detailDivider} />
-                <View style={styles.detailItem}>
-                  <Ionicons name="calendar-outline" size={14} color={c.subtext} />
-                  <Text style={[styles.detailText, { color: c.subtext }]}>Member since 2026</Text>
+                <View style={styles.statsRow}>
+                  {profile?.userType === 'freelancer' ? (
+                    <>
+                      <View style={styles.statItem}>
+                        <Text style={[styles.statValue, { color: c.text }]}>₦{profile?.hourlyRate || '0'}</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>/hr</Text>
+                      </View>
+                      <View style={styles.statDivider} />
+                      <View style={styles.statItem}>
+                        <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsCompleted || '0'}</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.statItem}>
+                        <Text style={[styles.statValue, { color: c.text }]}>₦{profile?.totalSpend?.toLocaleString() || '0'}</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>Spend</Text>
+                      </View>
+                      <View style={styles.statDivider} />
+                      <View style={styles.statItem}>
+                        <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsPosted || '0'}</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
+                      </View>
+                    </>
+                  )}
+                  <View style={styles.statDivider} />
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
+                  </View>
                 </View>
               </View>
 
-              <View style={styles.bioHeader}>
-                <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
-                {isOwnProfile && (
-                  <TouchableOpacity
-                    onPress={generateAIBio}
-                    disabled={isGeneratingBio}
-                    style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
-                  >
-                    {isGeneratingBio ? (
-                      <ActivityIndicator size="small" color={c.primary} />
-                    ) : (
-                      <>
-                        <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
-                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
+              <View style={styles.infoSection}>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
+                  {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
+                </View>
+                <Text style={[styles.role, { color: c.primary }]}>
+                  {profile?.userType === 'freelancer'
+                    ? (profile?.jobTitle || 'Freelancer')
+                    : (profile?.companyName || 'Individual Client')}
+                </Text>
+
+                <View style={styles.detailsRow}>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="location-outline" size={14} color={c.subtext} />
+                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+                  </View>
+                  <View style={styles.detailDivider} />
+                  <View style={styles.detailItem}>
+                    <Ionicons name="calendar-outline" size={14} color={c.subtext} />
+                    <Text style={[styles.detailText, { color: c.subtext }]}>Member since 2026</Text>
+                  </View>
+                </View>
+
+                <View style={styles.bioHeader}>
+                  <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
+                  {isOwnProfile && (
+                    <TouchableOpacity
+                      onPress={generateAIBio}
+                      disabled={isGeneratingBio}
+                      style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
+                    >
+                      {isGeneratingBio ? (
+                        <ActivityIndicator size="small" color={c.primary} />
+                      ) : (
+                        <>
+                          <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
+                          <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
+
+                {isOwnProfile ? (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                      onPress={() => navigation.navigate('ClientEditProfile')}
+                    >
+                      <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                      <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                      onPress={() => navigation.navigate('PostJob')}
+                    >
+                      <Ionicons name="add-circle-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                      <Text style={[styles.profileActionText, { color: c.text }]}>Post Job</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                      onPress={() => navigation.navigate('ManageSubscription')}
+                    >
+                      <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={[styles.profileActionBtn, { backgroundColor: c.primary, borderColor: c.primary }]}
+                      onPress={() => {
+                        // Logic to invite or message
+                        if (profile?.userType === 'freelancer') {
+                          // Invite logic (could open modal or navigate)
+                          navigation.navigate('ClientRecommended', { openInvite: true, freelancerId: profile._id });
+                        } else {
+                          // Message logic
+                          navigation.navigate('Messages', { recipientId: profile._id });
+                        }
+                      }}
+                    >
+                      <Ionicons name={profile?.userType === 'freelancer' ? "paper-plane" : "chatbubble-ellipses"} size={16} color="#FFF" style={{ marginRight: 6 }} />
+                      <Text style={[styles.profileActionText, { color: '#FFF' }]}>
+                        {profile?.userType === 'freelancer' ? 'Invite to Job' : 'Message'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                      onPress={() => setReviewModalVisible(true)}
+                    >
+                      <Ionicons name="star-outline" size={16} color={c.text} style={{ marginRight: 6 }} />
+                      <Text style={[styles.profileActionText, { color: c.text }]}>Add Review</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
-              <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
-              {isOwnProfile ? (
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                    onPress={() => navigation.navigate('ClientEditProfile')}
-                  >
-                    <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                    onPress={() => navigation.navigate('PostJob')}
-                  >
-                    <Ionicons name="add-circle-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Post Job</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                    onPress={() => navigation.navigate('ManageSubscription')}
-                  >
-                    <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={[styles.profileActionBtn, { backgroundColor: c.primary, borderColor: c.primary }]}
-                    onPress={() => {
-                      // Logic to invite or message
-                      if (profile?.userType === 'freelancer') {
-                        // Invite logic (could open modal or navigate)
-                        navigation.navigate('ClientRecommended', { openInvite: true, freelancerId: profile._id });
-                      } else {
-                        // Message logic
-                        navigation.navigate('Messages', { recipientId: profile._id });
-                      }
-                    }}
-                  >
-                    <Ionicons name={profile?.userType === 'freelancer' ? "paper-plane" : "chatbubble-ellipses"} size={16} color="#FFF" style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: '#FFF' }]}>
-                      {profile?.userType === 'freelancer' ? 'Invite to Job' : 'Message'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                    onPress={() => setReviewModalVisible(true)}
-                  >
-                    <Ionicons name="star-outline" size={16} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Add Review</Text>
-                  </TouchableOpacity>
+              {isOwnProfile && (
+                <View style={styles.ultraSleekCompleteness}>
+                  <View style={styles.completenessRow}>
+                    <Text style={[styles.tinyLabel, { color: c.subtext }]}>Trust Score</Text>
+                    <Text style={[styles.tinyValue, { color: trustScore > 70 ? '#10B981' : c.primary }]}>{trustScore}%</Text>
+                  </View>
+                  <View style={[styles.thinTrack, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                    <LinearGradient
+                      colors={trustScore > 70 ? ['#10B981', '#34D399'] : [c.primary, '#FF9F70']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[styles.thinFill, { width: `${trustScore}%` }]}
+                    />
+                  </View>
                 </View>
               )}
             </View>
+          </View>
 
-            {isOwnProfile && (
-              <View style={styles.ultraSleekCompleteness}>
-                <View style={styles.completenessRow}>
-                  <Text style={[styles.tinyLabel, { color: c.subtext }]}>Trust Score</Text>
-                  <Text style={[styles.tinyValue, { color: trustScore > 70 ? '#10B981' : c.primary }]}>{trustScore}%</Text>
-                </View>
-                <View style={[styles.thinTrack, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
-                  <LinearGradient
-                    colors={trustScore > 70 ? ['#10B981', '#34D399'] : [c.primary, '#FF9F70']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.thinFill, { width: `${trustScore}%` }]}
-                  />
-                </View>
+          {/* Tabs */}
+          <View style={[styles.tabContainer, { borderBottomColor: c.border, marginTop: 24 }]}>
+            <TouchableOpacity
+              style={[styles.tabItem, activeTab === 'history' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('history')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'history' ? c.primary : c.subtext }]}>
+                {profile?.userType === 'freelancer' ? 'Portfolio' : 'Posted Jobs'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('reviews')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Tab Content */}
+          <View style={styles.contentContainer}>
+            {activeTab === 'history' ? (
+              <View>
+                {profile?.userType === 'freelancer' ? (
+                  /* Portfolio List */
+                  profile?.portfolio?.length > 0 ? (
+                    profile.portfolio.map((item: any, index: number) => (
+                      <View key={index} style={[styles.jobCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                        <View style={styles.jobHeader}>
+                          <View style={[styles.iconBox, { backgroundColor: c.primary + '15' }]}>
+                            <Ionicons name="images" size={20} color={c.primary} />
+                          </View>
+                          <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
+                            <Text style={[styles.jobBudget, { color: c.subtext }]} numberOfLines={2}>{item.description}</Text>
+                          </View>
+                        </View>
+                        {item.imageUrl && (
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            style={{ width: '100%', height: 160, borderRadius: 12, marginTop: 12 }}
+                            resizeMode="cover"
+                          />
+                        )}
+                      </View>
+                    ))
+                  ) : (
+                    <View style={styles.emptyTabState}>
+                      <Ionicons name="images-outline" size={48} color={c.border} />
+                      <Text style={{ color: c.subtext, marginTop: 8 }}>No portfolio items yet.</Text>
+                    </View>
+                  )
+                ) : (
+                  /* Posted Jobs List */
+                  profile?.jobs?.length > 0 ? (
+                    profile.jobs.map((job: any, index: number) => (
+                      <View key={index} style={[styles.jobCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                        <View style={styles.jobHeader}>
+                          <View style={[styles.iconBox, { backgroundColor: c.primary + '15' }]}>
+                            <Ionicons name="briefcase" size={20} color={c.primary} />
+                          </View>
+                          <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>{job.title}</Text>
+                            <Text style={[styles.jobBudget, { color: c.subtext }]}>Budget: {job.budget}</Text>
+                          </View>
+                          <View style={[styles.statusBadge, { backgroundColor: job.status === 'Open' ? '#D1FAE5' : '#F3F4F6' }]}>
+                            <Text style={[styles.statusText, { color: job.status === 'Open' ? '#059669' : '#6B7280' }]}>{job.status}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <View style={styles.emptyTabState}>
+                      <Ionicons name="clipboard-outline" size={48} color={c.border} />
+                      <Text style={{ color: c.subtext, marginTop: 8 }}>No posted jobs yet.</Text>
+                    </View>
+                  )
+                )}
+              </View>
+            ) : (
+              <View>
+                {profile?.reviews?.length > 0 ? (
+                  profile.reviews.map((review: any, index: number) => (
+                    <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                      <View style={styles.reviewHeader}>
+                        <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
+                        <View style={styles.ratingRow}>
+                          <Ionicons name="star" size={14} color="#F59E0B" />
+                          <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Ionicons name="star-outline" size={48} color={c.border} />
+                    <Text style={{ color: c.subtext, marginTop: 8 }}>No reviews yet.</Text>
+                  </View>
+                )}
               </View>
             )}
           </View>
-        </View>
 
-        {/* Tabs */}
-        <View style={[styles.tabContainer, { borderBottomColor: c.border, marginTop: 24 }]}>
-          <TouchableOpacity
-            style={[styles.tabItem, activeTab === 'history' && { borderBottomColor: c.primary }]}
-            onPress={() => setActiveTab('history')}
-          >
-            <Text style={[styles.tabText, { color: activeTab === 'history' ? c.primary : c.subtext }]}>
-              {profile?.userType === 'freelancer' ? 'Portfolio' : 'Posted Jobs'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
-            onPress={() => setActiveTab('reviews')}
-          >
-            <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
-          </TouchableOpacity>
-        </View>
+        </Animated.ScrollView>
 
-        {/* Tab Content */}
-        <View style={styles.contentContainer}>
-          {activeTab === 'history' ? (
-            <View>
-              {profile?.userType === 'freelancer' ? (
-                /* Portfolio List */
-                profile?.portfolio?.length > 0 ? (
-                  profile.portfolio.map((item: any, index: number) => (
-                    <View key={index} style={[styles.jobCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                      <View style={styles.jobHeader}>
-                        <View style={[styles.iconBox, { backgroundColor: c.primary + '15' }]}>
-                          <Ionicons name="images" size={20} color={c.primary} />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 12 }}>
-                          <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
-                          <Text style={[styles.jobBudget, { color: c.subtext }]} numberOfLines={2}>{item.description}</Text>
-                        </View>
-                      </View>
-                      {item.imageUrl && (
-                        <Image
-                          source={{ uri: item.imageUrl }}
-                          style={{ width: '100%', height: 160, borderRadius: 12, marginTop: 12 }}
-                          resizeMode="cover"
-                        />
-                      )}
-                    </View>
-                  ))
+        {/* Review Modal */}
+        <Modal
+          visible={reviewModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setReviewModalVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+            <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>Add Review</Text>
+                <TouchableOpacity onPress={() => setReviewModalVisible(false)}>
+                  <Ionicons name="close" size={24} color={c.subtext} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Rating</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                    <Ionicons
+                      name={star <= rating ? "star" : "star-outline"}
+                      size={32}
+                      color={star <= rating ? "#F59E0B" : c.border}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Your Comment</Text>
+              <TextInput
+                style={{
+                  backgroundColor: c.background,
+                  borderRadius: 12,
+                  padding: 16,
+                  height: 120,
+                  textAlignVertical: 'top',
+                  color: c.text,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                  marginBottom: 24
+                }}
+                placeholder="Share your experience..."
+                placeholderTextColor={c.subtext}
+                multiline
+                value={comment}
+                onChangeText={setComment}
+              />
+
+              <TouchableOpacity
+                style={{
+                  backgroundColor: c.primary,
+                  paddingVertical: 16,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  opacity: isSubmittingReview ? 0.7 : 1
+                }}
+                onPress={handleAddReview}
+                disabled={isSubmittingReview}
+              >
+                {isSubmittingReview ? (
+                  <ActivityIndicator color="#FFF" />
                 ) : (
-                  <View style={styles.emptyTabState}>
-                    <Ionicons name="images-outline" size={48} color={c.border} />
-                    <Text style={{ color: c.subtext, marginTop: 8 }}>No portfolio items yet.</Text>
-                  </View>
-                )
-              ) : (
-                /* Posted Jobs List */
-                profile?.jobs?.length > 0 ? (
-                  profile.jobs.map((job: any, index: number) => (
-                    <View key={index} style={[styles.jobCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                      <View style={styles.jobHeader}>
-                        <View style={[styles.iconBox, { backgroundColor: c.primary + '15' }]}>
-                          <Ionicons name="briefcase" size={20} color={c.primary} />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 12 }}>
-                          <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>{job.title}</Text>
-                          <Text style={[styles.jobBudget, { color: c.subtext }]}>Budget: {job.budget}</Text>
-                        </View>
-                        <View style={[styles.statusBadge, { backgroundColor: job.status === 'Open' ? '#D1FAE5' : '#F3F4F6' }]}>
-                          <Text style={[styles.statusText, { color: job.status === 'Open' ? '#059669' : '#6B7280' }]}>{job.status}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <View style={styles.emptyTabState}>
-                    <Ionicons name="clipboard-outline" size={48} color={c.border} />
-                    <Text style={{ color: c.subtext, marginTop: 8 }}>No posted jobs yet.</Text>
-                  </View>
-                )
-              )}
-            </View>
-          ) : (
-            <View>
-              {profile?.reviews?.length > 0 ? (
-                profile.reviews.map((review: any, index: number) => (
-                  <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                    <View style={styles.reviewHeader}>
-                      <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
-                      <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={14} color="#F59E0B" />
-                        <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
-                  </View>
-                ))
-              ) : (
-                <View style={styles.emptyTabState}>
-                  <Ionicons name="star-outline" size={48} color={c.border} />
-                  <Text style={{ color: c.subtext, marginTop: 8 }}>No reviews yet.</Text>
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-
-      </Animated.ScrollView>
-
-      {/* Review Modal */}
-      <Modal
-        visible={reviewModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setReviewModalVisible(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
-          <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>Add Review</Text>
-              <TouchableOpacity onPress={() => setReviewModalVisible(false)}>
-                <Ionicons name="close" size={24} color={c.subtext} />
+                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Submit Review</Text>
+                )}
               </TouchableOpacity>
             </View>
-
-            <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Rating</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                  <Ionicons
-                    name={star <= rating ? "star" : "star-outline"}
-                    size={32}
-                    color={star <= rating ? "#F59E0B" : c.border}
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Your Comment</Text>
-            <TextInput
-              style={{
-                backgroundColor: c.background,
-                borderRadius: 12,
-                padding: 16,
-                height: 120,
-                textAlignVertical: 'top',
-                color: c.text,
-                borderWidth: 1,
-                borderColor: c.border,
-                marginBottom: 24
-              }}
-              placeholder="Share your experience..."
-              placeholderTextColor={c.subtext}
-              multiline
-              value={comment}
-              onChangeText={setComment}
-            />
-
-            <TouchableOpacity
-              style={{
-                backgroundColor: c.primary,
-                paddingVertical: 16,
-                borderRadius: 12,
-                alignItems: 'center',
-                opacity: isSubmittingReview ? 0.7 : 1
-              }}
-              onPress={handleAddReview}
-              disabled={isSubmittingReview}
-            >
-              {isSubmittingReview ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Submit Review</Text>
-              )}
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
-    </View>
-  );
+        </Modal>
+      </View>
+      );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingBottom: 10,
+      const styles = StyleSheet.create({
+        container: {flex: 1 },
+      header: {
+        position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,
+      paddingBottom: 10,
   },
-  floatingHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 11,
-    paddingBottom: 10,
+      floatingHeader: {
+        position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 11,
+      paddingBottom: 10,
   },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 44,
+      headerContent: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      height: 44,
   },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+      headerTitle: {
+        fontSize: 16,
+      fontWeight: '600',
   },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+      iconBtn: {
+        width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-  coverContainer: {
-    height: 180,
-    width: '100%',
-    position: 'relative',
+      coverContainer: {
+        height: 180,
+      width: '100%',
+      position: 'relative',
   },
-  coverGradient: {
-    flex: 1,
+      coverGradient: {
+        flex: 1,
   },
-  coverOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+      coverOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.1)',
   },
-  profileCardContainer: {
-    paddingHorizontal: 16,
-    marginTop: -40,
+      profileCardContainer: {
+        paddingHorizontal: 16,
+      marginTop: -40,
   },
-  profileCard: {
-    borderRadius: 20,
-    padding: 20,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+      profileCard: {
+        borderRadius: 20,
+      padding: 20,
+      shadowOffset: {width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 5,
   },
-  avatarRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 16,
+      avatarRow: {
+        flexDirection: 'row',
+      alignItems: 'flex-end',
+      marginBottom: 16,
   },
-  avatarContainer: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    borderWidth: 4,
-    position: 'relative',
-    marginTop: -42,
+      avatarContainer: {
+        width: 84,
+      height: 84,
+      borderRadius: 42,
+      borderWidth: 4,
+      position: 'relative',
+      marginTop: -42,
   },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 40,
+      avatar: {
+        width: '100%',
+      height: '100%',
+      borderRadius: 40,
   },
-  premiumBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#F59E0B',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#FFF',
+      premiumBadge: {
+        position: 'absolute',
+      bottom: 0,
+      right: 0,
+      backgroundColor: '#F59E0B',
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: '#FFF',
   },
-  statsRow: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingBottom: 8,
+      statsRow: {
+        flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      paddingBottom: 8,
   },
-  statItem: {
-    alignItems: 'center',
+      statItem: {
+        alignItems: 'center',
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '700',
+      statValue: {
+        fontSize: 16,
+      fontWeight: '700',
   },
-  statLabel: {
-    fontSize: 12,
+      statLabel: {
+        fontSize: 12,
   },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#E5E7EB',
+      statDivider: {
+        width: 1,
+      height: 24,
+      backgroundColor: '#E5E7EB',
   },
-  infoSection: {
-    marginTop: 8,
+      infoSection: {
+        marginTop: 8,
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+      nameRow: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 4,
   },
-  name: {
-    fontSize: 22,
-    fontWeight: '700',
+      name: {
+        fontSize: 22,
+      fontWeight: '700',
   },
-  role: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 16,
+      role: {
+        fontSize: 14,
+      fontWeight: '600',
+      marginBottom: 16,
   },
-  detailsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+      detailsRow: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+      gap: 8,
   },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+      detailItem: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
   },
-  detailText: {
-    fontSize: 13,
+      detailText: {
+        fontSize: 13,
   },
-  detailDivider: {
-    width: 1,
-    height: 12,
-    backgroundColor: '#E5E7EB',
+      detailDivider: {
+        width: 1,
+      height: 12,
+      backgroundColor: '#E5E7EB',
   },
-  bioHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+      bioHeader: {
+        flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
   },
-  bioTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
+      bioTitle: {
+        fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 1,
   },
-  aiBioBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+      aiBioBtn: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+      gap: 4,
   },
-  aiBioText: {
-    fontSize: 11,
-    fontWeight: '600',
+      aiBioText: {
+        fontSize: 11,
+      fontWeight: '600',
   },
-  bio: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 20,
+      bio: {
+        fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 20,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
+      actionButtons: {
+        flexDirection: 'row',
+      gap: 8,
+      marginTop: 4,
   },
-  primaryBtn: {
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+      primaryBtn: {
+        paddingVertical: 12,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-  btnTextWhite: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '600',
+      btnTextWhite: {
+        color: '#FFF',
+      fontSize: 14,
+      fontWeight: '600',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
+      tabContainer: {
+        flexDirection: 'row',
+      paddingHorizontal: 20,
+      borderBottomWidth: 1,
   },
-  tabItem: {
-    marginRight: 24,
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+      tabItem: {
+        marginRight: 24,
+      paddingVertical: 12,
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
   },
-  tabText: {
-    fontSize: 15,
-    fontWeight: '600',
+      tabText: {
+        fontSize: 15,
+      fontWeight: '600',
   },
-  contentContainer: {
-    padding: 20,
+      contentContainer: {
+        padding: 20,
   },
-  jobCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
+      jobCard: {
+        borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
   },
-  jobHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+      jobHeader: {
+        flexDirection: 'row',
+      alignItems: 'center',
   },
-  iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+      iconBox: {
+        width: 40,
+      height: 40,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-  jobTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 2,
+      jobTitle: {
+        fontSize: 16,
+      fontWeight: '700',
+      marginBottom: 2,
   },
-  jobBudget: {
-    fontSize: 12,
+      jobBudget: {
+        fontSize: 12,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+      statusBadge: {
+        paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '700',
+      statusText: {
+        fontSize: 12,
+      fontWeight: '700',
   },
-  emptyTabState: {
-    padding: 40,
-    alignItems: 'center',
+      emptyTabState: {
+        padding: 40,
+      alignItems: 'center',
   },
-  reviewCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
+      reviewCard: {
+        padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 12,
   },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+      reviewHeader: {
+        flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
   },
-  reviewAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
+      reviewAuthor: {
+        fontSize: 14,
+      fontWeight: '600',
   },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+      ratingRow: {
+        flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
   },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '600',
+      ratingText: {
+        fontSize: 12,
+      fontWeight: '600',
   },
-  reviewComment: {
-    fontSize: 13,
-    lineHeight: 18,
+      reviewComment: {
+        fontSize: 13,
+      lineHeight: 18,
   },
-  emptyState: {
-    margin: 20,
-    padding: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    borderWidth: 1,
+      emptyState: {
+        margin: 20,
+      padding: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      borderWidth: 1,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 16,
-    marginBottom: 8,
+      emptyTitle: {
+        fontSize: 20,
+      fontWeight: '700',
+      marginTop: 16,
+      marginBottom: 8,
   },
-  profileActionBtn: {
-    flex: 1,
-    height: 32,
-    flexDirection: 'row',
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
+      profileActionBtn: {
+        flex: 1,
+      height: 32,
+      flexDirection: 'row',
+      borderRadius: 6,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
   },
-  profileActionIconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
+      profileActionIconBtn: {
+        width: 32,
+      height: 32,
+      borderRadius: 6,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
   },
-  profileActionText: {
-    fontSize: 12,
-    fontWeight: '500',
+      profileActionText: {
+        fontSize: 12,
+      fontWeight: '500',
   },
-  ultraSleekCompleteness: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.02)',
+      ultraSleekCompleteness: {
+        marginTop: 14,
+      paddingTop: 14,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(0,0,0,0.02)',
   },
-  completenessRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
+      completenessRow: {
+        flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 6,
   },
-  tinyLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+      tinyLabel: {
+        fontSize: 10,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
   },
-  tinyValue: {
-    fontSize: 10,
-    fontWeight: '800',
+      tinyValue: {
+        fontSize: 10,
+      fontWeight: '800',
   },
-  thinTrack: {
-    height: 3,
-    borderRadius: 1.5,
-    overflow: 'hidden',
+      thinTrack: {
+        height: 3,
+      borderRadius: 1.5,
+      overflow: 'hidden',
   },
-  thinFill: {
-    height: '100%',
-    borderRadius: 1.5,
+      thinFill: {
+        height: '100%',
+      borderRadius: 1.5,
   },
 });

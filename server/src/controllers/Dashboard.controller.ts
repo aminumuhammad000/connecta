@@ -205,10 +205,34 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
       totalEarnings = earningsResult[0]?.total || 0;
     }
 
+    // Get total projects (engagements) - where status is accepted, active, or completed
+    const totalProjectsCount = await Proposal.countDocuments({
+      freelancerId: userId,
+      status: { $in: ['accepted', 'active', 'in_progress', 'approved', 'completed'] },
+    });
+
+    // Get unread messages count
+    const conversations = await Conversation.find({
+      $or: [
+        { clientId: userId },
+        { freelancerId: userId },
+      ],
+    }).select('_id');
+
+    const conversationIds = conversations.map((conv) => conv._id);
+
+    const unreadMessagesCount = await Message.countDocuments({
+      conversationId: { $in: conversationIds },
+      sender: { $ne: userId },
+      isRead: false,
+    });
+
     res.status(200).json({
       activeProposals: activeProposalsCount,
       completedJobs: completedJobsCount,
       totalEarnings: totalEarnings,
+      totalProjects: totalProjectsCount,
+      newMessages: unreadMessagesCount,
     });
   } catch (error) {
     console.error('Error fetching freelancer dashboard:', error);

@@ -373,6 +373,7 @@ export interface DashboardStats {
     totalEarnings?: number;
     completedJobs?: number;
     activeProposals?: number;
+    totalProjects?: number;
 }
 
 // API Response Types

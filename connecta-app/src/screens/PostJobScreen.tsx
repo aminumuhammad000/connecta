@@ -1196,78 +1196,80 @@ const PostJobScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={[styles.header, { borderBottomColor: c.border }]}>
-          <TouchableOpacity
-            onPress={() => currentStep > 0 ? prevStep() : navigation.goBack()}
-            style={styles.iconBtn}
-          >
-            <MaterialIcons
-              name={currentStep > 0 ? "arrow-back" : "close"}
-              size={24}
-              color={c.text}
-            />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: c.text }]}>Post a New Job</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        {(!jobMode && !isEditMode) ? (
-          renderTypeSelection()
-        ) : (
-          <>
-            {renderStepIndicator()}
-            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-              {currentStep === 0 && renderBasics()}
-              {currentStep === 1 && renderDetails()}
-              {currentStep === 2 && renderBudget()}
-              {currentStep === 3 && renderPreview()}
-            </ScrollView>
-
-            <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
-              <View style={{ flex: 1 }} />
-              <Button
-                title={
-                  currentStep === 3
-                    ? isEditMode
-                      ? 'Update'
-                      : 'Pay & Post'
-                    : 'Next'
-                }
-                onPress={
-                  currentStep === 3
-                    ? isEditMode
-                      ? handleUpdateJob
-                      : initiatePayment
-                    : nextStep
-                }
-                style={styles.smallNextBtn}
-                loading={isLoading}
+      <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={[styles.header, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              onPress={() => currentStep > 0 ? prevStep() : navigation.goBack()}
+              style={styles.iconBtn}
+            >
+              <MaterialIcons
+                name={currentStep > 0 ? "arrow-back" : "close"}
+                size={24}
+                color={c.text}
               />
-            </View>
-          </>
-        )}
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: c.text }]}>Post a New Job</Text>
+            <View style={{ width: 40 }} />
+          </View>
 
-        {/* Flutterwave Payment WebView */}
-        <PaymentWebView
-          visible={showPaymentModal}
-          paymentUrl={paymentUrl}
-          onSuccess={handlePaymentSuccess}
-          onCancel={handlePaymentCancel}
-        />
+          {(!jobMode && !isEditMode) ? (
+            renderTypeSelection()
+          ) : (
+            <>
+              {renderStepIndicator()}
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+                {currentStep === 0 && renderBasics()}
+                {currentStep === 1 && renderDetails()}
+                {currentStep === 2 && renderBudget()}
+                {currentStep === 3 && renderPreview()}
+              </ScrollView>
 
-        <SuccessModal
-          visible={showSuccessModal}
-          title="Payment Successful!"
-          message="Your job has been posted and payment is held securely in escrow."
-          buttonText="Go to My Jobs"
-          onClose={() => {
-            setShowSuccessModal(false);
-            navigation.goBack();
-          }}
-        />
+              <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
+                <View style={{ flex: 1 }} />
+                <Button
+                  title={
+                    currentStep === 3
+                      ? isEditMode
+                        ? 'Update'
+                        : 'Pay & Post'
+                      : 'Next'
+                  }
+                  onPress={
+                    currentStep === 3
+                      ? isEditMode
+                        ? handleUpdateJob
+                        : initiatePayment
+                      : nextStep
+                  }
+                  style={styles.smallNextBtn}
+                  loading={isLoading}
+                />
+              </View>
+            </>
+          )}
 
-      </KeyboardAvoidingView>
+          {/* Flutterwave Payment WebView */}
+          <PaymentWebView
+            visible={showPaymentModal}
+            paymentUrl={paymentUrl}
+            onSuccess={handlePaymentSuccess}
+            onCancel={handlePaymentCancel}
+          />
+
+          <SuccessModal
+            visible={showSuccessModal}
+            title="Payment Successful!"
+            message="Your job has been posted and payment is held securely in escrow."
+            buttonText="Go to My Jobs"
+            onClose={() => {
+              setShowSuccessModal(false);
+              navigation.goBack();
+            }}
+          />
+
+        </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };

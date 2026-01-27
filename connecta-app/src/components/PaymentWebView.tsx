@@ -46,20 +46,51 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
                     <View style={{ width: 40 }} /> {/* Spacer to center title */}
                 </View>
 
-                {loading && (
+                {loading && Platform.OS !== 'web' && (
                     <View style={styles.loadingContainer}>
                         <ActivityIndicator size="large" color={c.primary} />
                         <Text style={[styles.loadingText, { color: c.text }]}>Loading payment page...</Text>
                     </View>
                 )}
 
-                <WebView
-                    source={{ uri: paymentUrl }}
-                    onNavigationStateChange={handleNavigationStateChange}
-                    onLoadStart={() => setLoading(true)}
-                    onLoadEnd={() => setLoading(false)}
-                    style={styles.webview}
-                />
+                {Platform.OS === 'web' ? (
+                    <View style={styles.webContainer}>
+                        <Text style={[styles.webText, { color: c.text }]}>
+                            Complete your payment securely in a new browser tab.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.webButton, { backgroundColor: c.primary }]}
+                            onPress={() => {
+                                window.open(paymentUrl, '_blank');
+                                // In a real scenario, we'd wait for a callback or deep link.
+                                // For this POC/Web version, we might assume user closes modal manually or we poll.
+                                // But effectively getting the transaction ID back is hard without a backend callback pushing to frontend via socket.
+                                // For now, we will just open it.
+                            }}
+                        >
+                            <Text style={styles.webButtonText}>Open Payment Page</Text>
+                        </TouchableOpacity>
+                        <Text style={[styles.webSubText, { color: c.subtext }]}>
+                            After payment, return here.
+                        </Text>
+
+                        {/* Dev Test Button for Success */}
+                        <TouchableOpacity
+                            onPress={() => onSuccess('web-test-transaction-id')}
+                            style={{ marginTop: 20 }}
+                        >
+                            <Text style={{ color: c.subtext, fontSize: 12 }}>(Dev: Simulate Success)</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <WebView
+                        source={{ uri: paymentUrl }}
+                        onNavigationStateChange={handleNavigationStateChange}
+                        onLoadStart={() => setLoading(true)}
+                        onLoadEnd={() => setLoading(false)}
+                        style={styles.webview}
+                    />
+                )}
             </View>
         </Modal>
     );
@@ -99,6 +130,33 @@ const styles = StyleSheet.create({
     webview: {
         flex: 1,
     },
+    webContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    webText: {
+        fontSize: 16,
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    webButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        minWidth: 200,
+        alignItems: 'center',
+    },
+    webButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    webSubText: {
+        marginTop: 16,
+        fontSize: 14,
+    }
 });
 
 export default PaymentWebView;

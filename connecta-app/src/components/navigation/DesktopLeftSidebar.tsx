@@ -99,7 +99,10 @@ const DesktopLeftSidebar = ({ navigation }: any) => {
 
                 {/* Premium Upsell (Freelancer Only usually) */}
                 {!isClient && !user?.isPremium && (
-                    <TouchableOpacity style={[styles.premiumRow, { borderTopColor: c.border, backgroundColor: c.primary + '10' }]}>
+                    <TouchableOpacity
+                        style={[styles.premiumRow, { borderTopColor: c.border, backgroundColor: c.primary + '10' }]}
+                        onPress={() => navigation.navigate('FreelancerMain', { screen: 'ManageSubscription' })}
+                    >
                         <LinearGradient
                             colors={['#F59E0B', '#D97706']}
                             style={styles.premiumIcon}
