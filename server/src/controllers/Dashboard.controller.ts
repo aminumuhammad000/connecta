@@ -215,9 +215,9 @@ export const getActiveProjects = async (req: Request, res: Response) => {
     ];
 
     // Sort by date
-    allActiveProjects.sort((a, b) => {
-      const dateA = new Date(a.createdAt || a.posted || 0).getTime();
-      const dateB = new Date(b.createdAt || b.posted || 0).getTime();
+    allActiveProjects.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
       return dateB - dateA;
     });
 

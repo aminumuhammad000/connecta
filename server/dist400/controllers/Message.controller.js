@@ -3,6 +3,9 @@ import Conversation from '../models/Conversation.model.js';
 import mongoose from 'mongoose';
 // Import io from app (singleton pattern)
 import { getIO } from '../core/utils/socketIO.js';
+import User from '../models/user.model.js';
+import Notification from '../models/Notification.model.js';
+import notificationService from '../services/notification.service.js';
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req, res) => {
     try {
@@ -206,9 +209,9 @@ export const sendMessage = async (req, res) => {
             io.to(userId).emit('conversation:update');
         });
         // Create notification for receiver
-        const sender = await mongoose.model('User').findById(senderId).select('firstName lastName');
+        const sender = await User.findById(senderId).select('firstName lastName');
         const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'Someone';
-        await mongoose.model('Notification').create({
+        await Notification.create({
             userId: receiverId,
             type: 'message_received',
             title: 'New Message',
@@ -226,7 +229,6 @@ export const sendMessage = async (req, res) => {
             type: 'message_received'
         });
         // Send Push Notification
-        const notificationService = (await import('../services/notification.service.js')).default;
         notificationService.sendPushNotification(receiverId, 'New Message', `${senderName}: ${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}`, { conversationId: targetConversationId, type: 'message' });
         // Emit message to receiver for real-time chat
         io.to(receiverId).emit('message:receive', message);

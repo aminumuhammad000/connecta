@@ -8,6 +8,7 @@ import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
 import mongoose from 'mongoose';
 import CollaboProject from '../models/CollaboProject.model.js';
+import Profile from '../models/Profile.model.js';
 // Get Admin Dashboard Data
 export const getAdminStats = async (req, res) => {
     try {
@@ -188,8 +189,8 @@ export const getActiveProjects = async (req, res) => {
         ];
         // Sort by date
         allActiveProjects.sort((a, b) => {
-            const dateA = new Date(a.createdAt || a.posted || 0).getTime();
-            const dateB = new Date(b.createdAt || b.posted || 0).getTime();
+            const dateA = new Date(a.createdAt || 0).getTime();
+            const dateB = new Date(b.createdAt || 0).getTime();
             return dateB - dateA;
         });
         res.status(200).json({
@@ -265,7 +266,6 @@ export const getFreelancerDashboard = async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 };
-import Profile from '../models/Profile.model.js';
 // Get Top Freelancers (AI-powered recommendations)
 export const getTopFreelancers = async (req, res) => {
     try {

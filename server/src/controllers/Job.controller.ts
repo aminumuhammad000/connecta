@@ -133,7 +133,7 @@ export const createJob = async (req: Request, res: Response) => {
       TwilioService.notifyMatchingFreelancers(newJob);
 
       const recService = new RecommendationService();
-      recService.processNewJob(newJob._id);
+      recService.processNewJob(newJob._id as any);
     } catch (notifyErr) {
       console.error("Failed to notify freelancers:", notifyErr);
     }
