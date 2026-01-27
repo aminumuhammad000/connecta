@@ -110,8 +110,8 @@ function ClientTabs() {
 
                     if (route.name === 'Home') {
                         iconName = focused ? 'home' : 'home-outline';
-                    } else if (route.name === 'Jobs') {
-                        iconName = focused ? 'briefcase' : 'briefcase-outline';
+                    } else if (route.name === 'Freelancers') {
+                        iconName = focused ? 'people' : 'people-outline';
                     } else if (route.name === 'Projects') {
                         iconName = focused ? 'folder-open' : 'folder-open-outline';
                     } else if (route.name === 'Messages') {
@@ -132,7 +132,7 @@ function ClientTabs() {
             })}
         >
             <Tab.Screen name="Home" component={ClientDashboardScreen} />
-            <Tab.Screen name="Jobs" component={ClientJobsScreen} />
+            <Tab.Screen name="Freelancers" component={ClientRecommendedFreelancersScreen} />
             <Tab.Screen name="Projects" component={ClientProjectsScreen} />
             <Tab.Screen name="Messages" component={ChatsScreen} />
             <Tab.Screen name="Profile" component={ClientProfileScreen} />
@@ -144,6 +144,7 @@ export default function ClientNavigator() {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="ClientTabs" component={ClientTabs} />
+            <Stack.Screen name="Jobs" component={ClientJobsScreen} />
             <Stack.Screen name="PostJob" component={PostJobScreen} />
             <Stack.Screen name="PostCollaboJob" component={require('../screens/PostCollaboJobScreen').default} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />

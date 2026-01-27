@@ -103,3 +103,8 @@ export const deleteTask = async (taskId: string) => {
     const response = await del(`/api/collabo/task/${taskId}`);
     return (response as any)?.data || response;
 };
+
+export const deleteFile = async (fileId: string) => {
+    const response = await del(`/api/collabo/file/${fileId}`);
+    return (response as any)?.data || response;
+};

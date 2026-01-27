@@ -11,6 +11,7 @@ import { configureNotifications, registerForPushNotificationsAsync, areNotificat
 import { InAppAlertProvider, useInAppAlert } from './src/components/InAppAlert';
 import authService from './src/services/authService';
 import EmailVerificationScreen from './src/screens/EmailVerificationScreen';
+import { logAppOpen } from './src/utils/analytics';
 
 // Navigators
 import AuthNavigator from './src/navigation/AuthNavigator';
@@ -43,6 +44,8 @@ function AppContent() {
   const { showAlert } = useInAppAlert();
 
   useEffect(() => {
+    logAppOpen();
+
     // Skip notification setup on web - not fully supported
     if (Platform.OS === 'web') {
       console.log('[App] Skipping notification setup on web platform');

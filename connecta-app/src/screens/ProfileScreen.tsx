@@ -407,7 +407,7 @@ export default function ProfileScreen({ navigation }: any) {
                 profile.reviews.map((review: any, index: number) => (
                   <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
                     <View style={styles.reviewHeader}>
-                      <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
+                      <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.reviewerId?.firstName || review.author || 'Anonymous'}</Text>
                       <View style={styles.ratingRow}>
                         <Ionicons name="star" size={14} color="#F59E0B" />
                         <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>

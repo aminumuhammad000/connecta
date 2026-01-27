@@ -43,6 +43,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [myJobs, setMyJobs] = useState<any[]>([]);
   const [collaboProjects, setCollaboProjects] = useState<any[]>([]);
   const [selectedCollaboProject, setSelectedCollaboProject] = useState<any>(null);
+  const [allActiveProjects, setAllActiveProjects] = useState<any[]>([]);
 
   const { socket } = useSocket();
 
@@ -94,12 +95,13 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const loadDashboardData = async () => {
     try {
-      const [statsData, freelancersData, notifCount, jobsData, collaboData] = await Promise.all([
+      const [statsData, freelancersData, notifCount, jobsData, collaboData, activeProjectsData] = await Promise.all([
         dashboardService.getClientStats().catch(() => null),
         dashboardService.getRecommendedFreelancers().catch(() => []),
         notificationService.getUnreadCount().catch(() => 0),
         jobService.getMyJobs().catch(() => []),
-        collaboService.getMyCollaboProjects().catch(() => [])
+        collaboService.getMyCollaboProjects().catch(() => []),
+        dashboardService.getActiveProjects().catch(() => [])
       ]);
 
       setStats(statsData);
@@ -107,6 +109,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
       setUnreadCount(notifCount);
       setMyJobs(jobsData);
       setCollaboProjects(collaboData);
+      setAllActiveProjects(activeProjectsData);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
@@ -191,10 +194,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
     );
   }
 
-  // Combine active jobs and projects for display
-  const activeJobs = myJobs.filter(j => j.status === 'active' || j.status === 'in_progress');
-  const activeCollabos = collaboProjects.filter(p => p.status === 'active' || p.status === 'planning');
-  const allActiveProjects = [...activeJobs, ...activeCollabos];
+  // Combined active projects are now fetched directly from server
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -354,11 +354,17 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
                 {allActiveProjects.map((item: any) => {
-                  const isCollabo = !!item.teamName;
+                  const isCollabo = item.projectType === 'collabo';
+                  const isProject = item.projectType === 'project';
+
                   return (
                     <TouchableOpacity
                       key={item._id}
-                      onPress={() => isCollabo ? navigation.navigate('CollaboWorkspace', { projectId: item._id }) : navigation.navigate('JobDetail', { id: item._id })}
+                      onPress={() => {
+                        if (isCollabo) navigation.navigate('CollaboWorkspace', { projectId: item._id });
+                        else if (isProject) navigation.navigate('ProjectDetail', { id: item._id });
+                        else navigation.navigate('JobDetail', { id: item._id });
+                      }}
                       style={{
                         width: 260,
                         backgroundColor: c.card,
@@ -370,9 +376,9 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                       }}
                     >
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <View style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: isCollabo ? '#8B5CF620' : '#3B82F620', borderRadius: 6 }}>
-                          <Text style={{ fontSize: 10, fontWeight: '700', color: isCollabo ? '#8B5CF6' : '#3B82F6' }}>
-                            {isCollabo ? 'COLLABO' : 'JOB'}
+                        <View style={{ paddingHorizontal: 8, paddingVertical: 4, backgroundColor: isCollabo ? '#8B5CF620' : isProject ? '#10B98120' : '#3B82F620', borderRadius: 6 }}>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: isCollabo ? '#8B5CF6' : isProject ? '#10B981' : '#3B82F6' }}>
+                            {isCollabo ? 'COLLABO' : isProject ? 'PROJECT' : 'JOB'}
                           </Text>
                         </View>
                         <Text style={{ fontSize: 12, color: c.subtext }}>{item.status}</Text>
@@ -382,7 +388,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
 
                       <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Text style={{ fontSize: 14, fontWeight: '700', color: c.text }}>
-                          {isCollabo ? `₦${(item.totalBudget || 0).toLocaleString()}` : `₦${(item.budget || 0).toLocaleString()}`}
+                          ₦{Number(item.budget || 0).toLocaleString()}
                         </Text>
                         <MaterialIcons name="arrow-forward" size={16} color={c.primary} />
                       </View>

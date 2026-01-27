@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { User, UserType, LoginCredentials, SignupData } from '../types';
 import * as authService from '../services/authService';
 import * as storage from '../utils/storage';
+import * as analytics from '../utils/analytics';
 
 interface AuthContextValue {
     user: User | null;
@@ -69,6 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                 setToken(token);
                 setUser(user);
+
+                // Analytics
+                await analytics.setUserId(user._id || user.id);
+                await analytics.logEvent('login', { method: 'email', user_type: user.userType });
+
                 return user;
             } else {
                 console.error('Login response missing token/user:', response);
@@ -97,6 +103,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                     setToken(token);
                     setUser(user);
+
+                    // Analytics
+                    await analytics.setUserId(user._id || user.id);
+                    await analytics.logEvent('signup_complete', { method: 'email', user_type: user.userType });
                 } else {
                     console.warn('Signup successful but token/user missing in response:', response);
                 }
@@ -118,6 +128,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 await storage.saveUserRole(response.user.userType);
                 setToken(response.token);
                 setUser(response.user);
+
+                // Analytics
+                await analytics.setUserId(response.user._id || response.user.id);
+                await analytics.logEvent('signup_complete', { method: 'google', user_type: response.user.userType });
             }
             return response;
         } catch (error) {
@@ -134,6 +148,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await storage.saveUserRole(response.user.userType);
             setToken(response.token);
             setUser(response.user);
+
+            // Analytics
+            await analytics.setUserId(response.user._id || response.user.id);
+            await analytics.logEvent('login', { method: 'google', user_type: response.user.userType });
         } catch (error) {
             console.error('Google login error:', error);
             throw error;
@@ -147,6 +165,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await storage.saveUserRole(user.userType);
             setToken(token);
             setUser(user);
+
+            // Analytics
+            await analytics.setUserId(user._id || user.id);
+            await analytics.logEvent('login', { method: 'token_refresh', user_type: user.userType });
         } catch (error) {
             console.error('Login with token error:', error);
             throw error;
@@ -160,6 +182,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             setToken(null);
             setUser(null);
+
+            // Analytics
+            await analytics.setUserId(null);
+            await analytics.logEvent('logout');
         } catch (error) {
             console.error('Logout error:', error);
             throw error;

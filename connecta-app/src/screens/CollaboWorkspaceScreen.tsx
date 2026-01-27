@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Dimensions, Image } from 'react-native';
 
 const { width } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, deleteTask, getFiles, uploadFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole, markWorkspaceRead } from '../services/collaboService';
+import { getCollaboProject, getMessages, sendMessage, getTasks, createTask, updateTask, deleteTask, getFiles, uploadFile, deleteFile, fundCollaboProject, activateCollaboProject, startWork, removeFromRole, inviteToRole, addRole, markWorkspaceRead } from '../services/collaboService';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Linking from 'expo-linking';
 import * as DocumentPicker from 'expo-document-picker';
@@ -38,6 +38,8 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
     // File State
     const [files, setFiles] = useState<any[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [isImageModalVisible, setIsImageModalVisible] = useState(false);
 
     // Role State
     const [isAddRoleModalVisible, setIsAddRoleModalVisible] = useState(false);
@@ -121,12 +123,18 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                 });
             }
         });
+
+        socket.on('collabo:file_delete', (deletedFileId: string) => {
+            setFiles(prev => prev.filter(f => f._id !== deletedFileId));
+        });
+
         return () => {
             socket.emit('room:leave', workspaceId);
             socket.off('collabo:message');
             socket.off('collabo:task_update');
             socket.off('collabo:task_delete');
             socket.off('collabo:file_upload');
+            socket.off('collabo:file_delete');
         };
     }, [socket, projectData, activeTab]);
 
@@ -788,6 +796,29 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
         }
     };
 
+    const handleDeleteFile = async (fileId: string) => {
+        Alert.alert(
+            "Delete File",
+            "Are you sure you want to delete this file?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await deleteFile(fileId);
+                            setFiles(prev => prev.filter(f => f._id !== fileId));
+                            showAlert({ title: 'File deleted', type: 'success' });
+                        } catch (error) {
+                            showAlert({ title: 'Failed to delete file', type: 'error' });
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const renderFiles = () => (
         <View style={{ flex: 1, padding: 16 }}>
             <TouchableOpacity
@@ -818,44 +849,80 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
             <FlatList
                 data={files}
                 keyExtractor={item => item._id}
-                renderItem={({ item }) => (
-                    <View style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        padding: 12,
-                        borderBottomWidth: 1,
-                        borderBottomColor: c.border,
-                        backgroundColor: c.card,
-                        borderRadius: 12,
-                        marginBottom: 8
-                    }}>
-                        <View style={{
-                            width: 40, height: 40,
-                            backgroundColor: c.border,
-                            borderRadius: 8,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginRight: 12
-                        }}>
-                            <MaterialIcons
-                                name={item.type.includes('image') ? 'image' : 'description'}
-                                size={24}
-                                color={c.subtext}
-                            />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={{ fontWeight: '600', color: c.text }}>{item.name}</Text>
-                            <Text style={{ fontSize: 12, color: c.subtext }}>
-                                {(item.size / 1024).toFixed(1)} KB • Uploaded by {item.uploaderId.firstName}
-                            </Text>
-                        </View>
-                        <TouchableOpacity onPress={() => console.log("Download", item.url)}>
-                            <MaterialIcons name="download" size={20} color={c.primary} />
+                renderItem={({ item }) => {
+                    const isImage = item.type.includes('image');
+                    const canDelete = item.uploaderId._id === user?._id || user?.userType === 'client';
+
+                    return (
+                        <TouchableOpacity
+                            disabled={!isImage}
+                            onPress={() => {
+                                if (isImage) {
+                                    setSelectedImage(API_BASE_URL + item.url);
+                                    setIsImageModalVisible(true);
+                                }
+                            }}
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                padding: 12,
+                                borderBottomWidth: 1,
+                                borderBottomColor: c.border,
+                                backgroundColor: c.card,
+                                borderRadius: 12,
+                                marginBottom: 8
+                            }}>
+                            <View style={{
+                                width: 40, height: 40,
+                                backgroundColor: c.border,
+                                borderRadius: 8,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: 12
+                            }}>
+                                <MaterialIcons
+                                    name={isImage ? 'image' : 'description'}
+                                    size={24}
+                                    color={c.subtext}
+                                />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={{ fontWeight: '600', color: c.text }}>{item.name}</Text>
+                                <Text style={{ fontSize: 12, color: c.subtext }}>
+                                    {(item.size / 1024).toFixed(1)} KB • Uploaded by {item.uploaderId.firstName}
+                                </Text>
+                            </View>
+                            {canDelete && (
+                                <TouchableOpacity onPress={() => handleDeleteFile(item._id)}>
+                                    <MaterialIcons name="delete-outline" size={20} color="#EF4444" />
+                                </TouchableOpacity>
+                            )}
                         </TouchableOpacity>
-                    </View>
-                )}
+                    );
+                }}
                 ListEmptyComponent={<Text style={{ color: c.subtext, textAlign: 'center', marginTop: 20 }}>No files yet.</Text>}
             />
+
+            <Modal
+                visible={isImageModalVisible}
+                transparent={true}
+                onRequestClose={() => setIsImageModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity
+                        style={{ position: 'absolute', top: 40, right: 20, zIndex: 10 }}
+                        onPress={() => setIsImageModalVisible(false)}
+                    >
+                        <MaterialIcons name="close" size={30} color="#FFF" />
+                    </TouchableOpacity>
+                    {selectedImage && (
+                        <Image
+                            source={{ uri: selectedImage }}
+                            style={{ width: width, height: width, resizeMode: 'contain' }}
+                        />
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 
