@@ -48,14 +48,6 @@ export const getRecentMessages = async (): Promise<Message[]> => {
 };
 
 /**
- * Get active projects for client dashboard
- */
-export const getActiveProjects = async (): Promise<any[]> => {
-    const response = await get<any[]>(API_ENDPOINTS.DASHBOARD_ACTIVE_PROJECTS);
-    return unwrap<any[]>(response, []);
-};
-
-/**
  * Test backend connection
  */
 export const testConnection = async (): Promise<{ message: string }> => {
@@ -68,6 +60,5 @@ export default {
     getFreelancerStats,
     getRecommendedFreelancers,
     getRecentMessages,
-    getActiveProjects,
     testConnection,
 };

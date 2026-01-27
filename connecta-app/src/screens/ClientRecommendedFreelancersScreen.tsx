@@ -135,11 +135,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
             <TouchableOpacity onPress={() => navigation.goBack?.()} accessibilityLabel="Go back" style={styles.iconBtn}>
               <MaterialIcons name="arrow-back" size={22} color={c.text} />
             </TouchableOpacity>
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={[styles.title, { color: c.text }]} numberOfLines={1} adjustsFontSizeToFit>
-                Top freelancer based on your profile
-              </Text>
-            </View>
+            <Text style={[styles.title, { color: c.text }]}>Recommended For You</Text>
             <View style={{ width: 40 }} />
           </View>
 
@@ -218,7 +214,7 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
           </View>
         )}
 
-        <Text style={[styles.meta, { color: c.subtext }]} numberOfLines={1} adjustsFontSizeToFit>
+        <Text style={[styles.meta, { color: c.subtext }]}>
           {selectedJob
             ? `Recommended for "${selectedJob.title}"`
             : "Top freelancers based on your profile"

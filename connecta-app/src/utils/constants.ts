@@ -3,9 +3,7 @@ import { Platform } from 'react-native';
 
 // API Configuration
 const getBaseUrl = () => {
-    // For Android Emulator, use 'http://10.0.2.2:5000'
-    return 'http://localhost:5000';
-    // return 'https://api.myconnecta.ng';
+    return 'https://api.myconnecta.ng';
 };
 
 export const API_BASE_URL = getBaseUrl();
@@ -80,7 +78,6 @@ export const API_ENDPOINTS = {
     DASHBOARD_STATS: '/api/dashboard/stats',
     DASHBOARD_FREELANCERS: '/api/dashboard/freelancers',
     DASHBOARD_MESSAGES: '/api/dashboard/messages',
-    DASHBOARD_ACTIVE_PROJECTS: '/api/dashboard/active-projects',
 
     // Payments
     INITIALIZE_PAYMENT: '/api/payments/initialize',

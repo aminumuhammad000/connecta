@@ -179,29 +179,6 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                     )}
                 </View>
 
-                {/* Reviews */}
-                <View style={{ padding: 16 }}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Reviews</Text>
-                    {profile?.reviews?.length > 0 ? (
-                        <View style={{ gap: 12 }}>
-                            {profile.reviews.map((review: any, index: number) => (
-                                <View key={index} style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <Text style={{ fontWeight: '600', color: c.text }}>{review.reviewerId?.firstName || 'Client'}</Text>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <MaterialIcons name="star" size={14} color="#F59E0B" />
-                                            <Text style={{ marginLeft: 4, fontWeight: '600', color: c.text }}>{review.rating}</Text>
-                                        </View>
-                                    </View>
-                                    <Text style={{ color: c.subtext, fontSize: 13, lineHeight: 18 }}>{review.comment}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    ) : (
-                        <Text style={{ color: c.subtext }}>No reviews yet.</Text>
-                    )}
-                </View>
-
                 {/* Login CTA */}
                 <View style={{ margin: 16, padding: 24, backgroundColor: c.isDark ? '#2C2C2E' : '#ebf8ff', borderRadius: 16, alignItems: 'center', gap: 12 }}>
                     <MaterialIcons name="lock-outline" size={32} color={c.primary} />
