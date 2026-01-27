@@ -63,12 +63,12 @@ class CollaboService {
             console.log("Project saved:", project._id);
 
             // 2. Create Roles
-            const roleDocs = data.roles.map(role => ({
+            const roleDocs = (data.roles || []).map(role => ({
                 projectId: project._id,
-                title: role.title,
-                description: role.description,
-                budget: role.budget,
-                skills: role.skills,
+                title: role.title || 'Untitled Role',
+                description: role.description || 'No description',
+                budget: Number(role.budget) || 0,
+                skills: Array.isArray(role.skills) ? role.skills : [],
                 status: 'open',
             }));
 

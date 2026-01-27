@@ -7,9 +7,17 @@ import CollaboProject from '../models/CollaboProject.model.js';
 
 export const createCollaboProject = async (req: Request, res: Response) => {
     try {
+        if (!(req as any).user || !(req as any).user._id) {
+            return res.status(401).json({ message: "User not authenticated" });
+        }
         const clientId = (req as any).user._id;
+        console.log(`[Collabo] Creating project for client: ${clientId}`);
         const { title, teamName, description, totalBudget, roles, milestones, recommendedStack, risks, category, niche, projectType, scope, duration, durationType } = req.body;
-        console.log("Creating Collabo Project:", JSON.stringify(req.body, null, 2));
+        console.log("[Collabo] Request Body:", JSON.stringify({ title, teamName, totalBudget, rolesCount: roles?.length }, null, 2));
+
+        if (!Array.isArray(roles)) {
+            return res.status(400).json({ message: "Roles must be an array" });
+        }
 
         const result = await CollaboService.createCollaboProject(clientId, {
             title,
