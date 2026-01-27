@@ -99,6 +99,12 @@ export const createReview = async (req, res) => {
     }
     catch (error) {
         console.error('Create review error:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'You have already reviewed this user in this context',
+            });
+        }
         return res.status(500).json({
             success: false,
             message: error.message || 'Failed to create review',

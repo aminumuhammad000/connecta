@@ -23,6 +23,7 @@ class LLMService {
                 model: settings.ai.model || "gemini-2.0-flash",
                 maxOutputTokens: 2048,
                 temperature: 0.7,
+                maxRetries: 1,
             });
         } catch (error) {
             console.error("Error fetching system settings for LLM:", error);
@@ -87,7 +88,7 @@ Return ONLY raw JSON. No markdown.`],
         }
     }
 
-    private getFallbackScope(description: string) {
+    public getFallbackScope(description: string) {
         const lowerDesc = description.toLowerCase();
         let estimatedBudget = 2000;
         let timeline = "4 weeks";

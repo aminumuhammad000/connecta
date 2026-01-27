@@ -1,6 +1,6 @@
 // src/routes/Job.routes.ts
 import express from "express";
-import { getAllJobs, getJobById, createJob, updateJob, deleteJob, getRecommendedJobs, searchJobs, getClientJobs, saveJob, unsaveJob, getSavedJobs } from "../controllers/Job.controller.js";
+import { getAllJobs, getJobById, createJob, updateJob, deleteJob, getRecommendedJobs, searchJobs, getClientJobs, saveJob, unsaveJob, getSavedJobs, inviteFreelancer } from "../controllers/Job.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
 const router = express.Router();
@@ -12,6 +12,8 @@ router.get("/saved", authenticate, getSavedJobs);
 router.post("/:id/save", authenticate, saveJob);
 // Unsave a job (protected)
 router.delete("/:id/save", authenticate, unsaveJob);
+// Invite freelancer to job (protected)
+router.post("/:id/invite", authenticate, inviteFreelancer);
 // Get all jobs with filters
 router.get("/", getAllJobs);
 // Get recommended jobs (Jobs You May Like)

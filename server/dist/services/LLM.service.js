@@ -18,6 +18,7 @@ class LLMService {
                 model: settings.ai.model || "gemini-2.0-flash",
                 maxOutputTokens: 2048,
                 temperature: 0.7,
+                maxRetries: 1,
             });
         }
         catch (error) {
