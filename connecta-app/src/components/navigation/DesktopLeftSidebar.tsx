@@ -123,7 +123,7 @@ const DesktopLeftSidebar = () => {
                     style={[styles.myItemBtn, { borderTopColor: c.border }]}
                     onPress={() => {
                         if (isClient) {
-                            navigation.navigate('PostJob');
+                            navigation.navigate('ClientMain', { screen: 'PostJob' });
                         } else {
                             navigation.navigate('FreelancerMain', { screen: 'FreelancerProjects' });
                         }
@@ -142,7 +142,7 @@ const DesktopLeftSidebar = () => {
                     <>
                         <TouchableOpacity
                             style={styles.shortcutItem}
-                            onPress={() => navigation.navigate('FreelancerMain', { screen: 'FreelancerTabs', params: { screen: 'Proposals' } })}
+                            onPress={() => navigation.navigate('FreelancerMain', { screen: 'Proposals' })}
                         >
                             <View style={[styles.shortcutIcon, { backgroundColor: c.primary + '15' }]}>
                                 <Ionicons name="document-text" size={16} color={c.primary} />
@@ -164,7 +164,7 @@ const DesktopLeftSidebar = () => {
                     <>
                         <TouchableOpacity
                             style={styles.shortcutItem}
-                            onPress={() => navigation.navigate('ClientPayments')}
+                            onPress={() => navigation.navigate('ClientMain', { screen: 'ClientPayments' })}
                         >
                             <View style={[styles.shortcutIcon, { backgroundColor: '#10B98115' }]}>
                                 <Ionicons name="card" size={16} color="#10B981" />
@@ -173,7 +173,7 @@ const DesktopLeftSidebar = () => {
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={styles.shortcutItem}
-                            onPress={() => navigation.navigate('ClientEditProfile')}
+                            onPress={() => navigation.navigate('ClientMain', { screen: 'ClientEditProfile' })}
                         >
                             <View style={[styles.shortcutIcon, { backgroundColor: '#3B82F615' }]}>
                                 <Ionicons name="business" size={16} color="#3B82F6" />
@@ -185,11 +185,9 @@ const DesktopLeftSidebar = () => {
 
                 <TouchableOpacity
                     style={styles.shortcutItem}
-                    // For client, navigating to settings or collabo is fine. Assuming Collabo is shared.
                     onPress={() => {
                         if (isClient) {
-                            // Navigate to Projects tab where Collabo projects are listed
-                            navigation.navigate('ClientTabs', { screen: 'Projects' });
+                            navigation.navigate('ClientMain', { screen: 'ClientTabs', params: { screen: 'Projects' } });
                         } else {
                             navigation.navigate('FreelancerMain', { screen: 'FreelancerProjects', params: { tab: 'collabo' } });
                         }
@@ -206,7 +204,13 @@ const DesktopLeftSidebar = () => {
 
                 <TouchableOpacity
                     style={styles.shortcutItem}
-                    onPress={() => navigation.navigate('Settings')}
+                    onPress={() => {
+                        if (isClient) {
+                            navigation.navigate('ClientMain', { screen: 'Settings' });
+                        } else {
+                            navigation.navigate('FreelancerMain', { screen: 'Settings' });
+                        }
+                    }}
                 >
                     <View style={[styles.shortcutIcon, { backgroundColor: '#8B5CF615' }]}>
                         <Ionicons name="settings" size={16} color="#8B5CF6" />

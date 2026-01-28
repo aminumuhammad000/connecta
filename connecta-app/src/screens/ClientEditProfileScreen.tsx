@@ -224,7 +224,6 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-<<<<<<< HEAD
             <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
                 <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -232,36 +231,6 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
                     <View style={{ width: 40 }} />
-=======
-            <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={c.text} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
-                <View style={{ width: 40 }} />
-            </View>
-
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* Profile Photo Section */}
-                <View style={styles.photoSection}>
-                    <View style={styles.avatarWrapper}>
-                        <Avatar uri={profileImage || undefined} name={formData.firstName} size={110} />
-                        <TouchableOpacity
-                            style={[styles.editPhotoButton, { backgroundColor: c.primary, width: 40, height: 40, borderRadius: 20 }]}
-                            onPress={handlePickImage}
-                            disabled={uploadingImage}
-                        >
-                            {uploadingImage ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <Ionicons name="camera" size={22} color="white" />
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={[styles.photoHint, { color: c.text, fontWeight: '600' }]}>
-                        {uploadingImage ? 'Uploading your photo...' : 'Tap to change profile picture'}
-                    </Text>
->>>>>>> 461b1b45f48a78fbbab5a02cf146e7ffe4ce163f
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

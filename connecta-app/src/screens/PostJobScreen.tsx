@@ -442,6 +442,9 @@ const PostJobScreen: React.FC = () => {
 
 
 
+  const { width } = Dimensions.get('window');
+  const isDesktop = width >= 768;
+
   const renderBasics = () => (
     <View style={styles.stepWrapperContent}>
       <View style={styles.stepHeader}>
@@ -449,44 +452,46 @@ const PostJobScreen: React.FC = () => {
         <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Set the foundation for your project. Be clear and professional.</Text>
       </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: errors.title ? '#EF4444' : c.text }]}>Job Title</Text>
-        <TextInput
-          value={title}
-          onChangeText={(t) => { setTitle(t); clearError('title'); }}
-          placeholder="e.g. Senior Product Designer"
-          placeholderTextColor={c.subtext}
-          style={[
-            styles.giantInput,
-            {
-              color: c.text,
-              backgroundColor: c.card,
-              borderColor: errors.title ? '#EF4444' : c.border,
-              borderWidth: errors.title ? 2 : 1
-            }
-          ]}
-        />
-        {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-      </View>
+      <View style={isDesktop ? styles.desktopRow : undefined}>
+        <View style={[styles.inputGroup, isDesktop && styles.desktopHalfCol]}>
+          <Text style={[styles.label, { color: errors.title ? '#EF4444' : c.text }]}>Job Title</Text>
+          <TextInput
+            value={title}
+            onChangeText={(t) => { setTitle(t); clearError('title'); }}
+            placeholder="e.g. Senior Product Designer"
+            placeholderTextColor={c.subtext}
+            style={[
+              styles.giantInput,
+              {
+                color: c.text,
+                backgroundColor: c.card,
+                borderColor: errors.title ? '#EF4444' : c.border,
+                borderWidth: errors.title ? 2 : 1
+              }
+            ]}
+          />
+          {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+        </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: errors.company ? '#EF4444' : c.text }]}>Company or Project Name</Text>
-        <TextInput
-          value={company}
-          onChangeText={(t) => { setCompany(t); clearError('company'); }}
-          placeholder="e.g. Acme Corp"
-          placeholderTextColor={c.subtext}
-          style={[
-            styles.giantInput,
-            {
-              color: c.text,
-              backgroundColor: c.card,
-              borderColor: errors.company ? '#EF4444' : c.border,
-              borderWidth: errors.company ? 2 : 1
-            }
-          ]}
-        />
-        {errors.company && <Text style={styles.errorText}>{errors.company}</Text>}
+        <View style={[styles.inputGroup, isDesktop && styles.desktopHalfCol]}>
+          <Text style={[styles.label, { color: errors.company ? '#EF4444' : c.text }]}>Company or Project Name</Text>
+          <TextInput
+            value={company}
+            onChangeText={(t) => { setCompany(t); clearError('company'); }}
+            placeholder="e.g. Acme Corp"
+            placeholderTextColor={c.subtext}
+            style={[
+              styles.giantInput,
+              {
+                color: c.text,
+                backgroundColor: c.card,
+                borderColor: errors.company ? '#EF4444' : c.border,
+                borderWidth: errors.company ? 2 : 1
+              }
+            ]}
+          />
+          {errors.company && <Text style={styles.errorText}>{errors.company}</Text>}
+        </View>
       </View>
 
       <View style={styles.inputGroup}>
@@ -513,6 +518,7 @@ const PostJobScreen: React.FC = () => {
                     elevation: isSelected ? 4 : 1,
                     shadowColor: isSelected ? c.primary : '#000',
                     shadowOpacity: isSelected ? 0.15 : 0.05,
+                    // Desktop specific tweak if needed, but grid handles wrap nicely
                   }
                 ]}
               >
@@ -2202,6 +2208,14 @@ const styles = StyleSheet.create({
   premiumEscrowText: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  desktopRow: {
+    flexDirection: 'row',
+    gap: 20,
+    width: '100%',
+  },
+  desktopHalfCol: {
+    flex: 1,
   },
 });
 
