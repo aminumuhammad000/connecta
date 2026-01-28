@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: 'connecta-server',
+            name: 'server',
             script: 'node',
             args: 'dist/app.js',
             cwd: '/var/www/connecta/server',
