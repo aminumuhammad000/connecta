@@ -7,7 +7,6 @@ import profileService from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import aiService from '../services/aiService';
 import * as reviewService from '../services/reviewService';
 import { Alert, Modal, TextInput } from 'react-native';
 
@@ -21,7 +20,6 @@ export default function ClientProfileScreen({ navigation, route }: any) {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -71,7 +69,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      let data;
+      let data: any;
 
       if (viewingUserId) {
         try {
@@ -134,30 +132,6 @@ export default function ClientProfileScreen({ navigation, route }: any) {
   };
 
   const onBack = () => navigation.goBack?.();
-
-  const generateAIBio = async () => {
-    if (!profile || !isOwnProfile) return;
-    try {
-      setIsGeneratingBio(true);
-      const prompt = `Generate a professional client bio for ${profile.firstName} who is looking for freelancers on Connecta. Mention they are interested in quality work and professional collaboration. The bio must be short, between 10 and 20 words. Return ONLY the bio text, no conversational filler.`;
-      const generatedBio = await aiService.sendAIQuery(prompt, user?._id || '', 'client');
-
-      if (generatedBio) {
-        let currentText = '';
-        const words = generatedBio.split(' ');
-        for (let i = 0; i < words.length; i++) {
-          currentText += (i === 0 ? '' : ' ') + words[i];
-          setProfile((prev: any) => ({ ...prev, bio: currentText }));
-          await new Promise(resolve => setTimeout(resolve, 40));
-        }
-        await profileService.updateMyProfile({ bio: generatedBio });
-      }
-    } catch (error) {
-      console.error('Error generating AI bio:', error);
-    } finally {
-      setIsGeneratingBio(false);
-    }
-  };
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -345,22 +319,6 @@ export default function ClientProfileScreen({ navigation, route }: any) {
 
                 <View style={styles.bioHeader}>
                   <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
-                  {isOwnProfile && (
-                    <TouchableOpacity
-                      onPress={generateAIBio}
-                      disabled={isGeneratingBio}
-                      style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
-                    >
-                      {isGeneratingBio ? (
-                        <ActivityIndicator size="small" color={c.primary} />
-                      ) : (
-                        <>
-                          <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
-                          <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  )}
                 </View>
                 <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
@@ -524,13 +482,31 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                   profile.reviews.map((review: any, index: number) => (
                     <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
                       <View style={styles.reviewHeader}>
-                        <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          {review.reviewerId?.profileImage ? (
+                            <Image source={{ uri: review.reviewerId.profileImage }} style={{ width: 24, height: 24, borderRadius: 12 }} />
+                          ) : (
+                            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
+                              <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>
+                                {review.reviewerId?.firstName?.charAt(0) || '?'}
+                              </Text>
+                            </View>
+                          )}
+                          <Text style={[styles.reviewAuthor, { color: c.text }]}>
+                            {review.reviewerId ? `${review.reviewerId.firstName} ${review.reviewerId.lastName}` : 'Anonymous'}
+                          </Text>
+                        </View>
                         <View style={styles.ratingRow}>
                           <Ionicons name="star" size={14} color="#F59E0B" />
                           <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
                         </View>
                       </View>
                       <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
+                      {review.projectId && (
+                        <Text style={{ fontSize: 12, color: c.primary, marginTop: 8 }}>
+                          Project: {review.projectId.title || 'Untitled Project'}
+                        </Text>
+                      )}
                     </View>
                   ))
                 ) : (

@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import profileService from '../services/profileService';
+import * as reviewService from '../services/reviewService';
 import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import aiService from '../services/aiService';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
 const { width } = Dimensions.get('window');
@@ -20,9 +20,9 @@ export default function ProfileScreen({ navigation }: any) {
   const isDesktop = windowWidth > 768;
   const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
   const [profile, setProfile] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isGeneratingBio, setIsGeneratingBio] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -38,15 +38,24 @@ export default function ProfileScreen({ navigation }: any) {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const data = await profileService.getMyProfile();
+      const [profileData, reviewsData] = await Promise.all([
+        profileService.getMyProfile(),
+        user?._id ? reviewService.getUserReviews(user._id) : Promise.resolve([])
+      ]);
+
       const merged = {
         firstName: user?.firstName,
         lastName: user?.lastName,
         email: user?.email,
-        ...data,
+        ...profileData,
       };
       setProfile(merged);
-      setErrorMessage(data ? null : 'Profile not found. Create your profile to get started.');
+
+      // Handle reviews data structure (could be array or object with data property)
+      const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData?.data || []);
+      setReviews(reviewsList);
+
+      setErrorMessage(profileData ? null : 'Profile not found. Create your profile to get started.');
     } catch (error: any) {
       console.error('Error loading profile:', error);
       if (error?.status === 404) {
@@ -61,33 +70,6 @@ export default function ProfileScreen({ navigation }: any) {
   };
 
   const onBack = () => navigation.goBack?.();
-
-  const generateAIBio = async () => {
-    if (!profile) return;
-    try {
-      setIsGeneratingBio(true);
-      const prompt = `Generate a professional summary for a freelancer named ${profile.firstName} with job title "${profile.jobTitle || profile.title || 'Freelancer'}" and skills: ${profile.skills?.join(', ') || 'various skills'}. The summary must be short, between 10 and 20 words. Return ONLY the summary text, no conversational filler.`;
-      const generatedBio = await aiService.sendAIQuery(prompt, user?._id || '', 'freelancer');
-
-      if (generatedBio) {
-        // Typing effect for "writing" feel
-        let currentText = '';
-        const words = generatedBio.split(' ');
-        for (let i = 0; i < words.length; i++) {
-          currentText += (i === 0 ? '' : ' ') + words[i];
-          setProfile((prev: any) => ({ ...prev, bio: currentText }));
-          // Small delay between words
-          await new Promise(resolve => setTimeout(resolve, 40));
-        }
-        // Update server after typing finishes
-        await profileService.updateMyProfile({ bio: generatedBio });
-      }
-    } catch (error) {
-      console.error('Error generating AI bio:', error);
-    } finally {
-      setIsGeneratingBio(false);
-    }
-  };
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100],
@@ -293,20 +275,6 @@ export default function ProfileScreen({ navigation }: any) {
 
                 <View style={styles.bioHeader}>
                   <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
-                  <TouchableOpacity
-                    onPress={generateAIBio}
-                    disabled={isGeneratingBio}
-                    style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
-                  >
-                    {isGeneratingBio ? (
-                      <ActivityIndicator size="small" color={c.primary} />
-                    ) : (
-                      <>
-                        <MaterialIcons name="auto-awesome" size={12} color={c.primary} />
-                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
                 </View>
                 <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
@@ -431,23 +399,55 @@ export default function ProfileScreen({ navigation }: any) {
                 )}
               </View>
             ) : (
-              <View>
-                {profile?.reviews?.length > 0 ? (
-                  profile.reviews.map((review: any, index: number) => (
-                    <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                      <View style={styles.reviewHeader}>
-                        <Text style={[styles.reviewAuthor, { color: c.text }]}>{review.author || 'Anonymous'}</Text>
-                        <View style={styles.ratingRow}>
+              <View style={{ gap: 16 }}>
+                {reviews.length > 0 ? (
+                  reviews.map((review: any, index: number) => (
+                    <View key={index} style={[styles.reviewCard, { backgroundColor: c.card, borderColor: c.border, shadowColor: c.shadows.small.shadowColor }]}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: 18, fontWeight: '700', color: c.primary }}>
+                              {(review.reviewerId?.firstName || review.author || 'A').charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                          <View>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
+                              {review.reviewerId ? `${review.reviewerId.firstName} ${review.reviewerId.lastName}` : (review.author || 'Anonymous')}
+                            </Text>
+                            <Text style={{ fontSize: 12, color: c.subtext }}>
+                              {review.projectId?.title || 'Project Review'}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFFBEB', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#F59E0B20' }}>
                           <Ionicons name="star" size={14} color="#F59E0B" />
-                          <Text style={[styles.ratingText, { color: c.text }]}>{review.rating}</Text>
+                          <Text style={{ fontSize: 14, fontWeight: '700', color: '#B45309' }}>{review.rating.toFixed(1)}</Text>
                         </View>
                       </View>
-                      <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
+
+                      <Text style={{ fontSize: 14, color: c.text, lineHeight: 22, marginBottom: 12 }}>
+                        "{review.comment}"
+                      </Text>
+
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: c.border, paddingTop: 12 }}>
+                        <Text style={{ fontSize: 12, color: c.subtext }}>
+                          {new Date(review.createdAt || Date.now()).toLocaleDateString()}
+                        </Text>
+                        {review.projectId?.budget && (
+                          <Text style={{ fontSize: 12, fontWeight: '600', color: c.primary }}>
+                            ₦{review.projectId.budget.toLocaleString()}
+                          </Text>
+                        )}
+                      </View>
                     </View>
                   ))
                 ) : (
                   <View style={styles.emptyTabState}>
-                    <Text style={{ color: c.subtext }}>No reviews yet.</Text>
+                    <Ionicons name="chatbubble-outline" size={40} color={c.border} style={{ marginBottom: 12 }} />
+                    <Text style={{ color: c.text, fontSize: 16, fontWeight: '600' }}>No reviews yet</Text>
+                    <Text style={{ color: c.subtext, textAlign: 'center', marginTop: 4 }}>
+                      Complete jobs to earn reviews and build your reputation.
+                    </Text>
                   </View>
                 )}
               </View>

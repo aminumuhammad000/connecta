@@ -197,7 +197,7 @@ export const inviteToRole = async (req: Request, res: Response) => {
         const result = await CollaboService.inviteToRole(roleId, freelancerId, clientId);
         res.json(result);
     } catch (error: any) {
-        res.status(500).json({ message: 'Failed to send invitation', error: error.message });
+        res.status(500).json({ message: `Failed to send invitation: ${error.message}`, error: error.message });
     }
 }
 

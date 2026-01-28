@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Modal, Alert, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Modal, Alert, FlatList, Share, TextInput } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import * as collaboService from '../services/collaboService';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { Job } from '../types';
+import CustomAlert from '../components/CustomAlert';
 
 const PublicFreelancerProfileScreen: React.FC = () => {
     const c = useThemeColors();
@@ -26,8 +27,10 @@ const PublicFreelancerProfileScreen: React.FC = () => {
 
     // Invite Logic
     const [inviteModalVisible, setInviteModalVisible] = useState(false);
-    const [myJobs, setMyJobs] = useState<Job[]>([]);
-    const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+    const [inviteStep, setInviteStep] = useState(1);
+    const [inviteContexts, setInviteContexts] = useState<any[]>([]);
+    const [selectedContext, setSelectedContext] = useState<any | null>(null);
+    const [selectedJob, setSelectedJob] = useState<any | null>(null);
     const [isInviting, setIsInviting] = useState(false);
     const [loadingJobs, setLoadingJobs] = useState(false);
 
@@ -46,13 +49,21 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                 reviewService.getUserReviewStats(id)
             ]);
             setProfile(profileData);
-            setReviews(reviewsData.data || []);
+            const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData?.data || []);
+            setReviews(reviewsList);
             setReviewStats(statsData.data || null);
         } catch (error) {
             console.error('Error loading profile:', error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'Present';
+        const date = new Date(dateString);
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getFullYear()}`;
     };
 
     const handleHire = () => {
@@ -64,9 +75,26 @@ const PublicFreelancerProfileScreen: React.FC = () => {
         }
     };
 
+    const handleShare = async () => {
+        if (!profile) return;
+        try {
+            await Share.share({
+                message: `Check out ${profile.firstName}'s profile on Connecta!`,
+                // url: `https://connecta.app/freelancer/${id}`, // Example URL scheme
+                title: `${profile.firstName}'s Profile`
+            });
+        } catch (error) {
+            console.error('Error sharing profile:', error);
+        }
+    };
+
     const openInviteModal = async () => {
         setInviteModalVisible(true);
         setLoadingJobs(true);
+        setInviteStep(1);
+        setSelectedContext(null);
+        setSelectedJob(null);
+
         try {
             // Fetch both regular jobs and collabo projects
             const [jobs, collaboProjects] = await Promise.all([
@@ -77,35 +105,27 @@ const PublicFreelancerProfileScreen: React.FC = () => {
             const formattedJobs = jobs.map((j: any) => ({
                 _id: j._id,
                 title: j.title,
-                subtitle: 'Individual Job',
                 budget: j.budget?.min || j.salary?.min || 0,
                 type: 'job'
             }));
 
-            const formattedCollaboRoles: any[] = [];
-
-            // Handle if response is wrapped in data or projects property
+            const formattedProjects: any[] = [];
             const projectsList = Array.isArray(collaboProjects) ? collaboProjects : (collaboProjects as any)?.projects || [];
 
             (projectsList || []).forEach((p: any) => {
-                if (p.roles && p.roles.length > 0) {
-                    p.roles.forEach((r: any) => {
-                        // Show role if it's open or doesn't have a freelancer assigned yet
-                        if (r.status === 'open' || !r.freelancerId) {
-                            formattedCollaboRoles.push({
-                                _id: r._id,
-                                title: r.title,
-                                subtitle: `${p.title} (Team Role)`,
-                                budget: r.budget,
-                                type: 'collabo',
-                                projectId: p._id
-                            });
-                        }
+                // Only include projects that have open roles
+                const openRoles = p.roles?.filter((r: any) => r.status === 'open' || !r.freelancerId) || [];
+                if (openRoles.length > 0) {
+                    formattedProjects.push({
+                        _id: p._id,
+                        title: p.title,
+                        type: 'collabo',
+                        roles: openRoles
                     });
                 }
             });
 
-            setMyJobs([...formattedJobs, ...formattedCollaboRoles]);
+            setInviteContexts([...formattedJobs, ...formattedProjects]);
         } catch (error) {
             console.error("Failed to load jobs", error);
             Alert.alert("Error", "Failed to load your jobs.");
@@ -114,9 +134,21 @@ const PublicFreelancerProfileScreen: React.FC = () => {
         }
     };
 
+    // Alert State
+    const [alertConfig, setAlertConfig] = useState<{ visible: boolean; title: string; message: string; type: 'success' | 'error' | 'warning' }>({
+        visible: false,
+        title: '',
+        message: '',
+        type: 'success'
+    });
+
+    const showAlert = (title: string, message: string, type: 'success' | 'error' | 'warning' = 'success') => {
+        setAlertConfig({ visible: true, title, message, type });
+    };
+
     const handleSendInvite = async () => {
         if (!selectedJob) {
-            Alert.alert("Select a Job", "Please select a job to invite the freelancer to.");
+            showAlert("Select a Job", "Please select a job to invite the freelancer to.", 'warning');
             return;
         }
 
@@ -125,27 +157,52 @@ const PublicFreelancerProfileScreen: React.FC = () => {
 
             if ((selectedJob as any).type === 'collabo') {
                 await (collaboService as any).inviteToRole((selectedJob as any)._id, id);
-                Alert.alert('Success', `Invitation sent to ${profile.firstName} for "${selectedJob.title}"`);
+                showAlert('Invitation Sent', `Invitation sent to ${profile.firstName} for "${selectedJob.title}"`, 'success');
             } else {
                 await (jobService as any).inviteFreelancer(selectedJob._id, id);
-                Alert.alert('Success', `Invitation sent to ${profile.firstName} for "${selectedJob.title}"`);
+                showAlert('Invitation Sent', `Invitation sent to ${profile.firstName} for "${selectedJob.title}"`, 'success');
             }
 
             setInviteModalVisible(false);
             setSelectedJob(null);
         } catch (error: any) {
             console.error('Error sending invite:', error);
-            Alert.alert('Error', error.message || 'Failed to send invitation. Please try again.');
+            showAlert('Error', error.message || 'Failed to send invitation. Please try again.', 'error');
         } finally {
             setIsInviting(false);
         }
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return 'Present';
-        const date = new Date(dateString);
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${months[date.getMonth()]} ${date.getFullYear()}`;
+    // Review Logic
+    const [reviewModalVisible, setReviewModalVisible] = useState(false);
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState('');
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    const handleAddReview = async () => {
+        if (!comment.trim()) {
+            showAlert('Error', 'Please enter a comment', 'error');
+            return;
+        }
+
+        try {
+            setIsSubmittingReview(true);
+            await reviewService.createReview({
+                revieweeId: id,
+                reviewerType: user?.userType === 'client' ? 'client' : 'freelancer',
+                rating,
+                comment,
+            });
+            showAlert('Success', 'Review submitted successfully', 'success');
+            setReviewModalVisible(false);
+            setComment('');
+            setRating(5);
+            loadProfile(); // Refresh reviews
+        } catch (error: any) {
+            showAlert('Error', error.message || 'Failed to submit review', 'error');
+        } finally {
+            setIsSubmittingReview(false);
+        }
     };
 
     if (isLoading) {
@@ -161,7 +218,7 @@ const PublicFreelancerProfileScreen: React.FC = () => {
             <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
                 <View style={[styles.appBar, { borderBottomColor: c.border }]}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-                        <MaterialIcons name="arrow-back" size={22} color={c.text} />
+                        <MaterialIcons name="arrow-back" size={24} color={c.text} />
                     </TouchableOpacity>
                     <Text style={[styles.appBarTitle, { color: c.text }]}>Profile</Text>
                     <View style={{ width: 40 }} />
@@ -175,95 +232,108 @@ const PublicFreelancerProfileScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-            <View style={[styles.appBar, { borderBottomColor: c.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Go back">
+            {/* Modern Header */}
+            <View style={[styles.appBar, { borderBottomColor: 'transparent', paddingHorizontal: 16 }]}>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={[styles.iconBtn, { backgroundColor: c.card }]}
+                >
                     <MaterialIcons name="arrow-back" size={22} color={c.text} />
                 </TouchableOpacity>
-                <Text style={[styles.appBarTitle, { color: c.text }]}>Freelancer Profile</Text>
-                <View style={{ width: 40 }} />
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity style={[styles.iconBtn, { backgroundColor: c.card, marginRight: 8 }]} onPress={handleShare}>
+                    <MaterialIcons name="share" size={20} color={c.text} />
+                </TouchableOpacity>
+                {isAuthenticated && user?._id !== id && (
+                    <TouchableOpacity
+                        style={[styles.iconBtn, { backgroundColor: c.card }]}
+                        onPress={() => setReviewModalVisible(true)}
+                    >
+                        <MaterialIcons name="rate-review" size={20} color={c.text} />
+                    </TouchableOpacity>
+                )}
             </View>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 80 + insets.bottom }}>
-                {/* Profile Header */}
-                <View style={[styles.sectionPad, profile?.isPremium && { backgroundColor: c.isDark ? '#3D2800' : '#FFFBEB', paddingBottom: 24, paddingTop: 20 }]}>
-                    <View style={styles.headerRow}>
-                        <View style={styles.headerLeft}>
-                            <View style={[styles.avatarContainer, profile?.isPremium && styles.premiumBorder]}>
-                                <Image source={{ uri: profile?.profilePicture || `https://ui-avatars.com/api/?name=${profile.firstName}+${profile.lastName}` }} style={styles.avatar} />
-                                {profile?.isPremium && (
-                                    <View style={styles.premiumIconBadge}>
-                                        <MaterialIcons name="workspace-premium" size={14} color="#FFF" />
-                                    </View>
-                                )}
+            <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+                {/* Hero Section */}
+                <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 24 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 16 }}>
+                        <View>
+                            <Image
+                                source={{ uri: profile?.profilePicture || `https://ui-avatars.com/api/?name=${profile.firstName}+${profile.lastName}` }}
+                                style={{ width: 80, height: 80, borderRadius: 24, backgroundColor: c.card }}
+                            />
+                            {profile?.isPremium && (
+                                <View style={{
+                                    position: 'absolute', bottom: -6, right: -6,
+                                    backgroundColor: '#F59E0B', borderRadius: 12, width: 24, height: 24,
+                                    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.background
+                                }}>
+                                    <MaterialIcons name="star" size={14} color="#FFF" />
+                                </View>
+                            )}
+                        </View>
+                        <View style={{ flex: 1, paddingTop: 4 }}>
+                            <Text style={{ fontSize: 24, fontWeight: '800', color: c.text, lineHeight: 30 }}>
+                                {profile?.firstName} {profile?.lastName}
+                            </Text>
+                            <Text style={{ fontSize: 16, color: c.primary, fontWeight: '600', marginTop: 4 }}>
+                                {profile?.profession || 'Freelancer'}
+                            </Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                                <MaterialIcons name="location-on" size={14} color={c.subtext} />
+                                <Text style={{ fontSize: 14, color: c.subtext }}>{profile?.country || 'Remote'}</Text>
                             </View>
-                            <View>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-                                    {profile?.isVerified && (
-                                        <MaterialIcons name="verified" size={20} color="#F59E0B" style={{ marginLeft: 4 }} />
-                                    )}
-                                </View>
-                                {profile?.isPremium && (
-                                    <View style={styles.premiumBadge}>
-                                        <MaterialIcons name="star" size={12} color="#FFF" />
-                                        <Text style={styles.premiumText}>PREMIUM MEMBER</Text>
-                                    </View>
-                                )}
-                                <Text style={[styles.role, { color: c.subtext }]}>{profile?.profession || 'Freelancer'}</Text>
-                                <View style={styles.verifiedRow}>
-                                    <MaterialIcons name="location-on" size={14} color={c.subtext} />
-                                    <Text style={[styles.location, { color: c.subtext }]}>{profile?.country || 'Remote'}</Text>
-                                </View>
+                        </View>
+                    </View>
+
+                    {/* Stats Row */}
+                    <View style={{ flexDirection: 'row', marginTop: 24, gap: 12 }}>
+                        <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                            <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '600' }}>Success</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                                <MaterialIcons name="verified" size={18} color={profile?.jobSuccessScore >= 90 ? '#10B981' : c.subtext} />
+                                <Text style={{ fontSize: 18, fontWeight: '800', color: c.text }}>{profile?.jobSuccessScore || 100}%</Text>
+                            </View>
+                        </View>
+                        <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                            <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '600' }}>Rating</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                                <MaterialIcons name="star" size={18} color="#F59E0B" />
+                                <Text style={{ fontSize: 18, fontWeight: '800', color: c.text }}>{profile?.rating || '5.0'}</Text>
+                            </View>
+                        </View>
+                        <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                            <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '600' }}>Reviews</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                                <MaterialIcons name="rate-review" size={18} color={c.primary} />
+                                <Text style={{ fontSize: 18, fontWeight: '800', color: c.text }}>{reviewStats?.totalReviews || 0}</Text>
                             </View>
                         </View>
                     </View>
                 </View>
 
-                {/* Reputation & Badges */}
-                <View style={[styles.sectionPad, { marginTop: 12 }]}>
-                    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 20 }]}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <View>
-                                <Text style={{ color: c.subtext, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Job Success</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: profile?.jobSuccessScore >= 90 ? '#DCFCE7' : '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
-                                        <MaterialIcons name="verified-user" size={28} color={profile?.jobSuccessScore >= 90 ? '#16A34A' : c.subtext} />
-                                    </View>
-                                    <View style={{ marginLeft: 12 }}>
-                                        <Text style={{ fontSize: 28, fontWeight: '800', color: c.text }}>{profile?.jobSuccessScore || 100}%</Text>
-                                        <Text style={{ fontSize: 12, color: c.subtext, marginTop: 2 }}>Client Satisfaction</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            <View style={{ alignItems: 'flex-end' }}>
-                                <Text style={{ color: c.subtext, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Rating</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                                    <Text style={{ fontSize: 20, fontWeight: '800', color: '#B45309', marginRight: 4 }}>{profile?.rating || '5.0'}</Text>
-                                    <MaterialIcons name="star" size={20} color="#F59E0B" />
-                                </View>
-                                <Text style={{ fontSize: 12, color: c.subtext, marginTop: 4 }}>
-                                    {reviewStats?.totalReviews || 0} reviews
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-
-                {/* About */}
-                <View style={{ padding: 16 }}>
+                {/* About Section */}
+                <View style={styles.sectionContainer}>
                     <Text style={[styles.sectionTitle, { color: c.text }]}>About</Text>
-                    <Text style={[styles.about, { color: c.subtext }]}>{profile?.bio || 'No bio added yet.'}</Text>
+                    <Text style={{ fontSize: 15, lineHeight: 24, color: c.subtext }}>
+                        {profile?.bio || 'No bio added yet.'}
+                    </Text>
                 </View>
 
-                {/* Skills */}
-                <View style={{ paddingHorizontal: 16 }}>
+                {/* Skills Section */}
+                <View style={styles.sectionContainer}>
                     <Text style={[styles.sectionTitle, { color: c.text }]}>Skills</Text>
-                    <View style={styles.skillsRow}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                         {profile?.skills?.length > 0 ? (
                             profile.skills.map((s: string) => (
-                                <View key={s} style={[styles.skillChip, { backgroundColor: c.isDark ? 'rgba(253,103,48,0.2)' : 'rgba(253,103,48,0.1)' }]}>
-                                    <Text style={{ color: c.primary, fontSize: 13, fontWeight: '700' }}>{s}</Text>
+                                <View key={s} style={{
+                                    paddingHorizontal: 14, paddingVertical: 8,
+                                    borderRadius: 12,
+                                    backgroundColor: c.card,
+                                    borderWidth: 1, borderColor: c.border
+                                }}>
+                                    <Text style={{ color: c.text, fontSize: 14, fontWeight: '600' }}>{s}</Text>
                                 </View>
                             ))
                         ) : (
@@ -272,24 +342,27 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                     </View>
                 </View>
 
-                {/* Employment History */}
-                <View style={{ padding: 16 }}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Work Experience</Text>
+                {/* Experience Section */}
+                <View style={styles.sectionContainer}>
+                    <Text style={[styles.sectionTitle, { color: c.text }]}>Experience</Text>
                     {profile?.employment?.length > 0 ? (
                         <View style={{ gap: 16 }}>
                             {profile.employment.map((job: any, i: number) => (
-                                <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-                                    <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border }}>
-                                        <MaterialIcons name="business" size={20} color={c.subtext} />
+                                <View key={i} style={{ flexDirection: 'row', gap: 16 }}>
+                                    <View style={{ width: 2, backgroundColor: c.border, position: 'relative', marginLeft: 8 }}>
+                                        <View style={{
+                                            width: 12, height: 12, borderRadius: 6,
+                                            backgroundColor: c.primary, position: 'absolute', left: -5, top: 0
+                                        }} />
                                     </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[styles.cardTitle, { color: c.text }]}>{job.position}</Text>
-                                        <Text style={{ fontSize: 14, color: c.text, fontWeight: '500' }}>{job.company}</Text>
-                                        <Text style={{ fontSize: 12, color: c.subtext, marginTop: 2 }}>
+                                    <View style={{ flex: 1, paddingBottom: 8 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{job.position}</Text>
+                                        <Text style={{ fontSize: 14, color: c.primary, fontWeight: '600', marginTop: 2 }}>{job.company}</Text>
+                                        <Text style={{ fontSize: 13, color: c.subtext, marginTop: 4 }}>
                                             {formatDate(job.startDate)} - {formatDate(job.endDate)}
                                         </Text>
                                         {job.description && (
-                                            <Text style={{ fontSize: 13, color: c.subtext, marginTop: 4, lineHeight: 20 }}>{job.description}</Text>
+                                            <Text style={{ fontSize: 14, color: c.subtext, marginTop: 6, lineHeight: 20 }}>{job.description}</Text>
                                         )}
                                     </View>
                                 </View>
@@ -300,127 +373,67 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                     )}
                 </View>
 
-                {/* Education */}
-                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                    <Text style={[styles.sectionTitle, { color: c.text }]}>Education</Text>
-                    {profile?.education?.length > 0 ? (
-                        <View style={{ gap: 16 }}>
-                            {profile.education.map((edu: any, i: number) => (
-                                <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-                                    <View style={{ width: 40, height: 40, borderRadius: 8, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border }}>
-                                        <MaterialIcons name="school" size={20} color={c.subtext} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={[styles.cardTitle, { color: c.text }]}>{edu.institution}</Text>
-                                        <Text style={{ fontSize: 14, color: c.text, fontWeight: '500' }}>{edu.degree} in {edu.fieldOfStudy}</Text>
-                                        <Text style={{ fontSize: 12, color: c.subtext, marginTop: 2 }}>
-                                            {formatDate(edu.startDate)} - {formatDate(edu.endDate)}
-                                        </Text>
-                                    </View>
-                                </View>
-                            ))}
-                        </View>
-                    ) : (
-                        <Text style={{ color: c.subtext }}>No education listed.</Text>
-                    )}
-                </View>
-
-                {/* Portfolio */}
-                <View style={{ padding: 16 }}>
+                {/* Portfolio Section */}
+                <View style={styles.sectionContainer}>
                     <Text style={[styles.sectionTitle, { color: c.text }]}>Portfolio</Text>
                     {profile?.portfolio?.length > 0 ? (
-                        <View style={{ gap: 16 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingRight: 20 }}>
                             {profile.portfolio.map((item: any, i: number) => (
-                                <View key={i} style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 0, overflow: 'hidden' }]}>
+                                <View key={i} style={{ width: 280, backgroundColor: c.card, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: c.border }}>
                                     <Image source={{ uri: item.imageUrl || 'https://via.placeholder.com/400x300' }} style={{ width: '100%', height: 160 }} />
-                                    <View style={{ padding: 12 }}>
-                                        <Text style={[styles.cardTitle, { color: c.text }]}>{item.title || 'Untitled'}</Text>
-                                        <Text style={{ color: c.subtext, fontSize: 12 }}>{item.description}</Text>
-                                        {item.projectUrl && (
-                                            <TouchableOpacity onPress={() => { /* Open URL */ }}>
-                                                <Text style={{ color: c.primary, fontSize: 12, marginTop: 4, fontWeight: '600' }}>View Project</Text>
-                                            </TouchableOpacity>
-                                        )}
+                                    <View style={{ padding: 16 }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }} numberOfLines={1}>{item.title || 'Untitled'}</Text>
+                                        <Text style={{ color: c.subtext, fontSize: 13, marginTop: 4 }} numberOfLines={2}>{item.description}</Text>
                                     </View>
                                 </View>
                             ))}
-                        </View>
+                        </ScrollView>
                     ) : (
-                        <Text style={{ color: c.subtext }}>No portfolio items publicly visible.</Text>
+                        <Text style={{ color: c.subtext }}>No portfolio items.</Text>
                     )}
                 </View>
 
                 {/* Reviews Section */}
-                <View style={{ padding: 16 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Client Reviews</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <MaterialIcons name="star" size={16} color="#F59E0B" />
-                            <Text style={{ fontWeight: '700', color: c.text }}>{reviewStats?.averageRating || '0.0'}</Text>
-                            <Text style={{ color: c.subtext }}>({reviewStats?.totalReviews || 0})</Text>
-                        </View>
-                    </View>
-
+                <View style={[styles.sectionContainer, { marginBottom: 20 }]}>
+                    <Text style={[styles.sectionTitle, { color: c.text }]}>Reviews</Text>
                     {reviews.length > 0 ? (
                         <View style={{ gap: 16 }}>
                             {reviews.map((review: any) => (
-                                <View key={review._id} style={[styles.card, { backgroundColor: c.card, borderColor: c.border, padding: 16 }]}>
+                                <View key={review._id} style={{ backgroundColor: c.card, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: c.border }}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{review.projectId?.title || 'General Review'}</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '700', color: c.text }}>{review.projectId?.title || 'Project'}</Text>
                                         <View style={{ flexDirection: 'row', gap: 2 }}>
                                             {[1, 2, 3, 4, 5].map((star) => (
-                                                <MaterialIcons
-                                                    key={star}
-                                                    name={star <= review.rating ? "star" : "star-border"}
-                                                    size={14}
-                                                    color="#F59E0B"
-                                                />
+                                                <MaterialIcons key={star} name="star" size={14} color={star <= review.rating ? "#F59E0B" : c.border} />
                                             ))}
                                         </View>
                                     </View>
-                                    <Text style={{ fontSize: 14, color: c.text, lineHeight: 20 }}>"{review.comment}"</Text>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 }}>
-                                        <Image
-                                            source={{ uri: review.reviewerId?.profileImage || `https://ui-avatars.com/api/?name=${review.reviewerId?.firstName}+${review.reviewerId?.lastName}` }}
-                                            style={{ width: 24, height: 24, borderRadius: 12 }}
-                                        />
-                                        <Text style={{ fontSize: 12, color: c.subtext, fontWeight: '600' }}>
-                                            {review.reviewerId?.firstName} {review.reviewerId?.lastName}
-                                        </Text>
-                                        <Text style={{ fontSize: 12, color: c.subtext }}>• {formatDate(review.createdAt)}</Text>
-                                    </View>
+                                    <Text style={{ fontSize: 14, color: c.subtext, lineHeight: 20, fontStyle: 'italic' }}>"{review.comment}"</Text>
                                 </View>
                             ))}
                         </View>
                     ) : (
-                        <View style={{ padding: 20, alignItems: 'center', backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border }}>
-                            <Text style={{ color: c.subtext }}>No reviews yet.</Text>
-                        </View>
+                        <Text style={{ color: c.subtext }}>No reviews yet.</Text>
                     )}
                 </View>
 
-                {/* Login CTA */}
-                {!isAuthenticated && (
-                    <View style={{ margin: 16, padding: 24, backgroundColor: c.isDark ? '#2C2C2E' : '#ebf8ff', borderRadius: 16, alignItems: 'center', gap: 12 }}>
-                        <MaterialIcons name="lock-outline" size={32} color={c.primary} />
-                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text, textAlign: 'center' }}>
-                            Hire {profile.firstName} for your project
-                        </Text>
-                        <Text style={{ fontSize: 14, color: c.subtext, textAlign: 'center' }}>
-                            Sign up to message, interview, and hire top talent securely.
-                        </Text>
-                    </View>
-                )}
-
             </ScrollView>
 
-            {/* Fixed CTA */}
-            <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
+            {/* Floating CTA */}
+            <View style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                padding: 16, paddingBottom: 16 + insets.bottom,
+                backgroundColor: c.background, borderTopWidth: 1, borderTopColor: c.border
+            }}>
                 <TouchableOpacity
-                    style={[styles.applyBtn, { backgroundColor: c.primary }]}
+                    style={{
+                        backgroundColor: c.primary, height: 56, borderRadius: 16,
+                        alignItems: 'center', justifyContent: 'center',
+                        shadowColor: c.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4
+                    }}
                     onPress={handleHire}
                 >
-                    <Text style={styles.applyText}>
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
                         {isAuthenticated ? "Invite to Job" : "Login to Hire"}
                     </Text>
                 </TouchableOpacity>
@@ -431,153 +444,283 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                 visible={inviteModalVisible}
                 transparent={true}
                 animationType="slide"
-                onRequestClose={() => setInviteModalVisible(false)}
+                onRequestClose={() => {
+                    setInviteModalVisible(false);
+                    setInviteStep(1);
+                    setSelectedContext(null);
+                    setSelectedJob(null);
+                }}
             >
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
                     <View style={{ backgroundColor: c.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>Invite {profile.firstName}</Text>
-                            <TouchableOpacity onPress={() => setInviteModalVisible(false)}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                {inviteStep === 2 && (
+                                    <TouchableOpacity onPress={() => setInviteStep(1)} style={{ padding: 4 }}>
+                                        <MaterialIcons name="arrow-back" size={24} color={c.text} />
+                                    </TouchableOpacity>
+                                )}
+                                <Text style={{ fontSize: 20, fontWeight: '800', color: c.text }}>
+                                    {inviteStep === 1 ? `Invite ${profile.firstName}` : 'Select Role'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={() => {
+                                setInviteModalVisible(false);
+                                setInviteStep(1);
+                                setSelectedContext(null);
+                                setSelectedJob(null);
+                            }} style={{ padding: 4 }}>
                                 <MaterialIcons name="close" size={24} color={c.subtext} />
                             </TouchableOpacity>
                         </View>
 
-                        <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 16 }}>
-                            Select a job to invite this freelancer to:
+                        <Text style={{ fontSize: 15, color: c.subtext, marginBottom: 20 }}>
+                            {inviteStep === 1
+                                ? "Select a job or project to invite this freelancer to:"
+                                : `Select a role in "${selectedContext?.title}" for this freelancer:`
+                            }
                         </Text>
 
                         {loadingJobs ? (
-                            <ActivityIndicator size="large" color={c.primary} />
+                            <ActivityIndicator size="large" color={c.primary} style={{ padding: 40 }} />
                         ) : (
                             <ScrollView style={{ maxHeight: 300 }} contentContainerStyle={{ gap: 12 }}>
-                                {myJobs.length > 0 ? (
-                                    myJobs.map((item: any) => (
-                                        <TouchableOpacity
-                                            key={`${item.type}-${item._id}`}
-                                            onPress={() => setSelectedJob(item)}
-                                            style={{
-                                                padding: 16,
-                                                borderRadius: 12,
-                                                borderWidth: 1.5,
-                                                borderColor: selectedJob?._id === item._id ? c.primary : c.border,
-                                                backgroundColor: selectedJob?._id === item._id ? c.primary + '08' : c.card,
-                                                flexDirection: 'row',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                shadowColor: '#000',
-                                                shadowOffset: { width: 0, height: 1 },
-                                                shadowOpacity: 0.05,
-                                                shadowRadius: 2,
-                                                elevation: 1
-                                            }}
-                                        >
-                                            <View style={{ flex: 1 }}>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                {inviteStep === 1 ? (
+                                    // Step 1: List Jobs and Projects
+                                    inviteContexts.length > 0 ? (
+                                        inviteContexts.map((item: any) => {
+                                            const isSelected = selectedContext?._id === item._id;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={`${item.type}-${item._id}`}
+                                                    onPress={() => {
+                                                        setSelectedContext(item);
+                                                        if (item.type === 'job') {
+                                                            setSelectedJob(item); // Auto-select for job
+                                                        } else {
+                                                            setSelectedJob(null); // Reset for project
+                                                        }
+                                                    }}
+                                                    activeOpacity={0.8}
+                                                    style={{
+                                                        padding: 16,
+                                                        borderRadius: 16,
+                                                        borderWidth: isSelected ? 2 : 1,
+                                                        borderColor: isSelected ? c.primary : c.border,
+                                                        backgroundColor: isSelected ? c.primary + '08' : c.background,
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        gap: 12
+                                                    }}
+                                                >
                                                     <View style={{
-                                                        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
-                                                        backgroundColor: item.type === 'collabo' ? '#8B5CF6' + '20' : '#10B981' + '20',
-                                                        borderWidth: 1,
-                                                        borderColor: item.type === 'collabo' ? '#8B5CF6' : '#10B981'
+                                                        width: 40, height: 40, borderRadius: 12,
+                                                        backgroundColor: item.type === 'collabo' ? '#8B5CF620' : '#10B98120',
+                                                        alignItems: 'center', justifyContent: 'center'
                                                     }}>
-                                                        <Text style={{
-                                                            color: item.type === 'collabo' ? '#8B5CF6' : '#10B981',
-                                                            fontSize: 10, fontWeight: '800', letterSpacing: 0.5
-                                                        }}>
-                                                            {item.type === 'collabo' ? 'COLLABO' : 'JOB'}
+                                                        <MaterialIcons
+                                                            name={item.type === 'collabo' ? 'groups' : 'work'}
+                                                            size={20}
+                                                            color={item.type === 'collabo' ? '#8B5CF6' : '#10B981'}
+                                                        />
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }} numberOfLines={1}>{item.title}</Text>
+                                                        <Text style={{ fontSize: 13, color: c.subtext }} numberOfLines={1}>
+                                                            {item.type === 'collabo' ? 'Project • Multiple Roles' : `Job • ₦${item.budget?.toLocaleString() || 'Negotiable'}`}
                                                         </Text>
                                                     </View>
-                                                    <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, flex: 1 }} numberOfLines={1}>
-                                                        {item.title}
-                                                    </Text>
-                                                </View>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                                    <MaterialIcons name={item.type === 'collabo' ? 'groups' : 'work'} size={14} color={c.subtext} />
-                                                    <Text style={{ fontSize: 13, color: c.subtext, flex: 1 }} numberOfLines={1}>
-                                                        {item.subtitle}
-                                                    </Text>
-                                                </View>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                                                    <MaterialIcons name="payments" size={14} color={c.primary} />
-                                                    <Text style={{ fontSize: 13, color: c.primary, fontWeight: '600' }}>
-                                                        {item.budget ? `₦${item.budget.toLocaleString()}` : 'Budget Negotiable'}
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <View style={{ marginLeft: 12 }}>
-                                                <View style={{
-                                                    width: 24, height: 24, borderRadius: 12,
-                                                    borderWidth: 2,
-                                                    borderColor: selectedJob?._id === item._id ? c.primary : c.border,
-                                                    alignItems: 'center', justifyContent: 'center',
-                                                    backgroundColor: selectedJob?._id === item._id ? c.primary : 'transparent'
-                                                }}>
-                                                    {selectedJob?._id === item._id && <MaterialIcons name="check" size={16} color="#FFF" />}
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))
-                                ) : (
-                                    <View style={{ padding: 30, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                                        <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: c.border + '30', alignItems: 'center', justifyContent: 'center' }}>
-                                            <MaterialIcons name="work-off" size={28} color={c.subtext} />
+                                                    <View style={{
+                                                        width: 24, height: 24, borderRadius: 12, borderWidth: 2,
+                                                        borderColor: isSelected ? c.primary : c.border,
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        backgroundColor: isSelected ? c.primary : 'transparent'
+                                                    }}>
+                                                        {isSelected && <MaterialIcons name="check" size={14} color="#FFF" />}
+                                                    </View>
+                                                </TouchableOpacity>
+                                            );
+                                        })
+                                    ) : (
+                                        <View style={{ padding: 30, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                                            <MaterialIcons name="work-off" size={40} color={c.border} />
+                                            <Text style={{ textAlign: 'center', color: c.subtext }}>No active jobs or projects found.</Text>
                                         </View>
-                                        <Text style={{ textAlign: 'center', color: c.text, fontSize: 16, fontWeight: '600' }}>
-                                            No Active Jobs or Projects
-                                        </Text>
-                                        <Text style={{ textAlign: 'center', color: c.subtext, fontSize: 14, maxWidth: 240 }}>
-                                            You need to post a job or create a Collabo project before you can invite freelancers.
-                                        </Text>
-                                    </View>
+                                    )
+                                ) : (
+                                    // Step 2: List Roles for Selected Project
+                                    selectedContext?.roles?.length > 0 ? (
+                                        selectedContext.roles.map((role: any) => {
+                                            const isSelected = selectedJob?._id === role._id;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={role._id}
+                                                    onPress={() => setSelectedJob({ ...role, type: 'collabo', projectId: selectedContext._id, title: role.title })}
+                                                    activeOpacity={0.8}
+                                                    style={{
+                                                        padding: 16,
+                                                        borderRadius: 16,
+                                                        borderWidth: isSelected ? 2 : 1,
+                                                        borderColor: isSelected ? c.primary : c.border,
+                                                        backgroundColor: isSelected ? c.primary + '08' : c.background,
+                                                        flexDirection: 'row',
+                                                        alignItems: 'center',
+                                                        gap: 12
+                                                    }}
+                                                >
+                                                    <View style={{
+                                                        width: 40, height: 40, borderRadius: 12,
+                                                        backgroundColor: '#8B5CF620',
+                                                        alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        <MaterialIcons name="person" size={20} color="#8B5CF6" />
+                                                    </View>
+                                                    <View style={{ flex: 1 }}>
+                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }} numberOfLines={1}>{role.title}</Text>
+                                                        <Text style={{ fontSize: 13, color: c.subtext }} numberOfLines={1}>
+                                                            Budget: ₦{role.budget?.toLocaleString() || 'Negotiable'}
+                                                        </Text>
+                                                    </View>
+                                                    <View style={{
+                                                        width: 24, height: 24, borderRadius: 12, borderWidth: 2,
+                                                        borderColor: isSelected ? c.primary : c.border,
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        backgroundColor: isSelected ? c.primary : 'transparent'
+                                                    }}>
+                                                        {isSelected && <MaterialIcons name="check" size={14} color="#FFF" />}
+                                                    </View>
+                                                </TouchableOpacity>
+                                            );
+                                        })
+                                    ) : (
+                                        <View style={{ padding: 30, alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                                            <MaterialIcons name="person-off" size={40} color={c.border} />
+                                            <Text style={{ textAlign: 'center', color: c.subtext }}>No open roles in this project.</Text>
+                                        </View>
+                                    )
                                 )}
                             </ScrollView>
                         )}
 
-                        <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.border, gap: 12 }}>
+                        <View style={{ marginTop: 24, gap: 12 }}>
                             <TouchableOpacity
-                                onPress={handleSendInvite}
-                                disabled={!selectedJob || isInviting}
+                                onPress={() => {
+                                    if (inviteStep === 1 && selectedContext?.type === 'collabo') {
+                                        setInviteStep(2);
+                                    } else {
+                                        handleSendInvite();
+                                    }
+                                }}
+                                disabled={!selectedContext || (inviteStep === 2 && !selectedJob) || isInviting}
                                 style={{
-                                    backgroundColor: selectedJob ? c.primary : c.border,
+                                    backgroundColor: (selectedContext && (inviteStep === 1 || selectedJob)) ? c.primary : c.border,
                                     padding: 16,
-                                    borderRadius: 12,
+                                    borderRadius: 16,
                                     alignItems: 'center',
                                     flexDirection: 'row',
                                     justifyContent: 'center',
                                     gap: 8,
-                                    opacity: (!selectedJob || isInviting) ? 0.7 : 1
+                                    opacity: (!selectedContext || (inviteStep === 2 && !selectedJob) || isInviting) ? 0.7 : 1
                                 }}
                             >
                                 {isInviting ? (
                                     <ActivityIndicator color="#FFF" size="small" />
                                 ) : (
                                     <>
-                                        <MaterialIcons name="send" size={20} color="#FFF" />
-                                        <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15 }}>Send Invitation</Text>
+                                        <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>
+                                            {inviteStep === 1 && selectedContext?.type === 'collabo' ? 'Next: Select Role' : 'Send Invitation'}
+                                        </Text>
+                                        <MaterialIcons name={inviteStep === 1 && selectedContext?.type === 'collabo' ? "arrow-forward" : "send"} size={20} color="#FFF" />
                                     </>
                                 )}
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setInviteModalVisible(false);
-                                    navigation.navigate('PostJob');
-                                }}
-                                style={{
-                                    padding: 16,
-                                    borderRadius: 12,
-                                    alignItems: 'center',
-                                    flexDirection: 'row',
-                                    justifyContent: 'center',
-                                    gap: 8
-                                }}
-                            >
-                                <MaterialIcons name="add-circle-outline" size={20} color={c.primary} />
-                                <Text style={{ color: c.primary, fontWeight: '700', fontSize: 15 }}>Post New Job</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
+
+            {/* Review Modal */}
+            <Modal
+                visible={reviewModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setReviewModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
+                    <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>Add Review</Text>
+                            <TouchableOpacity onPress={() => setReviewModalVisible(false)}>
+                                <Ionicons name="close" size={24} color={c.subtext} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Rating</Text>
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                                    <Ionicons
+                                        name={star <= rating ? "star" : "star-outline"}
+                                        size={32}
+                                        color={star <= rating ? "#F59E0B" : c.border}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Your Comment</Text>
+                        <View style={{
+                            backgroundColor: c.background,
+                            borderRadius: 12,
+                            padding: 16,
+                            height: 120,
+                            borderWidth: 1,
+                            borderColor: c.border,
+                            marginBottom: 24
+                        }}>
+                            <TextInput
+                                style={{
+                                    flex: 1,
+                                    textAlignVertical: 'top',
+                                    color: c.text,
+                                    fontSize: 16
+                                }}
+                                placeholder="Share your experience working with this freelancer..."
+                                placeholderTextColor={c.subtext}
+                                multiline
+                                value={comment}
+                                onChangeText={setComment}
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: c.primary,
+                                paddingVertical: 16,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                opacity: isSubmittingReview ? 0.7 : 1
+                            }}
+                            onPress={handleAddReview}
+                            disabled={isSubmittingReview}
+                        >
+                            {isSubmittingReview ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Submit Review</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
         </SafeAreaView>
     );
 };
@@ -586,38 +729,13 @@ const styles = StyleSheet.create({
     appBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderBottomWidth: StyleSheet.hairlineWidth,
+        paddingVertical: 12,
     },
-    iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 },
-    appBarTitle: { fontSize: 16, fontWeight: '600' },
-    sectionPad: { paddingHorizontal: 16 },
-    headerRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-    headerLeft: { flexDirection: 'row', gap: 12, alignItems: 'center', flex: 1 },
-    avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#ddd' },
-    name: { fontSize: 20, fontWeight: '800' },
-    role: { fontSize: 14, marginTop: 2, fontWeight: '500' },
-    location: { fontSize: 13, marginLeft: 4 },
-    verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-
-    avatarContainer: { position: 'relative' },
-    premiumBorder: { borderWidth: 3, borderColor: '#F59E0B', borderRadius: 999, padding: 2 },
-    premiumIconBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#F59E0B', borderRadius: 999, width: 20, height: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFF' },
-    premiumBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F59E0B', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4, alignSelf: 'flex-start' },
-    premiumText: { color: '#FFF', fontSize: 10, fontWeight: '700', marginLeft: 2 },
-
-    card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 12, marginBottom: 12 },
-    sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8 },
-    about: { fontSize: 14, lineHeight: 22 },
-    skillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    skillChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, fontSize: 13, fontWeight: '700' },
-    cardTitle: { fontSize: 16, fontWeight: '700' },
-
-    ctaBar: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, paddingTop: 8 },
-    applyBtn: { height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
-    applyText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 12 },
+    appBarTitle: { fontSize: 18, fontWeight: '700', marginLeft: 12 },
+    statCard: { flex: 1, padding: 12, borderRadius: 16, borderWidth: 1 },
+    sectionContainer: { paddingHorizontal: 20, marginBottom: 24 },
+    sectionTitle: { fontSize: 20, fontWeight: '800', marginBottom: 16 },
 });
 
 export default PublicFreelancerProfileScreen;

@@ -407,7 +407,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 freelancers.slice(0, 5).map((f: any, index: number) => (
                   <TouchableOpacity
                     key={f._id || f.id || `freelancer-${index}`}
-                    activeOpacity={0.7}
+                    activeOpacity={0.9}
                     onPress={() => navigation.navigate('FreelancerPublicProfile', { id: f._id || f.id })}
                     style={{
                       backgroundColor: c.card,
@@ -430,24 +430,36 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <View style={{ flex: 1, marginRight: 8 }}>
-                            <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }} numberOfLines={1}>{f.firstName} {f.lastName}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }} numberOfLines={1}>
+                              {f.firstName || f.lastName ? `${f.firstName || ''} ${f.lastName || ''}`.trim() : 'Unknown Freelancer'}
+                            </Text>
                             <Text style={{ color: c.subtext, fontSize: 13, marginTop: 2 }} numberOfLines={1}>{f.jobTitle || 'Freelancer'}</Text>
                           </View>
                           {f.hourlyRate && (
-                            <Text style={{ fontSize: 14, fontWeight: '700', color: c.text }}>₦{f.hourlyRate}/hr</Text>
+                            <View style={{ alignItems: 'flex-end' }}>
+                              <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>₦{f.hourlyRate}</Text>
+                              <Text style={{ fontSize: 11, color: c.subtext }}>/hr</Text>
+                            </View>
                           )}
                         </View>
 
-                        {/* Meta Row */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                        {/* Meta Row - Unified */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <MaterialIcons name="star" size={14} color="#F59E0B" />
-                            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text }}>{(f.rating || 0).toFixed(1)}</Text>
-                            <Text style={{ fontSize: 12, color: c.subtext }}>({f.reviews || 0})</Text>
+                            <MaterialIcons name="star" size={16} color="#F59E0B" />
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{(f.rating || 0).toFixed(1)}</Text>
+                            <Text style={{ fontSize: 13, color: c.subtext }}>({f.reviews || 0})</Text>
                           </View>
 
+                          {f.jobSuccessScore && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                              <MaterialIcons name="bolt" size={16} color="#10B981" />
+                              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{f.jobSuccessScore}%</Text>
+                            </View>
+                          )}
+
                           {f.location && (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                               <MaterialIcons name="place" size={14} color={c.subtext} />
                               <Text style={{ fontSize: 12, color: c.subtext }} numberOfLines={1}>{f.location}</Text>
                             </View>
@@ -457,31 +469,39 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                     </View>
 
                     {/* Skills (Text based, clean) */}
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
                       {f.skills?.slice(0, 4).map((s: string, i: number) => (
-                        <Text key={`${s}-${i}`} style={{ fontSize: 12, color: c.subtext, backgroundColor: c.isDark ? '#374151' : '#F3F4F6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, overflow: 'hidden' }}>
+                        <Text key={`${s}-${i}`} style={{ fontSize: 12, color: c.subtext, backgroundColor: c.isDark ? '#374151' : '#F3F4F6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, overflow: 'hidden', fontWeight: '500' }}>
                           {s}
                         </Text>
                       ))}
                       {f.skills?.length > 4 && (
-                        <Text style={{ fontSize: 12, color: c.subtext, paddingVertical: 4 }}>+{f.skills.length - 4} more</Text>
+                        <Text style={{ fontSize: 12, color: c.subtext, paddingVertical: 6, paddingHorizontal: 4 }}>+{f.skills.length - 4} more</Text>
                       )}
                     </View>
 
                     {/* Action Divider */}
-                    <View style={{ height: 1, backgroundColor: c.border, marginVertical: 12 }} />
+                    <View style={{ height: 1, backgroundColor: c.border, marginVertical: 16 }} />
 
                     {/* Actions */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
                       <TouchableOpacity
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12 }}
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: c.border }}
+                        onPress={() => navigation.navigate('FreelancerPublicProfile', { id: f._id || f.id })}
+                      >
+                        <MaterialIcons name="person" size={18} color={c.text} />
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>View Profile</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: c.primary }}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleInviteClick(f);
                         }}
                       >
-                        <MaterialIcons name="send" size={16} color={c.primary} />
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: c.primary }}>Invite to Job</Text>
+                        <MaterialIcons name="send" size={18} color="#FFF" />
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFF' }}>Invite</Text>
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>

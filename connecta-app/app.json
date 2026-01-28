@@ -23,6 +23,7 @@
     },
     "android": {
       "package": "com.connecta.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"

@@ -15,7 +15,6 @@ import SuccessModal from '../components/SuccessModal';
 import { JOB_CATEGORIES, JOB_TYPES, LOCATION_SCOPES, LOCATION_TYPES, DURATION_TYPES } from '../utils/categories';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as aiService from '../services/aiService';
-
 const { width } = Dimensions.get('window');
 
 const COMMON_TIMEZONES = [
@@ -1151,7 +1150,7 @@ const PostJobScreen: React.FC = () => {
       <TouchableOpacity
         activeOpacity={0.9}
         style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
-        onPress={() => navigation.navigate('PostCollaboJob')}
+        onPress={() => (navigation as any).navigate('PostCollaboJob')}
       >
         <LinearGradient
           colors={['#8B5CF6', '#A78BFA']}
