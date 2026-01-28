@@ -3,7 +3,7 @@ module.exports = {
         {
             name: 'connecta-server',
             script: 'node',
-            args: 'dist400/app.js',
+            args: 'dist/app.js',
             cwd: '/var/www/connecta/server',
             instances: 1,
             autorestart: true,
