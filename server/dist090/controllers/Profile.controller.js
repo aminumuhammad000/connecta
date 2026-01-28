@@ -210,9 +210,14 @@ export const getProfileByUserId = async (req, res) => {
             .populate('reviewerId', 'firstName lastName profileImage')
             .populate('projectId', 'title');
         console.log('Found reviews:', reviews.length);
+        // Fetch jobs posted by this user (if client)
+        const jobs = await Job.find({ clientId: req.params.userId }).sort({ createdAt: -1 });
+        const jobsPosted = jobs.length;
         const responseData = {
             ...profile.toObject(),
-            reviews
+            reviews,
+            jobs,
+            jobsPosted
         };
         res.status(200).json(responseData);
     }

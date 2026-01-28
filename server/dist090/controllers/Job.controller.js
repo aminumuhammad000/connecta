@@ -439,10 +439,17 @@ export const inviteFreelancer = async (req, res) => {
         if (!freelancer) {
             return res.status(404).json({ success: false, message: "Freelancer not found" });
         }
-        // Check if already invited (optional, maybe check notifications or a new Invitation model)
-        // For now, we'll just send the notification.
-        // Create Notification
+        // Check if already invited
         const Notification = (await import("../models/Notification.model.js")).default;
+        const existingInvite = await Notification.findOne({
+            userId: freelancerId,
+            type: "job_invite",
+            relatedId: job._id
+        });
+        if (existingInvite) {
+            return res.status(400).json({ success: false, message: "Freelancer already invited to this job" });
+        }
+        // Create Notification
         await Notification.create({
             userId: freelancerId,
             type: "job_invite",
@@ -453,8 +460,7 @@ export const inviteFreelancer = async (req, res) => {
             link: `/jobs/${job._id}`,
             isRead: false
         });
-        // Send Email (using email service if available, or just log for now)
-        // In a real app, we'd use the email service here.
+        // Send Email
         try {
             const { sendEmail } = await import("../services/email.service.js");
             const { getBaseTemplate } = await import("../utils/emailTemplates.js");

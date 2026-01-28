@@ -180,7 +180,7 @@ export const inviteToRole = async (req, res) => {
         res.json(result);
     }
     catch (error) {
-        res.status(500).json({ message: 'Failed to send invitation', error: error.message });
+        res.status(500).json({ message: `Failed to send invitation: ${error.message}`, error: error.message });
     }
 };
 export const addRole = async (req, res) => {

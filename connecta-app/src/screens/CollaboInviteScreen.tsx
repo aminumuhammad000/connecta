@@ -5,20 +5,31 @@ import { useThemeColors } from '../theme/theme';
 import Button from '../components/Button';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getRole, acceptCollaboRole } from '../services/collaboService';
-import { useInAppAlert } from '../components/InAppAlert';
 import { useAuth } from '../context/AuthContext';
+import CustomAlert from '../components/CustomAlert';
 
 export default function CollaboInviteScreen() {
     const c = useThemeColors();
     const route = useRoute<any>();
     const navigation = useNavigation<any>();
     const { roleId } = route.params || {};
-    const { showAlert } = useInAppAlert();
     const { user } = useAuth();
 
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
     const [accepting, setAccepting] = useState(false);
+
+    // Alert State
+    const [alertConfig, setAlertConfig] = useState<{ visible: boolean; title: string; message: string; type: 'success' | 'error' | 'warning' }>({
+        visible: false,
+        title: '',
+        message: '',
+        type: 'success'
+    });
+
+    const showAlert = (title: string, message: string, type: 'success' | 'error' | 'warning' = 'success') => {
+        setAlertConfig({ visible: true, title, message, type });
+    };
 
     useEffect(() => {
         if (roleId) loadData();
@@ -29,7 +40,7 @@ export default function CollaboInviteScreen() {
             const res = await getRole(roleId);
             setData((res as any).data || res);
         } catch (error) {
-            showAlert({ title: 'Invite not found or expired.', type: 'error' });
+            showAlert('Error', 'Invite not found or expired.', 'error');
             setTimeout(() => navigation.goBack(), 2000);
         } finally {
             setLoading(false);
@@ -40,12 +51,12 @@ export default function CollaboInviteScreen() {
         setAccepting(true);
         try {
             await acceptCollaboRole(roleId);
-            showAlert({ title: 'Welcome to the team! 🎉', type: 'success' });
+            showAlert('Success', 'Welcome to the team! 🎉', 'success');
             setTimeout(() => {
                 navigation.replace('CollaboWorkspace', { projectId: data.project._id });
             }, 1500);
         } catch (error: any) {
-            showAlert({ title: 'Failed to accept invite. Please try again.', type: 'error' });
+            showAlert('Error', 'Failed to accept invite. Please try again.', 'error');
         } finally {
             setAccepting(false);
         }
@@ -109,6 +120,14 @@ export default function CollaboInviteScreen() {
                 )}
 
             </ScrollView>
+
+            <CustomAlert
+                visible={alertConfig.visible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+            />
         </SafeAreaView>
     );
 }

@@ -396,19 +396,46 @@ class CollaboService {
 
     async inviteToRole(roleId: string, freelancerId: string, clientId: string) {
         try {
+            console.log(`[CollaboService] inviteToRole called with roleId=${roleId}, freelancerId=${freelancerId}, clientId=${clientId}`);
+
             const role = await ProjectRole.findById(roleId);
-            if (!role) throw new Error("Role not found");
+            if (!role) {
+                console.error(`[CollaboService] Role not found: ${roleId}`);
+                throw new Error("Role not found");
+            }
 
             const project = await CollaboProject.findById(role.projectId).populate('clientId', 'firstName lastName email');
-            if (!project) throw new Error("Project not found");
+            if (!project) {
+                console.error(`[CollaboService] Project not found for role: ${roleId}`);
+                throw new Error("Project not found");
+            }
 
             // Verify client owns this project
-            if (project.clientId._id.toString() !== clientId) {
+            // Handle populated clientId which is an object
+            const projectClientId = (project.clientId as any)._id
+                ? (project.clientId as any)._id.toString()
+                : project.clientId.toString();
+
+            console.log(`[CollaboService] Project Owner: ${projectClientId}, Requesting Client: ${clientId.toString()}`);
+
+            if (projectClientId !== clientId.toString()) {
+                console.error(`[CollaboService] Unauthorized invite attempt. Owner: ${projectClientId}, Requester: ${clientId}`);
                 throw new Error("Unauthorized: Only project owner can invite team members");
             }
 
             const freelancer = await User.findById(freelancerId);
             if (!freelancer) throw new Error("Freelancer not found");
+
+            // Check if already invited
+            const existingInvite = await Notification.findOne({
+                userId: freelancerId,
+                type: 'collabo_invite',
+                relatedId: roleId
+            });
+
+            if (existingInvite) {
+                throw new Error("Freelancer already invited to this role");
+            }
 
             // Create notification
             await Notification.create({
@@ -422,7 +449,7 @@ class CollaboService {
                 isRead: false
             });
 
-            // Send email
+            // Send email (Non-blocking)
             try {
                 const emailHtml = getBaseTemplate({
                     title: 'You\'re Invited to Join a Team!',
@@ -439,13 +466,15 @@ class CollaboService {
                     actionText: 'View Invitation'
                 });
 
+                // Don't await email if speed is critical, but awaiting ensures we know if it fails
                 await sendEmail(
                     freelancer.email,
                     `Team Invitation: ${project.title}`,
                     emailHtml
                 );
             } catch (emailError) {
-                console.error('Failed to send invitation email:', emailError);
+                console.error('Failed to send invitation email (non-fatal):', emailError);
+                // Do not throw here, invitation is valid via notification
             }
 
             return { success: true, message: 'Invitation sent successfully' };

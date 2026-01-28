@@ -26,10 +26,11 @@ const platformDefaultBaseUrl = 'http://localhost:5000';
 const platformDefaultBaseUrl = 'https://api.myconnecta.ng';
 
 const getBaseUrl = () => {
-    if (process.env.NODE_ENV === 'development') {
-        return derivedHostBaseUrl || platformDefaultBaseUrl;
-    }
-    return 'https://api.myconnecta.ng';
+    // if (process.env.NODE_ENV === 'development') {
+    //     return derivedHostBaseUrl || platformDefaultBaseUrl;
+    // }
+    // Use LAN IP as fallback since 10.0.2.2 failed
+    return 'http://192.168.43.204:5000';
 };
 
 export const API_BASE_URL = getBaseUrl();
