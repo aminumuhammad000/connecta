@@ -48,7 +48,6 @@ export const cancelSubscription = async (): Promise<void> => {
 
 export default {
     getMySubscription,
-    getMySubscription,
     initializeUpgradePayment,
     verifyUpgradePayment,
     cancelSubscription,

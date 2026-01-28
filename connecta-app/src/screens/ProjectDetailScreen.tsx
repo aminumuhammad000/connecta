@@ -295,10 +295,25 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 <View style={[styles.infoCard, { backgroundColor: c.card, borderColor: c.border }]}>
                     <View style={styles.infoRow}>
                         <Text style={[styles.infoLabel, { color: c.subtext }]}>{isProjectOwner ? 'Freelancer:' : 'Client:'}</Text>
-                        <View style={styles.clientInfo}>
-                            <Text style={[styles.infoValue, { color: c.text }]}>{isProjectOwner ? (project.freelancerName || 'Freelancer') : project.clientName}</Text>
+                        <TouchableOpacity
+                            style={styles.clientInfo}
+                            onPress={() => {
+                                if (isProjectOwner) {
+                                    // Client viewing Freelancer
+                                    const fid = project.freelancerId?._id || project.freelancerId;
+                                    if (fid) navigation.navigate('FreelancerPublicProfile', { id: fid });
+                                } else {
+                                    // Freelancer viewing Client
+                                    const cid = project.clientId?._id || project.clientId;
+                                    if (cid) navigation.navigate('ClientProfile', { userId: cid });
+                                }
+                            }}
+                        >
+                            <Text style={[styles.infoValue, { color: c.primary, textDecorationLine: 'underline' }]}>
+                                {isProjectOwner ? (project.freelancerName || 'Freelancer') : project.clientName}
+                            </Text>
                             {project.clientVerified && !isProjectOwner && <Ionicons name="checkmark-circle" size={16} color={c.primary} style={{ marginLeft: 4 }} />}
-                        </View>
+                        </TouchableOpacity>
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={[styles.infoLabel, { color: c.subtext }]}>Budget:</Text>

@@ -59,9 +59,9 @@ const AddPortfolioScreen = () => {
 
                 // Use the configured upload endpoint
                 const { uploadFile } = require('../services/api');
-                const { API_ENDPOINTS } = require('../utils/constants');
+                // Hardcode the endpoint if constants are not reliable or check them
+                const uploadRes = await uploadFile('/api/portfolio/upload', formData);
 
-                const uploadRes = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
                 if (uploadRes.data?.url) {
                     finalImageUrl = uploadRes.data.url;
                 } else {

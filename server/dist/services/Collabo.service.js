@@ -41,12 +41,12 @@ class CollaboService {
             await project.save();
             console.log("Project saved:", project._id);
             // 2. Create Roles
-            const roleDocs = data.roles.map(role => ({
+            const roleDocs = (data.roles || []).map(role => ({
                 projectId: project._id,
-                title: role.title,
-                description: role.description,
-                budget: role.budget,
-                skills: role.skills,
+                title: role.title || 'Untitled Role',
+                description: role.description || 'No description',
+                budget: Number(role.budget) || 0,
+                skills: Array.isArray(role.skills) ? role.skills : [],
                 status: 'open',
             }));
             console.log("Creating roles...", roleDocs.length);
@@ -76,9 +76,11 @@ class CollaboService {
         const workspace = await CollaboWorkspace.findOne({ projectId });
         return { project, roles, workspace };
     }
-    async scopeProject(description) {
+    async scopeProject(description, useAI = true) {
         // Use Real AI to scope the project
-        const scope = await LLMService.scopeProject(description);
+        const scope = useAI
+            ? await LLMService.scopeProject(description)
+            : LLMService.getFallbackScope(description);
         // Ensure roles have required fields for frontend mapping
         const processedRoles = scope.roles.map((r) => ({
             ...r,

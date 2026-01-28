@@ -413,3 +413,70 @@ export const getSavedJobs = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
+// ===================
+// Invite Freelancer to Job
+// ===================
+export const inviteFreelancer = async (req, res) => {
+    try {
+        const { id } = req.params; // Job ID
+        const { freelancerId } = req.body;
+        // @ts-ignore
+        const clientId = req.user?._id || req.user?.id;
+        if (!clientId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        if (!freelancerId) {
+            return res.status(400).json({ success: false, message: "Freelancer ID is required" });
+        }
+        const job = await Job.findById(id);
+        if (!job) {
+            return res.status(404).json({ success: false, message: "Job not found" });
+        }
+        if (job.clientId.toString() !== clientId.toString()) {
+            return res.status(403).json({ success: false, message: "Unauthorized: You do not own this job" });
+        }
+        const freelancer = await User.findById(freelancerId);
+        if (!freelancer) {
+            return res.status(404).json({ success: false, message: "Freelancer not found" });
+        }
+        // Check if already invited (optional, maybe check notifications or a new Invitation model)
+        // For now, we'll just send the notification.
+        // Create Notification
+        const Notification = (await import("../models/Notification.model.js")).default;
+        await Notification.create({
+            userId: freelancerId,
+            type: "job_invite",
+            title: "Job Invitation",
+            message: `You have been invited to apply for "${job.title}"`,
+            relatedId: job._id,
+            relatedType: "job",
+            link: `/jobs/${job._id}`,
+            isRead: false
+        });
+        // Send Email (using email service if available, or just log for now)
+        // In a real app, we'd use the email service here.
+        try {
+            const { sendEmail } = await import("../services/email.service.js");
+            const { getBaseTemplate } = await import("../utils/emailTemplates.js");
+            const emailHtml = getBaseTemplate({
+                title: "You're Invited! 🚀",
+                subject: `Invitation to apply for ${job.title}`,
+                content: `
+          <p>Hi ${freelancer.firstName},</p>
+          <p>You've been invited to apply for the job <strong>${job.title}</strong>.</p>
+          <p>The client thinks you'd be a great fit!</p>
+        `,
+                actionUrl: `${process.env.CLIENT_URL || 'https://app.myconnecta.ng'}/jobs/${job._id}`,
+                actionText: "View Job"
+            });
+            await sendEmail(freelancer.email, `Invitation: ${job.title}`, emailHtml);
+        }
+        catch (emailErr) {
+            console.error("Failed to send invitation email:", emailErr);
+        }
+        res.status(200).json({ success: true, message: "Invitation sent successfully" });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};

@@ -11,7 +11,8 @@ import {
   getClientJobs,
   saveJob,
   unsaveJob,
-  getSavedJobs
+  getSavedJobs,
+  inviteFreelancer
 } from "../controllers/Job.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
@@ -29,6 +30,9 @@ router.post("/:id/save", authenticate, saveJob);
 
 // Unsave a job (protected)
 router.delete("/:id/save", authenticate, unsaveJob);
+
+// Invite freelancer to job (protected)
+router.post("/:id/invite", authenticate, inviteFreelancer);
 
 // Get all jobs with filters
 router.get("/", getAllJobs);

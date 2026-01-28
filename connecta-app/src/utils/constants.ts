@@ -25,6 +25,9 @@ const derivedHostBaseUrl = deriveExpoHostBaseUrl();
 const platformDefaultBaseUrl = 'http://localhost:5000';
 
 const getBaseUrl = () => {
+    if (process.env.NODE_ENV === 'development') {
+        return derivedHostBaseUrl || platformDefaultBaseUrl;
+    }
     return 'https://api.myconnecta.ng';
 };
 

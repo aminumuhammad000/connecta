@@ -32,6 +32,7 @@ import NotificationDetailScreen from '../screens/NotificationDetailScreen';
 import ProposalsScreen from '../screens/ProposalsScreen';
 import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
 import VideoCallScreen from '../screens/VideoCallScreen';
+import PublicFreelancerProfileScreen from '../screens/PublicFreelancerProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -171,6 +172,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
             <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
             <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />
+            <Stack.Screen name="FreelancerPublicProfile" component={PublicFreelancerProfileScreen} />
             <Stack.Screen name="ClientProfile" component={ClientProfileScreen} />
             <Stack.Screen name="ClientPayments" component={ClientPaymentsScreen} />
             <Stack.Screen name="Payment" component={PaymentScreen} />

@@ -71,8 +71,11 @@ export const createReview = async (req: Request, res: Response) => {
     }
 
     // Check if review already exists (prevent spam)
-    const query: any = { reviewerId: userId, revieweeId };
-    if (projectId) query.projectId = projectId;
+    const query: any = {
+      reviewerId: userId,
+      revieweeId,
+      projectId: projectId || null
+    };
     // else query.projectId = { $exists: false }; // Allow multiple general reviews or just one? Let's say one per user pair if no project.
 
     const existingReview = await Review.findOne(query);
@@ -108,6 +111,12 @@ export const createReview = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Create review error:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already reviewed this user in this context',
+      });
+    }
     return res.status(500).json({
       success: false,
       message: error.message || 'Failed to create review',

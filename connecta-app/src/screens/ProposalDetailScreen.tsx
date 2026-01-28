@@ -153,47 +153,86 @@ const ProposalDetailScreen: React.FC = () => {
                     <Text style={[styles.title, { color: c.text }]}>{jobTitle}</Text>
 
                     {/* Client Info */}
-                    <TouchableOpacity
-                        style={[styles.clientCard, { borderColor: c.border, backgroundColor: c.card }]}
-                        onPress={() => {
-                            if (clientSource?._id) {
-                                (navigation as any).navigate('ClientProfile', {
-                                    userId: clientSource._id,
-                                    initialUser: {
-                                        name: clientName,
-                                        avatar: clientAvatar,
-                                        location: clientLocation,
-                                        isPremium: clientSource?.isPremium,
-                                        paymentVerified: clientSource?.paymentVerified
-                                    }
-                                });
-                            }
-                        }}
-                    >
-                        {clientAvatar ? (
-                            <Image source={{ uri: clientAvatar }} style={styles.avatar} />
-                        ) : (
-                            <View style={[styles.avatar, { backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }]}>
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>{clientName.charAt(0)}</Text>
+                    {/* Client or Freelancer Info */}
+                    {isClientOwner ? (
+                        <TouchableOpacity
+                            style={[styles.clientCard, { borderColor: c.border, backgroundColor: c.card }]}
+                            onPress={() => {
+                                const fid = proposal.freelancerId?._id || proposal.freelancerId;
+                                if (fid) {
+                                    (navigation as any).navigate('FreelancerPublicProfile', { id: fid });
+                                }
+                            }}
+                        >
+                            <Image
+                                source={{ uri: proposal.freelancerId?.profileImage || `https://ui-avatars.com/api/?name=${proposal.freelancerId?.firstName}+${proposal.freelancerId?.lastName}` }}
+                                style={styles.avatar}
+                            />
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                    <Text style={[styles.clientName, { color: c.text }]}>
+                                        {proposal.freelancerId ? `${proposal.freelancerId.firstName} ${proposal.freelancerId.lastName}` : 'Freelancer'}
+                                    </Text>
+                                    {proposal.freelancerId?.isVerified && (
+                                        <MaterialIcons name="verified" size={16} color="#F59E0B" />
+                                    )}
+                                </View>
+                                <Text style={{ color: c.subtext, fontSize: 11 }}>{proposal.freelancerId?.jobTitle || 'Freelancer'}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                                        <MaterialIcons name="star" size={12} color="#F59E0B" />
+                                        <Text style={{ color: c.text, fontSize: 11, fontWeight: '600' }}>{proposal.freelancerId?.rating || '0.0'}</Text>
+                                    </View>
+                                    {proposal.freelancerId?.jobSuccessScore && (
+                                        <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '600' }}>{proposal.freelancerId.jobSuccessScore}% Success</Text>
+                                    )}
+                                </View>
                             </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Text style={[styles.clientName, { color: c.text }]}>{clientName}</Text>
-                                {clientSource?.isPremium && (
-                                    <MaterialIcons name="verified" size={16} color="#F59E0B" />
-                                )}
-                            </View>
-                            <Text style={{ color: c.subtext, fontSize: 11 }}>{clientLocation}</Text>
-                            {clientSource?.paymentVerified && (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
-                                    <MaterialIcons name="verified-user" size={12} color="#22C55E" />
-                                    <Text style={{ color: '#22C55E', fontSize: 10, fontWeight: '600' }}>Payment Verified</Text>
+                            <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+                        </TouchableOpacity>
+                    ) : (
+                        <TouchableOpacity
+                            style={[styles.clientCard, { borderColor: c.border, backgroundColor: c.card }]}
+                            onPress={() => {
+                                if (clientSource?._id) {
+                                    (navigation as any).navigate('ClientProfile', {
+                                        userId: clientSource._id,
+                                        initialUser: {
+                                            name: clientName,
+                                            avatar: clientAvatar,
+                                            location: clientLocation,
+                                            isPremium: clientSource?.isPremium,
+                                            paymentVerified: clientSource?.paymentVerified
+                                        }
+                                    });
+                                }
+                            }}
+                        >
+                            {clientAvatar ? (
+                                <Image source={{ uri: clientAvatar }} style={styles.avatar} />
+                            ) : (
+                                <View style={[styles.avatar, { backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }]}>
+                                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>{clientName.charAt(0)}</Text>
                                 </View>
                             )}
-                        </View>
-                        <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-                    </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                    <Text style={[styles.clientName, { color: c.text }]}>{clientName}</Text>
+                                    {clientSource?.isPremium && (
+                                        <MaterialIcons name="verified" size={16} color="#F59E0B" />
+                                    )}
+                                </View>
+                                <Text style={{ color: c.subtext, fontSize: 11 }}>{clientLocation}</Text>
+                                {clientSource?.paymentVerified && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 }}>
+                                        <MaterialIcons name="verified-user" size={12} color="#22C55E" />
+                                        <Text style={{ color: '#22C55E', fontSize: 10, fontWeight: '600' }}>Payment Verified</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+                        </TouchableOpacity>
+                    )}
 
                     {/* Proposal Details */}
                     <View style={{ marginTop: 16 }}>

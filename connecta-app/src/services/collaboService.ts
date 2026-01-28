@@ -45,6 +45,8 @@ export const getMyCollaboProjects = async () => {
     return (response as any)?.data || response;
 };
 
+export const getMyProjects = getMyCollaboProjects;
+
 export const getFreelancerCollaboProjects = async () => {
     const response = await get('/api/collabo/freelancer-projects');
     return (response as any)?.data || response;
