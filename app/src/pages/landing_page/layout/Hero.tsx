@@ -8,16 +8,16 @@ const Hero = () => {
     const [index, setIndex] = useState(0);
 
     const titles = [
-        "Not Just Jobs, The Right Ones.",
-        "Where Talent Meets Opportunity.",
-        "Your Skills. Our Universe. Infinite Possibilities.",
+        "Not Just Jobs, The Right Ones",
+        "Where Talent Meets Opportunity",
+        "Your Skills. Our Universe. Infinite Possibilities",
         "Stop Searching. Start Connecting.",
-        "The Professional Network That Actually Works.",
-        "Hire The Top 1% Without The Hassle.",
-        "Global Talent, One Click Away.",
-        "Build Your Dream Team In Minutes.",
-        "Freelancing, Reimagined For The Future.",
-        "Your Next Big Break Is Right Here."
+        "The Professional Network That Actually Works",
+        "Hire The Top 1% Without The Hassle",
+        "Global Talent, One Click Away",
+        "Build Your Dream Team In Minutes",
+        "Freelancing, Reimagined For The Future",
+        "Your Next Big Break Is Right Here"
     ];
 
     useEffect(() => {

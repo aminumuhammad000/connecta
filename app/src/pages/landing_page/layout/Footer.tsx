@@ -56,10 +56,10 @@ const Footer = () => {
               Connecta is an AI-powered freelance marketplace connecting talented professionals with clients worldwide. We make finding the right talent or the perfect gig simple, fast, and rewarding.
             </p>
             <div className={style.socialLinks}>
-              <a href="#" className={style.socialIcon}><Icon icon="mdi:twitter" /></a>
-              <a href="#" className={style.socialIcon}><Icon icon="mdi:facebook" /></a>
-              <a href="#" className={style.socialIcon}><Icon icon="mdi:linkedin" /></a>
-              <a href="#" className={style.socialIcon}><Icon icon="mdi:instagram" /></a>
+              <a href="https://x.com/Connectainc" target="_blank" rel="noopener noreferrer" className={style.socialIcon}><Icon icon="mdi:twitter" /></a>
+              <a href="https://www.facebook.com/profile.php?id=61583324766005&mibextid=ZbWKwL" target="_blank" rel="noopener noreferrer" className={style.socialIcon}><Icon icon="mdi:facebook" /></a>
+              <a href="https://www.tiktok.com/@connectainc?_r=1&_t=ZS-93OcUt3ckJW" target="_blank" rel="noopener noreferrer" className={style.socialIcon}><Icon icon="ic:baseline-tiktok" /></a>
+              <a href="https://www.instagram.com/connecta_inc?igsh=MTA0NXhwY2sxZjNkeA==" target="_blank" rel="noopener noreferrer" className={style.socialIcon}><Icon icon="mdi:instagram" /></a>
             </div>
           </div>
 
@@ -89,8 +89,8 @@ const Footer = () => {
             <ul className={style.linksList}>
               <li><a href="#about">About Us</a></li>
               <li><a href="#contact">Contact</a></li>
-              <li><a href="#careers">Careers</a></li>
-              <li><a href="#blog">Blog</a></li>
+              {/* <li><a href="#careers">Careers</a></li> */}
+              {/* <li><a href="#blog">Blog</a></li> */}
             </ul>
           </div>
         </div>
@@ -101,9 +101,12 @@ const Footer = () => {
       <div className={style.footerBottom}>
         <p className={style.copyright}>© 2026 Connecta. All rights reserved.</p>
         <div className={style.legalLinks}>
-          <a href="#privacy">Privacy Policy</a>
+          <span className="text-gray-400 text-sm">Privacy Policy</span>
+          <span className="text-gray-400 text-sm">Terms of Service</span>
+          <span className="text-gray-400 text-sm">Security</span>
+          {/* <a href="#privacy">Privacy Policy</a>
           <a href="#terms">Terms of Service</a>
-          <a href="#security">Security</a>
+          <a href="#security">Security</a> */}
         </div>
       </div>
     </div>
