@@ -18,7 +18,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { socket, onlineUsers } = useSocket();
+  const { socket, onlineUsers, refreshUnreadCount } = useSocket();
   /* State */
   const { conversationId: paramConversationId, userName, userAvatar } = route?.params || {};
   const [activeConversationId, setActiveConversationId] = useState<string | null>(paramConversationId || null);
@@ -80,6 +80,8 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
               // After getting ID, load messages
               const msgs = await messageService.getConversationMessages(conv._id);
               setMessages(Array.isArray(msgs) ? (msgs as unknown as ChatMessage[]) : []);
+              // Mark as read immediately
+              markRead(conv._id);
             }
           } catch (error) {
             console.error('Error initializing conversation:', error);
@@ -121,7 +123,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
         // Scroll to bottom
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
         // Mark as read immediately if looking at screen
-        messageService.markMessagesAsRead(activeConversationId, user!._id);
+        markRead(activeConversationId);
 
         // Hide typing when message received
         setOtherUserTyping(false);
@@ -178,6 +180,8 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
     try {
       if (convId && user?._id) {
         await messageService.markMessagesAsRead(convId, user._id);
+        // Refresh global unread count
+        if (refreshUnreadCount) refreshUnreadCount();
       }
     } catch (e) {
       console.log('Error marking read', e);

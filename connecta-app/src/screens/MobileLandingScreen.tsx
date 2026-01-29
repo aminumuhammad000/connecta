@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Dimensions, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, StatusBar, Dimensions, Linking, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
@@ -18,6 +18,7 @@ const { width: windowWidth } = Dimensions.get('window'); // Fallback
 import { useWindowDimensions } from 'react-native';
 
 const MobileLandingScreen = () => {
+    console.log('MobileLandingScreen V2 Loaded');
     const { width } = useWindowDimensions();
     const isDesktop = width > 768;
     const navigation = useNavigation<any>();
@@ -50,7 +51,33 @@ const MobileLandingScreen = () => {
 
     const handleLogin = () => navigation.navigate('Auth', { screen: 'Login' });
     const handleJoin = () => navigation.navigate('Auth', { screen: 'Signup' });
-    const handleSearch = () => navigation.navigate('PublicSearch');
+
+    // Navigation Handlers
+    const handleFreelancerPress = (id: string) => {
+        if (isAuthenticated) {
+            // Navigate to authenticated profile screen
+            navigation.navigate('FreelancerProfile', { userId: id });
+        } else {
+            navigation.navigate('PublicFreelancerProfile', { id });
+        }
+    };
+
+    const handleJobPress = (id: string) => {
+        if (isAuthenticated) {
+            // Navigate to authenticated job detail screen
+            navigation.navigate('JobDetail', { jobId: id });
+        } else {
+            navigation.navigate('PublicJobDetail', { id });
+        }
+    };
+
+    const handleViewAllFreelancers = () => {
+        navigation.navigate('PublicFreelancerSearch');
+    };
+
+    const handleViewAllJobs = () => {
+        navigation.navigate('PublicSearch');
+    };
 
     const openSupport = (type: 'whatsapp' | 'phone' | 'email') => {
         if (type === 'whatsapp') Linking.openURL('whatsapp://send?phone=2348128655555');
@@ -59,7 +86,7 @@ const MobileLandingScreen = () => {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: '#FFF' }]}>
+        <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
 
             {/* Top Header */}
@@ -69,6 +96,7 @@ const MobileLandingScreen = () => {
                 {isAuthenticated ? (
                     <TouchableOpacity
                         style={styles.headerBtnPrimary}
+                        activeOpacity={0.8}
                         onPress={() => navigation.navigate(user?.userType === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}
                     >
                         <Text style={styles.headerBtnTextPrimary}>Dashboard</Text>
@@ -76,68 +104,77 @@ const MobileLandingScreen = () => {
                     </TouchableOpacity>
                 ) : (
                     <View style={{ flexDirection: 'row', gap: 12 }}>
-                        <TouchableOpacity onPress={handleLogin} style={styles.headerBtnSecondary}>
+                        <TouchableOpacity onPress={handleLogin} style={styles.headerBtnSecondary} activeOpacity={0.7}>
                             <Text style={styles.headerBtnTextSecondary}>Log In</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={handleJoin} style={styles.headerBtnPrimary}>
+                        <TouchableOpacity onPress={handleJoin} style={styles.headerBtnPrimary} activeOpacity={0.8}>
                             <Text style={styles.headerBtnTextPrimary}>Join</Text>
                         </TouchableOpacity>
                     </View>
                 )}
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 <View style={[styles.mainContainer, isDesktop && styles.desktopContainer]}>
 
-                    {/* 1. HERO SECTION (Web Clone) */}
+                    {/* 1. HERO SECTION */}
                     <LandingHero isDesktop={isDesktop} />
 
-                    {/* 2. STATS & CATEGORIES (Web Clone) */}
+                    {/* 2. STATS & CATEGORIES */}
                     <LandingStats isDesktop={isDesktop} />
 
-                    {/* 3. FREELANCER SPOTLIGHT (Mobile Specific - High Value) */}
+                    {/* 3. FREELANCER SPOTLIGHT */}
                     <View style={styles.sectionContainer}>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Top Talent</Text>
-                            <TouchableOpacity onPress={handleJoin}>
+                            <TouchableOpacity onPress={handleViewAllFreelancers} activeOpacity={0.6}>
                                 <Text style={styles.seeAllText}>View All</Text>
                             </TouchableOpacity>
                         </View>
                         <ScrollView horizontal={!isDesktop} showsHorizontalScrollIndicator={false} contentContainerStyle={isDesktop ? styles.desktopGrid : styles.cardScroll}>
                             {freelancers.map((user, i) => (
-                                <TouchableOpacity key={user._id || i} style={[styles.freelancerCard, isDesktop && styles.desktopCard]} activeOpacity={0.9} onPress={handleJoin}>
+                                <TouchableOpacity
+                                    key={user._id || i}
+                                    style={[styles.freelancerCard, isDesktop && styles.desktopCard]}
+                                    activeOpacity={0.9}
+                                    onPress={() => handleFreelancerPress(user._id)}
+                                >
+                                    <View style={styles.cardHeaderBg} />
                                     <Image
                                         source={{ uri: user.profilePicture || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random` }}
                                         style={styles.avatar}
                                     />
                                     {user.isVerified && (
                                         <View style={styles.verifiedBadge}>
-                                            <Ionicons name="checkmark-circle" size={14} color="#FD6730" />
+                                            <Ionicons name="checkmark-circle" size={16} color="#FD6730" />
                                         </View>
                                     )}
-                                    <Text style={styles.userName} numberOfLines={1}>{user.firstName} {user.lastName}</Text>
-                                    <Text style={styles.userRole} numberOfLines={1}>{user.profession || 'Freelancer'}</Text>
-                                    <View style={styles.ratingRow}>
-                                        <Ionicons name="star" size={12} color="#FFD166" />
-                                        <Text style={styles.ratingText}>4.9</Text>
+                                    <View style={styles.cardContent}>
+                                        <Text style={styles.userName} numberOfLines={1}>{user.firstName} {user.lastName}</Text>
+                                        <Text style={styles.userRole} numberOfLines={1}>{user.profession || 'Freelancer'}</Text>
+                                        <View style={styles.ratingRow}>
+                                            <Ionicons name="star" size={14} color="#FFD166" />
+                                            <Text style={styles.ratingText}>{user.rating || '5.0'}</Text>
+                                            <Text style={styles.reviewCount}>({user.reviewCount || 0})</Text>
+                                        </View>
                                     </View>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     </View>
 
-                    {/* 4. FEATURES (Web Clone) */}
+                    {/* 4. FEATURES */}
                     <LandingFeatures isDesktop={isDesktop} />
 
-                    {/* 5. CONNECTA AI BANNER */}
-                    <TouchableOpacity style={styles.aiBanner} activeOpacity={0.9} onPress={handleJoin}>
+                    {/* 5. CONNECTA AI BANNER (Non-clickable) */}
+                    <View style={styles.aiBanner}>
                         <LinearGradient
                             colors={['#1A202C', '#2D3748']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.aiGradient}
                         >
-                            <View>
+                            <View style={{ flex: 1 }}>
                                 <View style={styles.aiBadge}>
                                     <Text style={styles.aiBadgeText}>NEW</Text>
                                 </View>
@@ -148,71 +185,57 @@ const MobileLandingScreen = () => {
                                 <Feather name="cpu" size={32} color="#FD6730" />
                             </View>
                         </LinearGradient>
-                    </TouchableOpacity>
+                    </View>
 
                     {/* 6. JOBS IN DEMAND */}
                     <View style={styles.sectionContainer}>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Jobs In Demand</Text>
+                            <TouchableOpacity onPress={handleViewAllJobs} activeOpacity={0.6}>
+                                <Text style={styles.seeAllText}>View All</Text>
+                            </TouchableOpacity>
                         </View>
                         <View style={[styles.jobsList, isDesktop && styles.desktopJobsGrid]}>
                             {jobs.map((job, i) => (
-                                <TouchableOpacity key={job._id || i} style={[styles.leaderboardCard, isDesktop && styles.desktopJobCard]} activeOpacity={0.9} onPress={handleJoin}>
-                                    <View style={styles.rankBadge}>
-                                        <Text style={styles.rankText}>#{i + 1}</Text>
-                                    </View>
-                                    <View style={styles.leaderboardContent}>
-                                        <View style={styles.jobHeader}>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={styles.jobTitle} numberOfLines={1}>{job.title}</Text>
-                                                <Text style={styles.companyName}>{job.company || 'Confidential'}</Text>
-                                            </View>
-                                            <Text style={styles.jobBudget}>
+                                <TouchableOpacity
+                                    key={job._id || i}
+                                    style={[styles.jobCard, isDesktop && styles.desktopJobCard]}
+                                    activeOpacity={0.9}
+                                    onPress={() => handleJobPress(job._id)}
+                                >
+                                    <View style={styles.jobCardTop}>
+                                        <View style={styles.jobIcon}>
+                                            <Feather name="briefcase" size={20} color="#FD6730" />
+                                        </View>
+                                        <View style={styles.jobBudgetBadge}>
+                                            <Text style={styles.jobBudgetText}>
                                                 {job.budget ? `₦${job.budget.toLocaleString()}` : 'Negotiable'}
                                             </Text>
                                         </View>
+                                    </View>
+
+                                    <Text style={styles.jobTitle} numberOfLines={2}>{job.title}</Text>
+                                    <Text style={styles.companyName}>{job.company || 'Confidential'}</Text>
+
+                                    <View style={styles.jobFooter}>
                                         <View style={styles.tagsRow}>
-                                            {job.skills?.slice(0, 3).map((skill: string, idx: number) => (
+                                            {job.skills?.slice(0, 2).map((skill: string, idx: number) => (
                                                 <View key={idx} style={styles.tag}>
                                                     <Text style={styles.tagText}>{skill}</Text>
                                                 </View>
                                             ))}
-                                            <Text style={styles.postedTime}>🔥 Hot</Text>
+                                            {job.skills?.length > 2 && (
+                                                <Text style={styles.moreTags}>+{job.skills.length - 2}</Text>
+                                            )}
                                         </View>
+                                        <Text style={styles.postedTime}>Just now</Text>
                                     </View>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
-                    {/* 7. HOW IT WORKS */}
-                    <View style={styles.sectionContainer}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>How It Works</Text>
-                        </View>
-                        <View style={styles.stepsRow}>
-                            <View style={styles.stepItem}>
-                                <View style={[styles.stepIcon, { backgroundColor: '#FFF5F0' }]}>
-                                    <Feather name="file-text" size={24} color="#FD6730" />
-                                </View>
-                                <Text style={styles.stepLabel}>1. Post</Text>
-                            </View>
-                            <View style={styles.stepLine} />
-                            <View style={styles.stepItem}>
-                                <View style={[styles.stepIcon, { backgroundColor: '#F0FFF4' }]}>
-                                    <Feather name="check-circle" size={24} color="#38A169" />
-                                </View>
-                                <Text style={styles.stepLabel}>2. Match</Text>
-                            </View>
-                            <View style={styles.stepLine} />
-                            <View style={styles.stepItem}>
-                                <View style={[styles.stepIcon, { backgroundColor: '#E6F4FF' }]}>
-                                    <Feather name="credit-card" size={24} color="#0091FF" />
-                                </View>
-                                <Text style={styles.stepLabel}>3. Pay</Text>
-                            </View>
-                        </View>
-                    </View>
+
 
                     {/* 8. SUPPORT */}
                     <View style={styles.sectionContainer}>
@@ -220,42 +243,20 @@ const MobileLandingScreen = () => {
                             <Text style={[styles.sectionTitle, { textAlign: 'center', width: '100%', marginBottom: 10, color: '#A0AEC0', fontSize: 14 }]}>Need Support?</Text>
                         </View>
                         <View style={styles.supportGrid}>
-                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#25D366' }]} onPress={() => openSupport('whatsapp')}>
+                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#25D366' }]} onPress={() => openSupport('whatsapp')} activeOpacity={0.8}>
                                 <Ionicons name="logo-whatsapp" size={24} color="#FFF" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#3182CE' }]} onPress={() => openSupport('phone')}>
+                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#3182CE' }]} onPress={() => openSupport('phone')} activeOpacity={0.8}>
                                 <Feather name="phone" size={24} color="#FFF" />
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#E53E3E' }]} onPress={() => openSupport('email')}>
+                            <TouchableOpacity style={[styles.supportCard, { backgroundColor: '#E53E3E' }]} onPress={() => openSupport('email')} activeOpacity={0.8}>
                                 <Feather name="mail" size={24} color="#FFF" />
                             </TouchableOpacity>
                         </View>
                     </View>
 
-
                 </View>
             </ScrollView>
-
-            {/* Sticky Bottom CTA (Mobile Only) */}
-            {!isDesktop && (
-                isAuthenticated ? (
-                    <View style={styles.bottomBar}>
-                        <TouchableOpacity style={styles.dashboardBtn} onPress={() => navigation.navigate(user?.userType === 'freelancer' ? 'FreelancerMain' : 'ClientMain')}>
-                            <Text style={styles.dashboardBtnText}>Go to Dashboard</Text>
-                            <Feather name="arrow-right" size={20} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <View style={[styles.bottomBar, { flexDirection: 'row', gap: 12 }]}>
-                        <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-                            <Text style={styles.loginText}>Log In</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.joinBtn} onPress={handleJoin}>
-                            <Text style={styles.joinText}>Join Now</Text>
-                        </TouchableOpacity>
-                    </View>
-                )
-            )}
         </View>
     );
 };
@@ -267,102 +268,122 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingVertical: 16,
         backgroundColor: '#FFF',
         borderBottomWidth: 1,
-        borderBottomColor: '#EDF2F7',
+        borderBottomColor: '#F1F5F9',
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
+        shadowOpacity: 0.03,
         shadowRadius: 4,
         zIndex: 100,
     },
     headerBtnPrimary: {
         backgroundColor: '#FD6730',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 24,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
+        shadowColor: '#FD6730',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 3,
     },
     headerBtnSecondary: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 24,
         borderWidth: 1,
         borderColor: '#E2E8F0',
+        backgroundColor: '#FFF',
     },
     headerBtnTextPrimary: {
         color: '#FFF',
         fontWeight: '700',
-        fontSize: 13,
+        fontSize: 14,
     },
     headerBtnTextSecondary: {
         color: '#4A5568',
         fontWeight: '700',
-        fontSize: 13,
+        fontSize: 14,
     },
     sectionContainer: { marginTop: 32, paddingHorizontal: 24 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-    sectionTitle: { fontSize: 20, fontWeight: '800', color: '#1A202C' },
-    seeAllText: { fontSize: 14, color: '#FD6730', fontWeight: '600' },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+    sectionTitle: { fontSize: 22, fontWeight: '800', color: '#1A202C', letterSpacing: -0.5 },
+    seeAllText: { fontSize: 14, color: '#FD6730', fontWeight: '700' },
 
     // Freelancer Card
     cardScroll: { paddingRight: 24, gap: 16 },
-    freelancerCard: { width: 140, padding: 12, backgroundColor: '#FFF', borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#EDF2F7', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 3 },
-    avatar: { width: 64, height: 64, borderRadius: 32, marginBottom: 8 },
-    verifiedBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: '#FFF', borderRadius: 10 },
-    userName: { fontSize: 14, fontWeight: '700', color: '#2D3748', textAlign: 'center' },
-    userRole: { fontSize: 12, color: '#718096', marginBottom: 6, textAlign: 'center' },
-    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FFFAF0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-    ratingText: { fontSize: 12, fontWeight: '700', color: '#B7791F' },
+    freelancerCard: {
+        width: 160,
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 4,
+        marginBottom: 8, // For shadow
+    },
+    cardHeaderBg: { height: 48, backgroundColor: '#FFF5F0', position: 'absolute', top: 0, left: 0, right: 0 },
+    avatar: { width: 72, height: 72, borderRadius: 36, marginTop: 12, alignSelf: 'center', borderWidth: 4, borderColor: '#FFF' },
+    verifiedBadge: { position: 'absolute', top: 16, right: 16, backgroundColor: '#FFF', borderRadius: 12, padding: 2 },
+    cardContent: { padding: 12, alignItems: 'center' },
+    userName: { fontSize: 15, fontWeight: '700', color: '#2D3748', textAlign: 'center', marginBottom: 2 },
+    userRole: { fontSize: 12, color: '#718096', marginBottom: 8, textAlign: 'center', fontWeight: '500' },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F7FAFC', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    ratingText: { fontSize: 12, fontWeight: '700', color: '#2D3748' },
+    reviewCount: { fontSize: 12, color: '#A0AEC0' },
 
-    // Jobs Leaderboard
-    jobsList: { gap: 12 },
-    leaderboardCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: '#FFF', borderRadius: 16, borderWidth: 1, borderColor: '#EDF2F7', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
-    rankBadge: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#F7FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-    rankText: { fontSize: 14, fontWeight: '800', color: '#CBD5E0' },
-    leaderboardContent: { flex: 1 },
-    jobHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    jobTitle: { fontSize: 16, fontWeight: '700', color: '#2D3748', marginRight: 8 },
-    companyName: { fontSize: 12, color: '#718096' },
-    jobBudget: { fontSize: 14, fontWeight: '700', color: '#2B6CB0' },
-    tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-    tag: { backgroundColor: '#EDF2F7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-    tagText: { fontSize: 10, color: '#4A5568', fontWeight: '600' },
-    postedTime: { fontSize: 10, color: '#FD6730', fontWeight: '700', marginLeft: 'auto' },
+    // Jobs Card
+    jobsList: { gap: 16 },
+    jobCard: {
+        padding: 20,
+        backgroundColor: '#FFF',
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+        elevation: 2
+    },
+    jobCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+    jobIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF5F0', alignItems: 'center', justifyContent: 'center' },
+    jobBudgetBadge: { backgroundColor: '#F0FFF4', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+    jobBudgetText: { fontSize: 13, fontWeight: '700', color: '#2F855A' },
+    jobTitle: { fontSize: 17, fontWeight: '700', color: '#2D3748', marginBottom: 4, lineHeight: 24 },
+    companyName: { fontSize: 13, color: '#718096', fontWeight: '500', marginBottom: 16 },
+    jobFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    tagsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    tag: { backgroundColor: '#F7FAFC', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#EDF2F7' },
+    tagText: { fontSize: 11, color: '#4A5568', fontWeight: '600' },
+    moreTags: { fontSize: 11, color: '#A0AEC0', fontWeight: '600' },
+    postedTime: { fontSize: 12, color: '#A0AEC0', fontWeight: '500' },
 
     // AI Banner
-    aiBanner: { marginHorizontal: 24, marginTop: 40, borderRadius: 24, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
-    aiGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 24 },
-    aiBadge: { backgroundColor: '#FD6730', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 8 },
-    aiBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
-    aiTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 4 },
-    aiSubtitle: { fontSize: 13, color: '#CBD5E0', maxWidth: 200 },
-    aiIconBox: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+    aiBanner: { marginHorizontal: 24, marginTop: 40, borderRadius: 24, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16 },
+    aiGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 28 },
+    aiBadge: { backgroundColor: '#FD6730', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 },
+    aiBadgeText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+    aiTitle: { fontSize: 22, fontWeight: '800', color: '#fff', marginBottom: 6 },
+    aiSubtitle: { fontSize: 14, color: '#CBD5E0', maxWidth: 220, lineHeight: 20 },
+    aiIconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
 
-    // Steps
-    stepsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, gap: 8 },
-    stepItem: { alignItems: 'center', gap: 8 },
-    stepIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-    stepLabel: { fontSize: 13, fontWeight: '700', color: '#2D3748' },
-    stepLine: { flex: 1, height: 2, backgroundColor: '#EDF2F7', marginTop: -20 },
+
+
 
     // Support
-    supportGrid: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginBottom: 40 },
-    supportCard: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, elevation: 3 },
-
-    // Bottom Bar
-    // Bottom Bar
-    bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, paddingBottom: 32, backgroundColor: '#FFF', borderTopWidth: 1, borderTopColor: '#EDF2F7' },
-    loginBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#EDF2F7', backgroundColor: '#F7FAFC' },
-    loginText: { fontSize: 16, fontWeight: '700', color: '#4A5568' },
-    joinBtn: { flex: 1, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', shadowColor: '#FD6730', shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
-    joinText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-    dashboardBtn: { height: 50, borderRadius: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FD6730', gap: 10 },
-    dashboardBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+    supportGrid: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 60 },
+    supportCard: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
 
     // Desktop Responsive Styles
     mainContainer: {
@@ -371,25 +392,25 @@ const styles = StyleSheet.create({
     desktopContainer: {
         maxWidth: 1440,
         alignSelf: 'center',
-        paddingHorizontal: 0, // Reduced from 40 to 0 for full width feel
+        paddingHorizontal: 0,
     },
     desktopGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 16,
-        justifyContent: 'space-between', // Try to distribute evenly
+        gap: 20,
+        justifyContent: 'space-between',
     },
     desktopCard: {
-        width: '23%', // 4 Cards per row approx
+        width: '23%',
     },
     desktopJobsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 16,
+        gap: 20,
         justifyContent: 'space-between',
     },
     desktopJobCard: {
-        width: '48%', // 2 Column Grid
+        width: '48%',
     },
 });
 

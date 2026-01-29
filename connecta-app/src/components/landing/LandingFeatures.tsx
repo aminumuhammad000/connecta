@@ -1,201 +1,160 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList } from 'react-native';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const { width } = Dimensions.get('window');
 
 const features = [
     {
         id: 0,
-        title: "AI Job Scouting",
-        desc: "Connecta crawls the entire web to bring relevant gigs right to you.",
+        title: "AI Job Matching",
+        desc: "Smart algorithms connect you with perfect opportunities",
         icon: "cpu",
-        iconLib: Feather,
-        gradient: ['#FD6730', '#F94144'],
+        gradient: ['#FF6B6B', '#FD6730'] as const,
     },
     {
         id: 1,
-        title: "Smart Matching",
-        desc: "Our AI matches your skills with clients. No more spam applications.",
-        icon: "zap",
-        iconLib: Feather,
-        gradient: ['#F6E05E', '#ED8936'],
+        title: "Team Collaboration",
+        desc: "Work together seamlessly with built-in workspace tools",
+        icon: "users",
+        gradient: ['#4ECDC4', '#44A08D'] as const,
     },
     {
         id: 2,
-        title: "Connecta Collabo",
-        desc: "Dedicated workspace for freelance teams. Chat and manage tasks.",
-        icon: "users",
-        iconLib: Feather,
-        gradient: ['#4299E1', '#667EEA'],
+        title: "Secure Payments",
+        desc: "Protected escrow ensures you get paid on time, every time",
+        icon: "shield",
+        gradient: ['#667EEA', '#764BA2'] as const,
     },
     {
         id: 3,
-        title: "Secure Escrow",
-        desc: "Get paid on time. Funds held securely until milestones are met.",
-        icon: "shield",
-        iconLib: Feather,
-        gradient: ['#48BB78', '#38B2AC'],
+        title: "Global Network",
+        desc: "Connect with talent and clients from around the world",
+        icon: "globe",
+        gradient: ['#F093FB', '#F5576C'] as const,
     },
 ];
 
 const LandingFeatures = ({ isDesktop }: { isDesktop?: boolean }) => {
-    const renderItem = ({ item, index }: { item: any, index: number }) => (
-        <View style={[styles.cardContainer, isDesktop && styles.desktopCardContainer]}>
-            <View style={styles.card}>
-                <LinearGradient
-                    colors={item.gradient}
-                    style={styles.iconBox}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                >
-                    <item.iconLib name={item.icon} size={32} color="#FFF" />
-                </LinearGradient>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardDesc}>{item.desc}</Text>
-
-                <View style={styles.footer}>
-                    <Text style={styles.nextText}>NEXT UP</Text>
-                    <Feather name="arrow-right" size={14} color="#CBD5E0" />
-                </View>
-            </View>
-        </View>
-    );
+    const { width } = useWindowDimensions();
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>
-                    Everything You Need to <Text style={{ color: '#FD6730' }}>Dominate</Text>
+                    Why Choose <Text style={{ color: '#FD6730' }}>Connecta</Text>
                 </Text>
                 <Text style={styles.subtitle}>
-                    Connecta packs the freelance universe into one platform.
+                    Everything you need to succeed as a freelancer or hire top talent
                 </Text>
             </View>
 
-            {isDesktop ? (
-                <View style={styles.desktopGrid}>
-                    {features.map((item, index) => (
-                        <View key={item.id} style={styles.desktopCardWrapper}>
-                            {renderItem({ item, index })}
+            <View style={[styles.grid, isDesktop && styles.desktopGrid]}>
+                {features.map((item) => (
+                    <View
+                        key={item.id}
+                        style={[
+                            styles.card,
+                            isDesktop && styles.desktopCard
+                        ]}
+                    >
+                        <LinearGradient
+                            colors={item.gradient}
+                            style={styles.iconBox}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        >
+                            <Feather name={item.icon as any} size={28} color="#FFF" />
+                        </LinearGradient>
+
+                        <View style={styles.cardContent}>
+                            <Text style={styles.cardTitle}>{item.title}</Text>
+                            <Text style={styles.cardDesc}>{item.desc}</Text>
                         </View>
-                    ))}
-                </View>
-            ) : (
-                <FlatList
-                    data={features}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id.toString()}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    snapToInterval={width - 48} // Card width + margin
-                    snapToAlignment="center"
-                    decelerationRate="fast"
-                    contentContainerStyle={styles.listContent}
-                />
-            )}
+                    </View>
+                ))}
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 50,
-        backgroundColor: '#FFF',
+        paddingVertical: 40,
+        paddingHorizontal: 24,
+        backgroundColor: '#FAFBFC',
     },
     header: {
-        paddingHorizontal: 24,
-        marginBottom: 30,
+        marginBottom: 32,
+        alignItems: 'center',
     },
     title: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '800',
         color: '#1A202C',
-        marginBottom: 12,
-        lineHeight: 40,
+        marginBottom: 8,
+        textAlign: 'center',
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 16,
+        fontSize: 15,
         color: '#718096',
-        maxWidth: 300,
-        lineHeight: 24,
+        textAlign: 'center',
+        lineHeight: 22,
+        maxWidth: 320,
     },
-    listContent: {
-        paddingHorizontal: 24,
+    grid: {
         gap: 16,
-    },
-    cardContainer: {
-        width: width - 70, // Slightly smaller than screen width
-        marginRight: 16,
-    },
-    card: {
-        backgroundColor: '#FFF',
-        borderRadius: 32,
-        padding: 32,
-        borderWidth: 1,
-        borderColor: '#EDF2F7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
-        elevation: 5,
-        minHeight: 320,
-    },
-    iconBox: {
-        width: 80,
-        height: 80,
-        borderRadius: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 8,
-    },
-    cardTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: '#1A202C',
-        marginBottom: 12,
-    },
-    cardDesc: {
-        fontSize: 16,
-        color: '#718096',
-        lineHeight: 24,
-        marginBottom: 32,
-    },
-    footer: {
-        marginTop: 'auto',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        borderTopWidth: 1,
-        borderTopColor: '#F7FAFC',
-        paddingTop: 20,
-    },
-    nextText: {
-        fontSize: 12,
-        fontWeight: '800',
-        color: '#CBD5E0',
-        letterSpacing: 1,
     },
     desktopGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 24,
-        gap: 24,
+        justifyContent: 'space-between',
+        gap: 20,
+    },
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 3,
+    },
+    desktopCard: {
+        width: '48%',
+    },
+    iconBox: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 6,
     },
-    desktopCardWrapper: {
-        width: '48%', // 2 per row
+    cardContent: {
+        flex: 1,
     },
-    desktopCardContainer: {
-        width: '100%',
-        marginRight: 0,
+    cardTitle: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#1A202C',
+        marginBottom: 6,
+        letterSpacing: -0.3,
+    },
+    cardDesc: {
+        fontSize: 14,
+        color: '#718096',
+        lineHeight: 20,
     },
 });
 

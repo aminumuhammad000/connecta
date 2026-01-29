@@ -14,6 +14,7 @@ import { PortfolioItem } from '../types';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Avatar from '../components/Avatar';
+import LocationPicker from '../components/LocationPicker';
 
 export default function EditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
@@ -98,16 +99,29 @@ export default function EditProfileScreen({ navigation }: any) {
     const openDatePicker = (form: string, field: string, currentVal: string) => {
         setDatePickerTarget({ form, field });
         if (currentVal) {
-            const [m, y] = currentVal.split(' ');
-            const monthIdx = months.indexOf(m);
-            if (monthIdx !== -1) setSelectedMonth(monthIdx);
-            if (y) setSelectedYear(parseInt(y));
+            if (currentVal.includes('-')) {
+                // Handle YYYY-MM-DD
+                const parts = currentVal.split('-');
+                if (parts.length >= 2) {
+                    setSelectedYear(parseInt(parts[0]));
+                    setSelectedMonth(parseInt(parts[1]) - 1);
+                }
+            } else {
+                // Handle old "Jan 2025" format
+                const [m, y] = currentVal.split(' ');
+                const monthIdx = months.indexOf(m);
+                if (monthIdx !== -1) setSelectedMonth(monthIdx);
+                if (y) setSelectedYear(parseInt(y));
+            }
         }
         setShowDatePicker(true);
     };
 
     const handleConfirmDate = () => {
-        const dateStr = `${months[selectedMonth]} ${selectedYear}`;
+        // Save as YYYY-MM-DD to avoid time issues on server
+        const month = (selectedMonth + 1).toString().padStart(2, '0');
+        const dateStr = `${selectedYear}-${month}-01`;
+
         if (datePickerTarget?.form === 'education') {
             setEducationForm(prev => ({ ...prev, [datePickerTarget.field]: dateStr }));
         } else if (datePickerTarget?.form === 'employment') {
@@ -117,10 +131,21 @@ export default function EditProfileScreen({ navigation }: any) {
     };
 
     useEffect(() => {
-        loadUserProfile();
+        loadProfile();
     }, []);
 
-    const loadUserProfile = async () => {
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        } catch (e) {
+            return dateString;
+        }
+    };
+
+    const loadProfile = async () => {
         try {
             setLoading(true);
             const profile = await profileService.getMyProfile();
@@ -135,7 +160,7 @@ export default function EditProfileScreen({ navigation }: any) {
                 bio: profile?.bio || '',
                 jobTitle: profile?.jobTitle || '',
                 skills: profile?.skills || [],
-                skillsText: (profile?.skills || []).join(', '),
+                skillsText: '',
             });
 
             // Set profile image
@@ -263,14 +288,20 @@ export default function EditProfileScreen({ navigation }: any) {
 
             if (!result.canceled && result.assets && result.assets[0]) {
                 const imageUri = result.assets[0].uri;
+
+                // Show local preview immediately
+                setPortfolioForm(prev => ({ ...prev, imageUrl: imageUri }));
                 setUploadingImage(true);
 
                 try {
                     const uploadedUrl = await uploadPortfolioImage(imageUri);
+                    // Update with final remote URL
                     setPortfolioForm(prev => ({ ...prev, imageUrl: uploadedUrl }));
                 } catch (uploadError: any) {
                     console.error('Upload error:', uploadError);
                     showAlert({ title: 'Error', message: 'Failed to upload image', type: 'error' });
+                    // Optionally clear the local preview if upload fails
+                    // setPortfolioForm(prev => ({ ...prev, imageUrl: '' }));
                 } finally {
                     setUploadingImage(false);
                 }
@@ -280,7 +311,6 @@ export default function EditProfileScreen({ navigation }: any) {
             showAlert({ title: 'Error', message: 'Failed to pick image', type: 'error' });
         }
     };
-
     // Education handlers
     const handleAddEducation = () => {
         setEducationForm({ institution: '', degree: '', fieldOfStudy: '', startDate: '', endDate: '', category: 'University' });
@@ -419,10 +449,12 @@ export default function EditProfileScreen({ navigation }: any) {
         setSaving(true);
         try {
             // Combine existing chips with any pending text in the input
-            const pendingSkill = formData.skillsText.trim();
             let finalSkills = [...formData.skills];
-            if (pendingSkill && !finalSkills.includes(pendingSkill)) {
-                finalSkills.push(pendingSkill);
+            if (formData.skillsText.trim()) {
+                const pendingSkills = formData.skillsText.split(',')
+                    .map(s => s.trim())
+                    .filter(s => s !== '' && !finalSkills.includes(s));
+                finalSkills = [...finalSkills, ...pendingSkills];
             }
 
             // Update profile
@@ -561,17 +593,11 @@ export default function EditProfileScreen({ navigation }: any) {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
-                            <View style={[styles.inputWithIcon, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
-                                <Ionicons name="location-outline" size={20} color={c.subtext} style={{ marginLeft: 12 }} />
-                                <TextInput
-                                    style={[styles.inputNoBorder, { color: c.text }]}
-                                    value={formData.location}
-                                    onChangeText={(text) => handleInputChange('location', text)}
-                                    placeholder="City, Country"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
+                            <LocationPicker
+                                value={formData.location}
+                                onValueChange={(location) => handleInputChange('location', location)}
+                                label="LOCATION"
+                            />
                         </View>
 
                         <View style={styles.inputGroup}>
@@ -625,7 +651,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                         <TouchableOpacity onPress={() => {
                                             const newSkills = [...formData.skills];
                                             newSkills.splice(index, 1);
-                                            setFormData(prev => ({ ...prev, skills: newSkills, skillsText: newSkills.join(', ') }));
+                                            setFormData(prev => ({ ...prev, skills: newSkills }));
                                         }}>
                                             <Ionicons name="close-circle" size={16} color={c.primary} style={{ marginLeft: 6 }} />
                                         </TouchableOpacity>
@@ -670,15 +696,21 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                                 <TouchableOpacity
                                     onPress={() => {
-                                        const text = formData.skillsText;
-                                        const newSkill = text.trim();
-                                        if (newSkill && !formData.skills.includes(newSkill)) {
-                                            const newSkills = [...formData.skills, newSkill];
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                skills: newSkills,
-                                                skillsText: ''
-                                            }));
+                                        const text = formData.skillsText.trim();
+                                        if (text) {
+                                            const newSkillsList = text.split(',')
+                                                .map(s => s.trim())
+                                                .filter(s => s !== '' && !formData.skills.includes(s));
+
+                                            if (newSkillsList.length > 0) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    skills: [...prev.skills, ...newSkillsList],
+                                                    skillsText: ''
+                                                }));
+                                            } else {
+                                                setFormData(prev => ({ ...prev, skillsText: '' }));
+                                            }
                                         }
                                     }}
                                     style={{ padding: 10 }}
@@ -691,16 +723,27 @@ export default function EditProfileScreen({ navigation }: any) {
 
                     {/* Portfolio Section */}
                     <Card variant="outlined" style={styles.sectionCard}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Portfolio</Text>
-                            <Button
-                                title="Add Work"
-                                onPress={handleAddPortfolio}
-                                variant="outline"
-                                size="small"
-                                style={{ height: 32, paddingHorizontal: 12 }}
-                            />
+                        <View style={styles.sectionHeaderRow}>
+                            <View>
+                                <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 4 }]}>Portfolio</Text>
+                                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>Showcase your work</Text>
+                            </View>
                         </View>
+
+                        <TouchableOpacity
+                            style={[styles.addButton, { backgroundColor: c.primary }]}
+                            onPress={handleAddPortfolio}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.addButtonIconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                                <Ionicons name="add" size={24} color="#FFF" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.addButtonTitle, { color: '#FFF' }]}>Add Project</Text>
+                                <Text style={[styles.addButtonSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>Show clients your best work</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#FFF" />
+                        </TouchableOpacity>
 
                         {portfolio.length > 0 ? (
                             <View style={{ gap: 16, marginTop: 12 }}>
@@ -742,16 +785,27 @@ export default function EditProfileScreen({ navigation }: any) {
 
                     {/* Education Section */}
                     <Card variant="outlined" style={styles.sectionCard}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Education</Text>
-                            <Button
-                                title="Add"
-                                onPress={handleAddEducation}
-                                variant="outline"
-                                size="small"
-                                style={{ height: 32, paddingHorizontal: 12 }}
-                            />
+                        <View style={styles.sectionHeaderRow}>
+                            <View>
+                                <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 4 }]}>Education</Text>
+                                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>Academic background</Text>
+                            </View>
                         </View>
+
+                        <TouchableOpacity
+                            style={[styles.addButton, { backgroundColor: c.primary }]}
+                            onPress={handleAddEducation}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.addButtonIconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                                <Ionicons name="school" size={24} color="#FFF" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.addButtonTitle, { color: '#FFF' }]}>Add Education</Text>
+                                <Text style={[styles.addButtonSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>Degrees, certificates, etc.</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#FFF" />
+                        </TouchableOpacity>
                         {education.length > 0 ? (
                             <View style={{ gap: 12, marginTop: 12 }}>
                                 {education.map((item, index) => (
@@ -765,7 +819,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                             </View>
                                             <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.institution}</Text>
                                             <Text style={[styles.itemMeta, { color: c.subtext }]}>
-                                                {item.startDate} — {item.endDate || 'Present'}
+                                                {formatDate(item.startDate)} — {item.endDate ? formatDate(item.endDate) : 'Present'}
                                             </Text>
                                         </View>
                                         <View style={styles.itemActions}>
@@ -789,16 +843,27 @@ export default function EditProfileScreen({ navigation }: any) {
 
                     {/* Employment Section */}
                     <Card variant="outlined" style={styles.sectionCard}>
-                        <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Work Experience</Text>
-                            <Button
-                                title="Add"
-                                onPress={handleAddEmployment}
-                                variant="outline"
-                                size="small"
-                                style={{ height: 32, paddingHorizontal: 12 }}
-                            />
+                        <View style={styles.sectionHeaderRow}>
+                            <View>
+                                <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 4 }]}>Work Experience</Text>
+                                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>Professional history</Text>
+                            </View>
                         </View>
+
+                        <TouchableOpacity
+                            style={[styles.addButton, { backgroundColor: c.primary }]}
+                            onPress={handleAddEmployment}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.addButtonIconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                                <Ionicons name="briefcase" size={24} color="#FFF" />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.addButtonTitle, { color: '#FFF' }]}>Add Experience</Text>
+                                <Text style={[styles.addButtonSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>Past jobs and roles</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#FFF" />
+                        </TouchableOpacity>
                         {employment.length > 0 ? (
                             <View style={{ gap: 12, marginTop: 12 }}>
                                 {employment.map((item, index) => (
@@ -807,7 +872,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                             <Text style={[styles.itemTitle, { color: c.text }]}>{item.position}</Text>
                                             <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.company}</Text>
                                             <Text style={[styles.itemMeta, { color: c.subtext }]}>
-                                                {item.startDate} — {item.endDate || 'Present'}
+                                                {formatDate(item.startDate)} — {item.endDate ? formatDate(item.endDate) : 'Present'}
                                             </Text>
                                         </View>
                                         <View style={styles.itemActions}>
@@ -854,21 +919,30 @@ export default function EditProfileScreen({ navigation }: any) {
                         { backgroundColor: c.background },
                         isDesktop && { width: '100%', maxWidth: 500, borderRadius: 24, paddingBottom: 0 }
                     ]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
-                            <TouchableOpacity onPress={() => setShowPortfolioModal(false)}>
-                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                        <View style={[styles.modalHeader, { borderBottomColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity onPress={() => setShowPortfolioModal(false)} style={{ padding: 4 }}>
+                                <Ionicons name="close" size={24} color={c.text} />
                             </TouchableOpacity>
-                            <Text style={[styles.modalTitle, { color: c.text }]}>
-                                {editingPortfolioIndex !== null ? 'Edit Portfolio' : 'Add Portfolio'}
+                            <Text style={[styles.modalTitle, { color: c.text, fontSize: 17 }]}>
+                                {editingPortfolioIndex !== null ? 'Edit Project' : 'Add Project'}
                             </Text>
-                            <TouchableOpacity onPress={handleSavePortfolioItem}>
-                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
-                                    {editingPortfolioIndex !== null ? 'Done' : 'Add'}
-                                </Text>
+                            <TouchableOpacity
+                                onPress={handleSavePortfolioItem}
+                                style={{
+                                    backgroundColor: c.primary,
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 8,
+                                    borderRadius: 100,
+                                }}
+                            >
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView style={styles.modalBody}>
+                        <ScrollView
+                            style={styles.modalBody}
+                            contentContainerStyle={{ paddingBottom: 100 }}
+                        >
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Title *</Text>
                                 <TextInput
@@ -896,24 +970,36 @@ export default function EditProfileScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Project Image</Text>
                                 {portfolioForm.imageUrl ? (
-                                    <View>
-                                        <Image source={{ uri: portfolioForm.imageUrl }} style={styles.previewImage} />
-                                        <TouchableOpacity
-                                            style={[styles.changeImageButton, { backgroundColor: c.primary }]}
-                                            onPress={handlePickPortfolioImage}
-                                            disabled={uploadingImage}
-                                        >
-                                            <Text style={{ color: 'white' }}>
-                                                {uploadingImage ? 'Uploading...' : 'Change Image'}
-                                            </Text>
-                                        </TouchableOpacity>
+                                    <View style={[styles.previewContainer, { borderColor: c.border }]}>
+                                        <Image
+                                            source={{ uri: portfolioForm.imageUrl }}
+                                            style={styles.previewImage}
+                                            resizeMode="cover"
+                                        />
+                                        <View style={styles.previewOverlay}>
+                                            <TouchableOpacity
+                                                style={[styles.changeImageButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                                                onPress={handlePickPortfolioImage}
+                                                disabled={uploadingImage}
+                                            >
+                                                <Ionicons name="camera" size={18} color="white" style={{ marginRight: 6 }} />
+                                                <Text style={{ color: 'white', fontWeight: '600', fontSize: 13 }}>
+                                                    {uploadingImage ? 'Uploading...' : 'Change Image'}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                        {uploadingImage && (
+                                            <View style={styles.uploadingOverlay}>
+                                                <ActivityIndicator size="small" color="white" />
+                                            </View>
+                                        )}
                                     </View>
                                 ) : (
                                     <TouchableOpacity
                                         style={[
-                                            styles.uploadButton, 
-                                            { 
-                                                backgroundColor: c.primary + '05', 
+                                            styles.uploadButton,
+                                            {
+                                                backgroundColor: c.primary + '05',
                                                 borderColor: c.primary,
                                                 borderWidth: 2,
                                                 borderStyle: 'dashed'
@@ -956,6 +1042,16 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
                         </ScrollView>
+
+                        {/* Sticky Footer */}
+                        <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity
+                                style={[styles.saveButton, { backgroundColor: c.primary }]}
+                                onPress={handleSavePortfolioItem}
+                            >
+                                <Text style={styles.saveButtonText}>Save Project</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -973,20 +1069,29 @@ export default function EditProfileScreen({ navigation }: any) {
                         { backgroundColor: c.background },
                         isDesktop && { width: '100%', maxWidth: 500, borderRadius: 24, paddingBottom: 0 }
                     ]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
-                            <TouchableOpacity onPress={() => setShowEducationModal(false)}>
-                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                        <View style={[styles.modalHeader, { borderBottomColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity onPress={() => setShowEducationModal(false)} style={{ padding: 4 }}>
+                                <Ionicons name="close" size={24} color={c.text} />
                             </TouchableOpacity>
-                            <Text style={[styles.modalTitle, { color: c.text }]}>
+                            <Text style={[styles.modalTitle, { color: c.text, fontSize: 17 }]}>
                                 {editingEducationIndex !== null ? 'Edit Education' : 'Add Education'}
                             </Text>
-                            <TouchableOpacity onPress={handleSaveEducation}>
-                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
-                                    {editingEducationIndex !== null ? 'Done' : 'Add'}
-                                </Text>
+                            <TouchableOpacity
+                                onPress={handleSaveEducation}
+                                style={{
+                                    backgroundColor: c.primary,
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 8,
+                                    borderRadius: 100,
+                                }}
+                            >
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
                             </TouchableOpacity>
                         </View>
-                        <ScrollView style={styles.modalBody}>
+                        <ScrollView
+                            style={styles.modalBody}
+                            contentContainerStyle={{ paddingBottom: 100 }}
+                        >
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Degree / Certification *</Text>
                                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -1038,7 +1143,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                         onPress={() => openDatePicker('education', 'startDate', educationForm.startDate)}
                                     >
                                         <Text style={{ color: educationForm.startDate ? c.text : c.subtext }}>
-                                            {educationForm.startDate || 'Select Date'}
+                                            {educationForm.startDate ? formatDate(educationForm.startDate) : 'Select Date'}
                                         </Text>
                                         <Ionicons name="calendar-outline" size={18} color={c.subtext} />
                                     </TouchableOpacity>
@@ -1051,13 +1156,23 @@ export default function EditProfileScreen({ navigation }: any) {
                                         onPress={() => openDatePicker('education', 'endDate', educationForm.endDate)}
                                     >
                                         <Text style={{ color: educationForm.endDate ? c.text : c.subtext }}>
-                                            {educationForm.endDate || 'Present'}
+                                            {educationForm.endDate ? formatDate(educationForm.endDate) : 'Present'}
                                         </Text>
                                         <Ionicons name="calendar-outline" size={18} color={c.subtext} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
                         </ScrollView>
+
+                        {/* Sticky Footer */}
+                        <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity
+                                style={[styles.saveButton, { backgroundColor: c.primary }]}
+                                onPress={handleSaveEducation}
+                            >
+                                <Text style={styles.saveButtonText}>Save Education</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -1075,20 +1190,29 @@ export default function EditProfileScreen({ navigation }: any) {
                         { backgroundColor: c.background },
                         isDesktop && { width: '100%', maxWidth: 400, borderRadius: 24, paddingBottom: 0 }
                     ]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
-                            <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
-                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                        <View style={[styles.modalHeader, { borderBottomColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity onPress={() => setShowLanguageModal(false)} style={{ padding: 4 }}>
+                                <Ionicons name="close" size={24} color={c.text} />
                             </TouchableOpacity>
-                            <Text style={[styles.modalTitle, { color: c.text }]}>
+                            <Text style={[styles.modalTitle, { color: c.text, fontSize: 17 }]}>
                                 {editingLanguageIndex !== null ? 'Edit Language' : 'Add Language'}
                             </Text>
-                            <TouchableOpacity onPress={handleSaveLanguage}>
-                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
-                                    {editingLanguageIndex !== null ? 'Done' : 'Add'}
-                                </Text>
+                            <TouchableOpacity
+                                onPress={handleSaveLanguage}
+                                style={{
+                                    backgroundColor: c.primary,
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 8,
+                                    borderRadius: 100,
+                                }}
+                            >
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
                             </TouchableOpacity>
                         </View>
-                        <ScrollView style={styles.modalBody}>
+                        <ScrollView
+                            style={styles.modalBody}
+                            contentContainerStyle={{ paddingBottom: 100 }}
+                        >
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Language *</Text>
                                 <TextInput
@@ -1124,6 +1248,16 @@ export default function EditProfileScreen({ navigation }: any) {
                                 </View>
                             </View>
                         </ScrollView>
+
+                        {/* Sticky Footer */}
+                        <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity
+                                style={[styles.saveButton, { backgroundColor: c.primary }]}
+                                onPress={handleSaveLanguage}
+                            >
+                                <Text style={styles.saveButtonText}>Save Language</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -1141,20 +1275,29 @@ export default function EditProfileScreen({ navigation }: any) {
                         { backgroundColor: c.background },
                         isDesktop && { width: '100%', maxWidth: 500, borderRadius: 24, paddingBottom: 0 }
                     ]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: c.border }]}>
-                            <TouchableOpacity onPress={() => setShowEmploymentModal(false)}>
-                                <Text style={{ color: c.subtext, fontSize: 16 }}>Cancel</Text>
+                        <View style={[styles.modalHeader, { borderBottomColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity onPress={() => setShowEmploymentModal(false)} style={{ padding: 4 }}>
+                                <Ionicons name="close" size={24} color={c.text} />
                             </TouchableOpacity>
-                            <Text style={[styles.modalTitle, { color: c.text }]}>
+                            <Text style={[styles.modalTitle, { color: c.text, fontSize: 17 }]}>
                                 {editingEmploymentIndex !== null ? 'Edit Work' : 'Add Work'}
                             </Text>
-                            <TouchableOpacity onPress={handleSaveEmployment}>
-                                <Text style={{ color: c.primary, fontSize: 16, fontWeight: '700' }}>
-                                    {editingEmploymentIndex !== null ? 'Done' : 'Add'}
-                                </Text>
+                            <TouchableOpacity
+                                onPress={handleSaveEmployment}
+                                style={{
+                                    backgroundColor: c.primary,
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 8,
+                                    borderRadius: 100,
+                                }}
+                            >
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
                             </TouchableOpacity>
                         </View>
-                        <ScrollView style={styles.modalBody}>
+                        <ScrollView
+                            style={styles.modalBody}
+                            contentContainerStyle={{ paddingBottom: 100 }}
+                        >
                             <View style={styles.inputGroup}>
                                 <Text style={[styles.label, { color: c.subtext }]}>Company *</Text>
                                 <TextInput
@@ -1185,7 +1328,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                         onPress={() => openDatePicker('employment', 'startDate', employmentForm.startDate)}
                                     >
                                         <Text style={{ color: employmentForm.startDate ? c.text : c.subtext }}>
-                                            {employmentForm.startDate || 'Select Date'}
+                                            {employmentForm.startDate ? formatDate(employmentForm.startDate) : 'Select Date'}
                                         </Text>
                                         <Ionicons name="calendar-outline" size={18} color={c.subtext} />
                                     </TouchableOpacity>
@@ -1198,7 +1341,7 @@ export default function EditProfileScreen({ navigation }: any) {
                                         onPress={() => openDatePicker('employment', 'endDate', employmentForm.endDate)}
                                     >
                                         <Text style={{ color: employmentForm.endDate ? c.text : c.subtext }}>
-                                            {employmentForm.endDate || 'Present'}
+                                            {employmentForm.endDate ? formatDate(employmentForm.endDate) : 'Present'}
                                         </Text>
                                         <Ionicons name="calendar-outline" size={18} color={c.subtext} />
                                     </TouchableOpacity>
@@ -1218,6 +1361,16 @@ export default function EditProfileScreen({ navigation }: any) {
                                 />
                             </View>
                         </ScrollView>
+
+                        {/* Sticky Footer */}
+                        <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border, padding: 16 }]}>
+                            <TouchableOpacity
+                                style={[styles.saveButton, { backgroundColor: c.primary }]}
+                                onPress={handleSaveEmployment}
+                            >
+                                <Text style={styles.saveButtonText}>Save Experience</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -1445,17 +1598,36 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 18,
     },
-    previewImage: {
+    previewContainer: {
         width: '100%',
         height: 200,
-        borderRadius: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        overflow: 'hidden',
+        position: 'relative',
         marginBottom: 12,
     },
+    previewImage: {
+        width: '100%',
+        height: '100%',
+    },
+    previewOverlay: {
+        position: 'absolute',
+        bottom: 12,
+        right: 12,
+    },
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     changeImageButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        alignSelf: 'flex-start',
+        paddingHorizontal: 12,
+        borderRadius: 20,
     },
     uploadButton: {
         height: 120,
@@ -1637,5 +1809,41 @@ const styles = StyleSheet.create({
     nicheText: {
         fontSize: 13,
         fontWeight: '600',
+    },
+    // New Styles for Prominent Add Buttons
+    sectionHeaderRow: {
+        marginBottom: 16,
+    },
+    sectionSubtitle: {
+        fontSize: 13,
+        marginTop: 2,
+    },
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 16,
+        gap: 12,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    addButtonIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    addButtonTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        marginBottom: 2,
+    },
+    addButtonSubtitle: {
+        fontSize: 12,
     },
 });

@@ -46,42 +46,7 @@ function FreelancerTabs() {
     const isDesktop = width > 768;
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
-    const { socket } = useSocket();
-    const [unreadCount, setUnreadCount] = useState(0);
-
-    useEffect(() => {
-        if (user?._id) {
-            // Initial fetch
-            getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
-        }
-    }, [user]);
-
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleNewMessage = () => {
-            if (user?._id) {
-                getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
-            }
-        };
-
-        const handleMessageRead = () => {
-            if (user?._id) {
-                getTotalUnreadCount(user._id).then(setUnreadCount).catch(console.error);
-            }
-        };
-
-        // Listen for message events that should trigger a count update
-        socket.on('message:receive', handleNewMessage);
-        socket.on('conversation:update', handleNewMessage);
-        socket.on('message:read', handleMessageRead);
-
-        return () => {
-            socket.off('message:receive', handleNewMessage);
-            socket.off('conversation:update', handleNewMessage);
-            socket.off('message:read', handleMessageRead);
-        };
-    }, [socket, user]);
+    const { unreadCount } = useSocket();
 
     return (
         <Tab.Navigator

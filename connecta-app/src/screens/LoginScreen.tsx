@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, BackHandler, ActivityIndicator, StatusBar, useWindowDimensions } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StatusBar, useWindowDimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
@@ -25,6 +27,7 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgotPassword }) => {
+    const navigation = useNavigation();
     const c = useThemeColors();
     const { login, googleLogin } = useAuth();
     const [email, setEmail] = useState('');
@@ -32,6 +35,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+
+    // Animation values
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(30)).current;
+    const buttonScale = useRef(new Animated.Value(1)).current;
+    const inputFocusAnim = useRef(new Animated.Value(0)).current;
+    const emailInputScale = useRef(new Animated.Value(1)).current;
+    const passwordInputScale = useRef(new Animated.Value(1)).current;
 
     // Alert State
     const [alertVisible, setAlertVisible] = useState(false);
@@ -44,16 +55,39 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const showCustomAlert = (title: string, message: string, type: AlertType = 'success') => {
         setAlertConfig({ title, message, type });
         setAlertVisible(true);
+
+        // Haptic feedback based on alert type
+        if (type === 'success') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else if (type === 'error') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
     };
 
     const handleAlertClose = () => {
         setAlertVisible(false);
     };
 
+    // Entrance animation
     useEffect(() => {
-        const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
-        return () => sub.remove();
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+            }),
+            Animated.spring(slideAnim, {
+                toValue: 0,
+                friction: 8,
+                tension: 40,
+                useNativeDriver: true,
+            }),
+        ]).start();
     }, []);
+
+    // Allow back navigation to landing page - BackHandler removed
 
     useEffect(() => {
         (async () => {
@@ -71,6 +105,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
 
     const handleBiometricAuth = async () => {
         try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             const result = await LocalAuthentication.authenticateAsync({
                 promptMessage: 'Login with Face ID',
                 fallbackLabel: 'Use Passcode',
@@ -140,96 +175,199 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     };
 
     const handleLogin = async () => {
+        console.log('🔐 [LOGIN] Starting login process...');
+
         // Validation
         if (!email.trim() || !password.trim()) {
+            console.log('❌ [LOGIN] Validation failed - missing email or password');
             showCustomAlert('Error', 'Please enter both email and password', 'error');
+
+            // Shake animation for empty fields
+            if (!email.trim()) {
+                Animated.sequence([
+                    Animated.timing(emailInputScale, { toValue: 1.05, duration: 100, useNativeDriver: true }),
+                    Animated.timing(emailInputScale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+                    Animated.timing(emailInputScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+                ]).start();
+            }
+            if (!password.trim()) {
+                Animated.sequence([
+                    Animated.timing(passwordInputScale, { toValue: 1.05, duration: 100, useNativeDriver: true }),
+                    Animated.timing(passwordInputScale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+                    Animated.timing(passwordInputScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+                ]).start();
+            }
             return;
         }
 
+        console.log('📧 [LOGIN] Email:', email.trim());
+        console.log('🔑 [LOGIN] Password length:', password.length);
+
+        // Button press animation
+        Animated.sequence([
+            Animated.spring(buttonScale, {
+                toValue: 0.95,
+                friction: 3,
+                useNativeDriver: true,
+            }),
+            Animated.spring(buttonScale, {
+                toValue: 1,
+                friction: 3,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
         setIsLoading(true);
         try {
+            console.log('🌐 [LOGIN] Calling login API...');
             const user = await login({ email: email.trim(), password });
+            console.log('✅ [LOGIN] Login successful! User:', JSON.stringify(user, null, 2));
 
             // Save credentials for future biometric login
+            console.log('💾 [LOGIN] Saving credentials for biometric login...');
             await storage.setSecureItem('connecta_secure_email', email.trim());
             await storage.setSecureItem('connecta_secure_pass', password);
+            console.log('✅ [LOGIN] Credentials saved!');
 
             showCustomAlert('Success', 'Logged in successfully!', 'success');
+            console.log('🎉 [LOGIN] Calling onSignedIn callback...');
             // Navigation will happen automatically via AuthContext
             onSignedIn?.(user);
+            console.log('✅ [LOGIN] onSignedIn callback completed!');
         } catch (error: any) {
+            console.error('❌ [LOGIN] Login failed:', error);
+            console.error('❌ [LOGIN] Error message:', error.message);
+            console.error('❌ [LOGIN] Error details:', JSON.stringify(error, null, 2));
             showCustomAlert('Login Failed', error.message || 'Invalid email or password', 'error');
         } finally {
+            console.log('🔄 [LOGIN] Setting loading to false');
             setIsLoading(false);
         }
+    };
+
+    const handleGooglePress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        promptAsync();
+    };
+
+    const handleBiometricPress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        handleBiometricAuth();
+    };
+
+    const handlePasswordToggle = () => {
+        Haptics.selectionAsync();
+        setShowPassword(!showPassword);
     };
 
     const { width, height } = useWindowDimensions();
     const isDesktop = width > 768;
 
     const renderLoginForm = () => (
-        <View style={[
-            styles.mainContent,
-            isDesktop && styles.desktopFormContent
-        ]}>
-            {/* Header/Logo - Hide on Desktop usage of specific styles if wanted, but keep for now as requested "Welcome back" is checking mockups */}
+        <Animated.View
+            style={[
+                styles.mainContent,
+                isDesktop && styles.desktopFormContent,
+                {
+                    opacity: fadeAnim,
+                    transform: [{ translateY: slideAnim }]
+                }
+            ]}
+        >
+            {/* Back Button */}
+            {!isDesktop && (
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        navigation.goBack();
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="arrow-back" size={24} color={c.text} />
+                </TouchableOpacity>
+            )}
+
+            {/* Header/Logo */}
             <View style={styles.topSection}>
-                {/* On Desktop, we might want to hide the small logo since we have a big one on the left, but let's keep it consistent or small */}
                 {!isDesktop && (
-                    <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
+                    <Animated.View
+                        style={[
+                            styles.logoWrap,
+                            { backgroundColor: c.card },
+                            {
+                                transform: [{
+                                    scale: fadeAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0.8, 1]
+                                    })
+                                }]
+                            }
+                        ]}
+                    >
                         <Logo size={48} />
-                    </View>
+                    </Animated.View>
                 )}
                 <Text style={[styles.title, { color: c.text, fontSize: isDesktop ? 32 : 28 }]}>Welcome back!</Text>
-                <Text style={[styles.subtitle, { color: c.subtext }]}>Sign in to continue.</Text>
+                <Text style={[styles.subtitle, { color: c.subtext }]}>Sign in to continue your journey.</Text>
             </View>
 
             {/* Form */}
             <View style={styles.form}>
-                <Input
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="Email Address"
-                    icon="mail-outline"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    containerStyle={styles.inputSpacing}
-                />
-
-                <View style={styles.inputSpacing}>
+                <Animated.View style={[styles.inputContainer, { transform: [{ scale: emailInputScale }] }]}>
                     <Input
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="Password"
-                        icon="lock-outline"
-                        secureTextEntry={!showPassword}
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="Email Address"
+                        icon="mail-outline"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        containerStyle={styles.inputSpacing}
                     />
-                    <TouchableOpacity
-                        style={styles.eyeIcon}
-                        onPress={() => setShowPassword(!showPassword)}
-                    >
-                        <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
-                    </TouchableOpacity>
-                </View>
+                </Animated.View>
+
+                <Animated.View style={[styles.inputContainer, { transform: [{ scale: passwordInputScale }] }]}>
+                    <View style={styles.inputSpacing}>
+                        <Input
+                            value={password}
+                            onChangeText={setPassword}
+                            placeholder="Password"
+                            icon="lock-outline"
+                            secureTextEntry={!showPassword}
+                        />
+                        <TouchableOpacity
+                            style={styles.eyeIcon}
+                            onPress={handlePasswordToggle}
+                            activeOpacity={0.7}
+                        >
+                            <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
+                        </TouchableOpacity>
+                    </View>
+                </Animated.View>
 
                 <TouchableOpacity onPress={onForgotPassword} style={styles.forgotPassword}>
                     <Text style={[styles.forgotPasswordText, { color: c.primary }]}>Forgot Password?</Text>
                 </TouchableOpacity>
 
                 <View style={styles.actionButtons}>
-                    <Button
-                        title="Sign In"
-                        onPress={handleLogin}
-                        loading={isLoading}
-                        variant="primary"
-                        size="large"
-                        style={styles.mainBtn}
-                    />
+                    <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                        <Button
+                            title="Sign In"
+                            onPress={handleLogin}
+                            loading={isLoading}
+                            variant="primary"
+                            size="large"
+                            style={styles.mainBtn}
+                        />
+                    </Animated.View>
 
                     {isBiometricSupported && (
                         <TouchableOpacity
-                            onPress={handleBiometricAuth}
+                            onPress={handleBiometricPress}
                             style={[styles.biometricBtn, { borderColor: c.primary, backgroundColor: c.background }]}
+                            activeOpacity={0.7}
                         >
                             <MaterialCommunityIcons name="face-recognition" size={20} color={c.primary} />
                             <Text style={[styles.biometricText, { color: c.primary }]}>Login with Face ID</Text>
@@ -245,9 +383,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                 </View>
 
                 <TouchableOpacity
-                    activeOpacity={0.9}
+                    activeOpacity={0.8}
                     style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
-                    onPress={() => promptAsync()}
+                    onPress={handleGooglePress}
                     disabled={!request}
                 >
                     <MaterialCommunityIcons name="google" size={20} color={c.text} />
@@ -258,11 +396,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
             {/* Footer */}
             <View style={styles.footer}>
                 <Text style={[styles.footerText, { color: c.subtext }]}>Don't have an account?</Text>
-                <TouchableOpacity onPress={onSignup}>
+                <TouchableOpacity onPress={onSignup} activeOpacity={0.7}>
                     <Text style={[styles.footerLink, { color: c.primary }]}>Sign Up</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </Animated.View>
     );
 
     if (isDesktop) {
@@ -280,7 +418,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                         >
                             <View style={styles.heroContent}>
                                 <View style={styles.heroLogoWrap}>
-                                    {/* Show original logo without tint */}
                                     <Logo size={120} />
                                 </View>
                                 <Text style={[styles.heroTitle, { color: '#1a1a1a' }]}>Connecta</Text>
@@ -318,7 +455,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
         );
     }
 
-    // MOBILE RENDER (Unchanged mostly)
+    // MOBILE RENDER
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
@@ -397,7 +534,7 @@ const styles = StyleSheet.create({
     },
     desktopRightPanel: {
         flex: 1,
-        backgroundColor: '#f8f9fa', // Light gray background behind card
+        backgroundColor: '#f8f9fa',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
@@ -416,32 +553,50 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 30,
         elevation: 10,
-        maxHeight: '90%', // Ensure it fits in screen
+        maxHeight: '90%',
     },
     desktopFormContent: {
-        // Adjustments inside the card
         paddingVertical: 0,
     },
-    // Existing Styles
+    // Form Styles
+    backButton: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 10,
+        padding: 12,
+        borderRadius: 12,
+    },
     topSection: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 36,
     },
     logoWrap: {
         padding: 16,
-        borderRadius: 16,
-        marginBottom: 20,
+        borderRadius: 20,
+        marginBottom: 24,
+        shadowColor: '#FD6730',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 8,
     },
     title: {
         fontSize: 28,
         fontWeight: '800',
         marginBottom: 8,
+        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
     },
     form: {
-        marginBottom: 20,
+        marginBottom: 24,
+    },
+    inputContainer: {
+        width: '100%',
     },
     inputSpacing: {
         marginBottom: 16,
@@ -453,7 +608,7 @@ const styles = StyleSheet.create({
     },
     forgotPassword: {
         alignSelf: 'flex-end',
-        marginBottom: 24,
+        marginBottom: 28,
         marginTop: -8,
     },
     forgotPasswordText: {
@@ -461,19 +616,24 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     actionButtons: {
-        gap: 12,
+        gap: 14,
     },
     mainBtn: {
-        borderRadius: 12,
+        borderRadius: 14,
+        shadowColor: '#FD6730',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 12,
+        elevation: 6,
     },
     biometricBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        padding: 14,
-        borderRadius: 12,
-        borderWidth: 1,
+        padding: 16,
+        borderRadius: 14,
+        borderWidth: 1.5,
     },
     biometricText: {
         fontSize: 15,
@@ -482,7 +642,7 @@ const styles = StyleSheet.create({
     dividerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 24,
+        marginVertical: 28,
         gap: 14,
     },
     divider: {
@@ -498,9 +658,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        height: 50,
-        borderRadius: 12,
-        borderWidth: 1,
+        height: 52,
+        borderRadius: 14,
+        borderWidth: 1.5,
         gap: 10,
     },
     googleText: {
@@ -512,6 +672,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         gap: 6,
+        paddingTop: 20,
         paddingBottom: 20,
     },
     footerText: {

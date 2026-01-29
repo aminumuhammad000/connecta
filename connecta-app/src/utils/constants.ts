@@ -3,13 +3,11 @@
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = false;
+const USE_LOCAL_SERVER = true;
 
 // Server URLs
 const ONLINE_SERVER = 'https://api.myconnecta.ng';
-// For Android Emulator use 'http://10.0.2.2:5000', for iOS Simulator 'http://localhost:5000'
-// For physical device, use your computer's LAN IP (e.g., http://192.168.x.x:5000)
-const LOCAL_SERVER = 'http://localhost:5000';
+const LOCAL_SERVER = 'http://192.168.43.204:5000'; // Use your computer's local IP
 
 export const API_BASE_URL = USE_LOCAL_SERVER ? LOCAL_SERVER : ONLINE_SERVER;
 

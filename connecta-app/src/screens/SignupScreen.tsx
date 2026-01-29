@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Image, useWindowDimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, StatusBar, Image, useWindowDimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useInAppAlert } from '../components/InAppAlert';
@@ -12,6 +12,7 @@ import Input from '../components/Input';
 import Logo from '../components/Logo';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '../context/ThemeContext';
 
@@ -29,8 +30,35 @@ const SignupScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const nameInputScale = useRef(new Animated.Value(1)).current;
+  const emailInputScale = useRef(new Animated.Value(1)).current;
+  const passwordInputScale = useRef(new Animated.Value(1)).current;
+  const roleAnimFreelancer = useRef(new Animated.Value(1)).current;
+  const roleAnimClient = useRef(new Animated.Value(1)).current;
+
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
+
+  // Entrance animation
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        friction: 8,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
@@ -47,6 +75,7 @@ const SignupScreen: React.FC = () => {
   }, [response]);
 
   const handleGoogleSignup = async (token: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsLoading(true);
     try {
       const autoLogin = selectedRole === 'client';
@@ -56,9 +85,11 @@ const SignupScreen: React.FC = () => {
         // For Google signup, send to Skills
         (navigation as any).navigate('SkillSelection', { token: response.token, user: response.user });
       } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         showAlert({ title: 'Success', message: 'Account created with Google!', type: 'success' });
       }
     } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       showAlert({ title: 'Google Signup Failed', message: error.message || 'Failed to sign up with Google', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -66,9 +97,52 @@ const SignupScreen: React.FC = () => {
   };
 
   const handleCreateAccount = async () => {
-    if (!name.trim()) return showAlert({ title: 'Error', message: 'Please enter your full name', type: 'error' });
-    if (!email.trim()) return showAlert({ title: 'Error', message: 'Please enter your email', type: 'error' });
-    if (!password.trim() || password.length < 6) return showAlert({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
+    // Validation with shake animations
+    if (!name.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Animated.sequence([
+        Animated.timing(nameInputScale, { toValue: 1.05, duration: 100, useNativeDriver: true }),
+        Animated.timing(nameInputScale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+        Animated.timing(nameInputScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+      ]).start();
+      return showAlert({ title: 'Error', message: 'Please enter your full name', type: 'error' });
+    }
+
+    if (!email.trim()) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Animated.sequence([
+        Animated.timing(emailInputScale, { toValue: 1.05, duration: 100, useNativeDriver: true }),
+        Animated.timing(emailInputScale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+        Animated.timing(emailInputScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+      ]).start();
+      return showAlert({ title: 'Error', message: 'Please enter your email', type: 'error' });
+    }
+
+    if (!password.trim() || password.length < 6) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Animated.sequence([
+        Animated.timing(passwordInputScale, { toValue: 1.05, duration: 100, useNativeDriver: true }),
+        Animated.timing(passwordInputScale, { toValue: 0.95, duration: 100, useNativeDriver: true }),
+        Animated.timing(passwordInputScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+      ]).start();
+      return showAlert({ title: 'Error', message: 'Password must be at least 6 characters', type: 'error' });
+    }
+
+    // Button press animation
+    Animated.sequence([
+      Animated.spring(buttonScale, {
+        toValue: 0.95,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     setIsLoading(true);
     try {
@@ -76,9 +150,8 @@ const SignupScreen: React.FC = () => {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || firstName;
 
-      const autoLogin = true; // Always login to get token for verification
+      const autoLogin = true;
 
-      // Create account
       await signup({
         email: email.trim(),
         password,
@@ -87,8 +160,7 @@ const SignupScreen: React.FC = () => {
         userType: selectedRole,
       }, autoLogin);
 
-      // Removed automatic resend to prevent invalidating the signup OTP
-
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       showAlert({ title: 'Success', message: 'Account created! Please verify your email.', type: 'success' });
       (navigation as any).navigate('OTPVerification', {
         email: email.trim(),
@@ -96,21 +168,71 @@ const SignupScreen: React.FC = () => {
         role: selectedRole
       });
     } catch (error: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       showAlert({ title: 'Signup Failed', message: error.message || 'Failed to create account', type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleRoleSelect = (role: 'client' | 'freelancer') => {
+    Haptics.selectionAsync();
+    setSelectedRole(role);
+
+    // Animate the selected role
+    const targetAnim = role === 'freelancer' ? roleAnimFreelancer : roleAnimClient;
+    Animated.sequence([
+      Animated.spring(targetAnim, { toValue: 1.05, friction: 4, useNativeDriver: true }),
+      Animated.spring(targetAnim, { toValue: 1, friction: 4, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const handlePasswordToggle = () => {
+    Haptics.selectionAsync();
+    setShowPassword(!showPassword);
+  };
+
+  const handleBackPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.goBack();
+  };
+
+  const handleGooglePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    promptAsync();
+  };
+
   const renderSignupForm = () => (
-    <View style={[styles.mainContent, isDesktop && styles.desktopFormContent]}>
+    <Animated.View
+      style={[
+        styles.mainContent,
+        isDesktop && styles.desktopFormContent,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }]
+        }
+      ]}
+    >
 
       {/* Mobile Header: Logo + Title */}
       {!isDesktop && (
         <View style={styles.topSection}>
-          <View style={[styles.logoWrap, { backgroundColor: c.card }]}>
+          <Animated.View
+            style={[
+              styles.logoWrap,
+              { backgroundColor: c.card },
+              {
+                transform: [{
+                  scale: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1]
+                  })
+                }]
+              }
+            ]}
+          >
             <Logo size={42} />
-          </View>
+          </Animated.View>
           <Text style={[styles.title, { color: c.text }]}>Create Account</Text>
           <Text style={[styles.subtitle, { color: c.subtext }]}>Join Connecta today.</Text>
         </View>
@@ -126,78 +248,95 @@ const SignupScreen: React.FC = () => {
 
       {/* Role Switcher */}
       <View style={styles.roleContainer}>
-        <TouchableOpacity
-          style={[
-            styles.roleBtn,
-            selectedRole === 'freelancer' && { backgroundColor: c.primary, borderColor: c.primary },
-            selectedRole !== 'freelancer' && { borderColor: c.border, backgroundColor: c.card }
-          ]}
-          onPress={() => setSelectedRole('freelancer')}
-        >
-          <Text style={[
-            styles.roleText,
-            { color: selectedRole === 'freelancer' ? '#fff' : c.subtext }
-          ]}>Freelancer</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ flex: 1, transform: [{ scale: roleAnimFreelancer }] }}>
+          <TouchableOpacity
+            style={[
+              styles.roleBtn,
+              selectedRole === 'freelancer' && { backgroundColor: c.primary, borderColor: c.primary },
+              selectedRole !== 'freelancer' && { borderColor: c.border, backgroundColor: c.card }
+            ]}
+            onPress={() => handleRoleSelect('freelancer')}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.roleText,
+              { color: selectedRole === 'freelancer' ? '#fff' : c.subtext }
+            ]}>Freelancer</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <TouchableOpacity
-          style={[
-            styles.roleBtn,
-            selectedRole === 'client' && { backgroundColor: c.primary, borderColor: c.primary },
-            selectedRole !== 'client' && { borderColor: c.border, backgroundColor: c.card }
-          ]}
-          onPress={() => setSelectedRole('client')}
-        >
-          <Text style={[
-            styles.roleText,
-            { color: selectedRole === 'client' ? '#fff' : c.subtext }
-          ]}>Client</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ flex: 1, transform: [{ scale: roleAnimClient }] }}>
+          <TouchableOpacity
+            style={[
+              styles.roleBtn,
+              selectedRole === 'client' && { backgroundColor: c.primary, borderColor: c.primary },
+              selectedRole !== 'client' && { borderColor: c.border, backgroundColor: c.card }
+            ]}
+            onPress={() => handleRoleSelect('client')}
+            activeOpacity={0.7}
+          >
+            <Text style={[
+              styles.roleText,
+              { color: selectedRole === 'client' ? '#fff' : c.subtext }
+            ]}>Client</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Form */}
       <View style={styles.form}>
-        <Input
-          value={name}
-          onChangeText={setName}
-          placeholder="Full Name"
-          icon="person-outline"
-          containerStyle={styles.inputSpacing}
-        />
-        <Input
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email Address"
-          keyboardType="email-address"
-          containerStyle={styles.inputSpacing}
-          autoCapitalize="none"
-          icon="mail-outline"
-        />
-        <View style={styles.inputSpacing}>
+        <Animated.View style={[styles.inputContainer, { transform: [{ scale: nameInputScale }] }]}>
           <Input
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Password"
-            icon="lock-outline"
-            secureTextEntry={!showPassword}
+            value={name}
+            onChangeText={setName}
+            placeholder="Full Name"
+            icon="person-outline"
+            containerStyle={styles.inputSpacing}
           />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
-          </TouchableOpacity>
-        </View>
+        </Animated.View>
+
+        <Animated.View style={[styles.inputContainer, { transform: [{ scale: emailInputScale }] }]}>
+          <Input
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email Address"
+            keyboardType="email-address"
+            containerStyle={styles.inputSpacing}
+            autoCapitalize="none"
+            icon="mail-outline"
+          />
+        </Animated.View>
+
+        <Animated.View style={[styles.inputContainer, { transform: [{ scale: passwordInputScale }] }]}>
+          <View style={styles.inputSpacing}>
+            <Input
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Password"
+              icon="lock-outline"
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={handlePasswordToggle}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
       </View>
 
-      <Button
-        title="Sign Up"
-        onPress={handleCreateAccount}
-        loading={isLoading}
-        variant="primary"
-        size="large"
-        style={styles.mainBtn}
-      />
+      <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+        <Button
+          title="Sign Up"
+          onPress={handleCreateAccount}
+          loading={isLoading}
+          variant="primary"
+          size="large"
+          style={styles.mainBtn}
+        />
+      </Animated.View>
 
       {/* Social Login */}
       <View style={styles.dividerRow}>
@@ -207,9 +346,9 @@ const SignupScreen: React.FC = () => {
       </View>
 
       <TouchableOpacity
-        activeOpacity={0.9}
+        activeOpacity={0.8}
         style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
-        onPress={() => promptAsync()}
+        onPress={handleGooglePress}
         disabled={!request}
       >
         <MaterialCommunityIcons name="google" size={20} color={c.text} />
@@ -219,12 +358,15 @@ const SignupScreen: React.FC = () => {
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => (navigation as any).navigate('Login')}>
+        <TouchableOpacity onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          (navigation as any).navigate('Login');
+        }}>
           <Text style={{ color: c.primary, fontWeight: '700' }}>Log In</Text>
         </TouchableOpacity>
       </View>
 
-    </View>
+    </Animated.View>
   );
 
   if (isDesktop) {
@@ -242,7 +384,6 @@ const SignupScreen: React.FC = () => {
             >
               <View style={styles.heroContent}>
                 <View style={styles.heroLogoWrap}>
-                  {/* Show original logo without tint */}
                   <Logo size={120} />
                 </View>
                 <Text style={[styles.heroTitle, { color: '#1a1a1a' }]}>Connecta</Text>
@@ -280,8 +421,8 @@ const SignupScreen: React.FC = () => {
 
         {/* Header Back Btn */}
         <View style={styles.navHeader}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <MaterialIcons name="arrow-back" size={24} color={c.text} />
+          <TouchableOpacity onPress={handleBackPress} style={styles.backBtn} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={24} color={c.text} />
           </TouchableOpacity>
         </View>
 
@@ -370,9 +511,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 30,
+    elevation: 10,
     maxHeight: '90%',
   },
   desktopFormContent: {
@@ -385,20 +526,28 @@ const styles = StyleSheet.create({
   // Common Styles
   topSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
   },
   logoWrap: {
-    padding: 12,
-    borderRadius: 16,
-    marginBottom: 16,
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 20,
+    shadowColor: '#FD6730',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
-    marginBottom: 4,
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   roleContainer: {
     flexDirection: 'row',
@@ -407,18 +556,21 @@ const styles = StyleSheet.create({
   },
   roleBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 12,
+    height: 48,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
   },
   roleText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   form: {
     marginBottom: 20,
+  },
+  inputContainer: {
+    width: '100%',
   },
   inputSpacing: {
     marginBottom: 16,
@@ -429,7 +581,12 @@ const styles = StyleSheet.create({
     top: 14,
   },
   mainBtn: {
-    borderRadius: 12,
+    borderRadius: 14,
+    shadowColor: '#FD6730',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -450,9 +607,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
     gap: 10,
   },
   googleText: {

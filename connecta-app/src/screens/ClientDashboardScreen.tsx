@@ -28,7 +28,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [freelancers, setFreelancers] = useState<User[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { socket, unreadNotificationCount } = useSocket();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileMissing, setProfileMissing] = useState(false);
@@ -94,17 +94,15 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
 
   const loadDashboardData = async () => {
     try {
-      const [statsData, freelancersData, notifCount, jobsData, collaboData] = await Promise.all([
+      const [statsData, freelancersData, jobsData, collaboData] = await Promise.all([
         dashboardService.getClientStats().catch(() => null),
         dashboardService.getRecommendedFreelancers().catch(() => []),
-        notificationService.getUnreadCount().catch(() => 0),
         jobService.getMyJobs().catch(() => []),
         collaboService.getMyCollaboProjects().catch(() => [])
       ]);
 
       setStats(statsData);
       setFreelancers(freelancersData);
-      setUnreadCount(notifCount);
       setMyJobs(jobsData);
       setCollaboProjects(collaboData);
     } catch (error) {
@@ -231,7 +229,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconButton}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="notifications-outline" size={22} color="#FFF" />
-                    {unreadCount > 0 && (
+                    {unreadNotificationCount > 0 && (
                       <View style={{ position: 'absolute', top: 8, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: '#FF7F50' }} />
                     )}
                   </View>

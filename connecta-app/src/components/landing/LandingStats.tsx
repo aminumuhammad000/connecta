@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, Animated, Easing, TouchableOpacity } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { API_BASE_URL } from '../../utils/constants';
 
 const { width } = Dimensions.get('window');
 
@@ -18,19 +19,44 @@ const categories = [
 
 const LandingStats = ({ isDesktop }: { isDesktop?: boolean }) => {
     const [stats, setStats] = useState({
-        totalUsers: 12500,
-        freelancersCount: 4800,
-        completedProjects: 8900,
-        paymentRevenue: 45000000,
-        loading: false
+        totalUsers: 0,
+        freelancersCount: 0,
+        completedProjects: 0,
+        paymentRevenue: 0,
+        loading: true
     });
 
     const scrollX = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        // Fetch Real Stats (Mocking for now to match Web implementation structure, but replacing with real fetch if needed)
-        // For UI Clone, static initial data is safer visually until API is confirmed working 100% without auth
+        fetchStats();
     }, []);
+
+    const fetchStats = async () => {
+        try {
+            console.log('📊 [LandingStats] Fetching real stats from server...');
+            const response = await fetch(`${API_BASE_URL}/api/analytics/stats`);
+            const data = await response.json();
+
+            if (data.success && data.data) {
+                console.log('✅ [LandingStats] Stats fetched successfully:', data.data.overview);
+                setStats({
+                    totalUsers: data.data.overview.totalUsers || 0,
+                    freelancersCount: data.data.overview.freelancersCount || 0,
+                    completedProjects: data.data.overview.completedProjects || 0,
+                    paymentRevenue: data.data.overview.paymentRevenue || 0,
+                    loading: false
+                });
+            } else {
+                console.warn('⚠️ [LandingStats] Invalid response format, using defaults');
+                setStats(prev => ({ ...prev, loading: false }));
+            }
+        } catch (error) {
+            console.error('❌ [LandingStats] Failed to fetch stats:', error);
+            // Keep defaults on error
+            setStats(prev => ({ ...prev, loading: false }));
+        }
+    };
 
     // Infinite Scroll Animation
     useEffect(() => {
@@ -96,21 +122,21 @@ const LandingStats = ({ isDesktop }: { isDesktop?: boolean }) => {
                 {isDesktop ? (
                     // Desktop: Single Row of 4
                     <View style={styles.desktopRowFull}>
-                        <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} />
-                        <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} />
-                        <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} />
-                        <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} />
+                        <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} loading={stats.loading} />
+                        <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} loading={stats.loading} />
+                        <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} loading={stats.loading} />
+                        <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} loading={stats.loading} />
                     </View>
                 ) : (
                     // Mobile: 2x2 Grid using Rows
                     <>
                         <View style={styles.row}>
-                            <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} />
-                            <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} />
+                            <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} loading={stats.loading} />
+                            <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} loading={stats.loading} />
                         </View>
                         <View style={styles.row}>
-                            <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} />
-                            <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} />
+                            <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} loading={stats.loading} />
+                            <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} loading={stats.loading} />
                         </View>
                     </>
                 )}
@@ -119,12 +145,18 @@ const LandingStats = ({ isDesktop }: { isDesktop?: boolean }) => {
     );
 };
 
-const StatCard = ({ icon, label, value }: { icon: string, label: string, value: string }) => (
+const StatCard = ({ icon, label, value, loading }: { icon: string, label: string, value: string, loading?: boolean }) => (
     <View style={styles.card}>
         <View style={styles.iconBox}>
             <Feather name={icon as any} size={20} color="#FD6730" />
         </View>
-        <Text style={styles.cardValue}>{value}</Text>
+        {loading ? (
+            <View style={styles.skeleton}>
+                <View style={styles.skeletonLine} />
+            </View>
+        ) : (
+            <Text style={styles.cardValue}>{value}</Text>
+        )}
         <Text style={styles.cardLabel}>{label}</Text>
     </View>
 );
@@ -261,6 +293,16 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: '#718096',
+    },
+    skeleton: {
+        height: 28,
+        width: '60%',
+        marginBottom: 4,
+    },
+    skeletonLine: {
+        flex: 1,
+        backgroundColor: '#E2E8F0',
+        borderRadius: 4,
     },
     desktopGrid: {
         width: '100%',

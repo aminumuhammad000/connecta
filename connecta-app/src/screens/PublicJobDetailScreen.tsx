@@ -179,11 +179,11 @@ const PublicJobDetailScreen: React.FC = () => {
                         </View>
                     </View>
 
-                    {/* Login CTA */}
+                    {/* Login/Signup CTA */}
                     <View style={{ marginTop: 32, padding: 24, backgroundColor: c.isDark ? '#2C2C2E' : '#ebf8ff', borderRadius: 16, alignItems: 'center', gap: 12 }}>
                         <MaterialIcons name="lock-outline" size={32} color={c.primary} />
                         <Text style={{ fontSize: 16, fontWeight: '700', color: c.text, textAlign: 'center' }}>
-                            Sign up to see full details
+                            Join to see full details
                         </Text>
                         <Text style={{ fontSize: 14, color: c.subtext, textAlign: 'center' }}>
                             View attachments, tailored AI insights, and submit your proposal.
@@ -193,14 +193,22 @@ const PublicJobDetailScreen: React.FC = () => {
                 </View>
             </ScrollView>
 
-            {/* Fixed CTA */}
+            {/* Fixed CTA - Both Login and Sign Up */}
             <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
-                <TouchableOpacity
-                    style={[styles.applyBtn, { backgroundColor: c.primary }]}
-                    onPress={handleApply}
-                >
-                    <Text style={styles.applyText}>Login to Apply</Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                        style={[styles.loginBtn, { borderColor: c.primary, backgroundColor: c.background }]}
+                        onPress={() => navigation.navigate('Auth', { screen: 'Login' })}
+                    >
+                        <Text style={[styles.loginText, { color: c.primary }]}>Log In</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.applyBtn, { backgroundColor: c.primary }]}
+                        onPress={handleApply}
+                    >
+                        <Text style={styles.applyText}>Sign Up</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </SafeAreaView>
     );
@@ -236,7 +244,9 @@ const styles = StyleSheet.create({
     clientName: { fontSize: 14, fontWeight: '600' },
 
     ctaBar: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 16, paddingTop: 8 },
-    applyBtn: { height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+    loginBtn: { flex: 1, height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+    loginText: { fontSize: 15, fontWeight: '600' },
+    applyBtn: { flex: 1, height: 52, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
     applyText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });
 
