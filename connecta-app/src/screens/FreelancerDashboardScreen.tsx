@@ -206,7 +206,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={['right', 'top', 'bottom']}>
-      <View style={{ flex: 1, maxWidth: isDesktop ? '100%' : 600, alignSelf: 'center', width: '100%' }}>
+      <View style={{ flex: 1, maxWidth: isDesktop ? 1200 : 600, alignSelf: 'center', width: '100%' }}>
         <ScrollView
           contentContainerStyle={{ paddingBottom: 72 }}
           showsVerticalScrollIndicator={false}
@@ -253,8 +253,8 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Stats Overview - Overlapping Header (Desktop: Grid, Mobile: Row) */}
           <View style={[
             isDesktop ? styles.desktopStatsGrid : styles.statsContainer,
-            { 
-              marginTop: -50, 
+            {
+              marginTop: -50,
               paddingHorizontal: isDesktop ? 40 : 20,
               zIndex: 20, // Ensure it's over the header
             }

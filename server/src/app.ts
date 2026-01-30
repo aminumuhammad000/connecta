@@ -99,11 +99,11 @@ app.use("/api/broadcast", broadcastRoutes);
 import externalGigsRoutes from "./routes/external-gigs.routes.js";
 app.use("/api/external-gigs", externalGigsRoutes);
 
-import collaboRoutes from "./routes/Collabo.routes.js";
-app.use("/api/collabo", collaboRoutes);
-
 import avatarRoutes from "./routes/avatar.routes.js";
 app.use("/api/avatars", avatarRoutes);
+
+import contactRoutes from "./routes/contact.routes.js";
+app.use("/api/contact", contactRoutes);
 
 app.get("/health", (req, res) => {
   const dbState = mongoose.connection.readyState;

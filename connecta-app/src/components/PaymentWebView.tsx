@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Platform } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Platform, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -18,6 +18,7 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
     onCancel,
 }) => {
     const c = useThemeColors();
+    const { width } = Dimensions.get('window');
     const [loading, setLoading] = useState(true);
 
     const handleNavigationStateChange = (navState: any) => {
@@ -37,7 +38,15 @@ const PaymentWebView: React.FC<PaymentWebViewProps> = ({
 
     return (
         <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
-            <View style={[styles.container, { backgroundColor: c.background }]}>
+            <View style={[styles.container, {
+                backgroundColor: c.background,
+                width: '100%',
+                maxWidth: 800,
+                alignSelf: 'center',
+                borderLeftWidth: Platform.OS === 'web' && width > 800 ? 1 : 0,
+                borderRightWidth: Platform.OS === 'web' && width > 800 ? 1 : 0,
+                borderColor: c.border
+            }]}>
                 <View style={[styles.header, { borderBottomColor: c.border, paddingTop: Platform.OS === 'ios' ? 50 : 16 }]}>
                     <TouchableOpacity onPress={onCancel} style={styles.backBtn}>
                         <MaterialIcons name="arrow-back" size={24} color={c.text} />

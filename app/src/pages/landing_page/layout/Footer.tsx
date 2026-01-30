@@ -80,16 +80,16 @@ const Footer = () => {
               <li><a href="#how-it-works">Post a Job</a></li>
               <li><a href="#features">Find Talent</a></li>
               <li><a href="/signup">Get Started</a></li>
-              <li><a href="#contact">Contact Us</a></li>
+              <li><a href="/contact">Contact Us</a></li>
             </ul>
           </div>
 
           <div className={style.linksColumn}>
             <h3 className={style.columnTitle}>Company</h3>
             <ul className={style.linksList}>
-              <li><a href="#about">About Us</a></li>
-              <li><a href="#contact">Contact</a></li>
-              {/* <li><a href="#careers">Careers</a></li> */}
+              <li><a href="/about">About Us</a></li>
+              <li><a href="/contact">Contact</a></li>
+              <li><a href="/careers">Careers</a></li>
               {/* <li><a href="#blog">Blog</a></li> */}
             </ul>
           </div>
@@ -101,12 +101,9 @@ const Footer = () => {
       <div className={style.footerBottom}>
         <p className={style.copyright}>© 2026 Connecta. All rights reserved.</p>
         <div className={style.legalLinks}>
-          <span className="text-gray-400 text-sm">Privacy Policy</span>
-          <span className="text-gray-400 text-sm">Terms of Service</span>
-          <span className="text-gray-400 text-sm">Security</span>
-          {/* <a href="#privacy">Privacy Policy</a>
-          <a href="#terms">Terms of Service</a>
-          <a href="#security">Security</a> */}
+          <a href="/privacy" className="text-gray-400 text-sm hover:text-orange-500 transition-colors">Privacy Policy</a>
+          <a href="/terms" className="text-gray-400 text-sm hover:text-orange-500 transition-colors">Terms of Service</a>
+          <a href="/security" className="text-gray-400 text-sm hover:text-orange-500 transition-colors">Security</a>
         </div>
       </div>
     </div>
