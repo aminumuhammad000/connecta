@@ -376,10 +376,7 @@ export default function ProfileScreen({ navigation }: any) {
           <View style={styles.contentContainer}>
             {activeTab === 'portfolio' ? (
               <View>
-                <TouchableOpacity style={[styles.addProjectBtn, { borderColor: c.border, borderStyle: 'dashed' }]} onPress={() => navigation.navigate('AddPortfolio')}>
-                  <Ionicons name="add" size={24} color={c.subtext} />
-                  <Text style={{ color: c.subtext, marginLeft: 8, fontWeight: '500' }}>Add Project</Text>
-                </TouchableOpacity>
+
 
                 {profile?.portfolio?.length > 0 ? (
                   <View style={styles.portfolioGrid}>

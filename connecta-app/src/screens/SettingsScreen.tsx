@@ -56,8 +56,7 @@ export default function SettingsScreen({ navigation }: any) {
 
             // Explicitly request biometric authentication
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: value ? 'Enable Biometric Login' : 'Disable Biometric Login',
-                subtitle: 'Please verify your identity',
+                promptMessage: value ? 'Verify your fingerprint to enable' : 'Verify your fingerprint to disable',
                 fallbackLabel: 'Use Passcode',
                 disableDeviceFallback: false,
                 cancelLabel: 'Cancel',

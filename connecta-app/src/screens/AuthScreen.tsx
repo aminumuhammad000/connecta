@@ -92,7 +92,7 @@ export default function AuthScreen({ navigation }: any) {
                 </TouchableOpacity>
 
                 <View style={styles.footer}>
-                    <Text style={[styles.footerText, { color: c.textDim }]}>Already have an account? </Text>
+                    <Text style={[styles.footerText, { color: c.subtext }]}>Already have an account? </Text>
                     <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                         <Text style={[styles.linkText, { color: c.primary }]}>Log In</Text>
                     </TouchableOpacity>

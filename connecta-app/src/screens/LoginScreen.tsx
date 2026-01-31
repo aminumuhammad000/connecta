@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as Haptics from 'expo-haptics';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StatusBar, useWindowDimensions, Animated } from 'react-native';
@@ -106,51 +107,57 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const handleBiometricAuth = async () => {
         try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+            // Authenticate with biometric
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Login with Face ID',
+                promptMessage: 'Login with Biometric',
                 fallbackLabel: 'Use Passcode',
             });
 
             if (result.success) {
-                const token = await storage.getToken();
-                if (token) {
-                    const savedUser = await storage.getUserData();
-                    if (token && savedUser) {
+                // Get stored credentials
+                const storedEmail = await storage.getSecureItem('connecta_secure_email');
+                const storedPass = await storage.getSecureItem('connecta_secure_pass');
+
+                if (storedEmail && storedPass) {
+                    // Login with stored credentials
+                    setIsLoading(true);
+                    try {
+                        const user = await login({ email: storedEmail, password: storedPass });
                         showCustomAlert('Success', 'Welcome back!', 'success');
-
-                        const storedEmail = await storage.getSecureItem('connecta_secure_email');
-                        const storedPass = await storage.getSecureItem('connecta_secure_pass');
-
-                        if (storedEmail && storedPass) {
-                            await login({ email: storedEmail, password: storedPass });
-                            showCustomAlert('Success', 'Biometric Login Successful', 'success');
-                            onSignedIn?.();
-                        } else {
-                            showCustomAlert('Error', 'No credentials stored for biometric login', 'error');
-                        }
+                        // Pass user object for proper navigation
+                        onSignedIn?.(user);
+                    } catch (error: any) {
+                        console.error('Biometric login error:', error);
+                        showCustomAlert('Login Failed', error.message || 'Failed to login. Please try again.', 'error');
+                    } finally {
+                        setIsLoading(false);
                     }
                 } else {
-                    // Try to get creds
-                    const storedEmail = await storage.getSecureItem('connecta_secure_email');
-                    const storedPass = await storage.getSecureItem('connecta_secure_pass');
-
-                    if (storedEmail && storedPass) {
-                        await login({ email: storedEmail, password: storedPass });
-                        onSignedIn?.();
-                    }
+                    showCustomAlert('Error', 'No credentials stored. Please login manually first.', 'error');
                 }
+            } else if (result.error === 'user_cancel' || result.error === 'app_cancel') {
+                // User cancelled, do nothing
+                console.log('Biometric authentication cancelled');
+            } else {
+                showCustomAlert('Authentication Failed', 'Could not verify your identity. Please try again.', 'error');
             }
         } catch (e) {
-            console.log('Biometric error', e);
+            console.error('Biometric error:', e);
+            showCustomAlert('Error', 'An error occurred during biometric authentication', 'error');
         }
     };
 
     const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-        clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-        iosClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-        androidClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-        redirectUri: 'https://auth.expo.io/@0x_mrcoder/connecta',
+        clientId: '89671982625-iuj8vlsdjhcntlpdal9nbn6qi4hn01hf.apps.googleusercontent.com',
     });
+
+    // Log the redirect URI being used
+    useEffect(() => {
+        if (request?.redirectUri) {
+            console.log('🔗 Google OAuth Redirect URI:', request.redirectUri);
+        }
+    }, [request]);
 
     useEffect(() => {
         if (response?.type === 'success') {
@@ -164,9 +171,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const handleGoogleLogin = async (token: string) => {
         setIsLoading(true);
         try {
-            await googleLogin(token);
+            const user = await googleLogin(token);
             showCustomAlert('Success', 'Logged in with Google!', 'success');
-            onSignedIn?.();
+            onSignedIn?.(user); // Pass user for proper navigation
         } catch (error: any) {
             showCustomAlert('Google Login Failed', error.message || 'Failed to login with Google', 'error');
         } finally {
@@ -366,31 +373,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                     {isBiometricSupported && (
                         <TouchableOpacity
                             onPress={handleBiometricPress}
-                            style={[styles.biometricBtn, { borderColor: c.primary, backgroundColor: c.background }]}
+                            style={[styles.biometricCircle, { borderColor: c.primary + '30', backgroundColor: c.primary + '10' }]}
                             activeOpacity={0.7}
                         >
-                            <MaterialCommunityIcons name="face-recognition" size={20} color={c.primary} />
-                            <Text style={[styles.biometricText, { color: c.primary }]}>Login with Face ID</Text>
+                            <MaterialCommunityIcons name="fingerprint" size={32} color={c.primary} />
                         </TouchableOpacity>
                     )}
                 </View>
 
-                {/* Divider */}
-                <View style={styles.dividerRow}>
-                    <View style={[styles.divider, { backgroundColor: c.border }]} />
-                    <Text style={[styles.orText, { color: c.subtext }]}>OR</Text>
-                    <View style={[styles.divider, { backgroundColor: c.border }]} />
-                </View>
 
-                <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
-                    onPress={handleGooglePress}
-                    disabled={!request}
-                >
-                    <MaterialCommunityIcons name="google" size={20} color={c.text} />
-                    <Text style={[styles.googleText, { color: c.text }]}>Continue with Google</Text>
-                </TouchableOpacity>
             </View>
 
             {/* Footer */}
@@ -626,18 +617,15 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 6,
     },
-    biometricBtn: {
-        flexDirection: 'row',
+    biometricCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        borderWidth: 2,
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        padding: 16,
-        borderRadius: 14,
-        borderWidth: 1.5,
-    },
-    biometricText: {
-        fontSize: 15,
-        fontWeight: '600',
+        alignSelf: 'center',
+        marginTop: 8,
     },
     dividerRow: {
         flexDirection: 'row',

@@ -108,6 +108,31 @@ export default function NotificationsScreen({ navigation }: Props) {
 
     // 2. Navigate based on type/relatedType
     const { type, relatedId, relatedType } = item;
+    const link = (item as any).link;
+
+    // Handle System Messages (Welcome, etc.)
+    if (type === 'system') {
+      navigation.navigate('NotificationDetail', {
+        notification: {
+          id: item._id,
+          title: item.title,
+          description: item.message,
+          time: formatTime(item.createdAt)
+        }
+      });
+      return;
+    }
+
+    // Handle Collabo Links (Team Joined, etc.)
+    if (link && link.includes('/collabo/')) {
+      if (link.includes('/invite/')) {
+        navigation.navigate('CollaboInvite', { roleId: relatedId });
+      } else {
+        // For workspace links like /collabo/:projectId
+        navigation.navigate('CollaboWorkspace', { projectId: relatedId });
+      }
+      return;
+    }
 
     // Collabo invite -> Check role status first
     if (type === 'collabo_invite' && relatedId) {
@@ -154,7 +179,14 @@ export default function NotificationsScreen({ navigation }: Props) {
     }
 
     // Fallback
-    navigation.navigate('NotificationDetail', { notification: item });
+    navigation.navigate('NotificationDetail', {
+      notification: {
+        id: item._id,
+        title: item.title,
+        description: item.message,
+        time: formatTime(item.createdAt)
+      }
+    });
   };
 
   const getIconName = (type: string) => {

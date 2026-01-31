@@ -1,4 +1,4 @@
-import analytics from '@react-native-firebase/analytics';
+// import analytics from '@react-native-firebase/analytics';
 
 /**
  * Log a custom event to Firebase Analytics
@@ -7,7 +7,7 @@ import analytics from '@react-native-firebase/analytics';
  */
 export const logEvent = async (eventName: string, params?: object) => {
     try {
-        await analytics().logEvent(eventName, params);
+        // await analytics().logEvent(eventName, params);
         console.log(`[Analytics] Event logged: ${eventName}`, params || '');
     } catch (error) {
         console.error('[Analytics] Error logging event:', error);
@@ -20,7 +20,7 @@ export const logEvent = async (eventName: string, params?: object) => {
  */
 export const setUserId = async (userId: string | null) => {
     try {
-        await analytics().setUserId(userId);
+        // await analytics().setUserId(userId);
         console.log(`[Analytics] User ID set: ${userId}`);
     } catch (error) {
         console.error('[Analytics] Error setting user ID:', error);
@@ -32,7 +32,7 @@ export const setUserId = async (userId: string | null) => {
  */
 export const logAppOpen = async () => {
     try {
-        await analytics().logAppOpen();
+        // await analytics().logAppOpen();
         console.log('[Analytics] App open logged');
     } catch (error) {
         console.error('[Analytics] Error logging app open:', error);
@@ -45,7 +45,7 @@ export const logAppOpen = async () => {
  */
 export const setUserProperties = async (properties: { [key: string]: string | null }) => {
     try {
-        await analytics().setUserProperties(properties);
+        // await analytics().setUserProperties(properties);
         console.log('[Analytics] User properties set:', properties);
     } catch (error) {
         console.error('[Analytics] Error setting user properties:', error);

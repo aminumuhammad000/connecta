@@ -281,7 +281,7 @@ export const uploadFile = async (req, res) => {
             name: req.file.originalname,
             type: req.file.mimetype,
             size: req.file.size,
-            url: `/uploads/${req.file.filename}` // Serving static files
+            url: req.file.path || req.file.secure_url
         });
         res.json(file);
     }

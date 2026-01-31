@@ -10,6 +10,7 @@ import { getIO } from '../core/utils/socketIO.js';
 import CollaboFile from '../models/CollaboFile.model.js';
 import CollaboTask from '../models/CollaboTask.model.js';
 import User from '../models/user.model.js';
+import Wallet from '../models/Wallet.model.js';
 import { sendEmail } from './email.service.js';
 import { getBaseTemplate } from '../utils/emailTemplates.js';
 
@@ -151,6 +152,29 @@ class CollaboService {
         for (const role of roles) {
             if (role.freelancerId) {
                 const freelancer = role.freelancerId as any;
+
+                // Credit Pending Balance (Escrow)
+                try {
+                    console.log(`[Collabo] Crediting pending balance for ${freelancer._id}: ${role.budget}`);
+                    const walletUpdate = await Wallet.findOneAndUpdate(
+                        { userId: freelancer._id },
+                        {
+                            $inc: {
+                                balance: role.budget,
+                                escrowBalance: role.budget
+                                // Total earnings not incremented yet, as it's deferred/escrowed
+                            }
+                        },
+                        { new: true, upsert: true }
+                    );
+
+                    if (!walletUpdate.currency) {
+                        walletUpdate.currency = 'NGN';
+                        await walletUpdate.save();
+                    }
+                } catch (walletError) {
+                    console.error(`[Collabo] Failed to update wallet for ${freelancer._id}`, walletError);
+                }
 
                 // App Notification
                 await Notification.create({

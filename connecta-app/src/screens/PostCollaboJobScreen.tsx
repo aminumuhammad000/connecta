@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import Button from '../components/Button';
-import { createCollaboProject, activateCollaboProject } from '../services/collaboService';
+import { createCollaboProject } from '../services/collaboService';
 import { post } from '../services/api';
 import { useInAppAlert } from '../components/InAppAlert';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -149,17 +149,19 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                 throw new Error("Project created but ID not returned.");
             }
 
-            // Auto-activate (Simulate payment success)
-            await activateCollaboProject(project._id);
-
+            // Navigate to Payment
             showAlert({
                 title: "Success",
-                message: "Collabo Project LIVE! System is inviting freelancers now.",
+                message: "Project Created! Please fund the project to activate it.",
                 type: 'success'
             });
             setTimeout(() => {
-                navigation.navigate("ClientTabs", { screen: "Projects" });
-            }, 2000);
+                navigation.navigate("Payment", {
+                    projectId: project._id,
+                    amount: projectData.totalBudget,
+                    projectTitle: projectData.title
+                });
+            }, 1000);
 
         } catch (error: any) {
             console.error('Collabo Creation Error:', error);
