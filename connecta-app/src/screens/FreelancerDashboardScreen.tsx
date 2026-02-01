@@ -58,13 +58,10 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
-  const [unreadCount, setUnreadCount] = useState(2); // Mocked for now
-
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
-
-  const { socket } = useSocket();
+  const { socket, unreadNotificationCount } = useSocket();
 
   useEffect(() => {
     loadDashboardData();
@@ -241,7 +238,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconButton}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="notifications-outline" size={22} color="#FFF" />
-                    {unreadCount > 0 && (
+                    {unreadNotificationCount > 0 && (
                       <View style={{ position: 'absolute', top: 8, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: '#FF7F50' }} />
                     )}
                   </View>

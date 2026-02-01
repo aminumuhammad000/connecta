@@ -31,25 +31,69 @@ export default function SettingsScreen({ navigation }: any) {
     };
 
     const handleBiometricToggle = async (value: boolean) => {
-        if (value) {
+        try {
             const compatible = await LocalAuthentication.hasHardwareAsync();
-            if (!compatible) {
-                showAlert({ title: 'Not Supported', message: 'Biometric authentication is not supported on this device', type: 'error' });
-                return;
-            }
+            const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
             const enrolled = await LocalAuthentication.isEnrolledAsync();
-            if (!enrolled) {
-                showAlert({ title: 'Not Enrolled', message: 'No biometrics enrolled on this device', type: 'error' });
+
+            if (!compatible || types.length === 0) {
+                showAlert({
+                    title: 'Not Supported',
+                    message: 'Biometric authentication is not supported on this device',
+                    type: 'error'
+                });
                 return;
             }
-        }
 
-        await storage.setItem(STORAGE_KEYS.BIOMETRIC_ENABLED, String(value));
-        setBiometricEnabled(value);
+            if (!enrolled) {
+                showAlert({
+                    title: 'Not Enrolled',
+                    message: 'Please set up Face ID or Fingerprint in your device settings first',
+                    type: 'error'
+                });
+                return;
+            }
 
-        if (!value) {
-            await storage.removeSecureItem('connecta_secure_email');
-            await storage.removeSecureItem('connecta_secure_pass');
+            // Explicitly request biometric authentication
+            const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: value ? 'Enable Biometric Login' : 'Disable Biometric Login',
+                subtitle: 'Please verify your identity',
+                fallbackLabel: 'Use Passcode',
+                disableDeviceFallback: false,
+                cancelLabel: 'Cancel',
+            });
+
+            if (result.success) {
+                await storage.setItem(STORAGE_KEYS.BIOMETRIC_ENABLED, String(value));
+                setBiometricEnabled(value);
+
+                if (!value) {
+                    await storage.removeSecureItem('connecta_secure_email');
+                    await storage.removeSecureItem('connecta_secure_pass');
+                }
+
+                showAlert({
+                    title: 'Success',
+                    message: `Biometric login ${value ? 'enabled' : 'disabled'}`,
+                    type: 'success'
+                });
+            } else {
+                // If user cancelled, we don't show an error, just don't toggle
+                if (result.error !== 'user_cancel' && result.error !== 'app_cancel') {
+                    showAlert({
+                        title: 'Authentication Failed',
+                        message: 'Could not verify your identity. Please try again.',
+                        type: 'error'
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Biometric toggle error:', error);
+            showAlert({
+                title: 'Error',
+                message: 'An unexpected error occurred during biometric verification',
+                type: 'error'
+            });
         }
     };
 
@@ -81,8 +125,8 @@ export default function SettingsScreen({ navigation }: any) {
     const SettingItem = ({ icon, color, label, value, onToggle, onPress, type = 'link' }: any) => (
         <TouchableOpacity
             style={[styles.settingItem, { borderBottomColor: c.border }]}
-            onPress={type === 'link' ? onPress : undefined}
-            activeOpacity={type === 'link' ? 0.7 : 1}
+            onPress={type === 'link' ? onPress : () => onToggle(!value)}
+            activeOpacity={0.7}
         >
             <View style={styles.settingLeft}>
                 <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>

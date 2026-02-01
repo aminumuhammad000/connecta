@@ -11,13 +11,15 @@ import { Notification } from '../types';
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { useSocket } from '../context/SocketContext';
+
 type NotificationsScreenNavigationProp = NativeStackNavigationProp<any, any>;
 
 type Props = {
   navigation: NotificationsScreenNavigationProp;
 };
 
-const Header = ({ navigation, c }: { navigation: NotificationsScreenNavigationProp, c: any }) => (
+const Header = ({ navigation, c, onMarkAllRead }: { navigation: NotificationsScreenNavigationProp, c: any, onMarkAllRead: () => void }) => (
   <View
     style={[
       styles.header,
@@ -36,13 +38,16 @@ const Header = ({ navigation, c }: { navigation: NotificationsScreenNavigationPr
       <Ionicons name="chevron-back" size={24} color={c.text} />
     </TouchableOpacity>
     <Text style={[styles.headerTitle, { color: c.text }]}>Notifications</Text>
-    <View style={styles.placeholder} />
+    <TouchableOpacity onPress={onMarkAllRead} style={styles.markAllButton}>
+      <Ionicons name="checkmark-done" size={20} color={c.primary} />
+    </TouchableOpacity>
   </View>
 );
 
 export default function NotificationsScreen({ navigation }: Props) {
   const c = useThemeColors();
   const { showAlert } = useInAppAlert();
+  const { refreshUnreadNotificationCount } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -51,6 +56,8 @@ export default function NotificationsScreen({ navigation }: Props) {
     try {
       const data = await notificationService.getNotifications();
       setNotifications(data);
+      // Also refresh the global count while we are here
+      refreshUnreadNotificationCount();
     } catch (error) {
       console.error('Error loading notifications:', error);
     } finally {
@@ -74,6 +81,18 @@ export default function NotificationsScreen({ navigation }: Props) {
     loadNotifications();
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
+      refreshUnreadNotificationCount();
+      showAlert({ title: 'Success', message: 'All notifications marked as read', type: 'success' });
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      showAlert({ title: 'Error', message: 'Failed to mark all as read', type: 'error' });
+    }
+  };
+
   const handlePress = async (item: Notification) => {
     // 1. Mark as read immediately
     if (!item.read && !item.isRead) {
@@ -81,6 +100,7 @@ export default function NotificationsScreen({ navigation }: Props) {
         await notificationService.markAsRead(item._id);
         // Optimistic update
         setNotifications(prev => prev.map(n => n._id === item._id ? { ...n, read: true, isRead: true } : n));
+        refreshUnreadNotificationCount();
       } catch (e) {
         console.error("Failed to mark read", e);
       }
@@ -200,7 +220,7 @@ export default function NotificationsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-      <Header navigation={navigation} c={c} />
+      <Header navigation={navigation} c={c} onMarkAllRead={handleMarkAllRead} />
 
       {isLoading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -260,6 +280,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   actionText: { fontSize: 13, fontWeight: '600' },
+  markAllButton: {
+    padding: 4,
+  },
   placeholder: {
     width: 28, // to balance the back button
   },

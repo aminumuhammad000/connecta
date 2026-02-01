@@ -64,6 +64,14 @@ export const createProposal = async (proposalData: Partial<Proposal>): Promise<P
 };
 
 /**
+ * Update existing proposal
+ */
+export const updateProposal = async (id: string, proposalData: Partial<Proposal>): Promise<Proposal> => {
+    const response = await put<Proposal>(API_ENDPOINTS.PROPOSAL_BY_ID(id), proposalData);
+    return (response as any)?.data || response;
+};
+
+/**
  * Approve a proposal
  */
 export const approveProposal = async (id: string): Promise<Proposal> => {
@@ -92,7 +100,7 @@ export const updateProposalStatus = async (id: string, status: string): Promise<
  */
 export const generateCoverLetter = async (jobId: string): Promise<{ coverLetter: string }> => {
     const response = await post<{ success: boolean; data: string }>(API_ENDPOINTS.PROPOSALS + '/cover-letter', { jobTitle: 'Job Application', jobDesc: 'Job Description' }); // TODO: Pass actual job details
-    return { coverLetter: response.data };
+    return { coverLetter: response.data?.data || '' };
 };
 
 export default {
@@ -103,6 +111,7 @@ export default {
     getProposalStats,
     getProposalById,
     createProposal,
+    updateProposal,
     approveProposal,
     rejectProposal,
     updateProposalStatus,

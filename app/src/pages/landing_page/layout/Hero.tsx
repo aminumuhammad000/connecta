@@ -2,10 +2,21 @@ import React, { useState, useEffect } from "react";
 import { Search, Briefcase, Users, Star, DollarSign, Code, Zap, Globe, Rocket, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../../assets/logo.png";
+import { APP_DOMAIN } from "../../../utils/constants";
 
 const Hero = () => {
     const [active, setActive] = useState("freelancer");
     const [index, setIndex] = useState(0);
+    const [query, setQuery] = useState("");
+
+    const handleSearch = () => {
+        const typeParam = active === 'freelancer' ? 'freelancer' : 'job';
+        if (!query.trim()) {
+            window.location.href = `${APP_DOMAIN}/search?type=${typeParam}`;
+            return;
+        }
+        window.location.href = `${APP_DOMAIN}/search?q=${encodeURIComponent(query)}&type=${typeParam}`;
+    };
 
     const titles = [
         "Not Just Jobs, The Right Ones",
@@ -109,10 +120,16 @@ const Hero = () => {
                             <div className="relative group">
                                 <input
                                     type="text"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                     placeholder={active === 'freelancer' ? "Try 'React Developer' or 'Logo Designer'..." : "Try 'Frontend Project' or 'SEO Expert'..."}
                                     className="w-full bg-white border-2 border-transparent bg-gray-50 focus:bg-white focus:border-[#FD6730]/30 rounded-2xl py-5 pl-6 pr-16 outline-none transition-all text-gray-700 font-medium placeholder:text-gray-400 focus:shadow-lg focus:shadow-orange-500/5"
                                 />
-                                <button className="absolute right-3 top-3 bottom-3 aspect-square bg-[#FD6730] hover:bg-[#e05625] text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 group-hover:scale-105 active:scale-95">
+                                <button
+                                    onClick={handleSearch}
+                                    className="absolute right-3 top-3 bottom-3 aspect-square bg-[#FD6730] hover:bg-[#e05625] text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 group-hover:scale-105 active:scale-95"
+                                >
                                     <Search className="w-6 h-6" />
                                 </button>
                             </div>

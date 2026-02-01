@@ -1,6 +1,6 @@
 import axios from "axios";
+import { API_BASE_URL as BASE } from "../utils/constants";
 
-const BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:5000/api";
 const API_URL = `${BASE}/profiles`;
 
 // Get the profile for the authenticated user

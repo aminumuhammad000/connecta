@@ -10,6 +10,8 @@ interface ButtonProps {
     disabled?: boolean;
     loading?: boolean;
     style?: StyleProp<ViewStyle>;
+    textStyle?: StyleProp<TextStyle>;
+    icon?: React.ReactNode;
 }
 
 export default function Button({
@@ -20,6 +22,8 @@ export default function Button({
     disabled = false,
     loading = false,
     style,
+    textStyle,
+    icon,
 }: ButtonProps) {
     const c = useThemeColors();
 
@@ -29,6 +33,7 @@ export default function Button({
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'row',
+            gap: 8,
         };
 
         const sizeStyles = {
@@ -102,7 +107,10 @@ export default function Button({
             {loading ? (
                 <ActivityIndicator color={variant === 'primary' ? '#fff' : c.primary} size="small" />
             ) : (
-                <Text style={getTextStyle()}>{title}</Text>
+                <>
+                    {icon}
+                    <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+                </>
             )}
         </TouchableOpacity>
     );

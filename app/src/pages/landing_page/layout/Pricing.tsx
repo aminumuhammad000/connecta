@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Star, Zap, Shield, Crown, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { APP_DOMAIN } from '../../../utils/constants';
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -105,12 +106,15 @@ const Pricing = () => {
                 ))}
               </ul>
 
-              <button className={`w-full py-4 rounded-xl font-bold text-lg transition-all transform active:scale-95 ${plan.popular
-                ? 'bg-[#FD6730] text-white hover:bg-[#e05625] shadow-lg shadow-orange-500/25'
-                : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
-                }`}>
+              <a
+                href={plan.button === "Contact Sales" ? "/contact" : APP_DOMAIN}
+                className={`w-full py-4 rounded-xl font-bold text-lg text-center transition-all transform active:scale-95 border-none outline-none flex items-center justify-center ${plan.popular
+                  ? 'bg-[#FD6730] text-white hover:bg-[#e05625] shadow-lg shadow-orange-500/25'
+                  : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
+                  }`}
+              >
                 {plan.button}
-              </button>
+              </a>
             </motion.div>
           ))}
         </div>

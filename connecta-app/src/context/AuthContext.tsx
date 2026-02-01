@@ -54,28 +54,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const login = async (credentials: LoginCredentials) => {
+        console.log('🔑 [AuthContext] Login function called');
+        console.log('📧 [AuthContext] Email:', credentials.email);
+
         try {
+            console.log('🌐 [AuthContext] Calling authService.signin...');
             const response = await authService.signin(credentials);
+            console.log('✅ [AuthContext] authService.signin response:', JSON.stringify(response, null, 2));
 
             // Handle potential nested response structure
             const token = response.token || (response as any).data?.token;
             const user = response.user || (response as any).data?.user;
 
+            console.log('🔍 [AuthContext] Extracted token:', token ? '✅ Present' : '❌ Missing');
+            console.log('🔍 [AuthContext] Extracted user:', user ? `✅ ${user.email}` : '❌ Missing');
+
             if (token && user) {
+                console.log('💾 [AuthContext] Saving to storage...');
                 // Save token and user data
                 await storage.saveToken(token);
+                console.log('✅ [AuthContext] Token saved');
                 await storage.saveUserData(user);
+                console.log('✅ [AuthContext] User data saved');
                 await storage.saveUserRole(user.userType);
+                console.log('✅ [AuthContext] User role saved:', user.userType);
 
+                console.log('🔄 [AuthContext] Updating state...');
                 setToken(token);
                 setUser(user);
+                console.log('✅ [AuthContext] Login complete! User:', user.email);
                 return user;
             } else {
-                console.error('Login response missing token/user:', response);
+                console.error('❌ [AuthContext] Login response missing token/user:', response);
                 throw new Error('Login failed: Invalid response from server');
             }
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('❌ [AuthContext] Login error:', error);
+            console.error('❌ [AuthContext] Error details:', JSON.stringify(error, null, 2));
             throw error;
         }
     };

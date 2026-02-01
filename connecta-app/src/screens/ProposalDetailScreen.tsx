@@ -134,9 +134,7 @@ const ProposalDetailScreen: React.FC = () => {
                     <MaterialIcons name="arrow-back" size={22} color={c.text} />
                 </TouchableOpacity>
                 <Text style={[styles.appBarTitle, { color: c.text }]}>Proposal Details</Text>
-                <TouchableOpacity style={styles.iconBtn}>
-                    <MaterialIcons name="more-vert" size={22} color={c.text} />
-                </TouchableOpacity>
+                <View style={{ width: 40 }} />
             </View>
 
             <ScrollView contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
@@ -272,7 +270,17 @@ const ProposalDetailScreen: React.FC = () => {
             {/* Fixed CTA */}
             <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
                 {isFreelancerOwner && status === 'pending' && (
-                    <TouchableOpacity style={[styles.secondaryBtn, { borderColor: c.border }]}>
+                    <TouchableOpacity
+                        style={[styles.secondaryBtn, { borderColor: c.border }]}
+                        onPress={() => {
+                            (navigation as any).navigate('ApplyJob', {
+                                jobId: jobId?._id || jobId,
+                                jobTitle: jobTitle,
+                                proposalId: id,
+                                initialData: proposal
+                            });
+                        }}
+                    >
                         <Text style={[styles.secondaryBtnText, { color: c.text }]}>Edit Proposal</Text>
                     </TouchableOpacity>
                 )}

@@ -27,11 +27,19 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
     const activeProjects = await Project.countDocuments({ status: 'active' });
     const completedProjects = await Project.countDocuments({ status: 'completed' });
 
-    // Get total revenue from payments
-    const paymentRevenue = await Payment.aggregate([
+    // Get total transactions volume (Naira)
+    const paymentVolumeResult = await Payment.aggregate([
+      { $match: { status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    const totalPaymentRevenue = paymentRevenue[0]?.total || 0;
+    const totalPaymentVolume = (paymentVolumeResult[0]?.total || 0) / 100; // Convert Kobo to Naira as Paystack/Gateways use smallest unit
+
+    // Get total paid out (Released from Escrow)
+    const paidOutResult = await Payment.aggregate([
+      { $match: { status: 'completed', escrowStatus: 'released' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalPaidOut = (paidOutResult[0]?.total || 0) / 100;
 
     // Get user growth (monthly)
     const userGrowth = await User.aggregate([
@@ -68,7 +76,8 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
     const weeklyPaymentRevenue = await Payment.aggregate([
       {
         $match: {
-          createdAt: { $gte: sevenDaysAgo }
+          createdAt: { $gte: sevenDaysAgo },
+          status: 'completed'
         }
       },
       {
@@ -86,11 +95,11 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
       amount: item.amount
     }));
 
-    // Get subscription revenue
-    const subscriptionRevenue = await Subscription.aggregate([
+    // Get subscription revenue (Convert Kobo to Naira)
+    const subscriptionRevenueResult = await Subscription.aggregate([
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    const totalSubscriptionRevenue = subscriptionRevenue[0]?.total || 0;
+    const totalSubscriptionRevenue = (subscriptionRevenueResult[0]?.total || 0) / 100;
 
     // Get weekly subscription revenue (last 7 days)
     const weeklySubscriptionRevenue = await Subscription.aggregate([
@@ -144,9 +153,10 @@ export const getAnalyticsStats = async (req: Request, res: Response) => {
           freelancersCount,
           activeProjects,
           completedProjects,
-          paymentRevenue: totalPaymentRevenue,
+          paymentRevenue: totalPaymentVolume,
+          totalPaidOut: totalPaidOut,
           subscriptionRevenue: totalSubscriptionRevenue,
-          totalRevenue: totalPaymentRevenue + totalSubscriptionRevenue,
+          totalRevenue: totalPaymentVolume + totalSubscriptionRevenue,
           activeSubscriptions
         },
         userGrowth: formattedUserGrowth,

@@ -604,7 +604,14 @@ export default function ConnectaAIScreen({ navigation }: any) {
                         </TouchableOpacity>
 
                         <TextInput
-                            style={[styles.input, { backgroundColor: c.card, color: c.text }]}
+                            style={[
+                                styles.input,
+                                {
+                                    backgroundColor: c.card,
+                                    color: c.text,
+                                    textAlignVertical: 'center' // Important for Android multiline
+                                }
+                            ]}
                             value={input}
                             onChangeText={setInput}
                             placeholder="Ask me anything..."

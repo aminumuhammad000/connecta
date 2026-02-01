@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import Input from '../components/Input';
+import Button from '../components/Button';
+import CustomAlert, { AlertType } from '../components/CustomAlert';
 
 export default function SecurityScreen({ navigation }: any) {
     const c = useThemeColors();
@@ -14,147 +19,197 @@ export default function SecurityScreen({ navigation }: any) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    // Animation values
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(20)).current;
+
+    // Alert State
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType }>({
+        title: '',
+        message: '',
+        type: 'success'
+    });
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+            Animated.spring(slideAnim, {
+                toValue: 0,
+                friction: 8,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, []);
+
+    const showCustomAlert = (title: string, message: string, type: AlertType = 'success') => {
+        setAlertConfig({ title, message, type });
+        setAlertVisible(true);
+        if (type === 'success') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else if (type === 'error') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+    };
+
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
-            Alert.alert('Error', 'Please fill in all fields');
+            showCustomAlert('Error', 'Please fill in all fields', 'error');
             return;
         }
         if (newPassword !== confirmPassword) {
-            Alert.alert('Error', 'New passwords do not match');
+            showCustomAlert('Error', 'New passwords do not match', 'error');
             return;
         }
         if (newPassword.length < 8) {
-            Alert.alert('Error', 'Password must be at least 8 characters');
+            showCustomAlert('Error', 'Password must be at least 8 characters', 'error');
             return;
         }
 
         try {
             setIsLoading(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             const { changePassword } = require('../services/authService');
             await changePassword(currentPassword, newPassword);
-            Alert.alert('Success', 'Password changed successfully');
+            showCustomAlert('Success', 'Password changed successfully', 'success');
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
         } catch (error: any) {
             const msg = error.response?.data?.message || error.message || 'Failed to change password';
-            Alert.alert('Error', msg);
+            showCustomAlert('Error', msg, 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
+            <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
+
+            {/* Premium Header */}
             <View style={[styles.header, { borderBottomColor: c.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={c.text} />
+                <TouchableOpacity
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        navigation.goBack();
+                    }}
+                    style={styles.backButton}
+                >
+                    <Ionicons name="chevron-back" size={28} color={c.text} />
                 </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: c.text }]}>Security</Text>
-                <View style={{ width: 24 }} />
+                <Text style={[styles.headerTitle, { color: c.text }]}>Security Settings</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <Text style={[styles.sectionTitle, { color: c.text }]}>Change Password</Text>
-                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>
-                    Update your password to keep your account secure
-                </Text>
+            <Animated.ScrollView
+                contentContainerStyle={styles.content}
+                style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.topSection}>
+                    <View style={[styles.iconCircle, { backgroundColor: c.primary + '15' }]}>
+                        <Ionicons name="lock-closed" size={32} color={c.primary} />
+                    </View>
+                    <Text style={[styles.sectionTitle, { color: c.text }]}>Update Password</Text>
+                    <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>
+                        Keep your account safe by using a strong password that you don't use elsewhere.
+                    </Text>
+                </View>
 
-                <View style={styles.section}>
-                    <Text style={[styles.label, { color: c.subtext }]}>Current Password</Text>
-                    <View style={[styles.inputWrap, { backgroundColor: c.card, borderColor: c.border }]}>
-                        <TextInput
+                <View style={styles.formContainer}>
+                    <View style={styles.inputWrapper}>
+                        <Input
+                            label="CURRENT PASSWORD"
                             value={currentPassword}
                             onChangeText={setCurrentPassword}
-                            style={[styles.input, { color: c.text }]}
-                            secureTextEntry={!showCurrentPassword}
-                            placeholderTextColor={c.subtext}
                             placeholder="Enter current password"
+                            secureTextEntry={!showCurrentPassword}
+                            icon="lock-outline"
                         />
-                        <TouchableOpacity onPress={() => setShowCurrentPassword(!showCurrentPassword)}>
-                            <Ionicons
-                                name={showCurrentPassword ? "eye-outline" : "eye-off-outline"}
+                        <TouchableOpacity
+                            style={styles.eyeIcon}
+                            onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                        >
+                            <MaterialIcons
+                                name={showCurrentPassword ? "visibility" : "visibility-off"}
                                 size={20}
                                 color={c.subtext}
                             />
                         </TouchableOpacity>
                     </View>
-                </View>
 
-                <View style={styles.section}>
-                    <Text style={[styles.label, { color: c.subtext }]}>New Password</Text>
-                    <View style={[styles.inputWrap, { backgroundColor: c.card, borderColor: c.border }]}>
-                        <TextInput
+                    <View style={styles.inputWrapper}>
+                        <Input
+                            label="NEW PASSWORD"
                             value={newPassword}
                             onChangeText={setNewPassword}
-                            style={[styles.input, { color: c.text }]}
-                            secureTextEntry={!showNewPassword}
-                            placeholderTextColor={c.subtext}
                             placeholder="Enter new password"
+                            secureTextEntry={!showNewPassword}
+                            icon="vpn-key"
                         />
-                        <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)}>
-                            <Ionicons
-                                name={showNewPassword ? "eye-outline" : "eye-off-outline"}
+                        <TouchableOpacity
+                            style={styles.eyeIcon}
+                            onPress={() => setShowNewPassword(!showNewPassword)}
+                        >
+                            <MaterialIcons
+                                name={showNewPassword ? "visibility" : "visibility-off"}
                                 size={20}
                                 color={c.subtext}
                             />
                         </TouchableOpacity>
                     </View>
-                </View>
 
-                <View style={styles.section}>
-                    <Text style={[styles.label, { color: c.subtext }]}>Confirm New Password</Text>
-                    <View style={[styles.inputWrap, { backgroundColor: c.card, borderColor: c.border }]}>
-                        <TextInput
+                    <View style={styles.inputWrapper}>
+                        <Input
+                            label="CONFIRM NEW PASSWORD"
                             value={confirmPassword}
                             onChangeText={setConfirmPassword}
-                            style={[styles.input, { color: c.text }]}
-                            secureTextEntry={!showConfirmPassword}
-                            placeholderTextColor={c.subtext}
                             placeholder="Confirm new password"
+                            secureTextEntry={!showConfirmPassword}
+                            icon="check-circle-outline"
                         />
-                        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                            <Ionicons
-                                name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                        <TouchableOpacity
+                            style={styles.eyeIcon}
+                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                            <MaterialIcons
+                                name={showConfirmPassword ? "visibility" : "visibility-off"}
                                 size={20}
                                 color={c.subtext}
                             />
                         </TouchableOpacity>
                     </View>
+
+                    <Button
+                        title="Update Password"
+                        onPress={handleChangePassword}
+                        loading={isLoading}
+                        variant="primary"
+                        size="large"
+                        style={styles.saveButton}
+                    />
                 </View>
 
-                <TouchableOpacity
-                    style={[styles.saveButton, { backgroundColor: c.primary, opacity: isLoading ? 0.7 : 1 }]}
-                    onPress={handleChangePassword}
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text style={styles.saveButtonText}>Change Password</Text>
-                    )}
-                </TouchableOpacity>
+                <View style={styles.infoBox}>
+                    <Ionicons name="information-circle-outline" size={20} color={c.subtext} />
+                    <Text style={[styles.infoText, { color: c.subtext }]}>
+                        Your password must be at least 8 characters long and include a mix of letters, numbers, and symbols.
+                    </Text>
+                </View>
+            </Animated.ScrollView>
 
-                <View style={[styles.divider, { backgroundColor: c.border }]} />
-
-                <Text style={[styles.sectionTitle, { color: c.text }]}>Two-Factor Authentication</Text>
-                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>
-                    Add an extra layer of security to your account
-                </Text>
-
-                <TouchableOpacity style={[styles.optionRow, { borderColor: c.border }]}>
-                    <View style={styles.optionLeft}>
-                        <Ionicons name="shield-checkmark-outline" size={22} color={c.primary} />
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.optionTitle, { color: c.text }]}>Enable 2FA</Text>
-                            <Text style={[styles.optionSubtitle, { color: c.subtext }]}>
-                                Protect your account with 2FA
-                            </Text>
-                        </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={c.subtext} />
-                </TouchableOpacity>
-            </ScrollView>
+            <CustomAlert
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type={alertConfig.type}
+                onClose={() => setAlertVisible(false)}
+            />
         </SafeAreaView>
     );
 }
@@ -167,86 +222,78 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        borderBottomWidth: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: StyleSheet.hairlineWidth,
     },
     backButton: {
         padding: 4,
     },
     headerTitle: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 18,
+        fontWeight: '700',
+        letterSpacing: -0.5,
     },
     content: {
-        padding: 16,
+        padding: 24,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    sectionSubtitle: {
-        fontSize: 13,
-        marginBottom: 20,
-    },
-    section: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 13,
-        fontWeight: '500',
-        marginBottom: 8,
-    },
-    inputWrap: {
-        flexDirection: 'row',
+    topSection: {
         alignItems: 'center',
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        gap: 8,
+        marginBottom: 32,
     },
-    input: {
-        flex: 1,
-        height: 48,
-        fontSize: 15,
-    },
-    saveButton: {
-        marginTop: 8,
-        height: 48,
-        borderRadius: 12,
+    iconCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         alignItems: 'center',
         justifyContent: 'center',
+        marginBottom: 20,
     },
-    saveButtonText: {
-        color: '#fff',
+    sectionTitle: {
+        fontSize: 24,
+        fontWeight: '800',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    sectionSubtitle: {
         fontSize: 15,
-        fontWeight: '600',
+        textAlign: 'center',
+        lineHeight: 22,
+        paddingHorizontal: 10,
     },
-    divider: {
-        height: 1,
-        marginVertical: 32,
+    formContainer: {
+        gap: 8,
     },
-    optionRow: {
+    inputWrapper: {
+        position: 'relative',
+    },
+    eyeIcon: {
+        position: 'absolute',
+        right: 14,
+        top: 40, // Adjusted for label height in Input component
+        padding: 4,
+    },
+    saveButton: {
+        marginTop: 16,
+        borderRadius: 14,
+        shadowColor: '#FD6730',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    infoBox: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        backgroundColor: 'rgba(0,0,0,0.03)',
         padding: 16,
-        borderWidth: 1,
         borderRadius: 12,
-        marginTop: 12,
-    },
-    optionLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        marginTop: 32,
         gap: 12,
+        alignItems: 'flex-start',
+    },
+    infoText: {
         flex: 1,
-    },
-    optionTitle: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    optionSubtitle: {
-        fontSize: 12,
-        marginTop: 2,
+        fontSize: 13,
+        lineHeight: 18,
     },
 });

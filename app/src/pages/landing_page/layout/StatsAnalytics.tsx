@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Users, Code, CheckCircle, DollarSign, Loader2,
     Smartphone, Palette, Megaphone, FileText, Video,
     Cpu, Music, Briefcase, MessageCircle, Database, PenTool
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { API_BASE_URL } from '../../../utils/constants';
 
 const categories = [
     { label: "Programming & Tech", icon: Code, desc: "Build robust platforms" },
@@ -21,29 +22,44 @@ const categories = [
 ];
 
 const StatsAnalytics = () => {
-    const [stats, setStats] = useState({
-        totalUsers: 0,
-        freelancersCount: 0,
-        completedProjects: 0,
-        paymentRevenue: 0,
-        loading: true
+    const [stats, setStats] = useState(() => {
+        // Try to load initial stats from localStorage (Browser Cache)
+        const savedStats = localStorage.getItem('connecta_stats');
+        if (savedStats) {
+            try {
+                return { ...JSON.parse(savedStats), loading: false };
+            } catch (e) {
+                console.error("Failed to parse cached stats");
+            }
+        }
+        return {
+            totalUsers: 0,
+            freelancersCount: 0,
+            completedProjects: 0,
+            paymentRevenue: 0,
+            loading: true
+        };
     });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await fetch('https://api.myconnecta.ng/api/analytics/stats');
+                const response = await fetch(`${API_BASE_URL}/analytics/stats`);
                 const data = await response.json();
 
                 if (data.success && data.data?.overview) {
-                    const { totalUsers, freelancersCount, completedProjects, paymentRevenue } = data.data.overview;
-                    setStats({
-                        totalUsers,
-                        freelancersCount,
-                        completedProjects,
-                        paymentRevenue,
+                    const { totalUsers, freelancersCount, completedProjects, totalPaidOut } = data.data.overview;
+                    const newStats = {
+                        totalUsers: totalUsers || 0,
+                        freelancersCount: freelancersCount || 0,
+                        completedProjects: completedProjects || 0,
+                        paymentRevenue: totalPaidOut || 0,
                         loading: false
-                    });
+                    };
+                    setStats(newStats);
+
+                    // Save to localStorage (Platform Cache)
+                    localStorage.setItem('connecta_stats', JSON.stringify(newStats));
                 }
             } catch (error) {
                 console.error("Failed to fetch stats:", error);
@@ -56,6 +72,7 @@ const StatsAnalytics = () => {
 
     // Helper to format numbers (e.g., 1200 -> 1.2k)
     const formatNumber = (num: number) => {
+        if (num === undefined || num === null) return "0";
         if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M+';
         if (num >= 1000) return (num / 1000).toFixed(1) + 'k+';
         return num.toString();
@@ -63,6 +80,7 @@ const StatsAnalytics = () => {
 
     // Helper to format currency
     const formatCurrency = (amount: number) => {
+        if (amount === undefined || amount === null) return "₦0";
         if (amount >= 1000000) return '₦' + (amount / 1000000).toFixed(1) + 'M+';
         if (amount >= 1000) return '₦' + (amount / 1000).toFixed(1) + 'k+';
         return '₦' + amount.toLocaleString();

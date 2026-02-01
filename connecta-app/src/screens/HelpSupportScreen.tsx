@@ -1,16 +1,147 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Linking, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRole } from '../context/RoleContext';
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+type FAQItem = {
+  question: string;
+  answer: string;
+};
+
+type FAQCategory = {
+  id: string;
+  title: string;
+  items: FAQItem[];
+};
+
+const faqData: FAQCategory[] = [
+  {
+    id: 'general',
+    title: 'General Questions',
+    items: [
+      {
+        question: 'What is Connecta?',
+        answer: 'Connecta is a premium freelancing platform designed to connect visionary clients with top-tier African talent. We focus on quality, security, and fostering long-term professional relationships.'
+      },
+      {
+        question: 'Is Connecta free to join?',
+        answer: 'Yes, signing up for Connecta is completely free for both freelancers and clients. We only charge service fees when you successfully complete a project or hire talent.'
+      },
+      {
+        question: 'Who can use Connecta?',
+        answer: 'Connecta is open to skilled professionals (freelancers) looking for work and individuals or businesses (clients) looking to hire talent. We verify all users to ensure a high-quality community.'
+      }
+    ]
+  },
+  {
+    id: 'account',
+    title: 'Account & Verification',
+    items: [
+      {
+        question: 'How do I verify my identity?',
+        answer: 'To verify your identity, go to Settings > Verification. You will need to upload a valid government-issued ID (Passport, NIN, or Driver\'s License) and complete a facial verification scan. Verification typically takes 24-48 hours.'
+      },
+      {
+        question: 'Why is my account pending approval?',
+        answer: 'We manually review profiles to maintain quality. If your account is pending, please ensure your profile is 100% complete, including a professional photo, detailed bio, and portfolio items.'
+      },
+      {
+        question: 'Can I change my username or email?',
+        answer: 'For security reasons, you cannot change your username once set. You can update your email address in Settings, but you will need to verify the new email before the change takes effect.'
+      }
+    ]
+  },
+  {
+    id: 'jobs',
+    title: 'Jobs & Projects',
+    items: [
+      {
+        question: 'How do I find work on Connecta?',
+        answer: 'Browse the "Jobs" tab to see available projects that match your skills. You can filter by category, budget, and difficulty. When you find a job you like, submit a detailed proposal outlining why you are the best fit.'
+      },
+      {
+        question: 'What is Connecta Collabo?',
+        answer: 'Connecta Collabo is our unique feature for team-based hiring. It allows clients to hire a complete team (e.g., a developer, designer, and product manager) for complex projects, rather than managing individual freelancers separately.'
+      },
+      {
+        question: 'How does the bidding system work?',
+        answer: 'When applying for a job, you submit a "bid" which is your proposed price for the project. You can bid the client\'s budget, or higher/lower depending on your expertise and the project scope.'
+      }
+    ]
+  },
+  {
+    id: 'payments',
+    title: 'Payments & Wallet',
+    items: [
+      {
+        question: 'How do I get paid?',
+        answer: 'Connecta uses a secure Escrow system. When a client hires you, they deposit the funds into Escrow. Once you complete the work and the client approves it, the funds are released to your Connecta Wallet.'
+      },
+      {
+        question: 'What are the service fees?',
+        answer: 'Connecta charges a flat 10% service fee on all completed projects. This fee covers payment processing, platform maintenance, and 24/7 support.'
+      },
+      {
+        question: 'How do I withdraw my earnings?',
+        answer: 'You can withdraw funds from your Connecta Wallet directly to your local bank account. Withdrawals are processed within 24 hours. Go to Wallet > Withdraw to initiate a transfer.'
+      }
+    ]
+  },
+  {
+    id: 'safety',
+    title: 'Safety & Security',
+    items: [
+      {
+        question: 'Is my money safe?',
+        answer: 'Absolutely. We use industry-standard encryption and a secure Escrow system. Clients pay upfront, but funds are held safely until the work is delivered and approved, protecting both parties.'
+      },
+      {
+        question: 'What happens if a client refuses to pay?',
+        answer: 'If a dispute arises, you can initiate our Dispute Resolution process. Our support team will review the project communications and deliverables to make a fair judgment based on the contract terms.'
+      },
+      {
+        question: 'How do I report a suspicious user?',
+        answer: 'If you encounter any suspicious activity or a user violating our terms, please use the "Report" button on their profile or message, or contact support immediately.'
+      }
+    ]
+  }
+];
+
 const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const { role } = useRole();
 
-  const [open, setOpen] = useState<{ [k: string]: boolean }>({ account: true });
-  const toggle = (k: string) => setOpen(s => ({ ...s, [k]: !s[k] }));
+  // State to track expanded categories
+  const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({
+    'general': true // Open first one by default
+  });
+
+  // State to track expanded questions within categories
+  // Format: "categoryId-questionIndex"
+  const [expandedQuestions, setExpandedQuestions] = useState<{ [key: string]: boolean }>({});
+
+  const toggleCategory = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedCategories(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const toggleQuestion = (categoryId: string, index: number) => {
+    const key = `${categoryId}-${index}`;
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedQuestions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   const handleContact = async (type: 'whatsapp' | 'email' | 'call') => {
     try {
@@ -49,90 +180,80 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
             <TextInput
               placeholder="What can we help you with?"
               placeholderTextColor={c.subtext}
-              style={{ flex: 1, color: c.text }}
+              style={{ flex: 1, color: c.text, height: '100%' }}
             />
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 96 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 96 }} showsVerticalScrollIndicator={false}>
           {/* FAQ Headline */}
-          <Text style={{ color: c.text, fontSize: 24, fontWeight: '600', paddingHorizontal: 16, paddingTop: 12 }}>Frequently Asked Questions</Text>
+          <Text style={{ color: c.text, fontSize: 24, fontWeight: '600', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}>
+            Frequently Asked Questions
+          </Text>
 
-          {/* Accordions */}
-          <View style={{ paddingHorizontal: 16, marginTop: 4 }}>
-            {/* Getting Started */}
-            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
-              <TouchableOpacity onPress={() => toggle('getting')} style={styles.accordionHeader}>
-                <Text style={[styles.accTitle, { color: c.text }]}>Getting Started</Text>
-                <MaterialIcons name="expand-more" size={22} color={c.text} style={{ transform: [{ rotate: open['getting'] ? '180deg' : '0deg' }] }} />
-              </TouchableOpacity>
-              {open['getting'] && (
-                <Text style={[styles.accBody, { color: c.subtext }]}>Here you'll find answers to common questions about setting up your freelancer profile, browsing jobs, and submitting your first proposal.</Text>
-              )}
-            </View>
+          {/* FAQ Categories */}
+          <View style={{ paddingHorizontal: 16 }}>
+            {faqData.map((category) => (
+              <View key={category.id} style={[styles.categoryContainer, { borderColor: c.border, backgroundColor: c.card }]}>
+                {/* Category Header */}
+                <TouchableOpacity
+                  onPress={() => toggleCategory(category.id)}
+                  style={styles.categoryHeader}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.categoryTitle, { color: c.text }]}>{category.title}</Text>
+                  <MaterialIcons
+                    name="expand-more"
+                    size={24}
+                    color={c.subtext}
+                    style={{ transform: [{ rotate: expandedCategories[category.id] ? '180deg' : '0deg' }] }}
+                  />
+                </TouchableOpacity>
 
-            {/* Account & Profile (open by default) */}
-            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
-              <TouchableOpacity onPress={() => toggle('account')} style={styles.accordionHeader}>
-                <Text style={[styles.accTitle, { color: open['account'] ? c.primary : c.text }]}>
-                  Account & Profile
-                </Text>
-                <MaterialIcons name="expand-more" size={22} color={open['account'] ? c.primary : c.text} style={{ transform: [{ rotate: open['account'] ? '180deg' : '0deg' }] }} />
-              </TouchableOpacity>
-              {open['account'] && (
-                <View style={{ paddingBottom: 8 }}>
-                  {['How do I verify my identity?', 'How can I reset my password?', 'Can I change my username?'].map(link => (
-                    <TouchableOpacity key={link} style={styles.linkRow}>
-                      <Text style={{ color: c.text }}>{link}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
+                {/* Questions List (Visible if Category is Expanded) */}
+                {expandedCategories[category.id] && (
+                  <View style={styles.questionsList}>
+                    {category.items.map((item, index) => {
+                      const qKey = `${category.id}-${index}`;
+                      const isExpanded = expandedQuestions[qKey];
 
-            {/* Finding Work */}
-            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
-              <TouchableOpacity onPress={() => toggle('work')} style={styles.accordionHeader}>
-                <Text style={[styles.accTitle, { color: c.text }]}>Finding Work</Text>
-                <MaterialIcons name="expand-more" size={22} color={c.text} style={{ transform: [{ rotate: open['work'] ? '180deg' : '0deg' }] }} />
-              </TouchableOpacity>
-              {open['work'] && (
-                <Text style={[styles.accBody, { color: c.subtext }]}>Discover how to effectively search for jobs, write winning proposals, and understand the client interview process.</Text>
-              )}
-            </View>
+                      return (
+                        <View key={index} style={[
+                          styles.questionItem,
+                          { borderTopColor: c.border },
+                          index === 0 && { borderTopWidth: 0 }
+                        ]}>
+                          <TouchableOpacity
+                            onPress={() => toggleQuestion(category.id, index)}
+                            style={styles.questionHeader}
+                          >
+                            <Text style={[styles.questionText, { color: isExpanded ? c.primary : c.text }]}>
+                              {item.question}
+                            </Text>
+                            <MaterialIcons
+                              name={isExpanded ? "remove" : "add"}
+                              size={20}
+                              color={isExpanded ? c.primary : c.subtext}
+                            />
+                          </TouchableOpacity>
 
-            {/* Managing Projects */}
-            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
-              <TouchableOpacity onPress={() => toggle('projects')} style={styles.accordionHeader}>
-                <Text style={[styles.accTitle, { color: c.text }]}>Managing Projects</Text>
-                <MaterialIcons name="expand-more" size={22} color={c.text} style={{ transform: [{ rotate: open['projects'] ? '180deg' : '0deg' }] }} />
-              </TouchableOpacity>
-              {open['projects'] && (
-                <Text style={[styles.accBody, { color: c.subtext }]}>Learn about project milestones, communication with clients, submitting deliverables, and handling project disputes.</Text>
-              )}
-            </View>
-
-            {/* Payments & Billing */}
-            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }}>
-              <TouchableOpacity onPress={() => toggle('payments')} style={styles.accordionHeader}>
-                <Text style={[styles.accTitle, { color: c.text }]}>Payments & Billing</Text>
-                <MaterialIcons name="expand-more" size={22} color={c.text} style={{ transform: [{ rotate: open['payments'] ? '180deg' : '0deg' }] }} />
-              </TouchableOpacity>
-              {open['payments'] && (
-                <View style={{ paddingBottom: 8 }}>
-                  {['What are the service fees?', 'How do I withdraw my earnings?'].map(link => (
-                    <TouchableOpacity key={link} style={styles.linkRow}>
-                      <Text style={{ color: c.text }}>{link}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
+                          {isExpanded && (
+                            <Text style={[styles.answerText, { color: c.subtext }]}>
+                              {item.answer}
+                            </Text>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            ))}
           </View>
 
           {/* Contact Options */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 24, gap: 12 }}>
-            <Text style={{ color: c.text, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>Contact Us</Text>
+          <View style={{ paddingHorizontal: 16, paddingTop: 32, gap: 12 }}>
+            <Text style={{ color: c.text, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>Still need help?</Text>
 
             <TouchableOpacity
               style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
@@ -142,8 +263,8 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
                 <MaterialIcons name="chat" size={24} color="#25D366" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: c.text }]}>WhatsApp</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>Chat with our support team</Text>
+                <Text style={[styles.contactLabel, { color: c.text }]}>WhatsApp Support</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>Chat instantly with our team</Text>
               </View>
               <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
             </TouchableOpacity>
@@ -156,7 +277,7 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
                 <MaterialIcons name="email" size={24} color={c.primary} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: c.text }]}>Email</Text>
+                <Text style={[styles.contactLabel, { color: c.text }]}>Email Support</Text>
                 <Text style={{ color: c.subtext, fontSize: 13 }}>support@myconnecta.ng</Text>
               </View>
               <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
@@ -171,28 +292,87 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.contactLabel, { color: c.text }]}>Call Us</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>08128655555</Text>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>Mon-Fri, 9am - 5pm</Text>
               </View>
               <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
             </TouchableOpacity>
           </View>
         </ScrollView>
-
-        {/* Bottom Nav */}
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  searchWrap: { height: 56, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center' },
-  accordionHeader: { paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  accTitle: { fontSize: 14, fontWeight: '600' },
-  accBody: { fontSize: 13, lineHeight: 20, paddingBottom: 8 },
-  linkRow: { paddingVertical: 6 },
-  contactRow: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
-  iconBox: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  contactLabel: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  searchWrap: {
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  categoryContainer: {
+    marginBottom: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  categoryHeader: {
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  questionsList: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  questionItem: {
+    borderTopWidth: 1,
+    paddingVertical: 12,
+  },
+  questionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  questionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    marginRight: 12,
+  },
+  answerText: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 8,
+    paddingRight: 8,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 16,
+    borderRadius: 16,
+    borderWidth: 1
+  },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  contactLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4
+  },
 });
 
 export default HelpSupportScreen;

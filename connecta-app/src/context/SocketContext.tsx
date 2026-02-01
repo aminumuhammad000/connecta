@@ -7,6 +7,10 @@ interface SocketContextType {
     socket: Socket | null;
     isConnected: boolean;
     onlineUsers: string[];
+    unreadCount: number;
+    unreadNotificationCount: number;
+    refreshUnreadCount: () => Promise<void>;
+    refreshUnreadNotificationCount: () => Promise<void>;
 }
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
@@ -16,6 +20,34 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+
+    // Function to fetch unread message count
+    const refreshUnreadCount = async () => {
+        if (user?._id) {
+            try {
+                const { getTotalUnreadCount } = require('../services/messageService');
+                const count = await getTotalUnreadCount(user._id);
+                setUnreadCount(count);
+            } catch (error) {
+                console.error('[Socket] Failed to fetch unread count:', error);
+            }
+        }
+    };
+
+    // Function to fetch unread notification count
+    const refreshUnreadNotificationCount = async () => {
+        if (user?._id) {
+            try {
+                const { getUnreadCount } = require('../services/notificationService');
+                const count = await getUnreadCount();
+                setUnreadNotificationCount(count);
+            } catch (error) {
+                console.error('[Socket] Failed to fetch unread notification count:', error);
+            }
+        }
+    };
 
     useEffect(() => {
         if (!user || !token || !API_BASE_URL) {
@@ -47,6 +79,8 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             console.log('Socket connected:', socketInstance.id);
             setIsConnected(true);
             socketInstance.emit('user:join', user._id);
+            refreshUnreadCount();
+            refreshUnreadNotificationCount();
         });
 
         socketInstance.on('disconnect', () => {
@@ -66,6 +100,28 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             setOnlineUsers(prev => prev.filter(id => id !== data.userId));
         });
 
+        // Message events
+        socketInstance.on('message:receive', () => {
+            refreshUnreadCount();
+        });
+
+        socketInstance.on('conversation:update', () => {
+            refreshUnreadCount();
+        });
+
+        socketInstance.on('message:read', () => {
+            refreshUnreadCount();
+        });
+
+        // Notification events
+        socketInstance.on('notification:new', () => {
+            refreshUnreadNotificationCount();
+        });
+
+        socketInstance.on('notification:read', () => {
+            refreshUnreadNotificationCount();
+        });
+
         setSocket(socketInstance);
 
         return () => {
@@ -73,8 +129,24 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         };
     }, [user, token]);
 
+    // Initial fetch when user changes
+    useEffect(() => {
+        if (user?._id) {
+            refreshUnreadCount();
+            refreshUnreadNotificationCount();
+        }
+    }, [user]);
+
     return (
-        <SocketContext.Provider value={{ socket, isConnected, onlineUsers }}>
+        <SocketContext.Provider value={{
+            socket,
+            isConnected,
+            onlineUsers,
+            unreadCount,
+            unreadNotificationCount,
+            refreshUnreadCount,
+            refreshUnreadNotificationCount
+        }}>
             {children}
         </SocketContext.Provider>
     );

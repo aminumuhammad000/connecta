@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Star, Zap, Smartphone, CheckCircle, Download } from 'lucide-react';
+import { Star, Zap, CheckCircle, Download } from 'lucide-react';
 
 const MobileApp = () => {
     return (
@@ -92,25 +91,36 @@ const MobileApp = () => {
                         transition={{ delay: 0.4 }}
                         className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
                     >
-                        <button className="flex items-center gap-3 px-6 py-3 bg-gray-900 text-white rounded-xl shadow-xl hover:bg-black transition-transform hover:scale-105 active:scale-95 w-full sm:w-auto justify-center group">
-                            <span className="text-3xl group-hover:-translate-y-1 transition-transform"></span>
+                        {/* Android APK Link (Active) */}
+                        <a
+                            href="https://expo.dev/artifacts/eas/pPCfm8hHyBmVTkekp48Y7s.apk"
+                            className="flex items-center gap-3 px-6 py-3 bg-gray-900 text-white rounded-xl shadow-xl hover:bg-black transition-transform hover:scale-105 active:scale-95 w-full sm:w-auto justify-center group"
+                        >
+                            <Download className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
                             <div className="text-left">
-                                <div className="text-[10px] uppercase font-bold text-gray-400 leading-none">Download on the</div>
+                                <div className="text-[10px] uppercase font-bold text-gray-400 leading-none">Download for</div>
+                                <div className="text-sm font-bold leading-none mt-1">Android (.apk)</div>
+                            </div>
+                        </a>
+
+                        {/* Coming Soon Stores */}
+                        <div className="flex items-center gap-3 px-6 py-3 bg-white border border-gray-200 text-gray-400 rounded-xl shadow-sm cursor-not-allowed opacity-70 w-full sm:w-auto justify-center">
+                            <span className="text-3xl grayscale"></span>
+                            <div className="text-left">
+                                <div className="text-[10px] uppercase font-bold opacity-60 leading-none">Coming Soon</div>
                                 <div className="text-sm font-bold leading-none mt-1">App Store</div>
                             </div>
-                        </button>
+                        </div>
 
-                        <button className="flex items-center gap-3 px-6 py-3 bg-gray-900 text-white rounded-xl shadow-xl hover:bg-black transition-transform hover:scale-105 active:scale-95 w-full sm:w-auto justify-center group">
-                            {/* Simple Play Store Icon Shape */}
-                            <svg className="w-7 h-7 group-hover:-translate-y-1 transition-transform" viewBox="0 0 24 24">
-                                <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,25.88L21,17.25C21.77,16.81 21.77,15.69 21,15.25L5.78,6.47L16.81,17.5V15.12M14.77,10.92L4.35,0.5L14.77,10.92M15.42,11.58L15.42,11.58L15.42,11.58Z" fill="white" />
-                                <polygon points="21,12 5,4 5,20" fill="white" />
+                        <div className="flex items-center gap-3 px-6 py-3 bg-white border border-gray-200 text-gray-400 rounded-xl shadow-sm cursor-not-allowed opacity-70 w-full sm:w-auto justify-center">
+                            <svg className="w-7 h-7 grayscale opacity-60" viewBox="0 0 24 24">
+                                <path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,25.88L21,17.25C21.77,16.81 21.77,15.69 21,15.25L5.78,6.47L16.81,17.5V15.12M14.77,10.92L4.35,0.5L14.77,10.92M15.42,11.58L15.42,11.58L15.42,11.58Z" fill="currentColor" />
                             </svg>
                             <div className="text-left">
-                                <div className="text-[10px] uppercase font-bold text-gray-400 leading-none">Get it on</div>
+                                <div className="text-[10px] uppercase font-bold opacity-60 leading-none">Coming Soon</div>
                                 <div className="text-sm font-bold leading-none mt-1">Google Play</div>
                             </div>
-                        </button>
+                        </div>
                     </motion.div>
                 </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Rocket, Zap, TrendingUp, Globe, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { APP_DOMAIN } from '../../../utils/constants';
 
 const CallToAction = () => {
     const [index, setIndex] = useState(0);
@@ -85,15 +86,17 @@ const CallToAction = () => {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 relative z-20">
-                    <motion.button
+                    <motion.a
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-12 py-6 bg-white text-[#FD6730] text-xl font-extrabold rounded-3xl shadow-xl shadow-orange-900/20 flex items-center gap-3 transition-colors hover:bg-orange-50"
-                        onClick={() => window.location.href = '/signup'}
+                        className="px-12 py-6 bg-white text-[#FD6730] text-xl font-extrabold rounded-3xl shadow-xl shadow-orange-900/20 flex items-center gap-3 transition-colors hover:bg-orange-50 cursor-pointer"
+                        href={APP_DOMAIN}
+                        target="_blank"
+                        rel="noopener noreferrer"
                     >
                         <Rocket className="w-6 h-6 fill-current" />
                         Launch Project
-                    </motion.button>
+                    </motion.a>
                 </div>
 
             </div>

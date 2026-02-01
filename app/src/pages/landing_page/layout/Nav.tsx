@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import logo from "../../../assets/logo.png";
 import { Menu, X, ChevronRight, User } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
+import { APP_DOMAIN } from "../../../utils/constants";
 
 const Nav = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -16,9 +17,10 @@ const Nav = () => {
   }, []);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Features", href: "#features" },
-    { name: "How It Works", href: "#how-it-works" },
+    { name: "Home", href: "/" },
+    { name: "Features", href: "/features" },
+    { name: "How It Works", href: "/how-it-works" },
+    { name: "Download", href: "/download-app" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
@@ -34,9 +36,9 @@ const Nav = () => {
 
         {/* Logo Area */}
         <div className="flex items-center gap-2">
-          <div className="relative group cursor-pointer">
+          <a href="/" className="relative group cursor-pointer">
             <img src={logo} alt="Connecta Logo" className="h-12 w-auto object-contain relative z-10" />
-          </div>
+          </a>
         </div>
 
         {/* Desktop Nav */}
@@ -55,11 +57,11 @@ const Nav = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-4">
-          <a href="https://app.myconnecta.ng" className="text-sm font-bold text-gray-900 hover:text-[#FD6730] transition-colors">
+          <a href={APP_DOMAIN} className="text-sm font-bold text-gray-900 hover:text-[#FD6730] transition-colors">
             Log In
           </a>
           <a
-            href="https://app.myconnecta.ng"
+            href={APP_DOMAIN}
             className="px-5 py-2.5 rounded-full bg-[#FD6730] text-white text-sm font-bold shadow-lg shadow-orange-500/20 hover:bg-[#e05625] hover:shadow-orange-500/30 hover:-translate-y-0.5 transition-all flex items-center gap-2"
           >
             Sign Up Free
@@ -98,10 +100,10 @@ const Nav = () => {
               ))}
               <hr className="border-gray-100" />
               <div className="flex flex-col gap-4 pt-2">
-                <a href="https://app.myconnecta.ng" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-200 font-bold text-gray-600">
+                <a href={APP_DOMAIN} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-gray-200 font-bold text-gray-600">
                   <User className="w-4 h-4" /> Log In
                 </a>
-                <a href="https://app.myconnecta.ng" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#FD6730] text-white font-bold shadow-lg shadow-orange-500/20">
+                <a href={APP_DOMAIN} className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#FD6730] text-white font-bold shadow-lg shadow-orange-500/20">
                   Sign Up Free <ChevronRight className="w-4 h-4" />
                 </a>
               </div>

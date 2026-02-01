@@ -16,9 +16,9 @@ export const sendAIQuery = async (input: string, userId: string, userType: 'clie
         userType,
     });
 
-    // The agent returns { success: true, result: { message: "...", data: "...", ... } }
+    // The agent returns { success: true, data: { result: { message: "...", data: "...", ... } } }
     // We want the text content, which is usually in result.message or result.data
-    const result = response.result;
+    const result = response.data?.result;
     if (!result) return '';
 
     // If it's a direct text response

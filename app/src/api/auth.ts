@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_BASE_URL } from "../utils/constants";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const API_URL = API_BASE_URL;
 
 export const signup = (data: any) => axios.post(`${API_URL}/users/signup`, data);
 export const login = (data: any) => axios.post(`${API_URL}/users/signin`, data);

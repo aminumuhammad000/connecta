@@ -12,12 +12,13 @@ const ApplyJobScreen: React.FC = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const route = useRoute<any>();
-    const { jobId, jobTitle, jobBudget } = route.params || {};
+    const { jobId, jobTitle, jobBudget, proposalId, initialData } = route.params || {};
+    const isEditing = !!proposalId;
     const { showAlert } = useInAppAlert();
 
-    const [coverLetter, setCoverLetter] = useState('');
-    const [proposedRate, setProposedRate] = useState(jobBudget ? String(jobBudget) : '');
-    const [duration, setDuration] = useState('');
+    const [coverLetter, setCoverLetter] = useState(initialData?.coverLetter || initialData?.description || '');
+    const [proposedRate, setProposedRate] = useState(initialData?.budget?.amount ? String(initialData.budget.amount) : (jobBudget ? String(jobBudget) : ''));
+    const [duration, setDuration] = useState(initialData?.estimatedDuration || '');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,7 +49,7 @@ const ApplyJobScreen: React.FC = () => {
                 endDate.setDate(endDate.getDate() + 30);
             }
 
-            await proposalService.createProposal({
+            const proposalData: any = {
                 jobId,
                 description: coverLetter,
                 coverLetter: coverLetter,
@@ -65,12 +66,23 @@ const ApplyJobScreen: React.FC = () => {
                 level: 'intermediate',
                 priceType: 'fixed',
                 status: 'pending'
-            });
-            showAlert({
-                title: 'Proposal Submitted',
-                message: 'Good luck! The client will review it shortly.',
-                type: 'success'
-            });
+            };
+
+            if (isEditing) {
+                await proposalService.updateProposal(proposalId, proposalData);
+                showAlert({
+                    title: 'Proposal Updated',
+                    message: 'Your proposal has been updated successfully.',
+                    type: 'success'
+                });
+            } else {
+                await proposalService.createProposal(proposalData);
+                showAlert({
+                    title: 'Proposal Submitted',
+                    message: 'Good luck! The client will review it shortly.',
+                    type: 'success'
+                });
+            }
             setTimeout(() => navigation.goBack(), 1500);
         } catch (error: any) {
             console.error('Submit proposal error:', error);
@@ -108,7 +120,7 @@ const ApplyJobScreen: React.FC = () => {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
                         <MaterialIcons name="close" size={22} color={c.text} />
                     </TouchableOpacity>
-                    <Text style={[styles.appBarTitle, { color: c.text }]}>Apply to Job</Text>
+                    <Text style={[styles.appBarTitle, { color: c.text }]}>{isEditing ? 'Edit Proposal' : 'Apply to Job'}</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -184,12 +196,12 @@ const ApplyJobScreen: React.FC = () => {
                         {isSubmitting ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.submitText}>Submit Proposal</Text>
+                            <Text style={styles.submitText}>{isEditing ? 'Update Proposal' : 'Submit Proposal'}</Text>
                         )}
                     </TouchableOpacity>
                 </View>
-            </View>
-        </SafeAreaView>
+            </View >
+        </SafeAreaView >
     );
 };
 
