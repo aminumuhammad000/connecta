@@ -44,7 +44,16 @@
       }
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "useNoMessagingMetaData": true
+          }
+        }
+      ]
     ]
   }
 }

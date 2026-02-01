@@ -1,14 +1,28 @@
-// import analytics from '@react-native-firebase/analytics';
+import { Platform } from 'react-native';
+
+let analytics: any;
+if (Platform.OS !== 'web') {
+    analytics = require('@react-native-firebase/analytics').default;
+}
 
 /**
- * Log a custom event to Firebase Analytics
+ * Log a custom event to Firebase Analytics / Google Analytics
  * @param eventName Name of the event (e.g., 'login', 'signup_complete')
  * @param params Optional parameters to include with the event
  */
 export const logEvent = async (eventName: string, params?: object) => {
     try {
-        // await analytics().logEvent(eventName, params);
-        console.log(`[Analytics] Event logged: ${eventName}`, params || '');
+        if (Platform.OS === 'web') {
+            if (typeof window !== 'undefined' && (window as any).gtag) {
+                (window as any).gtag('event', eventName, params || {});
+                console.log(`[Analytics-Web] Event logged: ${eventName}`, params || '');
+            } else {
+                console.warn('[Analytics-Web] gtag not found');
+            }
+        } else {
+            await analytics().logEvent(eventName, params || {});
+            console.log(`[Analytics-Native] Event logged: ${eventName}`, params || '');
+        }
     } catch (error) {
         console.error('[Analytics] Error logging event:', error);
     }
@@ -20,8 +34,17 @@ export const logEvent = async (eventName: string, params?: object) => {
  */
 export const setUserId = async (userId: string | null) => {
     try {
-        // await analytics().setUserId(userId);
-        console.log(`[Analytics] User ID set: ${userId}`);
+        if (Platform.OS === 'web') {
+            if (typeof window !== 'undefined' && (window as any).gtag) {
+                (window as any).gtag('config', 'G-93286SQF3N', {
+                    'user_id': userId
+                });
+                console.log(`[Analytics-Web] User ID set: ${userId}`);
+            }
+        } else {
+            await analytics().setUserId(userId);
+            console.log(`[Analytics-Native] User ID set: ${userId}`);
+        }
     } catch (error) {
         console.error('[Analytics] Error setting user ID:', error);
     }
@@ -32,8 +55,12 @@ export const setUserId = async (userId: string | null) => {
  */
 export const logAppOpen = async () => {
     try {
-        // await analytics().logAppOpen();
-        console.log('[Analytics] App open logged');
+        if (Platform.OS === 'web') {
+            logEvent('page_view', { page_title: 'App Open' });
+        } else {
+            await analytics().logAppOpen();
+            console.log('[Analytics-Native] App open logged');
+        }
     } catch (error) {
         console.error('[Analytics] Error logging app open:', error);
     }
@@ -45,8 +72,15 @@ export const logAppOpen = async () => {
  */
 export const setUserProperties = async (properties: { [key: string]: string | null }) => {
     try {
-        // await analytics().setUserProperties(properties);
-        console.log('[Analytics] User properties set:', properties);
+        if (Platform.OS === 'web') {
+            if (typeof window !== 'undefined' && (window as any).gtag) {
+                (window as any).gtag('set', 'user_properties', properties);
+                console.log('[Analytics-Web] User properties set:', properties);
+            }
+        } else {
+            await analytics().setUserProperties(properties);
+            console.log('[Analytics-Native] User properties set:', properties);
+        }
     } catch (error) {
         console.error('[Analytics] Error setting user properties:', error);
     }

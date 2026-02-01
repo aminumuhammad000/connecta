@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useColorScheme, ActivityIndicator, View, Platform, LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -20,6 +20,7 @@ import ClientNavigator from './src/navigation/ClientNavigator';
 import FreelancerNavigator from './src/navigation/FreelancerNavigator';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { logAppOpen, logEvent, setUserId } from './src/utils/analytics';
 
 export default function App() {
   return (
@@ -43,6 +44,8 @@ function AppContent() {
   const { isDark } = useTheme();
   const c = useThemeColors();
   const { showAlert } = useInAppAlert();
+  const navigationRef = useRef<any>();
+  const routeNameRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Skip notification setup on web - not fully supported
@@ -109,6 +112,9 @@ function AppContent() {
       }
     })();
 
+    // Log app open event
+    logAppOpen();
+
     return () => {
       receivedSub?.remove();
       responseSub?.remove();
@@ -116,12 +122,30 @@ function AppContent() {
   }, [showAlert]);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name || null;
+      }}
+      onStateChange={async () => {
+        const previousRouteName = routeNameRef.current;
+        const currentRouteName = navigationRef.current?.getCurrentRoute()?.name || null;
+
+        if (previousRouteName !== currentRouteName && currentRouteName) {
+          await logEvent('screen_view', {
+            screen_name: currentRouteName,
+          });
+          console.log(`[Analytics] Screen view logged: ${currentRouteName}`);
+        }
+        routeNameRef.current = currentRouteName;
+      }}
+    >
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={c.background} />
       <RootNavigation />
     </NavigationContainer>
   );
 }
+
 
 import GettingStartedGuideScreen from './src/screens/GettingStartedGuideScreen';
 import * as storage from './src/utils/storage';
@@ -140,8 +164,11 @@ function RootNavigation() {
   useEffect(() => {
     if (user) {
       setRole(user.userType);
+      setUserId(user.id || user._id || null);
+      logEvent('login_success', { userType: user.userType });
     } else {
       setRole(null);
+      setUserId(null);
     }
   }, [user, setRole]);
 
