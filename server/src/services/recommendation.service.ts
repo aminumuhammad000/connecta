@@ -16,7 +16,9 @@ export class RecommendationService {
             const cached = await redisClient.get(cacheKey);
             if (cached) {
                 console.log(`[Cache] Hits for user recommendations: ${userId}`);
-                return JSON.parse(cached);
+                // Fix: Ensure cached is a string before JSON.parse
+                const data = typeof cached === 'string' ? cached : cached.toString();
+                return JSON.parse(data);
             }
 
             // 1. Fetch User and Profile

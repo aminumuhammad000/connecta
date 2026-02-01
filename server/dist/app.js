@@ -24,6 +24,7 @@ import gigsRoutes from "./routes/gigs.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import insightsRoutes from "./routes/insights.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
+import redisClient from "./config/redis.js";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -218,6 +219,15 @@ io.on("connection", (socket) => {
 });
 // Start Server
 // Connect to Database and then Start Server
+(async () => {
+    try {
+        await redisClient.connect();
+        console.log("✅ Redis connected");
+    }
+    catch (err) {
+        console.error("❌ Redis connection failed:", err);
+    }
+})();
 connectDB().then(() => {
     console.log("🚀 Database connected and ready.");
     server.listen(Number(PORT), "0.0.0.0", () => {
