@@ -12,6 +12,7 @@ import Input from '../components/Input';
 import Logo from '../components/Logo';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ThemeContext } from '../context/ThemeContext';
@@ -61,11 +62,15 @@ const SignupScreen: React.FC = () => {
   }, []);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-    iosClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-    androidClientId: '573187536896-3r6b17udvgmati90l2edq3mo9af98s4e.apps.googleusercontent.com',
-    redirectUri: 'https://auth.expo.io/@0x_mrcoder/connecta',
+    clientId: '89671982625-iuj8vlsdjhcntlpdal9nbn6qi4hn01hf.apps.googleusercontent.com',
   });
+
+  // Log the redirect URI being used
+  useEffect(() => {
+    if (request?.redirectUri) {
+      console.log('🔗 Google OAuth Redirect URI (Signup):', request.redirectUri);
+    }
+  }, [request]);
 
   useEffect(() => {
     if (response?.type === 'success') {
@@ -338,22 +343,7 @@ const SignupScreen: React.FC = () => {
         />
       </Animated.View>
 
-      {/* Social Login */}
-      <View style={styles.dividerRow}>
-        <View style={[styles.divider, { backgroundColor: c.border }]} />
-        <Text style={[styles.orText, { color: c.subtext }]}>OR</Text>
-        <View style={[styles.divider, { backgroundColor: c.border }]} />
-      </View>
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={[styles.googleBtn, { borderColor: c.border, backgroundColor: c.background }]}
-        onPress={handleGooglePress}
-        disabled={!request}
-      >
-        <MaterialCommunityIcons name="google" size={20} color={c.text} />
-        <Text style={[styles.googleText, { color: c.text }]}>Continue with Google</Text>
-      </TouchableOpacity>
 
       {/* Footer */}
       <View style={styles.footer}>

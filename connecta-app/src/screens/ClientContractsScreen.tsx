@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as contractService from '../services/contractService';
+import contractService from '../services/contractService';
 import { Contract } from '../services/contractService';
 
 interface ContractItem {

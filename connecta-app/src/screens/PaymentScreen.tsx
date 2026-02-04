@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
+import * as paymentService from '../services/paymentService';
 import { useThemeColors } from '../theme/theme';
 
 export default function PaymentScreen({ navigation, route }: any) {
@@ -18,53 +20,52 @@ export default function PaymentScreen({ navigation, route }: any) {
     } = route.params || {};
 
     const [loading, setLoading] = useState(false);
-    const [useMockPayment, setUseMockPayment] = useState(false);
 
     const platformFee = paymentType === 'job_verification' ? 0 : (amount * 10) / 100;
     const totalAmount = amount;
     const freelancerReceives = amount - platformFee;
 
     const handlePayment = async () => {
-        if (useMockPayment) {
-            handleMockPayment();
-            return;
-        }
-
         try {
             setLoading(true);
-            // Simulate API call to get authorization URL
-            // const response = await fetch(...)
 
-            // Mock response for now
-            setTimeout(async () => {
-                setLoading(false);
-                // In a real app, we'd open the Paystack URL
-                // await WebBrowser.openBrowserAsync(data.authorizationUrl);
+            let response;
+            if (paymentType === 'job_verification') {
+                response = await paymentService.initializeJobVerification({
+                    jobId: jobId,
+                    amount: totalAmount,
+                    description: `Job Verification: ${projectTitle}`
+                });
+            } else {
+                response = await paymentService.initializePayment({
+                    projectId: projectId,
+                    amount: totalAmount
+                });
+            }
 
-                // For now, just simulate success via mock
-                Alert.alert("Payment", "Redirecting to payment gateway...");
-                handleMockPayment();
-            }, 1500);
-        } catch (error) {
+            if (response && response.authorizationUrl) {
+                // Open payment gateway
+                await WebBrowser.openBrowserAsync(response.authorizationUrl);
+
+                // After browser closes, we assume logic continues or user checks status
+                Alert.alert(
+                    "Payment Initiated",
+                    "Please verify the payment in your dashboard once completed.",
+                    [{ text: "OK", onPress: () => navigation.goBack() }]
+                );
+            } else {
+                throw new Error("Failed to get payment URL");
+            }
+
+        } catch (error: any) {
             console.error(error);
+            Alert.alert("Error", error.message || "Failed to initiate payment");
+        } finally {
             setLoading(false);
-            Alert.alert("Error", "Failed to initiate payment");
         }
     };
 
-    const handleMockPayment = () => {
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            Alert.alert(
-                "Success",
-                "Payment successful! Funds added to escrow.",
-                [
-                    { text: "OK", onPress: () => navigation.goBack() }
-                ]
-            );
-        }, 2000);
-    };
+
 
     if (!amount) {
         return (
@@ -151,10 +152,7 @@ export default function PaymentScreen({ navigation, route }: any) {
                         </View>
                     )}
 
-                    <View style={styles.mockToggle}>
-                        <Text style={{ color: c.text }}>Use Mock Payment (Testing)</Text>
-                        <Switch value={useMockPayment} onValueChange={setUseMockPayment} />
-                    </View>
+
 
                     <TouchableOpacity
                         style={[styles.payButton, { backgroundColor: c.primary }]}
@@ -298,13 +296,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         lineHeight: 18,
     },
-    mockToggle: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 24,
-        marginBottom: 16,
-    },
+
     payButton: {
         height: 56,
         borderRadius: 12,

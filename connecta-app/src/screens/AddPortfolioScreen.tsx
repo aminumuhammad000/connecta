@@ -5,7 +5,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { post } from '../services/api';
+import { uploadPortfolioImage } from '../services/uploadService';
+import * as profileService from '../services/profileService';
 
 const AddPortfolioScreen = () => {
     const c = useThemeColors();
@@ -45,38 +46,26 @@ const AddPortfolioScreen = () => {
             // 1. Upload image if it's a local URI (not already a URL)
             let finalImageUrl = image;
             if (!image.startsWith('http')) {
-                // Determine file name and type from URI or default
-                // React Native ImagePicker results usually look like "file:///..."
-                const fileName = image.split('/').pop() || 'portfolio-image.jpg';
-                const fileType = 'image/jpeg'; // ImagePicker usually returns jpeg or png
-
-                const formData = new FormData();
-                formData.append('file', {
-                    uri: image,
-                    name: fileName,
-                    type: fileType,
-                } as any);
-
-                // Use the configured upload endpoint
-                const { uploadFile } = require('../services/api');
-                // Hardcode the endpoint if constants are not reliable or check them
-                const uploadRes = await uploadFile('/api/portfolio/upload', formData);
-
-                if (uploadRes.data?.url) {
-                    finalImageUrl = uploadRes.data.url;
-                } else {
-                    throw new Error('Image upload failed');
-                }
+                finalImageUrl = await uploadPortfolioImage(image);
             }
 
-            // 2. Save portfolio item with the URL
-            await post('/api/portfolio', {
+            // 2. Fetch and update profile using profileService
+            // This is safer than the direct /api/portfolio endpoint which was causing 500 errors
+            const currentProfile = await profileService.getMyProfile();
+            const currentPortfolio = currentProfile?.portfolio || [];
+
+            const newPortfolioItem = {
                 title,
                 description,
-                projectUrl,
+                projectUrl: projectUrl || undefined,
                 imageUrl: finalImageUrl,
                 tags: []
+            };
+
+            await profileService.updateMyProfile({
+                portfolio: [...currentPortfolio, newPortfolioItem]
             });
+
             Alert.alert('Success', 'Portfolio item added!');
             navigation.goBack();
         } catch (error: any) {

@@ -17,6 +17,7 @@ interface WalletData {
     bankName: string;
     accountNumber: string;
     accountName: string;
+    bankCode: string;
   };
 }
 

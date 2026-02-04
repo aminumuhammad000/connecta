@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Profile from "../models/Profile.model.js";
 import { Job } from "../models/Job.model.js";
 import { TFIDF } from "../utils/tfidf.js";
+import redisClient from "../config/redis.js";
 export class RecommendationService {
     /**
      * Get job recommendations for a specific user based on their profile.
@@ -9,7 +10,15 @@ export class RecommendationService {
      * @param limit The maximum number of recommendations to return.
      */
     async getRecommendationsForUser(userId, limit = 10) {
+        const cacheKey = `recommendations:${userId}:${limit}`;
         try {
+            const cached = await redisClient.get(cacheKey);
+            if (cached) {
+                console.log(`[Cache] Hits for user recommendations: ${userId}`);
+                // Fix: Ensure cached is a string before JSON.parse
+                const data = typeof cached === 'string' ? cached : cached.toString();
+                return JSON.parse(data);
+            }
             // 1. Fetch User and Profile
             const user = await User.findById(userId);
             if (!user) {
@@ -84,10 +93,13 @@ export class RecommendationService {
             });
             // Sort by new score
             scoredJobs.sort((a, b) => b.score - a.score);
-            return scoredJobs.slice(0, limit).map(item => ({
+            const result = scoredJobs.slice(0, limit).map(item => ({
                 ...item.job.toObject(),
                 matchScore: item.score
             }));
+            // Store in cache for 30 minutes
+            await redisClient.set(cacheKey, JSON.stringify(result), { EX: 60 * 30 });
+            return result;
         }
         catch (error) {
             console.error("Error generating recommendations:", error);

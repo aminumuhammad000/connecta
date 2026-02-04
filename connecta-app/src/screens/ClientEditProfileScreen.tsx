@@ -62,7 +62,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
     const [showEmploymentModal, setShowEmploymentModal] = useState(false);
     const [editingEmploymentIndex, setEditingEmploymentIndex] = useState<number | null>(null);
     const [employmentForm, setEmploymentForm] = useState({
-        company: '', position: '', startDate: '', endDate: '', description: ''
+        company: '', title: '', startDate: '', endDate: '', description: ''
     });
 
     useEffect(() => {
@@ -229,14 +229,14 @@ export default function ClientEditProfileScreen({ navigation }: any) {
     // Employment Handlers
     const handleAddEmployment = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setEmploymentForm({ company: '', position: '', startDate: '', endDate: '', description: '' });
+        setEmploymentForm({ company: '', title: '', startDate: '', endDate: '', description: '' });
         setEditingEmploymentIndex(null);
         setShowEmploymentModal(true);
     };
 
     const handleSaveEmployment = () => {
-        if (!employmentForm.company || !employmentForm.position) {
-            showAlert({ title: 'Error', message: 'Company and position are required', type: 'error' });
+        if (!employmentForm.company || !employmentForm.title) {
+            showAlert({ title: 'Error', message: 'Company and title are required', type: 'error' });
             return;
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -325,9 +325,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 website: formData.website.trim(),
                 bio: formData.bio.trim(),
                 avatar: finalImageUrl || undefined,
-                portfolio,
-                education,
-                employment,
+
             };
 
             await profileService.updateMyProfile(profileData);
@@ -485,122 +483,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                         </View>
                     </Card>
 
-                    {/* Portfolio Section */}
-                    <Card variant="outlined" style={styles.sectionCard}>
-                        <View style={styles.sectionHeaderRow}>
-                            <View>
-                                <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 4 }]}>Portfolio</Text>
-                                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>Showcase your work</Text>
-                            </View>
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.addButton, { backgroundColor: c.primary + '10', borderColor: c.primary }]}
-                            onPress={handleAddPortfolio}
-                            activeOpacity={0.7}
-                        >
-                            <View style={[styles.addButtonIconCircle, { backgroundColor: c.primary }]}>
-                                <Ionicons name="add" size={24} color="#FFF" />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.addButtonTitle, { color: c.primary }]}>Add Project</Text>
-                                <Text style={[styles.addButtonSubtitle, { color: c.subtext }]}>Show clients your best work</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={c.primary} />
-                        </TouchableOpacity>
-                        {portfolio.length > 0 && (
-                            <View style={{ gap: 16, marginTop: 12 }}>
-                                {portfolio.map((item, index) => (
-                                    <View key={index} style={[styles.itemCard, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
-                                        <Text style={[styles.itemTitle, { color: c.text }]}>{item.title}</Text>
-                                        <Text style={[styles.itemDesc, { color: c.subtext }]} numberOfLines={2}>{item.description}</Text>
-                                        <TouchableOpacity onPress={() => {
-                                            setPortfolio(prev => prev.filter((_, i) => i !== index));
-                                        }} style={styles.deleteIcon}>
-                                            <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </Card>
 
-                    {/* Education Section */}
-                    <Card variant="outlined" style={styles.sectionCard}>
-                        <View style={styles.sectionHeaderRow}>
-                            <View>
-                                <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 4 }]}>Education</Text>
-                                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>Academic background</Text>
-                            </View>
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.addButton, { backgroundColor: c.primary + '10', borderColor: c.primary }]}
-                            onPress={handleAddEducation}
-                            activeOpacity={0.7}
-                        >
-                            <View style={[styles.addButtonIconCircle, { backgroundColor: c.primary }]}>
-                                <Ionicons name="school" size={24} color="#FFF" />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.addButtonTitle, { color: c.primary }]}>Add Education</Text>
-                                <Text style={[styles.addButtonSubtitle, { color: c.subtext }]}>Degrees, certificates, etc.</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={c.primary} />
-                        </TouchableOpacity>
-                        {education.length > 0 && (
-                            <View style={{ gap: 12, marginTop: 12 }}>
-                                {education.map((item, index) => (
-                                    <View key={index} style={[styles.itemCard, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
-                                        <Text style={[styles.itemTitle, { color: c.text }]}>{item.degree}</Text>
-                                        <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.institution}</Text>
-                                        <TouchableOpacity onPress={() => {
-                                            setEducation(prev => prev.filter((_, i) => i !== index));
-                                        }} style={styles.deleteIcon}>
-                                            <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </Card>
-
-                    {/* Employment Section */}
-                    <Card variant="outlined" style={styles.sectionCard}>
-                        <View style={styles.sectionHeaderRow}>
-                            <View>
-                                <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 4 }]}>Work Experience</Text>
-                                <Text style={[styles.sectionSubtitle, { color: c.subtext }]}>Professional history</Text>
-                            </View>
-                        </View>
-                        <TouchableOpacity
-                            style={[styles.addButton, { backgroundColor: c.primary + '10', borderColor: c.primary }]}
-                            onPress={handleAddEmployment}
-                            activeOpacity={0.7}
-                        >
-                            <View style={[styles.addButtonIconCircle, { backgroundColor: c.primary }]}>
-                                <Ionicons name="briefcase" size={24} color="#FFF" />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.addButtonTitle, { color: c.primary }]}>Add Experience</Text>
-                                <Text style={[styles.addButtonSubtitle, { color: c.subtext }]}>Past jobs and roles</Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={20} color={c.primary} />
-                        </TouchableOpacity>
-                        {employment.length > 0 && (
-                            <View style={{ gap: 12, marginTop: 12 }}>
-                                {employment.map((item, index) => (
-                                    <View key={index} style={[styles.itemCard, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', borderColor: c.border }]}>
-                                        <Text style={[styles.itemTitle, { color: c.text }]}>{item.position}</Text>
-                                        <Text style={[styles.itemSubtitle, { color: c.subtext }]}>{item.company}</Text>
-                                        <TouchableOpacity onPress={() => {
-                                            setEmployment(prev => prev.filter((_, i) => i !== index));
-                                        }} style={styles.deleteIcon}>
-                                            <Ionicons name="trash-outline" size={20} color="#EF4444" />
-                                        </TouchableOpacity>
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </Card>
 
                     <View style={{ height: 100 }} />
                 </ScrollView>
@@ -616,294 +499,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 </View>
             </View>
 
-            {/* Portfolio Modal */}
-            <Modal
-                visible={showPortfolioModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowPortfolioModal(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-                    <View style={{ height: '90%', backgroundColor: c.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 0 }}>
-                        {/* Modal Header */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: c.border }}>
-                            <TouchableOpacity onPress={() => setShowPortfolioModal(false)} style={{ padding: 4 }}>
-                                <Ionicons name="close" size={24} color={c.text} />
-                            </TouchableOpacity>
-                            <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>
-                                {editingPortfolioIndex !== null ? 'Edit Project' : 'Add Project'}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={handleSavePortfolioItem}
-                                style={{
-                                    backgroundColor: c.primary,
-                                    paddingHorizontal: 16,
-                                    paddingVertical: 8,
-                                    borderRadius: 100,
-                                }}
-                            >
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
 
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Project Title</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={portfolioForm.title}
-                                    onChangeText={(t) => setPortfolioForm(prev => ({ ...prev, title: t }))}
-                                    placeholder="e.g. Mobile App Redesign"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Description</Text>
-                                <TextInput
-                                    style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={portfolioForm.description}
-                                    onChangeText={(t) => setPortfolioForm(prev => ({ ...prev, description: t }))}
-                                    multiline
-                                    numberOfLines={4}
-                                    placeholder="Describe the project..."
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Project Image</Text>
-                                {portfolioForm.imageUrl ? (
-                                    <View>
-                                        <Image source={{ uri: portfolioForm.imageUrl }} style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12 }} />
-                                        <Button title="Change Image" onPress={handlePickPortfolioImage} variant="outline" size="small" />
-                                    </View>
-                                ) : (
-                                    <TouchableOpacity
-                                        style={{ height: 120, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: c.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary + '05' }}
-                                        onPress={handlePickPortfolioImage}
-                                    >
-                                        <Ionicons name="cloud-upload-outline" size={32} color={c.primary} />
-                                        <Text style={{ color: c.primary, marginTop: 8, fontWeight: '600' }}>Upload Image</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Project URL (Optional)</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={portfolioForm.projectUrl}
-                                    onChangeText={(t) => setPortfolioForm(prev => ({ ...prev, projectUrl: t }))}
-                                    placeholder="https://..."
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Tags (comma separated)</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={portfolioForm.tags}
-                                    onChangeText={(t) => setPortfolioForm(prev => ({ ...prev, tags: t }))}
-                                    placeholder="React, Design, UI/UX"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={{ height: 100 }} />
-                        </ScrollView>
-
-                        {/* Sticky Footer in Modal */}
-                        <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.background }}>
-                            <Button title="Save Project" onPress={handleSavePortfolioItem} size="large" />
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Education Modal */}
-            <Modal
-                visible={showEducationModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowEducationModal(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-                    <View style={{ height: '80%', backgroundColor: c.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 0 }}>
-                        {/* Modal Header */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: c.border }}>
-                            <TouchableOpacity onPress={() => setShowEducationModal(false)} style={{ padding: 4 }}>
-                                <Ionicons name="close" size={24} color={c.text} />
-                            </TouchableOpacity>
-                            <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>Add Education</Text>
-                            <TouchableOpacity
-                                onPress={handleSaveEducation}
-                                style={{
-                                    backgroundColor: c.primary,
-                                    paddingHorizontal: 16,
-                                    paddingVertical: 8,
-                                    borderRadius: 100,
-                                }}
-                            >
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Institution</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={educationForm.institution}
-                                    onChangeText={(t) => setEducationForm(prev => ({ ...prev, institution: t }))}
-                                    placeholder="University Name"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Degree</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={educationForm.degree}
-                                    onChangeText={(t) => setEducationForm(prev => ({ ...prev, degree: t }))}
-                                    placeholder="Bachelor's, Master's, etc."
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Field of Study</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={educationForm.fieldOfStudy}
-                                    onChangeText={(t) => setEducationForm(prev => ({ ...prev, fieldOfStudy: t }))}
-                                    placeholder="Computer Science"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.row}>
-                                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                                    <Text style={[styles.label, { color: c.subtext }]}>Start Year</Text>
-                                    <TextInput
-                                        style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                        value={educationForm.startDate}
-                                        onChangeText={(t) => setEducationForm(prev => ({ ...prev, startDate: t }))}
-                                        placeholder="2018"
-                                        keyboardType="numeric"
-                                        placeholderTextColor={c.subtext}
-                                    />
-                                </View>
-                                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                                    <Text style={[styles.label, { color: c.subtext }]}>End Year</Text>
-                                    <TextInput
-                                        style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                        value={educationForm.endDate}
-                                        onChangeText={(t) => setEducationForm(prev => ({ ...prev, endDate: t }))}
-                                        placeholder="2022"
-                                        keyboardType="numeric"
-                                        placeholderTextColor={c.subtext}
-                                    />
-                                </View>
-                            </View>
-                            <View style={{ height: 100 }} />
-                        </ScrollView>
-
-                        {/* Sticky Footer in Modal */}
-                        <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.background }}>
-                            <Button title="Save Education" onPress={handleSaveEducation} size="large" />
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Employment Modal */}
-            <Modal
-                visible={showEmploymentModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowEmploymentModal(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
-                    <View style={{ height: '85%', backgroundColor: c.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 0 }}>
-                        {/* Modal Header */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: c.border }}>
-                            <TouchableOpacity onPress={() => setShowEmploymentModal(false)} style={{ padding: 4 }}>
-                                <Ionicons name="close" size={24} color={c.text} />
-                            </TouchableOpacity>
-                            <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>Add Experience</Text>
-                            <TouchableOpacity
-                                onPress={handleSaveEmployment}
-                                style={{
-                                    backgroundColor: c.primary,
-                                    paddingHorizontal: 16,
-                                    paddingVertical: 8,
-                                    borderRadius: 100,
-                                }}
-                            >
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFF' }}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Company</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={employmentForm.company}
-                                    onChangeText={(t) => setEmploymentForm(prev => ({ ...prev, company: t }))}
-                                    placeholder="Company Name"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Position</Text>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={employmentForm.position}
-                                    onChangeText={(t) => setEmploymentForm(prev => ({ ...prev, position: t }))}
-                                    placeholder="Job Title"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={styles.row}>
-                                <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                                    <Text style={[styles.label, { color: c.subtext }]}>Start Date</Text>
-                                    <TextInput
-                                        style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                        value={employmentForm.startDate}
-                                        onChangeText={(t) => setEmploymentForm(prev => ({ ...prev, startDate: t }))}
-                                        placeholder="Jan 2020"
-                                        placeholderTextColor={c.subtext}
-                                    />
-                                </View>
-                                <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                                    <Text style={[styles.label, { color: c.subtext }]}>End Date</Text>
-                                    <TextInput
-                                        style={[styles.input, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                        value={employmentForm.endDate}
-                                        onChangeText={(t) => setEmploymentForm(prev => ({ ...prev, endDate: t }))}
-                                        placeholder="Present"
-                                        placeholderTextColor={c.subtext}
-                                    />
-                                </View>
-                            </View>
-                            <View style={styles.inputGroup}>
-                                <Text style={[styles.label, { color: c.subtext }]}>Description</Text>
-                                <TextInput
-                                    style={[styles.textArea, { backgroundColor: c.card, color: c.text, borderColor: c.border }]}
-                                    value={employmentForm.description}
-                                    onChangeText={(t) => setEmploymentForm(prev => ({ ...prev, description: t }))}
-                                    multiline
-                                    numberOfLines={4}
-                                    placeholder="Describe your role and achievements..."
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                            <View style={{ height: 100 }} />
-                        </ScrollView>
-
-                        {/* Sticky Footer in Modal */}
-                        <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.background }}>
-                            <Button title="Save Experience" onPress={handleSaveEmployment} size="large" />
-                        </View>
-                    </View>
-                </View>
-            </Modal>
 
         </SafeAreaView>
     );

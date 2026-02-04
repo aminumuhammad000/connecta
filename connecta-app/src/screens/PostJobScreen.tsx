@@ -64,6 +64,7 @@ const PostJobScreen: React.FC = () => {
   const [category, setCategory] = useState('');
   const [experience, setExperience] = useState('Intermediate');
   const [jobType, setJobType] = useState('fixed'); // 'fixed' or 'hourly'
+  const [locationType, setLocationType] = useState('remote');
 
   const [isLoading, setIsLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -202,6 +203,7 @@ const PostJobScreen: React.FC = () => {
         setCategory(job.category || '');
         setExperience(job.experience || 'Intermediate');
         setJobType(job.budgetType || 'fixed');
+        setLocationType(job.locationType || 'remote');
       }
     } catch (error) {
       console.error('Error loading job details:', error);
@@ -288,7 +290,7 @@ const PostJobScreen: React.FC = () => {
         jobType: 'freelance' as any,
         budgetType: jobType,
         status: 'draft' as any, // Mark as draft until payment is complete
-        locationType: 'remote' as any,
+        locationType: locationType as any,
       };
 
       const createdJob = await jobService.createJob(tempJobData);
@@ -359,7 +361,7 @@ const PostJobScreen: React.FC = () => {
         jobType: jobType as any, // 'full-time', 'contract', etc.
         budgetType: 'fixed', // Force fixed budget for now or add toggle
         status: 'active' as any,
-        locationType: 'remote' as any, // This should also be dynamic if needed
+        locationType: locationType as any, // This should also be dynamic if needed
         jobScope,
         niche: subCategory || undefined,
         duration: durationValue,
@@ -402,7 +404,7 @@ const PostJobScreen: React.FC = () => {
         experience,
         jobType: 'freelance' as any,
         budgetType: jobType,
-        locationType: 'remote' as any,
+        locationType: locationType as any,
       };
 
       await jobService.updateJob(jobId, jobData);
@@ -618,6 +620,35 @@ const PostJobScreen: React.FC = () => {
       <View style={styles.stepHeader}>
         <Text style={[styles.stepMainTitle, { color: c.text }]}>Project Details</Text>
         <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Define the scope and expertise required for your project.</Text>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.refinedLabel, { color: c.text }]}>WORKPLACE TYPE</Text>
+        <View style={styles.compactToggleRow}>
+          <TouchableOpacity
+            onPress={() => setLocationType('remote')}
+            style={[styles.compactToggleBtn, { backgroundColor: locationType === 'remote' ? c.primary : c.card }]}
+          >
+            <MaterialIcons name="laptop-mac" size={16} color={locationType === 'remote' ? '#FFF' : c.subtext} />
+            <Text style={[styles.compactToggleText, { color: locationType === 'remote' ? '#FFF' : c.text }]}>Remote</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setLocationType('onsite')}
+            style={[styles.compactToggleBtn, { backgroundColor: locationType === 'onsite' ? c.primary : c.card }]}
+          >
+            <MaterialIcons name="business" size={16} color={locationType === 'onsite' ? '#FFF' : c.subtext} />
+            <Text style={[styles.compactToggleText, { color: locationType === 'onsite' ? '#FFF' : c.text }]}>On-Site</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setLocationType('hybrid')}
+            style={[styles.compactToggleBtn, { backgroundColor: locationType === 'hybrid' ? c.primary : c.card }]}
+          >
+            <MaterialIcons name="compare-arrows" size={16} color={locationType === 'hybrid' ? '#FFF' : c.subtext} />
+            <Text style={[styles.compactToggleText, { color: locationType === 'hybrid' ? '#FFF' : c.text }]}>Hybrid</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Location & Scope Combined */}

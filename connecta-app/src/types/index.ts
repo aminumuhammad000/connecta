@@ -261,7 +261,16 @@ export interface Transaction {
 
 export interface WalletBalance {
     balance: number;
+    availableBalance: number;
+    escrowBalance: number;
     currency: string;
+    isVerified: boolean;
+    bankDetails?: {
+        bankName: string;
+        accountNumber: string;
+        accountName: string;
+        bankCode: string;
+    };
 }
 
 export interface Bank {
@@ -283,6 +292,7 @@ export type NotificationType =
     | 'message_received'
     | 'review_received'
     | 'deadline_approaching'
+    | 'collabo_invite'
     | 'system'
     | 'info'
     | 'success'

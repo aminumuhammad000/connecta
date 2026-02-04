@@ -3,7 +3,7 @@
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = true;
+const USE_LOCAL_SERVER = false;
 
 // Server URLs
 const ONLINE_SERVER = 'https://api.myconnecta.ng';

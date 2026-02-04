@@ -145,7 +145,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="MessagesDetail" component={MessagesScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
-            <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen} />
+            <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen as any} />
             <Stack.Screen name="Security" component={SecurityScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
 

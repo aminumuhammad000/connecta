@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, FlatList, TextInput, KeyboardAvoidingView, Platform, Modal, Alert, Dimensions, Image } from 'react-native';
 
 const { width } = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -66,6 +66,13 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
             navigation.setParams({ selectedFreelancer: undefined, targetRoleId: undefined });
         }
     }, [route.params?.selectedFreelancer, route.params?.targetRoleId]);
+
+    useEffect(() => {
+        if (route.params?.openAddRole) {
+            setIsAddRoleModalVisible(true);
+            navigation.setParams({ openAddRole: undefined });
+        }
+    }, [route.params?.openAddRole]);
 
     useEffect(() => {
         if (activeTab === 'chat') {
@@ -183,14 +190,13 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
         }
     };
 
-    const handleFundProject = async () => {
-        try {
-            await fundCollaboProject(projectId);
-            showAlert({ title: 'Project funded and activated!', type: 'success' });
-            loadData();
-        } catch (error) {
-            showAlert({ title: 'Failed to fund project', type: 'error' });
-        }
+    const handleFundProject = () => {
+        if (!projectData?.project) return;
+        navigation.navigate('Payment', {
+            projectId: projectId,
+            amount: projectData.project.totalBudget,
+            projectTitle: projectData.project.title
+        });
     };
 
     const handleStartWork = async () => {
@@ -299,7 +305,10 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
                             {isFilled ? (
                                 <View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                                    <TouchableOpacity
+                                        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+                                        onPress={() => navigation.navigate('PublicFreelancerProfile', { id: freelancer._id })}
+                                    >
                                         <View style={{
                                             width: 36,
                                             height: 36,
@@ -318,10 +327,11 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                                 {freelancer?.firstName} {freelancer?.lastName}
                                             </Text>
                                             <Text style={{ color: c.subtext, fontSize: 12 }}>
-                                                ${role.budget}
+                                                View Profile • ${role.budget}
                                             </Text>
                                         </View>
-                                    </View>
+                                        <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+                                    </TouchableOpacity>
 
                                     {isClient && (
                                         <TouchableOpacity
@@ -337,12 +347,13 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                             style={{
                                                 marginTop: 12,
                                                 backgroundColor: '#EF4444',
-                                                padding: 10,
-                                                borderRadius: 8,
-                                                alignItems: 'center'
+                                                paddingVertical: 6,
+                                                paddingHorizontal: 12,
+                                                borderRadius: 16,
+                                                alignSelf: 'flex-start'
                                             }}
                                         >
-                                            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>Remove from Team</Text>
+                                            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 11 }}>Remove Member</Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -355,6 +366,13 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                     {isClient && (
                                         <TouchableOpacity
                                             onPress={() => {
+                                                if (projectData?.project?.status === 'planning') {
+                                                    Alert.alert("Payment Required", "Please fund the project to invite freelancers.", [
+                                                        { text: "Cancel" },
+                                                        { text: "Pay Now", onPress: handleFundProject }
+                                                    ]);
+                                                    return;
+                                                }
                                                 navigation.navigate('SelectFreelancer', {
                                                     roleId: role._id,
                                                     projectId: projectId
@@ -362,13 +380,15 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                             }}
                                             style={{
                                                 marginTop: 12,
-                                                backgroundColor: c.primary,
+                                                backgroundColor: projectData?.project?.status === 'planning' ? c.subtext : c.primary,
                                                 padding: 10,
                                                 borderRadius: 8,
                                                 alignItems: 'center'
                                             }}
                                         >
-                                            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>Invite Freelancer</Text>
+                                            <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>
+                                                {projectData?.project?.status === 'planning' ? 'Fund to Invite' : 'Invite Freelancer'}
+                                            </Text>
                                         </TouchableOpacity>
                                     )}
                                 </View>
@@ -435,9 +455,6 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                 }}
             />
             <View style={{ padding: 12, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: c.border, flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, paddingBottom: Platform.OS === 'ios' ? 20 : 12 }}>
-                <TouchableOpacity style={{ marginRight: 12 }}>
-                    <MaterialIcons name="add-circle-outline" size={24} color={c.subtext} />
-                </TouchableOpacity>
                 <TextInput
                     style={{
                         flex: 1,
@@ -697,20 +714,6 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
                                 <Text style={{ color: c.text, fontWeight: '600', marginBottom: 8 }}>Assign To</Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                                    <TouchableOpacity
-                                        onPress={() => setTaskForm({ ...taskForm, assigneeId: '' })}
-                                        style={{
-                                            paddingHorizontal: 16,
-                                            paddingVertical: 8,
-                                            borderRadius: 20,
-                                            backgroundColor: taskForm.assigneeId === '' ? c.primary : c.background,
-                                            borderWidth: 1,
-                                            borderColor: taskForm.assigneeId === '' ? c.primary : c.border,
-                                            marginRight: 8
-                                        }}
-                                    >
-                                        <Text style={{ color: taskForm.assigneeId === '' ? '#FFF' : c.text, fontSize: 13, fontWeight: '600' }}>Unassigned</Text>
-                                    </TouchableOpacity>
                                     {teamMembers.map((member: any) => (
                                         <TouchableOpacity
                                             key={member._id}
@@ -835,22 +838,29 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                             borderRadius: 8,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            marginRight: 12
+                            marginRight: 12,
+                            overflow: 'hidden'
                         }}>
-                            <MaterialIcons
-                                name={item.type.includes('image') ? 'image' : 'description'}
-                                size={24}
-                                color={c.subtext}
-                            />
+                            {item.type.includes('image') ? (
+                                <Image source={{ uri: item.url }} style={{ width: 40, height: 40 }} resizeMode="cover" />
+                            ) : (
+                                <MaterialIcons
+                                    name={item.type.includes('image') ? 'image' : (item.type.includes('pdf') ? 'picture-as-pdf' : 'description')}
+                                    size={24}
+                                    color={c.subtext}
+                                />
+                            )}
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={{ fontWeight: '600', color: c.text }}>{item.name}</Text>
+                            <TouchableOpacity onPress={() => Linking.openURL(item.url)}>
+                                <Text style={{ fontWeight: '600', color: c.text }}>{item.name}</Text>
+                            </TouchableOpacity>
                             <Text style={{ fontSize: 12, color: c.subtext }}>
                                 {(item.size / 1024).toFixed(1)} KB • Uploaded by {item.uploaderId.firstName}
                             </Text>
                         </View>
-                        <TouchableOpacity onPress={() => console.log("Download", item.url)}>
-                            <MaterialIcons name="download" size={20} color={c.primary} />
+                        <TouchableOpacity onPress={() => Linking.openURL(item.url)} style={{ padding: 4 }}>
+                            <MaterialIcons name="visibility" size={20} color={c.primary} />
                         </TouchableOpacity>
                     </View>
                 )}
@@ -1044,14 +1054,24 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
                                         const skillsList = newRoleData.skills.split(',').map(s => s.trim()).filter(Boolean);
 
-                                        await addRole(projectId, {
+                                        const newRole = await addRole(projectId, {
                                             title: newRoleData.title,
                                             description: newRoleData.description,
                                             budget: Number(newRoleData.budget),
                                             skills: skillsList
                                         });
 
-                                        showAlert({ title: 'Success', message: 'Role added successfully', type: 'success' });
+                                        if (route.params?.inviteFreelancerId) {
+                                            try {
+                                                await inviteToRole(newRole._id, route.params.inviteFreelancerId);
+                                                showAlert({ title: 'Success', message: 'Role added and invitation sent!', type: 'success' });
+                                                navigation.setParams({ inviteFreelancerId: undefined });
+                                            } catch (err: any) {
+                                                showAlert({ title: 'Partial Success', message: 'Role added but invite failed: ' + err.message, type: 'warning' });
+                                            }
+                                        } else {
+                                            showAlert({ title: 'Success', message: 'Role added successfully', type: 'success' });
+                                        }
                                         setIsAddRoleModalVisible(false);
                                         setNewRoleData({ title: '', description: '', budget: '', skills: '' });
                                         loadData();

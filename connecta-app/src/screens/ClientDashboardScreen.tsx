@@ -44,8 +44,6 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [collaboProjects, setCollaboProjects] = useState<any[]>([]);
   const [selectedCollaboProject, setSelectedCollaboProject] = useState<any>(null);
 
-  const { socket } = useSocket();
-
   useEffect(() => {
     loadDashboardData();
     checkProfileStatus();
@@ -676,7 +674,30 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                         </TouchableOpacity>
                       ))
                     ) : (
-                      <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>No open roles in this project.</Text>
+                      <View style={{ padding: 20, alignItems: 'center', gap: 12 }}>
+                        <Text style={{ textAlign: 'center', color: c.subtext }}>No open roles in this project.</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setInviteModalVisible(false);
+                            navigation.navigate('CollaboWorkspace', {
+                              projectId: selectedCollaboProject._id,
+                              openAddRole: true,
+                              inviteFreelancerId: selectedFreelancer?._id || selectedFreelancer?.id
+                            });
+                            setSelectedCollaboProject(null);
+                          }}
+                          style={{
+                            paddingVertical: 10,
+                            paddingHorizontal: 20,
+                            backgroundColor: c.primary + '15',
+                            borderRadius: 8,
+                            borderWidth: 1,
+                            borderColor: c.primary,
+                          }}
+                        >
+                          <Text style={{ color: c.primary, fontWeight: '600' }}>Create New Role</Text>
+                        </TouchableOpacity>
+                      </View>
                     )}
                   </View>
                 )}

@@ -133,6 +133,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="MessagesDetail" component={MessagesScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="NotificationDetail" component={require('../screens/NotificationDetailScreen').default} />
             <Stack.Screen name="Security" component={require('../screens/SecurityScreen').default} />
             <Stack.Screen name="HelpSupport" component={require('../screens/HelpSupportScreen').default} />
             <Stack.Screen name="ContactSupport" component={require('../screens/ContactSupportScreen').default} />

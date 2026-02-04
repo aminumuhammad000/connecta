@@ -11,7 +11,7 @@ interface AuthContextValue {
     login: (credentials: LoginCredentials) => Promise<any>;
     loginWithToken: (token: string, user: User) => Promise<void>;
     signup: (data: SignupData, autoLogin?: boolean) => Promise<any>;
-    googleLogin: (tokenId: string) => Promise<void>;
+    googleLogin: (tokenId: string) => Promise<User>;
     googleSignup: (tokenId: string, userType: UserType, autoLogin?: boolean) => Promise<any>;
     logout: () => Promise<void>;
     updateUser: (user: User) => void;
@@ -149,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await storage.saveUserRole(response.user.userType);
             setToken(response.token);
             setUser(response.user);
+            return response.user; // Return user for navigation
         } catch (error) {
             console.error('Google login error:', error);
             throw error;

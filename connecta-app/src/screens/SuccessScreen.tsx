@@ -48,11 +48,11 @@ export default function SuccessScreen({ navigation }: any) {
                     <Text style={[styles.title, { color: c.text }]}>🎉 You're On The List!</Text>
 
                     {/* Description */}
-                    <Text style={[styles.description, { color: c.textDim }]}>
+                    <Text style={[styles.description, { color: c.subtext }]}>
                         Thank you for joining the Connecta waitlist! We're thrilled to have you on board.
                     </Text>
 
-                    <Text style={[styles.subDescription, { color: c.textDim }]}>
+                    <Text style={[styles.subDescription, { color: c.subtext }]}>
                         We'll send you an exclusive early access invite to your email as soon as we launch. Get ready to experience the future of freelancing!
                     </Text>
 
@@ -78,7 +78,7 @@ export default function SuccessScreen({ navigation }: any) {
                             </View>
                             <View style={styles.stepTextContainer}>
                                 <Text style={[styles.stepTitle, { color: c.text }]}>Check Your Email</Text>
-                                <Text style={[styles.stepDesc, { color: c.textDim }]}>We've sent a confirmation to your inbox</Text>
+                                <Text style={[styles.stepDesc, { color: c.subtext }]}>We've sent a confirmation to your inbox</Text>
                             </View>
                         </View>
 
@@ -88,7 +88,7 @@ export default function SuccessScreen({ navigation }: any) {
                             </View>
                             <View style={styles.stepTextContainer}>
                                 <Text style={[styles.stepTitle, { color: c.text }]}>Stay Tuned</Text>
-                                <Text style={[styles.stepDesc, { color: c.textDim }]}>Follow us on social media for updates</Text>
+                                <Text style={[styles.stepDesc, { color: c.subtext }]}>Follow us on social media for updates</Text>
                             </View>
                         </View>
 
@@ -98,7 +98,7 @@ export default function SuccessScreen({ navigation }: any) {
                             </View>
                             <View style={styles.stepTextContainer}>
                                 <Text style={[styles.stepTitle, { color: c.text }]}>Get Early Access</Text>
-                                <Text style={[styles.stepDesc, { color: c.textDim }]}>Be among the first to use Connecta</Text>
+                                <Text style={[styles.stepDesc, { color: c.subtext }]}>Be among the first to use Connecta</Text>
                             </View>
                         </View>
                     </View>
