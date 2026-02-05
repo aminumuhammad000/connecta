@@ -1,0 +1,11 @@
+Time: 2026-02-05T17:27:55.195Z
+Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent: [404 Not Found] models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+Stack: Error: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent: [404 Not Found] models/gemini-1.5-flash-latest is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+    at handleResponseNotOk (file:///home/mrcoder/Documents/ProjectStation/connecta/server/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async makeRequest (file:///home/mrcoder/Documents/ProjectStation/connecta/server/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+    at async generateContent (file:///home/mrcoder/Documents/ProjectStation/connecta/server/node_modules/@google/generative-ai/dist/index.mjs:865:22)
+    at async <anonymous> (/home/mrcoder/Documents/ProjectStation/connecta/server/node_modules/@langchain/google-genai/src/chat_models.ts:1005:18)
+    at async pRetry (/home/mrcoder/Documents/ProjectStation/connecta/server/node_modules/@langchain/core/src/utils/p-retry/index.js:236:22)
+    at async run (/home/mrcoder/Documents/ProjectStation/connecta/server/node_modules/p-queue/dist/index.js:163:29)
+

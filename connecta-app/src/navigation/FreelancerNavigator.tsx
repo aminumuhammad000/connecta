@@ -150,6 +150,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
             <Stack.Screen name="JobPreferences" component={require('../screens/JobPreferencesScreen').default} />
+            <Stack.Screen name="ManageCV" component={require('../screens/ManageCVScreen').default} />
         </Stack.Navigator>
     );
 

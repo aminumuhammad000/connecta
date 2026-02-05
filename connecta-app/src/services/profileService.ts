@@ -1,4 +1,4 @@
-import { get, put, post } from './api';
+import { get, put, post, uploadFile } from './api';
 import { API_ENDPOINTS } from '../utils/constants';
 import { Profile } from '../types';
 
@@ -97,6 +97,30 @@ export const updateProfile = async (id: string, profileData: Partial<Profile>): 
     return data as Profile;
 };
 
+/**
+ * Parse resume file
+ */
+export const parseResume = async (formData: FormData): Promise<any> => {
+    const response = await uploadFile(`${API_ENDPOINTS.PROFILES}/parse-resume`, formData);
+
+    // Direct unwrapping for this specific endpoint structure
+    if (response?.success && response?.data) {
+        return response.data;
+    }
+
+    // Fallback to standard unwrapper
+    const data = unwrapProfile(response);
+    return data;
+};
+
+/**
+ * Download Resume PDF
+ */
+export const downloadResume = async (): Promise<string | null> => {
+    // Return the URL for the frontend to handle download
+    return `${API_ENDPOINTS.PROFILES}/me/resume/pdf`;
+};
+
 export default {
     getMyProfile,
     getProfileById,
@@ -104,4 +128,6 @@ export default {
     createProfile,
     updateMyProfile,
     updateProfile,
+    parseResume,
+    downloadResume,
 };

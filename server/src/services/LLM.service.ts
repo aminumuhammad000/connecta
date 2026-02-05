@@ -20,8 +20,8 @@ class LLMService {
 
             return new ChatGoogleGenerativeAI({
                 apiKey: apiKey,
-                model: settings.ai.model || "gemini-2.0-flash",
-                maxOutputTokens: 2048,
+                model: settings.ai.model || "gemini-flash-latest",
+                maxOutputTokens: 8192,
                 temperature: 0.7,
                 maxRetries: 1,
             });
@@ -159,6 +159,175 @@ Output ONLY the raw cover letter text.`],
             console.error("LLM Cover Letter Error:", error);
             return `Dear Hiring Manager,\n\nI am writing to express my interest in the ${jobTitle} position. With my background in ${freelancerSkills[0] || 'software development'}, I am confident I can contribute effectively to your project.\n\nThank you for considering my application.\n\nSincerely,\n${freelancerName}`;
         }
+    }
+    /**
+     * Parses resume text into structured profile data.
+     */
+    async parseResumeText(text: string): Promise<any> {
+        try {
+            const model = await this.getModel();
+
+            if (!model) {
+                throw new Error("AI Model not available");
+            }
+
+            const prompt = ChatPromptTemplate.fromMessages([
+                ["system", `You are an expert HR Data Extractor. Extract ALL profile information from the resume text below.
+                
+### 📋 OUTPUT SCHEMA (STRICT JSON)
+{{
+    "firstName": "...",
+    "lastName": "...",
+    "email": "...",
+    "phone": "...",
+    "location": "...",
+    "jobTitle": "...",
+    "bio": "Professional summary (30-50 words)...",
+    "skills": ["skill1", "skill2"...],
+    "education": [
+        {{ "institution": "...", "degree": "...", "fieldOfStudy": "...", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD or Present" }}
+    ],
+    "employment": [
+        {{ "company": "...", "title": "...", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD or Present", "description": "Detailed description of responsibilities..." }}
+    ]
+}}
+
+- Extract ALL education and employment history found. Do not summarize or truncate.
+- Limit "skills" to the TOP 30 most relevant tech skills to save space.
+- Use "YYYY-MM-01" for dates if day is unknown.
+- Returns "Present" for current roles.
+- If specific fields are missing, omit them.
+- Return ONLY raw minified JSON. No Markdown.`],
+                ["human", "RESUME TEXT:\n{text}"]
+            ]);
+
+            const chain = prompt.pipe(model).pipe(new StringOutputParser());
+            const response = await chain.invoke({ text });
+
+            // robust JSON parsing
+            let cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            console.log('🤖 AI Raw Response:', cleanedResponse.substring(0, 500) + '...'); // Log start of response
+            console.log('🤖 AI Response Length:', cleanedResponse.length);
+
+            try {
+                return JSON.parse(cleanedResponse);
+            } catch (e) {
+                console.warn("JSON Parse failed, attempting repair...");
+                const repaired = this.repairJSON(cleanedResponse);
+                try {
+                    return JSON.parse(repaired);
+                } catch (e2) {
+                    console.error("Failed to parse repaired JSON", repaired);
+                    throw new Error("Failed to parse resume data");
+                }
+            }
+
+        } catch (error: any) {
+            console.error("LLM Resume Parse Error:", error);
+
+            // Check for quota/rate limit errors and return fallback mock data
+            if (error?.message?.includes('429') || error?.message?.includes('Quota') || error?.message?.includes('Too Many Requests')) {
+                console.warn("⚠️ AI Quota Exceeded. Returning Mock Data for demonstration.");
+                return this.getMockResumeData(text);
+            }
+
+            throw error;
+        }
+    }
+
+    private repairJSON(jsonStr: string): string {
+        try {
+            // Remove markdown code blocks if present (redundant safety)
+            jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            // Simple stack to keep track of open brackets/braces
+            const stack: string[] = [];
+            let inString = false;
+            let escaped = false;
+
+            for (let i = 0; i < jsonStr.length; i++) {
+                const char = jsonStr[i];
+
+                if (escaped) {
+                    escaped = false;
+                    continue;
+                }
+
+                if (char === '\\') {
+                    escaped = true;
+                    continue;
+                }
+
+                if (char === '"') {
+                    inString = !inString;
+                    continue;
+                }
+
+                if (!inString) {
+                    if (char === '{') stack.push('}');
+                    else if (char === '[') stack.push(']');
+                    else if (char === '}' || char === ']') {
+                        if (stack.length && stack[stack.length - 1] === char) {
+                            stack.pop();
+                        }
+                    }
+                }
+            }
+
+            // Close any open strings first
+            if (inString) jsonStr += '"';
+
+            // Remove trailing commas which are common in truncation
+            jsonStr = jsonStr.trim();
+            if (jsonStr.endsWith(',')) {
+                jsonStr = jsonStr.slice(0, -1);
+            }
+            // If it ends with a colon (e.g. "key":), append null
+            if (jsonStr.endsWith(':')) {
+                jsonStr += ' null';
+            }
+            // Heuristic for cutoff keys
+            if (jsonStr.endsWith('"') && stack.length > 0 && stack[stack.length - 1] === '}') {
+                // Check if it looks like a key (not a value in a list or after a colon)
+                if (!/:\s*"[^"]*"$/.test(jsonStr) && !/,\s*"[^"]*"$/.test(jsonStr)) {
+                    // This is a loose check, but appending : null is safer than failing
+                    // Actually, if it ends with " and prev char was , or { it is a key
+                    if (/[,{]\s*"[^"]*"$/.test(jsonStr)) {
+                        jsonStr += ': null';
+                    }
+                }
+            }
+
+            // Append missing closing brackets in reverse order
+            while (stack.length > 0) {
+                jsonStr += stack.pop();
+            }
+
+            return jsonStr;
+        } catch (e) {
+            return jsonStr; // Return original if repair crashes (unlikely)
+        }
+    }
+
+    private getMockResumeData(text: string) {
+        // Basic fallback extraction or static mock
+        return {
+            firstName: "Test",
+            lastName: "Candidate",
+            email: "extracted@example.com",
+            phone: "+1234567890",
+            location: "San Francisco, CA",
+            jobTitle: "Software Engineer",
+            bio: "Experienced developer with a fallback mock profile due to AI rate limits. Ready to build amazing things.",
+            skills: ["JavaScript", "TypeScript", "React", "Node.js", "AI Handling"],
+            education: [
+                { institution: "Connecta University", degree: "Bachelor's", fieldOfStudy: "Computer Science", startDate: "2018-09-01", endDate: "2022-05-01" }
+            ],
+            employment: [
+                { company: "Tech Startup", title: "Senior Developer", startDate: "2022-06-01", endDate: "2024-01-01", description: "Led development of scalable web applications." }
+            ]
+        };
     }
 }
 

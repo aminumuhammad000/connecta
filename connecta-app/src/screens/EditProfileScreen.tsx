@@ -9,6 +9,7 @@ import { useInAppAlert } from '../components/InAppAlert';
 import * as profileService from '../services/profileService';
 import * as userService from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { uploadImage, uploadAvatar, uploadPortfolioImage } from '../services/uploadService';
 import { PortfolioItem } from '../types';
 import Card from '../components/Card';
@@ -527,7 +528,9 @@ export default function EditProfileScreen({ navigation }: any) {
                         <Ionicons name="arrow-back" size={24} color={c.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
-                    <View style={{ width: 40 }} />
+                    <TouchableOpacity onPress={() => navigation.navigate('ManageCV')} style={styles.importButton}>
+                        <Ionicons name="document-text-outline" size={24} color={c.primary} />
+                    </TouchableOpacity>
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

@@ -280,6 +280,14 @@ export default function ProfileScreen({ navigation }: any) {
 
                 <View style={[styles.actionButtons, { marginBottom: 16 }]}>
                   <TouchableOpacity
+                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card, flex: 1.2 }]}
+                    onPress={() => navigation.navigate('ManageCV')}
+                  >
+                    <Ionicons name="document-text-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Manage CV</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
                     onPress={() => navigation.navigate('EditProfile')}
                   >

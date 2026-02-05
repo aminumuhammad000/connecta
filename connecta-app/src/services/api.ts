@@ -125,12 +125,13 @@ export const del = async <T = any>(url: string): Promise<ApiResponse<T>> => {
  */
 export const uploadFile = async (url: string, formData: FormData): Promise<ApiResponse> => {
     const token = await getToken();
-    return axios.post(`${API_BASE_URL}${url}`, formData, {
+    const response = await axios.post(`${API_BASE_URL}${url}`, formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Bearer ${token}`,
         },
     });
+    return response.data;
 };
 
 // Event for handling 401 Unauthorized

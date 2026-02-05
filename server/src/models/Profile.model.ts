@@ -66,9 +66,9 @@ export interface IProfile extends Document {
 const EducationSchema = new Schema<IEducation>(
   {
     institution: { type: String, required: true },
-    degree: { type: String, required: true },
-    fieldOfStudy: { type: String, required: true },
-    startDate: { type: Date, required: true },
+    degree: { type: String },
+    fieldOfStudy: { type: String },
+    startDate: { type: Date },
     endDate: { type: Date },
   },
   { _id: false }
@@ -90,7 +90,7 @@ const EmploymentSchema = new Schema<IEmployment>(
   {
     company: { type: String, required: true },
     position: { type: String, required: true },
-    startDate: { type: Date, required: true },
+    startDate: { type: Date },
     endDate: { type: Date },
     description: { type: String },
   },

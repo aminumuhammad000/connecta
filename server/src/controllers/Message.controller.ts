@@ -7,6 +7,7 @@ import { getIO } from '../core/utils/socketIO.js';
 import User from '../models/user.model.js';
 import Notification from '../models/Notification.model.js';
 import notificationService from '../services/notification.service.js';
+import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
 
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req: Request, res: Response) => {
@@ -456,7 +457,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
     // We need to find workspaces where the user has an unread count entry
     // Since unreadCount is a Map, we can't easily query keys in MongoDB directly without knowing the key
     // But we can find workspaces where `unreadCount.userId` exists and is > 0
-    const CollaboWorkspace = mongoose.model('CollaboWorkspace');
+    // const CollaboWorkspace = mongoose.model('CollaboWorkspace');
     const collaboWorkspaces = await CollaboWorkspace.find({
       [`unreadCount.${userId}`]: { $gt: 0 }
     });
