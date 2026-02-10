@@ -11,8 +11,7 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'http://localhost:5000' for local development
-// const API_BASE_URL = 'http://localhost:5000'
-const API_BASE_URL = 'https://api.myconnecta.ng'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -536,6 +535,16 @@ export const broadcastAPI = {
     individualEmail?: string
   }) => {
     const { data } = await api.post('/api/broadcast/email', broadcastData)
+    return data
+  },
+}
+
+// ============================================
+// CONTACT MESSAGES
+// ============================================
+export const contactAPI = {
+  getAll: async () => {
+    const { data } = await api.get('/api/contact')
     return data
   },
 }

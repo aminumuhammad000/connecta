@@ -50,6 +50,7 @@ app.use(cors({
   origin: [
     "http://102.68.84.56",
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://localhost:8081",
     "https://myconnecta.ng",
     "https://www.myconnecta.ng",
@@ -138,6 +139,67 @@ app.get("/debug/users", async (req, res) => {
     res.json(users);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/debug/setup", async (req, res) => {
+  try {
+    const mongoose = await import('mongoose');
+    const bcrypt = await import('bcryptjs');
+    const User = mongoose.model('User');
+
+    // Create Admin
+    const adminEmail = 'admin@connecta.com';
+    let admin = await User.findOne({ email: adminEmail });
+
+    if (admin) {
+      // Update password if exists
+      const hashedPassword = await bcrypt.default.hash('password123', 10);
+      admin.password = hashedPassword;
+      await admin.save();
+    } else {
+      const hashedPassword = await bcrypt.default.hash('password123', 10);
+      admin = await User.create({
+        firstName: 'Admin',
+        lastName: 'User',
+        email: adminEmail,
+        password: hashedPassword,
+        userType: 'admin',
+        isVerified: true
+      });
+    }
+
+    // Create a Client
+    const clientEmail = 'client@connecta.com';
+    let client = await User.findOne({ email: clientEmail });
+    if (!client) {
+      const hashedPassword = await bcrypt.default.hash('password123', 10);
+      client = await User.create({
+        firstName: 'John',
+        lastName: 'Client',
+        email: clientEmail,
+        password: hashedPassword,
+        userType: 'client',
+        isVerified: true
+      });
+    }
+
+    // Verify immediately
+    const isMatch = await bcrypt.default.compare('password123', admin.password);
+
+    res.send(`
+      <h1>Setup Complete (Passwords Hashed)</h1>
+      <p><b>Verification Check: ${isMatch ? '<span style="color:green">MATCH</span>' : '<span style="color:red">FAIL</span>'}</b></p>
+      <p>Users created/updated:</p>
+      <ul>
+        <li>Admin: <b>${adminEmail}</b> / password123</li>
+        <li>Client: <b>${clientEmail}</b> / password123</li>
+      </ul>
+      <p><a href="http://localhost:5174/login">Go to Admin Login</a></p>
+    `);
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).send(`Error: ${error.message}`);
   }
 });
 

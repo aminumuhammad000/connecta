@@ -30,3 +30,17 @@ export const submitContactForm = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
+
+export const getAllContactMessages = async (req: Request, res: Response) => {
+    try {
+        const messages = await Contact.find().sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: messages
+        });
+    } catch (error: any) {
+        console.error("Error fetching contact messages:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
