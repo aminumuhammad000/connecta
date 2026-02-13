@@ -998,293 +998,292 @@ const PostJobScreen: React.FC = () => {
       </View>
 
     </View>
-    </View >
   );
 
-const renderPreview = () => (
-  <View style={styles.stepWrapperContent}>
-    <View style={styles.stepHeader}>
-      <Text style={[styles.stepMainTitle, { color: c.text }]}>Review Post</Text>
-      <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Check everything one last time before going live.</Text>
-    </View>
-
-    {/* Job Overview Card */}
-    <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-      <View style={styles.previewSectionHeader}>
-        <View style={styles.previewSectionTitleRow}>
-          <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
-          <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>JOB OVERVIEW</Text>
-        </View>
-        <TouchableOpacity onPress={() => setCurrentStep(0)} style={styles.editBtnSmall}>
-          <MaterialIcons name="edit" size={14} color={c.primary} />
-          <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
-        </TouchableOpacity>
+  const renderPreview = () => (
+    <View style={styles.stepWrapperContent}>
+      <View style={styles.stepHeader}>
+        <Text style={[styles.stepMainTitle, { color: c.text }]}>Review Post</Text>
+        <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Check everything one last time before going live.</Text>
       </View>
 
-      <Text style={[styles.previewMainTitle, { color: c.text }]}>{title}</Text>
-
-      <View style={styles.previewMetaRow}>
-        <View style={styles.metaItem}>
-          <MaterialIcons name="business" size={14} color={c.primary} />
-          <Text style={[styles.previewMetaText, { color: c.subtext }]} numberOfLines={1}>{company}</Text>
-        </View>
-        <View style={[styles.metaDot, { backgroundColor: c.border }]} />
-        <View style={styles.metaItem}>
-          <MaterialIcons name="category" size={14} color={c.primary} />
-          <Text style={[styles.previewMetaText, { color: c.subtext }]} numberOfLines={1}>{category}</Text>
-        </View>
-      </View>
-
-      <View style={[styles.previewDescBox, { backgroundColor: c.border + '15' }]}>
-        <Text style={[styles.previewDescription, { color: c.text }]}>
-          {description}
-        </Text>
-      </View>
-    </View>
-
-    {/* Details & Skills Card */}
-    <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-      <View style={styles.previewSectionHeader}>
-        <View style={styles.previewSectionTitleRow}>
-          <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
-          <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>DETAILS & SKILLS</Text>
-        </View>
-        <TouchableOpacity onPress={() => setCurrentStep(1)} style={styles.editBtnSmall}>
-          <MaterialIcons name="edit" size={14} color={c.primary} />
-          <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.previewInfoGrid}>
-        <View style={styles.previewInfoItem}>
-          <View style={[styles.miniIconCircle, { backgroundColor: c.primary + '10' }]}>
-            <MaterialIcons name="place" size={14} color={c.primary} />
+      {/* Job Overview Card */}
+      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={styles.previewSectionHeader}>
+          <View style={styles.previewSectionTitleRow}>
+            <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
+            <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>JOB OVERVIEW</Text>
           </View>
-          <Text style={[styles.previewInfoValue, { color: c.text }]}>{location || 'Remote'}</Text>
-        </View>
-        <View style={styles.previewInfoItem}>
-          <View style={[styles.miniIconCircle, { backgroundColor: c.primary + '10' }]}>
-            <MaterialIcons name="bolt" size={14} color={c.primary} />
-          </View>
-          <Text style={[styles.previewInfoValue, { color: c.text }]}>{experience}</Text>
-        </View>
-      </View>
-
-      <View style={[styles.previewSkillsRow, { marginTop: 20 }]}>
-        {skills.map(s => (
-          <View key={s} style={[styles.refinedSkillChip, { backgroundColor: c.primary + '10', borderColor: c.primary + '20', borderWidth: 1 }]}>
-            <Text style={[styles.refinedSkillText, { color: c.primary }]}>{s}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-
-    {/* Budget & Timeline Card */}
-    <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-      <View style={styles.previewSectionHeader}>
-        <View style={styles.previewSectionTitleRow}>
-          <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
-          <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>BUDGET & TIMELINE</Text>
-        </View>
-        <TouchableOpacity onPress={() => setCurrentStep(2)} style={styles.editBtnSmall}>
-          <MaterialIcons name="edit" size={14} color={c.primary} />
-          <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.previewBudgetBox, { backgroundColor: c.primary + '05' }]}>
-        <View style={styles.previewBudgetRow}>
-          <View>
-            <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Total Budget</Text>
-            <Text style={[styles.previewBudgetValue, { color: c.text }]}>
-              {currency === 'NGN' ? '₦' : '$'}{budget}
-            </Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Deadline</Text>
-            <Text style={[styles.previewDateValue, { color: c.text }]}>{deadline}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-
-    {/* Info Banner */}
-    <View style={[styles.premiumEscrowBanner, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
-      <LinearGradient
-        colors={[c.primary, '#FF9F70']}
-        style={styles.escrowIconCircle}
-      >
-        <MaterialIcons name="info" size={20} color="#FFF" />
-      </LinearGradient>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.premiumEscrowTitle, { color: c.text }]}>Job Visibility</Text>
-        <Text style={[styles.premiumEscrowText, { color: c.subtext }]}>
-          Your job will be visible to freelancers once it has been reviewed and approved.
-        </Text>
-      </View>
-    </View>
-  </View>
-);
-
-const renderTypeSelection = () => (
-  <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
-    <View style={styles.selectionHeader}>
-      <Text style={[styles.selectionMainTitle, { color: c.text }]}>
-        Choose your hiring model
-      </Text>
-      <Text style={[styles.selectionSubTitle, { color: c.subtext }]}>
-        Select the best way to get your project done. You can always change this later.
-      </Text>
-    </View>
-
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
-      onPress={() => setJobMode('individual')}
-    >
-      <LinearGradient
-        colors={[c.primary, '#FF9F70']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.premiumIconCircle}
-      >
-        <MaterialIcons name="person" size={32} color="#FFF" />
-      </LinearGradient>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.premiumTypeTitle, { color: c.text }]}>Individual Expert</Text>
-        <Text style={[styles.premiumTypeDesc, { color: c.subtext }]}>
-          Perfect for specific tasks, short-term projects, or specialized roles.
-        </Text>
-        <View style={styles.featureList}>
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check-circle" size={14} color={c.primary} />
-            <Text style={[styles.featureText, { color: c.subtext }]}>Direct communication</Text>
-          </View>
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check-circle" size={14} color={c.primary} />
-            <Text style={[styles.featureText, { color: c.subtext }]}>Fixed or hourly rates</Text>
-          </View>
-        </View>
-      </View>
-      <MaterialIcons name="chevron-right" size={24} color={c.border} />
-    </TouchableOpacity>
-
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
-      onPress={() => (navigation as any).navigate('PostCollaboJob')}
-    >
-      <LinearGradient
-        colors={['#8B5CF6', '#A78BFA']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.premiumIconCircle}
-      >
-        <MaterialIcons name="groups" size={32} color="#FFF" />
-      </LinearGradient>
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={[styles.premiumTypeTitle, { color: c.text }]}>Collabo Team</Text>
-          <View style={styles.newBadge}>
-            <Text style={styles.newBadgeText}>NEW</Text>
-          </View>
-        </View>
-        <Text style={[styles.premiumTypeDesc, { color: c.subtext }]}>
-          Best for complex projects requiring multiple experts working in sync.
-        </Text>
-        <View style={styles.featureList}>
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check-circle" size={14} color="#8B5CF6" />
-            <Text style={[styles.featureText, { color: c.subtext }]}>AI-managed workflows</Text>
-          </View>
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check-circle" size={14} color="#8B5CF6" />
-            <Text style={[styles.featureText, { color: c.subtext }]}>Unified team budget</Text>
-          </View>
-        </View>
-      </View>
-      <MaterialIcons name="chevron-right" size={24} color={c.border} />
-    </TouchableOpacity>
-
-    <View style={[styles.infoBox, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
-      <MaterialIcons name="info-outline" size={20} color={c.primary} />
-      <Text style={[styles.infoBoxText, { color: c.subtext }]}>
-        Not sure? Most clients start with an <Text style={{ fontWeight: '700', color: c.text }}>Individual Expert</Text> for smaller tasks.
-      </Text>
-    </View>
-  </ScrollView>
-);
-
-return (
-  <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-    <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={[styles.header, { borderBottomColor: c.border }]}>
-          <TouchableOpacity
-            onPress={() => currentStep > 0 ? prevStep() : navigation.goBack()}
-            style={styles.iconBtn}
-          >
-            <MaterialIcons
-              name={currentStep > 0 ? "arrow-back" : "close"}
-              size={24}
-              color={c.text}
-            />
+          <TouchableOpacity onPress={() => setCurrentStep(0)} style={styles.editBtnSmall}>
+            <MaterialIcons name="edit" size={14} color={c.primary} />
+            <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: c.text }]}>Post a New Job</Text>
-          <View style={{ width: 40 }} />
         </View>
 
-        {(!jobMode && !isEditMode) ? (
-          renderTypeSelection()
-        ) : (
-          <>
-            {renderStepIndicator()}
-            <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-              {currentStep === 0 && renderBasics()}
-              {currentStep === 1 && renderDetails()}
-              {currentStep === 2 && renderBudget()}
-              {currentStep === 3 && renderPreview()}
-            </ScrollView>
+        <Text style={[styles.previewMainTitle, { color: c.text }]}>{title}</Text>
 
-            <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
-              <View style={{ flex: 1 }} />
-              <Button
-                title={
-                  currentStep === 3
-                    ? isEditMode
-                      ? 'Update'
-                      : 'Post Job'
-                    : 'Next'
-                }
-                onPress={
-                  currentStep === 3
-                    ? isEditMode
-                      ? handleUpdateJob
-                      : submitJob
-                    : nextStep
-                }
-                style={styles.smallNextBtn}
-                loading={isLoading}
-              />
+        <View style={styles.previewMetaRow}>
+          <View style={styles.metaItem}>
+            <MaterialIcons name="business" size={14} color={c.primary} />
+            <Text style={[styles.previewMetaText, { color: c.subtext }]} numberOfLines={1}>{company}</Text>
+          </View>
+          <View style={[styles.metaDot, { backgroundColor: c.border }]} />
+          <View style={styles.metaItem}>
+            <MaterialIcons name="category" size={14} color={c.primary} />
+            <Text style={[styles.previewMetaText, { color: c.subtext }]} numberOfLines={1}>{category}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.previewDescBox, { backgroundColor: c.border + '15' }]}>
+          <Text style={[styles.previewDescription, { color: c.text }]}>
+            {description}
+          </Text>
+        </View>
+      </View>
+
+      {/* Details & Skills Card */}
+      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={styles.previewSectionHeader}>
+          <View style={styles.previewSectionTitleRow}>
+            <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
+            <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>DETAILS & SKILLS</Text>
+          </View>
+          <TouchableOpacity onPress={() => setCurrentStep(1)} style={styles.editBtnSmall}>
+            <MaterialIcons name="edit" size={14} color={c.primary} />
+            <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.previewInfoGrid}>
+          <View style={styles.previewInfoItem}>
+            <View style={[styles.miniIconCircle, { backgroundColor: c.primary + '10' }]}>
+              <MaterialIcons name="place" size={14} color={c.primary} />
             </View>
-          </>
-        )}
+            <Text style={[styles.previewInfoValue, { color: c.text }]}>{location || 'Remote'}</Text>
+          </View>
+          <View style={styles.previewInfoItem}>
+            <View style={[styles.miniIconCircle, { backgroundColor: c.primary + '10' }]}>
+              <MaterialIcons name="bolt" size={14} color={c.primary} />
+            </View>
+            <Text style={[styles.previewInfoValue, { color: c.text }]}>{experience}</Text>
+          </View>
+        </View>
 
-        <SuccessModal
-          visible={showSuccessModal}
-          title="Job Posted!"
-          message="Your job has been posted successfully and is pending approval."
-          buttonText="Go to My Jobs"
-          onClose={() => {
-            setShowSuccessModal(false);
-            navigation.goBack();
-          }}
-        />
+        <View style={[styles.previewSkillsRow, { marginTop: 20 }]}>
+          {skills.map(s => (
+            <View key={s} style={[styles.refinedSkillChip, { backgroundColor: c.primary + '10', borderColor: c.primary + '20', borderWidth: 1 }]}>
+              <Text style={[styles.refinedSkillText, { color: c.primary }]}>{s}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
 
-      </KeyboardAvoidingView>
+      {/* Budget & Timeline Card */}
+      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={styles.previewSectionHeader}>
+          <View style={styles.previewSectionTitleRow}>
+            <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
+            <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>BUDGET & TIMELINE</Text>
+          </View>
+          <TouchableOpacity onPress={() => setCurrentStep(2)} style={styles.editBtnSmall}>
+            <MaterialIcons name="edit" size={14} color={c.primary} />
+            <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.previewBudgetBox, { backgroundColor: c.primary + '05' }]}>
+          <View style={styles.previewBudgetRow}>
+            <View>
+              <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Total Budget</Text>
+              <Text style={[styles.previewBudgetValue, { color: c.text }]}>
+                {currency === 'NGN' ? '₦' : '$'}{budget}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Deadline</Text>
+              <Text style={[styles.previewDateValue, { color: c.text }]}>{deadline}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Info Banner */}
+      <View style={[styles.premiumEscrowBanner, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
+        <LinearGradient
+          colors={[c.primary, '#FF9F70']}
+          style={styles.escrowIconCircle}
+        >
+          <MaterialIcons name="info" size={20} color="#FFF" />
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.premiumEscrowTitle, { color: c.text }]}>Job Visibility</Text>
+          <Text style={[styles.premiumEscrowText, { color: c.subtext }]}>
+            Your job will be visible to freelancers once it has been reviewed and approved.
+          </Text>
+        </View>
+      </View>
     </View>
-  </SafeAreaView>
-);
+  );
+
+  const renderTypeSelection = () => (
+    <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
+      <View style={styles.selectionHeader}>
+        <Text style={[styles.selectionMainTitle, { color: c.text }]}>
+          Choose your hiring model
+        </Text>
+        <Text style={[styles.selectionSubTitle, { color: c.subtext }]}>
+          Select the best way to get your project done. You can always change this later.
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
+        onPress={() => setJobMode('individual')}
+      >
+        <LinearGradient
+          colors={[c.primary, '#FF9F70']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.premiumIconCircle}
+        >
+          <MaterialIcons name="person" size={32} color="#FFF" />
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.premiumTypeTitle, { color: c.text }]}>Individual Expert</Text>
+          <Text style={[styles.premiumTypeDesc, { color: c.subtext }]}>
+            Perfect for specific tasks, short-term projects, or specialized roles.
+          </Text>
+          <View style={styles.featureList}>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={14} color={c.primary} />
+              <Text style={[styles.featureText, { color: c.subtext }]}>Direct communication</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={14} color={c.primary} />
+              <Text style={[styles.featureText, { color: c.subtext }]}>Fixed or hourly rates</Text>
+            </View>
+          </View>
+        </View>
+        <MaterialIcons name="chevron-right" size={24} color={c.border} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
+        onPress={() => (navigation as any).navigate('PostCollaboJob')}
+      >
+        <LinearGradient
+          colors={['#8B5CF6', '#A78BFA']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.premiumIconCircle}
+        >
+          <MaterialIcons name="groups" size={32} color="#FFF" />
+        </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={[styles.premiumTypeTitle, { color: c.text }]}>Collabo Team</Text>
+            <View style={styles.newBadge}>
+              <Text style={styles.newBadgeText}>NEW</Text>
+            </View>
+          </View>
+          <Text style={[styles.premiumTypeDesc, { color: c.subtext }]}>
+            Best for complex projects requiring multiple experts working in sync.
+          </Text>
+          <View style={styles.featureList}>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={14} color="#8B5CF6" />
+              <Text style={[styles.featureText, { color: c.subtext }]}>AI-managed workflows</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <MaterialIcons name="check-circle" size={14} color="#8B5CF6" />
+              <Text style={[styles.featureText, { color: c.subtext }]}>Unified team budget</Text>
+            </View>
+          </View>
+        </View>
+        <MaterialIcons name="chevron-right" size={24} color={c.border} />
+      </TouchableOpacity>
+
+      <View style={[styles.infoBox, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
+        <MaterialIcons name="info-outline" size={20} color={c.primary} />
+        <Text style={[styles.infoBoxText, { color: c.subtext }]}>
+          Not sure? Most clients start with an <Text style={{ fontWeight: '700', color: c.text }}>Individual Expert</Text> for smaller tasks.
+        </Text>
+      </View>
+    </ScrollView>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+      <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={[styles.header, { borderBottomColor: c.border }]}>
+            <TouchableOpacity
+              onPress={() => currentStep > 0 ? prevStep() : navigation.goBack()}
+              style={styles.iconBtn}
+            >
+              <MaterialIcons
+                name={currentStep > 0 ? "arrow-back" : "close"}
+                size={24}
+                color={c.text}
+              />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: c.text }]}>Post a New Job</Text>
+            <View style={{ width: 40 }} />
+          </View>
+
+          {(!jobMode && !isEditMode) ? (
+            renderTypeSelection()
+          ) : (
+            <>
+              {renderStepIndicator()}
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+                {currentStep === 0 && renderBasics()}
+                {currentStep === 1 && renderDetails()}
+                {currentStep === 2 && renderBudget()}
+                {currentStep === 3 && renderPreview()}
+              </ScrollView>
+
+              <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
+                <View style={{ flex: 1 }} />
+                <Button
+                  title={
+                    currentStep === 3
+                      ? isEditMode
+                        ? 'Update'
+                        : 'Post Job'
+                      : 'Next'
+                  }
+                  onPress={
+                    currentStep === 3
+                      ? isEditMode
+                        ? handleUpdateJob
+                        : submitJob
+                      : nextStep
+                  }
+                  style={styles.smallNextBtn}
+                  loading={isLoading}
+                />
+              </View>
+            </>
+          )}
+
+          <SuccessModal
+            visible={showSuccessModal}
+            title="Job Posted!"
+            message="Your job has been posted successfully and is pending approval."
+            buttonText="Go to My Jobs"
+            onClose={() => {
+              setShowSuccessModal(false);
+              navigation.goBack();
+            }}
+          />
+
+        </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
+  );
 };
 
 const CalendarModal = ({ visible, onClose, onSelect, currentDate }: any) => {
