@@ -1,4 +1,36 @@
-import { uploadFile } from './api';
+import { Platform } from 'react-native';
+import { uploadFile, uploadFilePublic } from './api';
+
+/**
+ * Upload an avatar publicly (for new users)
+ */
+export const uploadAvatarPublic = async (uri: string): Promise<string> => {
+    console.log('📤 Starting public avatar upload...');
+    const formData = new FormData();
+    const filename = uri.split('/').pop() || 'avatar.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+    if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('avatar', blob, filename);
+    } else {
+        formData.append('avatar', {
+            uri,
+            name: filename,
+            type,
+        } as any);
+    }
+
+    try {
+        const axiosResponse: any = await uploadFilePublic('/api/avatars/public-upload', formData);
+        return axiosResponse.data?.url;
+    } catch (error) {
+        console.error('❌ Public upload error:', error);
+        throw error;
+    }
+};
 import { API_ENDPOINTS, API_BASE_URL } from '../utils/constants';
 
 /**
@@ -8,22 +40,27 @@ import { API_ENDPOINTS, API_BASE_URL } from '../utils/constants';
  */
 export const uploadImage = async (uri: string): Promise<string> => {
     const formData = new FormData();
-    const filename = uri.split('/').pop();
-    const match = /\.(\w+)$/.exec(filename || '');
+    const filename = uri.split('/').pop() || 'file.jpg';
+    const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-    formData.append('file', {
-        uri,
-        name: filename,
-        type,
-    } as any);
+    if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, filename);
+    } else {
+        formData.append('file', {
+            uri,
+            name: filename,
+            type,
+        } as any);
+    }
 
-    const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
+    const axiosResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
+    const apiResponse = axiosResponse.data;
+    let url = apiResponse.data?.url || apiResponse.url || apiResponse;
 
-    // Backend returns { message: "...", data: { url: "/uploads/..." } }
-    let url = response.data?.url;
-
-    if (url && url.startsWith('/')) {
+    if (url && typeof url === 'string' && url.startsWith('/')) {
         url = `${API_BASE_URL}${url}`;
     }
 
@@ -36,29 +73,55 @@ export const uploadImage = async (uri: string): Promise<string> => {
  * @returns URL of the uploaded avatar
  */
 export const uploadAvatar = async (uri: string): Promise<string> => {
-    console.log('📤 Starting avatar upload for URI:', uri);
+    console.log('📤 Starting avatar upload for URI:', uri.substring(0, 50) + '...');
     const formData = new FormData();
     const filename = uri.split('/').pop() || 'avatar.jpg';
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-    // In React Native, the object must have uri, name, and type
-    const fileToUpload = {
-        uri: uri,
-        name: filename,
-        type: type,
-    };
+    if (Platform.OS === 'web') {
+        try {
+            console.log('🌐 Web platform detected, converting URI to Blob...');
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            console.log('📦 Blob created successfully:', { type: blob.type, size: blob.size });
 
-    console.log('FormData file object:', fileToUpload);
-
-    formData.append('avatar', fileToUpload as any);
+            // On Web, the third argument is the filename
+            formData.append('avatar', blob, filename);
+            console.log('✅ Blob appended to avatar field');
+        } catch (err) {
+            console.error('❌ Error creating blob for web upload:', err);
+            // Fallback: If fetch fails, try to append the uri directly 
+            // though this usually results in [object Object] if not handled by the environment
+            formData.append('avatar', uri);
+        }
+    } else {
+        console.log('📱 Mobile platform detected');
+        formData.append('avatar', {
+            uri: uri,
+            name: filename,
+            type: type,
+        } as any);
+    }
 
     try {
-        const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_AVATAR, formData);
-        console.log('✅ Upload response:', response.data);
-        return response.data?.url;
-    } catch (error) {
-        console.error('❌ Upload service error:', error);
+        console.log('🚀 Sending request to server...');
+        const axiosResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_AVATAR, formData);
+        console.log('✅ Server response received');
+
+        const apiResponse = axiosResponse.data;
+        // The server might return { success: true, data: { url: "..." } } 
+        // OR it might be flattened depending on the interceptor
+        const url = apiResponse.data?.url || apiResponse.url || apiResponse;
+
+        if (!url || typeof url !== 'string') {
+            console.error('❌ Unexpected response format:', apiResponse);
+            throw new Error('Invalid response from upload server');
+        }
+
+        return url;
+    } catch (error: any) {
+        console.error('❌ Upload service fatal error:', error);
         throw error;
     }
 };
@@ -69,26 +132,29 @@ export const uploadAvatar = async (uri: string): Promise<string> => {
  * @returns URL of the uploaded image
  */
 export const uploadPortfolioImage = async (uri: string): Promise<string> => {
-    console.log('📤 Starting portfolio upload for URI:', uri);
+    console.log('📤 Starting portfolio upload for URI:', uri.substring(0, 50) + '...');
     const formData = new FormData();
     const filename = uri.split('/').pop() || 'portfolio.jpg';
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-    const fileToUpload = {
-        uri: uri,
-        name: filename,
-        type: type,
-    };
-
-    console.log('FormData file object:', fileToUpload);
-
-    formData.append('file', fileToUpload as any);
+    if (Platform.OS === 'web') {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, filename);
+    } else {
+        formData.append('file', {
+            uri: uri,
+            name: filename,
+            type: type,
+        } as any);
+    }
 
     try {
-        const response: any = await uploadFile(API_ENDPOINTS.UPLOAD_PORTFOLIO_IMAGE, formData);
-        console.log('✅ Upload response:', response.data);
-        return response.data?.url;
+        const axiosResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_PORTFOLIO_IMAGE, formData);
+        console.log('✅ Portfolio upload response received');
+        const apiResponse = axiosResponse.data;
+        return apiResponse.data?.url || apiResponse.url || apiResponse;
     } catch (error) {
         console.error('❌ Upload service error:', error);
         throw error;

@@ -89,6 +89,7 @@ export default function EditProfileScreen({ navigation }: any) {
         lastName: '',
         email: '',
         phone: '',
+        whatsapp: '',
         location: '',
         bio: '',
         jobTitle: '',
@@ -155,7 +156,8 @@ export default function EditProfileScreen({ navigation }: any) {
                 firstName: user?.firstName || '',
                 lastName: user?.lastName || '',
                 email: user?.email || '',
-                phone: profile?.phone || '',
+                phone: profile?.phone || profile?.phoneNumber || (user as any)?.phone || (user as any)?.phoneNumber || '',
+                whatsapp: profile?.whatsapp || profile?.whatsappNumber || (user as any)?.whatsapp || (user as any)?.whatsappNumber || '',
                 location: profile?.location || '',
                 bio: profile?.bio || '',
                 jobTitle: profile?.jobTitle || '',
@@ -459,7 +461,10 @@ export default function EditProfileScreen({ navigation }: any) {
 
             // Update profile
             const savedProfile = await profileService.updateMyProfile({
-                phoneNumber: formData.phone, // Map phone to phoneNumber
+                phone: formData.phone,
+                phoneNumber: formData.phone,
+                whatsapp: formData.whatsapp,
+                whatsappNumber: formData.whatsapp,
                 location: formData.location,
                 bio: formData.bio,
                 jobTitle: formData.jobTitle,
@@ -478,6 +483,10 @@ export default function EditProfileScreen({ navigation }: any) {
                     firstName: formData.firstName,
                     lastName: formData.lastName,
                     email: formData.email,
+                    phone: formData.phone,
+                    phoneNumber: formData.phone,
+                    whatsapp: formData.whatsapp,
+                    whatsappNumber: formData.whatsapp,
                     profileImage: profileImage || undefined,
                 });
                 console.log('User updated, response:', updatedUserData);
@@ -590,6 +599,32 @@ export default function EditProfileScreen({ navigation }: any) {
                                 placeholder="your.email@example.com"
                                 placeholderTextColor={c.subtext}
                             />
+                        </View>
+
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                                <Text style={[styles.label, { color: c.subtext }]}>Phone Number</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                    value={formData.phone}
+                                    onChangeText={(text) => handleInputChange('phone', text)}
+                                    keyboardType="phone-pad"
+                                    placeholder="+234 xxx xxx xxxx"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
+
+                            <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                                <Text style={[styles.label, { color: c.subtext }]}>WhatsApp Number</Text>
+                                <TextInput
+                                    style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                    value={formData.whatsapp}
+                                    onChangeText={(text) => handleInputChange('whatsapp', text)}
+                                    keyboardType="phone-pad"
+                                    placeholder="+234 xxx xxx xxxx"
+                                    placeholderTextColor={c.subtext}
+                                />
+                            </View>
                         </View>
 
                         <View style={styles.inputGroup}>

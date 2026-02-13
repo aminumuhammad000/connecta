@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, Animated, Easing, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Image, Animated, Easing, TextInput, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../../theme/theme';
@@ -99,7 +99,7 @@ const LandingHero = ({ isDesktop }: { isDesktop?: boolean }) => {
                         <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'Login' })}>
                             <Text style={styles.headerLoginText}>Log In</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.headerJoinBtn} onPress={() => navigation.navigate('Auth', { screen: 'Signup' })}>
+                        <TouchableOpacity style={styles.headerJoinBtn} onPress={() => navigation.navigate('Auth', { screen: 'RoleSelection' })}>
                             <Text style={styles.headerJoinText}>Join Now</Text>
                         </TouchableOpacity>
                     </View>
@@ -269,9 +269,14 @@ const styles = StyleSheet.create({
         borderWidth: 4,
         borderColor: '#FFF5F0',
         elevation: 10,
-        shadowColor: '#FD6730',
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
+        ...Platform.select({
+            web: { boxShadow: '0 0 20px rgba(253, 103, 48, 0.3)' },
+            default: {
+                shadowColor: '#FD6730',
+                shadowOpacity: 0.3,
+                shadowRadius: 20,
+            }
+        }),
     },
     logoIcon: {
         width: 60,
@@ -294,9 +299,14 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
+        ...Platform.select({
+            web: { boxShadow: '0 0 5px rgba(0, 0, 0, 0.1)' },
+            default: {
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 5,
+            }
+        }),
         elevation: 5,
     },
     floatBadge: {
@@ -308,10 +318,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        ...Platform.select({
+            web: { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' },
+            default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+            }
+        }),
         elevation: 4,
         zIndex: 20,
     },
@@ -348,10 +363,15 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.95)',
         borderRadius: 24,
         padding: 8,
-        shadowColor: '#FD6730',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
+        ...Platform.select({
+            web: { boxShadow: '0 10px 20px rgba(253, 103, 48, 0.1)' },
+            default: {
+                shadowColor: '#FD6730',
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.1,
+                shadowRadius: 20,
+            }
+        }),
         elevation: 10,
         marginBottom: 32,
     },
@@ -373,9 +393,14 @@ const styles = StyleSheet.create({
     },
     activeTab: {
         backgroundColor: '#FFF',
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        ...Platform.select({
+            web: { boxShadow: '0 0 2px rgba(0, 0, 0, 0.05)' },
+            default: {
+                shadowColor: '#000',
+                shadowOpacity: 0.05,
+                shadowRadius: 2,
+            }
+        }),
         elevation: 2,
     },
     tabText: {
@@ -412,9 +437,14 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#FD6730',
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
+        ...Platform.select({
+            web: { boxShadow: '0 0 8px rgba(253, 103, 48, 0.4)' },
+            default: {
+                shadowColor: '#FD6730',
+                shadowOpacity: 0.4,
+                shadowRadius: 8,
+            }
+        }),
     },
     socialProof: {
         flexDirection: 'row',
@@ -500,9 +530,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 12,
-        shadowColor: '#FD6730',
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
+        ...Platform.select({
+            web: { boxShadow: '0 0 10px rgba(253, 103, 48, 0.3)' },
+            default: {
+                shadowColor: '#FD6730',
+                shadowOpacity: 0.3,
+                shadowRadius: 10,
+            }
+        }),
         elevation: 4,
     },
     headerJoinText: {

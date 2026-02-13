@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  connecta-agent:
+    build: .
+    container_name: connecta-agent
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env
+    restart: always

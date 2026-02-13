@@ -172,3 +172,31 @@ export const removeSecureItem = async (key: string): Promise<void> => {
         throw error;
     }
 };
+// Pending Signup Management
+export const savePendingSignupData = async (data: any): Promise<void> => {
+    try {
+        const existing = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_SIGNUP);
+        const merged = existing ? { ...JSON.parse(existing), ...data } : data;
+        await AsyncStorage.setItem(STORAGE_KEYS.PENDING_SIGNUP, JSON.stringify(merged));
+    } catch (error) {
+        console.error('Error saving pending signup data:', error);
+    }
+};
+
+export const getPendingSignupData = async (): Promise<any> => {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_SIGNUP);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error('Error getting pending signup data:', error);
+        return null;
+    }
+};
+
+export const clearPendingSignupData = async (): Promise<void> => {
+    try {
+        await AsyncStorage.removeItem(STORAGE_KEYS.PENDING_SIGNUP);
+    } catch (error) {
+        console.error('Error clearing pending signup data:', error);
+    }
+};

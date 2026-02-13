@@ -1,49 +1,21 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Animated, StatusBar, ImageBackground } from 'react-native';
+import React, { useState, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Animated, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import Logo from '../components/Logo';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as storage from '../utils/storage';
+import { useTranslation } from '../utils/i18n';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface OnboardingItem {
     id: string;
     title: string;
     subtitle: string;
     icon: any;
-    stat?: string;
-    statLabel?: string;
+    stat: string;
+    statLabel: string;
 }
-
-const ONBOARDING_DATA: OnboardingItem[] = [
-    {
-        id: '1',
-        title: 'Find Perfect Freelancers',
-        subtitle: 'Access a global network of top-tier talent ready to bring your ideas to life.',
-        icon: 'person-search',
-        stat: '15k+',
-        statLabel: 'Verified Experts',
-    },
-    {
-        id: '2',
-        title: 'Secure Payments',
-        subtitle: 'Your money is safe with our escrow system. Only pay when you are 100% satisfied.',
-        icon: 'verified-user',
-        stat: '100%',
-        statLabel: 'Payment Protection',
-    },
-    {
-        id: '3',
-        title: 'Manage Projects Easily',
-        subtitle: 'Track progress, share files, and communicate seamlessly in one unified workspace.',
-        icon: 'dashboard',
-        stat: '24/7',
-        statLabel: 'Support & Tools',
-    },
-];
 
 interface OnboardingScreenProps {
     navigation: any;
@@ -51,9 +23,37 @@ interface OnboardingScreenProps {
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     const c = useThemeColors();
+    const { t } = useTranslation();
     const scrollX = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef<FlatList>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+
+    const onboardingData: OnboardingItem[] = useMemo(() => [
+        {
+            id: '1',
+            title: t('find_freelancers'),
+            subtitle: t('find_freelancers_sub'),
+            icon: 'person-search',
+            stat: '15k+',
+            statLabel: t('experts_label'),
+        },
+        {
+            id: '2',
+            title: t('secure_payments'),
+            subtitle: t('secure_payments_sub'),
+            icon: 'verified-user',
+            stat: '100%',
+            statLabel: t('protection_label'),
+        },
+        {
+            id: '3',
+            title: t('manage_projects'),
+            subtitle: t('manage_projects_sub'),
+            icon: 'dashboard',
+            stat: '24/7',
+            statLabel: t('support_label'),
+        },
+    ], [t]);
 
     const handleScroll = Animated.event(
         [{ nativeEvent: { contentOffset: { x: scrollX } } }],
@@ -69,7 +69,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
     const handleNext = async () => {
-        if (currentIndex < ONBOARDING_DATA.length - 1) {
+        if (currentIndex < onboardingData.length - 1) {
             flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
         } else {
             completeOnboarding();
@@ -77,8 +77,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     };
 
     const completeOnboarding = async () => {
-        // Could save a flag here if we want to hide it next time
-        // await storage.setItem('HAS_SEEN_ONBOARDING', 'true');
         navigation.replace('Welcome');
     };
 
@@ -88,14 +86,13 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
             onPress={completeOnboarding}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-            <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', opacity: 0.8 }}>Skip</Text>
+            <Text style={{ color: c.text, fontSize: 16, fontWeight: '600', opacity: 0.8 }}>{t('skip')}</Text>
         </TouchableOpacity>
     );
 
     const renderItem = ({ item, index }: { item: OnboardingItem; index: number }) => {
         const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
 
-        // Animations
         const scale = scrollX.interpolate({
             inputRange,
             outputRange: [0.5, 1, 0.5],
@@ -117,14 +114,12 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
         return (
             <View style={[styles.slide, { width }]}>
                 <Animated.View style={[styles.visualContainer, { transform: [{ scale }, { translateY }], opacity }]}>
-                    {/* Background Blob/Shape */}
                     <View style={[styles.blob, { backgroundColor: c.primary + '15' }]} />
 
                     <View style={[styles.iconContainer, { backgroundColor: c.card, shadowColor: c.primary }]}>
                         <MaterialIcons name={item.icon} size={80} color={c.primary} />
                     </View>
 
-                    {/* Floating Stats Card */}
                     <View style={[styles.floatingCard, { backgroundColor: c.card, shadowColor: '#000' }]}>
                         <View style={[styles.statIconBadge, { backgroundColor: c.primary + '20' }]}>
                             <MaterialIcons name="insights" size={20} color={c.primary} />
@@ -138,9 +133,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
                 <View style={styles.contentContainer}>
                     <Text style={[styles.title, { color: c.text }]}>
-                        {item.title.split(' ').map((word, i) => (
-                            <Text key={i} style={i === 1 ? { color: c.primary } : {}}>{word} </Text>
-                        ))}
+                        {item.title}
                     </Text>
                     <Text style={[styles.subtitle, { color: c.subtext }]}>{item.subtitle}</Text>
                 </View>
@@ -151,7 +144,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
     const Paginator = () => {
         return (
             <View style={styles.paginator}>
-                {ONBOARDING_DATA.map((_, i) => {
+                {onboardingData.map((_, i) => {
                     const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
                     const dotWidth = scrollX.interpolate({
                         inputRange,
@@ -184,7 +177,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
             <FlatList
                 ref={flatListRef}
-                data={ONBOARDING_DATA}
+                data={onboardingData}
                 renderItem={renderItem}
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -206,10 +199,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
                     activeOpacity={0.9}
                 >
                     <Text style={styles.btnText}>
-                        {currentIndex === ONBOARDING_DATA.length - 1 ? "Get Started" : "Next"}
+                        {currentIndex === onboardingData.length - 1 ? t('get_started') : t('next')}
                     </Text>
                     <MaterialIcons
-                        name={currentIndex === ONBOARDING_DATA.length - 1 ? "check" : "arrow-forward"}
+                        name={currentIndex === onboardingData.length - 1 ? "check" : "arrow-forward"}
                         size={24}
                         color="#fff"
                     />

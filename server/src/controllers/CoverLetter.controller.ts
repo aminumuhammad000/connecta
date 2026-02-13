@@ -16,6 +16,14 @@ export const generateCoverLetter = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
+        // Enforce spark balance requirement
+        if ((user.sparks || 0) <= 0) {
+            return res.status(403).json({
+                success: false,
+                message: 'You need Sparks to use AI services. Please claim your daily reward or complete your profile to earn sparks.'
+            });
+        }
+
         // Prepare details
         const freelancerName = `${user.firstName} ${user.lastName}`;
         const freelancerSkills = profile?.skills || [];

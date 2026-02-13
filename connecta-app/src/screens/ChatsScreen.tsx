@@ -331,8 +331,29 @@ export default function ChatsScreen({ navigation }: any) {
                         }
                         ListEmptyComponent={
                             <View style={styles.emptyState}>
-                                <Ionicons name="chatbubbles-outline" size={48} color={c.subtext} />
-                                <Text style={[styles.emptyText, { color: c.subtext }]}>No conversations yet</Text>
+                                <Ionicons name="chatbubbles-outline" size={64} color={c.subtext} />
+                                <Text style={[styles.emptyTitle, { color: c.text }]}>No Conversations Yet</Text>
+                                <Text style={[styles.emptyText, { color: c.subtext }]}>
+                                    {user?.userType === 'freelancer'
+                                        ? "Once you start applying or chatting with clients, your messages will appear here."
+                                        : "Find freelancers and start a conversation to see your chats here."}
+                                </Text>
+                                {user?.userType === 'freelancer' && (
+                                    <TouchableOpacity
+                                        style={[styles.emptyStateBtn, { backgroundColor: c.primary }]}
+                                        onPress={() => navigation.navigate('Gigs')}
+                                    >
+                                        <Text style={styles.emptyStateBtnText}>Find Gigs</Text>
+                                    </TouchableOpacity>
+                                )}
+                                {user?.userType === 'client' && (
+                                    <TouchableOpacity
+                                        style={[styles.emptyStateBtn, { backgroundColor: c.primary }]}
+                                        onPress={() => navigation.navigate('PublicFreelancerSearch')}
+                                    >
+                                        <Text style={styles.emptyStateBtnText}>Find Freelancers</Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         }
                     />
@@ -526,10 +547,35 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 48,
+        marginTop: 40,
+    },
+    emptyTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginTop: 16,
     },
     emptyText: {
-        marginTop: 16,
+        marginTop: 8,
+        fontSize: 14,
+        textAlign: 'center',
+        opacity: 0.7,
+        lineHeight: 20,
+    },
+    emptyStateBtn: {
+        marginTop: 24,
+        paddingHorizontal: 32,
+        paddingVertical: 14,
+        borderRadius: 25,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    emptyStateBtnText: {
+        color: '#FFF',
         fontSize: 16,
+        fontWeight: '700',
     },
     newChatBtn: {
         width: 36,

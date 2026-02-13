@@ -2,9 +2,6 @@ import { Request, Response } from 'express';
 import TwilioService from '../../services/twilio.service.js';
 import Profile from '../../models/Profile.model.js';
 import axios from 'axios';
-import { ConnectaAgent } from '../../core/ai/connecta-agent/agent.js';
-import { getApiKeys } from '../../services/apiKeys.service.js';
-import User from '../../models/user.model.js';
 
 /**
  * Handle Twilio WhatsApp Webhook
@@ -18,7 +15,6 @@ export const handleTwilioWebhook = async (req: Request, res: Response) => {
         const phoneNumber = From.replace('whatsapp:', '');
 
         // 1. Find User by Phone
-        // Need to check Profile for phone number match
         const profile = await Profile.findOne({ phoneNumber }).populate('user');
 
         if (!profile || !profile.user) {
@@ -30,28 +26,25 @@ export const handleTwilioWebhook = async (req: Request, res: Response) => {
         const user = profile.user as any;
         console.log(`Found user: ${user.firstName} ${user.lastName} (${user._id})`);
 
-        // 2. Initialize Agent for User
-        const apiKeys = await getApiKeys();
-        const agent = new ConnectaAgent({
-            apiBaseUrl: process.env.API_BASE_URL || "http://localhost:5000",
-            authToken: "", // Agent handles context via DB now mostly, but tools might need tokens. 
-            // Ideally we should generate a temporary token or use internal service calls.
-            // For now, let's proceed. The Agent might need bypassing auth for internal calls or we generate one.
+        // 2. Process Message via Standalone Agent Service
+        const AGENT_SERVER_URL = process.env.AGENT_SERVER_URL || "http://localhost:5001";
+        console.log(`🔀 Proxying WhatsApp message to Agent service: ${AGENT_SERVER_URL}`);
+
+        const agentResponse = await axios.post(`${AGENT_SERVER_URL}/api/agent`, {
+            input: Body,
             userId: user._id.toString(),
-            openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback",
-            mockMode: false,
-            // Prefix conversation ID to separate WA chats
-            conversationId: `wa_${user._id}_${new Date().toISOString().split('T')[0]}`
+            userType: user.userType
+        }, {
+            timeout: 35000
         });
 
-        await agent.initialize();
+        if (!agentResponse.data || !agentResponse.data.result) {
+            throw new Error('Invalid response from Agent service');
+        }
 
-        // 3. Process Message
-        // Send typing indicator (optional, not heavily supported in basic Twilio API but good practice logic)
+        const result = agentResponse.data.result;
 
-        const result = await agent.process(Body);
-
-        // 4. Send Response
+        // 3. Send Response
         let responseText = result.message || "";
 
         // If result has rich data (cards), format it simply for WhatsApp
@@ -80,8 +73,8 @@ export const handleTwilioWebhook = async (req: Request, res: Response) => {
         await TwilioService.sendWhatsAppMessage(From, responseText);
 
         res.status(200).send('<Response></Response>');
-    } catch (error) {
-        console.error('Twilio Webhook Error:', error);
+    } catch (error: any) {
+        console.error('Twilio Webhook Error:', error.message);
         res.status(500).send('Error');
     }
 };

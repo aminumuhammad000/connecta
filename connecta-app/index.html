@@ -6,6 +6,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Connecta</title>
+    <style>
+        html,
+        body,
+        #root {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: #F8FAFC;
+        }
+
+        #root {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Ensure the first child of root (React container) also fills the height */
+        #root>div {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-93286SQF3N"></script>
     <script>

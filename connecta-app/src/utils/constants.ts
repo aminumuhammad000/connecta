@@ -3,10 +3,10 @@
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = false;
+const USE_LOCAL_SERVER = true;
 
 // Server URLs
-const ONLINE_SERVER = 'https://api.myconnecta.ng';
+const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API
 const LOCAL_SERVER = 'http://192.168.43.204:5000'; // Use your computer's local IP
 
 export const API_BASE_URL = USE_LOCAL_SERVER ? LOCAL_SERVER : ONLINE_SERVER;
@@ -21,6 +21,7 @@ export const STORAGE_KEYS = {
     THEME_MODE: '@connecta/theme_mode',
     BIOMETRIC_ENABLED: '@connecta/biometric_enabled',
     AI_CHAT_HISTORY: '@connecta/ai_chat_history',
+    PENDING_SIGNUP: '@connecta/pending_signup',
 } as const;
 
 // API Endpoints
@@ -130,6 +131,9 @@ export const API_ENDPOINTS = {
     UPLOAD_FILE: '/api/uploads/upload',
     UPLOAD_AVATAR: '/api/avatars/upload',
     UPLOAD_PORTFOLIO_IMAGE: '/api/portfolio/upload',
+    CLAIM_REWARD: '/api/users/claim-reward',
+    SPARK_HISTORY: '/api/users/spark-history',
+    SPARK_STATS: '/api/users/spark-stats',
 } as const;
 
 // Default Values

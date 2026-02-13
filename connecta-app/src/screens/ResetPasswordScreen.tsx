@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import Logo from '../components/Logo';
 import { resetPassword } from '../services/authService';
 import CustomAlert, { AlertType } from '../components/CustomAlert';
+import ChatGreeting from '../components/ChatGreeting';
+import { useTranslation } from '../utils/i18n';
+import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
+import Button from '../components/Button';
+import Input from '../components/Input';
+import AnimatedBackground from '../components/AnimatedBackground';
+import { useNavigation } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 
 interface ResetPasswordScreenProps {
     email: string;
@@ -14,13 +22,15 @@ interface ResetPasswordScreenProps {
 }
 
 const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, resetToken, onPasswordReset }) => {
-    // ... (keep state)
+    const navigation = useNavigation();
     const c = useThemeColors();
+    const { t, lang } = useTranslation();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
+    const [confirmError, setConfirmError] = useState('');
 
     // Alert State
     const [alertVisible, setAlertVisible] = useState(false);
@@ -31,7 +41,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, resetT
     });
 
     const showAlert = (title: string, message: string, type: AlertType = 'success', onOk?: () => void) => {
-        setAlertConfig({ title, message, type, onOk });
+        setAlertConfig({ title: t(title as any) || title, message: t(message as any) || message, type, onOk });
         setAlertVisible(true);
     };
 
@@ -43,18 +53,27 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, resetT
     };
 
     const validatePassword = () => {
-        if (!password.trim() || !confirmPassword.trim()) {
-            showAlert('Error', 'Please fill in all fields', 'error');
-            return false;
+        setPasswordError('');
+        setConfirmError('');
+
+        let hasError = false;
+        if (!password.trim()) {
+            setPasswordError('Please enter a new password.');
+            hasError = true;
         }
 
         if (password.length < 8) {
-            showAlert('Error', 'Password must be at least 8 characters long', 'error');
-            return false;
+            setPasswordError('Your new password should be at least 8 characters long.');
+            hasError = true;
         }
 
         if (password !== confirmPassword) {
-            showAlert('Error', 'Passwords do not match', 'error');
+            setConfirmError('Those passwords don\'t match. Can you double check?');
+            hasError = true;
+        }
+
+        if (hasError) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             return false;
         }
 
@@ -70,115 +89,127 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, resetT
             await resetPassword(resetToken, password);
 
             showAlert(
-                'Success',
-                'Your password has been reset successfully!',
+                'success',
+                'Your password has been updated. You can now log in with your new password!',
                 'success',
                 () => onPasswordReset?.()
             );
         } catch (error: any) {
-            showAlert('Error', error.response?.data?.message || 'Failed to reset password. Please try again.', 'error');
+            showAlert('error', error.response?.data?.message || 'Something went wrong. Please try again.', 'error');
         } finally {
             setIsLoading(false);
         }
     };
 
+    const sideContent = (
+        <View style={styles.desktopSide}>
+            <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
+                <Ionicons name="refresh-circle-outline" size={70} color={c.primary} />
+            </View>
+            <Text style={[styles.sideTitle, { color: c.text }]}>Account{'\n'}Restored</Text>
+            <Text style={[styles.sideSub, { color: c.subtext }]}>
+                You're one step away from getting back into your account. Choose a strong password and stay secure.
+            </Text>
+        </View>
+    );
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-                    <View style={styles.center}>
-                        <View style={[styles.logoWrap, { backgroundColor: c.card, shadowColor: c.primary }]}>
-                            <MaterialIcons name="lock-reset" size={48} color={c.primary} />
-                        </View>
-                        <Text style={[styles.title, { color: c.text }]}>Reset Password</Text>
-                        <Text style={[styles.subtitle, { color: c.subtext }]}>
-                            Create a new password for your account
-                        </Text>
+            <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
+            <AnimatedBackground />
+            <ResponsiveOnboardingWrapper sideComponent={sideContent}>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                    <View style={styles.mainWrapper}>
+                        <ScrollView
+                            contentContainerStyle={styles.scroll}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            <View style={styles.headerControls}>
+                                <TouchableOpacity
+                                    onPress={() => (navigation as any).navigate('LanguageSelect')}
+                                    style={[styles.langToggle, { backgroundColor: c.card, borderColor: c.border }]}
+                                >
+                                    <MaterialIcons name="language" size={18} color={c.primary} />
+                                    <Text style={[styles.langToggleText, { color: c.text }]}>
+                                        {lang === 'ha' ? 'Hausa' : 'English'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
 
-                        <View style={styles.form}>
-                            <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.card }]}>
-                                <MaterialIcons name="lock-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-                                <TextInput
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    placeholder="New Password"
-                                    placeholderTextColor={c.subtext}
-                                    style={[styles.input, { color: c.text }]}
+                            <View style={styles.chatSection}>
+                                <ChatGreeting
+                                    messages={[
+                                        { text: t('reset_header') },
+                                        { text: t('reset_sub') },
+                                        { text: email, delay: 500 }
+                                    ]}
+                                />
+                            </View>
+
+                            <View style={styles.form}>
+                                <View style={styles.passContainer}>
+                                    <Input
+                                        value={password}
+                                        onChangeText={(val) => { setPassword(val); setPasswordError(''); }}
+                                        placeholder={t('password')}
+                                        icon="lock-outline"
+                                        secureTextEntry={!showPassword}
+                                        editable={!isLoading}
+                                        error={passwordError}
+                                    />
+                                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+                                        <MaterialIcons name={showPassword ? "visibility" : "visibility-off"} size={20} color={c.subtext} />
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Input
+                                    value={confirmPassword}
+                                    onChangeText={(val) => { setConfirmPassword(val); setConfirmError(''); }}
+                                    placeholder={t('confirm_new_pass')}
+                                    icon="lock-outline"
                                     secureTextEntry={!showPassword}
                                     editable={!isLoading}
+                                    error={confirmError}
                                 />
-                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                                    <MaterialIcons
-                                        name={showPassword ? "visibility" : "visibility-off"}
-                                        size={20}
-                                        color={c.subtext}
-                                    />
-                                </TouchableOpacity>
-                            </View>
 
-                            <View style={[styles.inputWrap, { borderColor: c.border, backgroundColor: c.card }]}>
-                                <MaterialIcons name="lock-outline" size={20} color={c.subtext} style={styles.inputIcon} />
-                                <TextInput
-                                    value={confirmPassword}
-                                    onChangeText={setConfirmPassword}
-                                    placeholder="Confirm New Password"
-                                    placeholderTextColor={c.subtext}
-                                    style={[styles.input, { color: c.text }]}
-                                    secureTextEntry={!showConfirmPassword}
-                                    editable={!isLoading}
-                                />
-                                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
-                                    <MaterialIcons
-                                        name={showConfirmPassword ? "visibility" : "visibility-off"}
-                                        size={20}
-                                        color={c.subtext}
-                                    />
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.passwordRequirements}>
-                                <Text style={[styles.requirementTitle, { color: c.text }]}>Password must contain:</Text>
-                                <View style={styles.requirementItem}>
-                                    <MaterialIcons
-                                        name={password.length >= 8 ? "check-circle" : "radio-button-unchecked"}
-                                        size={16}
-                                        color={password.length >= 8 ? '#4CAF50' : c.subtext}
-                                    />
-                                    <Text style={[styles.requirementText, { color: c.subtext }]}>
-                                        At least 8 characters
-                                    </Text>
-                                </View>
-                                <View style={styles.requirementItem}>
-                                    <MaterialIcons
-                                        name={password === confirmPassword && password.length > 0 ? "check-circle" : "radio-button-unchecked"}
-                                        size={16}
-                                        color={password === confirmPassword && password.length > 0 ? '#4CAF50' : c.subtext}
-                                    />
-                                    <Text style={[styles.requirementText, { color: c.subtext }]}>
-                                        Passwords match
-                                    </Text>
+                                <View style={styles.passwordRequirements}>
+                                    <Text style={[styles.requirementTitle, { color: c.text }]}>{t('pass_req')}</Text>
+                                    <View style={styles.requirementItem}>
+                                        <MaterialIcons
+                                            name={password.length >= 8 ? "check-circle" : "radio-button-unchecked"}
+                                            size={18}
+                                            color={password.length >= 8 ? '#4CAF50' : c.subtext}
+                                        />
+                                        <Text style={[styles.requirementText, { color: c.subtext }]}>
+                                            {t('min_chars')}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.requirementItem}>
+                                        <MaterialIcons
+                                            name={password === confirmPassword && password.length > 0 ? "check-circle" : "radio-button-unchecked"}
+                                            size={18}
+                                            color={password === confirmPassword && password.length > 0 ? '#4CAF50' : c.subtext}
+                                        />
+                                        <Text style={[styles.requirementText, { color: c.subtext }]}>
+                                            {t('pass_match')}
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
 
-                            <TouchableOpacity
-                                onPress={handleResetPassword}
-                                activeOpacity={0.9}
-                                style={[
-                                    styles.primaryBtn,
-                                    { backgroundColor: c.primary },
-                                    isLoading && { opacity: 0.6 }
-                                ]}
-                                disabled={isLoading}
-                            >
-                                <Text style={styles.primaryBtnText}>
-                                    {isLoading ? 'Resetting...' : 'Reset Password'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+                            <View style={styles.footer}>
+                                <Button
+                                    title={isLoading ? t('resetting') : t('reset_btn')}
+                                    onPress={handleResetPassword}
+                                    loading={isLoading}
+                                    size="large"
+                                />
+                            </View>
+                        </ScrollView>
                     </View>
-                </ScrollView>
-
-            </KeyboardAvoidingView>
+                </KeyboardAvoidingView>
+            </ResponsiveOnboardingWrapper>
 
             <CustomAlert
                 visible={alertVisible}
@@ -193,97 +224,38 @@ const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ email, resetT
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    center: {
+    mainWrapper: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-        paddingTop: 40,
-    },
-    logoWrap: {
-        padding: 20,
-        borderRadius: 20,
-        marginBottom: 28,
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 4,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: '600',
-        letterSpacing: -0.5,
-    },
-    subtitle: {
-        marginTop: 8,
-        fontSize: 15,
-        fontWeight: '400',
-        textAlign: 'center',
-        paddingHorizontal: 20,
-    },
-    form: {
         width: '100%',
-        maxWidth: 380,
-        marginTop: 32,
-        gap: 14,
+        maxWidth: 500,
+        alignSelf: 'center',
     },
-    inputWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 14,
-        paddingHorizontal: 14,
-        shadowColor: '#000',
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 1,
+    scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40, paddingTop: 40 },
+    chatSection: {
+        marginBottom: 32,
     },
-    inputIcon: {
-        marginRight: 10,
-    },
-    input: {
-        flex: 1,
-        height: 52,
-        fontSize: 16,
-    },
-    eyeIcon: {
-        padding: 4,
-    },
+    headerControls: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10 },
+    langToggle: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, gap: 6 },
+    langToggleText: { fontSize: 14, fontWeight: '700' },
+    form: { gap: 20, marginBottom: 32 },
+    passContainer: { position: 'relative' },
+    eyeIcon: { position: 'absolute', right: 16, top: 18 },
     passwordRequirements: {
-        marginTop: 8,
-        gap: 8,
+        marginTop: 10,
+        gap: 10,
+        padding: 16,
+        backgroundColor: 'rgba(0,0,0,0.03)',
+        borderRadius: 16,
     },
-    requirementTitle: {
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    requirementItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    requirementText: {
-        fontSize: 12,
-    },
-    primaryBtn: {
-        height: 52,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 3,
-    },
-    primaryBtnText: {
-        color: '#fff',
-        fontSize: 15,
-        fontWeight: '600',
-        letterSpacing: 0.3,
-    },
+    requirementTitle: { fontSize: 13, fontWeight: '700', marginBottom: 6 },
+    requirementItem: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    requirementText: { fontSize: 13, fontWeight: '500' },
+    footer: { marginTop: 'auto' },
+    // Desktop
+    desktopSide: { padding: 40, alignItems: 'center', justifyContent: 'center' },
+    bigIconBox: { width: 120, height: 120, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
+    sideTitle: { fontSize: 44, fontWeight: '900', textAlign: 'center', letterSpacing: -1.5, marginBottom: 16, lineHeight: 52 },
+    sideSub: { fontSize: 18, textAlign: 'center', opacity: 0.7, maxWidth: 360, lineHeight: 28 },
 });
 
 export default ResetPasswordScreen;

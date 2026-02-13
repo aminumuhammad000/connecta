@@ -173,7 +173,33 @@ const MyProposalsScreen: React.FC = () => {
               );
             })
           ) : (
-            <Text style={{ textAlign: 'center', color: c.subtext, marginTop: 20 }}>No proposals found</Text>
+            <View style={{ alignItems: 'center', paddingTop: 60, width: '100%' }}>
+              <MaterialIcons name="assignment-late" size={64} color={c.subtext} />
+              <Text style={{ color: c.text, fontSize: 18, marginTop: 16, fontWeight: '700' }}>
+                No Proposals Yet
+              </Text>
+              <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8, textAlign: 'center' }}>
+                You haven't submitted any proposals yet.{'\n'}Start applying to jobs to see them here.
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('MatchingJobs' as any)}
+                style={{
+                  marginTop: 24,
+                  backgroundColor: c.primary,
+                  paddingHorizontal: 24,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8
+                }}
+              >
+                <MaterialIcons name="search" size={20} color="#FFF" />
+                <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '700' }}>
+                  Find Jobs
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </ScrollView>
       </View>

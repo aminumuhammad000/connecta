@@ -10,11 +10,33 @@ import { AuthResponse, LoginCredentials, SignupData, ApiResponse, UserType } fro
 console.log('AuthService Module Loaded');
 
 /**
- * Sign up a new user
+ * Check if email exists
  */
-export const signup = async (data: SignupData, autoLogin?: boolean): Promise<AuthResponse> => {
+export const checkEmailExists = async (email: string): Promise<{ success: boolean; exists: boolean }> => {
+    const response = await post<{ success: boolean; exists: boolean }>('/api/users/check-email', { email });
+    return response as any;
+};
+
+/**
+ * Check if phone number exists
+ */
+export const checkPhoneExists = async (phoneNumber: string): Promise<{ success: boolean; exists: boolean }> => {
+    const response = await post<{ success: boolean; exists: boolean }>('/api/users/check-phone', { phoneNumber });
+    return response as any;
+};
+
+/**
+ * Initiate sign up (send OTP without creating user)
+ */
+export const initiateSignup = async (email: string, firstName: string, preferredLanguage?: string): Promise<ApiResponse> => {
+    return await post<ApiResponse>('/api/users/initiate-signup', { email, firstName, preferredLanguage });
+};
+
+/**
+ * Sign up a new user (Complete)
+ */
+export const signup = async (data: any, autoLogin?: boolean): Promise<AuthResponse> => {
     const response = await post<AuthResponse>(API_ENDPOINTS.SIGNUP, { ...data, autoLogin });
-    // Handle both { data: { token... } } and { token... } structures
     const authData = response.data || response;
     return authData as AuthResponse;
 };
@@ -85,7 +107,13 @@ export const changePassword = async (currentPassword: string, newPassword: strin
     return response;
 };
 
+export const updatePreferredLanguage = async (preferredLanguage: 'en' | 'ha'): Promise<ApiResponse> => {
+    const response = await post<ApiResponse>('/api/users/preferred-language', { preferredLanguage });
+    return response;
+};
+
 export default {
+    initiateSignup,
     signup,
     signin,
     googleSignin,
@@ -95,4 +123,6 @@ export default {
     verifyEmail,
     resendVerification,
     updatePushToken,
+    changePassword,
+    updatePreferredLanguage,
 };

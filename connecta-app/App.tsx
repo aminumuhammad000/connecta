@@ -21,22 +21,42 @@ import FreelancerNavigator from './src/navigation/FreelancerNavigator';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { logAppOpen, logEvent, setUserId } from './src/utils/analytics';
+import { useFonts } from 'expo-font';
+import { MaterialIcons, MaterialCommunityIcons, Ionicons, Feather } from '@expo/vector-icons';
+import { FloatingAIButton } from './src/components/FloatingAIButton';
 
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    ...MaterialIcons.font,
+    ...MaterialCommunityIcons.font,
+    ...Ionicons.font,
+    ...Feather.font,
+  });
+
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#FD6730" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <RoleProvider>
-            <SocketProvider>
-              <InAppAlertProvider>
-                <AppContent />
-              </InAppAlertProvider>
-            </SocketProvider>
-          </RoleProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <View style={{ flex: 1, height: Platform.OS === 'web' ? '100vh' : '100%' }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <RoleProvider>
+              <SocketProvider>
+                <InAppAlertProvider>
+                  <AppContent />
+                </InAppAlertProvider>
+              </SocketProvider>
+            </RoleProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </View>
   );
 }
 
@@ -46,6 +66,7 @@ function AppContent() {
   const { showAlert } = useInAppAlert();
   const navigationRef = useRef<any>();
   const routeNameRef = useRef<string | null>(null);
+  const [currentRoute, setCurrentRoute] = React.useState<string | null>(null);
 
   useEffect(() => {
     // Skip notification setup on web - not fully supported
@@ -126,6 +147,10 @@ function AppContent() {
       ref={navigationRef}
       onReady={() => {
         routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name || null;
+        setCurrentRoute(routeNameRef.current);
+      }}
+      documentTitle={{
+        formatter: (options, route) => `${options?.title ?? route?.name ?? 'Connecta'} - Connecta`,
       }}
       onStateChange={async () => {
         const previousRouteName = routeNameRef.current;
@@ -138,10 +163,12 @@ function AppContent() {
           console.log(`[Analytics] Screen view logged: ${currentRouteName}`);
         }
         routeNameRef.current = currentRouteName;
+        setCurrentRoute(currentRouteName);
       }}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={c.background} />
       <RootNavigation />
+      <FloatingAIButton forcedRouteName={currentRoute || undefined} navigationRef={navigationRef} />
     </NavigationContainer>
   );
 }

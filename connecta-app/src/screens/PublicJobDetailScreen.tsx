@@ -36,7 +36,7 @@ const PublicJobDetailScreen: React.FC = () => {
     };
 
     const handleApply = () => {
-        navigation.navigate('Auth', { screen: 'Signup' });
+        navigation.navigate('Auth', { screen: 'RoleSelection' });
     };
 
     if (isLoading) {

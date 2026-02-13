@@ -16,6 +16,8 @@ export interface User {
     isVerified?: boolean;
     savedJobs?: string[];
     emailFrequency?: 'daily' | 'weekly' | 'monthly';
+    sparks?: number;
+    lastRewardClaimedAt?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -51,9 +53,22 @@ export interface Profile {
     location?: string;
     phone?: string;
     phoneNumber?: string; // Added alias
+    whatsapp?: string; // Added
+    whatsappNumber?: string; // Added alias
     website?: string;
     companyName?: string; // Added
     avatar?: string; // Added
+    country?: string; // Added
+    city?: string; // Added
+    timezone?: string; // Added
+    preferredLanguage?: 'en' | 'ha';
+    entityType?: 'individual' | 'team'; // Added
+    sparks: number;
+    streakDays: number;
+    lastCheckIn?: string;
+    trustScore: number; // 0-100
+    tier: 'newcomer' | 'pro' | 'expert' | 'elite';
+    // Added
 
     // Onboarding / Preferences
     remoteWorkType?: 'remote_only' | 'hybrid' | 'onsite';

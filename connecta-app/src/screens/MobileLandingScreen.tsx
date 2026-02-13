@@ -50,7 +50,7 @@ const MobileLandingScreen = () => {
     };
 
     const handleLogin = () => navigation.navigate('Auth', { screen: 'Login' });
-    const handleJoin = () => navigation.navigate('Auth', { screen: 'Signup' });
+    const handleJoin = () => navigation.navigate('Auth', { screen: 'RoleSelection' });
 
     // Navigation Handlers
     const handleFreelancerPress = (id: string) => {
@@ -273,10 +273,15 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#F1F5F9',
         elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
+        ...Platform.select({
+            web: { boxShadow: '0 2px 4px rgba(0, 0, 0, 0.03)' },
+            default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.03,
+                shadowRadius: 4,
+            }
+        }),
         zIndex: 100,
     },
     headerBtnPrimary: {
@@ -287,10 +292,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        shadowColor: '#FD6730',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        ...Platform.select({
+            web: { boxShadow: '0 4px 8px rgba(253, 103, 48, 0.2)' },
+            default: {
+                shadowColor: '#FD6730',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+            }
+        }),
         elevation: 3,
     },
     headerBtnSecondary: {
@@ -325,10 +335,15 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#F1F5F9',
-        shadowColor: '#64748B',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
+        ...Platform.select({
+            web: { boxShadow: '0 8px 12px rgba(100, 116, 139, 0.05)' },
+            default: {
+                shadowColor: '#64748B',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.05,
+                shadowRadius: 12,
+            }
+        }),
         elevation: 4,
         marginBottom: 8, // For shadow
     },
@@ -350,10 +365,15 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         borderWidth: 1,
         borderColor: '#F1F5F9',
-        shadowColor: '#64748B',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 12,
+        ...Platform.select({
+            web: { boxShadow: '0 4px 12px rgba(100, 116, 139, 0.04)' },
+            default: {
+                shadowColor: '#64748B',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.04,
+                shadowRadius: 12,
+            }
+        }),
         elevation: 2
     },
     jobCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
@@ -370,7 +390,22 @@ const styles = StyleSheet.create({
     postedTime: { fontSize: 12, color: '#A0AEC0', fontWeight: '500' },
 
     // AI Banner
-    aiBanner: { marginHorizontal: 24, marginTop: 40, borderRadius: 24, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16 },
+    aiBanner: {
+        marginHorizontal: 24,
+        marginTop: 40,
+        borderRadius: 24,
+        overflow: 'hidden',
+        elevation: 4,
+        ...Platform.select({
+            web: { boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)' },
+            default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.15,
+                shadowRadius: 16,
+            }
+        })
+    },
     aiGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 28 },
     aiBadge: { backgroundColor: '#FD6730', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 },
     aiBadgeText: { fontSize: 11, fontWeight: '800', color: '#fff' },
@@ -383,7 +418,23 @@ const styles = StyleSheet.create({
 
     // Support
     supportGrid: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 60 },
-    supportCard: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },
+    supportCard: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...Platform.select({
+            web: { boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)' },
+            default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+            }
+        }),
+        elevation: 3
+    },
 
     // Desktop Responsive Styles
     mainContainer: {

@@ -11,6 +11,7 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber?: string;
   password: string;
   profileImage?: string;
   isActive?: boolean;
@@ -18,6 +19,7 @@ export interface IUser extends Document {
   pushToken?: string;
   isSubscribedToGigs?: boolean;
   emailFrequency?: "daily" | "weekly" | "monthly";
+  preferredLanguage?: "en" | "ha";
 
   // Reputation & Badges
   averageRating: number;
@@ -32,6 +34,11 @@ export interface IUser extends Document {
 
   createdAt: Date;
   updatedAt: Date;
+  profileReminderSent?: boolean;
+  sparks: number;
+  lastRewardClaimedAt?: Date;
+  referralCode: string;
+  referredBy?: mongoose.Types.ObjectId;
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -63,6 +70,7 @@ const UserSchema: Schema<IUser> = new Schema(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    phoneNumber: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
     profileImage: { type: String, required: false },
     isActive: { type: Boolean, default: true },
@@ -73,6 +81,11 @@ const UserSchema: Schema<IUser> = new Schema(
       type: String,
       enum: ["daily", "weekly", "monthly"],
       default: "daily",
+    },
+    preferredLanguage: {
+      type: String,
+      enum: ["en", "ha"],
+      default: "en",
     },
 
     // Reputation & Badges
@@ -89,6 +102,11 @@ const UserSchema: Schema<IUser> = new Schema(
       completionRate: { type: Number, default: 100 }, // Percentage
       responseTime: { type: Number, default: 24 }, // Avg hours (default 24h)
     },
+    profileReminderSent: { type: Boolean, default: false },
+    sparks: { type: Number, default: 0 },
+    lastRewardClaimedAt: { type: Date },
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

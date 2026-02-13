@@ -214,11 +214,6 @@ export default function ProfileScreen({ navigation }: any) {
                       </Text>
                     </View>
                   )}
-                  {profile?.isPremium && (
-                    <View style={styles.premiumBadge}>
-                      <Ionicons name="star" size={12} color="#FFF" />
-                    </View>
-                  )}
                 </View>
                 <View style={styles.statsRow}>
                   <View style={styles.statItem}>
@@ -241,7 +236,9 @@ export default function ProfileScreen({ navigation }: any) {
               <View style={styles.infoSection}>
                 <View style={styles.nameRow}>
                   <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-                  {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
+                  {user?.isVerified && (
+                    <MaterialIcons name="verified" size={20} color={c.primary} style={{ marginLeft: 6 }} />
+                  )}
                 </View>
                 <Text style={[styles.role, { color: c.primary }]}>{profile?.jobTitle || profile?.title || 'Freelancer'}</Text>
 
@@ -295,27 +292,17 @@ export default function ProfileScreen({ navigation }: any) {
                     <Text style={[styles.profileActionText, { color: c.text }]}>Prefs</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[
-                      styles.profileActionBtn,
-                      {
-                        borderColor: profile?.isPremium ? '#F59E0B' : c.border,
-                        backgroundColor: profile?.isPremium ? '#F59E0B15' : c.card,
-                        borderWidth: profile?.isPremium ? 1.5 : 1
-                      }
-                    ]}
-                    onPress={() => navigation.navigate('ManageSubscription')}
-                  >
-                    <Ionicons
-                      name={profile?.isPremium ? "diamond" : "star-outline"}
-                      size={14}
-                      color={profile?.isPremium ? '#F59E0B' : c.text}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text style={[styles.profileActionText, { color: profile?.isPremium ? '#F59E0B' : c.text, fontWeight: '700' }]}>
-                      {profile?.isPremium ? 'Premium' : 'Go Pro'}
-                    </Text>
-                  </TouchableOpacity>
+
+
+                  {!user?.isVerified && (
+                    <TouchableOpacity
+                      style={[styles.profileActionBtn, { borderColor: c.primary, backgroundColor: c.primary + '10' }]}
+                      onPress={() => navigation.navigate('IdentityVerification')}
+                    >
+                      <MaterialIcons name="verified-user" size={14} color={c.primary} style={{ marginRight: 6 }} />
+                      <Text style={[styles.profileActionText, { color: c.primary, fontWeight: '700' }]}>Verify</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Profile Strength with Description */}

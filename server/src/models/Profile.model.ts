@@ -35,8 +35,12 @@ export interface IProfile extends Document {
   user: IUser["_id"]; // Reference to User model
   phoneNumber?: string;
   location?: string;
+  country?: string;
+  city?: string;
+  timezone?: string;
   resume?: string; // Could be a URL to uploaded file
   skills?: string[]; // Array of skills
+  preferredLanguage?: 'en' | 'ha';
 
   // Client-specific fields
   companyName?: string;
@@ -113,8 +117,12 @@ const ProfileSchema = new Schema<IProfile>(
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
     phoneNumber: { type: String },
     location: { type: String },
+    country: { type: String },
+    city: { type: String },
+    timezone: { type: String },
     resume: { type: String },
     skills: [{ type: String }],
+    preferredLanguage: { type: String, enum: ['en', 'ha'], default: 'en' },
 
     // Client-specific fields
     companyName: { type: String },

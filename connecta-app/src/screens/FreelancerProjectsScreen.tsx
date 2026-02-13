@@ -152,10 +152,32 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
                     }
                 >
                     {filtered.length === 0 ? (
-                        <View style={{ alignItems: 'center', paddingTop: 40 }}>
+                        <View style={{ alignItems: 'center', paddingTop: 60 }}>
                             <MaterialIcons name="work-outline" size={64} color={c.subtext} />
-                            <Text style={{ color: c.text, fontSize: 18, marginTop: 16 }}>No jobs found</Text>
-                            <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8 }}>Active contracts will appear here</Text>
+                            <Text style={{ color: c.text, fontSize: 18, marginTop: 16, fontWeight: '700' }}>
+                                No Jobs Found
+                            </Text>
+                            <Text style={{ color: c.subtext, fontSize: 14, marginTop: 8, textAlign: 'center' }}>
+                                You don't have any active projects yet.{'\n'}Start applying to jobs to get hired.
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => navigation.navigate('MatchingJobs')}
+                                style={{
+                                    marginTop: 24,
+                                    backgroundColor: c.primary,
+                                    paddingHorizontal: 24,
+                                    paddingVertical: 14,
+                                    borderRadius: 12,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 8
+                                }}
+                            >
+                                <MaterialIcons name="search" size={20} color="#FFF" />
+                                <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '700' }}>
+                                    Find Jobs
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     ) : (
                         filtered.map((p: any) => {

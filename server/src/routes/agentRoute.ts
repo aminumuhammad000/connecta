@@ -1,96 +1,61 @@
 // src/routes/agent.routes.ts
 import { Router, Request, Response } from "express";
-import { loadTools } from "../core/ai/connecta-agent/tools/index.js";
-import { ConnectaAgent } from "../core/ai/connecta-agent/agent.js";
-import { getApiKeys } from "../services/apiKeys.service.js";
+import axios from "axios";
 
 const router = Router();
 
-// 🧠 Global init: load tools once when the server starts
-let toolsLoaded = false;
-
-async function ensureToolsLoaded() {
-  if (!toolsLoaded) {
-    await loadTools();
-    toolsLoaded = true;
-    console.log("✅ Tools successfully loaded for Connecta Agent.");
-  }
-}
-
-interface AgentRequest {
-  input: string;
-  userId: string;
-  userType?: string;
-}
-
-// Helper to create agent
-async function createAgent(userId: string, authToken?: string, userType?: string) {
-  await ensureToolsLoaded(); // ensure tools are ready before creating agent
-
-  const apiKeys = await getApiKeys();
-  const agent = new ConnectaAgent({
-    apiBaseUrl: `http://localhost:${process.env.PORT || 5000}`,
-    authToken: authToken || process.env.CONNECTA_AUTH_TOKEN || "",
-    openaiApiKey: apiKeys.openrouter || process.env.OPENROUTER_API_KEY || "fallback-api-key",
-    mockMode: false,
-    userId,
-  });
-
-  await agent.initialize(); // Initialize agent (fetches settings and sets up model)
-  return agent;
-}
-
-// POST /api/agent
+// This route now proxies requests to the standalone agent server
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { input, userId, userType } = req.body as AgentRequest;
-    const authHeader = (req.headers["authorization"] as string) || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+    const { input, userId, userType } = req.body;
+    const authHeader = req.headers["authorization"] || "";
 
-    console.log("📥 Agent request received:", { input: input?.substring(0, 50), userId, userType });
+    // Require User model to check sparks
+    const User = (await import("../models/user.model.js")).default;
+    const user = await User.findById(userId);
 
-    if (!input || !userId) {
-      return res.status(400).json({
-        error: "Missing required fields: 'input' and 'userId' are required.",
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Enforce spark balance requirement for AI services
+    if ((user.sparks || 0) <= 0) {
+      return res.status(403).json({
+        success: false,
+        message: "You need Sparks to use Connecta AI. Please claim your daily reward or complete your profile to earn sparks."
       });
     }
 
-    const agent = await createAgent(userId, token, userType);
+    const AGENT_SERVER_URL = process.env.AGENT_SERVER_URL || "http://localhost:5001";
 
-    // Add timeout to prevent hanging requests
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("AI Service Timeout")), 25000) // 25s timeout
-    );
+    console.log("🔀 Proxying agent request to standalone server...");
 
-    const result = await Promise.race([
-      agent.process(input),
-      timeoutPromise
-    ]) as any;
-
-    console.log("✅ Agent response:", { success: result.success, hasData: !!result.data });
-
-    return res.json({
-      success: true,
-      result,
+    const response = await axios.post(`${AGENT_SERVER_URL}/api/agent`, {
+      input,
+      userId,
+      userType
+    }, {
+      headers: {
+        "Authorization": authHeader,
+        "Content-Type": "application/json"
+      },
+      timeout: 35000 // Slightly longer than agent timeout
     });
+
+    return res.json(response.data);
   } catch (error: any) {
-    console.error("❌ Agent error:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      cause: error.cause,
-    });
-    let errorMessage = error.message || "Internal Server Error";
-    if (errorMessage.includes("Gemini") || errorMessage.includes("API configuration") || errorMessage.includes("Timeout")) {
-      errorMessage = "I'm having a temporary connection issue. Please try again in a moment.";
-    }
+    console.error("❌ Proxy error to Agent Server:", error.message);
 
-    return res.status(500).json({
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || "AI Agent Service is temporarily unavailable.";
+
+    return res.status(status).json({
       success: false,
-      message: errorMessage,
-      error: errorMessage,
+      message,
+      error: message
     });
   }
 });
 
 export default router;
+

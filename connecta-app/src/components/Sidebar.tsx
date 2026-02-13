@@ -224,10 +224,15 @@ const styles = StyleSheet.create({
     sidebar: {
         flex: 1,
         height: '100%',
-        shadowColor: "#000",
-        shadowOffset: { width: 10, height: 0 },
-        shadowOpacity: 0.2,
-        shadowRadius: 20,
+        ...Platform.select({
+            web: { boxShadow: '10px 0 20px rgba(0, 0, 0, 0.2)' },
+            default: {
+                shadowColor: "#000",
+                shadowOffset: { width: 10, height: 0 },
+                shadowOpacity: 0.2,
+                shadowRadius: 20,
+            }
+        }),
         elevation: 20,
         borderTopRightRadius: 16,
         borderBottomRightRadius: 16,
@@ -287,9 +292,14 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: 'white',
         marginBottom: 2,
-        textShadowColor: 'rgba(0,0,0,0.1)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
+        ...Platform.select({
+            web: { textShadow: '0px 1px 2px rgba(0,0,0,0.1)' },
+            default: {
+                textShadowColor: 'rgba(0,0,0,0.1)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+            }
+        }),
     },
     roleBadge: {
         backgroundColor: 'rgba(255,255,255,0.2)',

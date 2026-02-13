@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated, Dimensions, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 
@@ -31,26 +31,26 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
             Animated.parallel([
                 Animated.spring(scaleValue, {
                     toValue: 1,
-                    useNativeDriver: true,
+                    useNativeDriver: Platform.OS !== 'web',
                     friction: 5,
                     tension: 40
                 }),
                 Animated.timing(opacityValue, {
                     toValue: 1,
                     duration: 200,
-                    useNativeDriver: true
+                    useNativeDriver: Platform.OS !== 'web'
                 })
             ]).start();
         } else {
             Animated.timing(scaleValue, {
                 toValue: 0,
                 duration: 200,
-                useNativeDriver: true
+                useNativeDriver: Platform.OS !== 'web'
             }).start();
             Animated.timing(opacityValue, {
                 toValue: 0,
                 duration: 200,
-                useNativeDriver: true
+                useNativeDriver: Platform.OS !== 'web'
             }).start();
         }
     }, [visible]);
@@ -128,13 +128,15 @@ const styles = StyleSheet.create({
         padding: 24,
         alignItems: 'center',
         borderWidth: 1,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 10,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 10.84,
+        ...Platform.select({
+            web: { boxShadow: '0 10px 10px rgba(0, 0, 0, 0.25)' },
+            default: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 10 },
+                shadowOpacity: 0.25,
+                shadowRadius: 10.84,
+            }
+        }),
         elevation: 10,
     },
     iconContainer: {

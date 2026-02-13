@@ -8,8 +8,9 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import jobService from '../services/jobService';
 import { Job } from '../types';
+import Avatar from '../components/Avatar';
 
-const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
+const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'internal' | 'external' | 'fixed' | 'hourly' | 'remote' | 'entry' | 'intermediate' | 'expert'>('all');
@@ -206,6 +207,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                 placeholderTextColor={c.subtext}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                autoFocus={route.params?.autoFocus}
                 style={[styles.searchInput, { color: c.text }]}
               />
               {searchQuery.length > 0 && (
@@ -214,63 +216,63 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                 </TouchableOpacity>
               )}
             </View>
-
-            {/* Primary Source Filter (Segmented Control) */}
-            <View style={{
-              flexDirection: 'row',
-              backgroundColor: c.card,
-              borderRadius: 16,
-              padding: 4,
-              marginTop: 16,
-              borderWidth: 1,
-              borderColor: c.border
-            }}>
-              {(['all', 'internal', 'external'] as const).map((filter) => (
-                <TouchableOpacity
-                  key={filter}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 12,
-                    backgroundColor: selectedFilter === filter ? c.primary : 'transparent',
-                  }}
-                  onPress={() => setSelectedFilter(filter)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={{
-                    fontSize: 13,
-                    fontWeight: '700',
-                    color: selectedFilter === filter ? '#FFF' : c.subtext,
-                    textTransform: 'capitalize'
-                  }}>
-                    {filter} Jobs
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Secondary Filters */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ gap: 8 }}>
-              {['fixed', 'hourly', 'remote', 'entry', 'intermediate', 'expert'].map((filter) => (
-                <TouchableOpacity
-                  key={filter}
-                  style={[
-                    styles.filterChip,
-                    selectedFilter === filter
-                      ? { backgroundColor: c.primary, borderWidth: 0 }
-                      : { backgroundColor: c.card, borderColor: c.border }
-                  ]}
-                  onPress={() => setSelectedFilter(filter as any)}
-                >
-                  <Text style={selectedFilter === filter ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
           </View>
+
+          {/* Primary Source Filter (Segmented Control) */}
+          <View style={{
+            flexDirection: 'row',
+            backgroundColor: c.card,
+            borderRadius: 16,
+            padding: 4,
+            marginTop: 16,
+            borderWidth: 1,
+            borderColor: c.border
+          }}>
+            {(['all', 'internal', 'external'] as const).map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 12,
+                  backgroundColor: selectedFilter === filter ? c.primary : 'transparent',
+                }}
+                onPress={() => setSelectedFilter(filter)}
+                activeOpacity={0.8}
+              >
+                <Text style={{
+                  fontSize: 13,
+                  fontWeight: '700',
+                  color: selectedFilter === filter ? '#FFF' : c.subtext,
+                  textTransform: 'capitalize'
+                }}>
+                  {filter} Jobs
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Secondary Filters */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ gap: 8 }}>
+            {['fixed', 'hourly', 'remote', 'entry', 'intermediate', 'expert'].map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                style={[
+                  styles.filterChip,
+                  selectedFilter === filter
+                    ? { backgroundColor: c.primary, borderWidth: 0 }
+                    : { backgroundColor: c.card, borderColor: c.border }
+                ]}
+                onPress={() => setSelectedFilter(filter as any)}
+              >
+                <Text style={selectedFilter === filter ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
           {/* Jobs List */}
           <View style={styles.section}>
@@ -305,24 +307,42 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                         }}>
                           {/* Header: Title & Save */}
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                            <View style={{ flex: 1, gap: 4 }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
-                                  {job.title}
-                                </Text>
-                                {isNew && (
-                                  <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                              <View style={{ position: 'relative' }}>
+                                <Avatar
+                                  uri={(job.clientId as any)?.profileImage || job.companyLogo}
+                                  name={job.company || (job.clientId as any)?.firstName || 'C'}
+                                  size={45}
+                                />
+                                {isInternal && (
+                                  <View style={{
+                                    position: 'absolute',
+                                    bottom: -2,
+                                    right: -2,
+                                    backgroundColor: '#FFF',
+                                    borderRadius: 10,
+                                    padding: 1
+                                  }}>
+                                    <MaterialIcons name="verified" size={16} color="#FF7F50" />
                                   </View>
                                 )}
                               </View>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
-                                  {job.company || 'Confidential'} • {job.posted ? formatPostedTime(job.posted) : 'Recently'}
-                                </Text>
-                                {isInternal && (
-                                  <MaterialIcons name="verified" size={16} color="#FF7F50" />
-                                )}
+                              <View style={{ flex: 1, gap: 4 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                  <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
+                                    {job.title}
+                                  </Text>
+                                  {isNew && (
+                                    <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                      <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                                    </View>
+                                  )}
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                  <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
+                                    {job.company || 'Confidential'} • {job.posted ? formatPostedTime(job.posted) : 'Recently'}
+                                  </Text>
+                                </View>
                               </View>
                             </View>
                             <TouchableOpacity onPress={() => toggleSaveGig(job._id)}>
@@ -394,10 +414,34 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation }) => {
                 })
               ) : (
                 <View style={{ padding: 40, alignItems: 'center' }}>
-                  <MaterialIcons name="work-outline" size={48} color={c.subtext} />
-                  <Text style={{ color: c.subtext, marginTop: 12, textAlign: 'center' }}>
-                    No jobs found matching your criteria
+                  <MaterialIcons name="work-outline" size={64} color={c.subtext} />
+                  <Text style={{ color: c.text, marginTop: 16, fontSize: 18, fontWeight: '700', textAlign: 'center' }}>
+                    No Jobs Found
                   </Text>
+                  <Text style={{ color: c.subtext, marginTop: 8, textAlign: 'center', fontSize: 14 }}>
+                    No jobs found matching your criteria.{'\n'}Try adjusting your filters or search term.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchQuery('');
+                      setSelectedFilter('all');
+                    }}
+                    style={{
+                      marginTop: 24,
+                      backgroundColor: c.primary,
+                      paddingHorizontal: 24,
+                      paddingVertical: 14,
+                      borderRadius: 12,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8
+                    }}
+                  >
+                    <MaterialIcons name="refresh" size={20} color="#FFF" />
+                    <Text style={{ color: '#FFF', fontSize: 15, fontWeight: '700' }}>
+                      Browse All Jobs
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>

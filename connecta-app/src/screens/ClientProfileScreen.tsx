@@ -254,11 +254,6 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       </Text>
                     </View>
                   )}
-                  {profile?.isPremium && (
-                    <View style={styles.premiumBadge}>
-                      <Ionicons name="star" size={12} color="#FFF" />
-                    </View>
-                  )}
                 </View>
                 <View style={styles.statsRow}>
                   {profile?.userType === 'freelancer' ? (
@@ -297,7 +292,6 @@ export default function ClientProfileScreen({ navigation, route }: any) {
               <View style={styles.infoSection}>
                 <View style={styles.nameRow}>
                   <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-                  {profile?.isPremium && <Ionicons name="checkmark-circle" size={18} color="#3B82F6" style={{ marginLeft: 4 }} />}
                 </View>
                 <Text style={[styles.role, { color: c.primary }]}>
                   {profile?.userType === 'freelancer'
@@ -340,12 +334,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       <Text style={[styles.profileActionText, { color: c.text }]}>Post Job</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={[styles.profileActionIconBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                      onPress={() => navigation.navigate('ManageSubscription')}
-                    >
-                      <Ionicons name={profile?.isPremium ? "settings-outline" : "star-outline"} size={18} color={c.text} />
-                    </TouchableOpacity>
+
                   </View>
                 ) : (
                   <View style={styles.actionButtons}>

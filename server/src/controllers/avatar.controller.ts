@@ -71,3 +71,20 @@ export const uploadAvatar = async (req: Request, res: Response) => {
         });
     }
 };
+// Public upload (for users not yet in DB)
+export const publicUploadAvatar = async (req: Request, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+        const imageUrl = (req.file as any).path || (req.file as any).secure_url || (req.file as any).url;
+        res.status(200).json({
+            success: true,
+            message: 'Image uploaded to Cloudinary',
+            url: imageUrl
+        });
+    } catch (error: any) {
+        console.error('Public Upload error:', error);
+        res.status(500).json({ success: false, message: 'Upload failed' });
+    }
+};

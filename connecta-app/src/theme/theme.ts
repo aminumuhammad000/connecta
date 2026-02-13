@@ -50,6 +50,7 @@ function getThemeColors(isDark: boolean) {
     secondary: palette.secondary,
     accent: palette.accent,
     error: palette.error,
+    success: palette.success,
     gradients: isDark ? { ...gradients, background: gradients.dark } : { ...gradients, background: gradients.light },
     shadows: {
       small: {

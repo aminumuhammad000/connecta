@@ -107,7 +107,7 @@ const PublicFreelancerProfileScreen: React.FC = () => {
     const handleHire = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         if (!isAuthenticated) {
-            navigation.navigate('Auth', { screen: 'Signup' });
+            navigation.navigate('Auth', { screen: 'RoleSelection' });
         } else {
             openInviteModal();
         }

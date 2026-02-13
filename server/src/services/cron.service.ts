@@ -1,7 +1,10 @@
 import * as cron from "node-cron";
 import mongoose from "mongoose";
-import "../models/Job.model.js";
-const Job = mongoose.model("Job");
+import User from "../models/user.model.js";
+import Profile from "../models/Profile.model.js";
+import { sendProfileReminderEmail } from "./email.service.js";
+import twilioService from "./twilio.service.js";
+import { Job } from "../models/Job.model.js";
 
 /**
  * Initialize cron jobs
@@ -32,8 +35,72 @@ export const initCronJobs = () => {
         }
     });
 
+    // Run every hour to remind users with incomplete profiles
+    // 0 * * * * = every hour at minute 0
+    cron.schedule("0 * * * *", async () => {
+        await checkIncompleteProfiles();
+    });
+
     console.log("✅ Cron jobs initialized");
 };
+
+/**
+ * Check for users who registered 24h ago but haven't completed their profile
+ */
+async function checkIncompleteProfiles() {
+    console.log("⏰ Checking for incomplete profiles (24h reminder)...");
+    try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+        // Find users who registered between 24 and 48 hours ago
+        // and haven't been sent a reminder yet
+        const users = await User.find({
+            createdAt: { $gte: fortyEightHoursAgo, $lte: twentyFourHoursAgo },
+            profileReminderSent: { $ne: true },
+            userType: { $ne: "admin" } // Don't remind admins
+        });
+
+        if (users.length === 0) {
+            console.log("ℹ️ No users found for 24h profile reminder");
+            return;
+        }
+
+        console.log(`📣 Found ${users.length} potential users for profile reminder`);
+
+        for (const user of users) {
+            // Check profile
+            const profile = await Profile.findOne({ user: user._id });
+
+            const isIncomplete = !profile ||
+                (user.userType === 'freelancer' && (!profile.bio || !profile.skills || profile.skills.length === 0)) ||
+                ((user.userType === 'client' || user.userType === 'employer') && (!profile.bio || !profile.companyName));
+
+            if (isIncomplete) {
+                console.log(`📧 Sending reminder to ${user.email}...`);
+
+                // 1. Send Email
+                await sendProfileReminderEmail(user.email, user.firstName);
+
+                // 2. Send WhatsApp if phone number exists
+                if (profile?.phoneNumber) {
+                    const whatsappMsg = `Hi ${user.firstName}! 👋 We noticed you haven't completed your profile on Connecta yet. A complete profile helps you stand out and get 5x more opportunities! Complete it here: https://app.myconnecta.ng/settings/profile`;
+                    await twilioService.sendWhatsAppMessage(profile.phoneNumber, whatsappMsg);
+                }
+
+                // 3. Mark as sent
+                await User.updateOne({ _id: user._id }, { profileReminderSent: true });
+                console.log(`✅ Reminder sent to ${user.firstName} (${user.email})`);
+            } else {
+                // If profile is complete, just mark as sent so we don't check again
+                await User.updateOne({ _id: user._id }, { profileReminderSent: true });
+                console.log(`ℹ️ User ${user.email} already has a complete profile`);
+            }
+        }
+    } catch (error: any) {
+        console.error("❌ Error in profile reminder cron:", error.message);
+    }
+}
 
 /**
  * Send batch job match emails
@@ -50,7 +117,7 @@ async function sendBatchJobMatchEmails(frequency: 'daily' | 'weekly') {
         const matches = await JobMatch.find({
             notificationFrequency: frequency,
             isEmailed: false
-        }).populate('user', 'firstName email').populate('job', 'title skills');
+        }).populate('user', 'firstName email sparks').populate('job', 'title skills');
 
         if (matches.length === 0) {
             console.log(`ℹ️ No pending ${frequency} matches found`);
@@ -73,6 +140,18 @@ async function sendBatchJobMatchEmails(frequency: 'daily' | 'weekly') {
         // 3. Send emails
         for (const userId in userMatches) {
             const { user, jobs } = userMatches[userId];
+
+            // Enforce spark balance requirement
+            if ((user.sparks || 0) <= 0) {
+                console.log(`ℹ️ Skipping job matches for ${user.email} - Zero spark balance`);
+
+                // Still mark as emailed so we don't keep trying and failing for the same matches
+                await JobMatch.updateMany(
+                    { user: user._id, notificationFrequency: frequency, isEmailed: false },
+                    { isEmailed: true }
+                );
+                continue;
+            }
             const jobListHtml = jobs.map((job: any) => `
                 <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #e5e7eb; border-radius: 12px;">
                     <h4 style="margin: 0 0 10px 0; color: #111827;">${job.title}</h4>

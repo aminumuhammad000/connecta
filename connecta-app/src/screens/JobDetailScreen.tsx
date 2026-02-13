@@ -9,6 +9,7 @@ import proposalService from '../services/proposalService';
 import { useAuth } from '../context/AuthContext';
 import SuccessModal from '../components/SuccessModal';
 import Badge from '../components/Badge';
+import Avatar from '../components/Avatar';
 
 const JobDetailScreen: React.FC = () => {
   const c = useThemeColors();
@@ -350,18 +351,29 @@ const JobDetailScreen: React.FC = () => {
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                  <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>
-                      {(job.clientId?.firstName || job.clientName || 'C').charAt(0).toUpperCase()}
-                    </Text>
+                  <View style={{ position: 'relative' }}>
+                    <Avatar 
+                      uri={job.clientId?.profileImage || job.companyLogo} 
+                      name={job.clientId?.firstName || job.clientName || 'C'} 
+                      size={56} 
+                    />
+                    {job.paymentVerified && (
+                      <View style={{ 
+                        position: 'absolute', 
+                        bottom: -2, 
+                        right: -2, 
+                        backgroundColor: '#FFF', 
+                        borderRadius: 10,
+                        padding: 1
+                      }}>
+                        <MaterialIcons name="verified" size={18} color="#22C55E" />
+                      </View>
+                    )}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
-                        {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? 'External Client' : 'Unknown Client'))}
-                      </Text>
-                      {job.paymentVerified && <MaterialIcons name="verified" size={16} color="#22C55E" />}
-                    </View>
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
+                      {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? 'External Client' : 'Unknown Client'))}
+                    </Text>
                     <Text style={{ color: c.subtext, fontSize: 13, marginTop: 2 }}>
                       Member since {new Date(job.createdAt).getFullYear()}
                     </Text>

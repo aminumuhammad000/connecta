@@ -16,6 +16,8 @@ import * as collaboService from '../services/collaboService';
 import { DashboardStats, User } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import EmailVerificationModal from '../components/EmailVerificationModal';
+import SuccessModal from '../components/SuccessModal';
+import userService from '../services/userService';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { useSocket } from '../context/SocketContext';
@@ -24,7 +26,7 @@ const { width } = Dimensions.get('window');
 
 const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [freelancers, setFreelancers] = useState<User[]>([]);
@@ -33,6 +35,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileMissing, setProfileMissing] = useState(false);
   const [authModalVisible, setAuthModalVisible] = React.useState(false);
+  const [rewardModalVisible, setRewardModalVisible] = useState(false);
+  const [claimingReward, setClaimingReward] = useState(false);
 
   // Invite Modal State
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
@@ -48,6 +52,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
     loadDashboardData();
     checkProfileStatus();
     checkAuthStatus();
+    checkDailyReward();
   }, []);
 
   useEffect(() => {
@@ -74,8 +79,49 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
       loadDashboardData();
       checkProfileStatus();
       checkAuthStatus();
+      checkDailyReward();
     }, [user])
   );
+
+  const checkDailyReward = async () => {
+    if (!user) return;
+    try {
+      const now = new Date();
+      if (user.lastRewardClaimedAt) {
+        const lastClaim = new Date(user.lastRewardClaimedAt);
+        const hoursDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
+        if (hoursDiff >= 24) {
+          setRewardModalVisible(true);
+        }
+      } else {
+        setRewardModalVisible(true);
+      }
+    } catch (error) {
+      console.log('Error checking daily reward:', error);
+    }
+  };
+
+  const handleClaimReward = async () => {
+    try {
+      setClaimingReward(true);
+      const res = await userService.claimDailyReward();
+      if (res.success) {
+        setRewardModalVisible(false);
+        if (res.user) {
+          updateUser(res.user);
+        } else {
+          const updatedUser = await userService.getMe();
+          updateUser(updatedUser);
+        }
+        loadDashboardData();
+      }
+    } catch (error: any) {
+      console.log('Error claiming reward:', error);
+      setRewardModalVisible(false);
+    } finally {
+      setClaimingReward(false);
+    }
+  };
 
   const checkAuthStatus = () => {
     if (user && !user.isVerified) {
@@ -218,12 +264,23 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                   <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || 'User'}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity onPress={() => navigation.navigate('ConnectaAI')} style={styles.iconButton}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="auto-awesome" size={20} color="#FFF" />
-                  </View>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('SparkHistory')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 20,
+                    gap: 4
+                  }}
+                >
+                  <MaterialIcons name="auto-awesome" size={16} color="#FFD700" />
+                  <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{user?.sparks || 0}</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconButton}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="notifications-outline" size={22} color="#FFF" />
@@ -235,6 +292,16 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
             </View>
           </View>
+
+          {/* Daily Reward Modal */}
+          <SuccessModal
+            visible={rewardModalVisible}
+            title="Daily Spark Reward! ✨"
+            message="Your daily gift is ready. Claim your sparks now to keep the flame alive!"
+            buttonText={claimingReward ? "Claiming..." : "Claim 10 Sparks"}
+            onAction={handleClaimReward}
+            onClose={() => setRewardModalVisible(false)}
+          />
 
           {/* Stats Overview - Overlapping Header */}
           <View style={{ flexDirection: 'row', paddingHorizontal: 20, marginTop: -50, marginBottom: 24, gap: 12, zIndex: 20, elevation: 20 }}>

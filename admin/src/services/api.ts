@@ -540,4 +540,18 @@ export const broadcastAPI = {
   },
 }
 
+// ============================================
+// VERIFICATIONS
+// ============================================
+export const verificationsAPI = {
+  getAll: async (params?: { status?: string }) => {
+    const { data } = await api.get('/api/verifications/all', { params })
+    return data
+  },
+  updateStatus: async (id: string, status: 'approved' | 'rejected', adminNotes?: string) => {
+    const { data } = await api.put(`/api/verifications/${id}/status`, { status, adminNotes })
+    return data
+  }
+}
+
 export default api

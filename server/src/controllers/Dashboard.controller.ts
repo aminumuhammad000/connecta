@@ -10,6 +10,7 @@ import Wallet from '../models/Wallet.model.js';
 import mongoose from 'mongoose';
 import CollaboProject from '../models/CollaboProject.model.js';
 import Profile from '../models/Profile.model.js';
+import Contract from '../models/Contract.model.js';
 
 // Get Admin Dashboard Data
 export const getAdminStats = async (req: Request, res: Response) => {
@@ -42,13 +43,8 @@ export const getAdminStats = async (req: Request, res: Response) => {
     const pendingProposals = await Proposal.countDocuments({ status: 'pending' });
 
     // 6. Contracts
-    const Contract = mongoose.models.Contract || mongoose.model('Contract', new mongoose.Schema({}));
-    // Handle case where Contract model might not be registered yet if not imported
-    // But usually it is. If not, safe fallback or skip.
-    // For now we assume Contract model exists or we skip.
-    // simpler:
-    const totalContracts = 0; // Placeholder if Contract model not imported in this file
-    const activeContracts = 0;
+    const totalContracts = await Contract.countDocuments();
+    const activeContracts = await Contract.countDocuments({ status: 'active' });
 
     res.status(200).json({
       success: true,

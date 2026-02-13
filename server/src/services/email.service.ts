@@ -48,11 +48,15 @@ const getTransporter = async () => {
 /**
  * Send OTP email to user
  */
+/**
+ * Send OTP email to user
+ */
 export const sendOTPEmail = async (
   email: string,
   otp: string,
   userName?: string,
-  type: 'PASSWORD_RESET' | 'EMAIL_VERIFICATION' = 'PASSWORD_RESET'
+  type: 'PASSWORD_RESET' | 'EMAIL_VERIFICATION' = 'PASSWORD_RESET',
+  language: 'en' | 'ha' = 'en'
 ): Promise<{ success: boolean; error?: any }> => {
   try {
     const transporter = await getTransporter();
@@ -61,32 +65,52 @@ export const sendOTPEmail = async (
     const settings = await SystemSettings.findOne();
     const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
-
-    // For automated emails, we prefer a no-reply address if possible, 
-    // but we must send FROM the authenticated user to avoid spam filters/errors.
-    // We set the Reply-To to a no-reply address.
     const replyTo = 'no-reply@myconnecta.ng';
 
     const isVerification = type === 'EMAIL_VERIFICATION';
-    const subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
-    const title = isVerification ? 'Verify Your Email' : 'Password Reset Request';
-    const message = isVerification
-      ? 'Welcome to Connecta! Please use the verification code below to verify your email address:'
-      : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
+
+    // Translations
+    let subject, title, message, codeLabel, validLabel, ignoreLabel, ignoreMsg, greeting, team;
+
+    if (language === 'ha') {
+      subject = isVerification ? 'Tabbatar da Imel dinka - Connecta' : 'Lambar Sake Saita Kalmar Sirri - Connecta';
+      title = isVerification ? 'Tabbatar da Imel dinka' : 'Bukatar Sake Saita Kalmar Sirri';
+      message = isVerification
+        ? 'Barka da zuwa Connecta! Don Allah yi amfani da lambar tabbatarwa da ke kasa don tantance adireshin imel dinka:'
+        : 'Mun sami bukatar sake saita kalmar sirrinka. Yi amfani da lambar OTP da ke kasa don ci gaba da sake saita kalmar sirrinka:';
+      codeLabel = 'Lambar Tabbatarwa';
+      validLabel = 'Yana aiki na mintuna 10';
+      ignoreLabel = '⚠️ Sanarwar Tsaro:';
+      ignoreMsg = 'Idan ba kai ka nemi wannan lambar ba, don Allah ka yi watsi da wannan imel din.';
+      greeting = `Sannu ${userName || ''},`;
+      team = '- Kungiyar Connecta';
+    } else {
+      subject = isVerification ? 'Verify Your Email - Connecta' : 'Password Reset OTP - Connecta';
+      title = isVerification ? 'Verify Your Email' : 'Password Reset Request';
+      message = isVerification
+        ? 'Welcome to Connecta! Please use the verification code below to verify your email address:'
+        : 'We received a request to reset your password. Use the OTP code below to proceed with resetting your password:';
+      codeLabel = 'Your Verification Code';
+      validLabel = 'Valid for 10 minutes';
+      ignoreLabel = '⚠️ Security Notice:';
+      ignoreMsg = "If you didn't request this code, please ignore this email.";
+      greeting = `Hi ${userName || 'there'},`;
+      team = '- Connecta Team';
+    }
 
     const html = getBaseTemplate({
       title: title,
       subject: subject,
       content: `
-        <p>Hi ${userName || 'there'},</p>
+        <p>${greeting}</p>
         <p>${message}</p>
         <div style="background: #f8f9fa; border: 2px solid #FD6730; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">Your Verification Code</p>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">${codeLabel}</p>
           <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #FD6730; margin: 10px 0;">${otp}</div>
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">Valid for 10 minutes</p>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">${validLabel}</p>
         </div>
         <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px;">
-          <strong>⚠️ Security Notice:</strong> If you didn't request this code, please ignore this email.
+          <strong>${ignoreLabel}</strong> ${ignoreMsg}
         </div>
       `
     });
@@ -98,19 +122,19 @@ export const sendOTPEmail = async (
       subject: subject,
       html: html,
       text: `
-Hi ${userName || 'there'},
+${greeting}
 
 ${title}
 
 ${message}
 
-Your Code: ${otp}
+${codeLabel}: ${otp}
 
-This code is valid for 10 minutes.
+${validLabel}
 
-If you didn't request this, please ignore this email.
+${ignoreMsg}
 
-- Connecta Team
+${team}
       `,
     };
 
@@ -171,32 +195,62 @@ export const sendEmail = async (
  */
 export const sendWelcomeEmail = async (
   email: string,
-  userName: string
+  userName: string,
+  language: 'en' | 'ha' = 'en'
 ): Promise<{ success: boolean; error?: any }> => {
-  const subject = 'Welcome to Connecta! 🎉';
+  const subject = language === 'ha' ? 'Barka da zuwa Connecta! 🎉' : 'Welcome to Connecta! 🎉';
+  
+  let content, title, actionText, text;
+  
+  if (language === 'ha') {
+      title = 'Barka da zuwa Connecta! 🚀';
+      content = `
+        <p>Sannu ${userName},</p>
+        <p>Muna farin cikin kasancewarka tare da mu! Mun yi nasarar tabbatar da akantinka.</p>
+        <p>Connecta ita ce kofar samun manyan ayyuka da kuma kwararrun ma'aikata.</p>
+        
+        <h3>Ga abubuwan da za ka iya yi yanzu:</h3>
+        <ul>
+          <li><strong>Cike bayanan ka:</strong> Saka kwarewarka, ayyukan da ka yi, da kumaogwanka don ficewa.</li>
+          <li><strong>Nemi ayyuka:</strong> Nemi ayyukan da suka dace da kwarewarka.</li>
+          <li><strong>Saka aiki:</strong> Dauki kwararru don su yi maka aikinka.</li>
+        </ul>
+        
+        <p style="margin-top: 30px; font-size: 14px; color: #666;">
+            Idan kana da wata tambaya, za ka iya amsa wannan imel din.
+        </p>
+      `;
+      actionText = 'Fara Yanzu';
+      text = `Sannu ${userName}, Barka da zuwa Connecta! Mun yi nasarar tabbatar da akantinka. Muna farin cikin kasancewarka tare da mu.`;
+  } else {
+      title = 'Welcome to Connecta! 🚀';
+      content = `
+        <p>Hi ${userName},</p>
+        <p>We're thrilled to have you on board! Your account has been successfully verified.</p>
+        <p>Connecta is your gateway to finding amazing projects and talented professionals.</p>
+        
+        <h3>Here's what you can do next:</h3>
+        <ul>
+          <li><strong>Complete your profile:</strong> Add your skills, portfolio, and experience to stand out.</li>
+          <li><strong>Browse jobs:</strong> Find projects that match your expertise.</li>
+          <li><strong>Post a project:</strong> Hire top talent for your needs.</li>
+        </ul>
+        
+        <p style="margin-top: 30px; font-size: 14px; color: #666;">
+            If you have any questions, feel free to reply to this email.
+        </p>
+      `;
+      actionText = 'Get Started';
+      text = `Hi ${userName}, Welcome to Connecta! Your account has been successfully verified. We're thrilled to have you on board.`;
+  }
+
   const html = getBaseTemplate({
-    title: 'Welcome to Connecta! 🚀',
+    title: title,
     subject: subject,
-    content: `
-      <p>Hi ${userName},</p>
-      <p>We're thrilled to have you on board! Your account has been successfully verified.</p>
-      <p>Connecta is your gateway to finding amazing projects and talented professionals.</p>
-      
-      <h3>Here's what you can do next:</h3>
-      <ul>
-        <li><strong>Complete your profile:</strong> Add your skills, portfolio, and experience to stand out.</li>
-        <li><strong>Browse jobs:</strong> Find projects that match your expertise.</li>
-        <li><strong>Post a project:</strong> Hire top talent for your needs.</li>
-      </ul>
-      
-      <p style="margin-top: 30px; font-size: 14px; color: #666;">
-          If you have any questions, feel free to reply to this email.
-      </p>
-    `,
+    content: content,
     actionUrl: process.env.CLIENT_URL || 'https://app.myconnecta.ng',
-    actionText: 'Get Started'
+    actionText: actionText
   });
-  const text = `Hi ${userName}, Welcome to Connecta! Your account has been successfully verified. We're thrilled to have you on board.`;
 
   return sendEmail(email, subject, html, text);
 };
@@ -366,12 +420,16 @@ export const verifyEmailConfig = async (): Promise<boolean> => {
 /**
  * Send Gig Notification Email
  */
+/**
+ * Send Gig Notification Email
+ */
 export const sendGigNotificationEmail = async (
   email: string,
   userName: string,
   jobTitle: string,
   jobLink: string,
-  skills: string[]
+  skills: string[],
+  language: 'en' | 'ha' = 'en'
 ): Promise<{ success: boolean; error?: any }> => {
   try {
     const transporter = await getTransporter();
@@ -380,34 +438,51 @@ export const sendGigNotificationEmail = async (
     const settings = await SystemSettings.findOne();
     const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
-
-    // Set Reply-To to no-reply for notifications
     const replyTo = 'no-reply@myconnecta.ng';
 
-    const subject = `New Gig Alert: ${jobTitle}`;
+    let subject, title, intro, outro, unsubscribe, viewAction;
+
+    if (language === 'ha') {
+        subject = `Sabuwar Dama: ${jobTitle}`;
+        title = 'Sabuwar Dama! 🚀';
+        intro = `Sannu ${userName},<br>An samu sabon aiki da ya dace da kwarewarka:`;
+        outro = 'Duba shi yanzu kuma ka nemi aikin idan kana sha\'awa!';
+        unsubscribe = 'Ka samu wannan imel din ne saboda ka yi rajistar sanarwar ayyuka. Don daina karba, sabunta saitunanka a profile.';
+        viewAction = 'Duba Aikin';
+    } else {
+        subject = `New Gig Alert: ${jobTitle}`;
+        title = 'New Gig Alert! 🚀';
+        intro = `Hi ${userName},<br>A new gig matching your skills has just been posted:`;
+        outro = "Check it out and apply now if you're interested!";
+        unsubscribe = 'You received this email because you are subscribed to gig notifications. To unsubscribe, update your notification settings in your profile.';
+        viewAction = 'View Gig';
+    }
+
     const html = getBaseTemplate({
-      title: 'New Gig Alert! 🚀',
+      title: title,
       subject: subject,
       content: `
-        <p>Hi ${userName},</p>
-        <p>A new gig matching your skills has just been posted:</p>
+        <p>${intro}</p>
         <h3 style="color: #111827; margin: 20px 0;">${jobTitle}</h3>
         
         <div style="margin: 20px 0;">
           ${skills.map(skill => `<span style="background-color: #FFF0EB; color: #FD6730; padding: 6px 12px; border-radius: 20px; font-size: 12px; margin-right: 8px; margin-bottom: 8px; display: inline-block; font-weight: 600;">${skill}</span>`).join('')}
         </div>
 
-        <p>Check it out and apply now if you're interested!</p>
+        <p>${outro}</p>
         
         <p style="margin-top: 30px; font-size: 12px; color: #9CA3AF;">
-          You received this email because you are subscribed to gig notifications. 
-          To unsubscribe, update your notification settings in your profile.
+          ${unsubscribe}
         </p>
       `,
       actionUrl: jobLink,
-      actionText: 'View Gig'
+      actionText: viewAction
     });
-    const text = `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
+    
+    // Simple text version fallback
+    const text = language === 'ha'
+        ? `Sannu ${userName}, Sabuwar dama ta fito: ${jobTitle}. Kwarewa: ${skills.join(', ')}. Duba anan: ${jobLink}`
+        : `Hi ${userName}, A new gig matching your skills has been posted: ${jobTitle}. Skills: ${skills.join(', ')}. View it here: ${jobLink}`;
 
     const mailOptions = {
       from: `"${fromName}" <${fromEmail}>`,
@@ -425,4 +500,41 @@ export const sendGigNotificationEmail = async (
     console.error('Error sending gig notification email:', error);
     return { success: false, error: error.message || error };
   }
+};
+
+/**
+ * Send Profile Completion Reminder Email
+ */
+export const sendProfileReminderEmail = async (
+  email: string,
+  userName: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = 'Complete your profile on Connecta! 🚀';
+  const html = getBaseTemplate({
+    title: 'Stand out from the crowd! ✨',
+    subject: subject,
+    content: `
+      <p>Hi ${userName},</p>
+      <p>We noticed you haven't completed your profile yet. A complete profile is your best tool for success on Connecta!</p>
+      
+      <div style="background: #FFF0EB; border-left: 4px solid #FD6730; padding: 15px; margin: 25px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #111827; font-weight: 600;">Did you know?</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #4B5563;">Users with complete profiles are <strong>5x more likely</strong> to get hired or found by clients.</p>
+      </div>
+
+      <h3>Quick things you can add now:</h3>
+      <ul>
+        <li><strong>Bio:</strong> Tell everyone what you do best.</li>
+        <li><strong>Skills:</strong> Help our matching engine find the right gigs for you.</li>
+        <li><strong>Portfolio:</strong> Show off your amazing past work.</li>
+      </ul>
+      
+      <p style="margin-top: 30px;">Don't miss out on great opportunities. Complete your profile today!</p>
+    `,
+    actionUrl: `${process.env.CLIENT_URL || 'https://app.myconnecta.ng'}/settings/profile`,
+    actionText: 'Complete My Profile'
+  });
+  const text = `Hi ${userName}, complete your profile on Connecta to stand out! Users with complete profiles are 5x more likely to get hired.`;
+
+  return sendEmail(email, subject, html, text);
 };

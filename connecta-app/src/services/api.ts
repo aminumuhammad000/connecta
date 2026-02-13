@@ -120,17 +120,35 @@ export const del = async <T = any>(url: string): Promise<ApiResponse<T>> => {
     return apiClient.delete(url);
 };
 
+import { Platform } from 'react-native';
+
 /**
  * Upload file with multipart/form-data
  */
 export const uploadFile = async (url: string, formData: FormData): Promise<ApiResponse> => {
     const token = await getToken();
-    return axios.post(`${API_BASE_URL}${url}`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`,
-        },
-    });
+    const headers: any = {
+        'Authorization': `Bearer ${token}`,
+    };
+
+    // On Web, do not set Content-Type manually for FormData. 
+    // The browser needs to set it to include the boundary.
+    if (Platform.OS !== 'web') {
+        headers['Content-Type'] = 'multipart/form-data';
+    }
+
+    return axios.post(`${API_BASE_URL}${url}`, formData, { headers });
+};
+
+/**
+ * Upload file with multipart/form-data (Public version)
+ */
+export const uploadFilePublic = async (url: string, formData: FormData): Promise<ApiResponse> => {
+    const headers: any = {};
+    if (Platform.OS !== 'web') {
+        headers['Content-Type'] = 'multipart/form-data';
+    }
+    return axios.post(`${API_BASE_URL}${url}`, formData, { headers });
 };
 
 // Event for handling 401 Unauthorized

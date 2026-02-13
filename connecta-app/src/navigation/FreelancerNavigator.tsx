@@ -29,6 +29,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
 import VideoCallScreen from '../screens/VideoCallScreen';
+import IdentityVerificationScreen from '../screens/IdentityVerificationScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -79,8 +80,6 @@ function FreelancerTabs() {
                         iconName = focused ? 'home' : 'home-outline';
                     } else if (route.name === 'Gigs') {
                         iconName = focused ? 'briefcase' : 'briefcase-outline';
-                    } else if (route.name === 'Proposals') {
-                        iconName = focused ? 'document-text' : 'document-text-outline';
                     } else if (route.name === 'Messages') {
                         iconName = focused ? 'chatbubble' : 'chatbubble-outline';
                     } else if (route.name === 'Profile') {
@@ -100,7 +99,7 @@ function FreelancerTabs() {
         >
             <Tab.Screen name="Home" component={FreelancerDashboardScreen} />
             <Tab.Screen name="Gigs" component={FreelancerMatchedGigsScreen} />
-            <Tab.Screen name="Proposals" component={MyProposalsScreen} />
+
             <Tab.Screen name="Messages" component={ChatsScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
@@ -129,7 +128,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="FreelancerSavedGigs" component={FreelancerSavedGigsScreen} />
             <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
             <Stack.Screen name="AddPortfolio" component={require('../screens/AddPortfolioScreen').default} />
-            <Stack.Screen name="ConnectaAI" component={ConnectaAIScreen} />
+            <Stack.Screen name="AIChat" component={ConnectaAIScreen} />
             <Stack.Screen name="MessagesDetail" component={MessagesScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
@@ -150,6 +149,8 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
             <Stack.Screen name="JobPreferences" component={require('../screens/JobPreferencesScreen').default} />
+            <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
+            <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
         </Stack.Navigator>
     );
 

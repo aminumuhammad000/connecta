@@ -44,6 +44,7 @@
       }
     },
     "plugins": [
+      "expo-image-picker",
       "@react-native-community/datetimepicker",
       "@react-native-firebase/app",
       [

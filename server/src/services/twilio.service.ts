@@ -9,9 +9,14 @@ class TwilioService {
     constructor() {
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const authToken = process.env.TWILIO_AUTH_TOKEN;
+        const apiKey = process.env.TWILIO_API_KEY;
+        const apiSecret = process.env.TWILIO_API_SECRET;
+
         this.whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886'; // Default sandbox
 
-        if (accountSid && authToken) {
+        if (apiKey && apiSecret && accountSid) {
+            this.client = twilio(apiKey, apiSecret, { accountSid });
+        } else if (accountSid && authToken) {
             this.client = twilio(accountSid, authToken);
         } else {
             console.warn("⚠️ Twilio credentials missing. WhatsApp notifications will not work.");

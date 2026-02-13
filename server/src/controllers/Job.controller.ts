@@ -76,7 +76,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
       .sort({ isExternal: 1, posted: -1 }) // Prioritize internal (false=0, true=1)
       .limit(Number(limit))
       .skip(skip)
-      .populate("clientId", "firstName lastName email");
+      .populate("clientId", "firstName lastName email profileImage");
 
     const total = await Job.countDocuments(filter);
 
@@ -211,7 +211,7 @@ export const getRecommendedJobs = async (req: Request, res: Response) => {
       const jobs = await Job.find({ status: "active" })
         .sort({ isExternal: 1, posted: -1 })
         .limit(Number(limit))
-        .populate("clientId", "firstName lastName email");
+        .populate("clientId", "firstName lastName email profileImage");
       return res.status(200).json({ success: true, data: jobs });
     }
 
@@ -257,14 +257,14 @@ export const getRecommendedJobs = async (req: Request, res: Response) => {
     let jobs = await Job.find(filter)
       .sort({ isExternal: 1, posted: -1 })
       .limit(50)
-      .populate("clientId", "firstName lastName email");
+      .populate("clientId", "firstName lastName email profileImage");
 
     // Fallback: If no jobs found with strict filter, return recent jobs
     if (jobs.length < 5) {
       const fallbackJobs = await Job.find({ status: "active" })
         .sort({ isExternal: 1, posted: -1 })
         .limit(Number(limit))
-        .populate("clientId", "firstName lastName email");
+        .populate("clientId", "firstName lastName email profileImage");
 
       // Merge and remove duplicates
       const jobIds = new Set(jobs.map(j => j._id.toString()));
@@ -370,7 +370,7 @@ export const searchJobs = async (req: Request, res: Response) => {
       .sort({ isExternal: 1, posted: -1 })
       .limit(Number(limit))
       .skip(skip)
-      .populate("clientId", "firstName lastName email");
+      .populate("clientId", "firstName lastName email profileImage");
 
     const total = await Job.countDocuments(filter);
 

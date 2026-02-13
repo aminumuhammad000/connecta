@@ -1,10 +1,13 @@
 import express from "express";
-import { signup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, switchUserType } from "../controllers/user.controller.js";
+import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, deleteUser, getMe, updateMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, switchUserType, updatePreferredLanguage, checkEmailExists, checkPhoneExists, claimDailyReward, getSparkHistory, getSparkStats } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 
 const router = express.Router();
 
 // Auth routes
+router.post("/check-email", checkEmailExists);
+router.post("/check-phone", checkPhoneExists);
+router.post("/initiate-signup", initiateSignup);
 router.post("/signup", signup);
 router.post("/signin", signin);
 router.post("/google/signup", googleSignup);
@@ -23,6 +26,10 @@ router.post("/resend-verification", authenticate, resendVerificationOTP); // POS
 router.post("/push-token", authenticate, updatePushToken); // POST /api/users/push-token
 router.post("/change-password", authenticate, changePassword); // POST /api/users/change-password
 router.post("/switch-type", authenticate, switchUserType); // POST /api/users/switch-type
+router.post("/preferred-language", authenticate, updatePreferredLanguage); // POST /api/users/preferred-language
+router.post("/claim-reward", authenticate, claimDailyReward); // POST /api/users/claim-reward
+router.get("/spark-history", authenticate, getSparkHistory); // GET /api/users/spark-history
+router.get("/spark-stats", authenticate, getSparkStats); // GET /api/users/spark-stats
 
 // User data routes
 router.get("/freelancers", getFreelancers); // GET /api/users/freelancers (Specific)

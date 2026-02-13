@@ -7,7 +7,7 @@ import { Server } from "socket.io";
 import mongoose from "mongoose";
 import connectDB from "./config/db.config.js";
 import agentRoute from "./routes/agentRoute.js"
-// import { initCronJobs } from "./services/cron.service.js";
+import { initCronJobs } from "./services/cron.service.js";
 
 // routes 
 import userRoutes from "./routes/user.routes.js";
@@ -25,6 +25,7 @@ import gigsRoutes from "./routes/gigs.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import insightsRoutes from "./routes/insights.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
+import verificationRoutes from "./routes/verification.routes.js";
 import redisClient from "./config/redis.js";
 dotenv.config();
 
@@ -82,6 +83,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/gigs", gigsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/verifications", verificationRoutes);
 import analyticsRoutes from "./routes/analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
 import subscriptionRoutes from "./routes/Subscription.routes.js";
@@ -278,7 +280,7 @@ connectDB().then(() => {
     console.log(`🔌 Socket.io ready for real-time messaging`);
 
     // Initialize cron jobs
-    // initCronJobs();
+    initCronJobs();
   });
 }).catch(err => {
   console.error("❌ Failed to connect to database:", err);

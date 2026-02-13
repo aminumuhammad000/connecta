@@ -11,12 +11,15 @@ import Avatar from '../components/Avatar';
 import dashboardService from '../services/dashboardService';
 import jobService from '../services/jobService';
 import * as profileService from '../services/profileService';
+import userService from '../services/userService';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import ProfileCompletionModal from '../components/ProfileCompletionModal';
+import ProfileCompletionCard from '../components/ProfileCompletionCard';
+import SuccessModal from '../components/SuccessModal';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSocket } from '../context/SocketContext';
+import { useTranslation } from '../utils/i18n';
 
 import { useWindowDimensions } from 'react-native';
 
@@ -50,7 +53,8 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const isDesktop = width > 768;
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const { t } = useTranslation();
 
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -61,11 +65,23 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [rewardModalVisible, setRewardModalVisible] = useState(false);
+  const [claimingReward, setClaimingReward] = useState(false);
   const { socket, unreadNotificationCount } = useSocket();
+
+  const renderBadge = (count: any) => {
+    if (!count || count <= 0) return null;
+    return (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>{count > 99 ? '99+' : count}</Text>
+      </View>
+    );
+  };
 
   useEffect(() => {
     loadDashboardData();
     checkProfileStatus();
+    checkDailyReward();
   }, []);
 
   useEffect(() => {
@@ -91,8 +107,56 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
     useCallback(() => {
       loadDashboardData();
       checkProfileStatus();
+      checkDailyReward();
     }, [user])
   );
+
+  const checkDailyReward = async () => {
+    if (!user) return;
+    try {
+      const now = new Date();
+      if (user.lastRewardClaimedAt) {
+        const lastClaim = new Date(user.lastRewardClaimedAt);
+        const hoursDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
+        if (hoursDiff >= 24) {
+          console.log('[DailyReward] Showing modal because hoursDiff >= 24:', hoursDiff);
+          setRewardModalVisible(true);
+        } else {
+          console.log('[DailyReward] Not showing modal. hoursDiff:', hoursDiff);
+        }
+      } else {
+        // Never claimed before
+        console.log('[DailyReward] Showing modal because never claimed before');
+        setRewardModalVisible(true);
+      }
+    } catch (error) {
+      console.log('Error checking daily reward:', error);
+    }
+  };
+
+  const handleClaimReward = async () => {
+    try {
+      setClaimingReward(true);
+      const res = await userService.claimDailyReward();
+      if (res.success) {
+        setRewardModalVisible(false);
+        // Refresh local user state using returned user or fetch new
+        if (res.user) {
+          updateUser(res.user);
+        } else {
+          const updatedUser = await userService.getMe();
+          updateUser(updatedUser);
+        }
+        // Refresh dashboard stats
+        loadDashboardData();
+      }
+    } catch (error: any) {
+      console.log('Error claiming reward:', error);
+      setRewardModalVisible(false);
+    } finally {
+      setClaimingReward(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -127,9 +191,16 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
     try {
       const profile = await profileService.getMyProfile();
       const missing: string[] = [];
+
+      // Check required profile fields
       if (!profile?.bio) missing.push('bio');
       if (!profile?.skills || profile?.skills.length === 0) missing.push('skills');
       if (!profile?.location) missing.push('location');
+      if (!profile?.phone && !profile?.phoneNumber) missing.push('phone');
+      if (!profile?.avatar) missing.push('avatar');
+
+      // Check preference fields
+      if (!profile?.jobTitle) missing.push('education');
 
       if (missing.length > 0) {
         setMissingFields(missing);
@@ -139,7 +210,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
       }
     } catch (error: any) {
       if (error?.status === 404) {
-        setMissingFields(['bio', 'skills', 'location']);
+        setMissingFields(['bio', 'skills', 'location', 'phone', 'avatar', 'experience', 'education', 'portfolio']);
         setProfileModalVisible(true);
       } else {
         console.error('Error checking profile status:', error);
@@ -225,16 +296,27 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   </TouchableOpacity>
                 )}
                 <View>
-                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>Welcome back 👋</Text>
+                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{t('welcome_back' as any)} 👋</Text>
                   <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || 'User'}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity onPress={() => navigation.navigate('ConnectaAI')} style={styles.iconButton}>
-                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                    <MaterialIcons name="auto-awesome" size={20} color="#FFF" />
-                  </View>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('SparkHistory')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 20,
+                    gap: 4
+                  }}
+                >
+                  <MaterialIcons name="auto-awesome" size={16} color="#FFD700" />
+                  <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{user?.sparks || 0}</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconButton}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="notifications-outline" size={22} color="#FFF" />
@@ -246,140 +328,158 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
               </View>
             </View>
           </View>
+          <View style={{ height: 0 }} />
 
-          {/* Stats Overview - Overlapping Header (Desktop: Grid, Mobile: Row) */}
-          <View style={[
-            isDesktop ? styles.desktopStatsGrid : styles.statsContainer,
-            {
-              marginTop: -50,
-              paddingHorizontal: isDesktop ? 40 : 20,
-              zIndex: 20, // Ensure it's over the header
-            }
-          ]}>
-            {/* Active Proposals */}
-            <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>
-              <View style={[styles.statIcon, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
-                <MaterialIcons name="description" size={24} color="#3B82F6" />
-              </View>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>{stats?.activeProposals || 0}</Text>
-                <Text style={styles.statLabel}>Active</Text>
-              </View>
-            </View>
+          {/* Daily Reward Modal */}
+          <SuccessModal
+            visible={rewardModalVisible}
+            title="Daily Spark Reward! ✨"
+            message="Your daily gift is ready. Claim your sparks now to keep the flame alive!"
+            buttonText={claimingReward ? "Claiming..." : "Claim 10 Sparks"}
+            onAction={handleClaimReward}
+            onClose={() => setRewardModalVisible(false)}
+          />
 
-            {/* Completed Jobs */}
-            <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>
-              <View style={[styles.statIcon, { backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
-                <MaterialIcons name="check-circle" size={24} color="#10B981" />
-              </View>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>{stats?.completedJobs || 0}</Text>
-                <Text style={styles.statLabel}>Completed</Text>
-              </View>
-            </View>
+          {/* Profile Completion Card */}
+          <ProfileCompletionCard
+            visible={profileModalVisible}
+            missingFields={missingFields}
+            onComplete={handleCompleteProfile}
+            onSkip={handleSkipProfile}
+          />
 
-            {/* Total Earnings */}
-            <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>
-              <View style={[styles.statIcon, { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                <MaterialIcons name="attach-money" size={24} color="#F59E0B" />
-              </View>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>${stats?.totalEarnings || 0}</Text>
-                <Text style={styles.statLabel}>Earned</Text>
-              </View>
-            </View>
-            {/* Total Projects (Desktop Extra) */}
-            {isDesktop && (
-              <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>
-                <View style={[styles.statIcon, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
-                  <MaterialIcons name="work" size={24} color="#8B5CF6" />
+          <View style={{
+            marginTop: -45,
+            marginHorizontal: 20,
+            backgroundColor: c.card,
+            borderRadius: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 12,
+            elevation: 5,
+            borderWidth: 1,
+            borderColor: c.border,
+            marginBottom: 20,
+            overflow: 'hidden'
+          }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 12, gap: 4, paddingVertical: 15 }}
+            >
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('FreelancerProjects')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
+                  <Ionicons name="briefcase" size={20} color="#10B981" />
+                  {renderBadge(stats?.activeProjects || stats?.totalProjects)}
                 </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>{stats?.totalProjects || 0}</Text>
-                  <Text style={styles.statLabel}>Total Projects</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('Proposals')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
+                  <Ionicons name="document-text" size={20} color={c.primary} />
+                  {renderBadge(stats?.activeProposals)}
                 </View>
-              </View>
-            )}
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('Messages')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#3B82F615' }]}>
+                  <Ionicons name="chatbubbles" size={20} color="#3B82F6" />
+                  {renderBadge(stats?.newMessages)}
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Messages</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('Wallet')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
+                  <Ionicons name="wallet" size={20} color="#F59E0B" />
+                  {renderBadge(stats?.pendingPayments)}
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Wallet</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
+                onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
+                  <Ionicons name="people" size={20} color="#6366F1" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
 
+          {/* Search Bar */}
+          {/* Modern Search & Saved Section */}
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            marginBottom: 24,
+            gap: 12
+          }}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate('Gigs', { autoFocus: true })}
+              style={{
+                flex: 1,
+                backgroundColor: c.isDark ? '#2D2D2D' : '#F0F2F5',
+                height: 48,
+                borderRadius: 24,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 16,
+                borderWidth: 1,
+                borderColor: c.isDark ? '#404040' : '#E4E6EB',
+              }}
+            >
+              <Ionicons name="search" size={18} color={c.subtext} />
+              <Text style={{ marginLeft: 10, color: c.subtext, fontSize: 14, flex: 1 }}>Search for jobs...</Text>
+            </TouchableOpacity>
 
-          {!isDesktop && (
-            <View style={{ marginBottom: 12 }}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
-              >
-                <TouchableOpacity
-                  style={styles.quickAction}
-                  onPress={() => navigation.navigate('FreelancerProjects')}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
-                    <Ionicons name="briefcase" size={24} color="#10B981" />
-                  </View>
-                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.quickAction}
-                  onPress={() => navigation.navigate('Proposals')}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
-                    <Ionicons name="document-text" size={24} color={c.primary} />
-                  </View>
-                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.quickAction}
-                  onPress={() => navigation.navigate('Wallet')}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
-                    <Ionicons name="wallet" size={24} color="#F59E0B" />
-                  </View>
-                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Wallet</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.quickAction}
-                  onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
-                    <Ionicons name="people" size={24} color="#6366F1" />
-                    <View style={{ position: 'absolute', top: 0, right: 0, backgroundColor: '#EF4444', paddingHorizontal: 4, borderRadius: 4 }}>
-                      <Text style={{ fontSize: 8, color: '#FFF', fontWeight: '700' }}>NEW</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.quickAction}
-                  onPress={() => navigation.navigate('Settings')}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
-                    <Ionicons name="settings" size={24} color="#8B5CF6" />
-                  </View>
-                  <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Settings</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          )}
+            <TouchableOpacity
+              onPress={() => navigation.navigate('FreelancerSavedGigs')}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: c.isDark ? '#2D2D2D' : '#F0F2F5',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: c.isDark ? '#404040' : '#E4E6EB',
+              }}
+            >
+              <MaterialIcons name="bookmark-outline" size={22} color={c.text} />
+            </TouchableOpacity>
+          </View>
 
           {/* Recommended Jobs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Recommended Jobs</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('recommended_jobs' as any)}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Gigs')}>
-                <Text style={[styles.seeAll, { color: c.primary }]}>See All</Text>
+                <Text style={[styles.seeAll, { color: c.primary }]}>{t('view_all' as any)}</Text>
               </TouchableOpacity>
             </View>
 
@@ -408,27 +508,42 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                       }}>
                         {/* Header: Title & Save */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                          <View style={{ flex: 1, gap: 4 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                              <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
-                                {job.title}
-                              </Text>
-                              {isNew && (
-                                <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                  <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                            <View style={{ position: 'relative' }}>
+                              <Avatar
+                                uri={(job.clientId as any)?.profileImage || job.companyLogo}
+                                name={job.company || (job.clientId as any)?.firstName || 'C'}
+                                size={45}
+                              />
+                              {isInternal && (
+                                <View style={{
+                                  position: 'absolute',
+                                  bottom: -2,
+                                  right: -2,
+                                  backgroundColor: '#FFF',
+                                  borderRadius: 10,
+                                  padding: 1
+                                }}>
+                                  <MaterialIcons name="verified" size={16} color="#FF7F50" />
                                 </View>
                               )}
                             </View>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
-                                {job.company || 'Confidential'} • {new Date(job.createdAt).toLocaleDateString()}
-                              </Text>
-                              {isInternal && (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                                  <MaterialIcons name="verified" size={16} color="#FF7F50" />
-                                  <Text style={{ fontSize: 11, color: '#FF7F50', fontWeight: '600' }}>Verified</Text>
-                                </View>
-                              )}
+                            <View style={{ flex: 1, gap: 4 }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 22, flex: 1 }}>
+                                  {job.title}
+                                </Text>
+                                {isNew && (
+                                  <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                                  </View>
+                                )}
+                              </View>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
+                                  {job.company || 'Confidential'} • {new Date(job.createdAt).toLocaleDateString()}
+                                </Text>
+                              </View>
                             </View>
                           </View>
                           <TouchableOpacity onPress={() => toggleLikeGig(job._id)}>
@@ -494,18 +609,13 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   );
                 })
               ) : (
-                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>No recommended jobs found</Text>
+                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>{t('no_jobs_found' as any)}</Text>
               )}
             </View>
           </View>
         </ScrollView>
 
-        <ProfileCompletionModal
-          visible={profileModalVisible}
-          missingFields={missingFields}
-          onComplete={handleCompleteProfile}
-          onSkip={handleSkipProfile}
-        />
+        {/* OLD MODAL REMOVED - Now using ProfileCompletionCard instead */}
 
         <Sidebar
           isVisible={sidebarVisible}
@@ -646,31 +756,32 @@ const styles = StyleSheet.create({
   },
   quickAction: {
     alignItems: 'center',
-    width: 70,
+    width: 60,
     marginRight: 4,
   },
   quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
   },
   quickActionText: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 10,
+    fontWeight: '600',
     textAlign: 'center',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
+    marginTop: 8,
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     letterSpacing: -0.5,
   },

@@ -322,18 +322,22 @@ export const updateMyProfile = async (
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const {
-      phoneNumber, location, companyName, website, bio, avatar, skills,
+      phoneNumber, location, country, city, timezone, preferredLanguage, companyName, website, bio, avatar, skills,
       education, languages, employment, resume, portfolio,
       remoteWorkType, minimumSalary, workLocationPreferences, jobTitle,
       jobCategories, yearsOfExperience, engagementTypes, jobNotificationFrequency
     } = req.body;
 
-    console.log('📝 Update profile request:', { phoneNumber, location, website, bio, avatar, portfolio });
+    console.log('📝 Update profile request:', { phoneNumber, location, country, city, timezone, preferredLanguage, bio, avatar });
 
     // Prepare update data
     const updateData: any = {};
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
     if (location !== undefined) updateData.location = location;
+    if (country !== undefined) updateData.country = country;
+    if (city !== undefined) updateData.city = city;
+    if (timezone !== undefined) updateData.timezone = timezone;
+    if (preferredLanguage !== undefined) updateData.preferredLanguage = preferredLanguage;
     if (website !== undefined) updateData.website = website;
     if (bio !== undefined) updateData.bio = bio;
     if (avatar !== undefined) updateData.avatar = avatar;

@@ -5,6 +5,7 @@ import { Job } from '../models/Job.model.js';
 import User from '../models/user.model.js';
 import * as emailService from '../services/email.service.js';
 import notificationService from '../services/notification.service.js';
+import Notification from '../models/Notification.model.js';
 import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Project from '../models/Project.model.js';
@@ -218,7 +219,7 @@ export const createProposal = async (req: Request, res: Response) => {
           // Also send Socket Notification to Client
           const io = getIO();
 
-          await mongoose.model('Notification').create({
+          await Notification.create({
             userId: job.clientId,
             type: 'proposal_new',
             title: 'New Proposal Received',
@@ -611,7 +612,7 @@ export const approveProposal = async (req: Request, res: Response) => {
       const io = getIO(); // Import here to avoid circular dependency issues if any
 
       // Create notification record
-      await mongoose.model('Notification').create({
+      await Notification.create({
         userId: actualFreelancerId,
         type: 'proposal_accepted',
         title: 'Proposal Accepted',
@@ -713,7 +714,7 @@ export const rejectProposal = async (req: Request, res: Response) => {
         const io = getIO();
 
         // 1. DB Notification
-        await mongoose.model('Notification').create({
+        await Notification.create({
           userId: freelancer._id,
           type: 'proposal_rejected',
           title: 'Proposal Declined',

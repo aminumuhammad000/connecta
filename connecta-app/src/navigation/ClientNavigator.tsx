@@ -33,6 +33,7 @@ import ProposalsScreen from '../screens/ProposalsScreen';
 import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
 import VideoCallScreen from '../screens/VideoCallScreen';
 import PublicFreelancerProfileScreen from '../screens/PublicFreelancerProfileScreen';
+import IdentityVerificationScreen from '../screens/IdentityVerificationScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -150,7 +151,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
 
             <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
-            <Stack.Screen name="ConnectaAI" component={ConnectaAIScreen} />
+            <Stack.Screen name="AIChat" component={ConnectaAIScreen} />
             <Stack.Screen name="ClientEditProfile" component={ClientEditProfileScreen} />
             <Stack.Screen name="Proposals" component={ProposalsScreen} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
@@ -158,6 +159,8 @@ export default function ClientNavigator() {
             <Stack.Screen name="VideoCall" component={VideoCallScreen} />
             <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
+            <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
+            <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
         </Stack.Navigator>
     );
 

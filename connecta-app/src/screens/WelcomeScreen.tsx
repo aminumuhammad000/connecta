@@ -1,222 +1,175 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, Animated, StatusBar, Platform } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, Dimensions, StatusBar, Platform, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import Logo from '../components/Logo';
-import Button from '../components/Button';
+import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
+import { useTranslation } from '../utils/i18n';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeOutUp
+} from 'react-native-reanimated';
+import { MaterialIcons } from '@expo/vector-icons';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 const { width, height } = Dimensions.get('window');
 
-interface WelcomeScreenProps {
-  onLogin?: () => void;
-  onSignup?: () => void;
-}
-
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onLogin, onSignup }) => {
+const WelcomeScreen: React.FC<{ navigation?: any, onLogin?: () => void, onSignup?: () => void }> = ({ navigation, onLogin, onSignup }) => {
   const c = useThemeColors();
-
-  // Animation Values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-
-  // Taglines
+  const { t, lang } = useTranslation();
   const [index, setIndex] = useState(0);
-  const taglines = [
-    "The professional network\nfor freelancers.",
-    "Hire top talent\ninstantly & securely.",
-    "Work without limits,\nget paid on time.",
-    "Build your dream team\nin minutes."
-  ];
-  const textOpacity = useRef(new Animated.Value(1)).current;
+
+  const taglines = useMemo(() => [
+    t('tagline_1'),
+    t('tagline_2'),
+    t('tagline_3'),
+  ], [t]);
 
   useEffect(() => {
-    // Entrance Sequence
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      })
-    ]).start();
-
-    // Tagline Cycle
     const interval = setInterval(() => {
-      Animated.sequence([
-        Animated.timing(textOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-        Animated.timing(textOpacity, { toValue: 1, duration: 300, useNativeDriver: true })
-      ]).start();
-
-      setTimeout(() => {
-        setIndex((prev) => (prev + 1) % taglines.length);
-      }, 300);
-    }, 4000);
-
+      setIndex((prev) => (prev + 1) % taglines.length);
+    }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [taglines]);
+
+  const sideContent = (
+    <View style={styles.desktopSide}>
+      <Animated.View entering={FadeInDown.duration(1000).springify()} style={styles.logoBox}>
+        <Image source={require('../../assets/logo.png')} style={styles.sideLogo} resizeMode="contain" />
+      </Animated.View>
+      <Animated.Text entering={FadeInDown.delay(200)} style={[styles.sideTitle, { color: c.text }]}>
+        Nigeria's Premier{'\n'}Freelance Hub
+      </Animated.Text>
+      <View style={styles.trustRow}>
+        <View style={styles.trustItem}>
+          <MaterialIcons name="security" size={24} color={c.primary} />
+          <Text style={[styles.trustText, { color: c.subtext }]}>Secure Escrow</Text>
+        </View>
+        <View style={styles.trustItem}>
+          <MaterialIcons name="verified" size={24} color={c.primary} />
+          <Text style={[styles.trustText, { color: c.subtext }]}>Verified Gigs</Text>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
-    <View style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+      <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
+      <AnimatedBackground />
+      <ResponsiveOnboardingWrapper sideComponent={sideContent}>
+        <View style={styles.content}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('LanguageSelect')}
+            style={[styles.langToggle, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <MaterialIcons name="language" size={20} color={c.primary} />
+            <Text style={[styles.langToggleText, { color: c.text }]}>
+              {lang === 'ha' ? 'Hausa' : 'English'}
+            </Text>
+          </TouchableOpacity>
 
-        {/* TOP: Logo Section (Perfectly Placed for Mobile Brand Recognition) */}
-        <Animated.View style={[styles.topSection, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-          <View style={styles.logoContainer}>
-            {/* A subtle shadow behind the logo for depth */}
-            <View style={styles.logoShadow}>
-              <Logo size={90} />
+          {/* Logo Area */}
+          <Animated.View entering={FadeInDown.duration(1000).springify()} style={styles.logoContainer}>
+            <View style={[styles.logoGlow, { backgroundColor: c.primary + '30' }]} />
+            <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+          </Animated.View>
+
+          {/* Text Area */}
+          <View style={styles.textContainer}>
+            <Animated.Text entering={FadeInDown.delay(200)} style={[styles.title, { color: c.text }]}>
+              Connecta
+            </Animated.Text>
+
+            <View style={styles.taglineWrapper}>
+              <Animated.Text
+                key={index}
+                entering={FadeInUp.springify()}
+                exiting={FadeOutUp}
+                style={[styles.dynamicTagline, { color: c.text }]}
+              >
+                {taglines[index]}
+              </Animated.Text>
             </View>
           </View>
-          <Text style={styles.appName}>Connecta</Text>
-        </Animated.View>
 
-        {/* MIDDLE: Hero Text (Vertically Centered) */}
-        <Animated.View style={[styles.middleSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Text style={styles.staticHeading}>Welcome to the future of work.</Text>
+          {/* Action Area */}
+          <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.actionZone}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                if (onSignup) onSignup();
+                else navigation?.navigate('RoleSelection');
+              }}
+              style={[styles.primaryBtn, { backgroundColor: c.primary }]}
+            >
+              <Text style={styles.primaryBtnText}>{t('get_started')}</Text>
+            </TouchableOpacity>
 
-          <View style={styles.taglineWrapper}>
-            <Animated.Text style={[styles.dynamicTagline, { opacity: textOpacity }]}>
-              {taglines[index]}
-            </Animated.Text>
-          </View>
-        </Animated.View>
-
-        {/* BOTTOM: Actions (Comfortable Thumb Reach) */}
-        <Animated.View style={[styles.bottomSection, { opacity: fadeAnim }]}>
-          <Button
-            title="Log In"
-            onPress={onLogin || (() => { })}
-            style={[styles.loginBtn, { backgroundColor: '#FD6730' }]}
-            textStyle={styles.loginBtnText}
-          />
-
-          <Button
-            title="Create Account"
-            onPress={onSignup || (() => { })}
-            variant="outline"
-            style={styles.signupBtn}
-            textStyle={styles.signupBtnText}
-          />
-
-          <Text style={styles.legalText}>
-            Privacy Policy • Terms of Service
-          </Text>
-        </Animated.View>
-
-      </SafeAreaView>
-    </View>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (onLogin) onLogin();
+                else navigation?.navigate('Login');
+              }}
+              style={[styles.secondaryBtn, { borderColor: c.border }]}
+            >
+              <Text style={[styles.secondaryBtnText, { color: c.text }]}>
+                {t('already_have_account')} <Text style={{ color: c.primary, fontWeight: '800' }}>{t('login')}</Text>
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </ResponsiveOnboardingWrapper>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  topSection: {
-    flex: 2, // Takes up top ~35-40% of screen
+  container: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between', paddingVertical: 40 },
+  langToggle: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end', // Pushes logo towards the middle-top sweet spot
-    paddingBottom: 20,
+    gap: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-end',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 10,
   },
-  logoContainer: {
-    marginBottom: 16,
-  },
-  logoShadow: {
-    shadowColor: '#FD6730',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-    backgroundColor: 'white',
-    borderRadius: 50,
-    padding: 2,
-  },
-  appName: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#111827',
-    letterSpacing: -0.5,
-  },
-  middleSection: {
-    flex: 2, // Takes up middle ~35-40%
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  staticHeading: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
-  taglineWrapper: {
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  dynamicTagline: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    lineHeight: 40,
-  },
-  bottomSection: {
-    flex: 0,
-    paddingHorizontal: 24,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 40,
-    gap: 16,
-    width: '100%',
-  },
-  loginBtn: {
-    height: 56,
-    borderRadius: 14,
-    shadowColor: '#FD6730',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  loginBtnText: {
-    color: '#FFFFFF',
-    fontSize: 17,
+  langToggleText: {
+    fontSize: 14,
     fontWeight: '700',
   },
-  signupBtn: {
-    height: 56,
-    borderRadius: 14,
-    borderColor: '#E5E7EB',
-    borderWidth: 1.5,
-  },
-  signupBtnText: {
-    color: '#111827',
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  legalText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    textAlign: 'center',
-    marginTop: 8,
-  },
+  logoContainer: { alignItems: 'center', marginTop: 20 },
+  logoGlow: { position: 'absolute', width: 120, height: 120, borderRadius: 60, opacity: 0.5 },
+  logo: { width: 100, height: 100 },
+  textContainer: { alignItems: 'center', minHeight: 140 },
+  title: { fontSize: 44, fontWeight: '900', letterSpacing: -2, marginBottom: 10 },
+  taglineWrapper: { height: 60, justifyContent: 'center', alignItems: 'center' },
+  dynamicTagline: { fontSize: 18, fontWeight: '600', textAlign: 'center', opacity: 0.8 },
+  actionZone: { width: '100%', gap: 16, marginBottom: 20 },
+  primaryBtn: { height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', shadowColor: '#FD6730', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 8 },
+  primaryBtnText: { color: '#FFF', fontSize: 18, fontWeight: '800' },
+  secondaryBtn: { height: 64, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5 },
+  secondaryBtnText: { fontSize: 16, fontWeight: '600' },
+
+  // Desktop styles
+  desktopSide: { padding: 60, alignItems: 'center', justifyContent: 'center' },
+  logoBox: { width: 180, height: 180, marginBottom: 40 },
+  sideLogo: { width: 180, height: 180, marginBottom: 40 },
+  sideTitle: { fontSize: 56, fontWeight: '900', textAlign: 'center', letterSpacing: -2, marginBottom: 32, lineHeight: 64 },
+  trustRow: { flexDirection: 'row', gap: 24 },
+  trustItem: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.03)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  trustText: { fontSize: 14, fontWeight: '700' }
 });
 
 export default WelcomeScreen;

@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LoginScreen from '../screens/LoginScreen';
+import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import SignupScreen from '../screens/SignupScreen';
 import AuthScreen from '../screens/AuthScreen';
 import SuccessScreen from '../screens/SuccessScreen';
@@ -12,30 +13,38 @@ import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import SkillSelectionScreen from '../screens/SkillSelectionScreen';
 import FreelancerOnboardingScreen from '../screens/FreelancerOnboardingScreen';
+import LanguageSelectScreen from '../screens/LanguageSelectScreen';
+import SignupDetailsScreen from '../screens/SignupDetailsScreen';
+import LocationOnboardingScreen from '../screens/LocationOnboardingScreen';
 import MatchingJobsScreen from '../screens/MatchingJobsScreen';
-import { useRole } from '../context/RoleContext';
-
-import MobileLandingScreen from '../screens/MobileLandingScreen';
+import SignupPasswordScreen from '../screens/SignupPasswordScreen';
+import * as storage from '../utils/storage';
+import { signup } from '../services/authService';
 
 const Stack = createNativeStackNavigator();
 
 export default function AuthNavigator() {
-    const initialRoute = Platform.OS === 'web' ? 'Login' : 'Welcome';
+    const initialRoute = 'LanguageSelect';
 
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
+            <Stack.Screen name="LanguageSelect" component={LanguageSelectScreen} />
             <Stack.Screen name="Onboarding" component={OnboardingWrapper} />
             <Stack.Screen name="Welcome" component={WelcomeWrapper} />
-            <Stack.Screen name="Login" component={LoginWrapper} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
-            <Stack.Screen name="AuthSelection" component={AuthScreen} />
-            <Stack.Screen name="Success" component={SuccessScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordWrapper} />
-            <Stack.Screen name="OTPVerification" component={OTPVerificationWrapper} />
-            <Stack.Screen name="ResetPassword" component={ResetPasswordWrapper} />
-            <Stack.Screen name="SkillSelection" component={SkillSelectionScreen} />
-            <Stack.Screen name="FreelancerOnboarding" component={FreelancerOnboardingScreen} />
-            <Stack.Screen name="MatchingJobs" component={MatchingJobsScreen} />
+            <Stack.Screen name="Login" component={LoginWrapper} options={{ title: 'Login' }} />
+            <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} options={{ title: 'Select Role' }} />
+            <Stack.Screen name="Signup" component={SignupScreen} options={{ title: 'Sign Up' }} />
+            <Stack.Screen name="SignupDetails" component={SignupDetailsScreen} options={{ title: 'Contact Info' }} />
+            <Stack.Screen name="SignupPassword" component={SignupPasswordScreen} options={{ title: 'Security' }} />
+            <Stack.Screen name="LocationOnboarding" component={LocationOnboardingScreen} options={{ title: 'Location' }} />
+            <Stack.Screen name="AuthSelection" component={AuthScreen} options={{ title: 'Welcome' }} />
+            <Stack.Screen name="Success" component={SuccessScreen} options={{ title: 'Success' }} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordWrapper} options={{ title: 'Forgot Password' }} />
+            <Stack.Screen name="OTPVerification" component={OTPVerificationWrapper} options={{ title: 'Verify OTP' }} />
+            <Stack.Screen name="ResetPassword" component={ResetPasswordWrapper} options={{ title: 'Reset Password' }} />
+            <Stack.Screen name="SkillSelection" component={SkillSelectionScreen} options={{ title: 'Skills Selection' }} />
+            <Stack.Screen name="FreelancerOnboarding" component={FreelancerOnboardingScreen} options={{ title: 'Onboarding' }} />
+            <Stack.Screen name="MatchingJobs" component={MatchingJobsScreen} options={{ title: 'Matching Jobs' }} />
         </Stack.Navigator>
     );
 }
@@ -50,7 +59,7 @@ function WelcomeWrapper({ navigation }: any) {
     return (
         <WelcomeScreen
             onLogin={() => navigation.navigate('Login')}
-            onSignup={() => navigation.navigate('Signup')}
+            onSignup={() => navigation.navigate('RoleSelection')}
         />
     );
 }
@@ -72,7 +81,7 @@ function LoginWrapper({ navigation }: any) {
                     });
                 }
             }}
-            onSignup={() => navigation.navigate('Signup')}
+            onSignup={() => navigation.navigate('RoleSelection')}
             onForgotPassword={() => navigation.navigate('ForgotPassword')}
         />
     );
@@ -91,33 +100,7 @@ function OTPVerificationWrapper({ navigation, route }: any) {
     const { email, mode, role } = route.params || {};
 
     return (
-        <OTPVerificationScreen
-            email={email}
-            mode={mode}
-            onBackToForgotPassword={() => navigation.goBack()}
-            onOTPVerified={(tokenData: string | { token: string; user: any }) => {
-                let token: string;
-                let user: any;
-
-                if (typeof tokenData === 'string') {
-                    token = tokenData;
-                } else {
-                    token = tokenData.token;
-                    user = tokenData.user;
-                }
-
-                // If signing up as freelancer, go to skills selection
-                if (mode === 'signup' && role === 'freelancer') {
-                    navigation.navigate('SkillSelection', { token, user });
-                } else if (mode === 'signup') {
-                    // Client signup - finished
-                    // Trigger auth state update or nav to login
-                    navigation.navigate('Login'); // Or let AuthContext handle it
-                } else {
-                    navigation.navigate('ResetPassword', { email, resetToken: token });
-                }
-            }}
-        />
+        <OTPVerificationScreen />
     );
 }
 
