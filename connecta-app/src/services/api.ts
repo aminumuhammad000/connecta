@@ -137,7 +137,8 @@ export const uploadFile = async (url: string, formData: FormData): Promise<ApiRe
         headers['Content-Type'] = 'multipart/form-data';
     }
 
-    return axios.post(`${API_BASE_URL}${url}`, formData, { headers });
+    const response = await axios.post(`${API_BASE_URL}${url}`, formData, { headers });
+    return response.data;
 };
 
 /**
@@ -148,7 +149,8 @@ export const uploadFilePublic = async (url: string, formData: FormData): Promise
     if (Platform.OS !== 'web') {
         headers['Content-Type'] = 'multipart/form-data';
     }
-    return axios.post(`${API_BASE_URL}${url}`, formData, { headers });
+    const response = await axios.post(`${API_BASE_URL}${url}`, formData, { headers });
+    return response.data;
 };
 
 // Event for handling 401 Unauthorized

@@ -15,3 +15,12 @@ createRoot(document.getElementById('root')!).render(
     </GoogleOAuthProvider>
   </StrictMode>
 )
+
+// Register Service Worker for "Save in Catch" (Caching)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.log('SW registration failed: ', err);
+    });
+  });
+}

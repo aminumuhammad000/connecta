@@ -518,7 +518,19 @@ export default function ClientProfileScreen({ navigation, route }: any) {
           onRequestClose={() => setReviewModalVisible(false)}
         >
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
-            <View style={{ backgroundColor: c.card, borderRadius: 20, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 10 }}>
+            <View style={{
+              backgroundColor: c.card,
+              borderRadius: 20,
+              padding: 24,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 10 },
+              shadowOpacity: 0.1,
+              shadowRadius: 20,
+              elevation: 10,
+              width: '100%',
+              maxWidth: 500,
+              alignSelf: 'center'
+            }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>Add Review</Text>
                 <TouchableOpacity onPress={() => setReviewModalVisible(false)}>

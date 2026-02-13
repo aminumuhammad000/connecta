@@ -35,6 +35,7 @@ class CollaboService {
             scope?: string;
             duration?: string;
             durationType?: string;
+            status?: string;
         }
     ) {
         // Transactions removed for standalone MongoDB compatibility
@@ -48,7 +49,7 @@ class CollaboService {
                 teamName: data.teamName,
                 description: data.description,
                 totalBudget: data.totalBudget,
-                status: 'planning',
+                status: data.status || 'planning',
                 milestones: data.milestones,
                 recommendedStack: data.recommendedStack,
                 risks: data.risks,

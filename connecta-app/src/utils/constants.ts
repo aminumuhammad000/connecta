@@ -3,14 +3,14 @@
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = true;
+// 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
+const USE_LOCAL_SERVER = false;
 
 // Server URLs
 const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API
-const LOCAL_SERVER = 'http://192.168.43.204:5000'; // Use your computer's local IP
+const LOCAL_SERVER = 'http://192.168.100.33:5000'; // Using the first local IP found
 
 export const API_BASE_URL = USE_LOCAL_SERVER ? LOCAL_SERVER : ONLINE_SERVER;
-
 console.log('[API] Base URL:', API_BASE_URL);
 
 // AsyncStorage Keys

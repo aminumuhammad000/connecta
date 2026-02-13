@@ -11,8 +11,9 @@ export const getProposals = async () => {
   return response.data;
 };
 import axios from "axios";
+import { API_BASE_URL } from "../utils/constants";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL + "/proposals";
+const API_URL = API_BASE_URL + "/proposals";
 
 export const applyToJob = async ({ jobId, coverLetter, budget, duration, level, priceType, title }: {
   jobId: string;

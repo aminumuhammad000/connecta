@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Briefcase, Clock, MapPin, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { API_BASE_URL, APP_DOMAIN } from '../../../utils/constants';
 
 const SampleJobs = () => {
     const [jobs, setJobs] = useState<any[]>([]);
@@ -10,7 +11,7 @@ const SampleJobs = () => {
         const fetchJobs = async () => {
             try {
                 // Fetch recent active jobs
-                const response = await fetch('https://api.myconnecta.ng/api/jobs?limit=4&status=active');
+                const response = await fetch(`${API_BASE_URL}/jobs?limit=4&status=active`);
                 const data = await response.json();
 
                 if (data.success && Array.isArray(data.data)) {
@@ -70,13 +71,13 @@ const SampleJobs = () => {
                             Explore <span className="text-[#FD6730]">Jobs In Demand</span>
                         </h2>
                     </motion.div>
-                    <motion.button
+                    <motion.a
                         whileHover={{ x: 5 }}
-                        className="hidden md:flex items-center gap-2 text-gray-500 font-bold hover:text-[#FD6730] transition-colors"
-                        onClick={() => window.location.href = '/search'}
+                        className="hidden md:flex items-center gap-2 text-gray-500 font-bold hover:text-[#FD6730] transition-colors cursor-pointer"
+                        href={`${APP_DOMAIN}/search`}
                     >
                         View All Gigs <ArrowRight className="w-4 h-4" />
-                    </motion.button>
+                    </motion.a>
                 </div>
 
                 {/* Unique "Pod" / "Card" Layout */}
@@ -99,7 +100,7 @@ const SampleJobs = () => {
                                         transition={{ delay: i * 0.1 }}
                                         whileHover={{ y: -8, scale: 1.02 }}
                                         className={`p-6 rounded-3xl border-2 ${borderColor} bg-white shadow-xl shadow-gray-100 relative group cursor-pointer`}
-                                        onClick={() => window.location.href = `https://app.myconnecta.ng/job/${job._id}`}
+                                        onClick={() => window.location.href = `${APP_DOMAIN}/job/${job._id}`}
                                     >
                                         {/* Top Badge */}
                                         <div className={`inline-block px-3 py-1 rounded-lg ${colorClass} text-xs font-bold mb-4`}>
@@ -142,9 +143,12 @@ const SampleJobs = () => {
                 )}
 
                 {/* Mobile View All Button */}
-                <button className="md:hidden mt-8 w-full py-4 rounded-xl border-2 border-gray-100 font-bold text-gray-500 hover:border-[#FD6730] hover:text-[#FD6730] transition-all flex items-center justify-center gap-2">
+                <a
+                    href={`${APP_DOMAIN}/search`}
+                    className="md:hidden mt-8 w-full py-4 rounded-xl border-2 border-gray-100 font-bold text-gray-500 hover:border-[#FD6730] hover:text-[#FD6730] transition-all flex items-center justify-center gap-2"
+                >
                     View All Gigs <ArrowRight className="w-4 h-4" />
-                </button>
+                </a>
             </div>
         </section>
     );

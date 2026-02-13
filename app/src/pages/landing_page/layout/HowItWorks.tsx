@@ -23,7 +23,7 @@ const HowItWorks = () => {
         {
             id: 3,
             title: "Connect & Build",
-            desc: "Collaborate in real-time workspaces. Get paid securely via Escrow. Launch.",
+            desc: "Work solo or form a 'Collabo Squad' to tackle bigger projects. Collaborate in real-time and get paid securely.",
             icon: Handshake,
             color: "bg-green-50 text-green-500",
             arrowColor: "text-transparent" // Last one has no arrow

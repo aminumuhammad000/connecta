@@ -17,7 +17,7 @@ export default function Login() {
     try {
       // Always try backend first
       try {
-        const response: any = await authAPI.login(email, password)
+        const response: any = await authAPI.login(email.toLowerCase(), password)
         console.log('Login response:', response)
 
         if (response.success && response.token) {

@@ -1,10 +1,16 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IReview extends Document {
-  projectId: mongoose.Types.ObjectId;
-  reviewerId: mongoose.Types.ObjectId; // Person giving the review
-  revieweeId: mongoose.Types.ObjectId; // Person receiving the review
-  reviewerType: 'client' | 'freelancer';
+  projectId?: mongoose.Types.ObjectId;
+  reviewerId?: mongoose.Types.ObjectId; // Optional for guests
+  revieweeId?: mongoose.Types.ObjectId; // Optional for platform feedback
+
+  // Guest fields
+  guestName?: string;
+  guestEmail?: string;
+  guestRole?: string;
+
+  reviewerType: 'client' | 'freelancer' | 'guest';
   rating: number; // 1-5 stars
   comment: string;
   tags?: string[]; // e.g., ['Professional', 'On Time', 'Great Communication']
@@ -35,17 +41,32 @@ const ReviewSchema = new Schema<IReview>(
     reviewerId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Changed from true to false for guest reviews
     },
     revieweeId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Changed from true to false for platform reviews
+    },
+    // Guest fields
+    guestName: {
+      type: String,
+      trim: true
+    },
+    guestEmail: {
+      type: String,
+      trim: true,
+      lowercase: true
+    },
+    guestRole: {
+      type: String, // e.g. "Client", "Freelancer"
+      default: 'Visitor'
     },
     reviewerType: {
       type: String,
-      enum: ['client', 'freelancer'],
+      enum: ['client', 'freelancer', 'guest'],
       required: true,
+      default: 'guest'
     },
     rating: {
       type: Number,
@@ -69,7 +90,7 @@ const ReviewSchema = new Schema<IReview>(
     respondedAt: Date,
     isPublic: {
       type: Boolean,
-      default: true,
+      default: false, // Default to false for guests for moderation
     },
     isFlagged: {
       type: Boolean,
@@ -95,8 +116,11 @@ ReviewSchema.index({ revieweeId: 1, createdAt: -1 });
 ReviewSchema.index({ projectId: 1 });
 ReviewSchema.index({ rating: 1 });
 
-// Prevent duplicate reviews for same project/context
-ReviewSchema.index({ projectId: 1, reviewerId: 1, revieweeId: 1 }, { unique: true });
+// Prevent duplicate reviews for same project/context (if project exists)
+ReviewSchema.index({ projectId: 1, reviewerId: 1, revieweeId: 1 }, {
+  unique: true,
+  partialFilterExpression: { projectId: { $exists: true } }
+});
 
 const Review = mongoose.model<IReview>('Review', ReviewSchema);
 

@@ -377,10 +377,18 @@ export const updateMyProfile = async (
       console.log('✅ Profile updated:', profile);
     }
 
-    // Sync with User model if avatar was updated
-    if (avatar) {
-      await User.findByIdAndUpdate(userId, { profileImage: avatar });
-      console.log('🔄 Synced avatar to User profileImage');
+    // Sync with User model if avatar or names were updated
+    const userUpdate: any = {};
+    if (avatar) userUpdate.profileImage = avatar;
+
+    // Extract names from request body (they are not in profile schema but passed from frontend)
+    const { firstName, lastName } = req.body;
+    if (firstName) userUpdate.firstName = firstName;
+    if (lastName) userUpdate.lastName = lastName;
+
+    if (Object.keys(userUpdate).length > 0) {
+      await User.findByIdAndUpdate(userId, userUpdate);
+      console.log('🔄 Synced User model fields:', userUpdate);
     }
 
     res.status(200).json({
@@ -394,5 +402,117 @@ export const updateMyProfile = async (
       success: false,
       message: error.message
     });
+  }
+};
+
+// @ts-ignore
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { PDFParse } = require('pdf-parse');
+import LLMService from '../services/LLM.service.js';
+
+/**
+ * @desc Parse resume and return structured data
+ * @route POST /api/profiles/parse-resume
+ */
+export const parseResume = async (req: Request, res: Response) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ message: "No resume file uploaded" });
+    }
+
+    // Extract text from PDF
+    console.log('📄 Parsing PDF Resume...');
+
+    // pdf-parse v2 usage
+    // @ts-ignore
+    const pdfLib = require('pdf-parse');
+    const PDFParse = pdfLib.PDFParse || pdfLib.default?.PDFParse || pdfLib;
+
+    // Validate constructor
+    if (typeof PDFParse !== 'function') {
+      throw new Error(`PDFParse library not loaded correctly. Type: ${typeof PDFParse}`);
+    }
+
+    // Check if buffer exists
+    if (!req.file || !req.file.buffer) {
+      throw new Error("File buffer is empty");
+    }
+
+    // pdf-parse v2 constructor expects a buffer directly or an object?
+    // Based on user's previous code it was object. Let's try standard buffer first as per v2 pattern if possible, 
+    // or checks docs. But since I can't check docs, I will trust the previous code slightly but add try/catch.
+    // Actually, safely try both or just pass the buffer?
+    // Let's assume `new PDFParse(buffer)` or `new PDFParse({data: buffer})`
+    // I will try to use the library as intended by v2.
+    // Wait, let's look at the CJS test output first.
+
+    // Instantiate parser with correct signature
+    // pdf-parse v2 expects object with 'data' property
+    const parser = new PDFParse({ data: req.file.buffer });
+    const data = await parser.getText();
+    const text = data.text;
+
+    // Log the first 200 chars to debug
+    console.log('📄 Extracted PDF Text Sample:', text.substring(0, 200) + '...');
+
+    if (!text || text.length < 50) {
+      return res.status(400).json({ message: "Could not extract text from resume" });
+    }
+
+    console.log(`🤖 Extracted ${text.length} chars. sending to AI...`);
+
+    // Parse with AI
+    const profileData = await LLMService.parseResumeText(text);
+
+    console.log('✅ AI Parse Success');
+
+    res.status(200).json({
+      success: true,
+      data: profileData
+    });
+
+  } catch (error: any) {
+    console.error('Resume Parse Error:', error);
+    // Write error to file for debugging
+    const fs = require('fs');
+    fs.writeFileSync('debug_error.txt', `Time: ${new Date().toISOString()}\nError: ${error.message}\nStack: ${error.stack}\n\n`);
+
+    res.status(500).json({ message: "Failed to parse resume: " + error.message });
+  }
+};
+
+import PDFGenerationService from '../services/PDFGeneration.service.js';
+
+/**
+ * @desc Generate and download PDF resume
+ * @route GET /api/profiles/me/resume/pdf
+ */
+export const downloadResume = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id || (req as any).user.id;
+
+    // Fetch full profile data
+    const profile = await Profile.findOne({ user: userId }).populate('user', 'firstName lastName email phoneNumber');
+
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Generate PDF
+    const pdfBuffer = await PDFGenerationService.generateResumePDF(profile);
+
+    // Send as download
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="Connecta_Resume.pdf"`,
+      'Content-Length': pdfBuffer.length.toString(),
+    });
+
+    res.send(pdfBuffer);
+
+  } catch (error: any) {
+    console.error('PDF Generation Error:', error);
+    res.status(500).json({ message: "Failed to generate resume" });
   }
 };

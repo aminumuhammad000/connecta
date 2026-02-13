@@ -1,14 +1,28 @@
 import { Platform } from 'react-native';
 
-// Only require native analytics if NOT on web
-const analytics = Platform.OS !== 'web'
-    ? require('@react-native-firebase/analytics').default
-    : () => ({
+let analytics: any;
+if (Platform.OS !== 'web') {
+    try {
+        analytics = require('@react-native-firebase/analytics').default;
+    } catch (error) {
+        console.warn('[Analytics] @react-native-firebase/analytics not found. Analytics will be disabled.');
+        analytics = () => ({
+            logEvent: async () => { },
+            setUserId: async () => { },
+            logAppOpen: async () => { },
+            setUserProperties: async () => { },
+            logScreenView: async () => { },
+        });
+    }
+} else {
+    analytics = () => ({
         logEvent: async () => { },
         setUserId: async () => { },
         logAppOpen: async () => { },
         setUserProperties: async () => { },
+        logScreenView: async () => { },
     });
+}
 
 /**
  * Log a custom event to Firebase Analytics (Native)

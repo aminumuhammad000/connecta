@@ -115,91 +115,93 @@ const ApplyJobScreen: React.FC = () => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-            <View style={[styles.appBar, { borderBottomColor: c.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-                    <MaterialIcons name="close" size={22} color={c.text} />
-                </TouchableOpacity>
-                <Text style={[styles.appBarTitle, { color: c.text }]}>{isEditing ? 'Edit Proposal' : 'Apply to Job'}</Text>
-                <View style={{ width: 40 }} />
-            </View>
+            <View style={{ flex: 1, maxWidth: 800, alignSelf: 'center', width: '100%' }}>
+                <View style={[styles.appBar, { borderBottomColor: c.border }]}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+                        <MaterialIcons name="close" size={22} color={c.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.appBarTitle, { color: c.text }]}>{isEditing ? 'Edit Proposal' : 'Apply to Job'}</Text>
+                    <View style={{ width: 40 }} />
+                </View>
 
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-                    <Text style={[styles.jobTitle, { color: c.text }]}>Applying to: {jobTitle || 'Unknown Job'}</Text>
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+                        <Text style={[styles.jobTitle, { color: c.text }]}>Applying to: {jobTitle || 'Unknown Job'}</Text>
 
-                    <View style={{ marginTop: 20 }}>
-                        <Text style={[styles.label, { color: c.text }]}>Proposed Rate (₦)</Text>
-                        <TextInput
-                            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
-                            value={proposedRate}
-                            onChangeText={setProposedRate}
-                            keyboardType="numeric"
-                            placeholder="Ex: 500"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={{ marginTop: 16 }}>
-                        <Text style={[styles.label, { color: c.text }]}>Estimated Duration</Text>
-                        <TextInput
-                            style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
-                            value={duration}
-                            onChangeText={setDuration}
-                            placeholder="Ex: 2 weeks"
-                            placeholderTextColor={c.subtext}
-                        />
-                    </View>
-
-                    <View style={{ marginTop: 16 }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                            <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Cover Letter</Text>
-                            <TouchableOpacity
-                                onPress={handleGenerateWithAI}
-                                disabled={isGenerating}
-                                style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}
-                            >
-                                {isGenerating ? (
-                                    <ActivityIndicator size="small" color={c.primary} />
-                                ) : (
-                                    <>
-                                        <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                                        <Text style={{ fontSize: 12, fontWeight: '600', color: c.primary }}>
-                                            {coverLetter ? 'Regenerate with AI' : 'Generate with AI'}
-                                        </Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
+                        <View style={{ marginTop: 20 }}>
+                            <Text style={[styles.label, { color: c.text }]}>Proposed Rate (₦)</Text>
+                            <TextInput
+                                style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
+                                value={proposedRate}
+                                onChangeText={setProposedRate}
+                                keyboardType="numeric"
+                                placeholder="Ex: 500"
+                                placeholderTextColor={c.subtext}
+                            />
                         </View>
-                        <TextInput
-                            style={[styles.textArea, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
-                            value={coverLetter}
-                            onChangeText={setCoverLetter}
-                            multiline
-                            textAlignVertical="top"
-                            placeholder="Describe why you are the best fit for this job... or use AI to generate one!"
-                            placeholderTextColor={c.subtext}
-                        />
-                        <Text style={{ fontSize: 11, color: c.subtext, marginTop: 4, textAlign: 'right' }}>
-                            Powered by Connecta AI • You can edit the text above.
-                        </Text>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
 
-            <View style={[styles.footer, { borderTopColor: c.border, paddingBottom: insets.bottom + 16, backgroundColor: c.background }]}>
-                <TouchableOpacity
-                    style={[styles.submitBtn, { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 }]}
-                    onPress={handleSubmit}
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.submitText}>{isEditing ? 'Update Proposal' : 'Submit Proposal'}</Text>
-                    )}
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+                        <View style={{ marginTop: 16 }}>
+                            <Text style={[styles.label, { color: c.text }]}>Estimated Duration</Text>
+                            <TextInput
+                                style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
+                                value={duration}
+                                onChangeText={setDuration}
+                                placeholder="Ex: 2 weeks"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
+
+                        <View style={{ marginTop: 16 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Cover Letter</Text>
+                                <TouchableOpacity
+                                    onPress={handleGenerateWithAI}
+                                    disabled={isGenerating}
+                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}
+                                >
+                                    {isGenerating ? (
+                                        <ActivityIndicator size="small" color={c.primary} />
+                                    ) : (
+                                        <>
+                                            <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
+                                            <Text style={{ fontSize: 12, fontWeight: '600', color: c.primary }}>
+                                                {coverLetter ? 'Regenerate with AI' : 'Generate with AI'}
+                                            </Text>
+                                        </>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                            <TextInput
+                                style={[styles.textArea, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
+                                value={coverLetter}
+                                onChangeText={setCoverLetter}
+                                multiline
+                                textAlignVertical="top"
+                                placeholder="Describe why you are the best fit for this job... or use AI to generate one!"
+                                placeholderTextColor={c.subtext}
+                            />
+                            <Text style={{ fontSize: 11, color: c.subtext, marginTop: 4, textAlign: 'right' }}>
+                                Powered by Connecta AI • You can edit the text above.
+                            </Text>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+
+                <View style={[styles.footer, { borderTopColor: c.border, paddingBottom: insets.bottom + 16, backgroundColor: c.background }]}>
+                    <TouchableOpacity
+                        style={[styles.submitBtn, { backgroundColor: c.primary, opacity: isSubmitting ? 0.7 : 1 }]}
+                        onPress={handleSubmit}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.submitText}>{isEditing ? 'Update Proposal' : 'Submit Proposal'}</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </View >
+        </SafeAreaView >
     );
 };
 

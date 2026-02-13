@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layout, Shield, Users, Rocket, Zap, Globe } from 'lucide-react';
+import { APP_DOMAIN } from '../../../utils/constants';
 
 const CollaboOverview = () => {
     return (
@@ -40,10 +41,15 @@ const CollaboOverview = () => {
                             ))}
                         </div>
 
-                        <button className="w-full sm:w-auto px-8 py-4 bg-[#FD6730] text-white font-bold rounded-xl text-lg shadow-lg shadow-orange-500/20 hover:bg-[#e05625] hover:shadow-orange-500/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 mx-auto lg:mx-0">
+                        <a
+                            href={APP_DOMAIN}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto px-8 py-4 bg-[#FD6730] text-white font-bold rounded-xl text-lg shadow-lg shadow-orange-500/20 hover:bg-[#e05625] hover:shadow-orange-500/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 mx-auto lg:mx-0"
+                        >
                             <Zap className="w-5 h-5 fill-current" />
                             Launch Workspace
-                        </button>
+                        </a>
                     </div>
 
                     {/* Right Visual: Clean Light Mode Mockup */}

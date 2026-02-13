@@ -126,6 +126,17 @@ export const createJob = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized: No clientId" });
     }
     jobData.clientId = clientId;
+
+    // Check user verification status to determine job status
+    const Verification = (await import("../models/Verification.model.js")).default;
+    const verification = await Verification.findOne({ user: clientId });
+
+    if (verification && verification.status === "approved") {
+      jobData.status = "active";
+    } else {
+      jobData.status = "draft"; // Or we could add a new 'pending_approval' status if preferred
+    }
+
     const newJob = await Job.create(jobData);
 
     // Notify matching freelancers via WhatsApp and Email

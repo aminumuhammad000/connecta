@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -89,9 +89,12 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
         );
     }
 
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-            <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
+            <View style={{ flex: 1, maxWidth: isDesktop ? 900 : 600, alignSelf: 'center', width: '100%' }}>
                 {/* Top App Bar */}
                 <View style={styles.appBar}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

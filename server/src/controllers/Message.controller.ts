@@ -4,10 +4,10 @@ import Conversation from '../models/Conversation.model.js';
 import mongoose from 'mongoose';
 // Import io from app (singleton pattern)
 import { getIO } from '../core/utils/socketIO.js';
-import CollboWorkspace from '../models/CollaboWorkspace.model.js';
 import User from '../models/user.model.js';
 import Notification from '../models/Notification.model.js';
 import notificationService from '../services/notification.service.js';
+import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
 
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req: Request, res: Response) => {
@@ -455,7 +455,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
 
     // Also check CollaboWorkspaces
     // We need to find workspaces where the user has an unread count entry
-    const collaboWorkspaces = await CollboWorkspace.find({
+    const collaboWorkspaces = await CollaboWorkspace.find({
       [`unreadCount.${userId}`]: { $gt: 0 }
     });
 

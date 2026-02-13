@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, ArrowRight, MessageSquare, Mic, Loader2, Briefcase, Clock, MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL, APP_DOMAIN } from '../../../utils/constants';
 
 const AiSearch = () => {
   const [query, setQuery] = useState('');
@@ -13,7 +14,7 @@ const AiSearch = () => {
     setResults(null);
 
     try {
-      const response = await fetch(`https://api.myconnecta.ng/api/jobs/search?q=${encodeURIComponent(query)}&limit=4&isExternal=false`);
+      const response = await fetch(`${API_BASE_URL}/jobs/search?q=${encodeURIComponent(query)}&limit=4&isExternal=false`);
       const data = await response.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -161,7 +162,7 @@ const AiSearch = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xl shadow-gray-100 hover:shadow-2xl hover:border-[#FD6730]/30 transition-all cursor-pointer group relative"
-                        onClick={() => window.location.href = `https://app.myconnecta.ng/job/${job._id}`}
+                        onClick={() => window.location.href = `${APP_DOMAIN}/job/${job._id}`}
                       >
                         <div className="absolute top-4 right-4 text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-md group-hover:bg-[#FD6730] group-hover:text-white transition-colors">
                           {job.budget ? `₦${job.budget.toLocaleString()}` : "Confidential"}
@@ -182,7 +183,7 @@ const AiSearch = () => {
                   </div>
                 ) : (
                   <div className="p-8 bg-gray-50 rounded-2xl border border-gray-100 text-gray-500">
-                    No exact matches found. Try broadening your terms or <a href="https://app.myconnecta.ng/post-job" className="text-[#FD6730] font-bold hover:underline">post a job</a> to let them come to you.
+                    No exact matches found. Try broadening your terms or <a href={`${APP_DOMAIN}/post-job`} className="text-[#FD6730] font-bold hover:underline">post a job</a> to let them come to you.
                   </div>
                 )}
               </motion.div>

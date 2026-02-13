@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, useWindowDimensions } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -42,8 +42,18 @@ const PublicFreelancerSearchScreen = () => {
         }
     };
 
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+    const numColumns = isDesktop ? 2 : 1;
+
     const renderFreelancerItem = ({ item }: { item: any }) => (
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PublicFreelancerProfile', { id: item._id })}>
+        <TouchableOpacity
+            style={[
+                styles.card,
+                isDesktop && { flex: 1, margin: 8, maxWidth: '48%' }
+            ]}
+            onPress={() => navigation.navigate('PublicFreelancerProfile', { id: item._id })}
+        >
             <Image
                 source={{ uri: item.profilePicture || `https://ui-avatars.com/api/?name=${item.firstName}+${item.lastName}&background=random` }}
                 style={styles.avatar}
@@ -79,54 +89,59 @@ const PublicFreelancerSearchScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <StatusBar style="dark" />
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={24} color="#333" />
-                </TouchableOpacity>
-                <View style={styles.searchContainer}>
-                    <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Find Talent (e.g. Designer)..."
-                        value={query}
-                        onChangeText={setQuery}
-                        onSubmitEditing={() => searchFreelancers()}
-                        returnKeyType="search"
-                        autoFocus={!route.params?.initialQuery}
-                    />
-                    {query.length > 0 && (
-                        <TouchableOpacity onPress={() => setQuery('')}>
-                            <Feather name="x" size={18} color="#999" />
-                        </TouchableOpacity>
-                    )}
+            <View style={{ flex: 1, maxWidth: 1200, alignSelf: 'center', width: '100%' }}>
+                <StatusBar style="dark" />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={24} color="#333" />
+                    </TouchableOpacity>
+                    <View style={styles.searchContainer}>
+                        <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Find Talent (e.g. Designer)..."
+                            value={query}
+                            onChangeText={setQuery}
+                            onSubmitEditing={() => searchFreelancers()}
+                            returnKeyType="search"
+                            autoFocus={!route.params?.initialQuery}
+                        />
+                        {query.length > 0 && (
+                            <TouchableOpacity onPress={() => setQuery('')}>
+                                <Feather name="x" size={18} color="#999" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
-            </View>
 
-            {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#FD6730" />
-                </View>
-            ) : (
-                <FlatList
-                    data={freelancers}
-                    renderItem={renderFreelancerItem}
-                    keyExtractor={(item) => item._id}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={
-                        hasSearched ? (
-                            <View style={styles.center}>
-                                <Text style={styles.emptyText}>No freelancers found for "{query}"</Text>
-                            </View>
-                        ) : (
-                            <View style={styles.center}>
-                                <Feather name="users" size={48} color="#ddd" />
-                                <Text style={styles.emptyText}>Search for top talent</Text>
-                            </View>
-                        )
-                    }
-                />
-            )}
+                {loading ? (
+                    <View style={styles.center}>
+                        <ActivityIndicator size="large" color="#FD6730" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={freelancers}
+                        renderItem={renderFreelancerItem}
+                        keyExtractor={(item) => item._id}
+                        contentContainerStyle={styles.listContent}
+                        numColumns={numColumns}
+                        key={numColumns} // Force re-render when columns change
+                        columnWrapperStyle={isDesktop ? { justifyContent: 'space-between' } : undefined}
+                        ListEmptyComponent={
+                            hasSearched ? (
+                                <View style={styles.center}>
+                                    <Text style={styles.emptyText}>No freelancers found for "{query}"</Text>
+                                </View>
+                            ) : (
+                                <View style={styles.center}>
+                                    <Feather name="users" size={48} color="#ddd" />
+                                    <Text style={styles.emptyText}>Search for top talent</Text>
+                                </View>
+                            )
+                        }
+                    />
+                )}
+            </View>
         </SafeAreaView>
     );
 };

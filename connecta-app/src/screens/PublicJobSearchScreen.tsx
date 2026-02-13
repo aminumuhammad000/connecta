@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
@@ -41,8 +41,18 @@ const PublicJobSearchScreen = () => {
         }
     };
 
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+    const numColumns = isDesktop ? 2 : 1;
+
     const renderJobItem = ({ item }: { item: any }) => (
-        <TouchableOpacity style={styles.jobCard} onPress={() => navigation.navigate('PublicJobDetail', { id: item._id })}>
+        <TouchableOpacity
+            style={[
+                styles.jobCard,
+                isDesktop && { flex: 1, margin: 8, maxWidth: '48%' }
+            ]}
+            onPress={() => navigation.navigate('PublicJobDetail', { id: item._id })}
+        >
             <View style={styles.jobHeader}>
                 <View style={styles.iconBox}>
                     <Feather name="briefcase" size={20} color="#666" />
@@ -64,54 +74,59 @@ const PublicJobSearchScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <StatusBar style="dark" />
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={24} color="#333" />
-                </TouchableOpacity>
-                <View style={styles.searchContainer}>
-                    <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Search jobs..."
-                        value={query}
-                        onChangeText={setQuery}
-                        onSubmitEditing={() => searchJobs()}
-                        returnKeyType="search"
-                        autoFocus
-                    />
-                    {query.length > 0 && (
-                        <TouchableOpacity onPress={() => setQuery('')}>
-                            <Feather name="x" size={18} color="#999" />
-                        </TouchableOpacity>
-                    )}
+            <View style={{ flex: 1, maxWidth: 1200, alignSelf: 'center', width: '100%' }}>
+                <StatusBar style="dark" />
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={24} color="#333" />
+                    </TouchableOpacity>
+                    <View style={styles.searchContainer}>
+                        <Feather name="search" size={20} color="#666" style={styles.searchIcon} />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Search jobs..."
+                            value={query}
+                            onChangeText={setQuery}
+                            onSubmitEditing={() => searchJobs()}
+                            returnKeyType="search"
+                            autoFocus
+                        />
+                        {query.length > 0 && (
+                            <TouchableOpacity onPress={() => setQuery('')}>
+                                <Feather name="x" size={18} color="#999" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
-            </View>
 
-            {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#FD6730" />
-                </View>
-            ) : (
-                <FlatList
-                    data={jobs}
-                    renderItem={renderJobItem}
-                    keyExtractor={(item) => item._id}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={
-                        hasSearched ? (
-                            <View style={styles.center}>
-                                <Text style={styles.emptyText}>No jobs found matching "{query}"</Text>
-                            </View>
-                        ) : (
-                            <View style={styles.center}>
-                                <Feather name="search" size={48} color="#ddd" />
-                                <Text style={styles.emptyText}>Search for jobs</Text>
-                            </View>
-                        )
-                    }
-                />
-            )}
+                {loading ? (
+                    <View style={styles.center}>
+                        <ActivityIndicator size="large" color="#FD6730" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={jobs}
+                        renderItem={renderJobItem}
+                        keyExtractor={(item) => item._id}
+                        contentContainerStyle={styles.listContent}
+                        numColumns={numColumns}
+                        key={numColumns} // Force re-render when columns change
+                        columnWrapperStyle={isDesktop ? { justifyContent: 'space-between' } : undefined}
+                        ListEmptyComponent={
+                            hasSearched ? (
+                                <View style={styles.center}>
+                                    <Text style={styles.emptyText}>No jobs found matching "{query}"</Text>
+                                </View>
+                            ) : (
+                                <View style={styles.center}>
+                                    <Feather name="search" size={48} color="#ddd" />
+                                    <Text style={styles.emptyText}>Search for jobs</Text>
+                                </View>
+                            )
+                        }
+                    />
+                )}
+            </View>
         </SafeAreaView>
     );
 };

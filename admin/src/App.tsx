@@ -17,6 +17,7 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import EmailBroadcast from './pages/EmailBroadcast'
 import Verifications from './pages/Verifications'
+import SupportMessages from './pages/SupportMessages'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
@@ -45,6 +46,7 @@ function App() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/broadcast" element={<EmailBroadcast />} />
           <Route path="/verifications" element={<Verifications />} />
+          <Route path="/support" element={<SupportMessages />} />
         </Route>
       </Route>
 

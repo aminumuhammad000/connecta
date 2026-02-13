@@ -407,3 +407,113 @@ export const getAllReviews = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Get featured testimonials for landing page (public, no auth required)
+ */
+export const getFeaturedTestimonials = async (req: Request, res: Response) => {
+  try {
+    const { limit = 6 } = req.query;
+
+    // Feature guest reviews too
+    const testimonials = await Review.find({
+      isPublic: true,
+      isFlagged: false,
+      rating: { $gte: 4 }, // Only 4 and 5 star reviews
+    })
+      .sort({ rating: -1, helpfulCount: -1, createdAt: -1 }) // Sort by rating, helpful votes, then newest
+      .limit(Number(limit))
+      .populate('reviewerId', 'firstName lastName profilePicture profileImage')
+      .populate('revieweeId', 'firstName lastName role accountType');
+
+    // Transform data to match frontend expectations
+    const formattedTestimonials = testimonials.map((review: any) => {
+      let name = 'Anonymous';
+      let img = `https://i.pravatar.cc/150?u=${review._id}`;
+      let role = 'Visitor';
+
+      if (review.reviewerId) {
+        name = `${review.reviewerId.firstName || ''} ${review.reviewerId.lastName || ''}`.trim();
+        img = review.reviewerId.profilePicture || review.reviewerId.profileImage || img;
+        role = review.reviewerType === 'client' ? 'Client' : 'Freelancer';
+      } else if (review.guestName) {
+        name = review.guestName;
+        role = review.guestRole || 'Visitor';
+      }
+
+      // Override role if reviewee is populated (e.g. for existing logic) but usually for landing page it's about the reviewer
+      if (review.revieweeId && !review.reviewerId && !review.guestName) {
+        role = review.revieweeId?.role || review.revieweeId?.accountType || role;
+      }
+
+      return {
+        text: review.comment,
+        name,
+        role,
+        img,
+        rating: review.rating,
+        tags: review.tags || [],
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: formattedTestimonials,
+      count: formattedTestimonials.length,
+    });
+  } catch (error: any) {
+    console.error('Get featured testimonials error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch testimonials',
+    });
+  }
+};
+
+/**
+ * Create a guest review (public, no auth)
+ */
+export const createGuestReview = async (req: Request, res: Response) => {
+  try {
+    const { name, email, role, rating, comment } = req.body;
+
+    // Validate input
+    if (!name || !rating || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, rating, and comment are required',
+      });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5',
+      });
+    }
+
+    // Create review
+    const review = await Review.create({
+      guestName: name,
+      guestEmail: email,
+      guestRole: role || 'Visitor',
+      reviewerType: 'guest',
+      rating,
+      comment,
+      isPublic: true, // Auto-approve for now as requested
+      tags: ['Guest Review'],
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Feedback submitted successfully',
+      data: review,
+    });
+  } catch (error: any) {
+    console.error('Create guest review error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to submit feedback',
+    });
+  }
+};

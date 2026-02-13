@@ -15,6 +15,9 @@ import MobileApp from "./layout/MobileApp"
 import CallToAction from "./layout/CallToAction"
 import FeedBack from "./layout/FeedBack"
 import Footer from "./layout/Footer"
+import AboutUs from "./layout/AboutUs"
+import FAQ from "./layout/FAQ"
+import Testimonials from "./layout/Testimonials"
 
 const LandingPage = () => {
   return (
@@ -31,7 +34,10 @@ const LandingPage = () => {
       <Features />
       <AiSearch />
       <MobileApp />
+      <Testimonials />
+      <FAQ />
       <CallToAction />
+      {/* <AboutUs /> */}
       <FeedBack />
       <Footer />
     </div>

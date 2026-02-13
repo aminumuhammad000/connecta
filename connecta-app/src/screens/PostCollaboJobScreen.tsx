@@ -149,18 +149,14 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                 throw new Error("Project created but ID not returned.");
             }
 
-            // Navigate to Payment
+            // Success
             showAlert({
                 title: "Success",
-                message: "Project Created! Please fund the project to activate it.",
+                message: "Project Created Successfully!",
                 type: 'success'
             });
             setTimeout(() => {
-                navigation.navigate("Payment", {
-                    projectId: project._id,
-                    amount: projectData.totalBudget,
-                    projectTitle: projectData.title
-                });
+                navigation.goBack();
             }, 1000);
 
         } catch (error: any) {

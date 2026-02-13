@@ -499,15 +499,26 @@ export const verifyEmail = async (req: Request, res: Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    // ...
-    // Check if user exists
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+
     const user = await User.findOne({ email });
-    // ...
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    // Manage OTP record
+    await OTP.deleteMany({ email });
+    await OTP.create({ userId: user._id, email, otp, expiresAt });
+
     // Send OTP via email
-    const result = await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET', user.preferredLanguage as 'en' | 'ha' || 'en');
-    // ...
+    await sendOTPEmail(email, otp, user.firstName, 'PASSWORD_RESET', user.preferredLanguage as 'en' | 'ha' || 'en');
+
+    res.status(200).json({ success: true, message: "Password reset code sent to your email" });
   } catch (err) {
-    // ...
+    console.error('Forgot password error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err });
   }
 };
 

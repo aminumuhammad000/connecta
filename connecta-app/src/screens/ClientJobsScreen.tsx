@@ -77,8 +77,8 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const mapJobStatus = (status: string): string => {
-    if (status === 'open') return 'Open';
-    if (status === 'active') return 'Open';
+    if (status === 'open' || status === 'active') return 'Approved';
+    if (status === 'draft' || status === 'planning') return 'Not Approved';
     if (status === 'in_progress') return 'In Progress';
     if (status === 'completed') return 'Completed';
     if (status === 'cancelled') return 'Cancelled';
@@ -87,6 +87,7 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
 
   const getStatusColor = (status: string) => {
     if (status === 'open' || status === 'active') return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981' };
+    if (status === 'draft' || status === 'planning') return { bg: 'rgba(239, 68, 68, 0.1)', text: '#EF4444' };
     if (status === 'in_progress') return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6' };
     if (status === 'completed') return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' };
     return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' };

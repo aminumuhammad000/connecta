@@ -35,6 +35,8 @@ const DesktopRightSidebar = () => {
         }
     };
 
+    const isClient = user?.userType === 'client';
+
     const handleChatPress = (conv: any) => {
         // Same logic as ChatsScreen to find other user
         let otherUser;
@@ -47,17 +49,32 @@ const DesktopRightSidebar = () => {
                 : conv.clientId;
         }
 
-        navigation.navigate('MessagesDetail', {
+        const params = {
             conversationId: conv._id,
             userName: `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User',
             userAvatar: otherUser?.profileImage || otherUser?.avatar,
             receiverId: otherUser?._id
-        });
+        };
+
+        if (isClient) {
+            navigation.navigate('ClientMain', { screen: 'MessagesDetail', params });
+        } else {
+            navigation.navigate('FreelancerMain', { screen: 'MessagesDetail', params });
+        }
+    };
+
+    const handleViewAll = () => {
+        if (isClient) {
+            navigation.navigate('ClientMain', { screen: 'ClientTabs', params: { screen: 'Messages' } });
+        } else {
+            navigation.navigate('FreelancerMain', { screen: 'FreelancerTabs', params: { screen: 'Messages' } });
+        }
     };
 
     const handleAiSubmit = () => {
         // Navigate to AI screen, passing the query if possible (or just open it)
-        navigation.navigate('ConnectaAI', { initialQuery: aiQuery });
+        const targetRoute = isClient ? 'ClientMain' : 'FreelancerMain';
+        navigation.navigate(targetRoute, { screen: 'ConnectaAI', params: { initialQuery: aiQuery } });
         setAiQuery('');
     };
 
@@ -96,7 +113,7 @@ const DesktopRightSidebar = () => {
             <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
                 <View style={styles.cardHeader}>
                     <Text style={[styles.cardTitle, { color: c.text }]}>Recent Messages</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('FreelancerTabs', { screen: 'Messages' })}>
+                    <TouchableOpacity onPress={handleViewAll}>
                         <Text style={[styles.seeAllLink, { color: c.primary }]}>View all</Text>
                     </TouchableOpacity>
                 </View>

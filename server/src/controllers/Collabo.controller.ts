@@ -19,6 +19,11 @@ export const createCollaboProject = async (req: Request, res: Response) => {
             return res.status(400).json({ message: "Roles must be an array" });
         }
 
+        // Check user verification status to determine project status
+        const Verification = (await import("../models/Verification.model.js")).default;
+        const verification = await Verification.findOne({ user: clientId });
+        const initialStatus = (verification && verification.status === "approved") ? "active" : "planning";
+
         const result = await CollaboService.createCollaboProject(clientId, {
             title,
             teamName,
@@ -33,7 +38,8 @@ export const createCollaboProject = async (req: Request, res: Response) => {
             projectType,
             scope,
             duration,
-            durationType
+            durationType,
+            status: initialStatus
         });
 
         res.status(201).json(result);
