@@ -229,7 +229,16 @@ export const signup = async (req, res) => {
             profileImage: otherDetails.avatar || otherDetails.profileImage || `https://i.pravatar.cc/300?u=${email}`,
             referralCode,
             referredBy,
+            sparks: 50, // Signup bonus
             ...otherDetails
+        });
+        // Record transaction for signup bonus
+        await SparkTransaction.create({
+            userId: newUser._id,
+            type: 'bonus',
+            amount: 50,
+            balanceAfter: 50,
+            description: 'Welcome bonus for joining Connecta! 🎉'
         });
         const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         // Clean up OTP
@@ -320,13 +329,63 @@ export const googleSignup = async (req, res) => {
         let user = await User.findOne({ email });
         if (user)
             return res.status(400).json({ message: "User already exists" });
+        // Generate unique referral code
+        const generateReferralCode = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        };
+        let referralCode = generateReferralCode();
+        // Ensure uniqueness
+        let isUnique = false;
+        while (!isUnique) {
+            const existing = await User.findOne({ referralCode });
+            if (!existing)
+                isUnique = true;
+            else
+                referralCode = generateReferralCode();
+        }
+        const { referrerCode } = req.body;
+        let referredBy = undefined;
+        if (referrerCode) {
+            const referrer = await User.findOne({ referralCode: referrerCode.toUpperCase() });
+            if (referrer) {
+                referredBy = referrer._id;
+                // Award sparks to referrer
+                const referralBonus = 50;
+                referrer.sparks = (referrer.sparks || 0) + referralBonus;
+                await referrer.save();
+                // Record transaction for referrer
+                await SparkTransaction.create({
+                    userId: referrer._id,
+                    type: 'referral',
+                    amount: referralBonus,
+                    balanceAfter: referrer.sparks,
+                    description: `Referral bonus for inviting ${given_name}`
+                });
+            }
+        }
         user = await User.create({
             firstName: given_name,
             lastName: family_name,
             email,
             userType,
             password: "", // no password needed for Google accounts
-            profileImage: `https://i.pravatar.cc/300?u=${email}`
+            profileImage: `https://i.pravatar.cc/300?u=${email}`,
+            referralCode,
+            referredBy,
+            sparks: 50 // Signup bonus
+        });
+        // Record transaction for signup bonus
+        await SparkTransaction.create({
+            userId: user._id,
+            type: 'bonus',
+            amount: 50,
+            balanceAfter: 50,
+            description: 'Welcome bonus for joining Connecta! 🎉'
         });
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({ user, token });
