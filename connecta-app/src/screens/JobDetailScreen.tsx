@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import SuccessModal from '../components/SuccessModal';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
+import { useTranslation } from '../utils/i18n';
 
 const JobDetailScreen: React.FC = () => {
   const c = useThemeColors();
@@ -18,6 +19,7 @@ const JobDetailScreen: React.FC = () => {
   const route = useRoute<any>();
   const { id } = route.params || {};
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [job, setJob] = React.useState<any>(null);
   const [isSaved, setIsSaved] = React.useState(false);
@@ -131,13 +133,13 @@ const JobDetailScreen: React.FC = () => {
 
       setSuccessModal({
         visible: true,
-        title: 'Freelancer Hired!',
-        message: 'Proposal accepted and project created. You can now start working.',
+        title: t('freelancer_hired'),
+        message: t('proposal_accepted_msg'),
         data: { projectId } // Pass projectId to modal
       } as any);
     } catch (error: any) {
       console.error('Error accepting proposal:', error);
-      alert(error?.message || 'Failed to accept proposal.');
+      alert(error?.message || t('proposal_accept_fail'));
     } finally {
       setActionLoading(null);
     }
@@ -149,7 +151,7 @@ const JobDetailScreen: React.FC = () => {
       setProposals(prev => prev.map(p => p._id === proposalId ? { ...p, status: 'declined' } : p));
     } catch (error) {
       console.error('Error rejecting proposal:', error);
-      alert('Failed to reject proposal.');
+      alert(t('proposal_reject_fail'));
     }
   };
 
@@ -168,11 +170,11 @@ const JobDetailScreen: React.FC = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
             <MaterialIcons name="arrow-back" size={22} color={c.text} />
           </TouchableOpacity>
-          <Text style={[styles.appBarTitle, { color: c.text }]}>Job Details</Text>
+          <Text style={[styles.appBarTitle, { color: c.text }]}>{t('job_details')}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Text style={{ color: c.subtext, fontSize: 16 }}>Job not found or failed to load.</Text>
+          <Text style={{ color: c.subtext, fontSize: 16 }}>{t('job_load_fail')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -185,7 +187,7 @@ const JobDetailScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <MaterialIcons name="arrow-back" size={24} color={c.text} />
         </TouchableOpacity>
-        <Text style={[styles.appBarTitle, { color: c.text }]}>Job Details</Text>
+        <Text style={[styles.appBarTitle, { color: c.text }]}>{t('job_details')}</Text>
         <TouchableOpacity
           style={styles.iconBtn}
           accessibilityRole="button"
@@ -208,14 +210,14 @@ const JobDetailScreen: React.FC = () => {
 
             <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <Text style={{ fontSize: 14, color: c.subtext, fontWeight: '500' }}>
-                {job.company || 'Confidential'}
+                {job.company || t('confidential')}
               </Text>
               {job.isExternal ? (
-                <Badge label={job.source || "External"} variant="neutral" size="small" />
+                <Badge label={job.source || t('external')} variant="neutral" size="small" />
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <MaterialIcons name="verified" size={16} color="#FF7F50" />
-                  <Text style={{ fontSize: 13, color: '#FF7F50', fontWeight: '600' }}>Verified</Text>
+                  <Text style={{ fontSize: 13, color: '#FF7F50', fontWeight: '600' }}>{t('verified')}</Text>
                 </View>
               )}
               <Text style={{ fontSize: 14, color: c.subtext }}>•</Text>
@@ -232,9 +234,9 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="attach-money" size={20} color="#10B981" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>Budget</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('budget')}</Text>
                 <Text style={[styles.statValue, { color: c.text }]}>₦{job.budget}</Text>
-                <Text style={{ fontSize: 11, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : 'Fixed'}</Text>
+                <Text style={{ fontSize: 11, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : t('fixed_price')}</Text>
               </View>
             </View>
 
@@ -243,8 +245,8 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="work-outline" size={20} color="#3B82F6" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>Type</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>{job.jobType || 'Full Time'}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('type')}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>{job.jobType || t('full_time')}</Text>
               </View>
             </View>
 
@@ -253,8 +255,8 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="timeline" size={20} color="#F59E0B" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>Level</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>{job.experienceLevel || 'Interm.'}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('level')}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>{job.experienceLevel || t('intermediate')}</Text>
               </View>
             </View>
 
@@ -263,26 +265,26 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="place" size={20} color="#8B5CF6" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>Location</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>{job.location || 'Remote'}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('location')}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>{job.location || t('remote')}</Text>
               </View>
             </View>
           </View>
 
           {/* Description */}
           <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Description</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>{t('description')}</Text>
             <Text style={{ color: c.subtext, lineHeight: 24, fontSize: 15 }}>
               {isExpanded
-                ? (job.description ? job.description.replace(/<[^>]*>/g, '') : 'No description available')
-                : (job.description ? job.description.replace(/<[^>]*>/g, '').substring(0, 200) + (job.description.length > 200 ? '...' : '') : 'No description available')
+                ? (job.description ? job.description.replace(/<[^>]*>/g, '') : t('no_description'))
+                : (job.description ? job.description.replace(/<[^>]*>/g, '').substring(0, 200) + (job.description.length > 200 ? '...' : '') : t('no_description'))
               }
               {!isExpanded && job.description && job.description.replace(/<[^>]*>/g, '').length > 200 && (
                 <Text
                   style={{ color: c.primary, fontWeight: '600' }}
                   onPress={() => setIsExpanded(true)}
                 >
-                  {' '}Read More
+                  {' '}{t('read_more')}
                 </Text>
               )}
             </Text>
@@ -290,7 +292,7 @@ const JobDetailScreen: React.FC = () => {
 
           {/* Skills */}
           <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>Skills & Requirements</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>{t('skills_requirements')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {job.skills?.map((s: string) => (
                 <Text key={s} style={[styles.skill, { color: c.subtext, backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>{s}</Text>
@@ -303,21 +305,21 @@ const JobDetailScreen: React.FC = () => {
             <View style={{ marginTop: 32, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: c.isDark ? '#4338ca' : '#e0e7ff' }}>
               <View style={{ backgroundColor: c.isDark ? '#312e81' : '#eef2ff', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <MaterialIcons name="auto-awesome" size={20} color={c.primary} />
-                <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>Connecta AI Insights</Text>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>{t('ai_insights')}</Text>
               </View>
 
               <View style={{ padding: 20, backgroundColor: c.card, gap: 24 }}>
                 {/* Match Reason */}
                 <View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 6 }}>Why this fits you</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 6 }}>{t('why_fits_you')}</Text>
                   <Text style={{ fontSize: 14, color: c.subtext, lineHeight: 22 }}>
-                    Your skills in <Text style={{ fontWeight: '700' }}>React Native</Text> and <Text style={{ fontWeight: '700' }}>TypeScript</Text> match 95% of the requirements.
+                    {t('your_skills_in')} <Text style={{ fontWeight: '700' }}>React Native</Text> and <Text style={{ fontWeight: '700' }}>TypeScript</Text> {t('match_requirements')}
                   </Text>
                 </View>
 
                 {/* Key Phrases */}
                 <View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 8 }}>Key Phrases to Include</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 8 }}>{t('key_phrases')}</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                     {['Clean Architecture', 'Performance', 'Responsive'].map((phrase) => (
                       <View key={phrase} style={{ backgroundColor: c.isDark ? '#374151' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
@@ -333,7 +335,7 @@ const JobDetailScreen: React.FC = () => {
           {/* Client Info */}
           {!isJobOwner && (
             <View style={{ marginTop: 32 }}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>About the Client</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('about_client')}</Text>
               <TouchableOpacity
                 activeOpacity={job.isExternal ? 1 : 0.7}
                 onPress={() => {
@@ -352,17 +354,17 @@ const JobDetailScreen: React.FC = () => {
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
                   <View style={{ position: 'relative' }}>
-                    <Avatar 
-                      uri={job.clientId?.profileImage || job.companyLogo} 
-                      name={job.clientId?.firstName || job.clientName || 'C'} 
-                      size={56} 
+                    <Avatar
+                      uri={job.clientId?.profileImage || job.companyLogo}
+                      name={job.clientId?.firstName || job.clientName || 'C'}
+                      size={56}
                     />
                     {job.paymentVerified && (
-                      <View style={{ 
-                        position: 'absolute', 
-                        bottom: -2, 
-                        right: -2, 
-                        backgroundColor: '#FFF', 
+                      <View style={{
+                        position: 'absolute',
+                        bottom: -2,
+                        right: -2,
+                        backgroundColor: '#FFF',
                         borderRadius: 10,
                         padding: 1
                       }}>
@@ -372,10 +374,10 @@ const JobDetailScreen: React.FC = () => {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
-                      {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? 'External Client' : 'Unknown Client'))}
+                      {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? t('external_client') : t('unknown_client')))}
                     </Text>
                     <Text style={{ color: c.subtext, fontSize: 13, marginTop: 2 }}>
-                      Member since {new Date(job.createdAt).getFullYear()}
+                      {t('member_since')} {new Date(job.createdAt).getFullYear()}
                     </Text>
                   </View>
                   {!job.isExternal && (
@@ -385,13 +387,13 @@ const JobDetailScreen: React.FC = () => {
 
                 <View style={{ flexDirection: 'row', gap: 24, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 16 }}>
                   <View>
-                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>Location</Text>
+                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>{t('location')}</Text>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
-                      {job.locationType === 'remote' ? 'Remote' : (job.clientLocation || job.location)}
+                      {job.locationType === 'remote' ? t('remote') : (job.clientLocation || job.location)}
                     </Text>
                   </View>
                   <View>
-                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>Responsiveness</Text>
+                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>{t('responsiveness')}</Text>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
                       ~{job.clientId?.performanceMetrics?.responseTime || 24}h
                     </Text>
@@ -404,9 +406,9 @@ const JobDetailScreen: React.FC = () => {
           {/* Proposals List (Job Owner) */}
           {isJobOwner && (
             <View style={{ marginTop: 32 }}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Proposals ({proposals.length})</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('proposals')} ({proposals.length})</Text>
               {proposals.length === 0 ? (
-                <Text style={{ color: c.subtext, marginTop: 8 }}>No proposals yet.</Text>
+                <Text style={{ color: c.subtext, marginTop: 8 }}>{t('no_proposals')}</Text>
               ) : (
                 <View style={{ gap: 16, marginTop: 12 }}>
                   {proposals.map((p) => {
@@ -460,7 +462,7 @@ const JobDetailScreen: React.FC = () => {
             }]}
           >
             <Text style={[styles.applyText, hasApplied && { color: c.subtext }]}>
-              {job.isExternal ? 'Visit Job' : (hasApplied ? 'Applied' : 'Apply Now')}
+              {job.isExternal ? t('visit_job') : (hasApplied ? t('applied') : t('apply_now'))}
             </Text>
             {!hasApplied && <MaterialIcons name="arrow-forward" size={20} color="#FFF" />}
           </TouchableOpacity>
@@ -472,7 +474,7 @@ const JobDetailScreen: React.FC = () => {
         title={successModal.title}
         message={successModal.message}
         onClose={() => setSuccessModal({ ...successModal, visible: false })}
-        buttonText="View Project"
+        buttonText={t('view_project')}
         onAction={() => {
           setSuccessModal({ ...successModal, visible: false });
           if ((successModal as any).data?.projectId) {

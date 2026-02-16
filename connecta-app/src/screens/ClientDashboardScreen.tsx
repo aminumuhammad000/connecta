@@ -21,6 +21,7 @@ import userService from '../services/userService';
 import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { useSocket } from '../context/SocketContext';
+import { useTranslation } from '../utils/i18n';
 
 const { width } = Dimensions.get('window');
 
@@ -31,6 +32,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [freelancers, setFreelancers] = useState<User[]>([]);
   const { socket, unreadNotificationCount } = useSocket();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [profileMissing, setProfileMissing] = useState(false);
@@ -260,8 +262,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                   <MaterialIcons name="menu" size={24} color="#FFF" />
                 </TouchableOpacity>
                 <View>
-                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>Welcome back 👋</Text>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || 'User'}</Text>
+                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{t('welcome_back')} 👋</Text>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || t('default_user')}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -296,9 +298,10 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
           {/* Daily Reward Modal */}
           <SuccessModal
             visible={rewardModalVisible}
-            title="Daily Spark Reward! ✨"
-            message="Your daily gift is ready. Claim your sparks now to keep the flame alive!"
-            buttonText={claimingReward ? "Claiming..." : "Claim 10 Sparks"}
+            visible={rewardModalVisible}
+            title={t('daily_reward_title')}
+            message={t('daily_reward_msg')}
+            buttonText={claimingReward ? t('claiming') : t('claim_sparks')}
             onAction={handleClaimReward}
             onClose={() => setRewardModalVisible(false)}
           />
@@ -312,7 +315,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{formatNumber(stats?.activeProjects)}</Text>
-                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>Active Projects</Text>
+                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>{t('active_projects')}</Text>
               </View>
             </View>
 
@@ -323,7 +326,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>{formatNumber(stats?.pendingPayments)}</Text>
-                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>Payments Due</Text>
+                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>{t('payments_due')}</Text>
               </View>
             </View>
 
@@ -334,7 +337,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
               </View>
               <View style={{ alignItems: 'center' }}>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>₦{formatNumber(stats?.totalSpent)}</Text>
-                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>Total Spent</Text>
+                <Text style={{ fontSize: 10, color: c.subtext, fontWeight: '600', textAlign: 'center' }} numberOfLines={1} adjustsFontSizeToFit>{t('total_spent')}</Text>
               </View>
             </View>
           </View>
@@ -342,7 +345,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
           {/* Quick Actions */}
           <View style={{ marginBottom: 12 }}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Quick Actions</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('quick_actions')}</Text>
             </View>
             <ScrollView
               horizontal
@@ -357,7 +360,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
                   <Ionicons name="briefcase" size={24} color={c.primary} />
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('my_jobs')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -368,7 +371,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
                   <Ionicons name="folder-open" size={24} color="#10B981" />
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Projects</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('projects')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -379,7 +382,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={[styles.quickActionIcon, { backgroundColor: '#F59E0B15' }]}>
                   <Ionicons name="card" size={24} color="#F59E0B" />
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Payments</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('payments')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -390,7 +393,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
                   <Ionicons name="add-circle" size={24} color="#6366F1" />
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Post Job</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('post_job')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -401,7 +404,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
                   <Ionicons name="people" size={24} color="#8B5CF6" />
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('team_label')}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -410,9 +413,9 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
           {allActiveProjects.length > 0 && (
             <View style={{ marginBottom: 24 }}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: c.text }]}>Active Projects</Text>
+                <Text style={[styles.sectionTitle, { color: c.text }]}>{t('active_projects')}</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('Projects')}>
-                  <Text style={[styles.seeAll, { color: c.primary }]}>See All</Text>
+                  <Text style={[styles.seeAll, { color: c.primary }]}>{t('see_all')}</Text>
                 </TouchableOpacity>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}>
@@ -459,9 +462,9 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
           {/* Recommended Freelancers */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>Recommended for You</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('recommended_for_you')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('ClientRecommended')}>
-                <Text style={[styles.seeAll, { color: c.primary }]}>See All</Text>
+                <Text style={[styles.seeAll, { color: c.primary }]}>{t('see_all')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -553,7 +556,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                         onPress={() => navigation.navigate('FreelancerPublicProfile', { id: f._id || f.id })}
                       >
                         <MaterialIcons name="person" size={18} color={c.text} />
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>View Profile</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{t('view_profile')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -564,13 +567,13 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                         }}
                       >
                         <MaterialIcons name="send" size={18} color="#FFF" />
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFF' }}>Invite</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFF' }}>{t('invite')}</Text>
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
                 ))
               ) : (
-                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>No recommendations available</Text>
+                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>{t('no_recommendations')}</Text>
               )}
             </View>
           </View>
@@ -581,11 +584,11 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
             <View style={styles.overlay}>
               <View style={[styles.overlayCard, { backgroundColor: c.card, borderColor: c.border }]}>
                 <MaterialIcons name="person-outline" size={32} color={c.primary} />
-                <Text style={[styles.overlayTitle, { color: c.text }]}>Complete your profile</Text>
+                <Text style={[styles.overlayTitle, { color: c.text }]}>{t('complete_profile_title')}</Text>
                 <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 8 }}>
-                  Add your details to get better matches and faster approvals.
+                  {t('complete_profile_sub')}
                 </Text>
-                <Button title="Complete Profile" onPress={() => navigation.navigate('ClientEditProfile')} size="large" />
+                <Button title={t('complete_profile_btn')} onPress={() => navigation.navigate('ClientEditProfile')} size="large" />
               </View>
             </View>
           )

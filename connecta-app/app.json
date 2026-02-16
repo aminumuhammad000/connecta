@@ -4,7 +4,7 @@
     "slug": "connecta",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/app-icon-fixed.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/icon.png",
@@ -27,7 +27,7 @@
       "package": "com.connecta.app",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/app-icon-fixed.png",
         "backgroundColor": "#ffffff"
       },
       "usesCleartextTraffic": true,

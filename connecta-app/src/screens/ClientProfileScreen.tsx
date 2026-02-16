@@ -9,6 +9,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as reviewService from '../services/reviewService';
 import { Alert, Modal, TextInput } from 'react-native';
+import { useTranslation } from '../utils/i18n';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBRoQQ-xxcLo9YcmbA5AWwLA-FKTuhoFyvCtoj3YzgnBUHc3Bck-0K5CDGhw26GGSiL4TVmx-echTOzkIszt19LuAJSmxtNX4gLR84lGhbyBU_ylBR9UPjYUsGq-sCWYMZU8YMxAwFk3vUMj8iG1B-JkvTnZ33PaK6gy8KAqR6GAF4C1IoRLxDv3FB7Jl0FhWIXIXurfNORMKY7rKh4LRJjYzPXNlfWTAvV548j73C9tUL04WQzqGCFCWqIVMqtsa2VztnMJKvY5rM';
 const { width } = Dimensions.get('window');
@@ -16,6 +17,7 @@ const { width } = Dimensions.get('window');
 export default function ClientProfileScreen({ navigation, route }: any) {
   const c = useThemeColors();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'history' | 'reviews'>('history');
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +30,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
 
   const handleAddReview = async () => {
     if (!comment.trim()) {
-      Alert.alert('Error', 'Please enter a comment');
+      Alert.alert(t('error'), t('enter_comment'));
       return;
     }
 
@@ -40,13 +42,13 @@ export default function ClientProfileScreen({ navigation, route }: any) {
         rating,
         comment,
       });
-      Alert.alert('Success', 'Review submitted successfully');
+      Alert.alert(t('success'), t('review_submitted'));
       setReviewModalVisible(false);
       setComment('');
       setRating(5);
       loadProfile(); // Refresh reviews
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to submit review');
+      Alert.alert(t('error'), error.message || t('review_submit_error'));
     } finally {
       setIsSubmittingReview(false);
     }
@@ -78,7 +80,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
           console.log('Profile data received:', data);
         } catch (err) {
           console.error('API failed to get profile:', err);
-          setErrorMessage('Failed to load profile details.');
+          setErrorMessage(t('profile_load_error'));
           setIsLoading(false);
           return;
         }
@@ -87,7 +89,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
       }
 
       if (!data) {
-        setErrorMessage('Profile not found.');
+        setErrorMessage(t('profile_not_found'));
         setIsLoading(false);
         return;
       }
@@ -125,7 +127,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
       setErrorMessage(null);
     } catch (error: any) {
       console.error('Error loading profile:', error);
-      setErrorMessage('Unable to load profile.');
+      setErrorMessage(t('profile_load_error'));
     } finally {
       setIsLoading(false);
     }
@@ -169,15 +171,15 @@ export default function ClientProfileScreen({ navigation, route }: any) {
       <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
         <View style={[styles.emptyState, { backgroundColor: c.card, borderColor: c.border }]}>
           <Ionicons name="person-outline" size={48} color={c.subtext} />
-          <Text style={[styles.emptyTitle, { color: c.text }]}>No profile yet</Text>
+          <Text style={[styles.emptyTitle, { color: c.text }]}>{t('no_profile')}</Text>
           <Text style={{ color: c.subtext, textAlign: 'center', marginBottom: 20 }}>
-            {errorMessage || 'Set up your profile to start hiring.'}
+            {errorMessage || t('setup_profile_sub')}
           </Text>
           <TouchableOpacity
             style={[styles.primaryBtn, { backgroundColor: c.primary }]}
             onPress={() => navigation.navigate('ClientEditProfile')}
           >
-            <Text style={styles.btnTextWhite}>Create Profile</Text>
+            <Text style={styles.btnTextWhite}>{t('create_profile')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -194,7 +196,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
               <TouchableOpacity onPress={onBack} style={styles.iconBtn}>
                 <Ionicons name="chevron-back" size={24} color={c.text} />
               </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: c.text }]}>{profile?.firstName}'s Profile</Text>
+              <Text style={[styles.headerTitle, { color: c.text }]}>{t('profile_title', { name: profile?.firstName })}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.iconBtn}>
                 <Ionicons name="settings-outline" size={24} color={c.text} />
               </TouchableOpacity>
@@ -265,26 +267,26 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       <View style={styles.statDivider} />
                       <View style={styles.statItem}>
                         <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsCompleted || '0'}</Text>
-                        <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>{t('jobs')}</Text>
                       </View>
                     </>
                   ) : (
                     <>
                       <View style={styles.statItem}>
                         <Text style={[styles.statValue, { color: c.text }]}>₦{profile?.totalSpend?.toLocaleString() || '0'}</Text>
-                        <Text style={[styles.statLabel, { color: c.subtext }]}>Spend</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>{t('spend')}</Text>
                       </View>
                       <View style={styles.statDivider} />
                       <View style={styles.statItem}>
                         <Text style={[styles.statValue, { color: c.text }]}>{profile?.jobsPosted || '0'}</Text>
-                        <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
+                        <Text style={[styles.statLabel, { color: c.subtext }]}>{t('jobs')}</Text>
                       </View>
                     </>
                   )}
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
                     <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
-                    <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
+                    <Text style={[styles.statLabel, { color: c.subtext }]}>{t('rating')}</Text>
                   </View>
                 </View>
               </View>
@@ -295,26 +297,28 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                 </View>
                 <Text style={[styles.role, { color: c.primary }]}>
                   {profile?.userType === 'freelancer'
-                    ? (profile?.jobTitle || 'Freelancer')
-                    : (profile?.companyName || 'Individual Client')}
+                    ? (profile?.jobTitle || t('freelancer'))
+                    : (profile?.companyName || t('individual_client'))}
                 </Text>
 
                 <View style={styles.detailsRow}>
                   <View style={styles.detailItem}>
                     <Ionicons name="location-outline" size={14} color={c.subtext} />
-                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || t('no_location')}</Text>
                   </View>
                   <View style={styles.detailDivider} />
                   <View style={styles.detailItem}>
                     <Ionicons name="calendar-outline" size={14} color={c.subtext} />
-                    <Text style={[styles.detailText, { color: c.subtext }]}>Member since 2026</Text>
+                    <Text style={[styles.detailText, { color: c.subtext }]}>{t('member_since_year', { year: '2026' })}</Text>
                   </View>
                 </View>
 
                 <View style={styles.bioHeader}>
-                  <Text style={[styles.bioTitle, { color: c.subtext }]}>BIO</Text>
+                  <View style={styles.bioHeader}>
+                    <Text style={[styles.bioTitle, { color: c.subtext }]}>{t('bio').toUpperCase()}</Text>
+                  </View>
                 </View>
-                <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
+                <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || t('no_bio')}</Text>
 
                 {isOwnProfile ? (
                   <View style={styles.actionButtons}>
@@ -323,7 +327,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       onPress={() => navigation.navigate('ClientEditProfile')}
                     >
                       <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                      <Text style={[styles.profileActionText, { color: c.text }]}>Edit Profile</Text>
+                      <Text style={[styles.profileActionText, { color: c.text }]}>{t('edit_profile')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -331,7 +335,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       onPress={() => navigation.navigate('PostJob')}
                     >
                       <Ionicons name="add-circle-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                      <Text style={[styles.profileActionText, { color: c.text }]}>Post Job</Text>
+                      <Text style={[styles.profileActionText, { color: c.text }]}>{t('post_job')}</Text>
                     </TouchableOpacity>
 
 
@@ -353,7 +357,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                     >
                       <Ionicons name={profile?.userType === 'freelancer' ? "paper-plane" : "chatbubble-ellipses"} size={16} color="#FFF" style={{ marginRight: 6 }} />
                       <Text style={[styles.profileActionText, { color: '#FFF' }]}>
-                        {profile?.userType === 'freelancer' ? 'Invite to Job' : 'Message'}
+                        {profile?.userType === 'freelancer' ? t('invite_to_job') : t('message')}
                       </Text>
                     </TouchableOpacity>
 
@@ -362,7 +366,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       onPress={() => setReviewModalVisible(true)}
                     >
                       <Ionicons name="star-outline" size={16} color={c.text} style={{ marginRight: 6 }} />
-                      <Text style={[styles.profileActionText, { color: c.text }]}>Add Review</Text>
+                      <Text style={[styles.profileActionText, { color: c.text }]}>{t('add_review')}</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -371,7 +375,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
               {isOwnProfile && (
                 <View style={styles.ultraSleekCompleteness}>
                   <View style={styles.completenessRow}>
-                    <Text style={[styles.tinyLabel, { color: c.subtext }]}>Trust Score</Text>
+                    <Text style={[styles.tinyLabel, { color: c.subtext }]}>{t('trust_score')}</Text>
                     <Text style={[styles.tinyValue, { color: trustScore > 70 ? '#10B981' : c.primary }]}>{trustScore}%</Text>
                   </View>
                   <View style={[styles.thinTrack, { backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
@@ -394,14 +398,14 @@ export default function ClientProfileScreen({ navigation, route }: any) {
               onPress={() => setActiveTab('history')}
             >
               <Text style={[styles.tabText, { color: activeTab === 'history' ? c.primary : c.subtext }]}>
-                {profile?.userType === 'freelancer' ? 'Portfolio' : 'Posted Jobs'}
+                {profile?.userType === 'freelancer' ? t('portfolio') : t('posted_jobs')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tabItem, activeTab === 'reviews' && { borderBottomColor: c.primary }]}
               onPress={() => setActiveTab('reviews')}
             >
-              <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
+              <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>{t('reviews')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -435,7 +439,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                   ) : (
                     <View style={styles.emptyTabState}>
                       <Ionicons name="images-outline" size={48} color={c.border} />
-                      <Text style={{ color: c.subtext, marginTop: 8 }}>No portfolio items yet.</Text>
+                      <Text style={{ color: c.subtext, marginTop: 8 }}>{t('no_portfolio')}</Text>
                     </View>
                   )
                 ) : (
@@ -449,7 +453,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                           </View>
                           <View style={{ flex: 1, marginLeft: 12 }}>
                             <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={1}>{job.title}</Text>
-                            <Text style={[styles.jobBudget, { color: c.subtext }]}>Budget: {job.budget}</Text>
+                            <Text style={[styles.jobBudget, { color: c.subtext }]}>{t('budget')}: {job.budget}</Text>
                           </View>
                           <View style={[styles.statusBadge, { backgroundColor: job.status === 'Open' ? '#D1FAE5' : '#F3F4F6' }]}>
                             <Text style={[styles.statusText, { color: job.status === 'Open' ? '#059669' : '#6B7280' }]}>{job.status}</Text>
@@ -460,7 +464,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                   ) : (
                     <View style={styles.emptyTabState}>
                       <Ionicons name="clipboard-outline" size={48} color={c.border} />
-                      <Text style={{ color: c.subtext, marginTop: 8 }}>No posted jobs yet.</Text>
+                      <Text style={{ color: c.subtext, marginTop: 8 }}>{t('no_posted_jobs')}</Text>
                     </View>
                   )
                 )}
@@ -482,7 +486,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                             </View>
                           )}
                           <Text style={[styles.reviewAuthor, { color: c.text }]}>
-                            {review.reviewerId ? `${review.reviewerId.firstName} ${review.reviewerId.lastName}` : 'Anonymous'}
+                            {review.reviewerId ? `${review.reviewerId.firstName} ${review.reviewerId.lastName}` : t('anonymous')}
                           </Text>
                         </View>
                         <View style={styles.ratingRow}>
@@ -493,7 +497,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                       <Text style={[styles.reviewComment, { color: c.subtext }]}>{review.comment}</Text>
                       {review.projectId && (
                         <Text style={{ fontSize: 12, color: c.primary, marginTop: 8 }}>
-                          Project: {review.projectId.title || 'Untitled Project'}
+                          {t('project_label')}: {review.projectId.title || t('untitled_project')}
                         </Text>
                       )}
                     </View>
@@ -501,7 +505,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                 ) : (
                   <View style={styles.emptyTabState}>
                     <Ionicons name="star-outline" size={48} color={c.border} />
-                    <Text style={{ color: c.subtext, marginTop: 8 }}>No reviews yet.</Text>
+                    <Text style={{ color: c.subtext, marginTop: 8 }}>{t('no_reviews')}</Text>
                   </View>
                 )}
               </View>
@@ -532,13 +536,13 @@ export default function ClientProfileScreen({ navigation, route }: any) {
               alignSelf: 'center'
             }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>Add Review</Text>
+                <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>{t('add_review')}</Text>
                 <TouchableOpacity onPress={() => setReviewModalVisible(false)}>
                   <Ionicons name="close" size={24} color={c.subtext} />
                 </TouchableOpacity>
               </View>
 
-              <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Rating</Text>
+              <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>{t('rating')}</Text>
               <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <TouchableOpacity key={star} onPress={() => setRating(star)}>
@@ -551,7 +555,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                 ))}
               </View>
 
-              <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>Your Comment</Text>
+              <Text style={{ fontSize: 14, color: c.subtext, marginBottom: 12 }}>{t('your_comment')}</Text>
               <TextInput
                 style={{
                   backgroundColor: c.background,
@@ -564,7 +568,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                   borderColor: c.border,
                   marginBottom: 24
                 }}
-                placeholder="Share your experience..."
+                placeholder={t('share_experience')}
                 placeholderTextColor={c.subtext}
                 multiline
                 value={comment}
@@ -585,7 +589,7 @@ export default function ClientProfileScreen({ navigation, route }: any) {
                 {isSubmittingReview ? (
                   <ActivityIndicator color="#FFF" />
                 ) : (
-                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Submit Review</Text>
+                  <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>{t('submit_review')}</Text>
                 )}
               </TouchableOpacity>
             </View>

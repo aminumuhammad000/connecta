@@ -296,8 +296,8 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   </TouchableOpacity>
                 )}
                 <View>
-                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{t('welcome_back' as any)} 👋</Text>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || 'User'}</Text>
+                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{t('welcome_back')} 👋</Text>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || t('default_user')}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -333,9 +333,9 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Daily Reward Modal */}
           <SuccessModal
             visible={rewardModalVisible}
-            title="Daily Spark Reward! ✨"
-            message="Your daily gift is ready. Claim your sparks now to keep the flame alive!"
-            buttonText={claimingReward ? "Claiming..." : "Claim 10 Sparks"}
+            title={t('daily_reward_title')}
+            message={t('daily_reward_msg')}
+            buttonText={claimingReward ? t('claiming') : t('claim_sparks')}
             onAction={handleClaimReward}
             onClose={() => setRewardModalVisible(false)}
           />
@@ -361,7 +361,8 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
             borderWidth: 1,
             borderColor: c.border,
             marginBottom: 20,
-            overflow: 'hidden'
+            overflow: 'hidden',
+            zIndex: 1000,
           }}>
             <ScrollView
               horizontal
@@ -377,7 +378,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="briefcase" size={20} color="#10B981" />
                   {renderBadge(stats?.activeProjects || stats?.totalProjects)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>My Jobs</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('my_jobs')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -389,7 +390,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="document-text" size={20} color={c.primary} />
                   {renderBadge(stats?.activeProposals)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Proposals</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('proposals')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -401,7 +402,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="chatbubbles" size={20} color="#3B82F6" />
                   {renderBadge(stats?.newMessages)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Messages</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('messages')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -413,7 +414,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="wallet" size={20} color="#F59E0B" />
                   {renderBadge(stats?.pendingPayments)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Wallet</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('wallet')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -424,7 +425,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
                   <Ionicons name="people" size={20} color="#6366F1" />
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>Team</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('team')}</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -454,7 +455,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
               }}
             >
               <Ionicons name="search" size={18} color={c.subtext} />
-              <Text style={{ marginLeft: 10, color: c.subtext, fontSize: 14, flex: 1 }}>Search for jobs...</Text>
+              <Text style={{ marginLeft: 10, color: c.subtext, fontSize: 14, flex: 1 }}>{t('search_placeholder')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -477,9 +478,9 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Recommended Jobs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('recommended_jobs' as any)}</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('recommended_jobs')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Gigs')}>
-                <Text style={[styles.seeAll, { color: c.primary }]}>{t('view_all' as any)}</Text>
+                <Text style={[styles.seeAll, { color: c.primary }]}>{t('view_all')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -535,13 +536,13 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                                 </Text>
                                 {isNew && (
                                   <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>NEW</Text>
+                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>{t('new_badge')}</Text>
                                   </View>
                                 )}
                               </View>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
-                                  {job.company || 'Confidential'} • {new Date(job.createdAt).toLocaleDateString()}
+                                  {job.company || t('confidential')} • {new Date(job.createdAt).toLocaleDateString()}
                                 </Text>
                               </View>
                             </View>
@@ -564,7 +565,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
 
                         {/* Description Preview */}
                         <Text style={{ fontSize: 13, color: c.subtext, lineHeight: 20 }} numberOfLines={2}>
-                          {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : 'No description available')}
+                          {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : t('no_description'))}
                         </Text>
 
                         {/* Footer: Skills & Apply */}
@@ -600,7 +601,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                               gap: 6
                             }}
                           >
-                            <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>Apply</Text>
+                            <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>{t('apply')}</Text>
                             <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
                           </TouchableOpacity>
                         </View>
@@ -609,7 +610,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   );
                 })
               ) : (
-                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>{t('no_jobs_found' as any)}</Text>
+                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>{t('no_jobs_found')}</Text>
               )}
             </View>
           </View>

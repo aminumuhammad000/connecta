@@ -19,6 +19,7 @@ import Avatar from "./Avatar";
 import { useAuth } from "../context/AuthContext";
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useTranslation } from '../utils/i18n';
 
 interface SidebarProps {
     isVisible: boolean;
@@ -33,6 +34,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
     const c = useThemeColors();
     const insets = useSafeAreaInsets();
     const { user, logout } = useAuth();
+    const { t } = useTranslation();
     const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -82,16 +84,16 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
     };
 
     const menuItems = [
-        { icon: "person-outline", label: "My Profile", screen: "Profile", color: "#4F46E5" },
-        { icon: "wallet-outline", label: "Wallet", screen: user?.userType === "client" ? "ClientPayments" : "Wallet", color: "#10B981" },
+        { icon: "person-outline", label: t('my_profile'), screen: "Profile", color: "#4F46E5" },
+        { icon: "wallet-outline", label: t('wallet'), screen: user?.userType === "client" ? "ClientPayments" : "Wallet", color: "#10B981" },
         user?.userType === 'client'
-            ? { icon: "add-circle-outline", label: "Post a Job", screen: "PostJob", color: "#6366F1" }
-            : { icon: "options-outline", label: "Job Preferences", screen: "JobPreferences", color: "#6366F1" },
-        { icon: "document-text-outline", label: "Contracts", screen: user?.userType === "client" ? "Projects" : "FreelancerProjects", color: "#F59E0B" },
-        { icon: "settings-outline", label: "Settings", screen: "Settings", color: "#6B7280" },
-        { icon: "help-circle-outline", label: "Help & Support", screen: "HelpSupport", color: "#EC4899" },
-        { icon: "shield-checkmark-outline", label: "Terms & Conditions", screen: "Terms", color: "#8B5CF6" },
-        { icon: "information-circle-outline", label: "About Connecta", screen: "About", color: "#3B82F6" },
+            ? { icon: "add-circle-outline", label: t('post_job'), screen: "PostJob", color: "#6366F1" }
+            : { icon: "options-outline", label: t('job_preferences'), screen: "JobPreferences", color: "#6366F1" },
+        { icon: "document-text-outline", label: t('contracts'), screen: user?.userType === "client" ? "Projects" : "FreelancerProjects", color: "#F59E0B" },
+        { icon: "settings-outline", label: t('settings'), screen: "Settings", color: "#6B7280" },
+        { icon: "help-circle-outline", label: t('help_support'), screen: "HelpSupport", color: "#EC4899" },
+        { icon: "shield-checkmark-outline", label: t('terms_conditions'), screen: "Terms", color: "#8B5CF6" },
+        { icon: "information-circle-outline", label: t('about_connecta'), screen: "About", color: "#3B82F6" },
     ].filter(Boolean);
 
     return (
@@ -152,11 +154,11 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                                     </View>
                                     <View style={styles.userInfo}>
                                         <Text style={styles.userName} numberOfLines={1}>
-                                            {user?.firstName || 'User'}
+                                            {user?.firstName || t('default_user')}
                                         </Text>
                                         <View style={styles.roleBadge}>
                                             <Text style={styles.roleText}>
-                                                {user?.userType === 'client' ? 'Client' : 'Freelancer'}
+                                                {user?.userType === 'client' ? t('client') : t('freelancer')}
                                             </Text>
                                         </View>
                                     </View>
@@ -203,9 +205,9 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                             <View style={[styles.iconContainer, { backgroundColor: '#EF444415', width: 32, height: 32, borderRadius: 10 }]}>
                                 <Ionicons name="log-out-outline" size={18} color="#EF4444" />
                             </View>
-                            <Text style={styles.logoutText}>Log Out</Text>
+                            <Text style={styles.logoutText}>{t('logout')}</Text>
                         </TouchableOpacity>
-                        <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0</Text>
+                        <Text style={[styles.version, { color: c.subtext }]}>{t('version')} 1.0.0</Text>
                     </View>
                 </Animated.View>
             </View>

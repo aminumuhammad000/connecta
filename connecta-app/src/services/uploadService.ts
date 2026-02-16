@@ -24,8 +24,9 @@ export const uploadAvatarPublic = async (uri: string): Promise<string> => {
     }
 
     try {
-        const axiosResponse: any = await uploadFilePublic('/api/avatars/public-upload', formData);
-        return axiosResponse.data?.url;
+        // The response from uploadFilePublic is the data object itself
+        const responseData = axiosResponse;
+        return responseData.url || responseData.data?.url;
     } catch (error) {
         console.error('❌ Public upload error:', error);
         throw error;

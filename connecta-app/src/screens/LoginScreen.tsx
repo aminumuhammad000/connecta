@@ -81,8 +81,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const handleBiometricAuth = async () => {
         try {
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: 'Login with Biometric',
-                fallbackLabel: 'Use Passcode',
+                promptMessage: t('login_biometric'),
+                fallbackLabel: t('use_passcode'),
             });
             if (result.success) {
                 const storedEmail = await storage.getSecureItem('connecta_secure_email');
@@ -93,14 +93,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                         const user = await login({ email: storedEmail, password: storedPass });
                         onSignedIn?.(user);
                     } catch (error: any) {
-                        showCustomAlert('Error', error.message || 'Failed to login.', 'error');
+                        showCustomAlert('error', error.message || 'login_failed', 'error');
                     } finally {
                         setIsLoading(false);
                     }
                 }
             }
         } catch (e) {
-            showCustomAlert('Error', 'Biometric authentication failed', 'error');
+            showCustomAlert('error', 'biometric_auth_failed', 'error');
         }
     };
 
@@ -110,11 +110,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
 
         let hasError = false;
         if (!email.trim()) {
-            setEmailError('Please enter your email address');
+            setEmailError(t('enter_email'));
             hasError = true;
         }
         if (!password.trim()) {
-            setPasswordError('Please enter your password');
+            setPasswordError(t('enter_password'));
             hasError = true;
         }
 
@@ -129,7 +129,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
             await storage.setSecureItem('connecta_secure_pass', password);
             onSignedIn?.(user);
         } catch (error: any) {
-            showCustomAlert('Error', error.message || 'Invalid credentials', 'error');
+            showCustomAlert('error', error.message || 'invalid_credentials', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -142,7 +142,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
             </View>
             <Text style={[styles.sideTitle, { color: c.text }]}>{t('login_header')}</Text>
             <Text style={[styles.sideSub, { color: c.subtext }]}>
-                Continue where you left off and connect with the best talent.
+                {t('login_desc')}
             </Text>
         </View>
     );

@@ -15,6 +15,8 @@ import SuccessModal from '../components/SuccessModal';
 import { JOB_CATEGORIES, JOB_TYPES, LOCATION_SCOPES, LOCATION_TYPES, DURATION_TYPES } from '../utils/categories';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as aiService from '../services/aiService';
+import AnimatedBackground from '../components/AnimatedBackground';
+import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
 const { width } = Dimensions.get('window');
 
 const COMMON_TIMEZONES = [
@@ -1214,74 +1216,106 @@ const PostJobScreen: React.FC = () => {
     </ScrollView>
   );
 
+
+  const sideContent = (
+    <View style={styles.desktopSide}>
+      <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
+        <MaterialIcons name="work-outline" size={70} color={c.primary} />
+      </View>
+      <Text style={[styles.sideTitle, { color: c.text }]}>Find Talent</Text>
+      <Text style={[styles.sideSub, { color: c.subtext }]}>
+        Post your job and connect with expert freelancers ready to work.
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
-      <View style={{ flex: 1, maxWidth: 600, alignSelf: 'center', width: '100%' }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <View style={[styles.header, { borderBottomColor: c.border }]}>
-            <TouchableOpacity
-              onPress={() => currentStep > 0 ? prevStep() : navigation.goBack()}
-              style={styles.iconBtn}
-            >
-              <MaterialIcons
-                name={currentStep > 0 ? "arrow-back" : "close"}
-                size={24}
-                color={c.text}
-              />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: c.text }]}>Post a New Job</Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          {(!jobMode && !isEditMode) ? (
-            renderTypeSelection()
-          ) : (
-            <>
-              {renderStepIndicator()}
-              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
-                {currentStep === 0 && renderBasics()}
-                {currentStep === 1 && renderDetails()}
-                {currentStep === 2 && renderBudget()}
-                {currentStep === 3 && renderPreview()}
-              </ScrollView>
-
-              <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
-                <View style={{ flex: 1 }} />
-                <Button
-                  title={
-                    currentStep === 3
-                      ? isEditMode
-                        ? 'Update'
-                        : 'Post Job'
-                      : 'Next'
-                  }
-                  onPress={
-                    currentStep === 3
-                      ? isEditMode
-                        ? handleUpdateJob
-                        : submitJob
-                      : nextStep
-                  }
-                  style={styles.smallNextBtn}
-                  loading={isLoading}
+      <AnimatedBackground />
+      <ResponsiveOnboardingWrapper sideComponent={sideContent}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <View style={styles.mainWrapper}>
+            <View style={[styles.header, { borderBottomColor: c.border }]}>
+              <TouchableOpacity
+                onPress={() => currentStep > 0 ? prevStep() : navigation.goBack()}
+                style={styles.iconBtn}
+              >
+                <MaterialIcons
+                  name={currentStep > 0 ? "arrow-back" : "close"}
+                  size={24}
+                  color={c.text}
                 />
-              </View>
-            </>
-          )}
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { color: c.text }]}>Post a New Job</Text>
+              <View style={{ width: 40 }} />
+            </View>
 
-          <SuccessModal
-            visible={showSuccessModal}
-            title="Job Posted!"
-            message="Your job has been posted successfully and is pending approval."
-            buttonText="Go to My Jobs"
-            onClose={() => {
-              setShowSuccessModal(false);
-              navigation.goBack();
-            }}
-          />
+            {(!jobMode && !isEditMode) ? (
+              renderTypeSelection()
+            ) : (
+              <>
+                {renderStepIndicator()}
+                <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+                  {currentStep === 0 && renderBasics()}
+                  {currentStep === 1 && renderDetails()}
+                  {currentStep === 2 && renderBudget()}
+                  {currentStep === 3 && renderPreview()}
+                </ScrollView>
 
+                <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
+                  <View style={{ flex: 1 }} />
+                  <Button
+                    title={
+                      currentStep === 3
+                        ? isEditMode
+                          ? 'Update'
+                          : 'Post Job'
+                        : 'Next'
+                    }
+                    onPress={
+                      currentStep === 3
+                        ? isEditMode
+                          ? handleUpdateJob
+                          : submitJob
+                        : nextStep
+                    }
+                    style={styles.smallNextBtn}
+                    loading={isLoading}
+                    variant="primary"
+                    size="medium"
+                  />
+                </View>
+              </>
+            )}
+
+            <SuccessModal
+              visible={showSuccessModal}
+              title="Job Posted!"
+              message="Your job has been posted successfully and is pending approval."
+              buttonText="Go to My Jobs"
+              onClose={() => {
+                setShowSuccessModal(false);
+                navigation.goBack();
+              }}
+            />
+
+          </View>
         </KeyboardAvoidingView>
-      </View>
+      </ResponsiveOnboardingWrapper>
+
+      {/* Modals outside wrapper if needed, but here mostly inline or simple. 
+          CalendarModal is outside scope of this return. 
+          PaymentWebView modal should be here? wait.
+      */}
+      {showPaymentModal && (
+        <Modal visible={showPaymentModal} animationType="slide">
+          <PaymentWebView
+            url={paymentUrl}
+            onSuccess={handlePaymentSuccess}
+            onCancel={handlePaymentCancel}
+          />
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -2223,6 +2257,24 @@ const styles = StyleSheet.create({
   desktopHalfCol: {
     flex: 1,
   },
+  mainWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+  },
+  desktopSide: { padding: 40, alignItems: 'center', justifyContent: 'center' },
+  bigIconBox: { width: 120, height: 120, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
+  sideTitle: { fontSize: 44, fontWeight: '900', textAlign: 'center', letterSpacing: -1.5, marginBottom: 16, lineHeight: 52 },
+  sideSub: { fontSize: 18, textAlign: 'center', opacity: 0.7, maxWidth: 360, lineHeight: 28 },
+
 });
 
 export default PostJobScreen;
