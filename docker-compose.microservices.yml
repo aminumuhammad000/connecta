@@ -1,0 +1,318 @@
+version: '3.8'
+
+services:
+  # --- Infrastructure Services ---
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-password}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecta-network
+
+  auth-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: connecta_auth
+      POSTGRES_PASSWORD: auth_password
+      POSTGRES_DB: connecta_auth
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connecta_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecta-network
+
+  rewards-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: connecta_rewards
+      POSTGRES_PASSWORD: rewards_password
+      POSTGRES_DB: connecta_rewards
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connecta_rewards"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecta-network
+
+  proposal-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: connecta_proposals
+      POSTGRES_PASSWORD: proposals_password
+      POSTGRES_DB: connecta_proposals
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connecta_proposals"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecta-network
+
+  contract-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: connecta_contracts
+      POSTGRES_PASSWORD: contracts_password
+      POSTGRES_DB: connecta_contracts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connecta_contracts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecta-network
+
+  payment-db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: connecta_payments
+      POSTGRES_PASSWORD: payments_password
+      POSTGRES_DB: connecta_payments
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U connecta_payments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - connecta-network
+
+  mongo:
+    image: mongo:6.0
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-password}
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - connecta-network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - connecta-network
+
+  # --- Microservices ---
+
+  api-gateway:
+    build: 
+      context: ./microservices
+      dockerfile: api-gateway/Dockerfile
+    restart: always
+    ports: ["8000:8000"]
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:3000
+      - PROFILE_SERVICE_URL=http://profile-service:3000
+      - JOB_SERVICE_URL=http://job-service:3000
+      - PROPOSAL_SERVICE_URL=http://proposal-service:3000
+      - REWARDS_SERVICE_URL=http://rewards-service:3000
+      - CONTRACT_SERVICE_URL=http://contract-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - CHAT_SERVICE_URL=http://chat-service:3000
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3000
+      - MEDIA_SERVICE_URL=http://media-service:3000
+    networks: [connecta-network]
+    depends_on: 
+      auth-service: { condition: service_started }
+      profile-service: { condition: service_started }
+      job-service: { condition: service_started }
+      proposal-service: { condition: service_started }
+      rewards-service: { condition: service_started }
+      contract-service: { condition: service_started }
+      payment-service: { condition: service_started }
+      chat-service: { condition: service_started }
+      notification-service: { condition: service_started }
+      media-service: { condition: service_started }
+
+  auth-service:
+    build: 
+      context: ./microservices
+      dockerfile: auth-service/Dockerfile
+    restart: always
+    environment:
+      - DB_HOST=auth-db
+      - DB_URI=postgres://connecta_auth:auth_password@auth-db:5432/connecta_auth
+      - JWT_KEY=${JWT_KEY:-supersecretkey}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      auth-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  profile-service:
+    build: 
+      context: ./microservices
+      dockerfile: profile-service/Dockerfile
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_profiles?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  job-service:
+    build: 
+      context: ./microservices
+      dockerfile: job-service/Dockerfile
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_jobs?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  proposal-service:
+    build: 
+      context: ./microservices
+      dockerfile: proposal-service/Dockerfile
+    restart: always
+    environment:
+      - DB_HOST=proposal-db
+      - DB_NAME=connecta_proposals
+      - DB_USER=connecta_proposals
+      - DB_PASSWORD=proposals_password
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      proposal-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  rewards-service:
+    build: 
+      context: ./microservices
+      dockerfile: rewards-service/Dockerfile
+    restart: always
+    environment:
+      - DB_HOST=rewards-db
+      - DB_NAME=connecta_rewards
+      - DB_USER=connecta_rewards
+      - DB_PASSWORD=rewards_password
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      rewards-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  contract-service:
+    build: 
+      context: ./microservices
+      dockerfile: contract-service/Dockerfile
+    restart: always
+    environment:
+      - DB_HOST=contract-db
+      - DB_NAME=connecta_contracts
+      - DB_USER=connecta_contracts
+      - DB_PASSWORD=contracts_password
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      contract-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  payment-service:
+    build: 
+      context: ./microservices
+      dockerfile: payment-service/Dockerfile
+    restart: always
+    environment:
+      - DB_HOST=payment-db
+      - DB_NAME=connecta_payments
+      - DB_USER=connecta_payments
+      - DB_PASSWORD=payments_password
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      payment-db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  chat-service:
+    build: 
+      context: ./microservices
+      dockerfile: chat-service/Dockerfile
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_chats?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  notification-service:
+    build: 
+      context: ./microservices
+      dockerfile: notification-service/Dockerfile
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_notifications?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  media-service:
+    build: 
+      context: ./microservices
+      dockerfile: media-service/Dockerfile
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_media?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+networks:
+  connecta-network:
+    driver: bridge
+
+volumes:
+  pg_auth_data:
+  pg_rewards_data:
+  pg_proposals_data:
+  pg_contracts_data:
+  pg_payments_data:
+  mongo_data:
+  redis_data:

@@ -1,0 +1,17 @@
+{
+    "name": "verification-script",
+    "version": "1.0.0",
+    "description": "End-to-end verification for Connecta Microservices",
+    "main": "index.ts",
+    "scripts": {
+        "start": "ts-node index.ts"
+    },
+    "dependencies": {
+        "axios": "^1.6.2"
+    },
+    "devDependencies": {
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3",
+        "@types/node": "^20.10.5"
+    }
+}

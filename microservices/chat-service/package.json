@@ -1,0 +1,30 @@
+{
+    "name": "chat-service",
+    "version": "1.0.0",
+    "description": "Chat Service for Connecta",
+    "main": "dist/index.js",
+    "scripts": {
+        "start": "node dist/index.js",
+        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "mongoose": "^8.0.3",
+        "redis": "^4.6.11",
+        "dotenv": "^16.3.1",
+        "cors": "^2.8.5",
+        "amqplib": "^0.10.3",
+        "express-async-errors": "^3.1.1",
+        "body-parser": "^1.20.2",
+        "@connecta/common": "file:../common"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/cors": "^2.8.17",
+        "@types/node": "^20.10.5",
+        "@types/amqplib": "^0.10.5",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.3.3"
+    }
+}
