@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Connecta",
+    "slug": "connecta",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/app-icon-fixed.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "ON_LOAD",
+      "enabled": true
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.connecta.app"
+    },
+    "android": {
+      "package": "com.connecta.app",
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-icon-fixed.png",
+        "backgroundColor": "#ffffff"
+      },
+      "usesCleartextTraffic": true,
+      "softwareKeyboardLayoutMode": "resize"
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "scheme": "connecta",
+    "extra": {
+      "apiBaseUrl": "https://api.myconnecta.ng",
+      "eas": {
+        "projectId": "cfedb4f5-53e0-4027-8c15-2f467d00757b"
+      }
+    },
+    "plugins": [
+      "expo-image-picker",
+      "@react-native-community/datetimepicker",
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "useNoMessagingMetaData": true
+          }
+        }
+      ]
+    ]
+  }
+}

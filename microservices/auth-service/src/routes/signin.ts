@@ -42,7 +42,7 @@ router.post(
 
         existingUser.refreshToken = refreshToken;
         existingUser.lastLoginAt = new Date();
-        existingUser.lastIpAddress = req.ip;
+        existingUser.lastIpAddress = req.ip || null;
         await existingUser.save();
 
         // Generate Access Token

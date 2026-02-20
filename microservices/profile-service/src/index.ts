@@ -16,7 +16,7 @@ const start = async () => {
         await rabbitMQWrapper.connect(process.env.RABBITMQ_URL);
 
         // Start Listeners
-        new UserCreatedListener(rabbitMQWrapper.client).listen();
+        new UserCreatedListener(rabbitMQWrapper.channel).listen();
 
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected to MongoDB');

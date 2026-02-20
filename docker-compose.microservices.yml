@@ -99,7 +99,7 @@ services:
     image: mongo:6.0
     restart: always
     ports:
-      - "27017:27017"
+      - "27018:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-password}
@@ -117,7 +117,7 @@ services:
     image: redis:7-alpine
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -147,6 +147,7 @@ services:
       - CHAT_SERVICE_URL=http://chat-service:3000
       - NOTIFICATION_SERVICE_URL=http://notification-service:3000
       - MEDIA_SERVICE_URL=http://media-service:3000
+      - VERIFICATION_SERVICE_URL=http://verification-service:3000
     networks: [connecta-network]
     depends_on: 
       auth-service: { condition: service_started }
@@ -159,6 +160,7 @@ services:
       chat-service: { condition: service_started }
       notification-service: { condition: service_started }
       media-service: { condition: service_started }
+      verification-service: { condition: service_started }
 
   auth-service:
     build: 
@@ -169,6 +171,7 @@ services:
       - DB_HOST=auth-db
       - DB_URI=postgres://connecta_auth:auth_password@auth-db:5432/connecta_auth
       - JWT_KEY=${JWT_KEY:-supersecretkey}
+      - REFRESH_TOKEN_KEY=${REFRESH_TOKEN_KEY:-superrefreshkey}
       - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
     networks: [connecta-network]
     depends_on:
@@ -298,6 +301,19 @@ services:
     restart: always
     environment:
       - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_media?authSource=admin
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
+    networks: [connecta-network]
+    depends_on:
+      mongo: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  verification-service:
+    build: 
+      context: ./microservices
+      dockerfile: verification-service/Dockerfile
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASS:-password}@mongo:27017/connecta_verifications?authSource=admin
       - RABBITMQ_URL=amqp://${RABBITMQ_USER:-user}:${RABBITMQ_PASS:-password}@rabbitmq:5672
     networks: [connecta-network]
     depends_on:

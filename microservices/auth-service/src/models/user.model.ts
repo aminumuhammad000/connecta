@@ -9,9 +9,9 @@ interface UserAttributes {
     passwordHash: string;
     role: 'freelancer' | 'client' | 'admin';
     isVerified: boolean;
-    refreshToken?: string;
-    lastLoginAt?: Date;
-    lastIpAddress?: string;
+    refreshToken?: string | null;
+    lastLoginAt?: Date | null;
+    lastIpAddress?: string | null;
 }
 
 export class User extends Model<UserAttributes> implements UserAttributes {
@@ -19,6 +19,7 @@ export class User extends Model<UserAttributes> implements UserAttributes {
     public email!: string;
     public passwordHash!: string;
     public role!: 'freelancer' | 'client' | 'admin';
+    public isVerified!: boolean;
     public refreshToken!: string | null;
     public lastLoginAt!: Date | null;
     public lastIpAddress!: string | null;
