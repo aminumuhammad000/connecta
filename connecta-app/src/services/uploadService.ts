@@ -16,6 +16,7 @@ export const uploadAvatarPublic = async (uri: string): Promise<string> => {
         const blob = await response.blob();
         formData.append('avatar', blob, filename);
     } else {
+        console.log('📱 Mobile platform detected. File details:', { uri, filename, type });
         formData.append('avatar', {
             uri,
             name: filename,
@@ -23,8 +24,10 @@ export const uploadAvatarPublic = async (uri: string): Promise<string> => {
         } as any);
     }
 
+    console.log('📤 FormData prepared. Fields:', (formData as any)._parts?.map((p: any) => p[0]));
+
     try {
-        // The response from uploadFilePublic is the data object itself
+        const axiosResponse: any = await uploadFilePublic(API_ENDPOINTS.UPLOAD_AVATAR_PUBLIC, formData);
         const responseData = axiosResponse;
         return responseData.url || responseData.data?.url;
     } catch (error) {
@@ -57,9 +60,8 @@ export const uploadImage = async (uri: string): Promise<string> => {
         } as any);
     }
 
-    const axiosResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
-    const apiResponse = axiosResponse.data;
-    let url = apiResponse.data?.url || apiResponse.url || apiResponse;
+    const apiResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
+    let url = apiResponse.url || apiResponse.data?.url || apiResponse;
 
     if (url && typeof url === 'string' && url.startsWith('/')) {
         url = `${API_BASE_URL}${url}`;
@@ -107,13 +109,12 @@ export const uploadAvatar = async (uri: string): Promise<string> => {
 
     try {
         console.log('🚀 Sending request to server...');
-        const axiosResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_AVATAR, formData);
+        const apiResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_AVATAR, formData);
         console.log('✅ Server response received');
 
-        const apiResponse = axiosResponse.data;
         // The server might return { success: true, data: { url: "..." } } 
         // OR it might be flattened depending on the interceptor
-        const url = apiResponse.data?.url || apiResponse.url || apiResponse;
+        const url = apiResponse.url || apiResponse.data?.url || apiResponse;
 
         if (!url || typeof url !== 'string') {
             console.error('❌ Unexpected response format:', apiResponse);
@@ -152,10 +153,9 @@ export const uploadPortfolioImage = async (uri: string): Promise<string> => {
     }
 
     try {
-        const axiosResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_PORTFOLIO_IMAGE, formData);
+        const apiResponse: any = await uploadFile(API_ENDPOINTS.UPLOAD_PORTFOLIO_IMAGE, formData);
         console.log('✅ Portfolio upload response received');
-        const apiResponse = axiosResponse.data;
-        return apiResponse.data?.url || apiResponse.url || apiResponse;
+        return apiResponse.url || apiResponse.data?.url || apiResponse;
     } catch (error) {
         console.error('❌ Upload service error:', error);
         throw error;

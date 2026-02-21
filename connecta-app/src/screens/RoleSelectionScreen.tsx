@@ -12,6 +12,7 @@ import { useTranslation } from '../utils/i18n';
 import Button from '../components/Button';
 import ChatGreeting from '../components/ChatGreeting';
 import AnimatedBackground from '../components/AnimatedBackground';
+import * as storage from '../utils/storage';
 
 const RoleSelectionScreen: React.FC = () => {
     const c = useThemeColors();
@@ -24,8 +25,9 @@ const RoleSelectionScreen: React.FC = () => {
         setSelectedRole(role);
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!selectedRole) return;
+        await storage.savePendingSignupData({ userType: selectedRole });
         (navigation as any).navigate('Signup', { role: selectedRole });
     };
 

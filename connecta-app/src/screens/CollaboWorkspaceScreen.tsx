@@ -192,10 +192,15 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
     const handleFundProject = () => {
         if (!projectData?.project) return;
+        const clientId = projectData.project.clientId?._id || projectData.project.clientId;
+        console.log('💰 handleFundProject clientId:', clientId, 'user:', JSON.stringify(user?._id || user?.id));
         navigation.navigate('Payment', {
             projectId: projectId,
             amount: projectData.project.totalBudget,
-            projectTitle: projectData.project.title
+            projectTitle: projectData.project.title,
+            freelancerId: clientId, // Self-payment for project escrow
+            freelancerName: 'Project Escrow',
+            paymentType: 'project_payment'
         });
     };
 

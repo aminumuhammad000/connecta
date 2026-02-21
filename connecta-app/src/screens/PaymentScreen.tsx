@@ -19,6 +19,8 @@ export default function PaymentScreen({ navigation, route }: any) {
         paymentType = 'project_payment'
     } = route.params || {};
 
+    console.log('💳 PaymentScreen params:', JSON.stringify({ projectId, jobId, amount, freelancerId, paymentType }));
+
     const [loading, setLoading] = useState(false);
 
     const platformFee = paymentType === 'job_verification' ? 0 : (amount * 10) / 100;
@@ -39,7 +41,8 @@ export default function PaymentScreen({ navigation, route }: any) {
             } else {
                 response = await paymentService.initializePayment({
                     projectId: projectId,
-                    amount: totalAmount
+                    amount: totalAmount,
+                    payeeId: freelancerId,
                 });
             }
 

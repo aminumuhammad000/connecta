@@ -3,7 +3,7 @@
  * Switching isModeOnline to false will point the app to the local server.
  */
 
-const isModeOnline = true; // Set to false to use Local Server
+const isModeOnline = false; // Set to false to use Local Server
 
 export const API_BASE_URL = isModeOnline
     ? 'https://api.myconnecta.ng/api'

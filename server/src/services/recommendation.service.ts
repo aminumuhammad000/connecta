@@ -3,6 +3,10 @@ import Profile from "../models/Profile.model.js";
 import { Job } from "../models/Job.model.js";
 import { TFIDF } from "../utils/tfidf.js";
 import redisClient from "../config/redis.js";
+import JobMatch from "../models/JobMatch.model.js";
+import Notification from "../models/Notification.model.js";
+import { sendGigNotificationEmail } from "./email.service.js";
+
 
 export class RecommendationService {
     /**
@@ -149,8 +153,7 @@ export class RecommendationService {
             const jobTitle = job.title.toLowerCase();
 
             const matches = [];
-            const JobMatch = (await import("../models/JobMatch.model.js")).default;
-            const { sendGigNotificationEmail } = await import("./email.service.js");
+
 
             for (const profile of profiles) {
                 let score = 0;
@@ -210,8 +213,8 @@ export class RecommendationService {
                             );
 
                             // Create In-App Notification
-                            const Notification = (await import("../models/Notification.model.js")).default;
                             await Notification.create({
+
                                 userId: user._id,
                                 type: 'gig_matched',
                                 title: 'New Relevant Gig Found!',

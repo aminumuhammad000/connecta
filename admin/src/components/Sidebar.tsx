@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import Icon from './Icon'
+import { dashboardAPI } from '../services/api'
 
 interface NavItemProps {
   to: string
@@ -60,8 +61,28 @@ export default function Sidebar({
   onClose?: () => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [pendingJobsCount, setPendingJobsCount] = useState(0)
   const isMobile = variant === 'mobile'
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const response = await dashboardAPI.getStats()
+        const stats = response.data || response
+        if (stats && typeof stats.pendingJobs === 'number') {
+          setPendingJobsCount(stats.pendingJobs)
+        }
+      } catch (error) {
+        console.error('Error fetching pending jobs count:', error)
+      }
+    }
+
+    fetchPendingCount()
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchPendingCount, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token')
@@ -155,7 +176,7 @@ export default function Sidebar({
         <NavItem to="/dashboard" icon="dashboard" label="Dashboard" collapsed={isCollapsed} />
         <NavItem to="/users" icon="group" label="Users" collapsed={isCollapsed} />
         <NavItem to="/projects" icon="work" label="Projects" collapsed={isCollapsed} />
-        <NavItem to="/jobs" icon="business" label="Jobs" collapsed={isCollapsed} />
+        <NavItem to="/jobs" icon="business" label="Jobs" collapsed={isCollapsed} badge={pendingJobsCount} />
         <NavItem to="/applications" icon="assignment" label="Gig Applications" collapsed={isCollapsed} />
         <NavItem to="/contracts" icon="description" label="Contracts" collapsed={isCollapsed} />
         <NavItem to="/payments" icon="payments" label="Payments" collapsed={isCollapsed} />

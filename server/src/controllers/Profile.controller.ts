@@ -417,8 +417,25 @@ import LLMService from '../services/LLM.service.js';
  */
 export const parseResume = async (req: Request, res: Response) => {
   try {
+    console.log('📥 Incoming parse-resume request');
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('File:', req.file ? {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      hasBuffer: !!req.file.buffer
+    } : 'None');
+
     if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ message: "No resume file uploaded" });
+      return res.status(400).json({
+        message: "No resume file uploaded",
+        debug: {
+          contentType: req.headers['content-type'],
+          hasFile: !!req.file,
+          bodyKeys: Object.keys(req.body || {})
+        }
+      });
     }
 
     // Extract text from PDF

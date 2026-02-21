@@ -153,24 +153,8 @@ const PostJobScreen: React.FC = () => {
   const fetchDynamicSkills = async () => {
     try {
       setIsFetchingDynamicSkills(true);
-      // Clean up the query for better API results
-      const query = (category || selectedCategoryId).split('&')[0].split(' ')[0].replace(/[^a-zA-Z]/g, '');
-
-      const response = await fetch(`http://api.dataatwork.org/v1/skills/autocomplete?contains=${query}`);
-      const data = await response.json();
-
-      if (Array.isArray(data)) {
-        const fetched = data
-          .slice(0, 20)
-          .map(item => item.normalized_skill_name)
-          .map(s => s.charAt(0).toUpperCase() + s.slice(1)); // Capitalize
-
-        // Combine with our hardcoded ones, remove duplicates, and sort alphabetically
-        const combined = Array.from(new Set([...(CATEGORY_SKILLS[selectedCategoryId] || []), ...fetched])).sort((a, b) => a.localeCompare(b));
-        setDynamicSkills(combined);
-      } else {
-        setDynamicSkills((CATEGORY_SKILLS[selectedCategoryId] || []).sort());
-      }
+      // External skills API is currently unavailable, using category defaults
+      setDynamicSkills((CATEGORY_SKILLS[selectedCategoryId] || []).sort());
     } catch (error) {
       console.error('Error fetching dynamic skills:', error);
       setDynamicSkills((CATEGORY_SKILLS[selectedCategoryId] || []).sort());
@@ -178,6 +162,7 @@ const PostJobScreen: React.FC = () => {
       setIsFetchingDynamicSkills(false);
     }
   };
+
 
   const onDateSelect = (date: Date) => {
     const dateString = date.toISOString().split('T')[0];
@@ -360,8 +345,8 @@ const PostJobScreen: React.FC = () => {
         location,
         category,
         experience,
-        jobType: jobType as any,
-        budgetType: 'fixed',
+        jobType: 'freelance' as any,
+        budgetType: jobType,
         locationType: locationType as any,
         jobScope,
         niche: subCategory || undefined,
@@ -397,6 +382,10 @@ const PostJobScreen: React.FC = () => {
         jobType: 'freelance' as any,
         budgetType: jobType,
         locationType: locationType as any,
+        jobScope,
+        niche: subCategory || undefined,
+        duration: durationValue,
+        durationType: durationType as any,
       };
 
       await jobService.updateJob(jobId, jobData);

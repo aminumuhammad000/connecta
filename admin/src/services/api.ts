@@ -222,6 +222,10 @@ export const jobsAPI = {
     const { data } = await api.delete(`/api/jobs/${id}`)
     return data
   },
+  updateStatus: async (id: string, status: string) => {
+    const { data } = await api.patch(`/api/jobs/${id}/status`, { status })
+    return data
+  },
 }
 
 // ============================================

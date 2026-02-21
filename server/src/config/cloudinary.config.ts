@@ -15,34 +15,67 @@ if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !pr
     console.log('✅ Cloudinary environment variables loaded');
 }
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+const isCloudinaryConfigured = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
 
-// Avatar Storage
-const avatarStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: async (req: any, file: any) => {
-        return {
+let avatarStorage: any;
+let portfolioStorage: any;
+
+if (isCloudinaryConfigured) {
+    console.log('☁️ Using Cloudinary for storage');
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
+    avatarStorage = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
             folder: 'connecta/avatars',
-            allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-            transformation: [{ width: 500, height: 500, crop: 'limit' }],
-        } as any;
-    },
-});
+        },
+    });
 
-// Portfolio Storage
-const portfolioStorage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: async (req: any, file: any) => {
-        return {
+    portfolioStorage = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
             folder: 'connecta/portfolio',
-            allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
             transformation: [{ width: 1200, height: 800, crop: 'limit' }],
-        } as any;
-    },
-});
+        },
+    });
+} else {
+    console.warn('📁 Cloudinary not configured. Falling back to local disk storage.');
 
-export { cloudinary, avatarStorage, portfolioStorage };
+    const fs = await import('fs');
+    const path = await import('path');
+    const multer = await import('multer');
+
+    // Create uploads directory if it doesn't exist
+    const uploadDirs = ['uploads/avatars', 'uploads/portfolio'];
+    uploadDirs.forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+    });
+
+    avatarStorage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, 'uploads/avatars');
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    });
+
+    portfolioStorage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, 'uploads/portfolio');
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    });
+}
+
+export { cloudinary, avatarStorage, portfolioStorage, isCloudinaryConfigured };

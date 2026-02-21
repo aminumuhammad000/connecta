@@ -51,6 +51,14 @@ const LocationOnboardingScreen: React.FC = () => {
 
             const pendingData = await storage.getPendingSignupData();
 
+            if (!pendingData?.userType) {
+                console.error('❌ userType missing in pendingData at LocationOnboarding');
+                // Recovery: default to freelancer if somehow lost
+                if (pendingData) pendingData.userType = 'freelancer';
+            }
+
+            console.log('🚀 Final Signup Attempt for role:', pendingData?.userType);
+
             await authService.initiateSignup(
                 pendingData.email,
                 pendingData.firstName,

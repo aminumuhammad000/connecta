@@ -12,7 +12,8 @@ import {
   saveJob,
   unsaveJob,
   getSavedJobs,
-  inviteFreelancer
+  inviteFreelancer,
+  updateJobStatus
 } from "../controllers/Job.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
@@ -54,5 +55,8 @@ router.put("/:id", updateJob);
 
 // Delete job
 router.delete("/:id", authenticate, isAdmin, deleteJob);
+
+// Update job status (Admin only)
+router.patch("/:id/status", authenticate, isAdmin, updateJobStatus);
 
 export default router;

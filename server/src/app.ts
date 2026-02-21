@@ -26,6 +26,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import insightsRoutes from "./routes/insights.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
 import verificationRoutes from "./routes/verification.routes.js";
+import collaboRoutes from "./routes/Collabo.routes.js";
 import redisClient from "./config/redis.js";
 dotenv.config();
 
@@ -64,6 +65,7 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // Connect to Database
 // Database connection moved to end of file to ensure server starts only after DB is ready
@@ -85,6 +87,7 @@ app.use("/api/gigs", gigsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/verifications", verificationRoutes);
+app.use("/api/collabo", collaboRoutes);
 import analyticsRoutes from "./routes/analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
 import subscriptionRoutes from "./routes/Subscription.routes.js";
@@ -144,6 +147,7 @@ app.get("/debug/users", async (req, res) => {
   }
 });
 
+
 app.get("/debug/setup", async (req, res) => {
   try {
     const mongoose = await import('mongoose');
@@ -170,6 +174,7 @@ app.get("/debug/setup", async (req, res) => {
         isVerified: true
       });
     }
+
 
     // Create a Client
     const clientEmail = 'client@connecta.com';
@@ -240,7 +245,7 @@ io.on("connection", (socket) => {
   socket.on("user:join", (userId: string) => {
     activeUsers.set(userId, socket.id);
     socket.join(userId);
-    console.log(`User ${userId} joined with socket ${socket.id}`);
+    console.log(`User ${userId} joined with socket ${socket.id} `);
 
     // Emit online status
     io.emit("user:online", { userId, socketId: socket.id });
@@ -300,12 +305,12 @@ io.on("connection", (socket) => {
   // Room management (moved outside disconnect to prevent memory leak)
   socket.on("room:join", (roomId: string) => {
     socket.join(roomId);
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    console.log(`Socket ${socket.id} joined room ${roomId} `);
   });
 
   socket.on("room:leave", (roomId: string) => {
     socket.leave(roomId);
-    console.log(`Socket ${socket.id} left room ${roomId}`);
+    console.log(`Socket ${socket.id} left room ${roomId} `);
   });
 
   // Disconnect

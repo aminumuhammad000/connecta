@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
@@ -25,11 +25,24 @@ const SignupScreen: React.FC = () => {
   const { showAlert } = useInAppAlert();
   const { t, lang } = useTranslation();
 
-  const { role } = (route.params as any) || { role: 'freelancer' };
+  const { role: initialRole } = (route.params as any) || {};
+  const [role, setRole] = useState<'client' | 'freelancer'>(initialRole || 'freelancer');
   const [name, setName] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [nameError, setNameError] = useState('');
+
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!initialRole) {
+        const data = await storage.getPendingSignupData();
+        if (data?.userType) {
+          setRole(data.userType);
+        }
+      }
+    };
+    loadRole();
+  }, [initialRole]);
 
   // Animation values
   const pulseValue = useSharedValue(1);
@@ -91,7 +104,7 @@ const SignupScreen: React.FC = () => {
         firstName,
         lastName,
         avatar: imageUrl,
-        userType: role,
+        userType: role, // Ensure role is updated/verified here
       });
 
       (navigation as any).navigate('SignupDetails');

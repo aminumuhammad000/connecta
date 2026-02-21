@@ -4,11 +4,11 @@
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = false;
+const USE_LOCAL_SERVER = true;
 
 // Server URLs
 const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API
-const LOCAL_SERVER = 'http://192.168.100.33:5000'; // Using the first local IP found
+const LOCAL_SERVER = 'http://192.168.100.10:5000'; // Local development server
 
 export const API_BASE_URL = USE_LOCAL_SERVER ? LOCAL_SERVER : ONLINE_SERVER;
 console.log('[API] Base URL:', API_BASE_URL);
@@ -130,6 +130,7 @@ export const API_ENDPOINTS = {
     // Uploads
     UPLOAD_FILE: '/api/uploads/upload',
     UPLOAD_AVATAR: '/api/avatars/upload',
+    UPLOAD_AVATAR_PUBLIC: '/api/avatars/public-upload',
     UPLOAD_PORTFOLIO_IMAGE: '/api/portfolio/upload',
     CLAIM_REWARD: '/api/users/claim-reward',
     SPARK_HISTORY: '/api/users/spark-history',

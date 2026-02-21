@@ -1,6 +1,7 @@
 // src/routes/agent.routes.ts
 import { Router, Request, Response } from "express";
 import axios from "axios";
+import User from "../models/user.model.js";
 
 const router = Router();
 
@@ -11,8 +12,8 @@ router.post("/", async (req: Request, res: Response) => {
     const authHeader = req.headers["authorization"] || "";
 
     // Require User model to check sparks
-    const User = (await import("../models/user.model.js")).default;
     const user = await User.findById(userId);
+
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });

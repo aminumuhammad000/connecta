@@ -79,6 +79,9 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
         return base.filter((p: any) => p.status !== 'ongoing' && p.status !== 'in_progress' && p.status !== 'completed');
     }, [projects, q, filter]);
 
+    const { width } = useWindowDimensions();
+    const isDesktop = width > 768;
+
     if (isLoading) {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -88,9 +91,6 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
             </SafeAreaView>
         );
     }
-
-    const { width } = useWindowDimensions();
-    const isDesktop = width > 768;
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>

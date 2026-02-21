@@ -5,7 +5,8 @@ import { uploadAvatar, publicUploadAvatar } from '../controllers/avatar.controll
 import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = express.Router();
-const upload = multer({ storage: avatarStorage });
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 router.post('/upload', authenticate, upload.single('avatar'), uploadAvatar);
 router.post('/public-upload', upload.single('avatar'), publicUploadAvatar);

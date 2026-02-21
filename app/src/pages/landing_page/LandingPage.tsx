@@ -18,6 +18,7 @@ import Footer from "./layout/Footer"
 import AboutUs from "./layout/AboutUs"
 import FAQ from "./layout/FAQ"
 import Testimonials from "./layout/Testimonials"
+import CvOptimization from "./layout/CvOptimization"
 
 const LandingPage = () => {
   return (
@@ -25,6 +26,7 @@ const LandingPage = () => {
       <Nav />
       <Hero />
       <StatsAnalytics />
+      <CvOptimization />
       <SampleJobs />
       <TopCompanies />
       <CollaboOverview />

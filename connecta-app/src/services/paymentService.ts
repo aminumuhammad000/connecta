@@ -13,6 +13,7 @@ import { Payment, Transaction, WalletBalance, Bank } from '../types';
 export const initializePayment = async (paymentData: {
     projectId: string;
     amount: number;
+    payeeId: string;
 }): Promise<{ reference: string; authorizationUrl: string }> => {
     const response = await post(API_ENDPOINTS.INITIALIZE_PAYMENT, paymentData);
     return response.data!;

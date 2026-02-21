@@ -20,8 +20,8 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
         try {
-            console.log('🔵 API Request:', config.method?.toUpperCase(), (config.baseURL || '') + (config.url || ''));
             const token = await getToken();
+            console.log(`🔵 [API] ${config.method?.toUpperCase()} ${config.url} | Token: ${token ? '✅ (Present)' : '❌ (MISSING)'}`);
             if (token && config.headers) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
@@ -54,12 +54,17 @@ apiClient.interceptors.response.use(
 
         if (error.response) {
             // Server responded with error status
+            console.error(`❌ [API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response.status} | Data:`, error.response.data);
             const serverMessage = error.response.data?.message || error.response.data?.error;
             apiError.status = error.response.status;
 
             // Use server message if available, otherwise use generic message based on status
             if (serverMessage) {
                 apiError.message = serverMessage;
+                // If the user is not found (database was cleared or user deleted), log out
+                if (error.response.status === 404 && (serverMessage.includes('User not found') || serverMessage.includes('Profile not found'))) {
+                    if (logoutHandler) logoutHandler();
+                }
             } else if (error.response.status === 401) {
                 apiError.message = 'Session expired. Please login again.';
                 if (logoutHandler) logoutHandler();
@@ -127,29 +132,31 @@ import { Platform } from 'react-native';
  */
 export const uploadFile = async (url: string, formData: FormData): Promise<ApiResponse> => {
     const token = await getToken();
-    const headers: any = {
-        'Authorization': `Bearer ${token}`,
-    };
 
-    // On Web, do not set Content-Type manually for FormData. 
-    // The browser needs to set it to include the boundary.
-    if (Platform.OS !== 'web') {
-        headers['Content-Type'] = 'multipart/form-data';
-    }
-
-    const response = await axios.post(`${API_BASE_URL}${url}`, formData, { headers });
-    return response.data;
+    return await apiClient.post(url, formData, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000, // 60s timeout for uploads
+    });
 };
 
 /**
  * Upload file with multipart/form-data (Public version)
+ * Uses a direct axios call to bypass the interceptor entirely
  */
 export const uploadFilePublic = async (url: string, formData: FormData): Promise<ApiResponse> => {
-    const headers: any = {};
-    if (Platform.OS !== 'web') {
-        headers['Content-Type'] = 'multipart/form-data';
-    }
-    const response = await axios.post(`${API_BASE_URL}${url}`, formData, { headers });
+    const fullUrl = `${API_BASE_URL}${url}`;
+    console.log('📡 [uploadFilePublic] Sending to:', fullUrl);
+
+    const response = await axios.post(fullUrl, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000, // 60s timeout for uploads
+    });
+
     return response.data;
 };
 
