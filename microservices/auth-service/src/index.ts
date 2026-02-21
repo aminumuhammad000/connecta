@@ -1,11 +1,14 @@
 
 import { app } from './app';
 import { rabbitMQWrapper } from './rabbitmq-wrapper';
-// import { sequelize } from './config/database'; // We will create this next
+import { sequelize } from './config/database';
 
 const start = async () => {
     if (!process.env.JWT_KEY) {
         throw new Error('JWT_KEY must be defined');
+    }
+    if (!process.env.REFRESH_TOKEN_KEY) {
+        throw new Error('REFRESH_TOKEN_KEY must be defined');
     }
     if (!process.env.DB_URI) {
         throw new Error('DB_URI must be defined');
@@ -16,7 +19,8 @@ const start = async () => {
 
     try {
         await rabbitMQWrapper.connect(process.env.RABBITMQ_URL);
-        // await sequelize.authenticate();
+        await sequelize.authenticate();
+        await sequelize.sync();
         console.log('Connected to Postgres');
     } catch (err) {
         console.error(err);

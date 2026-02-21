@@ -15,11 +15,11 @@ interface ContractAttributes {
     status: 'draft' | 'pending_signatures' | 'active' | 'completed' | 'terminated' | 'disputed' | 'cancelled';
     startDate: Date;
     endDate: Date;
-    milestones?: string; // JSON string
+    milestones?: string | null; // JSON string
     escrowEnabled: boolean;
     platformFeePercent: number;
-    signatureHash?: string;
-    signedAt?: Date;
+    signatureHash?: string | null;
+    signedAt?: Date | null;
 }
 
 export class Contract extends Model<ContractAttributes> implements ContractAttributes {

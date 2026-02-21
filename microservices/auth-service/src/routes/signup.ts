@@ -36,7 +36,7 @@ router.post(
             role: role || 'freelancer',
             isVerified: false,
             lastLoginAt: new Date(),
-            lastIpAddress: req.ip
+            lastIpAddress: req.ip || null
         });
 
         // Generate Refresh Token

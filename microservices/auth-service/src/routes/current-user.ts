@@ -9,7 +9,11 @@ const router = express.Router();
 router.get('/currentuser', (req, res) => {
     // If no session or JWT, return null
     if (!req.session?.jwt) {
-        return res.send({ currentUser: null });
+        return res.send({
+            success: true,
+            message: 'No active session',
+            data: { currentUser: null }
+        });
     }
 
     try {
@@ -17,9 +21,17 @@ router.get('/currentuser', (req, res) => {
             req.session.jwt,
             process.env.JWT_KEY!
         );
-        res.send({ currentUser: payload });
+        res.send({
+            success: true,
+            message: 'Current user retrieved',
+            data: { currentUser: payload }
+        });
     } catch (err) {
-        res.send({ currentUser: null });
+        res.send({
+            success: true,
+            message: 'No active session',
+            data: { currentUser: null }
+        });
     }
 });
 

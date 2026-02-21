@@ -10,11 +10,11 @@ interface PaymentAttributes {
     status: 'pending' | 'escrowed' | 'completed' | 'failed' | 'refunded';
     paymentMethod: string;
     transactionId: string;
-    idempotencyKey?: string;
-    callbackUrl?: string;
-    metadata?: string; // JSON string
-    reference?: string;
-    externalReference?: string;
+    idempotencyKey?: string | null;
+    callbackUrl?: string | null;
+    metadata?: string | null;
+    reference?: string | null;
+    externalReference?: string | null;
 }
 
 export class Payment extends Model<PaymentAttributes> implements PaymentAttributes {

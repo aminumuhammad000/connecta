@@ -17,6 +17,7 @@
         "amqplib": "^0.10.3",
         "express-async-errors": "^3.1.1",
         "body-parser": "^1.20.2",
+        "express-validator": "^7.0.1",
         "@connecta/common": "file:../common"
     },
     "devDependencies": {

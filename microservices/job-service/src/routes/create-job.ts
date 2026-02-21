@@ -16,7 +16,7 @@ router.post(
         body('budget').isFloat({ gt: 0 }).withMessage('Budget must be greater than 0'),
     ],
     async (req: Request, res: Response) => {
-        const { title, description, budget } = req.body;
+        const { title, description, budget, category, experienceLevel, visibility, skillsRequired } = req.body;
 
         // Mock userId for now until we have auth middleware in this service
         // In real implementation: const userId = req.currentUser!.id;
@@ -31,6 +31,11 @@ router.post(
             description,
             budget,
             userId,
+            category: category || 'Uncategorized',
+            status: 'draft',
+            experienceLevel: experienceLevel || 'intermediate',
+            visibility: visibility || 'public',
+            skillsRequired: skillsRequired || []
         });
         await job.save();
 
