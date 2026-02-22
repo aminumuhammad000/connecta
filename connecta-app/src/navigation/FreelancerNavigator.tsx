@@ -137,6 +137,7 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="HelpSupport" component={require('../screens/HelpSupportScreen').default} />
             <Stack.Screen name="ContactSupport" component={require('../screens/ContactSupportScreen').default} />
             <Stack.Screen name="ProposalDetail" component={require('../screens/ProposalDetailScreen').default} />
+            <Stack.Screen name="Proposals" component={MyProposalsScreen} />
             <Stack.Screen name="ClientProfile" component={require('../screens/ClientProfileScreen').default} />
             <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
             <Stack.Screen name="VideoCall" component={VideoCallScreen} />

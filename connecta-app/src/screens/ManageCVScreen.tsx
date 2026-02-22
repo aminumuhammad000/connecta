@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -26,6 +26,7 @@ export default function ManageCVScreen({ navigation }: any) {
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewAuthToken, setPreviewAuthToken] = useState<string | null>(null);
+    const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
     const handlePreviewResume = async () => {
         try {
@@ -42,6 +43,18 @@ export default function ManageCVScreen({ navigation }: any) {
 
             setPreviewUrl(fullUrl);
             setPreviewAuthToken(token);
+
+            if (Platform.OS === 'web') {
+                const response = await fetch(fullUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                setBlobUrl(url);
+            }
+
             setShowPreviewModal(true);
 
         } catch (error: any) {
@@ -53,9 +66,17 @@ export default function ManageCVScreen({ navigation }: any) {
     const handleDownloadFile = async () => {
         if (!previewUrl) return;
 
+        if (Platform.OS === 'web' && blobUrl) {
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = 'Connecta_Verified_Resume.pdf';
+            link.click();
+            showAlert({ title: 'Success', message: 'Resume download started!', type: 'success' });
+            return;
+        }
+
         try {
             const fileUri = `${FileSystem.documentDirectory}Connecta_Verified_Resume.pdf`;
-
             console.log('Downloading resume from:', previewUrl);
 
             const downloadRes = await FileSystem.downloadAsync(
@@ -109,11 +130,18 @@ export default function ManageCVScreen({ navigation }: any) {
             showAlert({ title: 'Processing', message: 'Analyzing your resume with AI...', type: 'info' });
 
             const formData = new FormData();
-            formData.append('resume', {
-                uri: asset.uri,
-                name: asset.name,
-                type: asset.mimeType || 'application/pdf',
-            } as any);
+            if (Platform.OS === 'web') {
+                const response = await fetch(asset.uri);
+                const blob = await response.blob();
+                const file = new File([blob], asset.name, { type: asset.mimeType || 'application/pdf' });
+                formData.append('resume', file);
+            } else {
+                formData.append('resume', {
+                    uri: asset.uri,
+                    name: asset.name,
+                    type: asset.mimeType || 'application/pdf',
+                } as any);
+            }
 
             const parsedData = await profileService.parseResume(formData);
 
@@ -125,7 +153,8 @@ export default function ManageCVScreen({ navigation }: any) {
 
         } catch (error: any) {
             console.error('Resume import error:', error);
-            showAlert({ title: 'Error', message: 'Failed to parse resume: ' + (error.message || 'Unknown error'), type: 'error' });
+            const errorMessage = error.message || error.error || (typeof error === 'string' ? error : 'Unknown error');
+            showAlert({ title: 'Error', message: 'Failed to parse resume: ' + errorMessage, type: 'error' });
         } finally {
             setImportingResume(false);
         }
@@ -384,7 +413,16 @@ export default function ManageCVScreen({ navigation }: any) {
             <Modal visible={showPreviewModal} animationType="fade" onRequestClose={() => setShowPreviewModal(false)}>
                 <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
                     <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
-                        <TouchableOpacity onPress={() => setShowPreviewModal(false)} style={styles.backButton}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setShowPreviewModal(false);
+                                if (blobUrl && Platform.OS === 'web') {
+                                    URL.revokeObjectURL(blobUrl);
+                                    setBlobUrl(null);
+                                }
+                            }}
+                            style={styles.backButton}
+                        >
                             <Ionicons name="close" size={24} color={c.text} />
                         </TouchableOpacity>
                         <Text style={[styles.headerTitle, { color: c.text }]}>Resume Preview</Text>
@@ -394,7 +432,20 @@ export default function ManageCVScreen({ navigation }: any) {
                     </View>
 
                     <View style={{ flex: 1 }}>
-                        {previewUrl && previewAuthToken ? (
+                        {Platform.OS === 'web' ? (
+                            blobUrl ? (
+                                <iframe
+                                    src={blobUrl}
+                                    style={{ width: '100%', height: '100%', border: 'none' }}
+                                    title="Resume Preview"
+                                />
+                            ) : (
+                                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                                    <ActivityIndicator size="large" color={c.primary} />
+                                    <Text style={{ marginTop: 16, color: c.subtext }}>Loading preview...</Text>
+                                </View>
+                            )
+                        ) : previewUrl && previewAuthToken ? (
                             <WebView
                                 source={{
                                     uri: previewUrl,

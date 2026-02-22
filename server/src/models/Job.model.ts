@@ -24,7 +24,7 @@ export interface IJob extends Document {
   posted: Date;
   deadline?: Date;
   applicants: number;
-  status: "active" | "closed" | "draft";
+  status: "active" | "closed" | "draft" | "pending";
   clientId: mongoose.Types.ObjectId;
   category: string;
   summary: string;
@@ -108,7 +108,7 @@ const JobSchema: Schema<IJob> = new Schema(
     applicants: { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ["active", "closed", "draft"],
+      enum: ["active", "closed", "draft", "pending"],
       default: "active",
     },
     clientId: { type: Schema.Types.ObjectId, ref: "User", required: true },

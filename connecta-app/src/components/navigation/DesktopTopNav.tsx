@@ -79,20 +79,32 @@ const DesktopTopNav = () => {
 
     const handleNav = (route: string) => {
         if (route === 'Messages') {
-            // Reset count on navigation to messages
             setUnreadCount(0);
         }
 
+        const targetMain = isClient ? 'ClientMain' : 'FreelancerMain';
+        const tabNavigator = isClient ? 'ClientTabs' : 'FreelancerTabs';
+
         if (isClient) {
-            navigation.navigate('ClientMain', {
-                screen: 'ClientTabs',
-                params: { screen: route }
-            });
+            const isTab = ['Home', 'Jobs', 'Projects', 'Messages', 'Profile'].includes(route);
+            if (isTab) {
+                navigation.navigate(targetMain, {
+                    screen: tabNavigator,
+                    params: { screen: route }
+                });
+            } else {
+                navigation.navigate(targetMain, { screen: route });
+            }
         } else {
-            navigation.navigate('FreelancerMain', {
-                screen: 'FreelancerTabs',
-                params: { screen: route }
-            });
+            const isTab = ['Home', 'Gigs', 'Messages', 'Profile'].includes(route);
+            if (isTab) {
+                navigation.navigate(targetMain, {
+                    screen: tabNavigator,
+                    params: { screen: route }
+                });
+            } else {
+                navigation.navigate(targetMain, { screen: route });
+            }
         }
     };
 
@@ -260,7 +272,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         height: '100%',
         // @ts-ignore - Web only prop
-        outlineStyle: 'none',
+        ...({ outlineStyle: 'none' } as any),
     },
     navSection: {
         flexDirection: 'row',

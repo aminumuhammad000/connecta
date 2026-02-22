@@ -23,6 +23,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
     // 2. Job Stats
     const totalJobs = await Job.countDocuments();
     const activeJobs = await Job.countDocuments({ status: { $in: ['Open', 'open', 'active'] } });
+    const pendingJobs = await Job.countDocuments({ status: 'pending' });
 
     // 3. Project Stats
     const totalProjects = await Project.countDocuments();
@@ -60,7 +61,8 @@ export const getAdminStats = async (req: Request, res: Response) => {
         totalRevenue,
         pendingPayments: pendingPaymentsCount,
         totalProposals,
-        pendingProposals
+        pendingProposals,
+        pendingJobs
       }
     });
 

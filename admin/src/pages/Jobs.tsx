@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
-import { jobsAPI } from '../services/api'
+import { jobsAPI, profilesAPI } from '../services/api'
 
 interface Job {
   _id: string
@@ -14,6 +14,14 @@ interface Job {
   source?: string
   createdAt: string
   budget?: string
+  clientId: {
+    _id: string
+    firstName: string
+    lastName: string
+    email: string
+    phoneNumber?: string
+    profileImage?: string
+  }
 }
 
 export default function Jobs() {
@@ -42,11 +50,35 @@ export default function Jobs() {
     job: null
   })
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'closed' | 'draft'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'closed' | 'draft' | 'pending'>('all')
+  const [clientProfile, setClientProfile] = useState<any>(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
 
   useEffect(() => {
     fetchJobs()
   }, [filterType, statusFilter])
+
+  useEffect(() => {
+    if (viewModal.isOpen && viewModal.job && viewModal.job.clientId && typeof viewModal.job.clientId !== 'string') {
+      fetchClientProfile(viewModal.job.clientId._id)
+    } else {
+      setClientProfile(null)
+    }
+  }, [viewModal.isOpen, viewModal.job])
+
+  const fetchClientProfile = async (userId: string) => {
+    try {
+      setLoadingProfile(true)
+      const response: any = await profilesAPI.getByUserId(userId)
+      if (response.success && response.data) {
+        setClientProfile(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch client profile:', error)
+    } finally {
+      setLoadingProfile(false)
+    }
+  }
 
   const fetchJobs = async () => {
     try {
@@ -92,6 +124,19 @@ export default function Jobs() {
       setConfirmModal({ isOpen: false, jobId: null, title: '' })
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete job')
+    }
+  }
+
+  const handleUpdateStatus = async (jobId: string, status: string) => {
+    try {
+      await jobsAPI.updateStatus(jobId, status)
+      toast.success(`Job ${status === 'active' ? 'approved' : 'updated'} successfully`)
+      setJobs(jobs.map(j => j._id === jobId ? { ...j, status } : j))
+      if (viewModal.job?._id === jobId) {
+        setViewModal({ ...viewModal, job: { ...viewModal.job, status } })
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update job status')
     }
   }
 
@@ -142,6 +187,7 @@ export default function Jobs() {
                 className="px-4 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 <option value="all">All Status</option>
+                <option value="pending">Pending Approval</option>
                 <option value="active">Active</option>
                 <option value="closed">Closed</option>
                 <option value="draft">Draft</option>
@@ -177,6 +223,7 @@ export default function Jobs() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wider">Company</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wider">Source</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wider">Posted</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase tracking-wider">Actions</th>
                   </tr>
@@ -195,9 +242,35 @@ export default function Jobs() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-text-light-secondary dark:text-dark-secondary">{job.source || 'Connecta'}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${job.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                          job.status === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                          }`}>
+                          {job.status}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 text-sm text-text-light-secondary dark:text-dark-secondary">{formatDate(job.createdAt)}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {job.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleUpdateStatus(job._id, 'active')}
+                                className="p-2 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors text-green-600 dark:text-green-400"
+                                title="Approve Job"
+                              >
+                                <Icon name="check_circle" size={18} />
+                              </button>
+                              <button
+                                onClick={() => handleUpdateStatus(job._id, 'closed')}
+                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors text-red-600 dark:text-red-400"
+                                title="Reject Job"
+                              >
+                                <Icon name="cancel" size={18} />
+                              </button>
+                            </>
+                          )}
                           <button
                             onClick={() => setViewModal({ isOpen: true, job })}
                             className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-primary"
@@ -289,7 +362,12 @@ export default function Jobs() {
                 </div>
                 <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark">
                   <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Status</p>
-                  <p className="font-medium text-text-light-primary dark:text-dark-primary capitalize">{viewModal.job.status}</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${viewModal.job.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                    viewModal.job.status === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                    }`}>
+                    {viewModal.job.status}
+                  </span>
                 </div>
                 <div className="p-4 rounded-lg bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark">
                   <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-1">Source</p>
@@ -317,6 +395,100 @@ export default function Jobs() {
                 </div>
               )}
 
+              {!viewModal.job.isExternal && viewModal.job.clientId && (
+                <div className="pt-6 border-t border-border-light dark:border-border-dark">
+                  <h4 className="text-lg font-bold text-text-light-primary dark:text-dark-primary mb-4 flex items-center gap-2">
+                    <Icon name="person" size={20} className="text-primary" />
+                    Client Information
+                  </h4>
+
+                  <div className="bg-background-light dark:bg-background-dark/50 rounded-xl p-4 border border-border-light dark:border-border-dark">
+                    <div className="flex items-center gap-4 mb-4">
+                      {viewModal.job.clientId.profileImage ? (
+                        <img
+                          src={viewModal.job.clientId.profileImage}
+                          alt="Client"
+                          className="w-12 h-12 rounded-full object-cover border border-border-light dark:border-border-dark"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <Icon name="person" size={24} />
+                        </div>
+                      )}
+                      <div>
+                        <h5 className="font-bold text-text-light-primary dark:text-dark-primary">
+                          {viewModal.job.clientId.firstName} {viewModal.job.clientId.lastName}
+                        </h5>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm text-text-light-secondary dark:text-dark-secondary">
+                          <div className="flex items-center gap-1">
+                            <Icon name="mail" size={14} />
+                            <span>{viewModal.job.clientId.email}</span>
+                          </div>
+                          {viewModal.job.clientId.phoneNumber && (
+                            <div className="flex items-center gap-1">
+                              <Icon name="call" size={14} />
+                              <span>{viewModal.job.clientId.phoneNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {loadingProfile ? (
+                      <div className="flex items-center gap-2 text-sm text-text-light-secondary dark:text-dark-secondary py-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        <span>Loading full profile...</span>
+                      </div>
+                    ) : clientProfile ? (
+                      <div className="space-y-3 pt-2">
+                        {clientProfile.companyName && (
+                          <div>
+                            <p className="text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase">Company</p>
+                            <p className="text-sm text-text-light-primary dark:text-dark-primary font-medium">{clientProfile.companyName}</p>
+                          </div>
+                        )}
+                        {clientProfile.bio && (
+                          <div>
+                            <p className="text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase">Bio</p>
+                            <p className="text-sm text-text-light-primary dark:text-dark-primary italic line-clamp-3">"{clientProfile.bio}"</p>
+                          </div>
+                        )}
+                        {clientProfile.website && (
+                          <div>
+                            <p className="text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase">Website</p>
+                            <a
+                              href={clientProfile.website.startsWith('http') ? clientProfile.website : `https://${clientProfile.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-primary hover:underline flex items-center gap-1"
+                            >
+                              <Icon name="language" size={14} />
+                              {clientProfile.website}
+                            </a>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-4 pt-1">
+                          {clientProfile.location && (
+                            <div>
+                              <p className="text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase">Location</p>
+                              <p className="text-sm text-text-light-primary dark:text-dark-primary">{clientProfile.location}</p>
+                            </div>
+                          )}
+                          {clientProfile.country && (
+                            <div>
+                              <p className="text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase">Country</p>
+                              <p className="text-sm text-text-light-primary dark:text-dark-primary">{clientProfile.country}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-text-light-secondary dark:text-dark-secondary italic py-2">No additional profile details found.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark">
                 <button
                   onClick={() => setViewModal({ isOpen: false, job: null })}
@@ -324,6 +496,22 @@ export default function Jobs() {
                 >
                   Close
                 </button>
+                {viewModal.job.status === 'pending' && (
+                  <>
+                    <button
+                      onClick={() => handleUpdateStatus(viewModal.job!._id, 'closed')}
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => handleUpdateStatus(viewModal.job!._id, 'active')}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      Approve Job
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setConfirmModal({ isOpen: true, jobId: viewModal.job!._id, title: viewModal.job!.title })

@@ -5,6 +5,11 @@ import Profile from "../models/Profile.model.js";
 import Proposal from "../models/Proposal.model.js";
 import TwilioService from "../services/twilio.service.js";
 import { RecommendationService } from "../services/recommendation.service.js";
+import Verification from "../models/Verification.model.js";
+import Notification from "../models/Notification.model.js";
+import { sendEmail } from "../services/email.service.js";
+import { getBaseTemplate } from "../utils/emailTemplates.js";
+
 
 // ===================
 // Get Jobs for Current Client
@@ -76,7 +81,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
       .sort({ isExternal: 1, posted: -1 }) // Prioritize internal (false=0, true=1)
       .limit(Number(limit))
       .skip(skip)
-      .populate("clientId", "firstName lastName email profileImage");
+      .populate("clientId", "firstName lastName email profileImage phoneNumber");
 
     const total = await Job.countDocuments(filter);
 
@@ -102,7 +107,7 @@ export const getJobById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const job = await Job.findById(id).populate("clientId", "firstName lastName email");
+    const job = await Job.findById(id).populate("clientId", "firstName lastName email phoneNumber profileImage");
 
     if (!job) {
       return res.status(404).json({ success: false, message: "Job not found" });
@@ -128,13 +133,13 @@ export const createJob = async (req: Request, res: Response) => {
     jobData.clientId = clientId;
 
     // Check user verification status to determine job status
-    const Verification = (await import("../models/Verification.model.js")).default;
     const verification = await Verification.findOne({ user: clientId });
+
 
     if (verification && verification.status === "approved") {
       jobData.status = "active";
     } else {
-      jobData.status = "draft"; // Or we could add a new 'pending_approval' status if preferred
+      jobData.status = "pending";
     }
 
     const newJob = await Job.create(jobData);
@@ -154,10 +159,12 @@ export const createJob = async (req: Request, res: Response) => {
       message: "Job created successfully",
       data: newJob,
     });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server error", error: err });
+  } catch (err: any) {
+    console.error("❌ Error in createJob:", err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message || err });
   }
 };
+
 
 // ===================
 // Update Job
@@ -205,6 +212,45 @@ export const deleteJob = async (req: Request, res: Response) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
+// ===================
+// Update Job Status (Admin Only)
+// ===================
+export const updateJobStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["active", "closed", "draft", "pending"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    const job = await Job.findByIdAndUpdate(id, { status }, { new: true });
+
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // If approved (active), we might want to trigger recommendations here
+    if (status === "active") {
+      try {
+        TwilioService.notifyMatchingFreelancers(job);
+        const recService = new RecommendationService();
+        recService.processNewJob(job._id as any);
+      } catch (notifyErr) {
+        console.error("Failed to notify freelancers on approval:", notifyErr);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Job status updated to ${status}`,
+      data: job,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: "Server error", error: err.message || err });
   }
 };
 
@@ -523,8 +569,8 @@ export const inviteFreelancer = async (req: Request, res: Response) => {
     }
 
     // Check if already invited
-    const Notification = (await import("../models/Notification.model.js")).default;
     const existingInvite = await Notification.findOne({
+
       userId: freelancerId,
       type: "job_invite",
       relatedId: job._id
@@ -548,10 +594,8 @@ export const inviteFreelancer = async (req: Request, res: Response) => {
 
     // Send Email
     try {
-      const { sendEmail } = await import("../services/email.service.js");
-      const { getBaseTemplate } = await import("../utils/emailTemplates.js");
-
       const emailHtml = getBaseTemplate({
+
         title: "You're Invited! 🚀",
         subject: `Invitation to apply for ${job.title}`,
         content: `

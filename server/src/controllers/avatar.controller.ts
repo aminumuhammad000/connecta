@@ -1,6 +1,10 @@
 import { Request, Response } from 'express';
 import User from '../models/user.model.js';
 import Profile from '../models/Profile.model.js';
+import { isCloudinaryConfigured, cloudinary } from '../config/cloudinary.config.js';
+import fs from 'fs';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 export const uploadAvatar = async (req: Request, res: Response) => {
     try {
@@ -19,16 +23,39 @@ export const uploadAvatar = async (req: Request, res: Response) => {
             return res.status(401).json({ success: false, message: 'Unauthorized' });
         }
 
-        // The file URL is provided by Cloudinary via multer-storage-cloudinary
-        // It can be in .path, .secure_url, or .url depending on version/config
-        const imageUrl = (req.file as any).path || (req.file as any).secure_url || (req.file as any).url;
+        // The file URL is provided by Cloudinary via manual upload if configured
+        let imageUrl = '';
 
-        if (!imageUrl) {
-            console.error('❌ Cloudinary did not return a URL. File object:', req.file);
-            return res.status(500).json({ success: false, message: 'Cloudinary upload failed to return a URL' });
+        if (isCloudinaryConfigured) {
+            console.log('☁️ Uploading file to Cloudinary...');
+            const tempDir = path.join(process.cwd(), 'uploads', 'temp');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+            const tempFilePath = path.join(tempDir, `${uuidv4()}-${req.file.originalname}`);
+            fs.writeFileSync(tempFilePath, req.file.buffer);
+
+            try {
+                const result = await cloudinary.uploader.upload(tempFilePath, {
+                    folder: 'connecta/avatars',
+                    transformation: [{ width: 500, height: 500, crop: 'limit' }],
+                });
+                imageUrl = result.secure_url || result.url;
+            } finally {
+                // Delete temp file
+                if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+            }
+        } else {
+            // Local storage logic (this shouldn't happen with memoryStorage unless we save manually)
+            // But if we wanted to support local we'd write the buffer to disk here.
+            return res.status(500).json({ success: false, message: 'Local storage not implemented for memory storage' });
         }
 
-        console.log('📸 Cloudinary Upload Success:', imageUrl);
+        if (!imageUrl) {
+            console.error('❌ Upload failed to return a URL. File object:', req.file);
+            return res.status(500).json({ success: false, message: 'Upload failed' });
+        }
+
+        console.log('📸 Upload Success:', imageUrl);
 
         // Update user's profile image in database
         const user = await User.findByIdAndUpdate(
@@ -74,17 +101,56 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 // Public upload (for users not yet in DB)
 export const publicUploadAvatar = async (req: Request, res: Response) => {
     try {
+        console.log('📬 Public avatar upload request received');
+        console.log('📡 Content-Type:', req.headers['content-type']);
         if (!req.file) {
+            console.error('❌ No file in request');
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
-        const imageUrl = (req.file as any).path || (req.file as any).secure_url || (req.file as any).url;
+        console.log('📎 File received:', {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size
+        });
+
+        if (!isCloudinaryConfigured) {
+            return res.status(500).json({ success: false, message: 'Cloud storage not configured' });
+        }
+
+        // Use upload_stream to send buffer directly to Cloudinary (no temp file)
+        const result = await new Promise<any>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'connecta/avatars',
+                    timeout: 120000,
+                    resource_type: 'image',
+                },
+                (error, result) => {
+                    if (error) {
+                        console.error('❌ Cloudinary stream error:', error);
+                        reject(error);
+                    } else {
+                        console.log('✅ Cloudinary upload success:', result?.secure_url);
+                        resolve(result);
+                    }
+                }
+            );
+            uploadStream.end(req.file!.buffer);
+        });
+
+        const imageUrl = result.secure_url || result.url;
+
         res.status(200).json({
             success: true,
             message: 'Image uploaded to Cloudinary',
             url: imageUrl
         });
     } catch (error: any) {
-        console.error('Public Upload error:', error);
-        res.status(500).json({ success: false, message: 'Upload failed' });
+        console.error('❌ Public Upload fatal error:', error);
+        res.status(500).json({
+            success: false,
+            message: `Upload failed: ${error.message || JSON.stringify(error)}`,
+            error: error.message || error
+        });
     }
 };

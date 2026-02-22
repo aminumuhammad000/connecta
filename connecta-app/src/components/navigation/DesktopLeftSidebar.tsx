@@ -37,10 +37,10 @@ const DesktopLeftSidebar = () => {
     }, [user?._id]);
 
     const displayTitle = isClient
-        ? ((user as any)?.companyName || 'Client Account')
+        ? (profile?.companyName || (user as any)?.companyName || 'Client')
         : (profile?.jobTitle || (user as any)?.profession || 'Freelancer');
 
-    const location = profile?.location || (user as any)?.location || 'Global';
+    const location = profile?.location || (user as any)?.location || 'Nigeria';
 
     // Stats Logic
     const stats = isClient ? [

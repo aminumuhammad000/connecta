@@ -1,5 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { HumanMessage } from "@langchain/core/messages";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import dotenv from 'dotenv';
 import SystemSettings from '../models/SystemSettings.model.js';
@@ -20,7 +20,7 @@ class LLMService {
 
             return new ChatGoogleGenerativeAI({
                 apiKey: apiKey,
-                model: settings.ai.model || "gemini-flash-latest",
+                model: settings.ai.model || "gemini-2.5-flash",
                 maxOutputTokens: 8192,
                 temperature: 0.7,
                 maxRetries: 1,
@@ -43,8 +43,7 @@ class LLMService {
                 return this.getFallbackScope(description);
             }
 
-            const prompt = ChatPromptTemplate.fromMessages([
-                ["system", `You are a Senior Project Architect. Scope the software project based on the user's input.
+            const promptText = `You are a Senior Project Architect. Scope the software project based on the user's input.
 
 ### 📋 REQUIREMENTS CATEGORIES
 1. **TEAM STRUCTURE**: Define roles (title, description, budget, skills, count).
@@ -62,15 +61,15 @@ class LLMService {
     "risks": []
 }}
 
-Return ONLY raw JSON. No markdown.`],
-                ["human", "{description}"]
-            ]);
+Return ONLY raw JSON. No markdown.
 
-            const chain = prompt.pipe(model).pipe(new StringOutputParser());
-            const response = await chain.invoke({ description });
+USER DESCRIPTION: ${description}`;
+
+            const response = await model.invoke([new HumanMessage(promptText)]);
+            const responseText = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
 
             // robust JSON parsing
-            const cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
+            const cleanedResponse = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
             try {
                 return JSON.parse(cleanedResponse);
             } catch (e) {
@@ -123,8 +122,7 @@ Return ONLY raw JSON. No markdown.`],
                 return `Dear Hiring Manager,\n\nI am writing to express my interest in the ${jobTitle} position. With my background in ${freelancerSkills[0] || 'software development'}, I am confident I can contribute effectively to your project.\n\nThank you for considering my application.\n\nSincerely,\n${freelancerName}`;
             }
 
-            const prompt = ChatPromptTemplate.fromMessages([
-                ["system", `You are a Professional Career Coach. Write a concise, personalized cover letter.
+            const promptText = `You are a Professional Career Coach. Write a concise, personalized cover letter.
 
 ### 📋 REQUIREMENTS
 1. **TONE**: Professional, enthusiastic, and confident.
@@ -133,28 +131,18 @@ Return ONLY raw JSON. No markdown.`],
 4. **FORMAT**: Standard professional letter format.
 
 ### 👤 FREELANCER
-- Name: {freelancerName}
-- Bio: {freelancerBio}
-- Skills: {freelancerSkills}
+- Name: ${freelancerName}
+- Bio: ${freelancerBio}
+- Skills: ${freelancerSkills.join(', ')}
 
 ### 💼 JOB
-- Title: {jobTitle}
-- Description: {jobDescription}
+- Title: ${jobTitle}
+- Description: ${jobDescription}
 
-Output ONLY the raw cover letter text.`],
-                ["human", "Write the cover letter."]
-            ]);
+Output ONLY the raw cover letter text.`;
 
-            const chain = prompt.pipe(model).pipe(new StringOutputParser());
-            const response = await chain.invoke({
-                freelancerName,
-                freelancerBio,
-                freelancerSkills: freelancerSkills.join(', '),
-                jobTitle,
-                jobDescription
-            });
-
-            return response.trim();
+            const response = await model.invoke([new HumanMessage(promptText)]);
+            return (typeof response.content === 'string' ? response.content : JSON.stringify(response.content)).trim();
         } catch (error) {
             console.error("LLM Cover Letter Error:", error);
             return `Dear Hiring Manager,\n\nI am writing to express my interest in the ${jobTitle} position. With my background in ${freelancerSkills[0] || 'software development'}, I am confident I can contribute effectively to your project.\n\nThank you for considering my application.\n\nSincerely,\n${freelancerName}`;
@@ -171,8 +159,7 @@ Output ONLY the raw cover letter text.`],
                 throw new Error("AI Model not available");
             }
 
-            const prompt = ChatPromptTemplate.fromMessages([
-                ["system", `You are an expert HR Data Extractor. Extract ALL profile information from the resume text below.
+            const promptText = `You are an expert HR Data Extractor. Extract ALL profile information from the resume text below.
                 
 ### 📋 OUTPUT SCHEMA (STRICT JSON)
 {{
@@ -197,15 +184,17 @@ Output ONLY the raw cover letter text.`],
 - Use "YYYY-MM-01" for dates if day is unknown.
 - Returns "Present" for current roles.
 - If specific fields are missing, omit them.
-- Return ONLY raw minified JSON. No Markdown.`],
-                ["human", "RESUME TEXT:\n{text}"]
-            ]);
+- Return ONLY raw minified JSON. No Markdown.
 
-            const chain = prompt.pipe(model).pipe(new StringOutputParser());
-            const response = await chain.invoke({ text });
+RESUME TEXT:
+${text}`;
+
+            console.log('🤖 Sending ParseResume prompt...');
+            const response = await model.invoke([new HumanMessage(promptText)]);
+            const responseText = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
 
             // robust JSON parsing
-            let cleanedResponse = response.replace(/```json/g, '').replace(/```/g, '').trim();
+            let cleanedResponse = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
 
             console.log('🤖 AI Raw Response:', cleanedResponse.substring(0, 500) + '...'); // Log start of response
             console.log('🤖 AI Response Length:', cleanedResponse.length);
