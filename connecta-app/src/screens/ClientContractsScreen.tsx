@@ -54,8 +54,21 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
 
   const mapStatus = (status: string): 'Active' | 'Pending' | 'Completed' => {
     if (status === 'active') return 'Active';
-    if (status === 'pending') return 'Pending';
-    return 'Completed';
+    if (status === 'pending_signatures' || status === 'pending') return 'Pending';
+    if (status === 'completed') return 'Completed';
+    return 'Active';
+  };
+
+  const handleSign = async (id: string) => {
+    try {
+      setIsLoading(true);
+      await contractService.signContract(id);
+      await loadContracts();
+    } catch (error) {
+      console.error('Error signing contract:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -119,7 +132,10 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
                   <View style={styles.cardTop}>
                     <View>
                       <Text style={[styles.title, { color: c.text }]}>{item.title}</Text>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>Client: {item.client?.firstName || 'N/A'} {item.client?.lastName || ''}</Text>
+                      <Text style={{ color: c.subtext, fontSize: 12 }}>
+                        {item.clientId === item.client?._id ? 'Freelancer' : 'Client'}:
+                        {item.freelancerId === item.client?._id ? item.client?.firstName : item.freelancer?.firstName || 'N/A'}
+                      </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end' }}>
                       <View style={[styles.pill, pillStyle(mapStatus(item.status))]}>
@@ -128,7 +144,7 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
                     </View>
                   </View>
 
-                  {item.status === 'pending' ? (
+                  {mapStatus(item.status) === 'Pending' ? (
                     <View style={styles.metaRow}>
                       <View>
                         <Text style={{ color: c.subtext, fontSize: 12 }}>Sent Date</Text>
@@ -152,8 +168,11 @@ const ClientContractsScreen: React.FC<any> = ({ navigation }) => {
                     </View>
                   )}
 
-                  {item.status === 'Pending' ? (
-                    <TouchableOpacity style={[styles.signBtn, { backgroundColor: '#FD6730' }]}>
+                  {mapStatus(item.status) === 'Pending' ? (
+                    <TouchableOpacity
+                      style={[styles.signBtn, { backgroundColor: '#FD6730' }]}
+                      onPress={() => handleSign(item._id)}
+                    >
                       <Text style={styles.signText}>Sign Contract</Text>
                     </TouchableOpacity>
                   ) : (
