@@ -40,7 +40,17 @@ const server = http.createServer(app);
 import { setIO } from './core/utils/socketIO.js';
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:8081", "http://localhost:19000", "http://localhost:19001", "http://172.20.10.3:5000", "*"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:8081",
+      "http://localhost:19000",
+      "http://localhost:19001",
+      "http://192.168.100.10:5000",
+      "http://192.168.100.10:8081",
+      "http://172.20.10.3:5000",
+      "http://172.20.10.4:5000",
+      "http://172.20.10.4:8081"
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -60,7 +70,12 @@ app.use(cors({
     "https://app.myconnecta.ng",
     "https://api.myconnecta.ng",
     "http://172.20.10.3:5000",
-    "*"
+    "http://172.20.10.4",
+    "http://172.20.10.4:8081",
+    "http://172.20.10.4:5000",
+    "http://192.168.100.10",
+    "http://192.168.100.10:8081",
+    "http://192.168.100.10:5000"
   ],
   credentials: true
 }));
@@ -162,6 +177,7 @@ app.get("/debug/setup", async (req, res) => {
       // Update password if exists
       const hashedPassword = await bcrypt.default.hash('password123', 10);
       admin.password = hashedPassword;
+      admin.userType = 'admin'; // Force admin role
       await admin.save();
     } else {
       const hashedPassword = await bcrypt.default.hash('password123', 10);
@@ -178,10 +194,15 @@ app.get("/debug/setup", async (req, res) => {
 
     // Create a Client
     const clientEmail = 'client@connecta.com';
-    let client = await User.findOne({ email: clientEmail });
-    if (!client) {
+    let clientTest = await User.findOne({ email: clientEmail });
+    if (clientTest) {
       const hashedPassword = await bcrypt.default.hash('password123', 10);
-      client = await User.create({
+      clientTest.password = hashedPassword;
+      clientTest.userType = 'client';
+      await clientTest.save();
+    } else {
+      const hashedPassword = await bcrypt.default.hash('password123', 10);
+      clientTest = await User.create({
         firstName: 'John',
         lastName: 'Client',
         email: clientEmail,
@@ -191,18 +212,190 @@ app.get("/debug/setup", async (req, res) => {
       });
     }
 
+    // Create a Freelancer
+    const freelancerEmail = 'freelancer@connecta.com';
+    let freelancerTest = await User.findOne({ email: freelancerEmail });
+    if (freelancerTest) {
+      const hashedPassword = await bcrypt.default.hash('password123', 10);
+      freelancerTest.password = hashedPassword;
+      freelancerTest.userType = 'freelancer';
+      await freelancerTest.save();
+    } else {
+      const hashedPassword = await bcrypt.default.hash('password123', 10);
+      freelancerTest = await User.create({
+        firstName: 'Jane',
+        lastName: 'Freelancer',
+        email: freelancerEmail,
+        password: hashedPassword,
+        userType: 'freelancer',
+        isVerified: true
+      });
+    }
+
     // Verify immediately
     const isMatch = await bcrypt.default.compare('password123', admin.password);
 
     res.send(`
-      <h1>Setup Complete (Passwords Hashed)</h1>
-      <p><b>Verification Check: ${isMatch ? '<span style="color:green">MATCH</span>' : '<span style="color:red">FAIL</span>'}</b></p>
-      <p>Users created/updated:</p>
-      <ul>
-        <li>Admin: <b>${adminEmail}</b> / password123</li>
-        <li>Client: <b>${clientEmail}</b> / password123</li>
-      </ul>
-      <p><a href="http://localhost:5174/login">Go to Admin Login</a></p>
+      <style>
+        body { font-family: sans-serif; padding: 40px; line-height: 1.6; background: #f4f7f6; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        h1 { color: #2c3e50; }
+        .match { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        ul { list-style: none; padding: 0; }
+        li { background: #fff; margin: 10px 0; padding: 15px; border-radius: 4px; border-left: 4px solid #3498db; }
+        .email { font-weight: bold; color: #2980b9; }
+        .pwd { color: #7f8c8d; }
+        .role { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; background: #e0e0e0; margin-left: 10px; }
+      </style>
+      <div class="card">
+        <h1>Setup Complete</h1>
+        <p>Database state: <b>Memory (Reset on restart)</b></p>
+        <p>Verification Check: <span class="${isMatch ? 'match' : 'fail'}">${isMatch ? 'PASS' : 'FAIL'}</span></p>
+        
+        <h3>Test Accounts (Password: 12345678):</h3>
+        <p><i>Note: Updated passwords to <b>password123</b> for consistency.</i></p>
+        <ul>
+          <li>
+            <span class="email">${adminEmail}</span> <span class="role">Admin</span>
+            <br/><span class="pwd">password123</span>
+          </li>
+          <li>
+            <span class="email">${clientEmail}</span> <span class="role">Client</span>
+            <br/><span class="pwd">password123</span>
+          </li>
+          <li>
+            <span class="email">${freelancerEmail}</span> <span class="role">Freelancer</span>
+            <br/><span class="pwd">password123</span>
+          </li>
+        </ul>
+        <hr/>
+        <p><a href="http://localhost:5173/login">Go to Admin Dashboard</a></p>
+        <p>Open the Mobile App to log in as Client or Freelancer.</p>
+      </div>
+    `);
+  } catch (error: any) {
+    console.error(error);
+    res.status(500).send(`Error: ${error.message}`);
+  }
+});
+
+app.get("/debug/seed-freelancers", async (req, res) => {
+  try {
+    const mongoose = await import('mongoose');
+    const bcrypt = await import('bcryptjs');
+    const User = mongoose.model('User');
+
+    let ProfileModel: any;
+    try { ProfileModel = mongoose.model('Profile'); } catch { ProfileModel = null; }
+
+    const hashedPassword = await bcrypt.default.hash('password123', 10);
+
+    const freelancerData = [
+      { firstName: 'Aminu', lastName: 'Musa', email: 'aminu@test.com', jobTitle: 'Full Stack Developer', skills: ['React', 'Node.js', 'TypeScript', 'MongoDB'], hourlyRate: 5000, location: 'Kano, Nigeria', bio: 'Experienced full-stack developer with 5+ years building scalable web apps.' },
+      { firstName: 'Fatima', lastName: 'Bello', email: 'fatima@test.com', jobTitle: 'UI/UX Designer', skills: ['Figma', 'Adobe XD', 'Illustrator', 'Prototyping'], hourlyRate: 4000, location: 'Lagos, Nigeria', bio: 'Creative UI/UX designer passionate about building beautiful and intuitive products.' },
+      { firstName: 'Ibrahim', lastName: 'Suleiman', email: 'ibrahim@test.com', jobTitle: 'Mobile Developer', skills: ['React Native', 'Flutter', 'Kotlin', 'Swift'], hourlyRate: 6000, location: 'Abuja, Nigeria', bio: 'Mobile developer specializing in cross-platform apps with 4 years of experience.' },
+      { firstName: 'Zainab', lastName: 'Usman', email: 'zainab@test.com', jobTitle: 'Data Scientist', skills: ['Python', 'TensorFlow', 'Pandas', 'SQL', 'Machine Learning'], hourlyRate: 7000, location: 'Kaduna, Nigeria', bio: 'Data scientist turning raw data into actionable insights using modern ML techniques.' },
+      { firstName: 'Umar', lastName: 'Yusuf', email: 'umar@test.com', jobTitle: 'Backend Developer', skills: ['Node.js', 'Python', 'PostgreSQL', 'Redis', 'Docker'], hourlyRate: 5500, location: 'Port Harcourt, Nigeria', bio: 'Backend engineer who loves designing fast, secure, and scalable APIs.' },
+      { firstName: 'Halima', lastName: 'Abdullahi', email: 'halima@test.com', jobTitle: 'Content Writer', skills: ['Copywriting', 'SEO', 'Blogging', 'Social Media', 'Research'], hourlyRate: 2000, location: 'Ibadan, Nigeria', bio: 'SEO-driven content writer with a knack for engaging storytelling and brand voice.' },
+      { firstName: 'Mustapha', lastName: 'Garba', email: 'mustapha@test.com', jobTitle: 'DevOps Engineer', skills: ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Terraform'], hourlyRate: 8000, location: 'Enugu, Nigeria', bio: 'DevOps engineer building reliable infrastructure pipelines for startups and enterprises.' },
+      { firstName: 'Rukayya', lastName: 'Hassan', email: 'rukayya@test.com', jobTitle: 'Graphic Designer', skills: ['Photoshop', 'Illustrator', 'Canva', 'Branding', 'Logo Design'], hourlyRate: 3000, location: 'Kano, Nigeria', bio: 'Graphic designer bringing brands to life with clean, modern visual identities.' },
+      { firstName: 'Bashir', lastName: 'Isa', email: 'bashir@test.com', jobTitle: 'Cybersecurity Analyst', skills: ['Penetration Testing', 'Kali Linux', 'Network Security', 'OWASP'], hourlyRate: 9000, location: 'Abuja, Nigeria', bio: 'Certified ethical hacker protecting businesses from digital threats.' },
+      { firstName: 'Aisha', lastName: 'Danladi', email: 'aisha@test.com', jobTitle: 'Project Manager', skills: ['Agile', 'Scrum', 'JIRA', 'Risk Management', 'Leadership'], hourlyRate: 6500, location: 'Lagos, Nigeria', bio: 'PMP-certified project manager delivering projects on time, within scope and budget.' },
+    ];
+
+    const created: string[] = [];
+    const skipped: string[] = [];
+
+    for (const data of freelancerData) {
+      const existing = await User.findOne({ email: data.email });
+      if (existing) {
+        // Also fix profile for existing users (in case it was broken)
+        if (ProfileModel) {
+          try {
+            await ProfileModel.deleteOne({ user: existing._id });
+            await ProfileModel.create({
+              user: existing._id,
+              bio: data.bio,
+              skills: data.skills,
+              hourlyRate: data.hourlyRate,
+              location: data.location,
+              jobTitle: data.jobTitle,
+              rating: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)),
+              totalReviews: Math.floor(Math.random() * 20 + 1),
+              jobSuccessScore: Math.floor(Math.random() * 20 + 75),
+            });
+          } catch (_) { }
+        }
+        skipped.push(data.email);
+        continue;
+      }
+
+      const user = await User.create({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: hashedPassword,
+        userType: 'freelancer',
+        isVerified: true,
+        jobTitle: data.jobTitle,
+        skills: data.skills,
+        hourlyRate: data.hourlyRate,
+        location: data.location,
+      });
+
+      // Create profile if model is available (use correct field: 'user' not 'userId')
+      if (ProfileModel) {
+        try {
+          await ProfileModel.deleteOne({ user: user._id }); // clean up any broken profile
+          await ProfileModel.create({
+            user: user._id,
+            bio: data.bio,
+            skills: data.skills,
+            hourlyRate: data.hourlyRate,
+            location: data.location,
+            jobTitle: data.jobTitle,
+            rating: parseFloat((Math.random() * 1.5 + 3.5).toFixed(1)), // 3.5–5.0
+            totalReviews: Math.floor(Math.random() * 20 + 1),
+            jobSuccessScore: Math.floor(Math.random() * 20 + 75), // 75–95%
+          });
+        } catch (profileErr) {
+          console.warn(`Profile creation failed for ${data.email}:`, profileErr);
+        }
+      }
+
+      created.push(data.email);
+    }
+
+    const rows = freelancerData.map(d => `
+      <tr>
+        <td>${d.firstName} ${d.lastName}</td>
+        <td>${d.email}</td>
+        <td>${d.jobTitle}</td>
+        <td>₦${d.hourlyRate.toLocaleString()}/hr</td>
+        <td>${d.location}</td>
+        <td>${created.includes(d.email) ? '<span style="color:green">✅ Created</span>' : '<span style="color:orange">⚠️ Skipped</span>'}</td>
+      </tr>`).join('');
+
+    res.send(`
+      <style>
+        body { font-family: sans-serif; padding: 30px; background: #f4f7f6; }
+        .card { background: white; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; }
+        h1 { color: #2c3e50; } table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th { background: #3498db; color: white; padding: 10px 14px; text-align: left; }
+        td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        p { color: #555; }
+      </style>
+      <div class="card">
+        <h1>🧑‍💻 Freelancer Seeding Complete</h1>
+        <p>✅ Created: <strong>${created.length}</strong> &nbsp;|&nbsp; ⚠️ Skipped (already exist): <strong>${skipped.length}</strong></p>
+        <p>Password for all accounts: <strong>password123</strong></p>
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Job Title</th><th>Rate</th><th>Location</th><th>Status</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     `);
   } catch (error: any) {
     console.error(error);

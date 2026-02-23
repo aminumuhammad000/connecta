@@ -563,6 +563,13 @@ export const inviteFreelancer = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: "Unauthorized: You do not own this job" });
     }
 
+    if (job.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot invite freelancers until your job has been approved by admin.",
+      });
+    }
+
     const freelancer = await User.findById(freelancerId);
     if (!freelancer) {
       return res.status(404).json({ success: false, message: "Freelancer not found" });

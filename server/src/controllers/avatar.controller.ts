@@ -101,56 +101,64 @@ export const uploadAvatar = async (req: Request, res: Response) => {
 // Public upload (for users not yet in DB)
 export const publicUploadAvatar = async (req: Request, res: Response) => {
     try {
-        console.log('📬 Public avatar upload request received');
-        console.log('📡 Content-Type:', req.headers['content-type']);
+        const logFile = 'public_upload_debug.log';
+        const log = (msg: string) => fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`);
+
+        log('📬 Public upload request received');
         if (!req.file) {
-            console.error('❌ No file in request');
+            log('❌ No file in request');
             return res.status(400).json({ success: false, message: 'No file uploaded' });
         }
-        console.log('📎 File received:', {
-            originalname: req.file.originalname,
-            mimetype: req.file.mimetype,
-            size: req.file.size
-        });
+        log(`📎 File: ${req.file.originalname} (${req.file.size} bytes)`);
 
-        if (!isCloudinaryConfigured) {
-            return res.status(500).json({ success: false, message: 'Cloud storage not configured' });
-        }
+        let imageUrl = '';
 
-        // Use upload_stream to send buffer directly to Cloudinary (no temp file)
-        const result = await new Promise<any>((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    folder: 'connecta/avatars',
-                    timeout: 120000,
-                    resource_type: 'image',
-                },
-                (error, result) => {
-                    if (error) {
-                        console.error('❌ Cloudinary stream error:', error);
-                        reject(error);
-                    } else {
-                        console.log('✅ Cloudinary upload success:', result?.secure_url);
-                        resolve(result);
+        if (isCloudinaryConfigured) {
+            log('☁️ Using Cloudinary');
+            const result = await new Promise<any>((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    { folder: 'connecta/avatars', timeout: 120000, resource_type: 'image' },
+                    (error, result) => {
+                        if (error) {
+                            log(`❌ Cloudinary error: ${error.message}`);
+                            reject(error);
+                        } else {
+                            log(`✅ Cloudinary success: ${result?.secure_url}`);
+                            resolve(result);
+                        }
                     }
-                }
-            );
-            uploadStream.end(req.file!.buffer);
-        });
+                );
+                uploadStream.end(req.file!.buffer);
+            });
+            imageUrl = result.secure_url || result.url;
+        } else {
+            log('📁 Using local fallback');
+            const uploadDir = path.join(process.cwd(), 'uploads', 'avatars');
+            if (!fs.existsSync(uploadDir)) {
+                log(`creating dir: ${uploadDir}`);
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
 
-        const imageUrl = result.secure_url || result.url;
+            const filename = `public-${uuidv4()}-${req.file.originalname}`;
+            const filePath = path.join(uploadDir, filename);
+            log(`Writing to: ${filePath}`);
+            fs.writeFileSync(filePath, req.file.buffer);
+            imageUrl = `/uploads/avatars/${filename}`;
+            log(`✅ Local success: ${imageUrl}`);
+        }
 
         res.status(200).json({
             success: true,
-            message: 'Image uploaded to Cloudinary',
+            message: isCloudinaryConfigured ? 'Image uploaded to Cloudinary' : 'Image saved locally',
             url: imageUrl
         });
     } catch (error: any) {
+        fs.appendFileSync('public_upload_debug.log', `[${new Date().toISOString()}] ❌ FATAL ERROR: ${error.message}\n${error.stack}\n`);
         console.error('❌ Public Upload fatal error:', error);
         res.status(500).json({
             success: false,
-            message: `Upload failed: ${error.message || JSON.stringify(error)}`,
-            error: error.message || error
+            message: `Upload failed: ${error.message}`,
+            error: error.message
         });
     }
 };

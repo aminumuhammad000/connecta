@@ -192,14 +192,34 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
 
     const handleFundProject = () => {
         if (!projectData?.project) return;
-        const clientId = projectData.project.clientId?._id || projectData.project.clientId;
-        console.log('💰 handleFundProject clientId:', clientId, 'user:', JSON.stringify(user?._id || user?.id));
+
+        // Find first accepted freelancer in any role to use as payeeId
+        const acceptedRole = projectData.project.roles?.find(
+            (r: any) => r.freelancerId && (r.status === 'accepted' || r.status === 'active')
+        );
+        const payeeId = acceptedRole?.freelancerId?._id || acceptedRole?.freelancerId;
+        const payeeName = acceptedRole?.freelancerId?.firstName
+            ? `${acceptedRole.freelancerId.firstName} ${acceptedRole.freelancerId.lastName || ''}`.trim()
+            : 'Team Member';
+
+        const budget = projectData.project.totalBudget || projectData.project.budget || 0;
+
+        if (!budget) {
+            showAlert({ title: 'No budget set for this project', type: 'error' });
+            return;
+        }
+
+        if (!payeeId) {
+            showAlert({ title: 'No accepted freelancer found in this project yet', type: 'warning' });
+            return;
+        }
+
         navigation.navigate('Payment', {
-            projectId: projectId,
-            amount: projectData.project.totalBudget,
+            projectId: projectData.project._id || projectId,
+            amount: budget,
             projectTitle: projectData.project.title,
-            freelancerId: clientId, // Self-payment for project escrow
-            freelancerName: 'Project Escrow',
+            freelancerId: payeeId,
+            freelancerName: payeeName,
             paymentType: 'project_payment'
         });
     };

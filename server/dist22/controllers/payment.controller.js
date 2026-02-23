@@ -3,6 +3,7 @@ import Transaction from '../models/Transaction.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Withdrawal from '../models/Withdrawal.model.js';
 import Project from '../models/Project.model.js';
+import CollaboProject from '../models/CollaboProject.model.js';
 import { Job } from '../models/Job.model.js';
 import User from '../models/user.model.js';
 import flutterwaveService from '../services/flutterwave.service.js';
@@ -93,10 +94,16 @@ export const initializePayment = async (req, res) => {
                 message: 'Missing required fields: projectId, amount, payeeId',
             });
         }
-        // Verify project exists
-        const project = await Project.findById(projectId);
+        // Verify project exists — check both Project and CollaboProject
+        let project = await Project.findById(projectId);
+        let projectTitle = project?.title;
         if (!project) {
-            return res.status(404).json({ success: false, message: 'Project not found' });
+            const collaboProject = await CollaboProject.findById(projectId);
+            if (!collaboProject) {
+                return res.status(404).json({ success: false, message: 'Project not found' });
+            }
+            project = collaboProject;
+            projectTitle = collaboProject.title;
         }
         // Calculate platform fee
         const platformFee = (amount * PLATFORM_FEE_PERCENTAGE) / 100;
@@ -113,7 +120,7 @@ export const initializePayment = async (req, res) => {
             payment.amount = amount;
             payment.platformFee = platformFee;
             payment.netAmount = netAmount;
-            payment.description = description || `Payment for ${project.title}`;
+            payment.description = description || `Payment for ${projectTitle}`;
             payment.milestoneId = milestoneId;
             payment.paymentType = milestoneId ? 'milestone' : 'full_payment';
         }
@@ -129,7 +136,7 @@ export const initializePayment = async (req, res) => {
                 netAmount,
                 currency: 'NGN',
                 paymentType: milestoneId ? 'milestone' : 'full_payment',
-                description: description || `Payment for ${project.title}`,
+                description: description || `Payment for ${projectTitle}`,
                 status: 'pending',
                 escrowStatus: 'none',
             });

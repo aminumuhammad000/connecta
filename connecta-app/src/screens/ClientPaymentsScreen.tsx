@@ -16,6 +16,10 @@ interface TxnItem {
   rawAmount: number;
   status: 'Completed' | 'Pending' | 'Failed' | 'Refunded';
   avatar: string;
+  projectId?: string;
+  payeeId?: string;
+  payeeFirstName?: string;
+  projectTitle?: string;
 }
 
 const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
@@ -69,6 +73,11 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
         rawAmount: p.amount,
         status: p.status.charAt(0).toUpperCase() + p.status.slice(1) as any,
         avatar: payee?.profileImage || `https://ui-avatars.com/api/?name=${payee?.firstName}+${payee?.lastName}&background=random`,
+        // Pass through IDs needed for PaymentScreen
+        projectId: (project?._id || p.projectId) as string,
+        payeeId: (payee?._id || p.freelancerId) as string,
+        payeeFirstName: payee ? `${payee.firstName} ${payee.lastName || ''}`.trim() : undefined,
+        projectTitle: project?.title,
       };
     });
   }, [payments]);
@@ -82,10 +91,19 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
 
   const handleTransactionClick = (t: TxnItem) => {
     if (t.status === 'Pending') {
+      if (!t.projectId || !t.payeeId) {
+        // Fallback: can't resume payment without required fields — show info
+        alert('This payment cannot be resumed. Please contact support.');
+        return;
+      }
       navigation.navigate('Payment', {
         amount: t.rawAmount,
-        reference: t.purpose,
-        paymentId: t.id
+        projectId: t.projectId,
+        payeeId: t.payeeId,
+        projectTitle: t.projectTitle || t.purpose,
+        freelancerId: t.payeeId,
+        freelancerName: t.payeeFirstName || 'Freelancer',
+        paymentType: 'project_payment'
       });
     } else {
       // For completed/other, maybe show details or invoice

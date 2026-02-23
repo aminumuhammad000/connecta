@@ -1,0 +1,20 @@
+[2026-02-23T11:34:01.712Z] 📬 Public upload request received
+[2026-02-23T11:34:01.714Z] 📎 File: 6acbd6fa-c0da-4d82-9ae0-6c8510459ce1 (70850 bytes)
+[2026-02-23T11:34:01.714Z] ☁️ Using Cloudinary
+[2026-02-23T11:34:04.911Z] ✅ Cloudinary success: https://res.cloudinary.com/dl4smhb8s/image/upload/v1771846444/connecta/avatars/kpgnpra6gygy0at7cijm.jpg
+[2026-02-23T11:41:54.066Z] 📬 Public upload request received
+[2026-02-23T11:41:54.072Z] 📎 File: e345807b-5740-4b98-9469-bf36e0373c52 (70850 bytes)
+[2026-02-23T11:41:54.072Z] ☁️ Using Cloudinary
+[2026-02-23T11:41:59.139Z] ❌ Cloudinary error: Request Timeout
+[2026-02-23T11:41:59.145Z] ❌ FATAL ERROR: Request Timeout
+undefined
+[2026-02-23T11:42:01.478Z] 📬 Public upload request received
+[2026-02-23T11:42:01.478Z] 📎 File: e345807b-5740-4b98-9469-bf36e0373c52 (70850 bytes)
+[2026-02-23T11:42:01.478Z] ☁️ Using Cloudinary
+[2026-02-23T11:42:06.481Z] ❌ Cloudinary error: Request Timeout
+[2026-02-23T11:42:06.482Z] ❌ FATAL ERROR: Request Timeout
+undefined
+[2026-02-23T11:42:09.107Z] 📬 Public upload request received
+[2026-02-23T11:42:09.107Z] 📎 File: e345807b-5740-4b98-9469-bf36e0373c52 (70850 bytes)
+[2026-02-23T11:42:09.108Z] ☁️ Using Cloudinary
+[2026-02-23T11:42:12.234Z] ✅ Cloudinary success: https://res.cloudinary.com/dl4smhb8s/image/upload/v1771846931/connecta/avatars/fas3pdm4je9ghckil3r4.jpg

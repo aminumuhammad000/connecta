@@ -236,8 +236,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   }
 
   // Combine active jobs and projects for display
-  const activeJobs = myJobs.filter(j => j.status === 'active' || j.status === 'in_progress');
-  const activeCollabos = collaboProjects.filter(p => p.status === 'active' || p.status === 'planning');
+  const activeJobs = Array.isArray(myJobs) ? myJobs.filter(j => j.status === 'active' || j.status === 'in_progress') : [];
+  const activeCollabos = Array.isArray(collaboProjects) ? collaboProjects.filter(p => p.status === 'active' || p.status === 'planning') : [];
   const allActiveProjects = [...activeJobs, ...activeCollabos];
 
   return (
@@ -678,7 +678,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                     )}
 
                     {/* Collabo Projects Section */}
-                    {collaboProjects.length > 0 && (
+                    {Array.isArray(collaboProjects) && collaboProjects.length > 0 && (
                       <View>
                         <Text style={{ fontSize: 12, fontWeight: '700', color: c.subtext, marginBottom: 8, textTransform: 'uppercase' }}>Team Projects (Collabo)</Text>
                         {collaboProjects.map((project) => (
@@ -711,7 +711,7 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                       </View>
                     )}
 
-                    {myJobs.length === 0 && collaboProjects.length === 0 && (
+                    {Array.isArray(myJobs) && myJobs.length === 0 && Array.isArray(collaboProjects) && collaboProjects.length === 0 && (
                       <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>No active projects found.</Text>
                     )}
                   </>

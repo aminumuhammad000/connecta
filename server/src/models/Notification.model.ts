@@ -20,6 +20,7 @@ export type NotificationType =
   | 'gig_matched'
   | 'collabo_invite'
   | 'collabo_started'
+  | 'job_invite'
   | 'system';
 
 export interface INotification extends Document {
@@ -82,6 +83,7 @@ const NotificationSchema = new Schema<INotification>(
         'gig_matched',
         'collabo_invite',
         'collabo_started',
+        'job_invite',
         'system',
       ],
     },

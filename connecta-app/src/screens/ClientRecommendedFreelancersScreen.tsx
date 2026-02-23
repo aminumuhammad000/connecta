@@ -135,11 +135,14 @@ const ClientRecommendedFreelancersScreen: React.FC<any> = ({ navigation }) => {
     try {
       setIsInviting(true);
 
+      const freelancerId = selectedFreelancer._id || (selectedFreelancer as any).id;
+      if (!freelancerId) throw new Error('Could not resolve freelancer ID');
+
       if (inviteSelectedJob.type === 'collabo') {
-        await (collaboService as any).inviteToRole(inviteSelectedJob._id, selectedFreelancer._id);
+        await (collaboService as any).inviteToRole(inviteSelectedJob._id, freelancerId);
         showAlert('Invitation Sent', `Invitation sent to ${selectedFreelancer.firstName} for "${inviteSelectedJob.title}"`, 'success');
       } else {
-        await (jobService as any).inviteFreelancer(inviteSelectedJob._id, selectedFreelancer._id);
+        await (jobService as any).inviteFreelancer(inviteSelectedJob._id, freelancerId);
         showAlert('Invitation Sent', `Invitation sent to ${selectedFreelancer.firstName} for "${inviteSelectedJob.title}"`, 'success');
       }
 

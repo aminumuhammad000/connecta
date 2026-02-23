@@ -18,20 +18,28 @@ export default function RootNavigator() {
     const { isAuthenticated, user } = useAuth();
     const { role } = useRole();
 
-    const initialRoute = 'Landing';
-
     return (
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
-            <Stack.Screen name="Landing" component={MobileLandingScreen} options={{ title: 'Home' }} />
-            <Stack.Screen name="PublicSearch" component={PublicJobSearchScreen} options={{ title: 'Search Jobs' }} />
-            <Stack.Screen name="PublicFreelancerSearch" component={PublicFreelancerSearchScreen} options={{ title: 'Search Freelancers' }} />
-            <Stack.Screen name="PublicJobDetail" component={PublicJobDetailScreen} options={{ title: 'Job Details' }} />
-            <Stack.Screen name="PublicFreelancerProfile" component={PublicFreelancerProfileScreen} options={{ title: 'Freelancer Profile' }} />
-            <Stack.Screen name="Auth" component={AuthNavigator} options={{ title: 'Auth' }} />
-
-            {/* Main App Routes - Only accessible if authenticated, but defined here for navigation */}
-            <Stack.Screen name="ClientMain" component={ClientNavigator} options={{ title: 'Client Dashboard' }} />
-            <Stack.Screen name="FreelancerMain" component={FreelancerNavigator} options={{ title: 'Freelancer Dashboard' }} />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {!isAuthenticated ? (
+                /* Public & Auth Flow */
+                <>
+                    <Stack.Screen name="Landing" component={MobileLandingScreen} options={{ title: 'Home' }} />
+                    <Stack.Screen name="PublicSearch" component={PublicJobSearchScreen} options={{ title: 'Search Jobs' }} />
+                    <Stack.Screen name="PublicFreelancerSearch" component={PublicFreelancerSearchScreen} options={{ title: 'Search Freelancers' }} />
+                    <Stack.Screen name="PublicJobDetail" component={PublicJobDetailScreen} options={{ title: 'Job Details' }} />
+                    <Stack.Screen name="PublicFreelancerProfile" component={PublicFreelancerProfileScreen} options={{ title: 'Freelancer Profile' }} />
+                    <Stack.Screen name="Auth" component={AuthNavigator} options={{ title: 'Auth' }} />
+                </>
+            ) : (
+                /* Protected App Flow */
+                <>
+                    {role === 'client' ? (
+                        <Stack.Screen name="ClientMain" component={ClientNavigator} options={{ title: 'Client Dashboard' }} />
+                    ) : (
+                        <Stack.Screen name="FreelancerMain" component={FreelancerNavigator} options={{ title: 'Freelancer Dashboard' }} />
+                    )}
+                </>
+            )}
         </Stack.Navigator>
     );
 }

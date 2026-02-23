@@ -22,7 +22,7 @@ router.post("/reset-password", resetPassword);
 router.get("/me", authenticate, getMe); // GET /api/users/me
 router.put("/me", authenticate, updateMe); // PUT /api/users/me
 router.post("/verify-email", authenticate, verifyEmail); // POST /api/users/verify-email
-router.post("/resend-verification", authenticate, resendVerificationOTP); // POST /api/users/resend-verification
+router.post("/resend-verification", resendVerificationOTP); // POST /api/users/resend-verification
 router.post("/push-token", authenticate, updatePushToken); // POST /api/users/push-token
 router.post("/change-password", authenticate, changePassword); // POST /api/users/change-password
 router.post("/switch-type", authenticate, switchUserType); // POST /api/users/switch-type

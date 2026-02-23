@@ -31,6 +31,7 @@ const NotificationSchema = new Schema({
             'gig_matched',
             'collabo_invite',
             'collabo_started',
+            'job_invite',
             'system',
         ],
     },

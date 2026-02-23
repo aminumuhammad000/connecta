@@ -240,15 +240,16 @@ export const signup = async (req, res) => {
             balanceAfter: 50,
             description: 'Welcome bonus for joining Connecta! 🎉'
         });
-        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: newUser._id, userType: newUser.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
         // Clean up OTP
         await OTP.deleteOne({ _id: otpRecord._id });
         // Send Welcome Email
         sendWelcomeEmail(newUser.email, newUser.firstName, newUser.preferredLanguage || 'en').catch(console.error);
+        console.log('✅ Signup successful. Returning data for:', newUser.email);
         res.status(201).json({ user: newUser, token, success: true });
     }
     catch (err) {
-        console.error('Signup completion error:', err);
+        console.error('❌ Signup completion error:', err);
         res.status(500).json({ message: "Server error", error: err });
     }
 };
@@ -279,7 +280,7 @@ export const signin = async (req, res) => {
             console.error("JWT_SECRET is missing in environment variables");
             return res.status(500).json({ message: "Server configuration error" });
         }
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
         console.log('Token generated successfully');
         res.status(200).json({ success: true, user, token });
     }
@@ -305,7 +306,7 @@ export const googleSignin = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user)
             return res.status(404).json({ message: "User not found, please sign up first" });
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(200).json({ success: true, user, token });
     }
     catch (err) {
@@ -387,7 +388,7 @@ export const googleSignup = async (req, res) => {
             balanceAfter: 50,
             description: 'Welcome bonus for joining Connecta! 🎉'
         });
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({ user, token });
     }
     catch (err) {
@@ -399,12 +400,20 @@ export const googleSignup = async (req, res) => {
 // ===================
 export const resendVerificationOTP = async (req, res) => {
     try {
+        const { email } = req.body;
         const userId = req.user?.id;
-        if (!userId)
-            return res.status(401).json({ message: "Unauthorized" });
-        const user = await User.findById(userId);
-        if (!user)
+        console.log('Resend verification attempt:', { email, userId });
+        let user;
+        if (userId) {
+            user = await User.findById(userId);
+        }
+        else if (email) {
+            user = await User.findOne({ email });
+        }
+        if (!user) {
+            console.log('Resend failed: User not found');
             return res.status(404).json({ message: "User not found" });
+        }
         if (user.isVerified) {
             return res.status(400).json({ message: "Email is already verified" });
         }
@@ -412,13 +421,15 @@ export const resendVerificationOTP = async (req, res) => {
         const otp = Math.floor(1000 + Math.random() * 9000).toString();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
         // Manage OTP record
-        await OTP.deleteMany({ userId: user._id });
-        await OTP.create({ userId: user._id, otp, expiresAt });
+        await OTP.deleteMany({ email: user.email });
+        await OTP.create({ userId: user._id, email: user.email, otp, expiresAt });
         // Send OTP email
         const result = await sendOTPEmail(user.email, otp, user.firstName, 'EMAIL_VERIFICATION', user.preferredLanguage || 'en');
         if (!result.success) {
+            console.error('Failed to send verification email:', result.error);
             return res.status(500).json({ message: "Failed to send verification email" });
         }
+        console.log('Resend success: Verification code sent to', user.email);
         res.status(200).json({ success: true, message: "Verification code sent" });
     }
     catch (err) {

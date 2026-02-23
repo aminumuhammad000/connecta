@@ -7,7 +7,7 @@
 const USE_LOCAL_SERVER = true;
 
 // Server URLs
-const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API
+const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API confirmed via curl
 const LOCAL_SERVER = 'http://192.168.100.10:5000'; // Local development server
 
 export const API_BASE_URL = USE_LOCAL_SERVER ? LOCAL_SERVER : ONLINE_SERVER;

@@ -47,7 +47,7 @@ export default function Login() {
 
         // If user not found on production, show helpful message
         if (backendError.response?.data?.message?.includes('User not found')) {
-          toast.error('Account not found on production server. Please use valid credentials or contact administrator.')
+          toast.error('Account not found. If testing locally, please ensure you have run the setup route (e.g., /debug/setup).')
           setLoading(false)
           return
         }

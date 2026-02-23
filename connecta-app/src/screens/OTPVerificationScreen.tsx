@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { verifyOTP, signup, verifyEmail, resendVerification } from '../services/authService';
+import { verifyOTP, signup, verifyEmail, resendVerification, initiateSignup, sendPasswordResetOTP } from '../services/authService';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../utils/i18n';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Haptics from 'expo-haptics';
@@ -21,6 +22,7 @@ const OTPVerificationScreen: React.FC = () => {
     const route = useRoute();
     const { t, lang } = useTranslation();
     const { showAlert } = useInAppAlert();
+    const { signup: performSignup } = useAuth();
 
     const { email, mode = 'forgotPassword' } = (route.params as any) || {};
 
@@ -76,38 +78,34 @@ const OTPVerificationScreen: React.FC = () => {
             if (mode === 'signup') {
                 const pendingData = await storage.getPendingSignupData();
 
-                const response = await signup({
+                const response = await performSignup({
                     ...pendingData,
                     otp: code,
-                    autoLogin: true
+                }, true); // autoLogin: true
+
+                const user = response.user || (response as any).data?.user;
+
+                await storage.clearPendingSignupData();
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                showAlert({
+                    title: t('success' as any),
+                    message: t('email_verified_success'),
+                    type: 'success'
                 });
 
-                const token = (response as any).token || (response as any).data?.token;
-                const user = (response as any).user || (response as any).data?.user;
-
-                if (token) {
-                    await storage.clearPendingSignupData();
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    showAlert({
-                        title: t('success' as any),
-                        message: t('email_verified_success'),
-                        type: 'success'
-                    });
-
-                    setTimeout(() => {
-                        if (user?.userType === 'freelancer') {
-                            (navigation as any).reset({
-                                index: 0,
-                                routes: [{ name: 'SkillSelection', params: { token, user } }],
-                            });
-                        } else {
-                            (navigation as any).reset({
-                                index: 0,
-                                routes: [{ name: 'ClientMain' }],
-                            });
-                        }
-                    }, 1000);
-                }
+                setTimeout(() => {
+                    if (user?.userType === 'freelancer') {
+                        (navigation as any).reset({
+                            index: 0,
+                            routes: [{ name: 'SkillSelection', params: { user } }],
+                        });
+                    } else {
+                        (navigation as any).reset({
+                            index: 0,
+                            routes: [{ name: 'ClientMain' }],
+                        });
+                    }
+                }, 1000);
             } else {
                 const response = await verifyOTP(email, code);
                 const token = (response as any).token || (response as any).data?.token;
@@ -122,6 +120,30 @@ const OTPVerificationScreen: React.FC = () => {
             showAlert({ title: t('error' as any), message: error.message || 'Verification failed', type: 'error' });
             setOtp(['', '', '', '']);
             inputRefs.current[0]?.focus();
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        if (resendTimer > 0) return;
+
+        setIsLoading(true);
+        try {
+            if (mode === 'signup') {
+                const pendingData = await storage.getPendingSignupData();
+                await initiateSignup(email || pendingData?.email, pendingData?.firstName || 'User', lang);
+            } else if (mode === 'forgotPassword') {
+                await sendPasswordResetOTP(email);
+            } else {
+                await resendVerification(email);
+            }
+
+            setResendTimer(60);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            showAlert({ title: t('success' as any), message: 'New verification code sent!', type: 'success' });
+        } catch (error: any) {
+            showAlert({ title: t('error' as any), message: error.message || 'Resend failed', type: 'error' });
         } finally {
             setIsLoading(false);
         }
@@ -201,11 +223,11 @@ const OTPVerificationScreen: React.FC = () => {
 
                                 <View style={styles.resendContainer}>
                                     <TouchableOpacity
-                                        disabled={resendTimer > 0}
-                                        onPress={() => { }}
+                                        disabled={resendTimer > 0 || isLoading}
+                                        onPress={handleResend}
                                         style={styles.resendBtn}
                                     >
-                                        <Text style={[styles.resendText, { color: resendTimer > 0 ? c.subtext : c.primary }]}>
+                                        <Text style={[styles.resendText, { color: resendTimer > 0 || isLoading ? c.subtext : c.primary }]}>
                                             {resendTimer > 0 ? `${t('resend_in')} ${resendTimer}s` : t('resend_code')}
                                         </Text>
                                     </TouchableOpacity>

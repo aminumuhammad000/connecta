@@ -43,7 +43,7 @@ apiClient.interceptors.response.use(
         // Return the data directly for successful responses
         console.log('✅ API Response:', response.config.method?.toUpperCase(), response.status, (response.config.baseURL || '') + (response.config.url || ''));
         // Handle both direct data and wrapped responses
-        return response.data?.data !== undefined ? response.data : response.data;
+        return response.data?.data !== undefined ? response.data.data : response.data;
     },
     (error: AxiosError<ApiResponse>) => {
         // Handle different error scenarios
@@ -61,19 +61,28 @@ apiClient.interceptors.response.use(
             // Use server message if available, otherwise use generic message based on status
             if (serverMessage) {
                 apiError.message = serverMessage;
-                // If the user is not found (database was cleared or user deleted), log out
-                if (error.response.status === 404 && (serverMessage.includes('User not found') || serverMessage.includes('Profile not found'))) {
-                    if (logoutHandler) logoutHandler();
-                }
             } else if (error.response.status === 401) {
                 apiError.message = 'Session expired. Please login again.';
-                if (logoutHandler) logoutHandler();
             } else if (error.response.status === 403) {
                 apiError.message = 'You do not have permission to perform this action.';
             } else if (error.response.status === 404) {
                 apiError.message = 'The requested resource was not found.';
             } else if (error.response.status === 500) {
                 apiError.message = 'Server error. Please try again later.';
+            }
+
+            // Global Error Handlers (Logout)
+            if (error.response.status === 401) {
+                console.log('🔓 [API] 401 Unauthorized detected. Triggering auto-logout...');
+                if (logoutHandler) {
+                    console.log('🚪 [API] Executing logout handler...');
+                    logoutHandler();
+                } else {
+                    console.warn('⚠️ [API] 401 detected but no logoutHandler is registered');
+                }
+            } else if (error.response.status === 404 && serverMessage && (serverMessage.includes('User not found') || serverMessage.includes('Profile not found'))) {
+                console.log('🔍 [API] User/Profile not found (404). Triggering logout cleanup...');
+                if (logoutHandler) logoutHandler();
             }
         } else if (error.request) {
             // Request made but no response received
@@ -147,12 +156,17 @@ export const uploadFile = async (url: string, formData: FormData): Promise<ApiRe
  * Uses a direct axios call to bypass the interceptor entirely
  */
 export const uploadFilePublic = async (url: string, formData: FormData): Promise<ApiResponse> => {
-    const fullUrl = `${API_BASE_URL}${url}`;
+    // Ensure base URL doesn't have double slash if url starts with one
+    const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const fullUrl = `${baseUrl}${path}`;
+
     console.log('📡 [uploadFilePublic] Sending to:', fullUrl);
 
     const response = await axios.post(fullUrl, formData, {
         headers: {
-            'Content-Type': 'multipart/form-data',
+            // Note: Don't set Content-Type manually for FormData on web, 
+            // axios/browser will set it with the correct boundary.
         },
         timeout: 60000, // 60s timeout for uploads
     });
