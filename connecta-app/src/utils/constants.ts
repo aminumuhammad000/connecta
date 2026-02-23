@@ -72,12 +72,10 @@ export const API_ENDPOINTS = {
 
     // Messages
     CONVERSATIONS: '/api/messages/conversations',
-    USER_CONVERSATIONS: (userId: string) => `/api/messages/user/${userId}/conversations`,
-    CONVERSATION_MESSAGES: (conversationId: string) => `/api/messages/conversations/${conversationId}/messages`,
-    MESSAGES_BETWEEN: (userId1: string, userId2: string) => `/api/messages/between/${userId1}/${userId2}`,
-    SEND_MESSAGE: '/api/messages',
-    MARK_READ: '/api/messages/read',
-    UNREAD_COUNT_TOTAL: (userId: string) => `/api/messages/unread-count/${userId}`,
+    CONVERSATION_DETAILS: (id: string) => `/api/messages/conversations/${id}`,
+    SEND_MESSAGE: '/api/messages/message/send',
+    MARK_READ: '/api/messages/message/read',
+    UNREAD_COUNT_TOTAL: '/api/messages/unread-count',
 
     // Dashboard
     DASHBOARD_STATS: '/api/dashboard/stats',
@@ -110,6 +108,7 @@ export const API_ENDPOINTS = {
 
     // Contracts
     CONTRACTS: '/api/contracts',
+    MY_CONTRACTS: '/api/contracts/me',
     CONTRACT_BY_ID: (id: string) => `/api/contracts/${id}`,
     SIGN_CONTRACT: (id: string) => `/api/contracts/${id}/sign`,
 
@@ -132,9 +131,11 @@ export const API_ENDPOINTS = {
     UPLOAD_AVATAR: '/api/avatars/upload',
     UPLOAD_AVATAR_PUBLIC: '/api/avatars/public-upload',
     UPLOAD_PORTFOLIO_IMAGE: '/api/portfolio/upload',
-    CLAIM_REWARD: '/api/users/claim-reward',
-    SPARK_HISTORY: '/api/users/spark-history',
-    SPARK_STATS: '/api/users/spark-stats',
+
+    // Rewards
+    REWARD_BALANCE: '/api/rewards/balance',
+    CLAIM_REWARD: '/api/rewards/claim',
+    SPARK_HISTORY: '/api/rewards/history', // Assuming history exists or will be added
 } as const;
 
 // Default Values

@@ -26,30 +26,53 @@ const RewardsScreen: React.FC = () => {
     const c = useThemeColors();
     const navigation = useNavigation();
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [actions, setActions] = useState<rewardService.RewardAction[]>([]);
+    const [localSparks, setLocalSparks] = useState(user?.sparks || 0);
 
     // Animation for the Spark Counter
     const sparkScale = useSharedValue(1);
 
     useEffect(() => {
-        loadActions();
+        loadData();
     }, []);
 
-    const loadActions = async () => {
-        const data = await rewardService.getRewardActions();
-        setActions(data);
+    const loadData = async () => {
+        const [actionsData, balance] = await Promise.all([
+            rewardService.getRewardActions(),
+            rewardService.getRewardBalance()
+        ]);
+        setActions(actionsData);
+        setLocalSparks(balance);
+
+        if (user && balance !== user.sparks) {
+            updateUser({ ...user, sparks: balance });
+        }
     };
 
     const handleClaim = async (action: rewardService.RewardAction) => {
         if (action.completed) return;
 
-        // Visual validation
-        sparkScale.value = withSequence(withTiming(1.2, { duration: 100 }), withSpring(1));
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        try {
+            // Visual feedback
+            sparkScale.value = withSequence(withTiming(1.2, { duration: 100 }), withSpring(1));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Mock update
-        setActions(prev => prev.map(a => a.id === action.id ? { ...a, completed: true } : a));
+            // Real API call
+            const newTotal = await rewardService.claimReward(action.id);
+            setLocalSparks(newTotal);
+
+            // Update UI list (mock completion for now as backend doesn't return updated list)
+            setActions(prev => prev.map(a => a.id === action.id ? { ...a, completed: true } : a));
+
+            // Sync with auth context
+            if (user) {
+                updateUser({ ...user, sparks: newTotal });
+            }
+        } catch (error) {
+            console.error('Claim failed:', error);
+            // Error handling UI could go here
+        }
     };
 
     const sparkAnimStyle = useAnimatedStyle(() => ({
@@ -92,7 +115,7 @@ const RewardsScreen: React.FC = () => {
                                 <MaterialCommunityIcons name="lightning-bolt" size={24} color="#FFF" />
                             </View>
                             <Animated.Text style={[styles.sparkCount, sparkAnimStyle]}>
-                                {user?.sparks || 0}
+                                {localSparks}
                             </Animated.Text>
                             <View style={styles.tierContainer}>
                                 <Text style={styles.tierText}>Pro Tier</Text>

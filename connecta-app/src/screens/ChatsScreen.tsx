@@ -37,7 +37,7 @@ export default function ChatsScreen({ navigation }: any) {
             if (!user?._id) return;
 
             // Fetch regular conversations
-            const convData = await messageService.getUserConversations(user._id);
+            const convData = await messageService.getUserConversations();
             setConversations(Array.isArray(convData) ? convData : []);
 
             // Fetch collabo projects based on user type

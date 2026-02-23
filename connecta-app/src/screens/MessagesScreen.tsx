@@ -12,7 +12,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Message } from '../types';
 
 // Extend Message to support populated senderId if necessary
-type ChatMessage = Message & { senderId: any; receiverId: any };
+type ChatMessage = Message & {
+  senderId: any;
+  receiverId: any;
+  content: string;
+  read: boolean;
+};
 
 const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
@@ -179,7 +184,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   const markRead = async (convId: string) => {
     try {
       if (convId && user?._id) {
-        await messageService.markMessagesAsRead(convId, user._id);
+        await messageService.markMessagesAsRead(convId);
         // Refresh global unread count
         if (refreshUnreadCount) refreshUnreadCount();
       }
@@ -206,7 +211,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
     const time = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     // Check for video call invite
-    const videoCallMatch = item.text.match(/\[VIDEO_CALL_INVITE:(.*?)\]/);
+    const videoCallMatch = item.content.match(/\[VIDEO_CALL_INVITE:(.*?)\]/);
     const isVideoCall = !!videoCallMatch;
     const roomName = videoCallMatch ? videoCallMatch[1] : '';
 
@@ -228,7 +233,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
                 <Text style={{ color: mine ? 'white' : c.text, fontWeight: 'bold' }}>Join Video Call</Text>
               </TouchableOpacity>
             ) : (
-              <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.text}</Text>
+              <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.content}</Text>
             )}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
@@ -237,7 +242,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
               <MaterialIcons
                 name="done-all"
                 size={14}
-                color={item.isRead ? "#3b82f6" : c.subtext}
+                color={item.read ? "#3b82f6" : c.subtext}
               />
             )}
           </View>
@@ -299,9 +304,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
 
       const newMessage = await messageService.sendMessage({
         conversationId: finalConvId,
-        senderId: user._id,
-        receiverId: targetReceiverId,
-        text: messageText,
+        content: messageText,
       });
 
       // Add message to list

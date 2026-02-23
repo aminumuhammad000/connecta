@@ -1,4 +1,5 @@
-import api from './api';
+import { get, post } from './api';
+import { API_ENDPOINTS } from '../utils/constants';
 import * as storage from '../utils/storage';
 import * as Haptics from 'expo-haptics';
 
@@ -14,7 +15,7 @@ export interface RewardAction {
 
 export const getRewardActions = async (): Promise<RewardAction[]> => {
     // In a real app, this would fetch from the backend based on user progress
-    // Mocking for premium UI experience
+    // Mocking for premium UI experience for now
     return [
         {
             id: 'daily_return',
@@ -55,12 +56,22 @@ export const getRewardActions = async (): Promise<RewardAction[]> => {
     ];
 };
 
+export const getRewardBalance = async (): Promise<number> => {
+    try {
+        const response = await get<any>(API_ENDPOINTS.REWARD_BALANCE);
+        return response?.data?.balance || 0;
+    } catch (error) {
+        console.error('Failed to get reward balance:', error);
+        return 0;
+    }
+};
+
 export const claimReward = async (actionId: string): Promise<number> => {
     try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // Call backend to update sparks
-        const response = await api.post(`/profile/rewards/claim`, { actionId });
-        return response.data.newSparkTotal;
+        // Call backend to update sparks via rewards microservice
+        const response = await post<any>(API_ENDPOINTS.CLAIM_REWARD, { actionId });
+        return response?.data?.newSparkTotal || 0;
     } catch (error) {
         console.error('Failed to claim reward:', error);
         throw error;
@@ -72,10 +83,14 @@ export const checkDailyCheckIn = async (): Promise<{ earned: boolean; totalSpark
     const today = new Date().toISOString().split('T')[0];
 
     if (lastCheckIn !== today) {
-        // Mocking API call to earn daily spark
-        await storage.setItem('LAST_CHECK_IN', today);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        return { earned: true, totalSparks: 5 }; // Increment logically
+        try {
+            const newTotal = await claimReward('daily_return');
+            await storage.setItem('LAST_CHECK_IN', today);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            return { earned: true, totalSparks: newTotal };
+        } catch (error) {
+            console.error('Daily check-in claim failed:', error);
+        }
     }
 
     return { earned: false, totalSparks: 0 };

@@ -22,7 +22,7 @@ export interface Contract {
 
 export const contractService = {
     getContracts: async (): Promise<Contract[]> => {
-        const response = await get<Contract[]>(API_ENDPOINTS.CONTRACTS);
+        const response = await get<Contract[]>(API_ENDPOINTS.MY_CONTRACTS);
         return Array.isArray(response) ? response : (response as any)?.data || [];
     },
 
