@@ -38,7 +38,7 @@
     },
     "scheme": "connecta",
     "extra": {
-      "apiBaseUrl": "http://192.168.100.10:5000",
+      "apiBaseUrl": "https://api.myconnecta.ng",
       "eas": {
         "projectId": "cfedb4f5-53e0-4027-8c15-2f467d00757b"
       }

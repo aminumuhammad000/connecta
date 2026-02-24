@@ -11,12 +11,24 @@ import {
   getUnreadCount,
 } from '../controllers/Message.controller.js';
 
+import { authenticate } from '../core/middleware/auth.middleware.js';
+
 const router = express.Router();
+
+// Authenticated unread-count (userId from token) — matches new frontend constant
+router.get('/unread-count', authenticate, async (req: any, res) => {
+  const userId = req.user?._id || req.user?.id;
+  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+  // Reuse same logic: import inline to avoid circular deps
+  req.params = req.params || {};
+  req.params.userId = userId.toString();
+  return getUnreadCount(req, res);
+});
 
 // Conversation routes
 router.post('/conversations', getOrCreateConversation);
 router.get('/user/:userId/conversations', getUserConversations); // Get all conversations for a user
-router.get('/unread-count/:userId', getUnreadCount); // Get total unread count for a user
+router.get('/unread-count/:userId', getUnreadCount); // Legacy: unread count by URL userId
 router.get('/conversations/:userId', getUserConversations); // Legacy route
 router.get('/conversations/:conversationId/messages', getConversationMessages);
 
