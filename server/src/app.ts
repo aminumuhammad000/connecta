@@ -27,6 +27,7 @@ import insightsRoutes from "./routes/insights.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
 import verificationRoutes from "./routes/verification.routes.js";
 import collaboRoutes from "./routes/Collabo.routes.js";
+import rewardRoutes from "./routes/reward.routes.js";
 import redisClient from "./config/redis.js";
 dotenv.config();
 
@@ -103,6 +104,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/verifications", verificationRoutes);
 app.use("/api/collabo", collaboRoutes);
+app.use("/api/rewards", rewardRoutes);
 import analyticsRoutes from "./routes/analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
 import subscriptionRoutes from "./routes/Subscription.routes.js";

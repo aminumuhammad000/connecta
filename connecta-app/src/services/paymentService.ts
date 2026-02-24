@@ -16,7 +16,7 @@ export const initializePayment = async (paymentData: {
     payeeId: string;
 }): Promise<{ reference: string; authorizationUrl: string }> => {
     const response = await post(API_ENDPOINTS.INITIALIZE_PAYMENT, paymentData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -28,7 +28,7 @@ export const initializeJobVerification = async (verificationData: {
     description: string;
 }): Promise<{ reference: string; authorizationUrl: string }> => {
     const response = await post(API_ENDPOINTS.PAYMENT_JOB_VERIFICATION, verificationData);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 
@@ -40,7 +40,7 @@ export const initializeJobVerification = async (verificationData: {
  */
 export const verifyPayment = async (reference: string, transactionId: string): Promise<any> => {
     const response = await get<any>(`${API_ENDPOINTS.VERIFY_PAYMENT(reference)}?transaction_id=${transactionId}`);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -48,7 +48,7 @@ export const verifyPayment = async (reference: string, transactionId: string): P
  */
 export const getPaymentHistory = async (): Promise<Payment[]> => {
     const response = await get<Payment[]>(API_ENDPOINTS.PAYMENT_HISTORY);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -84,7 +84,7 @@ export const requestWithdrawal = async (withdrawalData: {
         }
     };
     const response = await post(API_ENDPOINTS.WITHDRAWAL_REQUEST, payload);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -92,7 +92,7 @@ export const requestWithdrawal = async (withdrawalData: {
  */
 export const getBanks = async (): Promise<Bank[]> => {
     const response = await get<Bank[]>(API_ENDPOINTS.BANKS);
-    return response.data!;
+    return Array.isArray(response) ? response : (response as any)?.data || [];
 };
 
 /**
@@ -100,7 +100,7 @@ export const getBanks = async (): Promise<Bank[]> => {
  */
 export const resolveBankAccount = async (accountNumber: string, bankCode: string): Promise<any> => {
     const response = await post(API_ENDPOINTS.RESOLVE_BANK, { accountNumber, bankCode });
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
@@ -113,7 +113,7 @@ export const saveWithdrawalSettings = async (settings: {
     bankCode: string;
 }): Promise<any> => {
     const response = await post(API_ENDPOINTS.WITHDRAWAL_SETTINGS, settings);
-    return response.data!;
+    return (response as any)?.data || response;
 };
 
 /**
