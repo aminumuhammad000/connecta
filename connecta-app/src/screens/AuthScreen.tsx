@@ -33,7 +33,11 @@ export default function AuthScreen({ navigation }: any) {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {/* Logo */}
                 <View style={styles.logoContainer}>
-                    {/* Placeholder for Logo if not available locally, or use text */}
+                    <Image
+                        source={require('../../assets/logo copy.png')}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
                     <Text style={[styles.logoText, { color: c.primary }]}>Connecta</Text>
                 </View>
 
@@ -113,7 +117,13 @@ const styles = StyleSheet.create({
     },
     logoContainer: {
         alignItems: 'center',
-        marginBottom: 48,
+        marginBottom: 32,
+    },
+    logoImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 20,
+        marginBottom: 12,
     },
     logoText: {
         fontSize: 32,

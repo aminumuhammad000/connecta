@@ -36,7 +36,7 @@ const WelcomeScreen: React.FC<{ navigation?: any, onLogin?: () => void, onSignup
   const sideContent = (
     <View style={styles.desktopSide}>
       <Animated.View entering={FadeInDown.duration(1000).springify()} style={styles.logoBox}>
-        <Image source={require('../../assets/logo.png')} style={styles.sideLogo} resizeMode="contain" />
+        <Image source={require('../../assets/logo copy.png')} style={styles.sideLogo} resizeMode="contain" />
       </Animated.View>
       <Animated.Text entering={FadeInDown.delay(200)} style={[styles.sideTitle, { color: c.text }]}>
         Nigeria's Premier{'\n'}Freelance Hub
@@ -73,7 +73,7 @@ const WelcomeScreen: React.FC<{ navigation?: any, onLogin?: () => void, onSignup
           {/* Logo Area */}
           <Animated.View entering={FadeInDown.duration(1000).springify()} style={styles.logoContainer}>
             <View style={[styles.logoGlow, { backgroundColor: c.primary + '30' }]} />
-            <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../../assets/logo copy.png')} style={styles.logo} resizeMode="contain" />
           </Animated.View>
 
           {/* Text Area */}

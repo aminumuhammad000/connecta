@@ -5,7 +5,7 @@ import { useThemeColors } from '../theme/theme';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as profileService from '../services/profileService';
 import { WebView } from 'react-native-webview';
@@ -30,9 +30,7 @@ export default function ManageCVScreen({ navigation }: any) {
 
     const handlePreviewResume = async () => {
         try {
-            // Use the centralized API_BASE_URL
             const API_URL = API_BASE_URL;
-
             showAlert({ title: 'Processing', message: 'Preparing document preview...', type: 'info' });
 
             const resumeUrl = await profileService.downloadResume();
@@ -46,16 +44,33 @@ export default function ManageCVScreen({ navigation }: any) {
 
             if (Platform.OS === 'web') {
                 const response = await fetch(fullUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const blob = await response.blob();
                 const url = URL.createObjectURL(blob);
                 setBlobUrl(url);
-            }
+                setShowPreviewModal(true);
+            } else if (Platform.OS === 'android') {
+                // Android WebView doesn't support PDF. Download and open instead.
+                const fileUri = `${FileSystem.cacheDirectory}Connecta_Resume_Preview.pdf`;
+                const downloadRes = await FileSystem.downloadAsync(
+                    fullUrl,
+                    fileUri,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
 
-            setShowPreviewModal(true);
+                if (downloadRes.status === 200) {
+                    await Sharing.shareAsync(downloadRes.uri, {
+                        mimeType: 'application/pdf',
+                        UTI: 'com.adobe.pdf'
+                    });
+                } else {
+                    throw new Error("Failed to download preview");
+                }
+            } else {
+                // iOS handles PDF in WebView natively
+                setShowPreviewModal(true);
+            }
 
         } catch (error: any) {
             console.error('Preview error:', error);
@@ -76,6 +91,8 @@ export default function ManageCVScreen({ navigation }: any) {
         }
 
         try {
+            showAlert({ title: 'Downloading', message: 'Saving resume to your device...', type: 'info' });
+
             const fileUri = `${FileSystem.documentDirectory}Connecta_Verified_Resume.pdf`;
             console.log('Downloading resume from:', previewUrl);
 
@@ -90,13 +107,14 @@ export default function ManageCVScreen({ navigation }: any) {
             );
 
             if (downloadRes.status !== 200) {
-                throw new Error("Failed to download file");
+                console.error('Download server error:', downloadRes.status);
+                throw new Error(`Failed to download (Server error: ${downloadRes.status})`);
             }
 
             console.log('File saved to:', downloadRes.uri);
 
             if (!(await Sharing.isAvailableAsync())) {
-                Alert.alert("Error", "Sharing is not available on this device");
+                showAlert({ title: 'Error', message: 'Sharing/Saving is not available on this device', type: 'error' });
                 return;
             }
 
@@ -110,7 +128,7 @@ export default function ManageCVScreen({ navigation }: any) {
 
         } catch (error: any) {
             console.error('Download error:', error);
-            showAlert({ title: 'Error', message: 'Failed to download resume', type: 'error' });
+            showAlert({ title: 'Error', message: `Download failed: ${error.message || 'Unknown error'}`, type: 'error' });
         }
     };
 

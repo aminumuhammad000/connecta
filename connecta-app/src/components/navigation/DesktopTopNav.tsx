@@ -4,6 +4,7 @@ import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute, useNavigationState } from '@react-navigation/native';
 import { useThemeColors } from '../../theme/theme';
 import Avatar from '../Avatar';
+import Logo from '../Logo';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import dashboardService from '../../services/dashboardService';
@@ -113,7 +114,7 @@ const DesktopTopNav = () => {
             <View style={styles.contentContainer}>
                 {/* Left: Logo & Search */}
                 <View style={styles.leftSection}>
-                    <Image source={require('../../../assets/logo.png')} style={styles.logo} />
+                    <Logo size={36} />
 
                     <View style={[styles.searchBar, { backgroundColor: c.background }]}>
                         <Ionicons name="search" size={18} color={c.subtext} style={{ marginLeft: 12 }} />

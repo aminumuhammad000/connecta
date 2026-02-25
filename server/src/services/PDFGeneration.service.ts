@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import path from 'path';
 
 /**
  * Service to generate a PDF resume from profile data
@@ -38,15 +39,9 @@ class PDFGenerationService {
                 doc.rect(0, 0, 595.28, 140) // A4 width
                     .fill(colors.lightBg);
 
-                // LOGO (Vector Draw) - Top Left
-                doc.save();
-                doc.translate(50, 40);
-                // "C" Icon
-                doc.circle(15, 15, 15).fill(colors.primary);
-                doc.font('Helvetica-Bold').fontSize(16).fillColor(colors.white).text('C', 9, 9);
-                // Text "onnecta"
-                doc.font('Helvetica-Bold').fontSize(20).fillColor(colors.text).text('onnecta', 36, 6);
-                doc.restore();
+                // LOGO (Real Image) - Top Left
+                const logoPath = path.join(process.cwd(), 'assets', 'logo.png');
+                doc.image(logoPath, 50, 35, { width: 100 });
 
                 // VERIFIED BADGE (Vector Draw) - Top Right
                 doc.save();
