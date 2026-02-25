@@ -2,7 +2,8 @@ module.exports = {
     apps: [
         {
             name: 'connecta-server',
-            script: 'dist/app.js',       // run built JS directly
+            script: 'npx',
+            args: 'tsx src/app.ts',
             cwd: '/var/www/connecta/server',
             instances: 1,
             autorestart: true,
@@ -11,7 +12,7 @@ module.exports = {
             env_production: {
                 NODE_ENV: 'production',
                 PORT: 5000,
-                NODE_OPTIONS: '--max-old-space-size=4096'
+                NODE_OPTIONS: '--max-old-space-size=2048'
             },
             error_file: './logs/err.log',
             out_file: './logs/out.log',
