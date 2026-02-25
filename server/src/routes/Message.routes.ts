@@ -26,6 +26,10 @@ router.get('/unread-count', authenticate, async (req: any, res) => {
   return getUnreadCount(req, res);
 });
 
+// Authenticated conversations (userId from token)
+router.get('/conversations', authenticate, getUserConversations);
+
+
 // Conversation routes
 router.post('/conversations', getOrCreateConversation);
 router.get('/user/:userId/conversations', getUserConversations); // Get all conversations for a user

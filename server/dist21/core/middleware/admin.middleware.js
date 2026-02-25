@@ -29,8 +29,9 @@ export const isAdmin = async (req, res, next) => {
             req.user.userType = userType;
         }
         if (userType !== 'admin') {
-            const debugMsg = `Forbidden: Admin access required (User: ${user.id}, Role: ${userType || 'missing'})`;
-            console.log(`[AdminMiddleware] ${debugMsg}`);
+            const currentRole = userType || 'missing';
+            const debugMsg = `Forbidden: Admin access required. Current Role: ${currentRole}`;
+            console.log(`[AdminMiddleware] ${debugMsg} (User: ${user.id})`);
             return res.status(403).json({
                 success: false,
                 message: debugMsg
