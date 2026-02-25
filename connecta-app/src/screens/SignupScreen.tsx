@@ -17,6 +17,7 @@ import SignupProgressBar from '../components/SignupProgressBar';
 import ChatGreeting from '../components/ChatGreeting';
 import * as storage from '../utils/storage';
 import AnimatedBackground from '../components/AnimatedBackground';
+import Logo from '../components/Logo';
 
 const SignupScreen: React.FC = () => {
   const c = useThemeColors();
