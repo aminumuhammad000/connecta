@@ -135,7 +135,13 @@ export const API_ENDPOINTS = {
     // Rewards
     REWARD_BALANCE: '/api/rewards/balance',
     CLAIM_REWARD: '/api/rewards/claim',
-    SPARK_HISTORY: '/api/rewards/history', // Assuming history exists or will be added
+    SPARK_HISTORY: '/api/rewards/history',
+    VALIDATE_RECIPIENT: '/api/rewards/validate-recipient',
+    TRANSFER_SPARKS: '/api/rewards/transfer',
+
+    // User PIN
+    CHECK_HAS_PIN: '/api/users/has-transaction-pin',
+    SET_TRANSACTION_PIN: '/api/users/transaction-pin',
 } as const;
 
 // Default Values

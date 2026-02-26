@@ -7,7 +7,7 @@ const SparkTransactionSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ['daily_reward', 'project_completed', 'referral', 'spend', 'bonus', 'purchase'],
+        enum: ['daily_reward', 'project_completed', 'referral', 'spend', 'bonus', 'purchase', 'transfer_send', 'transfer_receive'],
         required: true,
     },
     amount: {

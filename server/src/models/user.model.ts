@@ -39,6 +39,7 @@ export interface IUser extends Document {
   lastRewardClaimedAt?: Date;
   referralCode: string;
   referredBy?: mongoose.Types.ObjectId;
+  transactionPin?: string; // Hashed 4-digit PIN
 }
 
 const UserSchema: Schema<IUser> = new Schema(
@@ -107,6 +108,7 @@ const UserSchema: Schema<IUser> = new Schema(
     lastRewardClaimedAt: { type: Date },
     referralCode: { type: String, unique: true, sparse: true },
     referredBy: { type: Schema.Types.ObjectId, ref: "User" },
+    transactionPin: { type: String, select: false },
   },
   { timestamps: true }
 );

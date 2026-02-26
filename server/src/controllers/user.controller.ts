@@ -1271,3 +1271,192 @@ export const updatePreferredLanguage = async (req: Request, res: Response) => {
     });
   }
 };
+
+// ===================
+// Validate Recipient (Search by Email)
+// ===================
+export const validateRecipient = async (req: Request, res: Response) => {
+  try {
+    const { email, userId } = req.body;
+    const currentUserId = (req as any).user?.id || (req as any).user?._id;
+
+    if (!email && !userId) {
+      return res.status(400).json({ success: false, message: "Email or User ID is required" });
+    }
+
+    let query = {};
+    if (email) {
+      query = { email: email.toLowerCase() };
+    } else if (userId) {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ success: false, message: "Invalid User ID format" });
+      }
+      query = { _id: userId };
+    }
+
+    const recipient = await User.findOne(query).select('firstName lastName email profileImage');
+
+    if (!recipient) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (recipient._id.toString() === currentUserId.toString()) {
+      return res.status(400).json({ success: false, message: "You cannot send Sparks to yourself" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: recipient._id,
+        name: `${recipient.firstName} ${recipient.lastName}`,
+        email: recipient.email,
+        profileImage: recipient.profileImage
+      }
+    });
+  } catch (err) {
+    console.error('Validate recipient error:', err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ===================
+// Set Transaction PIN
+// ===================
+export const setTransactionPin = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const { pin } = req.body;
+
+    if (!pin || pin.length !== 4 || isNaN(parseInt(pin))) {
+      return res.status(400).json({ success: false, message: "Invalid 4-digit PIN" });
+    }
+
+    const hashedPin = await bcrypt.hash(pin, 10);
+    await User.findByIdAndUpdate(userId, { transactionPin: hashedPin });
+
+    res.status(200).json({ success: true, message: "Transaction PIN set successfully" });
+  } catch (err) {
+    console.error('Set transaction PIN error:', err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ===================
+// Check if User has PIN
+// ===================
+export const checkHasPin = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const user = await User.findById(userId).select('+transactionPin');
+
+    res.status(200).json({
+      success: true,
+      hasPin: !!user?.transactionPin
+    });
+  } catch (err) {
+    console.error('Check has PIN error:', err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// ===================
+// Transfer Sparks
+// ===================
+export const transferSparks = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const senderId = (req as any).user?.id || (req as any).user?._id;
+    const { recipientEmail, amount, pin } = req.body;
+
+    if (!recipientEmail || !amount || !pin) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
+
+    const sparkAmount = parseInt(amount);
+    if (isNaN(sparkAmount) || sparkAmount <= 0) {
+      return res.status(400).json({ success: false, message: "Invalid amount" });
+    }
+
+    // 1. Verify Sender and PIN
+    const sender = await User.findById(senderId).select('+transactionPin').session(session);
+    if (!sender) throw new Error("Sender not found");
+
+    if (!sender.transactionPin) {
+      return res.status(400).json({ success: false, message: "Transaction PIN not set" });
+    }
+
+    const isPinValid = await bcrypt.compare(pin, sender.transactionPin);
+    if (!isPinValid) {
+      return res.status(401).json({ success: false, message: "Invalid transaction PIN" });
+    }
+
+    // 2. Check Balance
+    if (sender.sparks < sparkAmount) {
+      return res.status(400).json({ success: false, message: "Insufficient Spark balance" });
+    }
+
+    // 3. Verify Recipient
+    const recipient = await User.findOne({ email: recipientEmail.toLowerCase() }).session(session);
+    if (!recipient) {
+      return res.status(404).json({ success: false, message: "Recipient not found" });
+    }
+
+    if (recipient._id.toString() === senderId.toString()) {
+      return res.status(400).json({ success: false, message: "Cannot transfer to yourself" });
+    }
+
+    // 4. Perform Transfer
+    sender.sparks -= sparkAmount;
+    recipient.sparks += sparkAmount;
+
+    await sender.save({ session });
+    await recipient.save({ session });
+
+    // 5. Record Transactions
+    await SparkTransaction.create([{
+      userId: sender._id,
+      type: 'transfer_send',
+      amount: -sparkAmount,
+      balanceAfter: sender.sparks,
+      description: `Sent Sparks to ${recipient.firstName} ${recipient.lastName}`,
+      metadata: { recipientId: recipient._id, recipientEmail: recipient.email }
+    }], { session });
+
+    await SparkTransaction.create([{
+      userId: recipient._id,
+      type: 'transfer_receive',
+      amount: sparkAmount,
+      balanceAfter: recipient.sparks,
+      description: `Received Sparks from ${sender.firstName} ${sender.lastName}`,
+      metadata: { senderId: sender._id, senderEmail: sender.email }
+    }], { session });
+
+    // 6. Notifications
+    try {
+      notificationService.sendPushNotification(
+        recipient._id.toString(),
+        "Sparks Received! ✨",
+        `You received ${sparkAmount} Sparks from ${sender.firstName}.`,
+        { type: 'spark_transfer', senderId: sender._id.toString() }
+      );
+    } catch (notificationError) {
+      console.warn("Failed to send transfer notification", notificationError);
+    }
+
+    await session.commitTransaction();
+    res.status(200).json({
+      success: true,
+      message: "Transfer successful",
+      newBalance: sender.sparks
+    });
+
+  } catch (err: any) {
+    await session.abortTransaction();
+    console.error('Transfer Sparks error:', err);
+    res.status(500).json({ success: false, message: err.message || "Transfer failed" });
+  } finally {
+    session.endSession();
+  }
+};

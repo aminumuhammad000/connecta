@@ -64,6 +64,7 @@ const UserSchema = new Schema({
     lastRewardClaimedAt: { type: Date },
     referralCode: { type: String, unique: true, sparse: true },
     referredBy: { type: Schema.Types.ObjectId, ref: "User" },
+    transactionPin: { type: String, select: false },
 }, { timestamps: true });
 const User = mongoose.model("User", UserSchema);
 export default User;

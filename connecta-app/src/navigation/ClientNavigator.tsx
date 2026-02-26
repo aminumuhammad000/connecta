@@ -161,6 +161,10 @@ export default function ClientNavigator() {
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
             <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
             <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
+            <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
+            <Stack.Screen name="SendSpark" component={require('../screens/SendSparkScreen').default} />
+            <Stack.Screen name="ReceiveSpark" component={require('../screens/ReceiveSparkScreen').default} />
+            <Stack.Screen name="SetTransactionPin" component={require('../screens/SetTransactionPinScreen').default} />
         </Stack.Navigator>
     );
 
