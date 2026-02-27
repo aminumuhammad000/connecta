@@ -30,6 +30,8 @@ const SendSparkScreen = () => {
     const [recipientData, setRecipientData] = useState<any>(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [txnDetails, setTxnDetails] = useState<any>(null);
+    const [myBalance, setMyBalance] = useState(0);
+    const [validationError, setValidationError] = useState('');
 
     const slideAnim = useRef(new Animated.Value(0)).current;
 
@@ -41,6 +43,52 @@ const SendSparkScreen = () => {
         }).start();
     }, [step]);
 
+    useEffect(() => {
+        const fetchBalance = async () => {
+            try {
+                const bal = await rewardService.getRewardBalance();
+                setMyBalance(bal);
+            } catch (e) {
+                console.error("Failed to fetch balance in SendSpark", e);
+            }
+        };
+        fetchBalance();
+    }, []);
+
+    // Automatic validation on email change
+    useEffect(() => {
+        // Only trigger if we are in Step 1
+        if (step !== 1) return;
+
+        if (recipientEmail.length > 5) {
+            const delayDebounceFn = setTimeout(() => {
+                autoValidate(recipientEmail);
+            }, 800); // Slightly faster debounce
+
+            return () => clearTimeout(delayDebounceFn);
+        } else {
+            setValidationError('');
+            setRecipientData(null);
+        }
+    }, [recipientEmail, step]);
+
+    const autoValidate = async (input: string) => {
+        try {
+            setIsValidating(true);
+            setValidationError('');
+            const isEmail = input.includes('@');
+            const res = await rewardService.validateRecipient(
+                isEmail ? { email: input } : { userId: input }
+            );
+            setRecipientData(res);
+        } catch (error: any) {
+            setValidationError(error.message || 'User not found');
+            setRecipientData(null);
+        } finally {
+            setIsValidating(false);
+        }
+    };
+
     const handleBarCodeScanned = ({ data }: { data: string }) => {
         try {
             const parsed = JSON.parse(data);
@@ -48,7 +96,8 @@ const SendSparkScreen = () => {
                 setRecipientEmail(parsed.email);
                 setShowScanner(false);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                validateRecipient(parsed.email);
+                // Directly call autoValidate to bypass the debounce for instant feedback
+                autoValidate(parsed.email);
             } else {
                 showAlert({ title: 'Invalid QR', message: 'This is not a valid Connecta Spark QR code', type: 'error' });
             }
@@ -86,6 +135,16 @@ const SendSparkScreen = () => {
             showAlert({ title: 'Invalid Amount', message: 'Please enter a valid amount of Sparks', type: 'error' });
             return;
         }
+
+        if (amt > myBalance) {
+            showAlert({
+                title: 'Insufficient Balance',
+                message: `You only have ${myBalance} Sparks. Please enter a lower amount.`,
+                type: 'warning'
+            });
+            return;
+        }
+
         setStep(3);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     };
@@ -107,6 +166,12 @@ const SendSparkScreen = () => {
     };
 
     const processTransfer = async (finalPin: string) => {
+        if (!recipientData || !recipientData.email) {
+            showAlert({ title: 'Error', message: 'Recipient data is missing. Please restart the transfer.', type: 'error' });
+            setStep(1);
+            return;
+        }
+
         try {
             setIsSending(true);
             const res = await rewardService.transferSparks({
@@ -120,7 +185,7 @@ const SendSparkScreen = () => {
             // Set transaction details for the modal
             setTxnDetails({
                 amount: amount,
-                recipientName: `${recipientData.firstName} ${recipientData.lastName}`,
+                recipientName: recipientData.name,
                 recipientEmail: recipientData.email,
                 date: new Date().toLocaleString(),
                 reference: `SPK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
@@ -302,12 +367,46 @@ const SendSparkScreen = () => {
                 <Text style={[styles.qrButtonText, { color: c.primary }]}>Scan QR Code</Text>
             </TouchableOpacity>
 
+            {isValidating && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                    <ActivityIndicator size="small" color={c.primary} />
+                    <Text style={{ color: c.subtext, fontSize: 13 }}>Validating recipient...</Text>
+                </View>
+            )}
+
+            {recipientData && !isValidating && (
+                <View style={[styles.recipientPreview, { backgroundColor: c.card, borderColor: c.primary, shadowColor: c.primary, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }]}>
+                    <View style={[styles.miniAvatar, { backgroundColor: c.primary }]}>
+                        {recipientData?.profileImage ? (
+                            <Image source={{ uri: recipientData.profileImage }} style={styles.miniAvatar} />
+                        ) : (
+                            <Text style={styles.miniAvatarText}>{recipientData?.name?.[0]}</Text>
+                        )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={[styles.previewName, { color: c.text }]}>{recipientData?.name}</Text>
+                            <MaterialIcons name="verified" size={16} color={c.primary} />
+                        </View>
+                        <Text style={[styles.previewEmail, { color: c.subtext }]}>{recipientData?.email}</Text>
+                    </View>
+                    <MaterialIcons name="check-circle" size={24} color={c.primary} />
+                </View>
+            )}
+
+            {validationError && !isValidating && (
+                <View style={[styles.errorBox, { backgroundColor: '#FEE2E2' }]}>
+                    <MaterialIcons name="error-outline" size={18} color="#991B1B" />
+                    <Text style={{ color: '#991B1B', fontSize: 13, fontWeight: '600' }}>{validationError}</Text>
+                </View>
+            )}
+
             <TouchableOpacity
-                style={[styles.mainBtn, { backgroundColor: c.primary }]}
-                onPress={() => validateRecipient('')}
-                disabled={isValidating}
+                style={[styles.mainBtn, { backgroundColor: recipientData ? c.primary : c.subtext, marginTop: 24 }]}
+                onPress={() => recipientData && setStep(2)}
+                disabled={!recipientData || isValidating}
             >
-                {isValidating ? <ActivityIndicator color="#fff" /> : <Text style={styles.mainBtnText}>Next Step</Text>}
+                <Text style={styles.mainBtnText}>Continue to Amount</Text>
             </TouchableOpacity>
         </View>
     );
@@ -323,9 +422,18 @@ const SendSparkScreen = () => {
                     )}
                 </View>
                 <View>
-                    <Text style={[styles.recipientName, { color: c.text }]}>{recipientData?.name || `${recipientData?.firstName} ${recipientData?.lastName}`}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={[styles.recipientName, { color: c.text }]}>{recipientData?.name || `${recipientData?.firstName} ${recipientData?.lastName}`}</Text>
+                        <MaterialIcons name="verified" size={18} color={c.primary} />
+                    </View>
                     <Text style={[styles.recipientEmail, { color: c.subtext }]}>{recipientData?.email}</Text>
                 </View>
+            </View>
+
+            <View style={{ marginTop: 12, paddingHorizontal: 4 }}>
+                <Text style={{ color: c.subtext, fontSize: 13 }}>
+                    Your Balance: <Text style={{ color: c.text, fontWeight: '700' }}>{myBalance} Sparks</Text>
+                </Text>
             </View>
 
             <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Amount to Send</Text>
@@ -359,7 +467,7 @@ const SendSparkScreen = () => {
         <View style={styles.stepContainer}>
             <Text style={[styles.label, { color: c.text, textAlign: 'center' }]}>Enter Transaction PIN</Text>
             <Text style={[styles.sub, { color: c.subtext, textAlign: 'center', marginBottom: 32 }]}>
-                To send {amount} Sparks to {recipientData?.firstName}
+                To send {amount} Sparks to {recipientData?.name}
             </Text>
 
             <View style={styles.pinDisplay}>
@@ -490,7 +598,13 @@ const styles = StyleSheet.create({
     shareBtn: { height: 56, borderRadius: 16, borderWidth: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
     shareBtnText: { fontSize: 16, fontWeight: '800' },
     doneBtn: { height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    doneBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' }
+    doneBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+    recipientPreview: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, marginTop: 24, gap: 12 },
+    miniAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+    miniAvatarText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+    previewName: { fontSize: 15, fontWeight: '700' },
+    previewEmail: { fontSize: 12 },
+    errorBox: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 12, marginTop: 16 }
 });
 
 export default SendSparkScreen;

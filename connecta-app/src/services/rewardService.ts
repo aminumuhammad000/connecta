@@ -59,7 +59,8 @@ export const getRewardActions = async (): Promise<RewardAction[]> => {
 export const getRewardBalance = async (): Promise<number> => {
     try {
         const response = await get<any>(API_ENDPOINTS.REWARD_BALANCE);
-        return response?.data?.balance || 0;
+        const data = (response as any)?.data || response;
+        return data?.currentBalance || data?.balance || 0;
     } catch (error) {
         console.error('Failed to get reward balance:', error);
         return 0;
@@ -98,7 +99,8 @@ export const checkDailyCheckIn = async (): Promise<{ earned: boolean; totalSpark
 export const validateRecipient = async (query: { email?: string, userId?: string }): Promise<any> => {
     try {
         const response = await post<any>(API_ENDPOINTS.VALIDATE_RECIPIENT, query);
-        return response?.data || response;
+        const data = (response as any)?.data || response;
+        return data;
     } catch (error) {
         console.error('Failed to validate recipient:', error);
         throw error;
