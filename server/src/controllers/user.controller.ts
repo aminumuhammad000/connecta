@@ -1363,9 +1363,6 @@ export const checkHasPin = async (req: Request, res: Response) => {
 // Transfer Sparks
 // ===================
 export const transferSparks = async (req: Request, res: Response) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const senderId = (req as any).user?.id || (req as any).user?._id;
     const { recipientEmail, amount, pin } = req.body;
@@ -1380,7 +1377,7 @@ export const transferSparks = async (req: Request, res: Response) => {
     }
 
     // 1. Verify Sender and PIN
-    const sender = await User.findById(senderId).select('+transactionPin').session(session);
+    const sender = await User.findById(senderId).select('+transactionPin');
     if (!sender) throw new Error("Sender not found");
 
     if (!sender.transactionPin) {
@@ -1398,7 +1395,7 @@ export const transferSparks = async (req: Request, res: Response) => {
     }
 
     // 3. Verify Recipient
-    const recipient = await User.findOne({ email: recipientEmail.toLowerCase() }).session(session);
+    const recipient = await User.findOne({ email: recipientEmail.toLowerCase() });
     if (!recipient) {
       return res.status(404).json({ success: false, message: "Recipient not found" });
     }
@@ -1407,56 +1404,67 @@ export const transferSparks = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Cannot transfer to yourself" });
     }
 
-    // 4. Perform Transfer
-    sender.sparks -= sparkAmount;
-    recipient.sparks += sparkAmount;
+    // Store original balances for potential rollback
+    const originalSenderSparks = sender.sparks;
+    const originalRecipientSparks = recipient.sparks;
 
-    await sender.save({ session });
-    await recipient.save({ session });
-
-    // 5. Record Transactions
-    await SparkTransaction.create([{
-      userId: sender._id,
-      type: 'transfer_send',
-      amount: -sparkAmount,
-      balanceAfter: sender.sparks,
-      description: `Sent Sparks to ${recipient.firstName} ${recipient.lastName}`,
-      metadata: { recipientId: recipient._id, recipientEmail: recipient.email }
-    }], { session });
-
-    await SparkTransaction.create([{
-      userId: recipient._id,
-      type: 'transfer_receive',
-      amount: sparkAmount,
-      balanceAfter: recipient.sparks,
-      description: `Received Sparks from ${sender.firstName} ${sender.lastName}`,
-      metadata: { senderId: sender._id, senderEmail: sender.email }
-    }], { session });
-
-    // 6. Notifications
+    // 4. Perform Transfer (sequential saves with manual rollback)
     try {
-      notificationService.sendPushNotification(
-        recipient._id.toString(),
-        "Sparks Received! ✨",
-        `You received ${sparkAmount} Sparks from ${sender.firstName}.`,
-        { type: 'spark_transfer', senderId: sender._id.toString() }
-      );
-    } catch (notificationError) {
-      console.warn("Failed to send transfer notification", notificationError);
+      sender.sparks -= sparkAmount;
+      await sender.save();
+
+      recipient.sparks += sparkAmount;
+      await recipient.save();
+
+      // 5. Record Transactions
+      await SparkTransaction.create({
+        userId: sender._id,
+        type: 'transfer_send',
+        amount: -sparkAmount,
+        balanceAfter: sender.sparks,
+        description: `Sent Sparks to ${recipient.firstName} ${recipient.lastName}`,
+        metadata: { recipientId: recipient._id, recipientEmail: recipient.email }
+      });
+
+      await SparkTransaction.create({
+        userId: recipient._id,
+        type: 'transfer_receive',
+        amount: sparkAmount,
+        balanceAfter: recipient.sparks,
+        description: `Received Sparks from ${sender.firstName} ${sender.lastName}`,
+        metadata: { senderId: sender._id, senderEmail: sender.email }
+      });
+
+      // 6. Notifications
+      try {
+        notificationService.sendPushNotification(
+          recipient._id.toString(),
+          "Sparks Received! ✨",
+          `You received ${sparkAmount} Sparks from ${sender.firstName}.`,
+          { type: 'spark_transfer', senderId: sender._id.toString() }
+        );
+      } catch (notificationError) {
+        console.warn("Failed to send transfer notification", notificationError);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Transfer successful",
+        newBalance: sender.sparks
+      });
+
+    } catch (innerErr: any) {
+      // Manual Rollback: If any save or transaction creation fails, revert balances
+      console.error('Transfer Sparks inner error, attempting rollback:', innerErr);
+      sender.sparks = originalSenderSparks;
+      recipient.sparks = originalRecipientSparks;
+      await sender.save().catch(e => console.error("Failed to rollback sender sparks:", e));
+      await recipient.save().catch(e => console.error("Failed to rollback recipient sparks:", e));
+      throw innerErr; // Re-throw to be caught by outer catch block
     }
 
-    await session.commitTransaction();
-    res.status(200).json({
-      success: true,
-      message: "Transfer successful",
-      newBalance: sender.sparks
-    });
-
   } catch (err: any) {
-    await session.abortTransaction();
     console.error('Transfer Sparks error:', err);
     res.status(500).json({ success: false, message: err.message || "Transfer failed" });
-  } finally {
-    session.endSession();
   }
 };
