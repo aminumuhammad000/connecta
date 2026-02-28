@@ -58,7 +58,7 @@ const PaymentSchema = new Schema({
     },
     paymentType: {
         type: String,
-        enum: ['milestone', 'full_payment', 'hourly', 'bonus', 'job_verification'],
+        enum: ['milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
         default: 'milestone',
     },
     gatewayReference: {

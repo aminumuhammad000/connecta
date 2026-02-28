@@ -24,7 +24,6 @@ const WalletSchema = new Schema({
     availableBalance: {
         type: Number,
         default: 0,
-        min: 0,
     },
     totalEarnings: {
         type: Number,
@@ -64,7 +63,7 @@ const WalletSchema = new Schema({
 WalletSchema.pre('save', function (next) {
     const balance = Number(this.balance) || 0;
     const escrow = Number(this.escrowBalance) || 0;
-    this.availableBalance = balance - escrow;
+    this.availableBalance = Math.max(0, balance - escrow);
     next();
 });
 export default mongoose.model('Wallet', WalletSchema);

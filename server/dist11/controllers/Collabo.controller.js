@@ -3,6 +3,8 @@ import Payment from '../models/Payment.model.js';
 import flutterwaveService from '../services/flutterwave.service.js';
 import User from '../models/user.model.js';
 import CollaboProject from '../models/CollaboProject.model.js';
+import Wallet from '../models/Wallet.model.js';
+import Transaction from '../models/Transaction.model.js';
 export const createCollaboProject = async (req, res) => {
     try {
         if (!req.user || !req.user._id) {
@@ -88,12 +90,12 @@ export const fundProject = async (req, res) => {
         const payment = new Payment({
             collaboProjectId: project._id,
             payerId: userId,
-            payeeId: userId, // Holding in platform escrow effectively
+            payeeId: userId, // Default to platform hold
             amount,
             currency: 'NGN',
             platformFee: 0,
             netAmount: amount,
-            paymentType: 'full_payment',
+            paymentType: 'project_payment', // Use a standard type or 'full_payment'
             description: `Funding for Collabo Project: ${project.title}`,
             status: 'pending',
             escrowStatus: 'held'
@@ -111,6 +113,72 @@ export const fundProject = async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ message: 'Failed to initiate funding', error: error.message });
+    }
+};
+export const fundProjectFromWallet = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user._id;
+        const project = await CollaboProject.findById(id);
+        if (!project)
+            return res.status(404).json({ message: "Project not found" });
+        if (project.clientId.toString() !== userId.toString()) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+        if (project.status !== 'planning') {
+            return res.status(400).json({ message: `Project is already ${project.status}` });
+        }
+        const amount = project.totalBudget;
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ message: "Invalid project budget" });
+        }
+        const wallet = await Wallet.findOne({ userId });
+        if (!wallet || (wallet.balance || 0) < amount) {
+            return res.status(400).json({ message: "Insufficient wallet balance" });
+        }
+        const balanceBefore = wallet.balance;
+        // 1. Deduct from wallet
+        wallet.balance -= amount;
+        await wallet.save();
+        // 2. Create Payment Record (Completed)
+        const payment = await Payment.create({
+            collaboProjectId: project._id,
+            payerId: userId,
+            payeeId: userId, // Holding in escrow
+            amount,
+            currency: 'NGN',
+            platformFee: 0,
+            netAmount: amount,
+            paymentType: 'project_payment',
+            description: `Wallet funding for Collabo Project: ${project.title}`,
+            status: 'completed',
+            escrowStatus: 'held',
+            gatewayReference: `WALLET-${Date.now()}`
+        });
+        // 3. Create Transaction Record
+        await Transaction.create({
+            userId,
+            type: 'payment_sent',
+            amount,
+            currency: 'NGN',
+            status: 'completed',
+            paymentId: payment._id,
+            projectId: project._id,
+            balanceBefore,
+            balanceAfter: wallet.balance,
+            description: `Funded Collabo Project: ${project.title}`
+        });
+        // 4. Activate Project
+        await CollaboService.activateProject(id);
+        res.json({
+            success: true,
+            message: "Project funded and activated successfully",
+            balance: wallet.balance
+        });
+    }
+    catch (error) {
+        console.error('Fund from wallet error:', error);
+        res.status(500).json({ message: 'Failed to fund from wallet', error: error.message });
     }
 };
 export const activateProject = async (req, res) => {
@@ -186,6 +254,17 @@ export const inviteToRole = async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ message: `Failed to send invitation: ${error.message}`, error: error.message });
+    }
+};
+export const aiInviteToRole = async (req, res) => {
+    try {
+        const { roleId } = req.params;
+        const clientId = req.user._id;
+        const result = await CollaboService.aiInviteToRole(roleId, clientId);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ message: `AI Invitation failed: ${error.message}`, error: error.message });
     }
 };
 export const addRole = async (req, res) => {
@@ -333,5 +412,40 @@ export const markRead = async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ message: 'Failed to mark read', error: error.message });
+    }
+};
+export const updateRole = async (req, res) => {
+    try {
+        const { roleId } = req.params;
+        const updates = req.body;
+        const clientId = req.user._id;
+        const result = await CollaboService.updateRole(roleId, clientId, updates);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to update role', error: error.message });
+    }
+};
+export const generateAutoTasks = async (req, res) => {
+    try {
+        const { id } = req.params; // projectId
+        const clientId = req.user._id;
+        const result = await CollaboService.generateAutoTasks(id, clientId);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to generate auto tasks', error: error.message });
+    }
+};
+export const getActivities = async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        if (!workspaceId)
+            return res.status(400).json({ message: "Workspace ID is required" });
+        const activities = await CollaboService.getActivities(workspaceId);
+        res.json(activities);
+    }
+    catch (error) {
+        res.status(500).json({ message: 'Failed to fetch activities', error: error.message });
     }
 };
