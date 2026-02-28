@@ -474,7 +474,7 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                     }}
                                 >
                                     <Ionicons name="add-circle" size={18} color={c.primary} style={{ marginRight: 6 }} />
-                                    <Text style={{ color: c.primary, fontWeight: '800', fontSize: 13 }}>PAY NOW</Text>
+                                    <Text style={{ color: c.primary, fontWeight: '800', fontSize: 13 }}>PAY AND ACTIVATE</Text>
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -507,7 +507,7 @@ export default function CollaboWorkspaceScreen({ route, navigation }: any) {
                                         }}
                                     >
                                         <Ionicons name="rocket" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                                        <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 16 }}>Start Project Execution</Text>
+                                        <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 16 }}>START THE JOB</Text>
                                     </TouchableOpacity>
                                 </View>
                             );

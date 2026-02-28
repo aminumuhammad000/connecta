@@ -53,12 +53,12 @@ const PaymentSchema = new Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['paystack', 'stripe', 'paypal', 'bank_transfer'],
-        default: 'paystack',
+        enum: ['paystack', 'stripe', 'paypal', 'bank_transfer', 'flutterwave'],
+        default: 'flutterwave',
     },
     paymentType: {
         type: String,
-        enum: ['milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
+        enum: ['project_payment', 'milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
         default: 'milestone',
     },
     gatewayReference: {

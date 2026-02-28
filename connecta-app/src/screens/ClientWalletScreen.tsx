@@ -11,6 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../utils/constants';
 import { getToken } from '../utils/storage';
+import * as WebBrowser from 'expo-web-browser';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 32;
@@ -139,9 +140,14 @@ const ClientWalletScreen = () => {
             });
 
             if (data?.authorizationUrl) {
-                navigation.navigate('Payment', { paymentUrl: data.authorizationUrl, amount });
+                await WebBrowser.openBrowserAsync(data.authorizationUrl);
                 setShowDepositModal(false);
                 setDepositAmount('');
+                showAlert({
+                    title: 'Deposit Initiated',
+                    message: 'Please complete the payment in the browser. Your balance will update automatically.',
+                    type: 'info'
+                });
             } else {
                 showAlert({ title: 'Error', message: 'Failed to initialize deposit', type: 'error' });
             }

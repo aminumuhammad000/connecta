@@ -12,8 +12,8 @@ export interface IPayment extends Document {
   platformFee: number;
   netAmount: number; // Amount after platform fee
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
-  paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer';
-  paymentType: 'milestone' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup';
+  paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer' | 'flutterwave';
+  paymentType: 'project_payment' | 'milestone' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup';
 
   // Payment Gateway Details
   gatewayReference: string; // Reference from payment gateway
@@ -95,12 +95,12 @@ const PaymentSchema: Schema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['paystack', 'stripe', 'paypal', 'bank_transfer'],
-      default: 'paystack',
+      enum: ['paystack', 'stripe', 'paypal', 'bank_transfer', 'flutterwave'],
+      default: 'flutterwave',
     },
     paymentType: {
       type: String,
-      enum: ['milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
+      enum: ['project_payment', 'milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
       default: 'milestone',
     },
     gatewayReference: {
