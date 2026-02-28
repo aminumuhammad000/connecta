@@ -124,7 +124,12 @@ export const transferSparks = async (data: { recipientEmail: string, amount: num
 export const getSparkHistory = async (): Promise<any[]> => {
     try {
         const response = await get<any>(API_ENDPOINTS.SPARK_HISTORY);
+        // The axios interceptor already unwraps response.data
+        // Backend returns: { success: true, data: [...transactions] }
+        // After interceptor: response === [...transactions] OR { data: [...] }
+        if (Array.isArray(response)) return response;
         const data = (response as any)?.data || response;
+        if (Array.isArray(data)) return data;
         return data?.transactions || [];
     } catch (error) {
         console.error('Failed to get spark history:', error);

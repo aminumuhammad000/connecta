@@ -77,16 +77,35 @@ const WalletScreen = () => {
       }));
 
       const sparkHistData = Array.isArray(sparkHist) ? sparkHist : (sparkHist as any)?.data || (sparkHist as any)?.transactions || [];
-      const mappedSparks = sparkHistData.map((t: any) => ({
-        id: t._id,
-        kind: 'spark',
-        type: t.amount > 0 ? 'income' : 'withdrawal',
-        title: t.description,
-        date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        amount: t.amount,
-        status: 'completed',
-        rawDate: new Date(t.createdAt)
-      }));
+      const mappedSparks = sparkHistData.map((t: any) => {
+        // Build a context-aware title based on transaction type
+        let title = t.description || 'Spark Transaction';
+        let subtitle = '';
+        if (t.type === 'transfer_send') {
+          // Extract name from description: "Sent Sparks to John Doe"
+          const match = t.description?.match(/to (.+)$/) || [];
+          title = `Sent to ${match[1] || (t.metadata?.recipientEmail || 'someone')}`;
+          subtitle = t.metadata?.recipientEmail || '';
+        } else if (t.type === 'transfer_receive') {
+          const match = t.description?.match(/from (.+)$/) || [];
+          title = `Received from ${match[1] || (t.metadata?.senderEmail || 'someone')}`;
+          subtitle = t.metadata?.senderEmail || '';
+        } else if (t.type === 'daily_reward') {
+          title = '🌅 Daily Login Reward';
+        }
+        return {
+          id: t._id,
+          kind: 'spark',
+          type: t.amount > 0 ? 'income' : 'withdrawal',
+          txnType: t.type,
+          title,
+          subtitle,
+          date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          amount: t.amount,
+          status: 'completed',
+          rawDate: new Date(t.createdAt)
+        };
+      });
 
       // Combine and Sort
       const combined = [...mappedTxns, ...mappedSparks].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
@@ -395,9 +414,13 @@ const WalletScreen = () => {
                     <Text style={[styles.txnTitle, { color: c.text }]} numberOfLines={1}>{t.title}</Text>
                     <View style={styles.txnMeta}>
                       <Text style={[styles.txnDate, { color: c.subtext }]}>{t.date}</Text>
-                      <View style={[styles.txnStatusBadge, { backgroundColor: isPending ? 'rgba(245,158,11,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                        <Text style={[styles.txnStatusText, { color: isPending ? '#F59E0B' : c.subtext }]}>{t.status}</Text>
-                      </View>
+                      {t.subtitle ? (
+                        <Text style={[styles.txnStatusText, { color: c.subtext, marginLeft: 6 }]} numberOfLines={1}>{t.subtitle}</Text>
+                      ) : (
+                        <View style={[styles.txnStatusBadge, { backgroundColor: isPending ? 'rgba(245,158,11,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                          <Text style={[styles.txnStatusText, { color: isPending ? '#F59E0B' : c.subtext }]}>{t.status}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
@@ -408,6 +431,12 @@ const WalletScreen = () => {
                         : new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(t.amount)
                       }
                     </Text>
+                    {t.kind === 'spark' && t.txnType === 'transfer_send' && (
+                      <MaterialIcons name="arrow-upward" size={12} color="#EF4444" style={{ marginRight: 2 }} />
+                    )}
+                    {t.kind === 'spark' && t.txnType === 'transfer_receive' && (
+                      <MaterialIcons name="arrow-downward" size={12} color="#10B981" style={{ marginRight: 2 }} />
+                    )}
                     {t.kind === 'spark' && <Text style={{ fontSize: 10, color: c.subtext }}>Sparks</Text>}
                   </View>
                 </View>

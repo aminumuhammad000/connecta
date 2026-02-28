@@ -86,8 +86,8 @@ function ClientTabs() {
                         iconName = focused ? 'briefcase' : 'briefcase-outline';
                     } else if (route.name === 'Projects') {
                         iconName = focused ? 'folder-open' : 'folder-open-outline';
-                    } else if (route.name === 'Messages') {
-                        iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+                    } else if (route.name === 'Wallet') {
+                        iconName = focused ? 'wallet' : 'wallet-outline';
                     } else if (route.name === 'Profile') {
                         iconName = focused ? 'person' : 'person-outline';
                     }
@@ -106,7 +106,7 @@ function ClientTabs() {
             <Tab.Screen name="Home" component={ClientDashboardScreen} />
             <Tab.Screen name="Jobs" component={ClientJobsScreen} />
             <Tab.Screen name="Projects" component={ClientProjectsScreen} />
-            <Tab.Screen name="Messages" component={ChatsScreen} />
+            <Tab.Screen name="Wallet" component={require('../screens/ClientWalletScreen').default} />
             <Tab.Screen name="Profile" component={ClientProfileScreen} />
         </Tab.Navigator>
     );
@@ -161,7 +161,7 @@ export default function ClientNavigator() {
             <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
             <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
             <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
-            <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
+            <Stack.Screen name="Wallet" component={require('../screens/ClientWalletScreen').default} />
             <Stack.Screen name="SendSpark" component={require('../screens/SendSparkScreen').default} />
             <Stack.Screen name="ReceiveSpark" component={require('../screens/ReceiveSparkScreen').default} />
             <Stack.Screen name="SetTransactionPin" component={require('../screens/SetTransactionPinScreen').default} />
