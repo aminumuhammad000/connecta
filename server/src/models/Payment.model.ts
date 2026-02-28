@@ -13,7 +13,7 @@ export interface IPayment extends Document {
   netAmount: number; // Amount after platform fee
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
   paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer';
-  paymentType: 'milestone' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification';
+  paymentType: 'milestone' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup';
 
   // Payment Gateway Details
   gatewayReference: string; // Reference from payment gateway
@@ -100,7 +100,7 @@ const PaymentSchema: Schema = new Schema(
     },
     paymentType: {
       type: String,
-      enum: ['milestone', 'full_payment', 'hourly', 'bonus', 'job_verification'],
+      enum: ['milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
       default: 'milestone',
     },
     gatewayReference: {

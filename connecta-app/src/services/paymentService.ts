@@ -20,6 +20,17 @@ export const initializePayment = async (paymentData: {
 };
 
 /**
+ * Initialize a wallet top-up payment
+ */
+export const initializeTopup = async (topupData: {
+    amount: number;
+    description: string;
+}): Promise<{ reference: string; authorizationUrl: string }> => {
+    const response = await post(API_ENDPOINTS.INITIALIZE_TOPUP, topupData);
+    return (response as any)?.data || response;
+};
+
+/**
  * Initialize job verification payment
  */
 export const initializeJobVerification = async (verificationData: {
@@ -142,6 +153,7 @@ export const processWithdrawal = async (withdrawalId: string): Promise<any> => {
 
 export default {
     initializePayment,
+    initializeTopup,
     initializeJobVerification,
     verifyPayment,
     getPaymentHistory,

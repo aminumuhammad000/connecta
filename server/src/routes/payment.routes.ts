@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  initializeTopup,
   initializePayment,
   initializeJobVerification,
   verifyPayment,
@@ -30,6 +31,7 @@ router.get('/admin/wallets/all', authenticate, getAllWallets);
 
 // Payment routes
 router.post('/initialize', authenticate, initializePayment);
+router.post('/initialize-topup', authenticate, initializeTopup);
 router.post('/job-verification', authenticate, initializeJobVerification);
 router.get('/verify/:reference', authenticate, verifyPayment);
 router.post('/:paymentId/release', authenticate, releasePayment);

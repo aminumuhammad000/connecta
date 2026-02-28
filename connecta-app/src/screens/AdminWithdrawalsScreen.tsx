@@ -36,7 +36,7 @@ const AdminWithdrawalsScreen = ({ navigation }: any) => {
     const handleApprove = async (id: string, amount: number) => {
         Alert.alert(
             'Confirm Approval',
-            `Are you sure you want to process this withdrawal of $${amount}?`,
+            `Are you sure you want to process this withdrawal of ₦${amount}?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -68,7 +68,7 @@ const AdminWithdrawalsScreen = ({ navigation }: any) => {
                 <View style={styles.row}>
                     <View>
                         <Text style={[styles.amount, { color: c.text }]}>
-                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: item.currency || 'USD' }).format(item.amount)}
+                            {new Intl.NumberFormat('en-NG', { style: 'currency', currency: item.currency || 'NGN' }).format(item.amount)}
                         </Text>
                         <Text style={[styles.date, { color: c.subtext }]}>
                             {new Date(item.createdAt).toLocaleDateString()} • {new Date(item.createdAt).toLocaleTimeString()}

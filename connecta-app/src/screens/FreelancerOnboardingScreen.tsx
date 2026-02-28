@@ -25,7 +25,7 @@ const STEPS: StepConfig[] = [
     },
     {
         id: 'minSalary',
-        question: 'What is your minimum desired salary (Annual USD)?',
+        question: 'What is your minimum desired salary (Annual Naira)?',
         type: 'currency',
         placeholder: 'e.g. 50,000'
     },

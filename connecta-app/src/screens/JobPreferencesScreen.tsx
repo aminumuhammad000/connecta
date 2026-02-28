@@ -245,9 +245,9 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                         </View>
 
                         <View style={styles.field}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Minimum Annual Salary (USD)</Text>
+                            <Text style={[styles.label, { color: c.subtext }]}>Minimum Annual Salary (NGN)</Text>
                             <View style={[styles.inputContainer, { backgroundColor: c.isDark ? '#2D2D2D' : '#F3F4F6' }]}>
-                                <Text style={{ color: c.subtext, fontSize: 16, marginRight: 8 }}>$</Text>
+                                <Text style={{ color: c.subtext, fontSize: 16, marginRight: 8 }}>₦</Text>
                                 <TextInput
                                     style={[styles.flexInput, { color: c.text }]}
                                     value={minSalary}

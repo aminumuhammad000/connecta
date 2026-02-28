@@ -201,7 +201,7 @@ const FreelancerProjectsScreen: React.FC<any> = ({ navigation }) => {
                                     <View style={styles.cardTop}>
                                         <Text style={[styles.cardTitle, { color: c.text }]} numberOfLines={1}>{p.title}</Text>
                                         <Text style={[styles.cardPrice, { color: c.primary }]}>
-                                            {p.budget?.currency || '$'}{p.budget?.amount?.toLocaleString() || '0'}
+                                            {p.budget?.currency || '₦'}{p.budget?.amount?.toLocaleString() || '0'}
                                         </Text>
                                     </View>
                                     <View style={styles.cardMiddle}>

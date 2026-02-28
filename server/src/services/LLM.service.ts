@@ -318,6 +318,43 @@ ${text}`;
             ]
         };
     }
+    async generateProjectTasks(projectDetails: any): Promise<any[]> {
+        try {
+            const model = await this.getModel();
+            if (!model) return [];
+
+            const rolesText = projectDetails.roles?.map((r: any) => `- ${r.title}: ${r.description}`).join('\n');
+            const promptText = `You are a Project Manager. Generate a set of high-level tasks for a team-based project.
+            
+### PROJECT DETAILS
+- Title: ${projectDetails.title}
+- Description: ${projectDetails.description}
+
+### ROLES
+${rolesText}
+
+### OUTPUT SCHEMA (STRICT JSON ARRAY)
+[
+    {
+        "title": "...",
+        "description": "...",
+        "priority": "low/medium/high",
+        "roleTitle": "Title of the role best suited for this task"
+    }
+]
+
+Return ONLY raw JSON array. Generate exactly 5-8 core tasks.`;
+
+            const response = await model.invoke([new HumanMessage(promptText)]);
+            const responseText = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+            const cleanedResponse = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            return JSON.parse(cleanedResponse);
+        } catch (error) {
+            console.error("LLM Auto-Task Error:", error);
+            return [];
+        }
+    }
 }
 
 export default new LLMService();

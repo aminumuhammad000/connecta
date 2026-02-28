@@ -20,6 +20,11 @@ export const fundCollaboProject = async (id: string) => {
     return (response as any)?.data || response;
 };
 
+export const fundCollaboProjectFromWallet = async (id: string) => {
+    const response = await post(`/api/collabo/${id}/fund-wallet`, {});
+    return (response as any)?.data || response;
+};
+
 export const startWork = async (id: string) => {
     const response = await post(`/api/collabo/${id}/start`, {});
     return (response as any)?.data || response;
@@ -35,8 +40,23 @@ export const inviteToRole = async (roleId: string, freelancerId: string) => {
     return (response as any)?.data || response;
 };
 
+export const aiInviteToRole = async (roleId: string) => {
+    const response = await post(`/api/collabo/role/${roleId}/ai-invite`, {});
+    return (response as any)?.data || response;
+};
+
 export const addRole = async (projectId: string, roleData: { title: string; description: string; budget: number; skills: string[] }) => {
     const response = await post(`/api/collabo/${projectId}/role`, roleData);
+    return (response as any)?.data || response;
+};
+
+export const updateRole = async (roleId: string, roleData: { title?: string; description?: string; budget?: number; skills?: string[] }) => {
+    const response = await patch(`/api/collabo/role/${roleId}`, roleData);
+    return (response as any)?.data || response;
+};
+
+export const generateAutoTasks = async (projectId: string) => {
+    const response = await post(`/api/collabo/${projectId}/auto-tasks`, {});
     return (response as any)?.data || response;
 };
 
@@ -103,5 +123,10 @@ export const getFiles = async (workspaceId: string) => {
 };
 export const deleteTask = async (taskId: string) => {
     const response = await del(`/api/collabo/task/${taskId}`);
+    return (response as any)?.data || response;
+};
+
+export const getActivities = async (workspaceId: string) => {
+    const response = await get(`/api/collabo/activities?workspaceId=${workspaceId}`);
     return (response as any)?.data || response;
 };

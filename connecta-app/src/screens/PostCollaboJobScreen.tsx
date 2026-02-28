@@ -739,7 +739,7 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                         <MaterialIcons name="payments" size={20} color="#FFF" style={{ opacity: 0.8 }} />
                         <Text style={styles.summaryLabel}>ESTIMATED BUDGET</Text>
                         <Text style={styles.summaryValue}>
-                            {currency === 'NGN' ? '₦' : '$'}{scopingData?.totalEstimatedBudget?.toLocaleString()}
+                            {currency === 'USD' ? '$' : '₦'}{scopingData?.totalEstimatedBudget?.toLocaleString()}
                         </Text>
                     </View>
                     <View style={[styles.summaryDivider, { backgroundColor: '#FFF' }]} />
@@ -807,7 +807,7 @@ export default function PostCollaboJobScreen({ navigation }: any) {
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.roleTitle, { color: c.text }]}>{role.title}</Text>
                                 <Text style={[styles.roleBudget, { color: c.primary }]}>
-                                    {currency === 'NGN' ? '₦' : '$'}{role.budget?.toLocaleString()}
+                                    {currency === 'USD' ? '$' : '₦'}{role.budget?.toLocaleString()}
                                 </Text>
                             </View>
                             {role.count > 1 && (

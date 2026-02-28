@@ -133,19 +133,17 @@ const ClientWalletScreen = () => {
         }
         try {
             setIsDepositing(true);
-            const token = await getToken();
-            const res = await fetch(`${API_BASE_URL}/api/payments/initialize`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ amount, description: 'Wallet Top-up' })
+            const data = await paymentService.initializeTopup({
+                amount,
+                description: 'Wallet Top-up'
             });
-            const data = await res.json();
-            if (data?.data?.authorizationUrl) {
-                navigation.navigate('Payment', { paymentUrl: data.data.authorizationUrl, amount });
+
+            if (data?.authorizationUrl) {
+                navigation.navigate('Payment', { paymentUrl: data.authorizationUrl, amount });
                 setShowDepositModal(false);
                 setDepositAmount('');
             } else {
-                showAlert({ title: 'Error', message: data.message || 'Failed to initialize deposit', type: 'error' });
+                showAlert({ title: 'Error', message: 'Failed to initialize deposit', type: 'error' });
             }
         } catch (error: any) {
             showAlert({ title: 'Error', message: error.message || 'Deposit failed', type: 'error' });

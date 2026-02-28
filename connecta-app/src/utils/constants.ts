@@ -84,6 +84,7 @@ export const API_ENDPOINTS = {
 
     // Payments
     INITIALIZE_PAYMENT: '/api/payments/initialize',
+    INITIALIZE_TOPUP: '/api/payments/initialize-topup',
     PAYMENT_JOB_VERIFICATION: '/api/payments/job-verification',
     VERIFY_PAYMENT: (reference: string) => `/api/payments/verify/${reference}`,
     PAYMENT_HISTORY: '/api/payments/history',
