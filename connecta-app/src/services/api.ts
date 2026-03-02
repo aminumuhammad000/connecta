@@ -153,25 +153,27 @@ export const uploadFile = async (url: string, formData: FormData): Promise<ApiRe
 
 /**
  * Upload file with multipart/form-data (Public version)
- * Uses a direct axios call to bypass the interceptor entirely
+ * Uses the pre-configured apiClient instance for consistent header/timeout handling
  */
 export const uploadFilePublic = async (url: string, formData: FormData): Promise<ApiResponse> => {
-    // Ensure base URL doesn't have double slash if url starts with one
-    const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
-    const path = url.startsWith('/') ? url : `/${url}`;
-    const fullUrl = `${baseUrl}${path}`;
+    console.log('📡 [uploadFilePublic] Sending to:', API_BASE_URL + url);
 
-    console.log('📡 [uploadFilePublic] Sending to:', fullUrl);
-
-    const response = await axios.post(fullUrl, formData, {
-        headers: {
-            // Note: Don't set Content-Type manually for FormData on web, 
-            // axios/browser will set it with the correct boundary.
-        },
-        timeout: 60000, // 60s timeout for uploads
-    });
-
-    return response.data;
+    try {
+        const response = await apiClient.post(url, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            timeout: 60000, // 60s timeout for uploads
+        });
+        return response as any;
+    } catch (error: any) {
+        console.error('❌ [uploadFilePublic] Network Error Details:', {
+            message: error.message,
+            code: error.code,
+            isAxiosError: error.isAxiosError
+        });
+        throw error;
+    }
 };
 
 // Event for handling 401 Unauthorized

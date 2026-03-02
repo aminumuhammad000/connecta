@@ -5,6 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useThemeColors } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../Avatar';
+import Logo from '../Logo';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const NavItem = ({ label, icon, routeName, isActive, onPress, colorSet }: any) => {
@@ -93,7 +94,7 @@ const DesktopSideNav = () => {
         <View style={[styles.container, { backgroundColor: '#fff', borderRightColor: c.border }]}>
             {/* Logo Area */}
             <View style={styles.logoContainer}>
-                <Image source={require('../../../assets/logo.png')} style={{ width: 130, height: 36, resizeMode: 'contain' }} />
+                <Logo width={130} height={36} />
                 <View style={styles.proBadge}>
                     <Text style={styles.proText}>PRO</Text>
                 </View>

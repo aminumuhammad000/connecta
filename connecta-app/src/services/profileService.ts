@@ -10,13 +10,39 @@ const unwrapProfile = (response: any): Profile | null => {
 
     // Handle API envelope shapes
     if (data?.success === false) return null;
+
     // Treat successful responses with null data as present to avoid repeated prompts
     if (data?.success === true && data?.data === null) return {} as Profile;
-    if (data?.profile) return data.profile as Profile;
-    if (data?.user) return data.user as Profile;
 
-    // If we have any non-null object/array here, return it so the app treats profile as present
-    if (data && typeof data === 'object') {
+    // If it's a flattened profile (our new standard) or has profile fields, return as is
+    // We check for fields that only exist in a Profile, not a User
+    const hasProfileFields = data && (data.bio !== undefined || data.skills !== undefined || data.employment !== undefined || data.portfolio !== undefined);
+
+    if (data?.profile) {
+        // If it's wrapped in a 'profile' key, return that
+        return data.profile as Profile;
+    }
+
+    if (hasProfileFields) {
+        // If the root object has profile fields, return the root object
+        // Merging user data if it's nested but we are in the root
+        if (data.user && typeof data.user === 'object') {
+            return {
+                ...data.user,
+                ...data,
+                userId: data.user._id || data.user.id || data.userId
+            } as Profile;
+        }
+        return data as Profile;
+    }
+
+    if (data?.user && typeof data.user === 'object') {
+        // Only return just the user if no profile fields were found at root
+        return data.user as Profile;
+    }
+
+    // Fallback: return root object if it's an object
+    if (data && typeof data === 'object' && Object.keys(data).length > 0) {
         return data as Profile;
     }
 

@@ -22,6 +22,7 @@ import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { useSocket } from '../context/SocketContext';
 import { useTranslation } from '../utils/i18n';
+import StatusSparkPopup, { PopupType } from '../components/StatusSparkPopup';
 
 const { width } = Dimensions.get('window');
 
@@ -39,6 +40,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const [authModalVisible, setAuthModalVisible] = React.useState(false);
   const [rewardModalVisible, setRewardModalVisible] = useState(false);
   const [claimingReward, setClaimingReward] = useState(false);
+  const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+  const [successData, setSuccessData] = useState({ title: '', message: '', type: 'success' as PopupType });
 
   // Invite Modal State
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
@@ -109,12 +112,12 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
       const res = await userService.claimDailyReward();
       if (res.success) {
         setRewardModalVisible(false);
-        if (res.user) {
-          updateUser(res.user);
-        } else {
-          const updatedUser = await userService.getMe();
-          updateUser(updatedUser);
-        }
+        setSuccessData({
+          title: 'Daily Reward Claimed!',
+          message: 'You have successfully claimed your daily sparks. Keep it up!',
+          type: 'success'
+        });
+        setSuccessPopupVisible(true);
         loadDashboardData();
       }
     } catch (error: any) {
@@ -189,12 +192,27 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
     try {
       setIsInviting(true);
       await jobService.inviteFreelancer(job._id, selectedFreelancer._id || selectedFreelancer.id);
-      Alert.alert('Success', `Invitation sent to ${selectedFreelancer.firstName} for "${job.title}"`);
+      setSuccessData({
+        title: 'Success! 🕊️',
+        message: `Your invitation for "${job.title}" has been sent to ${selectedFreelancer.firstName}.`,
+        type: 'success'
+      });
+      setSuccessPopupVisible(true);
       setInviteModalVisible(false);
       setSelectedFreelancer(null);
     } catch (error: any) {
       console.error('Error sending invite:', error);
-      Alert.alert('Error', error.message || 'Failed to send invitation. Please try again.');
+      if (error?.status === 403) {
+        setSuccessData({
+          title: 'Job Not Approved',
+          message: error.message || 'You cannot invite freelancers until your job has been approved by admin.',
+          type: 'warning'
+        });
+        setSuccessPopupVisible(true);
+        setInviteModalVisible(false);
+      } else {
+        Alert.alert('Error', error.message || 'Failed to send invitation. Please try again.');
+      }
     } finally {
       setIsInviting(false);
     }
@@ -205,12 +223,27 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
     try {
       setIsInviting(true);
       await collaboService.inviteToRole(role._id, selectedFreelancer._id || selectedFreelancer.id);
-      Alert.alert('Success', `Invitation sent to ${selectedFreelancer.firstName} for role "${role.title}"`);
+      setSuccessData({
+        title: 'Team Invite Sent!',
+        message: `You've invited ${selectedFreelancer.firstName} to join your team for "${role.title}".`,
+        type: 'success'
+      });
+      setSuccessPopupVisible(true);
       setInviteModalVisible(false);
       setSelectedFreelancer(null);
       setSelectedCollaboProject(null);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send invitation');
+      if (error?.status === 403) {
+        setSuccessData({
+          title: 'Project Not Approved',
+          message: error.message || 'Your team project must be approved by admin before you can invite roles.',
+          type: 'warning'
+        });
+        setSuccessPopupVisible(true);
+        setInviteModalVisible(false);
+      } else {
+        Alert.alert('Error', error.message || 'Failed to send invitation');
+      }
     } finally {
       setIsInviting(false);
     }
@@ -297,7 +330,6 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
 
           {/* Daily Reward Modal */}
           <SuccessModal
-            visible={rewardModalVisible}
             visible={rewardModalVisible}
             title={t('daily_reward_title')}
             message={t('daily_reward_msg')}
@@ -797,6 +829,14 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
             </View>
           </View>
         </Modal>
+
+        <StatusSparkPopup
+          visible={successPopupVisible}
+          type={successData.type}
+          title={successData.title}
+          message={successData.message}
+          onClose={() => setSuccessPopupVisible(false)}
+        />
 
         <Sidebar
           isVisible={sidebarVisible}

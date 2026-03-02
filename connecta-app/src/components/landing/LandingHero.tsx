@@ -109,7 +109,7 @@ const LandingHero = ({ isDesktop }: { isDesktop?: boolean }) => {
                 <View style={styles.sun}>
                     <LinearGradient colors={['#FD6730', '#FF8F6B']} style={styles.sunGradient} />
                     <View style={styles.sunInner}>
-                        <Image source={require('../../../assets/logo.png')} style={styles.logoIcon} />
+                        <Image source={require('../../../assets/logo copy.png')} style={styles.logoIcon} />
                     </View>
                 </View>
 

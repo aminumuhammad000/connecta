@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { Job } from '../types';
 import CustomAlert from '../components/CustomAlert';
+import StatusSparkPopup, { PopupType } from '../components/StatusSparkPopup';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -194,6 +195,9 @@ const PublicFreelancerProfileScreen: React.FC = () => {
         type: 'success'
     });
 
+    const [successPopupVisible, setSuccessPopupVisible] = useState(false);
+    const [successData, setSuccessData] = useState({ title: '', message: '', type: 'success' as PopupType });
+
     const showAlert = (title: string, message: string, type: 'success' | 'error' | 'warning' = 'success') => {
         setAlertConfig({ visible: true, title, message, type });
     };
@@ -211,18 +215,39 @@ const PublicFreelancerProfileScreen: React.FC = () => {
 
             if ((selectedJob as any).type === 'collabo') {
                 await (collaboService as any).inviteToRole((selectedJob as any)._id, id);
-                showAlert('Invitation Sent', `Invitation sent to ${profile.firstName} for "${selectedJob.title}"`, 'success');
+                setSuccessData({
+                    title: 'Invitation Sent! 🚀',
+                    message: `You've invited ${profile.firstName} to join your team for "${selectedJob.title}".`,
+                    type: 'success'
+                });
             } else {
                 await (jobService as any).inviteFreelancer(selectedJob._id, id);
-                showAlert('Invitation Sent', `Invitation sent to ${profile.firstName} for "${selectedJob.title}"`, 'success');
+                setSuccessData({
+                    title: 'Success! 🕊️',
+                    message: `Your invitation for "${selectedJob.title}" has been sent to ${profile.firstName}.`,
+                    type: 'success'
+                });
             }
+
+            setSuccessPopupVisible(true);
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setInviteModalVisible(false);
             setSelectedJob(null);
+            setIsInviting(false);
         } catch (error: any) {
             console.error('Error sending invite:', error);
-            showAlert('Error', error.message || 'Failed to send invitation. Please try again.', 'error');
+            if (error?.status === 403) {
+                setSuccessData({
+                    title: 'Job Not Approved',
+                    message: error.message || 'You cannot invite freelancers until your job has been approved by admin.',
+                    type: 'warning'
+                });
+                setSuccessPopupVisible(true);
+                setInviteModalVisible(false);
+            } else {
+                showAlert('Error', error.message || 'Failed to send invitation. Please try again.', 'error');
+            }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } finally {
             setIsInviting(false);
@@ -251,7 +276,12 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                 rating,
                 comment,
             });
-            showAlert('Success', 'Review submitted successfully', 'success');
+            setSuccessData({
+                title: 'Review Posted!',
+                message: 'Your feedback has been shared with the community. Thank you!',
+                type: 'success'
+            });
+            setSuccessPopupVisible(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setReviewModalVisible(false);
             setComment('');
@@ -895,17 +925,17 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                             ) : (
                                 <ScrollView style={{ maxHeight: 340 }} contentContainerStyle={{ gap: 12 }}>
                                     {inviteContexts.length > 0 ? (
-                                        inviteContexts.map((item: any) => {
+                                        inviteContexts.map((item: any, index: number) => {
                                             const isSelected = selectedJob?._id === item._id;
 
                                             if (item.type === 'empty-collabo') {
                                                 return (
-                                                    <View key={item._id} style={{ padding: 16, borderRadius: 16, backgroundColor: c.background, borderWidth: 1, borderColor: c.border, gap: 12 }}>
+                                                    <View key={item._id} style={{ padding: 16, borderRadius: 16, backgroundColor: c.background, borderWidth: 1, borderColor: c.border, gap: 12, marginBottom: 12 }}>
                                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: 0.6 }}>
-                                                            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#8B5CF620', alignItems: 'center', justifyContent: 'center' }}>
                                                                 <MaterialIcons name="groups" size={20} color="#8B5CF6" />
                                                             </View>
-                                                            <View>
+                                                            <View style={{ flex: 1 }}>
                                                                 <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{item.title}</Text>
                                                                 <Text style={{ fontSize: 13, color: c.subtext }}>No open roles</Text>
                                                             </View>
@@ -919,7 +949,7 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                                                                     inviteFreelancerId: id
                                                                 });
                                                             }}
-                                                            style={{ padding: 12, backgroundColor: c.primary + '15', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: c.primary }}
+                                                            style={{ padding: 12, backgroundColor: c.primary + '15', borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: c.primary }}
                                                         >
                                                             <Text style={{ color: c.primary, fontWeight: '700', fontSize: 14 }}>Create New Role</Text>
                                                         </TouchableOpacity>
@@ -929,43 +959,62 @@ const PublicFreelancerProfileScreen: React.FC = () => {
 
                                             return (
                                                 <TouchableOpacity
-                                                    key={item._id}
-                                                    disabled={item.disabled}
+                                                    key={item._id || index}
                                                     onPress={() => {
-                                                        if (item.disabled) return;
                                                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                                        setSelectedJob(isSelected ? null : item);
+                                                        setSelectedJob(item);
                                                     }}
-                                                    activeOpacity={item.disabled ? 1 : 0.8}
+                                                    activeOpacity={0.7}
                                                     style={{
                                                         padding: 16,
+                                                        backgroundColor: isSelected ? c.primary + '10' : c.background,
                                                         borderRadius: 16,
-                                                        backgroundColor: isSelected ? c.primary + '10' : (item.disabled ? c.card + '80' : c.card),
-                                                        borderWidth: 1.5,
-                                                        borderColor: isSelected ? c.primary : c.border,
+                                                        marginBottom: 12,
                                                         flexDirection: 'row',
                                                         alignItems: 'center',
-                                                        gap: 12,
-                                                        opacity: item.disabled ? 0.6 : 1
+                                                        borderWidth: 1.5,
+                                                        borderColor: isSelected ? c.primary : c.border,
+                                                        shadowColor: isSelected ? c.primary : '#000',
+                                                        shadowOffset: { width: 0, height: 4 },
+                                                        shadowOpacity: isSelected ? 0.1 : 0.05,
+                                                        shadowRadius: 8,
+                                                        elevation: 2
                                                     }}
                                                 >
                                                     <View style={{
-                                                        width: 40, height: 40, borderRadius: 12,
-                                                        backgroundColor: item.type === 'collabo' ? '#8B5CF620' : '#10B98120',
-                                                        alignItems: 'center', justifyContent: 'center'
+                                                        width: 48, height: 48, borderRadius: 12,
+                                                        backgroundColor: isSelected ? c.primary : c.border + '30',
+                                                        alignItems: 'center', justifyContent: 'center',
+                                                        marginRight: 16
                                                     }}>
                                                         <MaterialIcons
-                                                            name={item.type === 'collabo' ? 'person' : 'work'}
-                                                            size={20}
-                                                            color={item.type === 'collabo' ? '#8B5CF6' : '#10B981'}
+                                                            name={item.type === 'collabo' ? "groups" : "work"}
+                                                            size={24}
+                                                            color={isSelected ? "#FFF" : c.subtext}
                                                         />
                                                     </View>
+
                                                     <View style={{ flex: 1 }}>
-                                                        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }} numberOfLines={1}>{item.title}</Text>
-                                                        <Text style={{ fontSize: 13, color: c.subtext }} numberOfLines={1}>
-                                                            {item.subtitle} • {item.budget ? `₦${item.budget.toLocaleString()}` : 'Negotiable'}
+                                                        <Text style={{
+                                                            fontSize: 16,
+                                                            fontWeight: isSelected ? '700' : '600',
+                                                            color: isSelected ? c.primary : c.text,
+                                                            marginBottom: 4
+                                                        }}>
+                                                            {item.title}
                                                         </Text>
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                            {item.type === 'collabo' && (
+                                                                <View style={{ backgroundColor: '#8B5CF6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                                                    <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '800' }}>COLLABO</Text>
+                                                                </View>
+                                                            )}
+                                                            <Text style={{ fontSize: 13, color: c.subtext }} numberOfLines={1}>
+                                                                {item.status || 'Active'} • {item.budget ? `₦${item.budget.toLocaleString()}` : 'Negotiable'}
+                                                            </Text>
+                                                        </View>
                                                     </View>
+
                                                     <View style={{
                                                         width: 24, height: 24, borderRadius: 12, borderWidth: 2,
                                                         borderColor: isSelected ? c.primary : c.border,
@@ -1185,12 +1234,22 @@ const PublicFreelancerProfileScreen: React.FC = () => {
                     </View>
                 </Modal>
 
+
+
+                <StatusSparkPopup
+                    visible={successPopupVisible}
+                    type={successData.type}
+                    title={successData.title}
+                    message={successData.message}
+                    onClose={() => setSuccessPopupVisible(false)}
+                />
+
                 <CustomAlert
                     visible={alertConfig.visible}
                     title={alertConfig.title}
                     message={alertConfig.message}
                     type={alertConfig.type}
-                    onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+                    onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
                 />
             </View>
         </SafeAreaView>

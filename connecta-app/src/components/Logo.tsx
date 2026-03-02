@@ -12,7 +12,7 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ size = 28, width, height, resizeMode = 'contain', style }) => {
   return (
     <Image
-      source={require('../../assets/logo.png')}
+      source={require('../../assets/logo copy.png')}
       style={[{
         width: width || size,
         height: height || size,

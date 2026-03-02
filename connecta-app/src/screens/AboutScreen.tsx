@@ -28,12 +28,11 @@ export default function AboutScreen({ navigation }: any) {
                 contentContainerStyle={styles.scrollContent}
             >
                 <View style={styles.logoContainer}>
-                    <LinearGradient
-                        colors={[c.primary, '#FF9F70']}
-                        style={styles.logoGradient}
-                    >
-                        <Ionicons name="flash" size={60} color="#FFF" />
-                    </LinearGradient>
+                    <Image
+                        source={require('../../assets/logo copy.png')}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
                     <Text style={[styles.appName, { color: c.text }]}>Connecta</Text>
                     <Text style={[styles.version, { color: c.subtext }]}>Version 1.0.0</Text>
                 </View>
@@ -122,17 +121,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 30,
     },
-    logoGradient: {
-        width: 120,
-        height: 120,
-        borderRadius: 35,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#FD6730',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 10,
+    logoImage: {
+        width: 140,
+        height: 140,
+        borderRadius: 30,
     },
     appName: {
         fontSize: 28,

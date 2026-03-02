@@ -17,6 +17,7 @@ import SignupProgressBar from '../components/SignupProgressBar';
 import ChatGreeting from '../components/ChatGreeting';
 import * as storage from '../utils/storage';
 import AnimatedBackground from '../components/AnimatedBackground';
+import Logo from '../components/Logo';
 
 const SignupScreen: React.FC = () => {
   const c = useThemeColors();
@@ -118,7 +119,7 @@ const SignupScreen: React.FC = () => {
   const sideContent = (
     <View style={styles.desktopSide}>
       <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
-        <Ionicons name="person-circle-outline" size={80} color={c.primary} />
+        <Logo size={80} />
       </View>
       <Text style={[styles.sideTitle, { color: c.text }]}>Nice to{'\n'}Meet You!</Text>
       <Text style={[styles.sideSub, { color: c.subtext }]}>

@@ -98,6 +98,76 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
 };
 
 /**
+ * Initialize payment for a top-up (wallet deposit)
+ */
+export const initializeTopup = async (req: Request, res: Response) => {
+  try {
+    console.log('🔵 [debug] Received Topup Initialization request');
+    const { amount, description } = req.body;
+    const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    if (!amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required field: amount',
+      });
+    }
+
+    // Create payment record for top-up
+    const payment = new Payment({
+      payerId: userId,
+      payeeId: userId, // Top-up is to self
+      amount,
+      platformFee: 0, // No platform fee for top-ups usually
+      netAmount: amount,
+      currency: 'NGN',
+      paymentType: 'topup',
+      description: description || 'Wallet Top-up',
+      status: 'pending',
+      escrowStatus: 'none',
+    });
+
+    await payment.save();
+
+    // Initialize Flutterwave payment
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const flutterwaveResponse = await flutterwaveService.initializePayment(
+      user.email,
+      amount,
+      payment._id.toString(),
+      { type: 'topup', userId }
+    );
+
+    payment.gatewayReference = payment._id.toString();
+    await payment.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Top-up initialized successfully',
+      data: {
+        paymentId: payment._id,
+        authorizationUrl: flutterwaveResponse.data.link,
+        reference: payment._id.toString(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Initialize topup error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to initialize top-up',
+    });
+  }
+};
+
+/**
  * Initialize payment for a project/milestone
  */
 export const initializePayment = async (req: Request, res: Response) => {
@@ -258,6 +328,56 @@ export const verifyPayment = async (req: Request, res: Response) => {
         job.paymentStatus = 'escrow'; // Or released/verified depending on flow
         await job.save();
       }
+    }
+
+    // Handle Wallet Top-up
+    if (payment.paymentType === 'topup') {
+      let wallet = await Wallet.findOne({ userId: payment.payerId });
+      if (!wallet) {
+        wallet = new Wallet({ userId: payment.payerId });
+      }
+      wallet.balance = (wallet.balance || 0) + payment.amount;
+      wallet.availableBalance = (wallet.availableBalance || 0) + payment.amount;
+      await wallet.save();
+
+      // Create a credit transaction
+      await Transaction.create({
+        userId: payment.payerId,
+        type: 'deposit',
+        amount: payment.amount,
+        currency: payment.currency,
+        status: 'completed',
+        paymentId: payment._id,
+        description: payment.description || 'Wallet Top-up',
+      });
+    }
+
+    // Handle Project Payment (Milestone or Full)
+    if (payment.paymentType === 'milestone' || payment.paymentType === 'full_payment') {
+      // 1. Credit the freelancer's wallet (escrow balance)
+      let freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
+      if (!freelancerWallet) {
+        freelancerWallet = new Wallet({ userId: payment.payeeId });
+      }
+
+      // Add to balance and escrow
+      freelancerWallet.balance = (freelancerWallet.balance || 0) + payment.netAmount;
+      freelancerWallet.escrowBalance = (freelancerWallet.escrowBalance || 0) + payment.netAmount;
+      payment.escrowStatus = 'held';
+      await payment.save();
+      await freelancerWallet.save();
+
+      // 2. Create a transaction record for the freelancer
+      await Transaction.create({
+        userId: payment.payeeId,
+        type: 'credit',
+        amount: payment.netAmount,
+        currency: payment.currency,
+        status: 'completed',
+        paymentId: payment._id,
+        projectId: payment.projectId,
+        description: `Escrow payment for project: ${payment.description}`,
+      });
     }
 
     return res.status(200).json({
@@ -504,8 +624,9 @@ export const getWalletBalance = async (req: Request, res: Response) => {
 
     // Update wallet with correct values
     if (wallet) {
-      wallet.escrowBalance = actualEscrowBalance;
-      wallet.availableBalance = (wallet.balance || 0) - wallet.escrowBalance;
+      wallet.escrowBalance = Math.max(0, actualEscrowBalance);
+      wallet.balance = Math.max(0, wallet.balance || 0);
+      wallet.availableBalance = Math.max(0, (wallet.balance || 0) - wallet.escrowBalance);
       await wallet.save();
     }
 

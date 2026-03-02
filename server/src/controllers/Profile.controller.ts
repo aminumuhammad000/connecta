@@ -54,9 +54,76 @@ export const getAllProfiles = async (req: Request, res: Response) => {
 };
 
 /**
- * @desc Get profile for authenticated user
- * @route GET /api/profiles/me
+ * Helper to format profile response consistently
  */
+const formatProfileResponse = (profile: any, reviews: any[] = [], jobs: any[] = []) => {
+  const profileData = profile.toObject ? profile.toObject() : profile;
+  const userData = (profileData.user || {}) as any;
+
+  return {
+    _id: profileData._id,
+    userId: userData._id || profileData.user,
+    phoneNumber: profileData.phoneNumber,
+    location: profileData.location,
+    country: profileData.country,
+    city: profileData.city,
+    timezone: profileData.timezone,
+    preferredLanguage: profileData.preferredLanguage,
+    skills: profileData.skills || [],
+    companyName: profileData.companyName,
+    website: profileData.website,
+    bio: profileData.bio,
+    avatar: profileData.avatar || userData.profileImage,
+    profileImage: userData.profileImage || profileData.avatar,
+    education: profileData.education || [],
+    languages: profileData.languages || [],
+    employment: profileData.employment || [],
+    portfolio: profileData.portfolio || [],
+    resume: profileData.resume,
+    createdAt: profileData.createdAt,
+    updatedAt: profileData.updatedAt,
+
+    // User fields flattened for frontend convenience
+    firstName: userData.firstName,
+    lastName: userData.lastName,
+    email: userData.email,
+    userType: userData.userType,
+    isPremium: userData.isPremium,
+    subscriptionTier: userData.subscriptionTier,
+    subscriptionStatus: userData.subscriptionStatus,
+    premiumExpiryDate: userData.premiumExpiryDate,
+
+    // Reputation / Stats
+    averageRating: userData.averageRating || 0,
+    totalReviews: userData.totalReviews || 0,
+    jobSuccessScore: userData.jobSuccessScore || 0,
+    badges: userData.badges || [],
+    performanceMetrics: userData.performanceMetrics || {
+      onTimeDeliveryRate: 100,
+      completionRate: 100,
+      responseTime: 24,
+    },
+
+    // Additional data
+    jobs,
+    jobsPosted: jobs.length,
+    reviews,
+    totalSpend: 0,
+    avgRate: 0,
+
+    // Preferences
+    remoteWorkType: profileData.remoteWorkType,
+    minimumSalary: profileData.minimumSalary,
+    workLocationPreferences: profileData.workLocationPreferences,
+    jobTitle: profileData.jobTitle,
+    profession: profileData.jobTitle || 'Freelancer', // Map jobTitle to profession for frontend
+    jobCategories: profileData.jobCategories,
+    yearsOfExperience: profileData.yearsOfExperience,
+    engagementTypes: profileData.engagementTypes,
+    jobNotificationFrequency: profileData.jobNotificationFrequency,
+  };
+};
+
 import { Job } from "../models/Job.model.js";
 
 export const getMyProfile = async (
@@ -103,67 +170,7 @@ export const getMyProfile = async (
       .populate('reviewerId', 'firstName lastName profileImage')
       .populate('projectId', 'title');
 
-    // Convert to plain object and add extra data
-    const profileData = profile.toObject();
-
-    // Extract user data from populated field
-    const userData = (profileData.user || {}) as any;
-
-    // Build response with profile data at top level
-    // Don't spread profileData.user to avoid overwriting profile fields
-    const responseData = {
-      _id: profileData._id,
-      userId: profileData.user,
-      phoneNumber: profileData.phoneNumber,
-      location: profileData.location,
-      skills: profileData.skills,
-      companyName: profileData.companyName,
-      website: profileData.website,
-      bio: profileData.bio,
-      avatar: profileData.avatar || userData.profileImage,
-      profileImage: userData.profileImage || profileData.avatar,
-      education: profileData.education,
-      languages: profileData.languages,
-      employment: profileData.employment,
-      portfolio: profileData.portfolio,
-      resume: profileData.resume,
-      createdAt: profileData.createdAt,
-      updatedAt: profileData.updatedAt,
-      // User fields for convenience
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      email: userData.email,
-      userType: userData.userType,
-      isPremium: userData.isPremium,
-      subscriptionTier: userData.subscriptionTier,
-      subscriptionStatus: userData.subscriptionStatus,
-      premiumExpiryDate: userData.premiumExpiryDate,
-      // Reputation
-      averageRating: userData.averageRating || 0,
-      totalReviews: userData.totalReviews || 0,
-      jobSuccessScore: userData.jobSuccessScore || 0,
-      badges: userData.badges || [],
-      performanceMetrics: userData.performanceMetrics || {
-        onTimeDeliveryRate: 100,
-        completionRate: 100,
-        responseTime: 24,
-      },
-      // Additional data
-      jobs,
-      jobsPosted,
-      reviews, // Add reviews here
-      totalSpend: 0,
-      avgRate: 0,
-      // Preferences
-      remoteWorkType: profileData.remoteWorkType,
-      minimumSalary: profileData.minimumSalary,
-      workLocationPreferences: profileData.workLocationPreferences,
-      jobTitle: profileData.jobTitle,
-      jobCategories: profileData.jobCategories,
-      yearsOfExperience: profileData.yearsOfExperience,
-      engagementTypes: profileData.engagementTypes,
-      jobNotificationFrequency: profileData.jobNotificationFrequency,
-    };
+    const responseData = formatProfileResponse(profile, reviews, jobs);
 
     console.log('📤 Profile fields:', {
       phoneNumber: responseData.phoneNumber,
@@ -208,11 +215,7 @@ export const getProfileById = async (req: Request, res: Response) => {
       .populate('reviewerId', 'firstName lastName profileImage')
       .populate('projectId', 'title');
 
-    const responseData = {
-      ...profile.toObject(),
-      reviews
-    };
-
+    const responseData = formatProfileResponse(profile, reviews);
     res.status(200).json(responseData);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -252,15 +255,8 @@ export const getProfileByUserId = async (req: Request, res: Response) => {
 
     // Fetch jobs posted by this user (if client)
     const jobs = await Job.find({ clientId: req.params.userId }).sort({ createdAt: -1 });
-    const jobsPosted = jobs.length;
 
-    const responseData = {
-      ...profile.toObject(),
-      reviews,
-      jobs,
-      jobsPosted
-    };
-
+    const responseData = formatProfileResponse(profile, reviews, jobs);
     res.status(200).json(responseData);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

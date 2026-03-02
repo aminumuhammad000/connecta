@@ -152,6 +152,9 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="JobPreferences" component={require('../screens/JobPreferencesScreen').default} />
             <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
             <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
+            <Stack.Screen name="SendSpark" component={require('../screens/SendSparkScreen').default} />
+            <Stack.Screen name="ReceiveSpark" component={require('../screens/ReceiveSparkScreen').default} />
+            <Stack.Screen name="SetTransactionPin" component={require('../screens/SetTransactionPinScreen').default} />
             <Stack.Screen name="ManageCV" component={require('../screens/ManageCVScreen').default} />
         </Stack.Navigator>
     );

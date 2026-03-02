@@ -134,21 +134,21 @@ const LandingStats = ({ isDesktop }: { isDesktop?: boolean }) => {
                 {isDesktop ? (
                     // Desktop: Single Row of 4
                     <View style={styles.desktopRowFull}>
-                        <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} loading={stats.loading} />
-                        <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} loading={stats.loading} />
-                        <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} loading={stats.loading} />
-                        <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} loading={stats.loading} />
+                        <StatCard icon="users" iconLib={Feather} label="Total Users" value={formatNumber(stats.totalUsers)} loading={stats.loading} />
+                        <StatCard icon="code" iconLib={Feather} label="Contributors" value={formatNumber(stats.freelancersCount)} loading={stats.loading} />
+                        <StatCard icon="check-circle" iconLib={Feather} label="Projects Done" value={formatNumber(stats.completedProjects)} loading={stats.loading} />
+                        <StatCard icon="currency-ngn" iconLib={MaterialCommunityIcons} label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} loading={stats.loading} />
                     </View>
                 ) : (
                     // Mobile: 2x2 Grid using Rows
                     <>
                         <View style={styles.row}>
-                            <StatCard icon="users" label="Total Users" value={formatNumber(stats.totalUsers)} loading={stats.loading} />
-                            <StatCard icon="code" label="Contributors" value={formatNumber(stats.freelancersCount)} loading={stats.loading} />
+                            <StatCard icon="users" iconLib={Feather} label="Total Users" value={formatNumber(stats.totalUsers)} loading={stats.loading} />
+                            <StatCard icon="code" iconLib={Feather} label="Contributors" value={formatNumber(stats.freelancersCount)} loading={stats.loading} />
                         </View>
                         <View style={styles.row}>
-                            <StatCard icon="check-circle" label="Projects Done" value={formatNumber(stats.completedProjects)} loading={stats.loading} />
-                            <StatCard icon="dollar-sign" label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} loading={stats.loading} />
+                            <StatCard icon="check-circle" iconLib={Feather} label="Projects Done" value={formatNumber(stats.completedProjects)} loading={stats.loading} />
+                            <StatCard icon="currency-ngn" iconLib={MaterialCommunityIcons} label="Total Paid Out" value={formatCurrency(stats.paymentRevenue)} loading={stats.loading} />
                         </View>
                     </>
                 )}
@@ -157,10 +157,10 @@ const LandingStats = ({ isDesktop }: { isDesktop?: boolean }) => {
     );
 };
 
-const StatCard = ({ icon, label, value, loading }: { icon: string, label: string, value: string, loading?: boolean }) => (
+const StatCard = ({ icon, iconLib: IconLib = Feather, label, value, loading }: { icon: string, iconLib?: any, label: string, value: string, loading?: boolean }) => (
     <View style={styles.card}>
         <View style={styles.iconBox}>
-            <Feather name={icon as any} size={20} color="#FD6730" />
+            <IconLib name={icon as any} size={20} color="#FD6730" />
         </View>
         {loading ? (
             <View style={styles.skeleton}>

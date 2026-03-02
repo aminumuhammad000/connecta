@@ -262,7 +262,7 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
 
     // Safely access properties as they might vary
     const budgetAmount = project.budget?.amount || project.budget || 0;
-    const budgetCurrency = project.budget?.currency || '$';
+    const budgetCurrency = project.budget?.currency || '₦';
     const budgetType = project.budget?.type || 'fixed';
 
     // Format dates

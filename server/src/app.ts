@@ -27,6 +27,7 @@ import insightsRoutes from "./routes/insights.routes.js";
 import portfolioRoutes from "./routes/portfolio.routes.js";
 import verificationRoutes from "./routes/verification.routes.js";
 import collaboRoutes from "./routes/Collabo.routes.js";
+import rewardRoutes from "./routes/reward.routes.js";
 import redisClient from "./config/redis.js";
 dotenv.config();
 
@@ -79,7 +80,8 @@ app.use(cors({
   ],
   credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // Connect to Database
@@ -103,6 +105,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/portfolio", portfolioRoutes);
 app.use("/api/verifications", verificationRoutes);
 app.use("/api/collabo", collaboRoutes);
+app.use("/api/rewards", rewardRoutes);
 import analyticsRoutes from "./routes/analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
 import subscriptionRoutes from "./routes/Subscription.routes.js";

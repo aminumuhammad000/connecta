@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -68,7 +68,11 @@ export default function CompleteProfileScreen({ navigation }: any) {
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
                     <View style={styles.iconWrapper}>
-                        <Ionicons name="document-text-outline" size={48} color={c.primary} />
+                        <Image
+                            source={require('../../assets/logo copy.png')}
+                            style={styles.logoImage}
+                            resizeMode="contain"
+                        />
                     </View>
 
                     <Text style={[styles.title, { color: c.text }]}>Complete Your Profile</Text>
@@ -179,6 +183,11 @@ const styles = StyleSheet.create({
     },
     iconWrapper: {
         marginBottom: 16,
+    },
+    logoImage: {
+        width: 100,
+        height: 100,
+        borderRadius: 20,
     },
     title: {
         fontSize: 24,

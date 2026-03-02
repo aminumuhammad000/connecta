@@ -24,3 +24,4 @@ build/
 Thumbs.db
 .env
 .env.example
+mm.md

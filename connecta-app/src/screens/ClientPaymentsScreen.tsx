@@ -69,7 +69,7 @@ const ClientPaymentsScreen: React.FC<any> = ({ navigation }) => {
         who: payee ? `Paid to ${payee.firstName} ${payee.lastName}` : 'Payment',
         purpose: project ? `For: ${project.title}` : 'Project Payment',
         date: new Date(p.createdAt).toLocaleDateString(),
-        amount: `$${p.amount.toLocaleString()}`,
+        amount: `₦${p.amount.toLocaleString()}`,
         rawAmount: p.amount,
         status: p.status.charAt(0).toUpperCase() + p.status.slice(1) as any,
         avatar: payee?.profileImage || `https://ui-avatars.com/api/?name=${payee?.firstName}+${payee?.lastName}&background=random`,

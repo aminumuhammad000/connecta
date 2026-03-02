@@ -46,8 +46,8 @@ const DashboardScreen: React.FC = () => {
   }]);
 
   const jobs: ActiveJob[] = useMemo(() => ([
-    { id: 'j1', title: 'UI/UX Design for a Mobile App', dueIn: '5 days', price: '$2,500', progress: 0.75 },
-    { id: 'j2', title: 'Website Redesign Project', dueIn: '12 days', price: '$4,000', progress: 0.4 },
+    { id: 'j1', title: 'UI/UX Design for a Mobile App', dueIn: '5 days', price: '₦2,500', progress: 0.75 },
+    { id: 'j2', title: 'Website Redesign Project', dueIn: '12 days', price: '₦4,000', progress: 0.4 },
   ]), []);
 
   return (
@@ -102,7 +102,7 @@ const DashboardScreen: React.FC = () => {
             <Text style={{ color: c.subtext }}>Coming soon</Text>
           </View>
         )}
-</View>
+      </View>
     </SafeAreaView>
   );
 };

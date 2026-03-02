@@ -6,7 +6,7 @@ echo "Make sure you're logged in: eas login"
 echo ""
 
 # Build preview APK
-eas build --platform android --profile preview
+npx eas-cli build --platform android --profile preview
 
 echo ""
 echo "✅ Build submitted! Check your Expo dashboard for progress."

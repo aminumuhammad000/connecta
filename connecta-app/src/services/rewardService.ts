@@ -59,7 +59,8 @@ export const getRewardActions = async (): Promise<RewardAction[]> => {
 export const getRewardBalance = async (): Promise<number> => {
     try {
         const response = await get<any>(API_ENDPOINTS.REWARD_BALANCE);
-        return response?.data?.balance || 0;
+        const data = (response as any)?.data || response;
+        return data?.currentBalance || data?.balance || 0;
     } catch (error) {
         console.error('Failed to get reward balance:', error);
         return 0;
@@ -94,4 +95,65 @@ export const checkDailyCheckIn = async (): Promise<{ earned: boolean; totalSpark
     }
 
     return { earned: false, totalSparks: 0 };
+};
+export const validateRecipient = async (query: { email?: string, userId?: string }): Promise<any> => {
+    try {
+        const response = await post<any>(API_ENDPOINTS.VALIDATE_RECIPIENT, query);
+        const data = (response as any)?.data || response;
+        return data;
+    } catch (error) {
+        console.error('Failed to validate recipient:', error);
+        throw error;
+    }
+};
+
+export const transferSparks = async (data: { recipientEmail: string, amount: number, transactionPin: string }): Promise<any> => {
+    try {
+        const response = await post<any>(API_ENDPOINTS.TRANSFER_SPARKS, {
+            recipientEmail: data.recipientEmail,
+            amount: data.amount,
+            pin: data.transactionPin
+        });
+        return response?.data || response;
+    } catch (error) {
+        console.error('Failed to transfer sparks:', error);
+        throw error;
+    }
+};
+
+export const getSparkHistory = async (): Promise<any[]> => {
+    try {
+        const response = await get<any>(API_ENDPOINTS.SPARK_HISTORY);
+        // The axios interceptor already unwraps response.data
+        // Backend returns: { success: true, data: [...transactions] }
+        // After interceptor: response === [...transactions] OR { data: [...] }
+        if (Array.isArray(response)) return response;
+        const data = (response as any)?.data || response;
+        if (Array.isArray(data)) return data;
+        return data?.transactions || [];
+    } catch (error) {
+        console.error('Failed to get spark history:', error);
+        return [];
+    }
+};
+
+export const checkHasPin = async (): Promise<boolean> => {
+    try {
+        const response = await get<any>(API_ENDPOINTS.CHECK_HAS_PIN);
+        const data = (response as any)?.data || response;
+        return data?.hasPin || false;
+    } catch (error) {
+        console.error('Failed to check PIN status:', error);
+        return false;
+    }
+};
+
+export const setTransactionPin = async (pin: string): Promise<any> => {
+    try {
+        const response = await post<any>(API_ENDPOINTS.SET_TRANSACTION_PIN, { pin });
+        return response?.data || response;
+    } catch (error) {
+        console.error('Failed to set transaction PIN:', error);
+        throw error;
+    }
 };

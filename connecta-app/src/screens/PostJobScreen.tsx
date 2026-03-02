@@ -863,7 +863,7 @@ const PostJobScreen: React.FC = () => {
       <View style={styles.inputGroup}>
         <Text style={[styles.refinedLabel, { color: errors.budget ? '#EF4444' : c.text }]}>PROJECT BUDGET</Text>
         <View style={styles.currencyToggleRow}>
-          {['NGN', 'USD'].map(curr => (
+          {['NGN'].map(curr => (
             <TouchableOpacity
               key={curr}
               onPress={() => setCurrency(curr)}
@@ -882,7 +882,7 @@ const PostJobScreen: React.FC = () => {
         <View style={{ position: 'relative', marginTop: 12 }}>
           <View style={styles.budgetIconWrapper}>
             <Text style={{ color: errors.budget ? '#EF4444' : c.subtext, fontWeight: '800', fontSize: 18 }}>
-              {currency === 'NGN' ? '₦' : '$'}
+              {currency === 'USD' ? '$' : '₦'}
             </Text>
           </View>
           <TextInput
@@ -1087,7 +1087,7 @@ const PostJobScreen: React.FC = () => {
             <View>
               <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Total Budget</Text>
               <Text style={[styles.previewBudgetValue, { color: c.text }]}>
-                {currency === 'NGN' ? '₦' : '$'}{budget}
+                {currency === 'USD' ? '$' : '₦'}{budget}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>

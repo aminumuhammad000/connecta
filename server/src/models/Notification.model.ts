@@ -21,6 +21,8 @@ export type NotificationType =
   | 'collabo_invite'
   | 'collabo_started'
   | 'job_invite'
+  | 'proposal_new'
+  | 'deadline_approaching'
   | 'system';
 
 export interface INotification extends Document {

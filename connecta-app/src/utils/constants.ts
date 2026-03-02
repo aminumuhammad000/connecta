@@ -4,7 +4,7 @@
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = true;
+const USE_LOCAL_SERVER = false;
 
 // Server URLs
 const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API confirmed via curl
@@ -84,6 +84,7 @@ export const API_ENDPOINTS = {
 
     // Payments
     INITIALIZE_PAYMENT: '/api/payments/initialize',
+    INITIALIZE_TOPUP: '/api/payments/initialize-topup',
     PAYMENT_JOB_VERIFICATION: '/api/payments/job-verification',
     VERIFY_PAYMENT: (reference: string) => `/api/payments/verify/${reference}`,
     PAYMENT_HISTORY: '/api/payments/history',
@@ -135,7 +136,13 @@ export const API_ENDPOINTS = {
     // Rewards
     REWARD_BALANCE: '/api/rewards/balance',
     CLAIM_REWARD: '/api/rewards/claim',
-    SPARK_HISTORY: '/api/rewards/history', // Assuming history exists or will be added
+    SPARK_HISTORY: '/api/rewards/history',
+    VALIDATE_RECIPIENT: '/api/rewards/validate-recipient',
+    TRANSFER_SPARKS: '/api/rewards/transfer',
+
+    // User PIN
+    CHECK_HAS_PIN: '/api/users/has-transaction-pin',
+    SET_TRANSACTION_PIN: '/api/users/transaction-pin',
 } as const;
 
 // Default Values

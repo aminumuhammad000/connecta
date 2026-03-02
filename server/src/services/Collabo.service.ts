@@ -9,6 +9,7 @@ import CollaboMessage from '../models/CollaboMessage.model.js';
 import { getIO } from '../core/utils/socketIO.js';
 import CollaboFile from '../models/CollaboFile.model.js';
 import CollaboTask from '../models/CollaboTask.model.js';
+import CollaboActivity from '../models/CollaboActivity.model.js';
 import User from '../models/user.model.js';
 import Wallet from '../models/Wallet.model.js';
 import { sendEmail } from './email.service.js';
@@ -509,6 +510,52 @@ class CollaboService {
         }
     }
 
+    async aiInviteToRole(roleId: string, clientId: string) {
+        try {
+            console.log(`[CollaboService] aiInviteToRole called for role: ${roleId}`);
+
+            const role = await ProjectRole.findById(roleId);
+            if (!role) throw new Error("Role not found");
+
+            if (!role.skills || role.skills.length === 0) {
+                throw new Error("No skills defined for this role. Cannot perform AI matching.");
+            }
+
+            // Find matching freelancers
+            const matchingProfiles = await Profile.find({
+                skills: { $in: role.skills }
+            }).limit(10);
+
+            if (matchingProfiles.length === 0) {
+                throw new Error("No matching freelancers found for this role's skills.");
+            }
+
+            // Select the best match (for now, just the first person not already invited)
+            let selectedFreelancerId = null;
+            for (const profile of matchingProfiles) {
+                const existingInvite = await Notification.findOne({
+                    userId: profile.user,
+                    type: 'collabo_invite',
+                    relatedId: roleId
+                });
+
+                if (!existingInvite) {
+                    selectedFreelancerId = profile.user.toString();
+                    break;
+                }
+            }
+
+            if (!selectedFreelancerId) {
+                throw new Error("All potential matches have already been invited to this role.");
+            }
+
+            return await this.inviteToRole(roleId, selectedFreelancerId, clientId);
+        } catch (error) {
+            console.error("AI Invite To Role Error:", error);
+            throw error;
+        }
+    }
+
     async getRole(roleId: string) {
         // Return role with project details
         const role = await ProjectRole.findById(roleId);
@@ -609,6 +656,7 @@ class CollaboService {
     // Task Management
     async createTask(data: any) {
         const task = await CollaboTask.create(data);
+        await this.logActivity(data.workspaceId, data.createdBy, 'task_created', `created task: ${data.title}`);
         return task.populate('assigneeId', 'firstName lastName avatar');
     }
 
@@ -622,6 +670,18 @@ class CollaboService {
         const task = await CollaboTask.findByIdAndUpdate(taskId, updates, { new: true })
             .populate('assigneeId', 'firstName lastName avatar');
 
+        if (task) {
+            let action = 'task_updated';
+            let details = `updated task: ${task.title}`;
+            if (updates.status) {
+                action = 'task_status_changed';
+                details = `moved task "${task.title}" to ${updates.status}`;
+            }
+            // Use owner/assignee as actor if updates came from them. For simplicity, we might need actorId passed.
+            // But for now we log generic update.
+            await this.logActivity(task.workspaceId.toString(), task.createdBy.toString(), action, details);
+        }
+
         try {
             getIO().to(task?.workspaceId.toString() || '').emit('collabo:task_update', task);
         } catch (e) { console.log("Socket emit error", e) }
@@ -633,6 +693,8 @@ class CollaboService {
     async addFile(data: any) {
         const file = await CollaboFile.create(data);
         const populatedFile = await file.populate('uploaderId', 'firstName lastName avatar');
+
+        await this.logActivity(data.workspaceId, data.uploaderId, 'file_uploaded', `uploaded file: ${data.name}`);
 
         try {
             getIO().to(data.workspaceId).emit('collabo:file_upload', populatedFile);
@@ -671,16 +733,90 @@ class CollaboService {
     }
 
     async markWorkspaceRead(workspaceId: string, userId: string) {
-        await CollaboWorkspace.findByIdAndUpdate(workspaceId, {
-            [`unreadCount.${userId}`]: 0
+        return await CollaboWorkspace.findOneAndUpdate(
+            { _id: workspaceId },
+            { $set: { [`readBy.${userId}`]: new Date() } },
+            { new: true }
+        );
+    }
+
+    async updateRole(roleId: string, clientId: string, updates: { title?: string; description?: string; budget?: number; skills?: string[] }) {
+        const role = await ProjectRole.findById(roleId);
+        if (!role) throw new Error("Role not found");
+
+        const project = await CollaboProject.findById(role.projectId);
+        if (!project || project.clientId.toString() !== clientId.toString()) {
+            throw new Error("Not authorized to update this role");
+        }
+
+        if (updates.title) role.title = updates.title;
+        if (updates.description) role.description = updates.description;
+        if (updates.budget) {
+            const diff = updates.budget - role.budget;
+            role.budget = updates.budget;
+            // Update project total budget
+            await CollaboProject.findByIdAndUpdate(project._id, { $inc: { totalBudget: diff } });
+        }
+        if (updates.skills) role.skills = updates.skills;
+
+        return await role.save();
+    }
+
+    async generateAutoTasks(projectId: string, clientId: string) {
+        const details = await this.getProjectDetails(projectId);
+        if (!details.project || details.project.clientId.toString() !== clientId.toString()) {
+            throw new Error("Not authorized");
+        }
+
+        const LLMService = (await import('./LLM.service.js')).default;
+        const tasks = await LLMService.generateProjectTasks({
+            title: details.project.title,
+            description: details.project.description,
+            roles: details.roles
         });
 
-        // Emit conversation update to refresh badge
-        try {
-            getIO().to(userId).emit('conversation:update');
-        } catch (e) { console.log("Socket emit error", e) }
+        const createdTasks = [];
+        for (const t of tasks) {
+            // Find suited role if possible
+            const role = details.roles?.find((r: any) => r.title.toLowerCase().includes(t.roleTitle?.toLowerCase() || ''));
 
-        return { success: true };
+            const newTask = await this.createTask({
+                workspaceId: details.workspace?._id,
+                title: t.title,
+                description: t.description,
+                priority: t.priority || 'medium',
+                createdBy: clientId,
+                // We don't auto-assign assigneeId yet because common sense says AI doesn't know WHO is in the role yet if multiple?
+                // But we can store roleTitle in metadata if we had it.
+            });
+            createdTasks.push(newTask);
+        }
+
+        return createdTasks;
+    }
+
+    async logActivity(workspaceId: string, userId: string, action: string, details: string, metadata?: any) {
+        try {
+            const activity = await CollaboActivity.create({
+                workspaceId,
+                userId,
+                action,
+                details,
+                metadata
+            });
+            await activity.populate('userId', 'firstName lastName avatar');
+            getIO().to(workspaceId).emit('collabo:activity', activity);
+            return activity;
+        } catch (error) {
+            console.error('[CollaboService] Failed to log activity:', error);
+        }
+    }
+
+    async getActivities(workspaceId: string) {
+        return CollaboActivity.find({ workspaceId })
+            .populate('userId', 'firstName lastName avatar')
+            .sort({ createdAt: -1 })
+            .limit(50);
     }
 }
 

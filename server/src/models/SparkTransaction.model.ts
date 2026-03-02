@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ISparkTransaction extends Document {
     userId: mongoose.Types.ObjectId;
-    type: 'daily_reward' | 'project_completed' | 'referral' | 'spend' | 'bonus' | 'purchase';
+    type: 'daily_reward' | 'project_completed' | 'referral' | 'spend' | 'bonus' | 'purchase' | 'transfer_send' | 'transfer_receive';
     amount: number; // positive for gain, negative for spend
     balanceAfter: number;
     description: string;
@@ -20,7 +20,7 @@ const SparkTransactionSchema: Schema = new Schema(
         },
         type: {
             type: String,
-            enum: ['daily_reward', 'project_completed', 'referral', 'spend', 'bonus', 'purchase'],
+            enum: ['daily_reward', 'project_completed', 'referral', 'spend', 'bonus', 'purchase', 'transfer_send', 'transfer_receive'],
             required: true,
         },
         amount: {
