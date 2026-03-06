@@ -20,6 +20,7 @@ import Sidebar from '../components/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSocket } from '../context/SocketContext';
 import { useTranslation } from '../utils/i18n';
+import * as storage from '../utils/storage';
 
 import { useWindowDimensions } from 'react-native';
 
@@ -114,6 +115,13 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const checkDailyReward = async () => {
     if (!user) return;
     try {
+      // 1. Check if we already showed it to the user today (local suppression)
+      const alreadyShownLocal = await storage.isDailyRewardShownToday();
+      if (alreadyShownLocal) {
+        console.log('[DailyReward] Already shown today (local storage). Suppression active.');
+        return;
+      }
+
       const now = new Date();
       if (user.lastRewardClaimedAt) {
         const lastClaim = new Date(user.lastRewardClaimedAt);
@@ -121,6 +129,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
         if (hoursDiff >= 24) {
           console.log('[DailyReward] Showing modal because hoursDiff >= 24:', hoursDiff);
           setRewardModalVisible(true);
+          await storage.saveLastDailyRewardShown(); // Mark as shown locally immediately
         } else {
           console.log('[DailyReward] Not showing modal. hoursDiff:', hoursDiff);
         }
@@ -128,6 +137,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
         // Never claimed before
         console.log('[DailyReward] Showing modal because never claimed before');
         setRewardModalVisible(true);
+        await storage.saveLastDailyRewardShown(); // Mark as shown locally immediately
       }
     } catch (error) {
       console.log('Error checking daily reward:', error);

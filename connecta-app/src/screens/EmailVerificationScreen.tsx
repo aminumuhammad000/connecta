@@ -41,6 +41,11 @@ const EmailVerificationScreen: React.FC = () => {
         if (value && index < 3) {
             inputRefs.current[index + 1]?.focus();
         }
+
+        // Auto verify if complete
+        if (newOtp.every(digit => digit !== '') && index === 3) {
+            handleVerify(newOtp.join(''));
+        }
     };
 
     const handleKeyPress = (e: any, index: number) => {
@@ -49,10 +54,12 @@ const EmailVerificationScreen: React.FC = () => {
         }
     };
 
-    const handleVerify = async () => {
-        const otpString = otp.join('');
+    const handleVerify = async (otpOverride?: string) => {
+        const otpString = otpOverride || otp.join('');
         if (otpString.length !== 4) {
-            showAlert({ title: 'Error', message: 'Please enter the complete 4-digit code', type: 'error' });
+            if (!otpOverride) {
+                showAlert({ title: 'Error', message: 'Please enter the complete 4-digit code', type: 'error' });
+            }
             return;
         }
 

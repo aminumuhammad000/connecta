@@ -87,25 +87,20 @@ const OTPVerificationScreen: React.FC = () => {
 
                 await storage.clearPendingSignupData();
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                showAlert({
-                    title: t('success' as any),
-                    message: t('email_verified_success'),
-                    type: 'success'
-                });
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-                setTimeout(() => {
-                    if (user?.userType === 'freelancer') {
-                        (navigation as any).reset({
-                            index: 0,
-                            routes: [{ name: 'SkillSelection', params: { user } }],
-                        });
-                    } else {
-                        (navigation as any).reset({
-                            index: 0,
-                            routes: [{ name: 'ClientMain' }],
-                        });
-                    }
-                }, 1000);
+                // Navigate immediately
+                if (user?.userType === 'freelancer') {
+                    (navigation as any).reset({
+                        index: 0,
+                        routes: [{ name: 'SkillSelection', params: { user } }],
+                    });
+                } else {
+                    (navigation as any).reset({
+                        index: 0,
+                        routes: [{ name: 'ClientMain' }],
+                    });
+                }
             } else {
                 const response = await verifyOTP(email, code);
                 const token = (response as any).token || (response as any).data?.token;

@@ -200,3 +200,23 @@ export const clearPendingSignupData = async (): Promise<void> => {
         console.error('Error clearing pending signup data:', error);
     }
 };
+// Daily Reward Management
+export const saveLastDailyRewardShown = async (): Promise<void> => {
+    try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        await AsyncStorage.setItem(STORAGE_KEYS.LAST_DAILY_REWARD_SHOWN, today);
+    } catch (error) {
+        console.error('Error saving last daily reward shown:', error);
+    }
+};
+
+export const isDailyRewardShownToday = async (): Promise<boolean> => {
+    try {
+        const lastShown = await AsyncStorage.getItem(STORAGE_KEYS.LAST_DAILY_REWARD_SHOWN);
+        const today = new Date().toISOString().split('T')[0];
+        return lastShown === today;
+    } catch (error) {
+        console.error('Error checking if daily reward shown today:', error);
+        return false;
+    }
+};

@@ -23,6 +23,7 @@ import Sidebar from '../components/Sidebar';
 import { useSocket } from '../context/SocketContext';
 import { useTranslation } from '../utils/i18n';
 import StatusSparkPopup, { PopupType } from '../components/StatusSparkPopup';
+import * as storage from '../utils/storage';
 
 const { width } = Dimensions.get('window');
 
@@ -91,15 +92,24 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
   const checkDailyReward = async () => {
     if (!user) return;
     try {
+      // 1. Check if we already showed it to the user today (local suppression)
+      const alreadyShownLocal = await storage.isDailyRewardShownToday();
+      if (alreadyShownLocal) {
+        console.log('[DailyReward] Already shown today (local storage). Suppression active.');
+        return;
+      }
+
       const now = new Date();
       if (user.lastRewardClaimedAt) {
         const lastClaim = new Date(user.lastRewardClaimedAt);
         const hoursDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
         if (hoursDiff >= 24) {
           setRewardModalVisible(true);
+          await storage.saveLastDailyRewardShown(); // Mark as shown locally immediately
         }
       } else {
         setRewardModalVisible(true);
+        await storage.saveLastDailyRewardShown(); // Mark as shown locally immediately
       }
     } catch (error) {
       console.log('Error checking daily reward:', error);

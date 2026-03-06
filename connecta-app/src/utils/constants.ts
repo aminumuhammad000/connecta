@@ -22,6 +22,7 @@ export const STORAGE_KEYS = {
     BIOMETRIC_ENABLED: '@connecta/biometric_enabled',
     AI_CHAT_HISTORY: '@connecta/ai_chat_history',
     PENDING_SIGNUP: '@connecta/pending_signup',
+    LAST_DAILY_REWARD_SHOWN: '@connecta/last_daily_reward_shown',
 } as const;
 
 // API Endpoints
