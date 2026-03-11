@@ -11,6 +11,8 @@ import {
   addProjectUpload,
   addProjectActivity,
   submitProject,
+  acceptProjectSubmission,
+  requestRevision,
   deleteProject,
   getProjectStats,
 } from '../controllers/Project.controller.js';
@@ -47,6 +49,12 @@ router.patch('/:id/status', updateProjectStatus);
 
 // Submit project
 router.post('/:id/submit', authenticate, submitProject);
+
+// Accept project submission
+router.patch('/:id/accept', authenticate, acceptProjectSubmission);
+
+// Request revision
+router.patch('/:id/request-revision', authenticate, requestRevision);
 
 // Add file upload to project
 router.post('/:id/upload', addProjectUpload);

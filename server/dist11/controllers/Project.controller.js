@@ -373,22 +373,25 @@ export const getProjectStats = async (req, res) => {
         });
     }
 };
-// Submit project
+// Submit project as completed (Freelancer)
 export const submitProject = async (req, res) => {
     try {
         const { id } = req.params;
-        const { message, attachments } = req.body;
-        // In a real implementation, you might want to create a Submission model
-        // or update a submissions array in the Project model.
-        // For now, we'll just add an activity and update status if needed.
+        const { summary, files } = req.body;
         const project = await Project.findByIdAndUpdate(id, {
+            status: 'submitted',
+            statusLabel: 'Pending Client Approval',
+            submission: {
+                summary,
+                files: files || [],
+                submittedAt: new Date(),
+            },
             $push: {
                 activity: {
                     date: new Date(),
-                    description: `Project Submitted: ${message || 'No description'}`,
+                    description: `Project submitted for review. Summary: ${summary.substring(0, 50)}...`,
                 }
             },
-            // status: 'submitted', // If you have a 'submitted' status in your enum
         }, { new: true });
         if (!project) {
             return res.status(404).json({
@@ -406,6 +409,100 @@ export const submitProject = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error submitting project',
+            error: error.message,
+        });
+    }
+};
+// Accept project submission (Client)
+export const acceptProjectSubmission = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const project = await Project.findByIdAndUpdate(id, {
+            status: 'completed',
+            statusLabel: 'Completed',
+            $push: {
+                activity: {
+                    date: new Date(),
+                    description: 'Project submission accepted and marked as completed.',
+                }
+            },
+        }, { new: true });
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found',
+            });
+        }
+        // Auto-release associated payment if in escrow
+        try {
+            const Payment = (await import('../models/Payment.model.js')).default;
+            const Wallet = (await import('../models/Wallet.model.js')).default;
+            const payment = await Payment.findOne({
+                projectId: id,
+                escrowStatus: 'held'
+            });
+            if (payment) {
+                payment.escrowStatus = 'released';
+                payment.releasedAt = new Date();
+                await payment.save();
+                // Update freelancer wallet
+                const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
+                if (freelancerWallet) {
+                    freelancerWallet.escrowBalance -= payment.netAmount;
+                    freelancerWallet.totalEarnings += payment.netAmount;
+                    await freelancerWallet.save();
+                }
+            }
+        }
+        catch (paymentError) {
+            console.error('Error auto-releasing payment:', paymentError);
+            // We don't fail the whole request because project status WAS updated
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Project accepted and completed. Payment released from escrow.',
+            data: project,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error accepting project',
+            error: error.message,
+        });
+    }
+};
+// Request revision (Client)
+export const requestRevision = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { feedback } = req.body;
+        const project = await Project.findByIdAndUpdate(id, {
+            status: 'revision_requested',
+            statusLabel: 'Revision Requested',
+            $push: {
+                activity: {
+                    date: new Date(),
+                    description: `Revision requested: ${feedback || 'No feedback provided'}`,
+                }
+            },
+        }, { new: true });
+        if (!project) {
+            return res.status(404).json({
+                success: false,
+                message: 'Project not found',
+            });
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Revision requested successfully',
+            data: project,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error requesting revision',
             error: error.message,
         });
     }

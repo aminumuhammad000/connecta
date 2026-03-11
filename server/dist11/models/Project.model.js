@@ -25,7 +25,7 @@ const ProjectSchema = new Schema({
     },
     status: {
         type: String,
-        enum: ['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration'],
+        enum: ['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration', 'revision_requested'],
         default: 'ongoing',
     },
     statusLabel: {
@@ -72,6 +72,19 @@ const ProjectSchema = new Schema({
     deliverables: [{
             type: String,
         }],
+    submission: {
+        summary: String,
+        files: [{
+                fileName: String,
+                fileUrl: String,
+                fileType: String,
+                uploadedAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+            }],
+        submittedAt: Date,
+    },
     activity: [{
             date: {
                 type: Date,

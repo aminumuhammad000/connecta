@@ -27,7 +27,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
 
     // 3. Project Stats
     const totalProjects = await Project.countDocuments();
-    const activeProjects = await Project.countDocuments({ status: { $in: ['ongoing', 'active', 'In-Progress'] } });
+    const activeProjects = await Project.countDocuments({ status: { $in: ['ongoing', 'active', 'In-Progress', 'submitted', 'revision_requested'] } });
     const completedProjects = await Project.countDocuments({ status: 'completed' });
 
     // 4. Financial Stats
@@ -96,7 +96,7 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     // Get active projects count (from Project model)
     const activeProjectsCount = await Project.countDocuments({
       clientId: userId,
-      status: 'ongoing',
+      status: { $in: ['ongoing', 'submitted', 'revision_requested'] },
     });
 
     const totalActiveProjects = activeJobsCount + activeCollaboCount + activeProjectsCount;
@@ -177,7 +177,7 @@ export const getActiveProjects = async (req: Request, res: Response) => {
     // 3. Fetch ongoing projects (from Project model)
     const ongoingProjects = await Project.find({
       clientId: userId,
-      status: 'ongoing',
+      status: { $in: ['ongoing', 'submitted', 'revision_requested'] },
     }).sort({ createdAt: -1 });
 
     // Combine and format
@@ -289,7 +289,7 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
     // Get total projects (engagements) - where status is accepted, active, or completed
     const totalProjectsCount = await Proposal.countDocuments({
       freelancerId: userId,
-      status: { $in: ['accepted', 'active', 'in_progress', 'approved', 'completed'] },
+      status: { $in: ['accepted', 'active', 'in_progress', 'approved', 'completed', 'submitted', 'revision_requested'] },
     });
 
     // Get unread messages count

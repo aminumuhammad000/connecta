@@ -8,7 +8,7 @@ export interface IProject extends Document {
     startDate: Date;
     endDate: Date;
   };
-  status: 'ongoing' | 'submitted' | 'completed' | 'cancelled' | 'arbitration';
+  status: 'ongoing' | 'submitted' | 'completed' | 'cancelled' | 'arbitration' | 'revision_requested';
   statusLabel: string;
   clientId: mongoose.Types.ObjectId;
   clientName: string;
@@ -21,6 +21,16 @@ export interface IProject extends Document {
   };
   projectType: string;
   deliverables: string[];
+  submission?: {
+    summary: string;
+    files: Array<{
+      fileName: string;
+      fileUrl: string;
+      fileType: string;
+      uploadedAt: Date;
+    }>;
+    submittedAt: Date;
+  };
   activity: Array<{
     date: Date;
     description: string;
@@ -69,7 +79,7 @@ const ProjectSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration'],
+      enum: ['ongoing', 'submitted', 'completed', 'cancelled', 'arbitration', 'revision_requested'],
       default: 'ongoing',
     },
     statusLabel: {
@@ -116,6 +126,19 @@ const ProjectSchema: Schema = new Schema(
     deliverables: [{
       type: String,
     }],
+    submission: {
+      summary: String,
+      files: [{
+        fileName: String,
+        fileUrl: String,
+        fileType: String,
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      }],
+      submittedAt: Date,
+    },
     activity: [{
       date: {
         type: Date,
