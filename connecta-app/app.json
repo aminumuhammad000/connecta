@@ -2,7 +2,7 @@
   "expo": {
     "name": "Connecta",
     "slug": "connecta",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/app-icon-fixed.png",
     "userInterfaceStyle": "light",
@@ -25,6 +25,7 @@
     },
     "android": {
       "package": "com.connecta.app",
+      "versionCode": 2,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon-fixed.png",
@@ -43,7 +44,7 @@
     "extra": {
       "apiBaseUrl": "https://api.myconnecta.ng",
       "eas": {
-        "projectId": "cfedb4f5-53e0-4027-8c15-2f467d00757b"
+        "projectId": "f3b898e1-50cd-4ba8-b68c-e28809d4a247"
       }
     },
     "plugins": [

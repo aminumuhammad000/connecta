@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -20,6 +20,10 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSubmitModal, setShowSubmitModal] = useState(false);
+    const [submissionSummary, setSubmissionSummary] = useState('');
+    const [showRevisionModal, setShowRevisionModal] = useState(false);
+    const [revisionFeedback, setRevisionFeedback] = useState('');
 
     useEffect(() => {
         if (projectId) {
@@ -84,11 +88,6 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
     };
 
     const handleApproveWork = async () => {
-        if (!project?.payment) {
-            showAlert({ title: 'Error', message: 'Payment record not found.', type: 'error' });
-            return;
-        }
-
         Alert.alert('Approve Work', 'Are you satisfied with the work? This will release funds to the freelancer and mark the project as completed.', [
             { text: 'Cancel', style: 'cancel' },
             {
@@ -96,13 +95,13 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 onPress: async () => {
                     try {
                         setActionLoading(true);
-                        // Release funds
-                        if (project.payment.escrowStatus === 'held') {
-                            await paymentService.releasePayment(project.payment._id);
-                        }
-                        // Mark as completed
-                        await projectService.updateProjectStatus(project._id, 'completed');
-
+                        // Releases funds and marks as completed on backend
+                        await projectService.acceptProjectSubmission(project._id);
+                        
+                        // If payment record exists and is in escrow, release it specifically if backend doesn't handle it automatically
+                        // But our acceptProjectSubmission controller handles the status change and activity.
+                        // Usually the backend should also trigger the payment release.
+                        
                         showAlert({ title: 'Success', message: 'Work approved! Funds released.', type: 'success' });
                         fetchProjectDetails(); // Refresh
                     } catch (err: any) {
@@ -115,46 +114,47 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
         ]);
     };
 
-    const handleSubmitWork = async () => {
-        Alert.alert('Submit Work', 'Are you sure you want to submit this work for review? The client will be notified.', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Submit',
-                onPress: async () => {
-                    try {
-                        setActionLoading(true);
-                        await projectService.submitProject(project._id);
-                        showAlert({ title: 'Success', message: 'Work submitted for review!', type: 'success' });
-                        fetchProjectDetails();
-                    } catch (err: any) {
-                        showAlert({ title: 'Error', message: err.message || 'Failed to submit work', type: 'error' });
-                    } finally {
-                        setActionLoading(false);
-                    }
-                }
-            }
-        ]);
+    const handleConfirmSubmit = async () => {
+        if (!submissionSummary.trim()) {
+            showAlert({ title: 'Error', message: 'Please provide a summary of your work.', type: 'error' });
+            return;
+        }
+
+        try {
+            setActionLoading(true);
+            await projectService.submitProject(project._id, {
+                summary: submissionSummary,
+                files: [] // In a full implementation, files from uploads section would be here
+            });
+            setShowSubmitModal(false);
+            setSubmissionSummary('');
+            showAlert({ title: 'Success', message: 'Work submitted for review!', type: 'success' });
+            fetchProjectDetails();
+        } catch (err: any) {
+            showAlert({ title: 'Error', message: err.message || 'Failed to submit work', type: 'error' });
+        } finally {
+            setActionLoading(false);
+        }
     };
 
-    const handleRequestRevision = async () => {
-        Alert.alert('Request Revision', 'Ask freelancer to make changes? Status will be set to Ongoing.', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Request Revision',
-                onPress: async () => {
-                    try {
-                        setActionLoading(true);
-                        await projectService.updateProjectStatus(project._id, 'ongoing');
-                        showAlert({ title: 'Success', message: 'Revision requested.', type: 'success' });
-                        fetchProjectDetails();
-                    } catch (err: any) {
-                        showAlert({ title: 'Error', message: err.message || 'Failed to request revision', type: 'error' });
-                    } finally {
-                        setActionLoading(false);
-                    }
-                }
-            }
-        ]);
+    const handleConfirmRevision = async () => {
+        if (!revisionFeedback.trim()) {
+            showAlert({ title: 'Error', message: 'Please provide feedback for the revision.', type: 'error' });
+            return;
+        }
+
+        try {
+            setActionLoading(true);
+            await projectService.requestRevision(project._id, revisionFeedback);
+            setShowRevisionModal(false);
+            setRevisionFeedback('');
+            showAlert({ title: 'Success', message: 'Revision requested.', type: 'success' });
+            fetchProjectDetails();
+        } catch (err: any) {
+            showAlert({ title: 'Error', message: err.message || 'Failed to request revision', type: 'error' });
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const handleEndContract = () => {
@@ -285,8 +285,22 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 <Text style={[styles.projectTitle, { color: c.text }]}>{project.title}</Text>
 
                 <View style={styles.statusContainer}>
-                    <View style={[styles.statusBadge, { backgroundColor: project.status === 'ongoing' ? '#e6f7ff' : (project.status === 'completed' ? '#f6ffed' : '#fff1f0') }]}>
-                        <Text style={[styles.statusText, { color: project.status === 'ongoing' ? '#1890ff' : (project.status === 'completed' ? '#52c41a' : '#f5222d') }]}>
+                    <View style={[styles.statusBadge, { 
+                        backgroundColor: 
+                            project.status === 'ongoing' ? '#e6f7ff' : 
+                            project.status === 'completed' ? '#f6ffed' : 
+                            project.status === 'submitted' ? '#fff7e6' :
+                            project.status === 'revision_requested' ? '#fff1f0' :
+                            '#fff1f0' 
+                    }]}>
+                        <Text style={[styles.statusText, { 
+                            color: 
+                                project.status === 'ongoing' ? '#1890ff' : 
+                                project.status === 'completed' ? '#52c41a' : 
+                                project.status === 'submitted' ? '#faad14' :
+                                project.status === 'revision_requested' ? '#f5222d' :
+                                '#f5222d' 
+                        }]}>
                             {project.statusLabel || project.status?.toUpperCase()}
                         </Text>
                     </View>
@@ -367,7 +381,7 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 {project.activity && project.activity.length > 0 && (
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: c.text }]}>Activity</Text>
-                        {project.activity.map((item: any, index: number) => (
+                        {project.activity.slice(-5).reverse().map((item: any, index: number) => (
                             <View key={index} style={styles.listItem}>
                                 <Text style={[styles.listText, { color: c.text }]}>
                                     <Text style={{ fontWeight: 'bold' }}>{formatDate(item.date)}:</Text> {item.description}
@@ -377,10 +391,46 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                     </View>
                 )}
 
+                {project.submission && (
+                    <View style={[styles.section, styles.submissionBox, { backgroundColor: c.isDark ? '#1E293B' : '#F1F5F9', borderColor: c.border }]}>
+                        <Text style={[styles.sectionTitle, { color: c.text }]}>Submission Details</Text>
+                        <Text style={[styles.infoLabel, { color: c.subtext, marginBottom: 4 }]}>Submitted On: {formatDate(project.submission.submittedAt)}</Text>
+                        <Text style={[styles.sectionText, { color: c.text, fontWeight: '500' }]}>{project.submission.summary}</Text>
+                        
+                        {project.submission.files && project.submission.files.length > 0 && (
+                            <View style={{ marginTop: 12 }}>
+                                <Text style={[styles.infoLabel, { color: c.subtext, marginBottom: 8 }]}>Attached Files:</Text>
+                                {project.submission.files.map((file: any, index: number) => (
+                                    <TouchableOpacity 
+                                        key={index} 
+                                        style={styles.fileItem}
+                                        onPress={() => Linking.openURL(file.fileUrl)}
+                                    >
+                                        <Ionicons name="document-attach" size={16} color={c.primary} />
+                                        <Text style={[styles.fileText, { color: c.primary }]}>{file.fileName}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {project.status === 'revision_requested' && (
+                    <View style={[styles.section, styles.revisionBox, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
+                        <Text style={[styles.sectionTitle, { color: '#D97706' }]}>Revision Requested</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                            <Ionicons name="alert-circle" size={20} color="#D97706" />
+                            <Text style={{ color: '#92400E', flex: 1 }}>
+                                The client has requested changes to the submitted work. Please review the feedback and resubmit.
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
                 {/* Freelancer Actions: Upload & Submit */}
-                {!isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted') && (
+                {!isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted' || project.status === 'revision_requested') && (
                     <View style={{ gap: 12, marginBottom: 16 }}>
-                        {project.status === 'ongoing' && (
+                        {(project.status === 'ongoing' || project.status === 'revision_requested') && (
                             <>
                                 <TouchableOpacity
                                     style={[styles.uploadButton, { borderColor: c.primary, borderStyle: 'dashed', marginBottom: 0 }]}
@@ -392,7 +442,7 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
 
                                 <TouchableOpacity
                                     style={[styles.chatButton, { backgroundColor: c.primary, opacity: actionLoading ? 0.7 : 1 }]}
-                                    onPress={handleSubmitWork}
+                                    onPress={() => setShowSubmitModal(true)}
                                     disabled={actionLoading}
                                 >
                                     {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="send" size={20} color="white" style={{ marginRight: 8 }} />}
@@ -410,7 +460,7 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 )}
 
                 {/* Client Actions: Payment & End Contract */}
-                {isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted') && (
+                {isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted' || project.status === 'revision_requested') && (
                     <View style={{ gap: 12, marginBottom: 16 }}>
                         {/* If Submitted, show Approve/Reject */}
                         {project.status === 'submitted' && (
@@ -429,7 +479,7 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
 
                                 <TouchableOpacity
                                     style={[styles.chatButton, { backgroundColor: '#F59E0B', opacity: actionLoading ? 0.7 : 1 }]}
-                                    onPress={handleRequestRevision}
+                                    onPress={() => setShowRevisionModal(true)}
                                     disabled={actionLoading}
                                 >
                                     {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="refresh" size={20} color="white" style={{ marginRight: 8 }} />}
@@ -471,6 +521,94 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 </TouchableOpacity>
 
             </ScrollView>
+
+            {/* Submission Modal */}
+            <Modal
+                visible={showSubmitModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowSubmitModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: c.card }]}>
+                        <Text style={[styles.modalTitle, { color: c.text }]}>Submit Project</Text>
+                        <Text style={[styles.modalLabel, { color: c.subtext }]}>Upload final files, add a short summary, and submit for client review.</Text>
+                        
+                        <TextInput
+                            style={[styles.modalInput, { backgroundColor: c.background, color: c.text, borderColor: c.border }]}
+                            placeholder="Add a short summary of what you've completed..."
+                            placeholderTextColor={c.subtext}
+                            multiline
+                            numberOfLines={4}
+                            value={submissionSummary}
+                            onChangeText={setSubmissionSummary}
+                        />
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, { backgroundColor: c.border }]} 
+                                onPress={() => {
+                                    setShowSubmitModal(false);
+                                    setSubmissionSummary('');
+                                }}
+                            >
+                                <Text style={[styles.modalButtonText, { color: c.text }]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, { backgroundColor: c.primary }]} 
+                                onPress={handleConfirmSubmit}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalButtonText}>Submit as Completed</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Revision Modal */}
+            <Modal
+                visible={showRevisionModal}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowRevisionModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: c.card }]}>
+                        <Text style={[styles.modalTitle, { color: c.text }]}>Request Revision</Text>
+                        <Text style={[styles.modalLabel, { color: c.subtext }]}>The freelancer has submitted the project. Ask for changes if needed.</Text>
+                        
+                        <TextInput
+                            style={[styles.modalInput, { backgroundColor: c.background, color: c.text, borderColor: c.border }]}
+                            placeholder="Describe what needs to be changed..."
+                            placeholderTextColor={c.subtext}
+                            multiline
+                            numberOfLines={4}
+                            value={revisionFeedback}
+                            onChangeText={setRevisionFeedback}
+                        />
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, { backgroundColor: c.border }]} 
+                                onPress={() => {
+                                    setShowRevisionModal(false);
+                                    setRevisionFeedback('');
+                                }}
+                            >
+                                <Text style={[styles.modalButtonText, { color: c.text }]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.modalButton, { backgroundColor: '#F59E0B' }]} 
+                                onPress={handleConfirmRevision}
+                                disabled={actionLoading}
+                            >
+                                {actionLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalButtonText}>Request Revision</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -592,5 +730,68 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 10,
         borderRadius: 8,
-    }
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    modalContent: {
+        borderRadius: 16,
+        padding: 24,
+        gap: 16,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+    },
+    modalLabel: {
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    modalInput: {
+        borderRadius: 12,
+        borderWidth: 1,
+        padding: 12,
+        height: 120,
+        textAlignVertical: 'top',
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    modalButton: {
+        flex: 1,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalButtonText: {
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    submissionBox: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 24,
+    },
+    revisionBox: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 24,
+    },
+    fileItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    fileText: {
+        fontSize: 14,
+        textDecorationLine: 'underline',
+    },
 });

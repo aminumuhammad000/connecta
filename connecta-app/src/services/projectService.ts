@@ -85,8 +85,24 @@ export const addProjectActivity = async (id: string, activityData: any): Promise
 /**
  * Submit project for review
  */
-export const submitProject = async (id: string): Promise<any> => {
-    const response = await post(`${API_ENDPOINTS.PROJECT_BY_ID(id)}/submit`, {});
+export const submitProject = async (id: string, submissionData: { summary: string; files?: any[] }): Promise<any> => {
+    const response = await post(`${API_ENDPOINTS.PROJECT_BY_ID(id)}/submit`, submissionData);
+    return (response as any)?.data || response;
+};
+
+/**
+ * Accept project submission
+ */
+export const acceptProjectSubmission = async (id: string): Promise<any> => {
+    const response = await patch(`${API_ENDPOINTS.PROJECT_BY_ID(id)}/accept`, {});
+    return (response as any)?.data || response;
+};
+
+/**
+ * Request project revision
+ */
+export const requestRevision = async (id: string, feedback: string): Promise<any> => {
+    const response = await patch(`${API_ENDPOINTS.PROJECT_BY_ID(id)}/request-revision`, { feedback });
     return (response as any)?.data || response;
 };
 
@@ -101,4 +117,6 @@ export default {
     uploadProjectFile,
     addProjectActivity,
     submitProject,
+    acceptProjectSubmission,
+    requestRevision,
 };
