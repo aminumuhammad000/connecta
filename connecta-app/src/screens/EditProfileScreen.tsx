@@ -17,6 +17,26 @@ import Button from '../components/Button';
 import Avatar from '../components/Avatar';
 import LocationPicker from '../components/LocationPicker';
 
+const CATEGORIES = [
+    'Web Development', 'Mobile Dev', 'Design', 'Writing', 'Data Science',
+    'Marketing', 'Sales', 'Customer Support', 'Virtual Assistant', 'Video Editing',
+    'Blockchain', 'AI/ML', 'DevOps', 'Cybersecurity', 'Game Dev'
+];
+
+const REMOTE_OPTIONS = [
+    { label: 'Fully Remote', value: 'remote' },
+    { label: 'Hybrid', value: 'hybrid' },
+    { label: 'On-site', value: 'onsite' }
+];
+
+const EXP_OPTIONS = [
+    { label: 'Less than 1 year', value: '0' },
+    { label: '1-3 years', value: '1' },
+    { label: '3-5 years', value: '3' },
+    { label: '5-10 years', value: '5' },
+    { label: '10+ years', value: '10' }
+];
+
 export default function EditProfileScreen({ navigation }: any) {
     const c = useThemeColors();
     const { width } = useWindowDimensions();
@@ -96,6 +116,9 @@ export default function EditProfileScreen({ navigation }: any) {
         jobTitle: '',
         skills: [] as string[],
         skillsText: '',
+        remoteWorkType: 'remote',
+        yearsOfExperience: '1',
+        jobCategories: [] as string[],
     });
 
     const openDatePicker = (form: string, field: string, currentVal: string) => {
@@ -164,6 +187,9 @@ export default function EditProfileScreen({ navigation }: any) {
                 jobTitle: profile?.jobTitle || '',
                 skills: profile?.skills || [],
                 skillsText: '',
+                remoteWorkType: profile?.remoteWorkType || 'remote',
+                yearsOfExperience: (profile?.yearsOfExperience || 0).toString(),
+                jobCategories: profile?.jobCategories || [],
             });
 
             // Set profile image
@@ -475,6 +501,9 @@ export default function EditProfileScreen({ navigation }: any) {
                 education: education,
                 languages: languages,
                 employment: employment,
+                remoteWorkType: formData.remoteWorkType as any,
+                yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
+                jobCategories: formData.jobCategories,
             });
 
             // Update user data (firstName, lastName, email)
@@ -537,9 +566,7 @@ export default function EditProfileScreen({ navigation }: any) {
                         <Ionicons name="arrow-back" size={24} color={c.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: c.text }]}>Edit Profile</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('ManageCV')} style={styles.importButton}>
-                        <Ionicons name="document-text-outline" size={24} color={c.primary} />
-                    </TouchableOpacity>
+                    <View style={{ width: 40 }} />
                 </View>
 
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -594,9 +621,9 @@ export default function EditProfileScreen({ navigation }: any) {
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: c.subtext }]}>Email Address</Text>
                             <TextInput
-                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.subtext, borderColor: c.border, opacity: 0.7 }]}
                                 value={formData.email}
-                                onChangeText={(text) => handleInputChange('email', text)}
+                                editable={false}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 placeholder="your.email@example.com"
@@ -631,10 +658,13 @@ export default function EditProfileScreen({ navigation }: any) {
                         </View>
 
                         <View style={styles.inputGroup}>
-                            <LocationPicker
-                                value={formData.location}
-                                onValueChange={(location) => handleInputChange('location', location)}
-                                label="LOCATION"
+                            <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.location || 'Nigeria'}
+                                onChangeText={(text) => handleInputChange('location', text)}
+                                placeholder="e.g. Lagos, Nigeria"
+                                placeholderTextColor={c.subtext}
                             />
                         </View>
 
@@ -653,20 +683,6 @@ export default function EditProfileScreen({ navigation }: any) {
                     <Card variant="outlined" style={styles.sectionCard}>
                         <View style={styles.bioHeader}>
                             <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Professional Summary</Text>
-                            <TouchableOpacity
-                                onPress={generateAIBio}
-                                disabled={isGeneratingBio}
-                                style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
-                            >
-                                {isGeneratingBio ? (
-                                    <ActivityIndicator size="small" color={c.primary} />
-                                ) : (
-                                    <>
-                                        <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                                        <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
                         </View>
                         <TextInput
                             style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border, marginTop: 16 }]}
@@ -755,6 +771,86 @@ export default function EditProfileScreen({ navigation }: any) {
                                 >
                                     <Ionicons name="add-circle" size={26} color={c.primary} />
                                 </TouchableOpacity>
+                            </View>
+                        </View>
+                    </Card>
+
+                    {/* Job Preferences Section */}
+                    <Card variant="outlined" style={styles.sectionCard}>
+                        <View style={styles.sectionHeaderRow}>
+                            <MaterialIcons name="work-outline" size={22} color={c.primary} />
+                            <Text style={[styles.sectionTitle, { color: c.text }]}>Professional Preferences</Text>
+                        </View>
+
+                        <View style={styles.field}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Work Style</Text>
+                            <View style={styles.optionsRow}>
+                                {REMOTE_OPTIONS.map(opt => (
+                                    <TouchableOpacity
+                                        key={opt.value}
+                                        style={[
+                                            styles.optionChip,
+                                            {
+                                                backgroundColor: formData.remoteWorkType === opt.value ? c.primary : (c.isDark ? '#2D2D2D' : '#F3F4F6'),
+                                                borderColor: formData.remoteWorkType === opt.value ? c.primary : 'transparent'
+                                            }
+                                        ]}
+                                        onPress={() => setFormData(prev => ({ ...prev, remoteWorkType: opt.value }))}
+                                    >
+                                        <Text style={[styles.chipText, { color: formData.remoteWorkType === opt.value ? '#fff' : c.text }]}>{opt.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View style={styles.field}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Experience Level</Text>
+                            <View style={styles.optionsRow}>
+                                {EXP_OPTIONS.map(opt => (
+                                    <TouchableOpacity
+                                        key={opt.value}
+                                        style={[
+                                            styles.optionChip,
+                                            {
+                                                backgroundColor: formData.yearsOfExperience === opt.value ? c.primary : (c.isDark ? '#2D2D2D' : '#F3F4F6'),
+                                                borderColor: formData.yearsOfExperience === opt.value ? c.primary : 'transparent'
+                                            }
+                                        ]}
+                                        onPress={() => setFormData(prev => ({ ...prev, yearsOfExperience: opt.value }))}
+                                    >
+                                        <Text style={[styles.chipText, { color: formData.yearsOfExperience === opt.value ? '#fff' : c.text }]}>{opt.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+
+                        <View style={styles.field}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Job Categories (Select up to 5)</Text>
+                            <View style={styles.tagsContainer}>
+                                {CATEGORIES.map(cat => {
+                                    const isSelected = formData.jobCategories.includes(cat);
+                                    return (
+                                        <TouchableOpacity
+                                            key={cat}
+                                            style={[
+                                                styles.tagChip,
+                                                {
+                                                    backgroundColor: isSelected ? c.primary : (c.isDark ? '#2D2D2D' : '#F3F4F6'),
+                                                    borderColor: isSelected ? c.primary : 'transparent'
+                                                }
+                                            ]}
+                                            onPress={() => {
+                                                if (isSelected) {
+                                                    setFormData(prev => ({ ...prev, jobCategories: prev.jobCategories.filter(c => c !== cat) }));
+                                                } else if (formData.jobCategories.length < 5) {
+                                                    setFormData(prev => ({ ...prev, jobCategories: [...prev.jobCategories, cat] }));
+                                                }
+                                            }}
+                                        >
+                                            <Text style={[styles.tagText, { color: isSelected ? '#fff' : c.text }]}>{cat}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
                         </View>
                     </Card>
@@ -1883,5 +1979,37 @@ const styles = StyleSheet.create({
     },
     addButtonSubtitle: {
         fontSize: 12,
+    },
+    optionChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        marginRight: 10,
+        marginBottom: 10,
+    },
+    chipText: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    optionsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    tagChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 16,
+        borderWidth: 1,
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    tagsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    tagText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
 });

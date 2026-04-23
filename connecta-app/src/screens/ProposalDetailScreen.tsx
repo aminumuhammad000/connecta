@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Alert } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import SuccessModal from '../components/SuccessModal';
-import { approveProposal } from '../services/proposalService';
+import { approveProposal, rejectProposal } from '../services/proposalService';
 
 const ProposalDetailScreen: React.FC = () => {
     const c = useThemeColors();
@@ -63,15 +63,19 @@ const ProposalDetailScreen: React.FC = () => {
     // Client Info strategy: 
     // 1. Direct clientId (if proposal has it)
     // 2. jobId.clientId (deep populated)
-    const clientSource = clientId || jobId?.clientId;
-    const clientName = clientSource ? `${clientSource.firstName} ${clientSource.lastName}` : 'Unknown Client';
-    const clientLocation = clientSource?.location || 'Location not specified';
-    const clientAvatar = clientSource?.profileImage;
+    const clientSource = (proposal.clientId && typeof proposal.clientId === 'object') ? proposal.clientId : jobId?.clientId;
+    const clientName = (clientSource && typeof clientSource === 'object' && clientSource.firstName) 
+        ? `${clientSource.firstName} ${clientSource.lastName}` 
+        : 'Unknown Client';
+    const clientLocation = (clientSource && typeof clientSource === 'object') ? (clientSource.location || 'Location not specified') : 'Location not specified';
+    const clientAvatar = (clientSource && typeof clientSource === 'object') ? clientSource.profileImage : null;
 
     // Budget & Duration
-    const displayRate = budget?.amount ? budget.amount : (proposal.proposedRate || 0);
-    const displayDuration = dateRange
-        ? Math.ceil((new Date(dateRange.endDate).getTime() - new Date(dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7)) + ' weeks'
+    const displayRate = proposal.price || budget?.amount || proposal.proposedRate || 0;
+    const displayDuration = proposal.deliveryTime 
+        ? (proposal.deliveryTime >= 7 
+            ? `${Math.floor(proposal.deliveryTime / 7)} weeks ${proposal.deliveryTime % 7 > 0 ? (proposal.deliveryTime % 7) + ' days' : ''}`
+            : `${proposal.deliveryTime} days`)
         : (proposal.estimatedDuration || 'N/A');
     const displayCoverLetter = description || coverLetter || 'No cover letter provided.';
 
@@ -115,6 +119,32 @@ const ProposalDetailScreen: React.FC = () => {
                             Alert.alert("Error", error.message || "Failed to hire freelancer");
                         } finally {
                             setIsHiring(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleReject = () => {
+        Alert.alert(
+            "Reject Proposal",
+            "Are you sure you want to reject this proposal?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Reject",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setIsLoading(true);
+                            await rejectProposal(id);
+                            navigation.goBack();
+                        } catch (error: any) {
+                            console.error("Reject error:", error);
+                            Alert.alert("Error", error.message || "Failed to reject proposal");
+                        } finally {
+                            setIsLoading(false);
                         }
                     }
                 }
@@ -240,7 +270,7 @@ const ProposalDetailScreen: React.FC = () => {
                         <View style={[styles.infoGrid, { borderTopColor: c.border, borderBottomColor: c.border }]}>
                             <View style={styles.infoItem}>
                                 <Text style={[styles.infoLabel, { color: c.subtext }]}>Your Bid</Text>
-                                <Text style={[styles.infoValue, { color: c.text }]}>${displayRate}</Text>
+                                <Text style={[styles.infoValue, { color: c.text }]}>₦{displayRate.toLocaleString()}</Text>
                             </View>
                             <View style={styles.infoItem}>
                                 <Text style={[styles.infoLabel, { color: c.subtext }]}>Timeline</Text>
@@ -267,42 +297,13 @@ const ProposalDetailScreen: React.FC = () => {
                 </View>
             </ScrollView>
 
-            {/* Fixed CTA */}
-            <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: 8 + insets.bottom, backgroundColor: c.background }]}>
-                {isFreelancerOwner && status === 'pending' && (
-                    <TouchableOpacity
-                        style={[styles.secondaryBtn, { borderColor: c.border }]}
-                        onPress={() => {
-                            (navigation as any).navigate('ApplyJob', {
-                                jobId: jobId?._id || jobId,
-                                jobTitle: jobTitle,
-                                proposalId: id,
-                                initialData: proposal
-                            });
-                        }}
-                    >
-                        <Text style={[styles.secondaryBtnText, { color: c.text }]}>Edit Proposal</Text>
-                    </TouchableOpacity>
-                )}
-
-                {isClientOwner && status === 'pending' && (
-                    <TouchableOpacity
-                        style={[styles.primaryBtn, { backgroundColor: c.primary, flex: 2 }]}
-                        onPress={handleHire}
-                        disabled={isHiring}
-                    >
-                        {isHiring ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.primaryBtnText}>Hire Freelancer</Text>
-                        )}
-                    </TouchableOpacity>
-                )}
-
+            {/* Fixed CTA Bar */}
+            <View style={[styles.ctaBar, { borderTopColor: c.border, paddingBottom: Math.max(insets.bottom, 16), paddingTop: 12, backgroundColor: c.background }]}>
+                {/* Message Button (Persistent) */}
                 <TouchableOpacity
-                    style={[styles.primaryBtn, { backgroundColor: isClientOwner ? c.card : c.primary, borderWidth: isClientOwner ? 1 : 0, borderColor: c.border }]}
+                    style={[styles.messageBtn, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
                     onPress={() => {
-                        const targetUserId = isFreelancerOwner ? (typeof clientSource === 'object' ? clientSource?._id : clientSource) : (proposal.freelancerId?._id || proposal.freelancerId);
+                        const targetUserId = isFreelancerOwner ? (clientSource?._id || clientSource) : (proposal.freelancerId?._id || proposal.freelancerId);
                         const targetUserName = isFreelancerOwner ? clientName : `${proposal.freelancerId?.firstName} ${proposal.freelancerId?.lastName}`;
 
                         if (targetUserId) {
@@ -311,11 +312,65 @@ const ProposalDetailScreen: React.FC = () => {
                                 userName: targetUserName,
                                 projectId: jobId?._id || jobId,
                             });
+                        } else {
+                            Alert.alert('Error', 'Could not identify the user to message.');
                         }
                     }}
                 >
-                    <Text style={[styles.primaryBtnText, isClientOwner && { color: c.text }]}>Message</Text>
+                    <Ionicons name="chatbubbles-outline" size={22} color={c.text} />
                 </TouchableOpacity>
+
+                {/* Main Actions */}
+                <View style={{ flex: 1, flexDirection: 'row', gap: 8 }}>
+                    {isFreelancerOwner && status === 'pending' && (
+                        <TouchableOpacity
+                            style={[styles.primaryBtn, { backgroundColor: c.primary, flex: 1 }]}
+                            onPress={() => {
+                                (navigation as any).navigate('ApplyJob', {
+                                    jobId: jobId?._id || jobId,
+                                    jobTitle: jobTitle,
+                                    proposalId: id,
+                                    initialData: proposal
+                                });
+                            }}
+                        >
+                            <Text style={styles.primaryBtnText}>Edit Proposal</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    {isClientOwner && status === 'pending' && (
+                        <>
+                            <TouchableOpacity
+                                style={[styles.secondaryBtn, { borderColor: '#EF4444', flex: 1 }]}
+                                onPress={handleReject}
+                            >
+                                <Text style={[styles.secondaryBtnText, { color: '#EF4444' }]}>Reject</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.primaryBtn, { backgroundColor: c.primary, flex: 1.5 }]}
+                                onPress={handleHire}
+                                disabled={isHiring}
+                            >
+                                {isHiring ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={styles.primaryBtnText}>Hire</Text>
+                                )}
+                            </TouchableOpacity>
+                        </>
+                    )}
+
+                    {(status === 'accepted' || status === 'approved') && (
+                        <TouchableOpacity
+                            style={[styles.primaryBtn, { backgroundColor: c.text, flex: 1 }]}
+                            onPress={() => (navigation as any).navigate('Jobs')}
+                        >
+                            <MaterialIcons name="work" size={20} color={c.background} style={{ marginRight: 8 }} />
+                            <Text style={[styles.primaryBtnText, { color: c.background, fontSize: 14 }]}>View Job</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
             <SuccessModal
@@ -325,27 +380,11 @@ const ProposalDetailScreen: React.FC = () => {
                 buttonText="Go to Project"
                 onAction={() => {
                     setShowSuccessModal(false);
-                    // Navigate to project workspace using the project ID returned from approval if available, 
-                    // or navigate to client projects list
-                    if (createdProjectData?._id) {
-                        (navigation as any).navigate('ProjectWorkspace', { projectId: createdProjectData._id });
-                    } else {
-                        (navigation as any).navigate('ClientProjects');
-                    }
+                    (navigation as any).navigate('Jobs');
                 }}
                 onClose={() => setShowSuccessModal(false)}
             />
-            {(status === 'accepted' || status === 'approved') && (
-                <View style={{ position: 'absolute', bottom: 80, left: 16, right: 16 }}>
-                    <TouchableOpacity
-                        style={[styles.primaryBtn, { backgroundColor: c.text, height: 48 }]}
-                        onPress={() => (navigation as any).navigate('ProjectDetail', { id: jobId?._id || jobId })}
-                    >
-                        <MaterialIcons name="work" size={20} color={c.background} style={{ marginRight: 8 }} />
-                        <Text style={[styles.primaryBtnText, { color: c.background }]}>Go to Project Workspace</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+
 
         </SafeAreaView >
     );
@@ -416,6 +455,13 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     secondaryBtnText: { fontSize: 15, fontWeight: '600' },
+    messageBtn: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 });
 
 export default ProposalDetailScreen;

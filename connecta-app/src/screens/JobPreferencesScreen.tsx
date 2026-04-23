@@ -20,6 +20,12 @@ const EXPERIENCE_LEVELS = ['Less than 1 year', '1-3 years', '3-5 years', '5+ yea
 const ENGAGEMENT_TYPES = ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship'];
 const FREQUENCIES = ['Daily', 'Weekly', 'Only when highly relevant'];
 
+const SECTIONS = [
+    { id: 'work', title: 'Work', icon: 'work-outline', iconType: 'MaterialIcons' },
+    { id: 'categories', title: 'Categories', icon: 'category', iconType: 'MaterialIcons' },
+    { id: 'experience', title: 'Experience', icon: 'stars', iconType: 'MaterialIcons' },
+];
+
 const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
     const c = useThemeColors();
     const { showAlert } = useInAppAlert();
@@ -29,13 +35,11 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
 
     // Form State
     const [remoteType, setRemoteType] = useState('');
-    const [minSalary, setMinSalary] = useState('');
-    const [location, setLocation] = useState('');
-    const [jobTitle, setJobTitle] = useState('');
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [experience, setExperience] = useState('');
     const [selectedEngagements, setSelectedEngagements] = useState<string[]>([]);
     const [frequency, setFrequency] = useState('');
+    const [activeSection, setActiveSection] = useState('work');
 
     useEffect(() => {
         fetchProfile();
@@ -52,9 +56,6 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                 const remoteMap: any = { 'remote_only': 'Fully Remote', 'hybrid': 'Hybrid (Mostly Remote)', 'onsite': 'Hybrid (Occasional)' };
                 setRemoteType(remoteMap[data.remoteWorkType as string] || data.remoteWorkType || '');
 
-                setMinSalary(data.minimumSalary?.toString() || '');
-                setLocation(data.location || '');
-                setJobTitle(data.jobTitle || '');
                 setSelectedCategories(data.jobCategories || []);
 
                 // Map backend number to UI label
@@ -87,9 +88,6 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
 
             const updates: Partial<Profile> = {
                 remoteWorkType: remoteMap[remoteType] || remoteType,
-                minimumSalary: parseInt(minSalary) || 0,
-                location: location,
-                jobTitle: jobTitle,
                 jobCategories: selectedCategories,
                 yearsOfExperience: expMap[experience] ?? parseInt(experience) ?? 0,
                 engagementTypes: selectedEngagements.map(t => {
@@ -149,7 +147,48 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                     <Ionicons name="chevron-back" size={24} color={c.text} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: c.text }]}>Preferences</Text>
-                <View style={{ width: 40 }} />
+            </View>
+
+            <View style={{ marginBottom: 10 }}>
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10 }}
+                >
+                    {SECTIONS.map((section) => (
+                        <TouchableOpacity
+                            key={section.id}
+                            onPress={() => setActiveSection(section.id)}
+                            style={[
+                                styles.sectionTab,
+                                { 
+                                    backgroundColor: activeSection === section.id ? c.primary : c.card,
+                                    borderColor: activeSection === section.id ? c.primary : c.border
+                                }
+                            ]}
+                        >
+                            {section.iconType === 'MaterialIcons' ? (
+                                <MaterialIcons 
+                                    name={section.icon as any} 
+                                    size={16} 
+                                    color={activeSection === section.id ? '#FFF' : c.text} 
+                                />
+                            ) : (
+                                <Ionicons 
+                                    name={section.icon as any} 
+                                    size={16} 
+                                    color={activeSection === section.id ? '#FFF' : c.text} 
+                                />
+                            )}
+                            <Text style={[
+                                styles.sectionTabText, 
+                                { color: activeSection === section.id ? '#FFF' : c.text }
+                            ]}>
+                                {section.title}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
             <KeyboardAvoidingView
@@ -161,6 +200,7 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Work Style Section */}
+                    {activeSection === 'work' && (
                     <View style={[styles.sectionCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
                         <View style={styles.sectionHeaderRow}>
                             <View style={[styles.iconContainer, { backgroundColor: '#3B82F620' }]}>
@@ -168,7 +208,6 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                             </View>
                             <Text style={[styles.sectionTitle, { color: c.text }]}>Work Style</Text>
                         </View>
-
                         <View style={styles.field}>
                             <Text style={[styles.label, { color: c.subtext }]}>Remote Preference</Text>
                             <View style={styles.optionsRow}>
@@ -189,20 +228,11 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                                 ))}
                             </View>
                         </View>
-
-                        <View style={styles.field}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Target Job Title</Text>
-                            <TextInput
-                                style={[styles.input, { color: c.text, backgroundColor: c.isDark ? '#2D2D2D' : '#F3F4F6', borderColor: 'transparent' }]}
-                                value={jobTitle}
-                                onChangeText={setJobTitle}
-                                placeholder="e.g. Senior Product Designer"
-                                placeholderTextColor={c.subtext}
-                            />
-                        </View>
                     </View>
+                    )}
 
                     {/* Categories Section */}
+                    {activeSection === 'categories' && (
                     <View style={[styles.sectionCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
                         <View style={styles.sectionHeaderRow}>
                             <View style={[styles.iconContainer, { backgroundColor: '#8B5CF620' }]}>
@@ -234,47 +264,10 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                             })}
                         </View>
                     </View>
-
-                    {/* Financials Section */}
-                    <View style={[styles.sectionCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
-                        <View style={styles.sectionHeaderRow}>
-                            <View style={[styles.iconContainer, { backgroundColor: '#10B98120' }]}>
-                                <MaterialIcons name="attach-money" size={20} color="#10B981" />
-                            </View>
-                            <Text style={[styles.sectionTitle, { color: c.text }]}>Financials & Location</Text>
-                        </View>
-
-                        <View style={styles.field}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Minimum Annual Salary (NGN)</Text>
-                            <View style={[styles.inputContainer, { backgroundColor: c.isDark ? '#2D2D2D' : '#F3F4F6' }]}>
-                                <Text style={{ color: c.subtext, fontSize: 16, marginRight: 8 }}>₦</Text>
-                                <TextInput
-                                    style={[styles.flexInput, { color: c.text }]}
-                                    value={minSalary}
-                                    onChangeText={setMinSalary}
-                                    keyboardType="numeric"
-                                    placeholder="80,000"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                        </View>
-
-                        <View style={styles.field}>
-                            <Text style={[styles.label, { color: c.subtext }]}>Preferred Location</Text>
-                            <View style={[styles.inputContainer, { backgroundColor: c.isDark ? '#2D2D2D' : '#F3F4F6' }]}>
-                                <Ionicons name="location-outline" size={18} color={c.subtext} style={{ marginRight: 8 }} />
-                                <TextInput
-                                    style={[styles.flexInput, { color: c.text }]}
-                                    value={location}
-                                    onChangeText={setLocation}
-                                    placeholder="City, Country or Remote"
-                                    placeholderTextColor={c.subtext}
-                                />
-                            </View>
-                        </View>
-                    </View>
+                    )}
 
                     {/* Experience Section */}
+                    {activeSection === 'experience' && (
                     <View style={[styles.sectionCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
                         <View style={styles.sectionHeaderRow}>
                             <View style={[styles.iconContainer, { backgroundColor: '#F59E0B20' }]}>
@@ -328,37 +321,7 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                             </View>
                         </View>
                     </View>
-
-                    {/* Notifications Section */}
-                    <View style={[styles.sectionCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor, marginBottom: 120 }]}>
-                        <View style={styles.sectionHeaderRow}>
-                            <View style={[styles.iconContainer, { backgroundColor: '#EF444420' }]}>
-                                <MaterialIcons name="notifications-none" size={20} color="#EF4444" />
-                            </View>
-                            <Text style={[styles.sectionTitle, { color: c.text }]}>Notifications</Text>
-                        </View>
-
-                        <View style={styles.field}>
-                            <Text style={[styles.label, { color: c.subtext }]}>How often should we alert you?</Text>
-                            <View style={styles.optionsRow}>
-                                {FREQUENCIES.map(freq => (
-                                    <TouchableOpacity
-                                        key={freq}
-                                        style={[
-                                            styles.optionChip,
-                                            {
-                                                backgroundColor: frequency === freq ? c.primary : (c.isDark ? '#2D2D2D' : '#F3F4F6'),
-                                                borderColor: frequency === freq ? c.primary : 'transparent'
-                                            }
-                                        ]}
-                                        onPress={() => setFrequency(freq)}
-                                    >
-                                        <Text style={[styles.chipText, { color: frequency === freq ? '#fff' : c.text }]}>{freq}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                    </View>
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
 
@@ -493,6 +456,20 @@ const styles = StyleSheet.create({
     tagText: {
         fontSize: 12,
         fontWeight: '600',
+    },
+    sectionTab: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        marginRight: 10,
+        borderWidth: 1,
+    },
+    sectionTabText: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
     },
     footer: {
         padding: 20,

@@ -117,7 +117,7 @@ export default function IdentityVerificationScreen({ navigation }: any) {
                 type: "success",
             });
 
-            // Refresh user sparks globally
+            // Refresh user data globally
             const updatedUser = await userService.getMe();
             updateUser(updatedUser);
 
@@ -221,16 +221,7 @@ export default function IdentityVerificationScreen({ navigation }: any) {
                     <Text style={[styles.introDesc, { color: c.subtext }]}>
                         Verify your identity to build trust with clients and earn a verified badge.
                     </Text>
-                    <View style={[styles.feeBox, { backgroundColor: c.primary + '10', borderColor: c.primary + '30' }]}>
-                        <View style={styles.feeItem}>
-                            <MaterialCommunityIcons name="lightning-bolt" size={20} color={c.primary} />
-                            <Text style={[styles.feeText, { color: c.text }]}>Cost: <Text style={{ fontWeight: 'bold' }}>500 Sparks</Text></Text>
-                        </View>
-                        <View style={styles.feeItem}>
-                            <MaterialCommunityIcons name="gift" size={20} color="#10B981" />
-                            <Text style={[styles.feeText, { color: c.text }]}>Reward: <Text style={{ fontWeight: 'bold', color: '#10B981' }}>100 Sparks back</Text> on approval</Text>
-                        </View>
-                    </View>
+
                 </View>
 
                 {existingVerification?.status === "rejected" && (

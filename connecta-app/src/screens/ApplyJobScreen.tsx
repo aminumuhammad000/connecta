@@ -12,21 +12,19 @@ const ApplyJobScreen: React.FC = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const route = useRoute<any>();
-    const { jobId, jobTitle, jobBudget, proposalId, initialData } = route.params || {};
+    const { jobId, jobTitle, jobBudget, jobDuration, proposalId, initialData } = route.params || {};
     const isEditing = !!proposalId;
     const { showAlert } = useInAppAlert();
 
     const [coverLetter, setCoverLetter] = useState(initialData?.coverLetter || initialData?.description || '');
     const [proposedRate, setProposedRate] = useState(initialData?.budget?.amount ? String(initialData.budget.amount) : (jobBudget ? String(jobBudget) : ''));
-    const [duration, setDuration] = useState(initialData?.estimatedDuration || '');
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [duration, setDuration] = useState(initialData?.duration || (jobDuration ? String(jobDuration) + (String(jobDuration).includes('day') || String(jobDuration).includes('week') ? '' : ' days') : ''));
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [isRateEditable, setIsRateEditable] = useState(false);
+    const [isDurationEditable, setIsDurationEditable] = useState(false);
+
     const handleSubmit = async () => {
-        if (!coverLetter.trim()) {
-            showAlert({ title: 'Missing Info', message: 'Please write a cover letter.', type: 'error' });
-            return;
-        }
         if (!proposedRate.trim()) {
             showAlert({ title: 'Missing Info', message: 'Please enter your proposed rate.', type: 'error' });
             return;
@@ -34,26 +32,30 @@ const ApplyJobScreen: React.FC = () => {
 
         try {
             setIsSubmitting(true);
-            // Calculate valid date range from duration string
-            const startDate = new Date();
-            const endDate = new Date();
-            // Simple parsing: if contains 'week' add 7*n, 'month' add 30*n, else default 30 days
+            // Calculate days for deliveryTime
+            let days = 30;
             const d = duration.toLowerCase();
             if (d.includes('week')) {
-                const num = parseInt(d) || 1;
-                endDate.setDate(endDate.getDate() + (num * 7));
+                days = (parseInt(d) || 1) * 7;
             } else if (d.includes('month')) {
-                const num = parseInt(d) || 1;
-                endDate.setDate(endDate.getDate() + (num * 30));
+                days = (parseInt(d) || 1) * 30;
+            } else if (d.includes('day')) {
+                days = parseInt(d) || 1;
             } else {
-                endDate.setDate(endDate.getDate() + 30);
+                days = parseInt(duration) || 30;
             }
+
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + days);
 
             const proposalData: any = {
                 jobId,
                 description: coverLetter,
                 coverLetter: coverLetter,
                 title: jobTitle || 'Job Application',
+                price: Number(proposedRate),
+                deliveryTime: days,
                 budget: {
                     amount: Number(proposedRate),
                     currency: '₦'
@@ -62,7 +64,7 @@ const ApplyJobScreen: React.FC = () => {
                     startDate: startDate,
                     endDate: endDate
                 },
-                type: 'recommendation', // Required enum by backend
+                type: 'recommendation', 
                 level: 'intermediate',
                 priceType: 'fixed',
                 status: 'pending'
@@ -96,22 +98,6 @@ const ApplyJobScreen: React.FC = () => {
         }
     };
 
-    const handleGenerateWithAI = async () => {
-        try {
-            setIsGenerating(true);
-            const response = await proposalService.generateCoverLetter(jobId);
-            if (response && response.coverLetter) {
-                setCoverLetter(response.coverLetter);
-            } else {
-                showAlert({ title: 'AI Error', message: 'Failed to generate cover letter.', type: 'error' });
-            }
-        } catch (error) {
-            console.error('AI generation error:', error);
-            showAlert({ title: 'Error', message: 'Failed to generate cover letter.', type: 'error' });
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -129,47 +115,49 @@ const ApplyJobScreen: React.FC = () => {
                         <Text style={[styles.jobTitle, { color: c.text }]}>Applying to: {jobTitle || 'Unknown Job'}</Text>
 
                         <View style={{ marginTop: 20 }}>
-                            <Text style={[styles.label, { color: c.text }]}>Proposed Rate (₦)</Text>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <View>
+                                    <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Proposed Rate (₦)</Text>
+                                    {!!jobBudget && <Text style={{ fontSize: 11, color: c.subtext, marginTop: 2 }}>Client's budget: ₦{jobBudget}</Text>}
+                                </View>
+                                <TouchableOpacity onPress={() => setIsRateEditable(!isRateEditable)}>
+                                    <MaterialIcons name={isRateEditable ? "lock-open" : "edit"} size={18} color={isRateEditable ? c.primary : c.subtext} />
+                                </TouchableOpacity>
+                            </View>
                             <TextInput
-                                style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
+                                style={[styles.input, { color: c.text, borderColor: isRateEditable ? c.primary : c.border, backgroundColor: c.card, opacity: isRateEditable ? 1 : 0.7 }]}
                                 value={proposedRate}
                                 onChangeText={setProposedRate}
                                 keyboardType="numeric"
                                 placeholder="Ex: 500"
                                 placeholderTextColor={c.subtext}
-                            />
-                        </View>
-
-                        <View style={{ marginTop: 16 }}>
-                            <Text style={[styles.label, { color: c.text }]}>Estimated Duration</Text>
-                            <TextInput
-                                style={[styles.input, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
-                                value={duration}
-                                onChangeText={setDuration}
-                                placeholder="Ex: 2 weeks"
-                                placeholderTextColor={c.subtext}
+                                editable={isRateEditable}
                             />
                         </View>
 
                         <View style={{ marginTop: 16 }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Cover Letter</Text>
-                                <TouchableOpacity
-                                    onPress={handleGenerateWithAI}
-                                    disabled={isGenerating}
-                                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: c.isDark ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}
-                                >
-                                    {isGenerating ? (
-                                        <ActivityIndicator size="small" color={c.primary} />
-                                    ) : (
-                                        <>
-                                            <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                                            <Text style={{ fontSize: 12, fontWeight: '600', color: c.primary }}>
-                                                {coverLetter ? 'Regenerate with AI' : 'Generate with AI'}
-                                            </Text>
-                                        </>
-                                    )}
+                                <View>
+                                    <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Estimated Duration</Text>
+                                    {!!jobDuration && <Text style={{ fontSize: 11, color: c.subtext, marginTop: 2 }}>Client expects: {String(jobDuration).includes('day') || String(jobDuration).includes('week') ? jobDuration : `${jobDuration} days`}</Text>}
+                                </View>
+                                <TouchableOpacity onPress={() => setIsDurationEditable(!isDurationEditable)}>
+                                    <MaterialIcons name={isDurationEditable ? "lock-open" : "edit"} size={18} color={isDurationEditable ? c.primary : c.subtext} />
                                 </TouchableOpacity>
+                            </View>
+                            <TextInput
+                                style={[styles.input, { color: c.text, borderColor: isDurationEditable ? c.primary : c.border, backgroundColor: c.card, opacity: isDurationEditable ? 1 : 0.7 }]}
+                                value={duration}
+                                onChangeText={setDuration}
+                                placeholder="Ex: 2 weeks"
+                                placeholderTextColor={c.subtext}
+                                editable={isDurationEditable}
+                            />
+                        </View>
+
+                        <View style={{ marginTop: 16 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <Text style={[styles.label, { color: c.text, marginBottom: 0 }]}>Cover Letter (Optional)</Text>
                             </View>
                             <TextInput
                                 style={[styles.textArea, { color: c.text, borderColor: c.border, backgroundColor: c.card }]}
@@ -180,9 +168,6 @@ const ApplyJobScreen: React.FC = () => {
                                 placeholder="Describe why you are the best fit for this job... or use AI to generate one!"
                                 placeholderTextColor={c.subtext}
                             />
-                            <Text style={{ fontSize: 11, color: c.subtext, marginTop: 4, textAlign: 'right' }}>
-                                Powered by Connecta AI • You can edit the text above.
-                            </Text>
                         </View>
                     </ScrollView>
                 </KeyboardAvoidingView>

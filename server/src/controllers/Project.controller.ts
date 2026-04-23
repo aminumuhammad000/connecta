@@ -481,72 +481,100 @@ export const submitProject = async (req: Request, res: Response) => {
   }
 };
 
-// Accept project submission (Client)
+// Accept project submission (Client) — releases escrow to freelancer's available balance
 export const acceptProjectSubmission = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const clientId = (req as any).user?.id || (req as any).user?._id;
 
-    const project = await Project.findByIdAndUpdate(
-      id,
-      {
-        status: 'completed',
-        statusLabel: 'Completed',
-        $push: {
-          activity: {
-            date: new Date(),
-            description: 'Project submission accepted and marked as completed.',
-          }
-        },
-      },
-      { new: true }
-    );
-
+    const project = await Project.findById(id);
     if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: 'Project not found',
-      });
+      return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    // Auto-release associated payment if in escrow
+    // Only the client who owns this project can approve
+    if (project.clientId?.toString() !== clientId?.toString()) {
+      return res.status(403).json({ success: false, message: 'Only the client can approve project completion.' });
+    }
+
+    // Update project status
+    project.status = 'completed' as any;
+    project.statusLabel = 'Completed';
+    (project.activity as any[]).push({ date: new Date(), description: 'Project submission accepted and marked as completed.' });
+    await project.save();
+
+    // ── Release escrow → freelancer available balance ─────────────
     try {
       const Payment = (await import('../models/Payment.model.js')).default;
-      const Wallet = (await import('../models/Wallet.model.js')).default;
+      const Wallet  = (await import('../models/Wallet.model.js')).default;
+      const Transaction = (await import('../models/Transaction.model.js')).default;
+      const { createNotification } = await import('./notification.controller.js');
 
-      const payment = await Payment.findOne({
-        projectId: id,
-        escrowStatus: 'held'
-      });
+      const payment = await Payment.findOne({ projectId: id, escrowStatus: 'held' });
 
       if (payment) {
+        // Mark payment as released
         payment.escrowStatus = 'released';
         payment.releasedAt = new Date();
         await payment.save();
 
-        // Update freelancer wallet
-        const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
-        if (freelancerWallet) {
-          freelancerWallet.escrowBalance -= payment.netAmount;
-          freelancerWallet.totalEarnings += payment.netAmount;
-          await freelancerWallet.save();
+        // ── Update freelancer wallet ──────────────────────────────
+        let freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
+        if (!freelancerWallet) {
+          freelancerWallet = new Wallet({ userId: payment.payeeId });
         }
+
+        const balanceBefore = freelancerWallet.balance;
+
+        // escrowBalance goes DOWN → availableBalance goes UP automatically
+        // (pre-save hook: availableBalance = balance - escrowBalance)
+        // balance stays the same — the money was already added to balance on proposal approval
+        freelancerWallet.escrowBalance = Math.max(0, (freelancerWallet.escrowBalance || 0) - payment.netAmount);
+        freelancerWallet.totalEarnings = (freelancerWallet.totalEarnings || 0) + payment.netAmount;
+        await freelancerWallet.save(); // hook recalculates availableBalance
+
+        // ── Update the pending escrow Transaction to completed ────
+        await Transaction.findOneAndUpdate(
+          {
+            userId: payment.payeeId,
+            paymentId: payment._id,
+            status: 'pending',
+            type: 'payment_received',
+          },
+          {
+            status: 'completed',
+            description: `💸 Escrow released for project: ${project.title}. Funds are now available to withdraw.`,
+            balanceAfter: freelancerWallet.balance, // update the balanceAfter as well
+          }
+        );
+
+        // ── Notify freelancer ─────────────────────────────────────
+        await createNotification({
+          userId: payment.payeeId,
+          type: 'payment_received',
+          title: '🎉 Payment Released!',
+          message: `₦${payment.netAmount.toLocaleString()} from project "${project.title}" is now available in your wallet. You can withdraw it to your bank account.`,
+          relatedId: payment._id,
+          relatedType: 'payment',
+          priority: 'high',
+        });
+
+        console.log(`✅ Escrow released: ₦${payment.netAmount} for project ${id} → freelancer ${payment.payeeId}`);
+      } else {
+        console.warn(`⚠️  No held payment found for project ${id}. Wallet not updated.`);
       }
     } catch (paymentError) {
       console.error('Error auto-releasing payment:', paymentError);
-      // We don't fail the whole request because project status WAS updated
+      // Don't fail the whole request — project status WAS updated
     }
 
     res.status(200).json({
       success: true,
-      message: 'Project accepted and completed. Payment released from escrow.',
+      message: 'Project accepted. Payment released to freelancer\'s available balance.',
       data: project,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error accepting project',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: 'Error accepting project', error: error.message });
   }
 };
 

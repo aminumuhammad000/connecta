@@ -538,3 +538,84 @@ export const sendProfileReminderEmail = async (
 
   return sendEmail(email, subject, html, text);
 };
+/**
+ * Send Wallet Credited Email
+ */
+export const sendWalletCreditedEmail = async (
+  email: string,
+  userName: string,
+  amount: number,
+  source: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `Wallet Credited: ₦${amount.toLocaleString()}`;
+  const html = getBaseTemplate({
+    title: 'Wallet Credited! 💸',
+    subject: subject,
+    content: `
+      <p>Hi ${userName},</p>
+      <p>Your wallet has been credited with <strong>₦${amount.toLocaleString()}</strong>.</p>
+      <p><strong>Source:</strong> ${source}</p>
+      <p>You can withdraw your funds or use them for other transactions within the platform.</p>
+    `,
+    actionUrl: `${process.env.CLIENT_URL || 'https://app.myconnecta.ng'}/wallet`,
+    actionText: 'View Wallet'
+  });
+  const text = `Hi ${userName}, your wallet has been credited with ₦${amount.toLocaleString()} from ${source}. View your wallet for details.`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
+ * Send Job Completed/Work Released Email
+ */
+export const sendJobApprovedEmail = async (
+  email: string,
+  userName: string,
+  jobTitle: string,
+  amount: number
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `Payment Released for ${jobTitle}`;
+  const html = getBaseTemplate({
+    title: 'Payment Released! 🏦',
+    subject: subject,
+    content: `
+      <p>Hi ${userName},</p>
+      <p>Great news! The work you submitted for <strong>${jobTitle}</strong> has been approved by the client.</p>
+      <p>As a result, your payment of <strong>₦${amount.toLocaleString()}</strong> has been released to your wallet.</p>
+    `,
+    actionUrl: `${process.env.CLIENT_URL || 'https://app.myconnecta.ng'}/wallet`,
+    actionText: 'Check My Balance'
+  });
+  const text = `Hi ${userName}, your work for ${jobTitle} was approved and ₦${amount.toLocaleString()} has been released to your wallet!`;
+
+  return sendEmail(email, subject, html, text);
+};
+
+/**
+ * Send New Chat Message Email
+ */
+export const sendNewMessageEmail = async (
+  email: string,
+  userName: string,
+  senderName: string,
+  messagePreview: string,
+  chatLink: string
+): Promise<{ success: boolean; error?: any }> => {
+  const subject = `New message from ${senderName} on Connecta`;
+  const html = getBaseTemplate({
+    title: 'New Message! 💬',
+    subject: subject,
+    content: `
+      <p>Hi ${userName},</p>
+      <p>You have a new message from <strong>${senderName}</strong>:</p>
+      <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; font-style: italic; margin: 20px 0;">
+        "${messagePreview}"
+      </div>
+    `,
+    actionUrl: chatLink,
+    actionText: 'Reply in Chat'
+  });
+  const text = `Hi ${userName}, you have a new message from ${senderName} on Connecta: "${messagePreview}". Reply in the app.`;
+
+  return sendEmail(email, subject, html, text);
+};

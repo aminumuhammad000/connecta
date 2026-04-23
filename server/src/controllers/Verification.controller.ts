@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import Verification from "../models/Verification.model.js";
 import User from "../models/user.model.js";
-import SparkTransaction from "../models/SparkTransaction.model.js";
 
 export const submitVerification = async (req: Request, res: Response) => {
   try {
@@ -19,14 +18,6 @@ export const submitVerification = async (req: Request, res: Response) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Enforce spark charge for verification
-    const VERIFICATION_CHARGE = 500;
-    if ((user.sparks || 0) < VERIFICATION_CHARGE) {
-      return res.status(400).json({
-        success: false,
-        message: `Insufficient sparks. Verification requires ${VERIFICATION_CHARGE} sparks. You currently have ${user.sparks || 0}.`
-      });
-    }
 
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
@@ -57,18 +48,6 @@ export const submitVerification = async (req: Request, res: Response) => {
     const newVerification = new Verification(verificationData);
     await newVerification.save();
 
-    // Deduct sparks
-    user.sparks -= VERIFICATION_CHARGE;
-    await user.save();
-
-    // Record transaction
-    await SparkTransaction.create({
-      userId: user._id,
-      type: 'spend',
-      amount: -VERIFICATION_CHARGE,
-      balanceAfter: user.sparks,
-      description: 'Account verification fee'
-    });
 
     res.status(201).json({
       message: "Verification request submitted successfully",
@@ -133,32 +112,13 @@ export const updateVerificationStatus = async (req: Request, res: Response) => {
       const user = await User.findById(verification.user);
       if (user) {
         user.isVerified = true;
-        if (!user.badges.includes("verified_pro")) {
-          user.badges.push("verified_pro");
-        }
-
-        // Award sparks for successful verification
-        const VERIFICATION_REWARD = 100;
-        user.sparks = (user.sparks || 0) + VERIFICATION_REWARD;
-
         await user.save();
-
-        // Record transaction
-        await SparkTransaction.create({
-          userId: user._id,
-          type: 'bonus',
-          amount: VERIFICATION_REWARD,
-          balanceAfter: user.sparks,
-          description: 'Identity verification successful reward'
-        });
       }
     } else {
       // If rejected, maybe we should keep isVerified as false (default)
       const user = await User.findById(verification.user);
       if (user) {
         user.isVerified = false;
-        // Optionally remove badge if it was there
-        user.badges = user.badges.filter(b => b !== "verified_pro");
         await user.save();
       }
     }

@@ -12,31 +12,7 @@ import { Job } from "../models/Job.model.js";
 export const initCronJobs = () => {
     console.log("⏰ Initializing cron jobs...");
 
-    // Run every hour to delete expired external gigs
-    // 0 * * * * = every hour at minute 0
-    cron.schedule("0 * * * *", async () => {
-        console.log("⏰ Running cleanup for expired gigs...");
-        try {
-            const now = new Date();
-
-            // Find and delete external gigs where deadline < now
-            const result = await Job.deleteMany({
-                isExternal: true,
-                deadline: { $lt: now }
-            });
-
-            if (result.deletedCount > 0) {
-                console.log(`✅ Deleted ${result.deletedCount} expired external gigs`);
-            } else {
-                console.log("ℹ️ No expired external gigs found");
-            }
-        } catch (error: any) {
-            console.error("❌ Error in expired gigs cleanup cron:", error.message);
-        }
-    });
-
     // Run every hour to remind users with incomplete profiles
-    // 0 * * * * = every hour at minute 0
     cron.schedule("0 * * * *", async () => {
         await checkIncompleteProfiles();
     });
@@ -73,8 +49,8 @@ async function checkIncompleteProfiles() {
             const profile = await Profile.findOne({ user: user._id });
 
             const isIncomplete = !profile ||
-                (user.userType === 'freelancer' && (!profile.bio || !profile.skills || profile.skills.length === 0)) ||
-                ((user.userType === 'client' || user.userType === 'employer') && (!profile.bio || !profile.companyName));
+                (user.userType === 'freelancer' && (!profile.bio || !profile.subSkills || profile.subSkills.length === 0)) ||
+                ((user.userType === 'client') && (!profile.bio));
 
             if (isIncomplete) {
                 console.log(`📧 Sending reminder to ${user.email}...`);
@@ -83,9 +59,9 @@ async function checkIncompleteProfiles() {
                 await sendProfileReminderEmail(user.email, user.firstName);
 
                 // 2. Send WhatsApp if phone number exists
-                if (profile?.phoneNumber) {
+                if (user.phoneNumber) {
                     const whatsappMsg = `Hi ${user.firstName}! 👋 We noticed you haven't completed your profile on Connecta yet. A complete profile helps you stand out and get 5x more opportunities! Complete it here: https://app.myconnecta.ng/settings/profile`;
-                    await twilioService.sendWhatsAppMessage(profile.phoneNumber, whatsappMsg);
+                    await twilioService.sendWhatsAppMessage(user.phoneNumber, whatsappMsg);
                 }
 
                 // 3. Mark as sent
@@ -117,7 +93,7 @@ async function sendBatchJobMatchEmails(frequency: 'daily' | 'weekly') {
         const matches = await JobMatch.find({
             notificationFrequency: frequency,
             isEmailed: false
-        }).populate('user', 'firstName email sparks').populate('job', 'title skills');
+        }).populate('user', 'firstName email').populate('job', 'title skills');
 
         if (matches.length === 0) {
             console.log(`ℹ️ No pending ${frequency} matches found`);
@@ -140,18 +116,6 @@ async function sendBatchJobMatchEmails(frequency: 'daily' | 'weekly') {
         // 3. Send emails
         for (const userId in userMatches) {
             const { user, jobs } = userMatches[userId];
-
-            // Enforce spark balance requirement
-            if ((user.sparks || 0) <= 0) {
-                console.log(`ℹ️ Skipping job matches for ${user.email} - Zero spark balance`);
-
-                // Still mark as emailed so we don't keep trying and failing for the same matches
-                await JobMatch.updateMany(
-                    { user: user._id, notificationFrequency: frequency, isEmailed: false },
-                    { isEmailed: true }
-                );
-                continue;
-            }
             const jobListHtml = jobs.map((job: any) => `
                 <div style="margin-bottom: 20px; padding: 15px; border: 1px solid #e5e7eb; border-radius: 12px;">
                     <h4 style="margin: 0 0 10px 0; color: #111827;">${job.title}</h4>

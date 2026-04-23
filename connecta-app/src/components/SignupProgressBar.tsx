@@ -42,11 +42,13 @@ const SignupProgressBar: React.FC<SignupProgressBarProps> = ({ currentStep, tota
             </View>
             <View style={styles.labelContainer}>
                 <Text style={[styles.stepLabel, { color: c.subtext }]}>
-                    Step <Text style={{ color: c.text, fontWeight: '800' }}>{currentStep}</Text> of {totalSteps}
+                    {`Step `}
+                    <Text style={{ color: c.text, fontWeight: '800' }}>{currentStep}</Text>
+                    {` of ${totalSteps}`}
                 </Text>
-                {currentStep === totalSteps && (
-                    <Text style={[styles.completionLabel, { color: c.primary }]}>Final Step! 🎉</Text>
-                )}
+                {currentStep === totalSteps ? (
+                    <Text style={[styles.completionLabel, { color: c.primary }]}>Final Step!</Text>
+                ) : null}
             </View>
         </View>
     );

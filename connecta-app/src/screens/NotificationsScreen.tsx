@@ -123,39 +123,7 @@ export default function NotificationsScreen({ navigation }: Props) {
       return;
     }
 
-    // Handle Collabo Links (Team Joined, etc.)
-    if (link && link.includes('/collabo/')) {
-      if (link.includes('/invite/')) {
-        navigation.navigate('CollaboInvite', { roleId: relatedId });
-      } else {
-        // For workspace links like /collabo/:projectId
-        navigation.navigate('CollaboWorkspace', { projectId: relatedId });
-      }
-      return;
-    }
 
-    // Collabo invite -> Check role status first
-    if (type === 'collabo_invite' && relatedId) {
-      try {
-        // Fetch role to check if already accepted
-        const { getRole } = await import('../services/collaboService');
-        const roleData = await getRole(relatedId);
-        const role = (roleData as any)?.role || roleData;
-        const project = (roleData as any)?.project || {};
-
-        // If already accepted by current user, go directly to workspace
-        if (role.status === 'filled' && role.freelancerId?._id === (item as any).userId) {
-          navigation.navigate('CollaboWorkspace', { projectId: project._id });
-        } else {
-          // Otherwise show invite screen
-          navigation.navigate('CollaboInvite', { roleId: relatedId });
-        }
-      } catch (error) {
-        // If error, still try to show invite screen
-        navigation.navigate('CollaboInvite', { roleId: relatedId });
-      }
-      return;
-    }
 
     // Project / Payment related -> Project Detail
     if ((relatedType === 'project' || type === 'project_started' || type === 'payment_released' || type === 'proposal_accepted') && relatedId) {

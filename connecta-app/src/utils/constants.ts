@@ -1,14 +1,24 @@
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
 // ==========================================
 // SERVER CONFIGURATION
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-// 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = false;
+const USE_LOCAL_SERVER = true;
+
+// Dynamic local IP detection for development
+const getLocalIP = () => {
+    // Falls back to hardcoded current IP if hostUri is unavailable
+    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+    if (!hostUri) return '192.168.42.44'; 
+    return hostUri.split(':')[0];
+};
 
 // Server URLs
-const ONLINE_SERVER = 'https://api.myconnecta.ng'; // Production API confirmed via curl
-const LOCAL_SERVER = 'http://192.168.100.10:5000'; // Local development server
+const ONLINE_SERVER = 'https://api.myconnecta.ng';
+const LOCAL_SERVER = Platform.OS === 'web' ? 'http://localhost:5000' : `http://${getLocalIP()}:5000`;
 
 export const API_BASE_URL = USE_LOCAL_SERVER ? LOCAL_SERVER : ONLINE_SERVER;
 console.log('[API] Base URL:', API_BASE_URL);
@@ -20,8 +30,9 @@ export const STORAGE_KEYS = {
     USER_ROLE: '@connecta/user_role',
     THEME_MODE: '@connecta/theme_mode',
     BIOMETRIC_ENABLED: '@connecta/biometric_enabled',
-    AI_CHAT_HISTORY: '@connecta/ai_chat_history',
     PENDING_SIGNUP: '@connecta/pending_signup',
+    PROFILE_DATA: '@connecta/profile_data',
+    PROFILE_CACHE: '@connecta/profile_cache_',
     LAST_DAILY_REWARD_SHOWN: '@connecta/last_daily_reward_shown',
 } as const;
 
@@ -54,7 +65,7 @@ export const API_ENDPOINTS = {
     // Proposals
     PROPOSALS: '/api/proposals',
     ACCEPTED_PROPOSALS: '/api/proposals/client/accepted',
-    FREELANCER_PROPOSALS: (freelancerId: string) => `/api/proposals/freelancer/${freelancerId}`,
+    FREELANCER_PROPOSALS: (freelancerId?: string) => `/api/proposals/my-proposals`,
     JOB_PROPOSALS: (jobId: string) => `/api/proposals/job/${jobId}`,
     PROPOSAL_STATS: (freelancerId: string) => `/api/proposals/stats/${freelancerId}`,
     PROPOSAL_BY_ID: (id: string) => `/api/proposals/${id}`,
@@ -74,6 +85,7 @@ export const API_ENDPOINTS = {
     // Messages
     CONVERSATIONS: '/api/messages/conversations',
     CONVERSATION_DETAILS: (id: string) => `/api/messages/conversations/${id}`,
+    CONVERSATION_MESSAGES: (id: string) => `/api/messages/conversations/${id}/messages`,
     SEND_MESSAGE: '/api/messages/message/send',
     MARK_READ: '/api/messages/message/read',
     UNREAD_COUNT_TOTAL: '/api/messages/unread-count',
@@ -96,6 +108,8 @@ export const API_ENDPOINTS = {
     BANKS: '/api/payments/banks',
     RESOLVE_BANK: '/api/payments/banks/resolve',
     RELEASE_PAYMENT: (paymentId: string) => `/api/payments/${paymentId}/release`,
+    PAY_FROM_WALLET: '/api/payments/pay-from-wallet',
+    VTSTACK_PAYOUT: '/api/payments/payout/vtstack',
 
     // Notifications
     NOTIFICATIONS: '/api/notifications',
@@ -121,25 +135,18 @@ export const API_ENDPOINTS = {
     APPLY_TO_GIG: (id: string) => `/api/gigs/${id}/apply`,
     SAVE_GIG: (id: string) => `/api/gigs/${id}/save`,
 
-    // AI Agent
-    AI_AGENT: '/api/agent',
-
     // Support
     SUPPORT_FEEDBACK: '/api/support/feedback',
     SUPPORT_HELP: '/api/support/help',
+
+    // System Settings
+    SETTINGS: '/api/settings',
 
     // Uploads
     UPLOAD_FILE: '/api/uploads/upload',
     UPLOAD_AVATAR: '/api/avatars/upload',
     UPLOAD_AVATAR_PUBLIC: '/api/avatars/public-upload',
     UPLOAD_PORTFOLIO_IMAGE: '/api/portfolio/upload',
-
-    // Rewards
-    REWARD_BALANCE: '/api/rewards/balance',
-    CLAIM_REWARD: '/api/rewards/claim',
-    SPARK_HISTORY: '/api/rewards/history',
-    VALIDATE_RECIPIENT: '/api/rewards/validate-recipient',
-    TRANSFER_SPARKS: '/api/rewards/transfer',
 
     // User PIN
     CHECK_HAS_PIN: '/api/users/has-transaction-pin',

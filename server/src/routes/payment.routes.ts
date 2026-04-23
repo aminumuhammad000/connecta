@@ -18,6 +18,10 @@ import {
   getPendingWithdrawals,
   getAllWithdrawals,
   getAllWallets,
+  getOrCreateVirtualAccount,
+  handleVTStackWebhook,
+  payFromWallet,
+  requestVTStackPayout,
 } from '../controllers/payment.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 
@@ -36,6 +40,7 @@ router.post('/job-verification', authenticate, initializeJobVerification);
 router.get('/verify/:reference', authenticate, verifyPayment);
 router.post('/:paymentId/release', authenticate, releasePayment);
 router.post('/:paymentId/refund', authenticate, refundPayment);
+router.post('/pay-from-wallet', authenticate, payFromWallet);
 router.get('/history', authenticate, getPaymentHistory);
 
 // Wallet routes
@@ -50,5 +55,12 @@ router.post('/withdrawal/:withdrawalId/process', authenticate, processWithdrawal
 // Bank routes
 router.get('/banks', authenticate, getBanks);
 router.post('/banks/resolve', authenticate, resolveAccount);
+
+// VTStack routes
+router.get('/vtstack/virtual-account', authenticate, getOrCreateVirtualAccount);
+router.post('/vtstack/webhook', handleVTStackWebhook);
+
+// VTStack Secure Payout (freelancer-initiated withdrawal via VTStack)
+router.post('/payout/vtstack', authenticate, requestVTStackPayout);
 
 export default router;

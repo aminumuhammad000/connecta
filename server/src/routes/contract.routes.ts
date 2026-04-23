@@ -1,36 +1,33 @@
 import express from 'express';
 import {
-  createContract,
-  getContractById,
+  createOffer,
+  acceptOffer,
+  submitWork,
+  approveWork,
   getUserContracts,
-  getAllContracts,
-  signContract,
-  terminateContract,
-  getContractTemplate,
+  getContractById,
 } from '../controllers/contract.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Admin route - Get all contracts (no auth)
-router.get('/admin/all', getAllContracts);
+// Create offer (Client only)
+router.post('/offer', authenticate, createOffer);
 
-// Create contract (protected - client only)
-router.post('/', authenticate, createContract);
+// Accept offer (Freelancer only)
+router.post('/accept/:id', authenticate, acceptOffer);
 
-// Get user's contracts (protected)
+// Submit work (Freelancer only)
+router.post('/submit/:id', authenticate, submitWork);
+
+// Approve work (Client only)
+router.post('/approve/:id', authenticate, approveWork);
+
+// Get user's contracts
 router.get('/', authenticate, getUserContracts);
 
-// Get contract template (public)
-router.get('/templates/:type', getContractTemplate);
-
-// Get contract by ID (protected)
-router.get('/:contractId', authenticate, getContractById);
-
-// Sign contract (protected)
-router.post('/:contractId/sign', authenticate, signContract);
-
-// Terminate contract (protected)
-router.post('/:contractId/terminate', authenticate, terminateContract);
+// Get contract by ID
+router.get('/:id', authenticate, getContractById);
 
 export default router;
+

@@ -7,17 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
-import CustomAlert, { AlertType } from '../components/CustomAlert';
 import ChatGreeting from '../components/ChatGreeting';
+import { useInAppAlert } from '../components/InAppAlert';
 import { STORAGE_KEYS } from '../utils/constants';
 import * as storage from '../utils/storage';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import { useTranslation } from '../utils/i18n';
-import TypewriterText from '../components/TypewriterText';
-import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
 import AnimatedBackground from '../components/AnimatedBackground';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -32,7 +28,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const navigation = useNavigation();
     const c = useThemeColors();
     const { login } = useAuth();
-    const { t, lang } = useTranslation();
+    const { showAlert } = useInAppAlert();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -43,21 +39,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
-
-    const [alertVisible, setAlertVisible] = useState(false);
-    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType }>({
-        title: '',
-        message: '',
-        type: 'success'
-    });
-
-    const showCustomAlert = (title: string, message: string, type: AlertType = 'success') => {
-        setAlertConfig({ title: t(title as any) || title, message: t(message as any) || message, type });
-        setAlertVisible(true);
-        if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        else if (type === 'error') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    };
 
     useEffect(() => {
         Animated.parallel([
@@ -81,8 +62,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
     const handleBiometricAuth = async () => {
         try {
             const result = await LocalAuthentication.authenticateAsync({
-                promptMessage: t('login_biometric'),
-                fallbackLabel: t('use_passcode'),
+                promptMessage: 'Login with Biometric',
+                fallbackLabel: 'Use Passcode',
             });
             if (result.success) {
                 const storedEmail = await storage.getSecureItem('connecta_secure_email');
@@ -93,14 +74,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                         const user = await login({ email: storedEmail, password: storedPass });
                         onSignedIn?.(user);
                     } catch (error: any) {
-                        showCustomAlert('error', error.message || 'login_failed', 'error');
+                        showAlert({ title: 'Error', message: error.message || 'Failed to login', type: 'error' });
                     } finally {
                         setIsLoading(false);
                     }
                 }
             }
         } catch (e) {
-            showCustomAlert('error', 'biometric_auth_failed', 'error');
+            showAlert({ title: 'Error', message: 'Biometric authentication failed', type: 'error' });
         }
     };
 
@@ -110,11 +91,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
 
         let hasError = false;
         if (!email.trim()) {
-            setEmailError(t('enter_email'));
+            setEmailError('Please enter your email address');
             hasError = true;
         }
         if (!password.trim()) {
-            setPasswordError(t('enter_password'));
+            setPasswordError('Please enter your password');
             hasError = true;
         }
 
@@ -129,54 +110,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
             await storage.setSecureItem('connecta_secure_pass', password);
             onSignedIn?.(user);
         } catch (error: any) {
-            showCustomAlert('error', error.message || 'invalid_credentials', 'error');
+            showAlert({ title: 'Error', message: error.message || 'Invalid credentials', type: 'error' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const sideContent = (
-        <View style={styles.desktopSide}>
-            <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
-                <Logo size={80} />
-            </View>
-            <Text style={[styles.sideTitle, { color: c.text }]}>{t('login_header')}</Text>
-            <Text style={[styles.sideSub, { color: c.subtext }]}>
-                {t('login_desc')}
-            </Text>
-        </View>
-    );
-
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
             <AnimatedBackground />
-            <ResponsiveOnboardingWrapper sideComponent={sideContent}>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                    <View style={styles.mainWrapper}>
-                        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                            <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], flex: 1 }}>
-                                <View style={styles.headerRow}>
-                                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                                        <Ionicons name="chevron-back" size={24} color={c.text} />
-                                    </TouchableOpacity>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <View style={styles.mainWrapper}>
+                    <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], flex: 1 }}>
+                            <View style={styles.headerRow}>
+                                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                                    <Ionicons name="chevron-back" size={24} color={c.text} />
+                                </TouchableOpacity>
+                            </View>
 
-                                    <TouchableOpacity
-                                        onPress={() => (navigation as any).navigate('LanguageSelect')}
-                                        style={[styles.langToggle, { backgroundColor: c.card, borderColor: c.border }]}
-                                    >
-                                        <MaterialIcons name="language" size={18} color={c.primary} />
-                                        <Text style={[styles.langToggleText, { color: c.text }]}>
-                                            {lang === 'ha' ? 'Hausa' : 'English'}
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-
+                            <View style={styles.contentContainer}>
                                 <View style={styles.chatSection}>
                                     <ChatGreeting
                                         messages={[
-                                            { text: t('login_header') },
-                                            { text: t('login_sub'), delay: 1000 }
+                                            { text: 'Welcome back!' },
+                                            { text: 'Good to see you again. Sign in to continue.', delay: 1000 }
                                         ]}
                                     />
                                 </View>
@@ -185,7 +144,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                                     <Input
                                         value={email}
                                         onChangeText={(val) => { setEmail(val); setEmailError(''); }}
-                                        placeholder={t('email')}
+                                        placeholder="Email Address"
                                         icon="mail-outline"
                                         keyboardType="email-address"
                                         autoCapitalize="none"
@@ -196,7 +155,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                                         <Input
                                             value={password}
                                             onChangeText={(val) => { setPassword(val); setPasswordError(''); }}
-                                            placeholder={t('password')}
+                                            placeholder="Password"
                                             icon="lock-outline"
                                             secureTextEntry={!showPassword}
                                             error={passwordError}
@@ -207,17 +166,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                                     </View>
 
                                     <TouchableOpacity onPress={onForgotPassword} style={styles.forgotPassword}>
-                                        <Text style={[styles.forgotPasswordText, { color: c.primary }]}>{t('forgot_password')}</Text>
+                                        <Text style={[styles.forgotPasswordText, { color: c.primary }]}>Forgot Password?</Text>
                                     </TouchableOpacity>
 
                                     <View style={styles.actionSection}>
-                                        <Button
-                                            title={t('sign_in')}
-                                            onPress={handleLogin}
-                                            loading={isLoading}
-                                            variant="primary"
-                                            size="large"
-                                        />
                                         {isBiometricSupported && (
                                             <TouchableOpacity
                                                 onPress={handleBiometricAuth}
@@ -226,6 +178,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                                                 <MaterialCommunityIcons name="fingerprint" size={32} color={c.primary} />
                                             </TouchableOpacity>
                                         )}
+                                        <View style={styles.buttonWrapper}>
+                                            <Button
+                                                title="Sign In"
+                                                onPress={handleLogin}
+                                                loading={isLoading}
+                                                variant="primary"
+                                                size="large"
+                                            />
+                                        </View>
                                     </View>
                                 </View>
 
@@ -235,26 +196,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSignedIn, onSignup, onForgo
                                         style={styles.signupLinkContainer}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={[styles.footerText, { color: c.subtext }]}>{t('dont_have_account')}</Text>
+                                        <Text style={[styles.footerText, { color: c.subtext }]}>New here?</Text>
                                         <View style={styles.signupAction}>
-                                            <Text style={[styles.footerLink, { color: c.primary }]}>{t('sign_up')}</Text>
+                                            <Text style={[styles.footerLink, { color: c.primary }]}>Join Connecta</Text>
                                             <Ionicons name="arrow-forward" size={18} color={c.primary} />
                                         </View>
                                     </TouchableOpacity>
                                 </View>
-                            </Animated.View>
-                        </ScrollView>
-                    </View>
-                </KeyboardAvoidingView>
-            </ResponsiveOnboardingWrapper>
-
-            <CustomAlert
-                visible={alertVisible}
-                title={alertConfig.title}
-                message={alertConfig.message}
-                type={alertConfig.type}
-                onClose={() => setAlertVisible(false)}
-            />
+                            </View>
+                        </Animated.View>
+                    </ScrollView>
+                </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -267,12 +220,12 @@ const styles = StyleSheet.create({
         maxWidth: 500,
         alignSelf: 'center',
     },
-    scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 16 },
+    scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 40 },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 8,
         width: '100%',
     },
     backButton: {
@@ -290,26 +243,21 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 2,
     },
-    langToggle: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, gap: 6 },
-    langToggleText: { fontSize: 13, fontWeight: '700' },
-    chatSection: { marginBottom: 36 },
-    form: { gap: 20, marginBottom: 24 },
+    contentContainer: { gap: 40 },
+    chatSection: { marginBottom: 0 },
+    form: { gap: 20 },
     passContainer: { position: 'relative' },
     eyeIcon: { position: 'absolute', right: 16, top: 18 },
     forgotPassword: { alignSelf: 'flex-end', marginTop: -4 },
     forgotPasswordText: { fontSize: 14, fontWeight: '600' },
-    actionSection: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+    actionSection: { flexDirection: 'row', gap: 12, alignItems: 'center', justifyContent: 'flex-end' },
+    buttonWrapper: { width: '64%' },
     biometricBtn: { width: 64, height: 60, borderRadius: 18, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-    footer: { marginTop: 'auto', paddingTop: 40, alignItems: 'flex-end' },
+    footer: { paddingTop: 40, alignItems: 'center' },
     signupLinkContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     signupAction: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     footerText: { fontSize: 14, fontWeight: '500' },
     footerLink: { fontSize: 15, fontWeight: '700' },
-    // Desktop
-    desktopSide: { padding: 60, alignItems: 'center', justifyContent: 'center' },
-    bigIconBox: { width: 140, height: 140, borderRadius: 48, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-    sideTitle: { fontSize: 44, fontWeight: '900', textAlign: 'center', marginBottom: 20, letterSpacing: -1.5 },
-    sideSub: { fontSize: 18, textAlign: 'center', lineHeight: 28, maxWidth: 360, opacity: 0.7 }
 });
 
 export default LoginScreen;

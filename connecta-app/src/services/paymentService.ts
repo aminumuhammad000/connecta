@@ -151,6 +151,38 @@ export const processWithdrawal = async (withdrawalId: string): Promise<any> => {
     return response.data;
 };
 
+/**
+ * Pay for a job or verification from wallet balance
+ */
+export const payFromWallet = async (paymentData: {
+    type: 'job_verification' | 'milestone' | 'full_payment';
+    amount: number;
+    jobId?: string;
+    projectId?: string;
+    payeeId?: string;
+    description?: string;
+}): Promise<any> => {
+    const response = await post(API_ENDPOINTS.PAY_FROM_WALLET, paymentData);
+    return (response as any)?.data || response;
+};
+
+/**
+ * Get or create VTStack Virtual Account
+ */
+export const getVTStackVirtualAccount = async (): Promise<any> => {
+    const response = await get<any>('/api/payments/vtstack/virtual-account');
+    return (response as any)?.data || response;
+};
+
+/**
+ * Request a VTStack Secure Payout (freelancer withdrawal)
+ * The backend handles HMAC signing and gateway communication.
+ */
+export const requestVTStackPayout = async (amount: number): Promise<any> => {
+    const response = await post(API_ENDPOINTS.VTSTACK_PAYOUT, { amount });
+    return (response as any)?.data || response;
+};
+
 export default {
     initializePayment,
     initializeTopup,
@@ -160,10 +192,13 @@ export default {
     getWalletBalance,
     getTransactions,
     requestWithdrawal,
+    requestVTStackPayout,
     getBanks,
     resolveBankAccount,
     saveWithdrawalSettings,
     releasePayment,
+    payFromWallet,
     getPendingWithdrawals,
     processWithdrawal,
+    getVTStackVirtualAccount,
 };

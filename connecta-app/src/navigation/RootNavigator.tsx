@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import MobileLandingScreen from '../screens/MobileLandingScreen';
+
 import PublicJobSearchScreen from '../screens/PublicJobSearchScreen';
 import PublicFreelancerSearchScreen from '../screens/PublicFreelancerSearchScreen';
 import PublicJobDetailScreen from '../screens/PublicJobDetailScreen';
@@ -23,12 +23,11 @@ export default function RootNavigator() {
             {!isAuthenticated ? (
                 /* Public & Auth Flow */
                 <>
-                    <Stack.Screen name="Landing" component={MobileLandingScreen} options={{ title: 'Home' }} />
+                    <Stack.Screen name="Auth" component={AuthNavigator} options={{ title: 'Auth' }} />
                     <Stack.Screen name="PublicSearch" component={PublicJobSearchScreen} options={{ title: 'Search Jobs' }} />
                     <Stack.Screen name="PublicFreelancerSearch" component={PublicFreelancerSearchScreen} options={{ title: 'Search Freelancers' }} />
                     <Stack.Screen name="PublicJobDetail" component={PublicJobDetailScreen} options={{ title: 'Job Details' }} />
                     <Stack.Screen name="PublicFreelancerProfile" component={PublicFreelancerProfileScreen} options={{ title: 'Freelancer Profile' }} />
-                    <Stack.Screen name="Auth" component={AuthNavigator} options={{ title: 'Auth' }} />
                 </>
             ) : (
                 /* Protected App Flow */

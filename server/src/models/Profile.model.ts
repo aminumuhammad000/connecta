@@ -1,152 +1,73 @@
 import mongoose, { Schema, Document } from "mongoose";
 import { IUser } from "./user.model.js";
 
-export interface IEducation {
-  institution: string;
-  degree: string;
-  fieldOfStudy: string;
-  description: string;
-  startDate: Date;
-  endDate?: Date;
-}
-
-export interface ILanguage {
-  language: string;
-  proficiency: "basic" | "conversational" | "fluent" | "native";
-}
-
-export interface IEmployment {
-  company: string;
-  position: string;
-  startDate: Date;
-  endDate?: Date;
-  description?: string;
-}
-
-export interface IPortfolio {
-  title: string;
-  description: string;
-  imageUrl?: string;
-  projectUrl?: string;
-  tags?: string[];
-}
-
 export interface IProfile extends Document {
-  user: IUser["_id"]; // Reference to User model
+  user: IUser["_id"];
+  primarySkill: string;
+  subSkills: string[];
+  yearsOfExperience: number;
+  remoteWorkType: 'remote' | 'onsite' | 'hybrid';
+  bio: string;
+  whatsapp?: string;
   phoneNumber?: string;
-  location?: string;
+  location: string;
   country?: string;
   city?: string;
   timezone?: string;
-  resume?: string; // Could be a URL to uploaded file
-  skills?: string[]; // Array of skills
-  preferredLanguage?: 'en' | 'ha';
-
-  // Client-specific fields
-  companyName?: string;
+  preferredLanguage?: string;
   website?: string;
-  bio?: string;
+  companyName?: string;
+  jobTitle: string;
   avatar?: string;
-
-  // Onboarding / Preferences
-  remoteWorkType?: 'remote_only' | 'hybrid' | 'onsite';
+  skills: string[];
+  education: any[];
+  languages: any[];
+  employment: any[];
+  portfolio: any[];
+  resume?: string;
+  jobCategories: string[];
   minimumSalary?: number;
   workLocationPreferences?: string[];
-  jobTitle?: string;
-  jobCategories?: string[];
-  yearsOfExperience?: number;
   engagementTypes?: string[];
-  jobNotificationFrequency?: 'daily' | 'weekly' | 'relevant_only';
-
-  education?: IEducation[];
-  languages?: ILanguage[];
-  employment?: IEmployment[];
-  portfolio?: IPortfolio[];
-
+  jobNotificationFrequency?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const EducationSchema = new Schema<IEducation>(
-  {
-    institution: { type: String, required: true },
-    degree: { type: String },
-    fieldOfStudy: { type: String },
-    startDate: { type: Date },
-    endDate: { type: Date },
-  },
-  { _id: false }
-);
-
-const LanguageSchema = new Schema<ILanguage>(
-  {
-    language: { type: String, required: true },
-    proficiency: {
-      type: String,
-      enum: ["basic", "conversational", "fluent", "native"],
-      default: "basic",
-    },
-  },
-  { _id: false }
-);
-
-const EmploymentSchema = new Schema<IEmployment>(
-  {
-    company: { type: String, required: true },
-    position: { type: String, required: true },
-    startDate: { type: Date },
-    endDate: { type: Date },
-    description: { type: String },
-  },
-  { _id: false }
-);
-
-const PortfolioSchema = new Schema<IPortfolio>(
-  {
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    imageUrl: { type: String },
-    projectUrl: { type: String },
-    tags: [{ type: String }],
-  },
-  { _id: true }
-);
-
 const ProfileSchema = new Schema<IProfile>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    primarySkill: { type: String },
+    subSkills: [{ type: String }],
+    yearsOfExperience: { type: Number },
+    remoteWorkType: { type: String, enum: ['remote', 'onsite', 'hybrid'] },
+    jobCategories: [{ type: String }],
+    bio: { type: String },
+    whatsapp: { type: String },
     phoneNumber: { type: String },
-    location: { type: String },
+    location: { type: String, default: 'Nigeria' },
     country: { type: String },
     city: { type: String },
     timezone: { type: String },
-    resume: { type: String },
-    skills: [{ type: String }],
-    preferredLanguage: { type: String, enum: ['en', 'ha'], default: 'en' },
-
-    // Client-specific fields
-    companyName: { type: String },
+    preferredLanguage: { type: String },
     website: { type: String },
-    bio: { type: String },
+    companyName: { type: String },
+    jobTitle: { type: String },
     avatar: { type: String },
-
-    // Onboarding / Preferences
-    remoteWorkType: { type: String, enum: ['remote_only', 'hybrid', 'onsite'] },
+    skills: [{ type: String }],
+    education: [Schema.Types.Mixed],
+    languages: [Schema.Types.Mixed],
+    employment: [Schema.Types.Mixed],
+    portfolio: [Schema.Types.Mixed],
+    resume: { type: String },
     minimumSalary: { type: Number },
     workLocationPreferences: [{ type: String }],
-    jobTitle: { type: String },
-    jobCategories: [{ type: String }],
-    yearsOfExperience: { type: Number },
-    engagementTypes: [{ type: String, enum: ['full_time', 'part_time', 'contract', 'freelance', 'internship'] }],
-    jobNotificationFrequency: { type: String, enum: ['daily', 'weekly', 'relevant_only'] },
-
-    education: [EducationSchema],
-    languages: [LanguageSchema],
-    employment: [EmploymentSchema],
-    portfolio: [PortfolioSchema],
+    engagementTypes: [{ type: String }],
+    jobNotificationFrequency: { type: String },
   },
   { timestamps: true }
 );
 
 const Profile = mongoose.model<IProfile>("Profile", ProfileSchema);
 export default Profile;
+

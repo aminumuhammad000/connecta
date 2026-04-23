@@ -288,26 +288,7 @@ export default function ManageCVScreen({ navigation }: any) {
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
-                {/* Feature 1: Smart Import */}
-                <Card variant="outlined" style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <View style={[styles.iconContainer, { backgroundColor: c.primary + '15' }]}>
-                            <MaterialIcons name="auto-fix-high" size={28} color={c.primary} />
-                        </View>
-                        <View style={{ flex: 1, marginLeft: 16 }}>
-                            <Text style={[styles.cardTitle, { color: c.text }]}>Smart Import</Text>
-                            <Text style={[styles.cardSubtitle, { color: c.subtext }]}>
-                                Upload your PDF resume and let our AI automatically fill your profile details.
-                            </Text>
-                        </View>
-                    </View>
-                    <Button
-                        title={importingResume ? "Analyzing..." : "Import from PDF"}
-                        onPress={handleImportResume}
-                        disabled={importingResume}
-                        style={{ marginTop: 16 }}
-                    />
-                </Card>
+
 
                 {/* Feature 2: Verified Resume (Placeholder) */}
                 <Card variant="outlined" style={styles.card}>

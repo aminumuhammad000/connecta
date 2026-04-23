@@ -22,20 +22,52 @@ const WithdrawalSetupScreen = () => {
     const [isResolving, setIsResolving] = useState(false);
     const [showBankModal, setShowBankModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [hasSavedDetails, setHasSavedDetails] = useState(false);
 
     useEffect(() => {
-        loadBanks();
+        const init = async () => {
+            setIsLoading(true);
+            const loadedBanks = await loadBanks();
+            await loadCurrentSettings(loadedBanks);
+            setIsLoading(false);
+        };
+        init();
     }, []);
 
     const loadBanks = async () => {
         try {
             const data = await paymentService.getBanks();
             setBanks(data);
+            return data;
         } catch (error) {
             console.error('Error loading banks:', error);
             showAlert({ title: 'Error', message: 'Failed to load banks', type: 'error' });
+            return [];
         }
     };
+
+    const loadCurrentSettings = async (availableBanks: Bank[]) => {
+        try {
+            const wallet = await paymentService.getWalletBalance();
+            if (wallet && wallet.bankDetails && wallet.bankDetails.accountNumber) {
+                setAccountNumber(wallet.bankDetails.accountNumber);
+                setAccountName(wallet.bankDetails.accountName);
+                setHasSavedDetails(true);
+                
+                // Try to find and set the selected bank from the list
+                const savedBankCode = wallet.bankDetails.bankCode;
+                if (availableBanks.length > 0) {
+                    const bank = availableBanks.find(b => b.code === savedBankCode);
+                    if (bank) setSelectedBank(bank);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading current settings:', error);
+        }
+    };
+
+
+
 
     const handleAccountNumberChange = (text: string) => {
         setAccountNumber(text);
@@ -50,7 +82,7 @@ const WithdrawalSetupScreen = () => {
         try {
             setIsResolving(true);
             const data = await paymentService.resolveBankAccount(accNum, bankCode);
-            setAccountName(data.account_name);
+            setAccountName(data.accountName || data.account_name);
         } catch (error) {
             console.error('Error resolving account:', error);
             setAccountName('');
@@ -98,50 +130,80 @@ const WithdrawalSetupScreen = () => {
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 24 }}>
-                <Text style={[styles.label, { color: c.text }]}>Select Bank</Text>
-                <TouchableOpacity
-                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, justifyContent: 'center' }]}
-                    onPress={() => setShowBankModal(true)}
-                >
-                    <Text style={{ color: selectedBank ? c.text : c.subtext }}>
-                        {selectedBank ? selectedBank.name : 'Choose your bank'}
-                    </Text>
-                    <MaterialIcons name="arrow-drop-down" size={24} color={c.subtext} style={{ position: 'absolute', right: 12 }} />
-                </TouchableOpacity>
+                {isLoading ? (
+                    <View style={{ marginTop: 100, alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color={c.primary} />
+                        <Text style={{ color: c.subtext, marginTop: 16 }}>Loading your details...</Text>
+                    </View>
+                ) : (
+                    <>
+                        {hasSavedDetails && (
+                            <View style={[styles.savedCard, { backgroundColor: c.primary + '10', borderColor: c.primary + '30' }]}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                                    <View style={{ backgroundColor: c.primary, padding: 4, borderRadius: 6 }}>
+                                        <MaterialIcons name="account-balance" size={14} color="white" />
+                                    </View>
+                                    <Text style={{ color: c.primary, fontWeight: '800', marginLeft: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Active Payout Method</Text>
+                                </View>
+                                <Text style={{ color: c.text, fontSize: 20, fontWeight: '900' }}>{accountName}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
+                                    <Text style={{ color: c.subtext, fontSize: 14 }}>{selectedBank?.name}</Text>
+                                    <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: c.subtext + '40' }} />
+                                    <Text style={{ color: c.subtext, fontSize: 14 }}>{accountNumber}</Text>
+                                </View>
+                            </View>
+                        )}
 
-                <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Account Number</Text>
-                <TextInput
-                    style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
-                    placeholder="Enter 10-digit account number"
-                    placeholderTextColor={c.subtext}
-                    keyboardType="numeric"
-                    maxLength={10}
-                    value={accountNumber}
-                    onChangeText={handleAccountNumberChange}
-                />
+                        <View style={{ marginTop: hasSavedDetails ? 32 : 0 }}>
+                            <Text style={[styles.label, { color: c.text }]}>
+                                {hasSavedDetails ? 'Change Bank Details' : 'Select Bank'}
+                            </Text>
+                            <TouchableOpacity
+                                style={[styles.input, { borderColor: c.border, backgroundColor: c.card, justifyContent: 'center' }]}
+                                onPress={() => setShowBankModal(true)}
+                            >
+                                <Text style={{ color: selectedBank ? c.text : c.subtext }}>
+                                    {selectedBank ? selectedBank.name : 'Choose your bank'}
+                                </Text>
+                                <MaterialIcons name="arrow-drop-down" size={24} color={c.subtext} style={{ position: 'absolute', right: 12 }} />
+                            </TouchableOpacity>
 
-                <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Account Name</Text>
-                <View style={[styles.input, { borderColor: c.border, backgroundColor: c.isDark ? '#1F2937' : '#F3F4F6', justifyContent: 'center' }]}>
-                    {isResolving ? (
-                        <ActivityIndicator size="small" color={c.primary} />
-                    ) : (
-                        <Text style={{ color: accountName ? '#10B981' : c.subtext, fontWeight: '600' }}>
-                            {accountName || 'Waiting for valid account number...'}
-                        </Text>
-                    )}
-                </View>
+                            <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Account Number</Text>
+                            <TextInput
+                                style={[styles.input, { borderColor: c.border, backgroundColor: c.card, color: c.text }]}
+                                placeholder="Enter 10-digit account number"
+                                placeholderTextColor={c.subtext}
+                                keyboardType="numeric"
+                                maxLength={10}
+                                value={accountNumber}
+                                onChangeText={handleAccountNumberChange}
+                            />
 
-                <TouchableOpacity
-                    style={[styles.saveBtn, { backgroundColor: c.primary, opacity: (!accountName || isSaving) ? 0.7 : 1 }]}
-                    onPress={handleSave}
-                    disabled={!accountName || isSaving}
-                >
-                    {isSaving ? (
-                        <ActivityIndicator color="white" />
-                    ) : (
-                        <Text style={styles.saveBtnText}>Save & Verify</Text>
-                    )}
-                </TouchableOpacity>
+                            <Text style={[styles.label, { color: c.text, marginTop: 24 }]}>Account Name</Text>
+                            <View style={[styles.input, { borderColor: c.border, backgroundColor: c.isDark ? '#1F2937' : '#F3F4F6', justifyContent: 'center' }]}>
+                                {isResolving ? (
+                                    <ActivityIndicator size="small" color={c.primary} />
+                                ) : (
+                                    <Text style={{ color: accountName ? '#10B981' : c.subtext, fontWeight: '600' }}>
+                                        {accountName || 'Waiting for valid account number...'}
+                                    </Text>
+                                )}
+                            </View>
+
+                            <TouchableOpacity
+                                style={[styles.saveBtn, { backgroundColor: c.primary, opacity: (!accountName || isSaving) ? 0.7 : 1 }]}
+                                onPress={handleSave}
+                                disabled={!accountName || isSaving}
+                            >
+                                {isSaving ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Text style={styles.saveBtnText}>Save & Verify</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </>
+                )}
             </ScrollView>
 
             {/* Bank Selection Modal */}
@@ -195,6 +257,12 @@ const styles = StyleSheet.create({
     },
     backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontSize: 18, fontWeight: '700' },
+    savedCard: {
+        padding: 24,
+        borderRadius: 24,
+        borderWidth: 1,
+        marginBottom: 8,
+    },
     label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
     input: {
         height: 50,

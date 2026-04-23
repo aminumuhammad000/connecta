@@ -8,28 +8,31 @@ import { useWindowDimensions, View } from 'react-native';
 
 // Screens
 import FreelancerDashboardScreen from '../screens/FreelancerDashboardScreen';
-import DesktopTopNav from '../components/navigation/DesktopTopNav';
-import DesktopLeftSidebar from '../components/navigation/DesktopLeftSidebar';
-import DesktopRightSidebar from '../components/navigation/DesktopRightSidebar';
 import FreelancerMatchedGigsScreen from '../screens/FreelancerMatchedGigsScreen';
 import MyProposalsScreen from '../screens/MyProposalsScreen';
 import ChatsScreen from '../screens/ChatsScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
-import ProjectDetailScreen from '../screens/ProjectDetailScreen';
-import FreelancerSavedGigsScreen from '../screens/FreelancerSavedGigsScreen';
-import ProjectWorkspaceScreen from '../screens/ProjectWorkspaceScreen';
-
-import CompleteProfileScreen from '../screens/CompleteProfileScreen';
-import AddPortfolioScreen from '../screens/AddPortfolioScreen';
-import ConnectaAIScreen from '../screens/ConnectaAIScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
-import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
-import VideoCallScreen from '../screens/VideoCallScreen';
-import IdentityVerificationScreen from '../screens/IdentityVerificationScreen';
+import ApplyJobScreen from '../screens/ApplyJobScreen';
+import NotificationDetailScreen from '../screens/NotificationDetailScreen';
+import SecurityScreen from '../screens/SecurityScreen';
+import HelpSupportScreen from '../screens/HelpSupportScreen';
+
+import ProposalDetailScreen from '../screens/ProposalDetailScreen';
+import ClientProfileScreen from '../screens/ClientProfileScreen';
+import WalletScreen from '../screens/WalletScreen';
+import WithdrawalSetupScreen from '../screens/WithdrawalSetupScreen';
+import AboutScreen from '../screens/AboutScreen';
+import TermsScreen from '../screens/TermsScreen';
+import FreelancerWriteReviewScreen from '../screens/FreelancerWriteReviewScreen';
+import FreelancerProjectsScreen from '../screens/FreelancerProjectsScreen';
+import ProjectDetailScreen from '../screens/ProjectDetailScreen';
+
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -77,8 +80,8 @@ function FreelancerTabs() {
                     let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
 
                     if (route.name === 'Home') {
-                        iconName = focused ? 'home' : 'home-outline';
-                    } else if (route.name === 'Gigs') {
+                    iconName = focused ? 'home' : 'home-outline';
+                    } else if (route.name === 'Jobs') {
                         iconName = focused ? 'briefcase' : 'briefcase-outline';
                     } else if (route.name === 'Messages') {
                         iconName = focused ? 'chatbubble' : 'chatbubble-outline';
@@ -98,7 +101,7 @@ function FreelancerTabs() {
             })}
         >
             <Tab.Screen name="Home" component={FreelancerDashboardScreen} />
-            <Tab.Screen name="Gigs" component={FreelancerMatchedGigsScreen} />
+            <Tab.Screen name="Jobs" component={FreelancerMatchedGigsScreen} />
 
             <Tab.Screen name="Messages" component={ChatsScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
@@ -122,40 +125,24 @@ export default function FreelancerNavigator() {
             <Stack.Screen name="FreelancerTabs" component={FreelancerTabs} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
-            <Stack.Screen name="ApplyJob" component={require('../screens/ApplyJobScreen').default} />
-            <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
-            <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
-            <Stack.Screen name="FreelancerSavedGigs" component={FreelancerSavedGigsScreen} />
-            <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
-            <Stack.Screen name="AddPortfolio" component={require('../screens/AddPortfolioScreen').default} />
-            <Stack.Screen name="AIChat" component={ConnectaAIScreen} />
+            <Stack.Screen name="ApplyJob" component={ApplyJobScreen} />
             <Stack.Screen name="MessagesDetail" component={MessagesScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
-            <Stack.Screen name="NotificationDetail" component={require('../screens/NotificationDetailScreen').default} />
-            <Stack.Screen name="Security" component={require('../screens/SecurityScreen').default} />
-            <Stack.Screen name="HelpSupport" component={require('../screens/HelpSupportScreen').default} />
-            <Stack.Screen name="ContactSupport" component={require('../screens/ContactSupportScreen').default} />
-            <Stack.Screen name="ProposalDetail" component={require('../screens/ProposalDetailScreen').default} />
+            <Stack.Screen name="NotificationDetail" component={NotificationDetailScreen as any} />
+            <Stack.Screen name="Security" component={SecurityScreen} />
+            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+
+            <Stack.Screen name="ProposalDetail" component={ProposalDetailScreen} />
             <Stack.Screen name="Proposals" component={MyProposalsScreen} />
-            <Stack.Screen name="ClientProfile" component={require('../screens/ClientProfileScreen').default} />
-            <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
-            <Stack.Screen name="VideoCall" component={VideoCallScreen} />
-            <Stack.Screen name="CollaboWorkspace" component={require('../screens/CollaboWorkspaceScreen').default} />
-            <Stack.Screen name="CollaboInvite" component={require('../screens/CollaboInviteScreen').default} />
-            <Stack.Screen name="FreelancerProjects" component={require('../screens/FreelancerProjectsScreen').default} />
-            <Stack.Screen name="Wallet" component={require('../screens/WalletScreen').default} />
-            <Stack.Screen name="WithdrawalSetup" component={require('../screens/WithdrawalSetupScreen').default} />
-            <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
-            <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
-            <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
-            <Stack.Screen name="JobPreferences" component={require('../screens/JobPreferencesScreen').default} />
-            <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
-            <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
-            <Stack.Screen name="SendSpark" component={require('../screens/SendSparkScreen').default} />
-            <Stack.Screen name="ReceiveSpark" component={require('../screens/ReceiveSparkScreen').default} />
-            <Stack.Screen name="SetTransactionPin" component={require('../screens/SetTransactionPinScreen').default} />
-            <Stack.Screen name="ManageCV" component={require('../screens/ManageCVScreen').default} />
+            <Stack.Screen name="ClientProfile" component={ClientProfileScreen} />
+            <Stack.Screen name="Wallet" component={WalletScreen} />
+            <Stack.Screen name="WithdrawalSetup" component={WithdrawalSetupScreen} />
+            <Stack.Screen name="About" component={AboutScreen} />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+            <Stack.Screen name="FreelancerWriteReview" component={FreelancerWriteReviewScreen} />
+            <Stack.Screen name="FreelancerProjects" component={FreelancerProjectsScreen} />
+            <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
         </Stack.Navigator>
     );
 

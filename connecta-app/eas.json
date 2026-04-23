@@ -1,21 +1,18 @@
 {
   "cli": {
-    "version": ">= 11.0.0",
+    "version": ">= 18.6.0",
     "appVersionSource": "remote"
   },
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      },
-      "channel": "preview"
+      "distribution": "internal"
     },
     "production": {
-      "android": {
-        "buildType": "app-bundle"
-      },
-      "channel": "production"
+      "autoIncrement": true
     }
   },
   "submit": {

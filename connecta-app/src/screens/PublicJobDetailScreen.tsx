@@ -189,7 +189,7 @@ const PublicJobDetailScreen: React.FC = () => {
                                 Join to see full details
                             </Text>
                             <Text style={{ fontSize: 14, color: c.subtext, textAlign: 'center' }}>
-                                View attachments, tailored AI insights, and submit your proposal.
+                                View attachments and submit your proposal.
                             </Text>
                         </View>
                     </View>

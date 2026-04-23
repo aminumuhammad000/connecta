@@ -17,7 +17,7 @@ export const palette = {
   borderDark: '#374151',
   success: '#10B981',
   error: '#EF4444',
-  warning: '#F59E0B',
+  warning: '#292114ff',
 };
 
 export const gradients = {

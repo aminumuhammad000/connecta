@@ -4,7 +4,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as projectService from '../services/projectService';
-import { getMyCollaboProjects } from '../services/collaboService';
 import { Project } from '../types';
 
 interface ProjectItem {
@@ -16,18 +15,17 @@ interface ProjectItem {
   status: 'In Progress' | 'Completed' | 'Pending Approval';
 }
 
-const chips: Array<{ key: 'All' | 'Active' | 'Completed' | 'Pending'; label: string }> = [
+const chips: Array<{ key: 'All' | 'Completed' | 'Submitted'; label: string }> = [
   { key: 'All', label: 'All' },
-  { key: 'Active', label: 'Active' },
   { key: 'Completed', label: 'Completed' },
-  { key: 'Pending', label: 'Pending' },
+  { key: 'Submitted', label: 'To Review' },
 ];
 
 const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
-  const [filter, setFilter] = useState<'All' | 'Active' | 'Completed' | 'Pending'>('All');
+  const [filter, setFilter] = useState<'All' | 'Completed' | 'Submitted'>('All');
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -38,22 +36,9 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
 
   const loadProjects = async () => {
     try {
-      const [standardProjects, collaboProjects] = await Promise.all([
-        projectService.getMyProjects(),
-        getMyCollaboProjects()
-      ]);
+      const standardProjects = await projectService.getMyProjects();
 
-      const normalizedCollabo = Array.isArray(collaboProjects) ? collaboProjects.map((p: any) => ({
-        _id: p._id,
-        title: p.title,
-        budget: p.totalBudget,
-        status: p.status === 'planning' ? 'review' : (p.status === 'active' ? 'in_progress' : p.status),
-        freelancerId: { firstName: p.teamName || 'Collabo', lastName: 'Team', profileImage: 'https://ui-avatars.com/api/?name=Team&background=8B5CF6&color=fff' },
-        isCollabo: true,
-        createdAt: p.createdAt
-      })) : [];
-
-      const allProjects = [...(Array.isArray(standardProjects) ? standardProjects : []), ...normalizedCollabo]
+      const allProjects = (Array.isArray(standardProjects) ? standardProjects : [])
         .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       setProjects(allProjects as any);
@@ -70,9 +55,11 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
     loadProjects();
   };
 
-  const mapProjectStatus = (status: string): 'In Progress' | 'Completed' | 'Pending Approval' => {
-    if (status === 'in_progress') return 'In Progress';
+  const mapProjectStatus = (status: string): 'In Progress' | 'Completed' | 'Pending Approval' | 'Revision Requested' => {
+    if (status === 'ongoing' || status === 'in_progress' || status === 'active') return 'In Progress';
     if (status === 'completed') return 'Completed';
+    if (status === 'submitted') return 'Pending Approval';
+    if (status === 'revision_requested') return 'Revision Requested';
     return 'Pending Approval';
   };
 
@@ -81,9 +68,9 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
       p.title?.toLowerCase().includes(q.trim().toLowerCase())
     );
     if (filter === 'All') return base;
-    if (filter === 'Active') return base.filter((p: any) => p.status === 'in_progress');
     if (filter === 'Completed') return base.filter((p: any) => p.status === 'completed');
-    return base.filter((p: any) => p.status === 'review');
+    if (filter === 'Submitted') return base.filter((p: any) => p.status === 'submitted');
+    return base;
   }, [projects, q, filter]);
 
   if (isLoading) {
@@ -130,6 +117,10 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             {chips.map(ch => {
               const active = filter === ch.key;
+              const count = ch.key === 'Submitted' 
+                ? projects.filter((p: any) => p.status === 'submitted').length 
+                : 0;
+
               return (
                 <TouchableOpacity
                   key={ch.key}
@@ -139,11 +130,19 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                     {
                       backgroundColor: active ? c.primary + '15' : c.card,
                       borderColor: active ? c.primary : c.border,
-                      borderWidth: 1
+                      borderWidth: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6
                     }
                   ]}
                 >
                   <Text style={[styles.chipText, { color: active ? c.primary : c.subtext }]}>{ch.label}</Text>
+                  {count > 0 && (
+                    <View style={{ backgroundColor: '#EF4444', borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+                      <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700' }}>{count}</Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -178,10 +177,7 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                   key={p._id}
                   activeOpacity={0.9}
                   style={[styles.card, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
-                  onPress={() => (p as any).isCollabo
-                    ? navigation.navigate('CollaboWorkspace', { projectId: p._id })
-                    : navigation.navigate('ProjectWorkspace', { id: p._id })
-                  }
+                  onPress={() => navigation.navigate('ProjectDetail', { projectId: p._id })}
                 >
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <View style={{ flex: 1, marginRight: 12 }}>
@@ -219,33 +215,40 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
                     </TouchableOpacity>
 
                     <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={[styles.cardPrice, { color: c.text }]}>₦{p.budget?.toLocaleString() || '0'}</Text>
+                      <Text style={[styles.cardPrice, { color: c.text }]}>
+                        ₦{(p.budget?.amount !== undefined ? p.budget.amount : p.budget)?.toLocaleString() || '0'}
+                      </Text>
                       <Text style={{ fontSize: 11, color: c.subtext }}>Budget</Text>
                     </View>
                   </View>
 
-                  <View style={{ marginTop: 12 }}>
-                    <TouchableOpacity
-                      style={{
-                        backgroundColor: c.primary,
-                        borderRadius: 8,
-                        paddingVertical: 8,
-                        paddingHorizontal: 16,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        alignSelf: 'flex-start',
-                        gap: 6
-                      }}
-                      onPress={() => (p as any).isCollabo
-                        ? navigation.navigate('CollaboWorkspace', { projectId: p._id })
-                        : navigation.navigate('ProjectWorkspace', { id: p._id })
-                      }
-                    >
-                      <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>Open Workspace</Text>
-                      <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
-                    </TouchableOpacity>
-                  </View>
+                    <View style={{ marginTop: 12, flexDirection: 'row', gap: 10 }}>
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: status === 'Pending Approval' ? '#10B981' : c.primary,
+                          borderRadius: 8,
+                          paddingVertical: 8,
+                          paddingHorizontal: 16,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          alignSelf: 'flex-start',
+                          gap: 6
+                        }}
+                        onPress={() => navigation.navigate('ProjectDetail', { projectId: p._id })}
+                      >
+                        <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 13 }}>
+                          {status === 'Pending Approval' ? 'Review & Approve' : 'Open Workspace'}
+                        </Text>
+                        <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
+                      </TouchableOpacity>
+                      
+                      {status === 'Pending Approval' && (
+                        <View style={{ backgroundColor: '#10B98115', paddingHorizontal: 10, borderRadius: 8, justifyContent: 'center' }}>
+                           <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '700' }}>SUBMITTED</Text>
+                        </View>
+                      )}
+                    </View>
                 </TouchableOpacity>
               );
             })
@@ -256,9 +259,10 @@ const ClientProjectsScreen: React.FC<any> = ({ navigation }) => {
   );
 };
 
-function pillStyle(status: ProjectItem['status']) {
+function pillStyle(status: 'In Progress' | 'Completed' | 'Pending Approval' | 'Revision Requested') {
   if (status === 'In Progress') return { backgroundColor: 'rgba(59,130,246,0.1)', color: '#3B82F6' };
   if (status === 'Completed') return { backgroundColor: 'rgba(16,185,129,0.1)', color: '#10B981' };
+  if (status === 'Revision Requested') return { backgroundColor: 'rgba(239,68,68,0.1)', color: '#EF4444' };
   return { backgroundColor: 'rgba(245,158,11,0.1)', color: '#F59E0B' };
 }
 

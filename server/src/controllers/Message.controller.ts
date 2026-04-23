@@ -7,27 +7,33 @@ import { getIO } from '../core/utils/socketIO.js';
 import User from '../models/user.model.js';
 import Notification from '../models/Notification.model.js';
 import notificationService from '../services/notification.service.js';
-import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
+// import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
 
 // Get or create conversation between two users
 export const getOrCreateConversation = async (req: Request, res: Response) => {
   try {
-    const { clientId, freelancerId, projectId } = req.body;
-    console.log('getOrCreateConversation payload:', { clientId, freelancerId, projectId });
+    const { clientId, freelancerId, projectId, participants } = req.body;
+    console.log('getOrCreateConversation payload:', { clientId, freelancerId, projectId, participants });
 
-    if (!clientId || !freelancerId || !projectId) {
+    // Basic participants validation
+    const actualParticipants = participants || (clientId && freelancerId ? [clientId, freelancerId] : []);
+    
+    if (actualParticipants.length < 2) {
       return res.status(400).json({
         success: false,
-        message: 'clientId, freelancerId, and projectId are required',
+        message: 'At least two participants (or clientId and freelancerId) are required',
       });
     }
 
-    // Find conversation by all three fields
-    let conversation = await Conversation.findOne({
-      clientId,
-      freelancerId,
-      projectId,
-    })
+    // Find conversation by provided fields or participants
+    let query: any = {};
+    if (clientId && freelancerId && projectId) {
+      query = { clientId, freelancerId, projectId };
+    } else {
+      query = { participants: { $all: actualParticipants, $size: actualParticipants.length }, projectId: projectId || null };
+    }
+
+    let conversation = await Conversation.findOne(query)
       .populate('clientId', 'firstName lastName email')
       .populate('freelancerId', 'firstName lastName email')
       .populate('participants', 'firstName lastName email profileImage avatar isPremium')
@@ -36,14 +42,18 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
     if (!conversation) {
       // Create new conversation
       const conversationData: any = {
-        clientId,
-        freelancerId,
-        projectId,
-        unreadCount: {
-          [clientId]: 0,
-          [freelancerId]: 0,
-        },
+        participants: actualParticipants,
+        unreadCount: {},
       };
+      
+      if (clientId) conversationData.clientId = clientId;
+      if (freelancerId) conversationData.freelancerId = freelancerId;
+      if (projectId) conversationData.projectId = projectId;
+      
+      actualParticipants.forEach((p: string) => {
+        conversationData.unreadCount[p] = 0;
+      });
+
       conversation = await Conversation.create(conversationData);
       conversation = await conversation.populate('clientId', 'firstName lastName email');
       conversation = await conversation.populate('freelancerId', 'firstName lastName email');
@@ -51,7 +61,7 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
       console.log('Created new conversation:', conversation._id?.toString());
       // Emit conversation update to both users
       const io = getIO();
-      [clientId, freelancerId].forEach((userId) => {
+      actualParticipants.forEach((userId: string) => {
         io.to(userId).emit('conversation:update');
       });
     }
@@ -71,7 +81,15 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
 // Get all conversations for a user
 export const getUserConversations = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    let { userId } = req.params;
+
+    if (!userId && (req as any).user) {
+      userId = (req as any).user?._id || (req as any).user?.id;
+    }
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
 
     // Find conversations where user is either client or freelancer
     // Find conversations where user is a participant
@@ -159,21 +177,58 @@ export const getConversationMessages = async (req: Request, res: Response) => {
   }
 };
 
+// Get single conversation details
+export const getConversationById = async (req: Request, res: Response) => {
+  try {
+    const { conversationId } = req.params;
+    const conversation = await Conversation.findById(conversationId)
+      .populate('clientId', 'firstName lastName email profileImage avatar isPremium')
+      .populate('freelancerId', 'firstName lastName email profileImage avatar isPremium')
+      .populate('participants', 'firstName lastName email profileImage avatar isPremium')
+      .populate('projectId', 'title');
+
+    if (!conversation) {
+      return res.status(404).json({ success: false, message: 'Conversation not found' });
+    }
+
+    res.status(200).json({ success: true, data: conversation });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Error fetching conversation details', error: error.message });
+  }
+};
+
 // Send a message
 export const sendMessage = async (req: Request, res: Response) => {
   try {
-    const { conversationId, senderId, receiverId, text, attachments } = req.body;
+    let { conversationId, senderId, receiverId, text, attachments } = req.body;
+    const authenticatedUserId = (req as any).user?._id || (req as any).user?.id;
 
-    // Validate required fields (text is optional if attachments exist)
-    // Validate required fields
-    if ((!conversationId && (!senderId || !receiverId)) || (!senderId || !receiverId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Conversation ID (or sender+receiver ID) is required',
-      });
+    // Use authenticated user as sender if not provided
+    if (!senderId && authenticatedUserId) {
+      senderId = authenticatedUserId;
+    }
+
+    // Basic validation
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: 'Authentication required to send message' });
     }
 
     let targetConversationId = conversationId;
+
+    // If we have conversationId but no receiverId, find receiver from conversation
+    if (targetConversationId && !receiverId) {
+      const conv = await Conversation.findById(targetConversationId);
+      if (conv) {
+        receiverId = conv.participants.find(p => p.toString() !== senderId.toString());
+      }
+    }
+
+    if (!receiverId && !targetConversationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Conversation ID or Receiver ID is required',
+      });
+    }
 
     // If no conversationId, find or create one
     if (!targetConversationId) {
@@ -234,20 +289,18 @@ export const sendMessage = async (req: Request, res: Response) => {
       io.to(userId).emit('conversation:update');
     });
 
-    // Create notification for receiver
-    const sender = await User.findById(senderId).select('firstName lastName');
-    const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'Someone';
-
-    await Notification.create({
-      userId: receiverId,
+    await notificationService.createNotification({
+      userId: receiverId.toString(),
       type: 'message_received',
       title: 'New Message',
-      message: `${senderName} sent you a message`,
-      relatedId: targetConversationId,
+      message: `${senderName} sent you a message: "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"`,
+      relatedId: targetConversationId.toString(),
       relatedType: 'message',
-      actorId: senderId,
+      actorId: senderId.toString(),
       actorName: senderName,
-      isRead: false,
+      link: `/messages/${targetConversationId}`,
+      shouldSendPush: true,
+      shouldSendEmail: true
     });
 
     // Emit notification event to receiver
@@ -285,7 +338,12 @@ export const sendMessage = async (req: Request, res: Response) => {
 // Mark messages as read
 export const markMessagesAsRead = async (req: Request, res: Response) => {
   try {
-    const { conversationId, userId } = req.body;
+    let { conversationId, userId } = req.body;
+    const authenticatedUserId = (req as any).user?._id || (req as any).user?.id;
+
+    if (!userId && authenticatedUserId) {
+      userId = authenticatedUserId;
+    }
 
     if (!conversationId || !userId) {
       return res.status(400).json({
@@ -453,7 +511,8 @@ export const getUnreadCount = async (req: Request, res: Response) => {
       }
     });
 
-    // Also check CollaboWorkspaces
+    /*
+    // Also check CollaboWorkspaces (DISABLED)
     // We need to find workspaces where the user has an unread count entry
     const collaboWorkspaces = await CollaboWorkspace.find({
       [`unreadCount.${userId}`]: { $gt: 0 }
@@ -465,6 +524,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
         totalUnread += Number(count) || 0;
       }
     });
+    */
 
     res.status(200).json({
       success: true,

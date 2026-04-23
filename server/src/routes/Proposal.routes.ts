@@ -1,60 +1,43 @@
 import { Router } from 'express';
 import {
+  getMyProposals,
   getAllProposals,
-  getFreelancerProposals,
   getProposalById,
   createProposal,
   updateProposalStatus,
-  updateProposal,
   deleteProposal,
-  getProposalStats,
-  getClientAcceptedProposals,
   getProposalsByJobId,
   approveProposal,
   rejectProposal,
 } from '../controllers/Proposal.controller.js';
-import { generateCoverLetter } from '../controllers/CoverLetter.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 
 const router = Router();
 
-// Get all proposals (admin/general)
-router.get('/', getAllProposals);
+// Get all proposals (Client received / Freelancer sent)
+router.get('/', authenticate, getAllProposals);
 
-// Get accepted proposals for client (protected)
-router.get('/client/accepted', authenticate, getClientAcceptedProposals);
+// Get proposals for a specific job (Client)
+router.get('/job/:jobId', authenticate, getProposalsByJobId);
 
-// Get proposals for a specific freelancer
-router.get('/freelancer/:freelancerId', getFreelancerProposals);
-
-// Get proposals for a specific job
-router.get('/job/:jobId', getProposalsByJobId);
-
-// Get proposal statistics for a freelancer
-router.get('/stats/:freelancerId', getProposalStats);
-
-// Approve a proposal (protected)
-router.put('/:id/approve', authenticate, approveProposal);
-
-// Reject a proposal (protected)
-router.put('/:id/reject', authenticate, rejectProposal);
+// Get my proposals (Freelancer)
+router.get('/my-proposals', authenticate, getMyProposals);
 
 // Get single proposal by ID
-router.get('/:id', getProposalById);
+router.get('/:id', authenticate, getProposalById);
 
-// Create a new proposal (protected)
+// Create a new proposal (Freelancer)
 router.post('/', authenticate, createProposal);
 
-// Generate Cover Letter (protected)
-router.post('/cover-letter', authenticate, generateCoverLetter);
+// Update proposal status (Reject only)
+router.patch('/:id/status', authenticate, updateProposalStatus);
 
-// Update proposal status (accept/decline)
-router.patch('/:id/status', updateProposalStatus);
-
-// Update proposal
-router.put('/:id', updateProposal);
+// Approve / Reject specialized routes (Mobile support)
+router.put('/:id/approve', authenticate, approveProposal);
+router.put('/:id/reject', authenticate, rejectProposal);
 
 // Delete proposal
-router.delete('/:id', deleteProposal);
+router.delete('/:id', authenticate, deleteProposal);
 
 export default router;
+

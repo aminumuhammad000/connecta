@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
 let analytics: any;
-if (Platform.OS !== 'web') {
+if (Platform.OS !== 'web' && !__DEV__) {
     try {
         analytics = require('@react-native-firebase/analytics').default;
     } catch (error) {

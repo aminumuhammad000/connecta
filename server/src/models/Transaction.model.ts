@@ -16,6 +16,7 @@ export interface ITransaction extends Document {
   balanceAfter: number;
   
   // Payment Gateway
+  gateway?: 'flutterwave' | 'paystack' | 'vtstack' | 'stripe';
   gatewayReference?: string;
   gatewayResponse?: any;
   
@@ -68,6 +69,10 @@ const TransactionSchema: Schema = new Schema(
     balanceAfter: {
       type: Number,
       default: 0,
+    },
+    gateway: {
+      type: String,
+      enum: ['flutterwave', 'paystack', 'vtstack', 'stripe'],
     },
     gatewayReference: {
       type: String,

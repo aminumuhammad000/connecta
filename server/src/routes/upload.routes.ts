@@ -3,7 +3,8 @@ import multer from "multer";
 import { uploadFileToDrive } from "../controllers/upload.controller.js";
 
 const router = express.Router();
-const upload = multer({ dest: "uploads/" }); // temporary folder
+import { projectStorage } from "../config/cloudinary.config.js";
+const upload = multer({ storage: projectStorage }); 
 
 router.post("/upload", upload.single("file"), uploadFileToDrive);
 

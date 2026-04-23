@@ -105,3 +105,32 @@ export const updateApiKeys = async (req: Request, res: Response) => {
         });
     }
 };
+
+/**
+ * Update Payment settings
+ */
+export const updatePaymentSettings = async (req: Request, res: Response) => {
+    try {
+        const { jobPostingFee } = req.body;
+
+        const settings = await SystemSettings.getSettings();
+
+        settings.payments = {
+            jobPostingFee: Number(jobPostingFee) || 0
+        };
+
+        await settings.save();
+
+        res.json({
+            success: true,
+            message: 'Payment settings updated successfully',
+            data: settings
+        });
+    } catch (error) {
+        console.error('Error updating payment settings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update payment settings'
+        });
+    }
+};

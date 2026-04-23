@@ -78,7 +78,7 @@ const DesktopSideNav = () => {
 
     const navItems = [
         { label: 'Dashboard', icon: 'grid', route: 'Home' },
-        { label: 'Find Work', icon: 'search', route: 'Gigs' },
+        { label: 'Find Jobs', icon: 'search', route: 'Jobs' },
         { label: 'My Proposals', icon: 'file-text', route: 'Proposals' },
         { label: 'Messages', icon: 'message-square', route: 'Messages' },
         { label: 'My Profile', icon: 'user', route: 'Profile' },

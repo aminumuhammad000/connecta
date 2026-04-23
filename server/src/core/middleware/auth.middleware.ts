@@ -33,3 +33,29 @@ export const authenticate = (
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+export const optionalAuthenticate = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : undefined;
+
+    if (!token) {
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    const userId = decoded._id || decoded.id;
+    
+    if (userId) {
+      (req as any).user = { id: userId, _id: userId, ...decoded };
+    }
+    next();
+  } catch (error) {
+    // If token is invalid, we just proceed without user
+    next();
+  }
+};

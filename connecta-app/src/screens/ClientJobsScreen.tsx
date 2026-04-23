@@ -7,7 +7,6 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import * as jobService from '../services/jobService';
-import * as collaboService from '../services/collaboService';
 import { Job } from '../types';
 
 interface ClientJob {
@@ -32,25 +31,9 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
 
   const loadJobs = async () => {
     try {
-      const [jobsData, collaboData] = await Promise.all([
-        jobService.getMyJobs(),
-        collaboService.getMyCollaboProjects().catch(() => [])
-      ]);
+      const jobsData = await jobService.getMyJobs();
 
-      // Normalize Collabo projects to match Job interface roughly
-      const normalizedCollabo = collaboData.map((p: any) => ({
-        _id: p._id,
-        title: p.title,
-        status: p.status === 'planning' ? 'open' : p.status, // Map status
-        proposalsCount: p.roles?.reduce((acc: number, r: any) => acc + (r.candidates?.length || 0), 0) || 0,
-        budget: p.totalBudget,
-        postedAt: p.createdAt,
-        isCollabo: true,
-        description: p.description,
-        teamName: p.teamName
-      }));
-
-      setJobs([...jobsData, ...normalizedCollabo].sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime()));
+      setJobs((jobsData || []).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (error) {
       console.error('Error loading jobs:', error);
     } finally {
@@ -77,20 +60,18 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
   };
 
   const mapJobStatus = (status: string): string => {
-    if (status === 'open' || status === 'active') return 'Approved';
-    if (status === 'draft' || status === 'planning') return 'Not Approved';
+    if (status === 'open' || status === 'active') return 'Active';
     if (status === 'in_progress') return 'In Progress';
     if (status === 'completed') return 'Completed';
     if (status === 'cancelled') return 'Cancelled';
-    return status;
+    return 'Pending';
   };
 
   const getStatusColor = (status: string) => {
-    if (status === 'open' || status === 'active') return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981' };
-    if (status === 'draft' || status === 'planning') return { bg: 'rgba(239, 68, 68, 0.1)', text: '#EF4444' };
-    if (status === 'in_progress') return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6' };
-    if (status === 'completed') return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' };
-    return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' };
+    if (status === 'open' || status === 'active') return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3B82F6' }; // Blue for Active
+    if (status === 'in_progress') return { bg: 'rgba(245, 158, 11, 0.1)', text: '#F59E0B' }; // Orange for In Progress
+    if (status === 'completed') return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10B981' }; // Green for Completed
+    return { bg: 'rgba(107, 114, 128, 0.1)', text: '#6B7280' }; // Default/Pending
   };
 
   const filtered = useMemo(() => {
@@ -178,27 +159,26 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
             ) : (
               filtered.map((j: any) => {
                 if (!j) return null;
-                const isCollabo = j.isCollabo;
 
                 return (
                   <TouchableOpacity
                     key={j._id}
-                    activeOpacity={0.9}
-                    onPress={() => isCollabo ? navigation.navigate('CollaboWorkspace', { projectId: j._id }) : navigation.navigate('JobDetail', { id: j._id })}
-                    style={[styles.jobCard, { backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('JobDetail', { id: j._id })}
+                    style={[
+                      styles.jobCard,
+                      {
+                        backgroundColor: c.card,
+                        borderColor: c.border,
+                        borderWidth: 1,
+                      }
+                    ]}
                   >
                     <View style={styles.jobHeader}>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          {isCollabo && (
-                            <View style={{ backgroundColor: '#8B5CF620', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                              <Text style={{ color: '#8B5CF6', fontSize: 10, fontWeight: '700' }}>COLLABO</Text>
-                            </View>
-                          )}
-                          <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={2}>{j?.title || 'Untitled Job'}</Text>
-                        </View>
-                        <Text style={{ fontSize: 13, color: c.subtext, marginTop: 4 }}>
-                          Posted {formatDate(j.postedAt || j.createdAt)}
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={[styles.jobTitle, { color: c.text }]} numberOfLines={2}>{j?.title || 'Untitled Job'}</Text>
+                        <Text style={{ fontSize: 13, color: c.subtext, marginTop: 6, fontWeight: '500' }}>
+                          Posted {formatDate(j.createdAt)}
                         </Text>
                       </View>
                       <View style={[styles.statusBadge, { backgroundColor: getStatusColor(j.status).bg }]}>
@@ -208,65 +188,39 @@ const ClientJobsScreen: React.FC<any> = ({ navigation }) => {
                       </View>
                     </View>
 
-                    <View style={[styles.divider, { backgroundColor: c.border }]} />
-
-                    <View style={styles.jobMeta}>
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name={isCollabo ? "groups" : "description"} size={18} color={c.primary} />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 24 }}>
+                      <View style={[styles.metaItem, { flex: 0 }]}>
                         <View>
                           <Text style={[styles.metaValue, { color: c.text }]}>{j.proposalsCount || 0}</Text>
-                          <Text style={[styles.metaLabel, { color: c.subtext }]}>{isCollabo ? 'Candidates' : 'Proposals'}</Text>
+                          <Text style={[styles.metaLabel, { color: c.subtext }]}>Proposals</Text>
                         </View>
                       </View>
 
-                      <View style={[styles.verticalDivider, { backgroundColor: c.border }]} />
-
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="account-balance-wallet" size={18} color="#10B981" />
+                      <View style={[styles.metaItem, { flex: 1 }]}>
                         <View>
                           <Text style={[styles.metaValue, { color: c.text }]}>₦{j.budget?.toLocaleString() || '0'}</Text>
                           <Text style={[styles.metaLabel, { color: c.subtext }]}>{j.budgetType || 'Fixed'}</Text>
                         </View>
                       </View>
-
-                      <View style={[styles.verticalDivider, { backgroundColor: c.border }]} />
-
-                      <View style={styles.metaItem}>
-                        <MaterialIcons name="visibility" size={18} color="#F59E0B" />
-                        <View>
-                          <Text style={[styles.metaValue, { color: c.text }]}>{j.views || 0}</Text>
-                          <Text style={[styles.metaLabel, { color: c.subtext }]}>Views</Text>
-                        </View>
-                      </View>
                     </View>
 
-                    <View style={[styles.divider, { backgroundColor: c.border }]} />
+                    <View style={[styles.divider, { backgroundColor: c.border, marginTop: 20, marginBottom: 16 }]} />
 
-                    <View style={styles.jobActions}>
-                      {!isCollabo && (
-                        <TouchableOpacity
-                          style={[styles.actionBtn, { borderColor: c.border }]}
-                          onPress={() => navigation.navigate('ClientRecommended', { jobId: j._id })}
-                        >
-                          <MaterialIcons name="person-add-alt" size={18} color={c.text} />
-                          <Text style={[styles.actionText, { color: c.text }]}>Invite</Text>
-                        </TouchableOpacity>
-                      )}
-
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
                       <TouchableOpacity
-                        style={[styles.actionBtn, { borderColor: c.border }]}
-                        onPress={() => isCollabo ? navigation.navigate('PostCollaboJob', { projectId: j._id, mode: 'edit' }) : navigation.navigate('PostJob', { jobId: j._id, mode: 'edit' })}
+                        style={[styles.actionBtn, { borderColor: c.border, backgroundColor: c.background }]}
+                        onPress={() => navigation.navigate('ClientRecommended', { jobId: j._id })}
                       >
-                        <MaterialIcons name="edit" size={18} color={c.text} />
-                        <Text style={[styles.actionText, { color: c.text }]}>Edit</Text>
+                        <MaterialIcons name="person-add-alt" size={18} color={c.text} />
+                        <Text style={[styles.actionText, { color: c.text }]}>Invite</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        style={[styles.actionBtnPrimary, { backgroundColor: c.primary }]}
-                        onPress={() => isCollabo ? navigation.navigate('CollaboWorkspace', { projectId: j._id }) : navigation.navigate('JobDetail', { id: j._id })}
+                        style={[styles.actionBtn, { borderColor: c.border, backgroundColor: c.background }]}
+                        onPress={() => navigation.navigate('PostJob', { jobId: j._id, mode: 'edit' })}
                       >
-                        <Text style={[styles.actionTextPrimary]}>{isCollabo ? 'Workspace' : 'View Details'}</Text>
-                        <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
+                        <MaterialIcons name="edit" size={18} color={c.text} />
+                        <Text style={[styles.actionText, { color: c.text }]}>Edit</Text>
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>

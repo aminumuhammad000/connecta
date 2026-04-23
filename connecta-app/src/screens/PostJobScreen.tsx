@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Alert, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 // import Logo from '../components/Logo';
 import * as jobService from '../services/jobService';
@@ -41,6 +41,14 @@ const CATEGORY_SKILLS: Record<string, string[]> = {
   hospitality: ['Barista', 'Bartending', 'Catering', 'Concierge', 'Culinary Arts', 'Customer Service', 'Event Management', 'Event Planning', 'Front Desk', 'Hotel Management', 'Housekeeping', 'Tourism', 'Tour Guiding', 'Travel Planning'].sort(),
 };
 
+const NIGERIA_STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT - Abuja', 'Gombe',
+  'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto',
+  'Taraba', 'Yobe', 'Zamfara'
+];
+
 const PostJobScreen: React.FC = () => {
   const c = useThemeColors();
   const navigation = useNavigation();
@@ -58,28 +66,45 @@ const PostJobScreen: React.FC = () => {
   const [budget, setBudget] = useState('');
   const [skillInput, setSkillInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
-  const [deadline, setDeadline] = useState('');
 
   // New fields required by backend
   const [company, setCompany] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('');
   const [experience, setExperience] = useState('Intermediate');
-  const [jobType, setJobType] = useState('fixed'); // 'fixed' or 'hourly'
+  const [jobType, setJobType] = useState('fixed'); 
+  const [hiringType, setHiringType] = useState<'job' | 'freelance'>('freelance');
+  const [customBudgetType, setCustomBudgetType] = useState('');
   const [locationType, setLocationType] = useState('remote');
 
   const [isLoading, setIsLoading] = useState(false);
+  const [jobPostingFee, setJobPostingFee] = useState(0);
+
+  useEffect(() => {
+    const fetchFee = async () => {
+      try {
+        const settings = await import('../services/settingsService').then(m => m.default.getSystemSettings());
+        if (settings?.payments?.jobPostingFee !== undefined) {
+          setJobPostingFee(settings.payments.jobPostingFee);
+        }
+      } catch (error) {
+        console.error('Error fetching job posting fee:', error);
+      }
+    };
+    fetchFee();
+  }, []);
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPaymentPromptModal, setShowPaymentPromptModal] = useState(false);
+  const [isTransferSelected, setIsTransferSelected] = useState(true); // Default to Transfer
   const [paymentUrl, setPaymentUrl] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const { user, token } = useAuth();
-  const [jobMode, setJobMode] = useState<'individual' | 'collabo' | null>(isEditMode ? 'individual' : null);
 
   // New State Variables
   const [jobScope, setJobScope] = useState('local');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  const [subCategory, setSubCategory] = useState('');
   const [durationType, setDurationType] = useState('months');
   const [durationValue, setDurationValue] = useState('');
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
@@ -88,7 +113,9 @@ const PostJobScreen: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dynamicSkills, setDynamicSkills] = useState<string[]>([]);
   const [isFetchingDynamicSkills, setIsFetchingDynamicSkills] = useState(false);
-  const [currency, setCurrency] = useState('NGN');
+  const [virtualAccount, setVirtualAccount] = useState<any>(null);
+  const [showStatePicker, setShowStatePicker] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<any>(null);
 
   useEffect(() => {
     if (isEditMode && jobId) {
@@ -150,6 +177,18 @@ const PostJobScreen: React.FC = () => {
     }
   }, [selectedCategoryId]);
 
+  useEffect(() => {
+    if (showPaymentPromptModal) {
+      paymentService.getVTStackVirtualAccount()
+        .then(res => setVirtualAccount(res))
+        .catch(err => console.error('Error fetching virtual account:', err));
+
+      paymentService.getWalletBalance()
+        .then(res => setWalletBalance(res))
+        .catch(err => console.error('Error fetching wallet balance:', err));
+    }
+  }, [showPaymentPromptModal]);
+
   const fetchDynamicSkills = async () => {
     try {
       setIsFetchingDynamicSkills(true);
@@ -164,16 +203,6 @@ const PostJobScreen: React.FC = () => {
   };
 
 
-  const onDateSelect = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    setDeadline(dateString);
-    setShowDatePicker(false);
-    if (errors.deadline) {
-      const newErrors = { ...errors };
-      delete newErrors.deadline;
-      setErrors(newErrors);
-    }
-  };
 
   const loadJobDetails = async () => {
     try {
@@ -184,12 +213,17 @@ const PostJobScreen: React.FC = () => {
         setDescription(job.description);
         setBudget(String(job.budget));
         setSkills(job.skills || []);
-        if (job.deadline) setDeadline(new Date(job.deadline).toISOString().split('T')[0]);
         setCompany(job.company || '');
         setLocation(job.location || '');
         setCategory(job.category || '');
         setExperience(job.experience || 'Intermediate');
-        setJobType(job.budgetType || 'fixed');
+        const bt = job.budgetType || 'fixed';
+        if (['fixed', 'hourly', 'weekly', 'monthly'].includes(bt)) {
+          setJobType(bt);
+        } else {
+          setJobType('custom');
+          setCustomBudgetType(bt);
+        }
         setLocationType(job.locationType || 'remote');
       }
     } catch (error) {
@@ -224,7 +258,6 @@ const PostJobScreen: React.FC = () => {
       if (!experience) newErrors.experience = 'Please select an experience level';
     } else if (currentStep === 2) {
       if (!budget || isNaN(parseFloat(budget))) newErrors.budget = 'Please enter a valid budget';
-      if (!deadline) newErrors.deadline = 'Please set a deadline';
     }
 
     setErrors(newErrors);
@@ -258,45 +291,101 @@ const PostJobScreen: React.FC = () => {
     setCurrentStep(prev => prev - 1);
   };
 
-  const initiatePayment = async () => {
+  const initiatePaymentForJob = async () => {
     try {
       setIsLoading(true);
 
-      // We need to create the job first to get the jobId, then initialize payment
-      // For now, let's create a temporary job record
       const tempJobData = {
         title,
         description,
         budget: String(budget),
         skills,
-        deadline: deadline ? new Date(deadline).toISOString() : undefined,
         company,
         location,
         category,
         experience,
-        jobType: 'freelance' as any,
-        budgetType: jobType,
-        status: 'draft' as any, // Mark as draft until payment is complete
+        jobType: hiringType as any,
+        budgetType: jobType === 'custom' ? (customBudgetType || 'custom') : jobType,
+        status: 'pending' as any, // Mark as pending initially
         locationType: locationType as any,
+        jobScope,
+        duration: durationValue,
+        durationType: durationType as any,
       };
 
       const createdJob = await jobService.createJob(tempJobData);
 
-      // Now initialize payment for this job
       console.log('Initializing payment for job:', createdJob._id);
 
       const response = await paymentService.initializeJobVerification({
         jobId: createdJob._id,
-        amount: parseFloat(budget),
-        description: `Payment for job posting: ${title}`,
+        amount: jobPostingFee, // Paid the platform fee
+        description: `Job posting fee for: ${title}`,
       });
 
       setPaymentUrl(response.authorizationUrl);
       setPaymentReference(response.reference);
-      setShowPaymentModal(true);
+      // After successful creation
+      if (jobPostingFee === 0) {
+        // If fee is 0, activate immediately
+        await jobService.updateJob(createdJob._id, { status: 'active' as any, paymentVerified: true });
+        setIsLoading(false);
+        setSuccessMessage('Job posted successfully! It is now active and freelancers can see it.');
+        setIsSuccessVisible(true);
+      } else {
+        // Show payment prompt
+        setIsLoading(false);
+        setShowPaymentPromptModal(true);
+      }
     } catch (error: any) {
-      console.error('Payment initialization error:', error);
-      Alert.alert('Error', error.message || 'Failed to initialize payment. Please try again.');
+      setIsLoading(false);
+      showAlert({ title: 'Error', message: error.message || 'Failed to create job', type: 'error' });
+    }
+  };
+
+  const handleWalletPayment = async () => {
+    try {
+      setIsLoading(true);
+
+      // 1. Create Job first if it doesn't exist (new post)
+      let targetJobId = jobId;
+      if (!isEditMode || !targetJobId) {
+        const tempJobData = {
+          title,
+          description,
+          budget: String(budget),
+          skills,
+          company,
+          location,
+          category,
+          experience,
+          jobType: hiringType as any,
+          budgetType: jobType === 'custom' ? (customBudgetType || 'custom') : jobType,
+          status: 'pending' as any,
+          locationType: locationType as any,
+          jobScope,
+          duration: durationValue,
+          durationType: durationType as any,
+        };
+        const createdJob = await jobService.createJob(tempJobData);
+        targetJobId = createdJob._id;
+      }
+
+      // 2. Process wallet payment
+      const response = await paymentService.payFromWallet({
+        type: 'job_verification',
+        amount: jobPostingFee, // Paid the platform fee
+        jobId: targetJobId,
+        description: `Job posting fee for: ${title}`,
+      });
+
+      if (response && response.success) {
+        setShowPaymentPromptModal(false);
+        setShowSuccessModal(true);
+      }
+    } catch (error: any) {
+      console.error('Wallet payment error:', error);
+      Alert.alert('Payment Failed', error.message || 'Could not process wallet payment.');
     } finally {
       setIsLoading(false);
     }
@@ -331,7 +420,15 @@ const PostJobScreen: React.FC = () => {
     Alert.alert('Payment Cancelled', 'You can try again when ready.');
   };
 
-  const submitJob = async () => {
+  const submitJob = () => {
+    if (jobPostingFee === 0) {
+      submitJobWithStatus('active');
+    } else {
+      setShowPaymentPromptModal(true);
+    }
+  };
+
+  const submitJobWithStatus = async (statusArg: string) => {
     try {
       setIsLoading(true);
 
@@ -340,18 +437,17 @@ const PostJobScreen: React.FC = () => {
         description,
         budget: String(budget),
         skills,
-        deadline: deadline ? new Date(deadline).toISOString() : undefined,
         company,
         location,
         category,
         experience,
-        jobType: 'freelance' as any,
-        budgetType: jobType,
+        jobType: hiringType as any,
+        budgetType: jobType === 'custom' ? (customBudgetType || 'custom') : jobType,
         locationType: locationType as any,
         jobScope,
-        niche: subCategory || undefined,
         duration: durationValue,
         durationType: durationType as any,
+        status: statusArg as any,
       };
 
       await jobService.createJob(jobData);
@@ -374,16 +470,14 @@ const PostJobScreen: React.FC = () => {
         description,
         budget: String(budget),
         skills,
-        deadline: deadline ? new Date(deadline).toISOString() : undefined,
         company,
         location,
         category,
         experience,
-        jobType: 'freelance' as any,
-        budgetType: jobType,
+        jobType: hiringType as any,
+        budgetType: jobType === 'custom' ? (customBudgetType || 'custom') : jobType,
         locationType: locationType as any,
         jobScope,
-        niche: subCategory || undefined,
         duration: durationValue,
         durationType: durationType as any,
       };
@@ -432,6 +526,53 @@ const PostJobScreen: React.FC = () => {
       <View style={styles.stepHeader}>
         <Text style={[styles.stepMainTitle, { color: c.text }]}>The Basics</Text>
         <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Set the foundation for your project. Be clear and professional.</Text>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={[styles.label, { color: c.text }]}>Hiring Mode</Text>
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 10 }}>
+          <TouchableOpacity
+            onPress={() => setHiringType('job')}
+            style={[
+              styles.categoryCard,
+              {
+                flex: 1,
+                borderColor: hiringType === 'job' ? c.primary : c.border,
+                borderWidth: hiringType === 'job' ? 2 : 1,
+                padding: 16,
+                alignItems: 'center',
+                backgroundColor: hiringType === 'job' ? c.primary + '08' : c.card
+              }
+            ]}
+          >
+            <View style={[styles.catIconCircle, { backgroundColor: hiringType === 'job' ? c.primary : c.border + '20' }]}>
+              <MaterialIcons name="business-center" size={24} color={hiringType === 'job' ? '#FFF' : c.subtext} />
+            </View>
+            <Text style={{ marginTop: 8, fontWeight: '700', color: hiringType === 'job' ? c.primary : c.text }}>Post a Job</Text>
+            <Text style={{ fontSize: 10, color: c.subtext, textAlign: 'center', marginTop: 4 }}>Full-time or regular employment (No Escrow)</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setHiringType('freelance')}
+            style={[
+              styles.categoryCard,
+              {
+                flex: 1,
+                borderColor: hiringType === 'freelance' ? c.primary : c.border,
+                borderWidth: hiringType === 'freelance' ? 2 : 1,
+                padding: 16,
+                alignItems: 'center',
+                backgroundColor: hiringType === 'freelance' ? c.primary + '08' : c.card
+              }
+            ]}
+          >
+            <View style={[styles.catIconCircle, { backgroundColor: hiringType === 'freelance' ? c.primary : c.border + '20' }]}>
+              <MaterialIcons name="work" size={24} color={hiringType === 'freelance' ? '#FFF' : c.subtext} />
+            </View>
+            <Text style={{ marginTop: 8, fontWeight: '700', color: hiringType === 'freelance' ? c.primary : c.text }}>Post Freelance</Text>
+            <Text style={{ fontSize: 10, color: c.subtext, textAlign: 'center', marginTop: 4 }}>Project-based or gig work (Escrow Required)</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={isDesktop ? styles.desktopRow : undefined}>
@@ -487,7 +628,6 @@ const PostJobScreen: React.FC = () => {
                 onPress={() => {
                   setSelectedCategoryId(cat.id);
                   setCategory(cat.label);
-                  setSubCategory('');
                   clearError('category');
                 }}
                 activeOpacity={0.7}
@@ -532,47 +672,10 @@ const PostJobScreen: React.FC = () => {
         {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
       </View>
 
-      {selectedCategoryId && JOB_CATEGORIES.find(cat => cat.id === selectedCategoryId)?.subcategories.length ? (
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: c.text }]}>Specialization</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {JOB_CATEGORIES.find(cat => cat.id === selectedCategoryId)?.subcategories.map(sub => (
-              <TouchableOpacity
-                key={sub}
-                onPress={() => setSubCategory(sub)}
-                style={[
-                  styles.nicheChip,
-                  {
-                    backgroundColor: subCategory === sub ? c.primary : c.card,
-                    borderColor: subCategory === sub ? c.primary : c.border
-                  }
-                ]}
-              >
-                <Text style={[styles.nicheText, { color: subCategory === sub ? '#FFF' : c.text }]}>{sub}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
+
 
       <View style={styles.inputGroup}>
-        <View style={styles.labelRow}>
-          <Text style={[styles.label, { color: errors.description ? '#EF4444' : c.text }]}>Description</Text>
-          <TouchableOpacity
-            onPress={generateAIDescription}
-            disabled={isGeneratingDescription}
-            style={[styles.aiAssistBtn, { backgroundColor: c.primary + '15' }]}
-          >
-            {isGeneratingDescription ? (
-              <ActivityIndicator size="small" color={c.primary} />
-            ) : (
-              <>
-                <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                <Text style={[styles.aiAssistText, { color: c.primary }]}>AI Write</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.label, { color: errors.description ? '#EF4444' : c.text }]}>Description</Text>
         <TextInput
           value={description}
           onChangeText={(t) => { setDescription(t); clearError('description'); }}
@@ -668,21 +771,45 @@ const PostJobScreen: React.FC = () => {
               ? "Where is this job located? (e.g. Lagos, Nigeria)"
               : "Preferred timezone or region (Optional)"}
           </Text>
-          <TextInput
-            value={location}
-            onChangeText={(t) => { setLocation(t); clearError('location'); }}
-            placeholder={jobScope === 'local' ? "Enter City, Country" : "e.g. GMT+1 or Worldwide"}
-            placeholderTextColor={c.subtext}
-            style={[
-              styles.refinedInput,
-              {
-                color: c.text,
-                backgroundColor: c.card,
-                borderColor: errors.location ? '#EF4444' : c.border,
-                height: 48,
-              }
-            ]}
-          />
+          {jobScope === 'local' ? (
+            <TouchableOpacity 
+              onPress={() => setShowStatePicker(true)}
+              style={[
+                styles.refinedInput,
+                {
+                  color: c.text,
+                  backgroundColor: c.card,
+                  borderColor: errors.location ? '#EF4444' : c.border,
+                  height: 48,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingHorizontal: 16
+                }
+              ]}
+            >
+              <Text style={{ color: location ? c.text : c.subtext, fontSize: 13, fontWeight: '700' }}>
+                {location || "Select State in Nigeria"}
+              </Text>
+              <MaterialIcons name="arrow-drop-down" size={24} color={c.subtext} />
+            </TouchableOpacity>
+          ) : (
+            <TextInput
+              value={location}
+              onChangeText={(t) => { setLocation(t); clearError('location'); }}
+              placeholder="e.g. GMT+1 or Worldwide"
+              placeholderTextColor={c.subtext}
+              style={[
+                styles.refinedInput,
+                {
+                  color: c.text,
+                  backgroundColor: c.card,
+                  borderColor: errors.location ? '#EF4444' : c.border,
+                  height: 48,
+                }
+              ]}
+            />
+          )}
         </View>
 
         {jobScope === 'international' && (
@@ -748,23 +875,7 @@ const PostJobScreen: React.FC = () => {
 
       {/* Skills Selection */}
       <View style={styles.inputGroup}>
-        <View style={styles.labelRow}>
-          <Text style={[styles.refinedLabel, { color: c.text }]}>SKILLS NEEDED</Text>
-          <TouchableOpacity
-            onPress={suggestAISkills}
-            disabled={isSuggestingSkills}
-            style={styles.figmaAiBtn}
-          >
-            {isSuggestingSkills ? (
-              <ActivityIndicator size="small" color={c.primary} />
-            ) : (
-              <>
-                <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                <Text style={[styles.figmaAiText, { color: c.primary }]}>Suggest</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={[styles.refinedLabel, { color: c.text }]}>SKILLS NEEDED</Text>
         {selectedCategoryId && (
           <View style={{ marginBottom: 16 }}>
             <View style={styles.labelRow}>
@@ -819,34 +930,32 @@ const PostJobScreen: React.FC = () => {
       {/* Duration - Simplified */}
       <View style={styles.inputGroup}>
         <Text style={[styles.refinedLabel, { color: c.text }]}>ESTIMATED DURATION</Text>
-        <View style={styles.durationRow}>
-          <TextInput
-            value={durationValue}
-            onChangeText={setDurationValue}
-            placeholder="0"
-            keyboardType="numeric"
-            placeholderTextColor={c.subtext}
-            style={[styles.refinedInput, { width: 80, textAlign: 'center', marginRight: 12 }]}
-          />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {DURATION_TYPES.map(dt => (
-              <TouchableOpacity
-                key={dt.id}
-                onPress={() => setDurationType(dt.id)}
-                style={[
-                  styles.durationChip,
-                  {
-                    backgroundColor: durationType === dt.id ? c.text : c.card,
-                    borderColor: durationType === dt.id ? c.text : c.border,
-                  }
-                ]}
-              >
-                <Text style={[styles.durationChipText, { color: durationType === dt.id ? c.background : c.text }]}>
-                  {dt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+        <TextInput
+          value={durationValue}
+          onChangeText={setDurationValue}
+          placeholder="e.g. 5"
+          keyboardType="numeric"
+          placeholderTextColor={c.subtext}
+          style={[styles.refinedInput, { width: '100%', marginBottom: 12 }]}
+        />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {DURATION_TYPES.map(dt => (
+            <TouchableOpacity
+              key={dt.id}
+              onPress={() => setDurationType(dt.id)}
+              style={[
+                styles.durationChip,
+                {
+                  backgroundColor: durationType === dt.id ? c.text : c.card,
+                  borderColor: durationType === dt.id ? c.text : c.border,
+                }
+              ]}
+            >
+              <Text style={[styles.durationChipText, { color: durationType === dt.id ? c.background : c.text }]}>
+                {dt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     </View>
@@ -859,30 +968,52 @@ const PostJobScreen: React.FC = () => {
         <Text style={[styles.stepSubTitle, { color: c.subtext }]}>Set your project budget and estimated completion date.</Text>
       </View>
 
-      {/* Budget Selection */}
+      {/* Payment Type Selection */}
       <View style={styles.inputGroup}>
-        <Text style={[styles.refinedLabel, { color: errors.budget ? '#EF4444' : c.text }]}>PROJECT BUDGET</Text>
-        <View style={styles.currencyToggleRow}>
-          {['NGN'].map(curr => (
+        <Text style={[styles.refinedLabel, { color: c.text }]}>PAYMENT TYPE</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {[
+            { id: 'fixed', label: 'Per Project' },
+            { id: 'hourly', label: 'Hourly' },
+            { id: 'weekly', label: 'Weekly' },
+            { id: 'monthly', label: 'Monthly' },
+            { id: 'custom', label: 'Custom' }
+          ].map(type => (
             <TouchableOpacity
-              key={curr}
-              onPress={() => setCurrency(curr)}
+              key={type.id}
+              onPress={() => setJobType(type.id)}
               style={[
-                styles.currencyToggleBtn,
+                styles.durationChip,
                 {
-                  backgroundColor: currency === curr ? c.primary : c.card,
-                  borderColor: currency === curr ? c.primary : c.border
+                  backgroundColor: jobType === type.id ? c.primary : c.card,
+                  borderColor: jobType === type.id ? c.primary : c.border,
                 }
               ]}
             >
-              <Text style={{ color: currency === curr ? '#FFF' : c.text, fontWeight: '800', fontSize: 12 }}>{curr}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: jobType === type.id ? '#FFF' : c.text }}>
+                {type.label}
+              </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
+        {jobType === 'custom' && (
+          <TextInput
+            value={customBudgetType}
+            onChangeText={setCustomBudgetType}
+            placeholder="e.g. Per Word, Milestone"
+            placeholderTextColor={c.subtext}
+            style={[styles.refinedInput, { color: c.text, backgroundColor: c.card, borderColor: c.border, marginTop: 12 }]}
+          />
+        )}
+      </View>
+
+      {/* Budget Selection */}
+      <View style={styles.inputGroup}>
+        <Text style={[styles.refinedLabel, { color: errors.budget ? '#EF4444' : c.text }]}>PROJECT BUDGET</Text>
         <View style={{ position: 'relative', marginTop: 12 }}>
           <View style={styles.budgetIconWrapper}>
             <Text style={{ color: errors.budget ? '#EF4444' : c.subtext, fontWeight: '800', fontSize: 18 }}>
-              {currency === 'USD' ? '$' : '₦'}
+              ₦
             </Text>
           </View>
           <TextInput
@@ -908,85 +1039,7 @@ const PostJobScreen: React.FC = () => {
         </Text>
       </View>
 
-      {/* Deadline Selection */}
-      <View style={styles.inputGroup}>
-        <Text style={[styles.refinedLabel, { color: errors.deadline ? '#EF4444' : c.text }]}>PROJECT DEADLINE</Text>
-        <View style={styles.deadlineQuickSelect}>
-          {[
-            { label: '1 Week', days: 7 },
-            { label: '2 Weeks', days: 14 },
-            { label: '1 Month', days: 30 },
-          ].map(opt => {
-            const date = new Date();
-            date.setDate(date.getDate() + opt.days);
-            const dateString = date.toISOString().split('T')[0];
-            const isSelected = deadline === dateString;
 
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => {
-                  setDeadline(dateString);
-                  clearError('deadline');
-                }}
-                style={[
-                  styles.deadlineChip,
-                  {
-                    backgroundColor: isSelected ? c.primary : c.card,
-                    borderColor: isSelected ? c.primary : c.border,
-                  }
-                ]}
-              >
-                <Text style={[styles.deadlineChipText, { color: isSelected ? '#FFF' : c.text }]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={{ marginTop: 16 }}>
-          <Text style={[styles.helperLabel, { color: c.subtext }]}>Or select a custom date</Text>
-          <View style={{ position: 'relative', marginTop: 8 }}>
-            <View style={styles.budgetIconWrapper}>
-              <MaterialIcons name="event" size={20} color={errors.deadline ? '#EF4444' : c.subtext} />
-            </View>
-            <TextInput
-              value={deadline}
-              onChangeText={(t) => { setDeadline(t); clearError('deadline'); }}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={c.subtext}
-              style={[
-                styles.refinedInput,
-                {
-                  color: c.text,
-                  backgroundColor: c.card,
-                  borderColor: errors.deadline ? '#EF4444' : c.border,
-                  paddingLeft: 48,
-                  paddingRight: 48,
-                  height: 48,
-                }
-              ]}
-            />
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              style={styles.calendarInputBtn}
-            >
-              <MaterialIcons name="calendar-today" size={20} color={c.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-        {errors.deadline && <Text style={styles.errorText}>{errors.deadline}</Text>}
-
-        {showDatePicker && (
-          <CalendarModal
-            visible={showDatePicker}
-            onClose={() => setShowDatePicker(false)}
-            onSelect={onDateSelect}
-            currentDate={deadline ? new Date(deadline) : new Date()}
-          />
-        )}
-      </View>
 
     </View>
   );
@@ -999,102 +1052,90 @@ const PostJobScreen: React.FC = () => {
       </View>
 
       {/* Job Overview Card */}
-      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <View style={styles.previewSectionHeader}>
-          <View style={styles.previewSectionTitleRow}>
-            <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
-            <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>JOB OVERVIEW</Text>
-          </View>
+      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border, padding: 0, overflow: 'hidden' }]}>
+        <View style={[styles.previewSectionHeader, { padding: 16, borderBottomWidth: 1, borderBottomColor: c.border, backgroundColor: c.background, marginBottom: 0 }]}>
+          <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>JOB OVERVIEW</Text>
           <TouchableOpacity onPress={() => setCurrentStep(0)} style={styles.editBtnSmall}>
-            <MaterialIcons name="edit" size={14} color={c.primary} />
             <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.previewMainTitle, { color: c.text }]}>{title}</Text>
-
-        <View style={styles.previewMetaRow}>
-          <View style={styles.metaItem}>
-            <MaterialIcons name="business" size={14} color={c.primary} />
-            <Text style={[styles.previewMetaText, { color: c.subtext }]} numberOfLines={1}>{company}</Text>
-          </View>
-          <View style={[styles.metaDot, { backgroundColor: c.border }]} />
-          <View style={styles.metaItem}>
-            <MaterialIcons name="category" size={14} color={c.primary} />
-            <Text style={[styles.previewMetaText, { color: c.subtext }]} numberOfLines={1}>{category}</Text>
-          </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Hiring Mode</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text, textTransform: 'capitalize' }}>
+            {hiringType === 'job' ? 'Direct Hiring (Job)' : 'Freelance Project'}
+          </Text>
         </View>
 
-        <View style={[styles.previewDescBox, { backgroundColor: c.border + '15' }]}>
-          <Text style={[styles.previewDescription, { color: c.text }]}>
-            {description}
-          </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Title</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text }}>{title}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Company</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text }}>{company}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Category</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text }}>{category}</Text>
+        </View>
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', paddingVertical: 14, paddingHorizontal: 16 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext, marginBottom: 8 }}>Description</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, textAlign: 'left', lineHeight: 22 }}>{description}</Text>
         </View>
       </View>
 
       {/* Details & Skills Card */}
-      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <View style={styles.previewSectionHeader}>
-          <View style={styles.previewSectionTitleRow}>
-            <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
-            <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>DETAILS & SKILLS</Text>
-          </View>
+      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border, padding: 0, overflow: 'hidden', marginTop: 16 }]}>
+        <View style={[styles.previewSectionHeader, { padding: 16, borderBottomWidth: 1, borderBottomColor: c.border, backgroundColor: c.background, marginBottom: 0 }]}>
+          <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>DETAILS & SKILLS</Text>
           <TouchableOpacity onPress={() => setCurrentStep(1)} style={styles.editBtnSmall}>
-            <MaterialIcons name="edit" size={14} color={c.primary} />
             <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.previewInfoGrid}>
-          <View style={styles.previewInfoItem}>
-            <View style={[styles.miniIconCircle, { backgroundColor: c.primary + '10' }]}>
-              <MaterialIcons name="place" size={14} color={c.primary} />
-            </View>
-            <Text style={[styles.previewInfoValue, { color: c.text }]}>{location || 'Remote'}</Text>
-          </View>
-          <View style={styles.previewInfoItem}>
-            <View style={[styles.miniIconCircle, { backgroundColor: c.primary + '10' }]}>
-              <MaterialIcons name="bolt" size={14} color={c.primary} />
-            </View>
-            <Text style={[styles.previewInfoValue, { color: c.text }]}>{experience}</Text>
-          </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Location</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text }}>{location || 'Remote'} {locationType ? `(${locationType})` : ''}</Text>
         </View>
-
-        <View style={[styles.previewSkillsRow, { marginTop: 20 }]}>
-          {skills.map(s => (
-            <View key={s} style={[styles.refinedSkillChip, { backgroundColor: c.primary + '10', borderColor: c.primary + '20', borderWidth: 1 }]}>
-              <Text style={[styles.refinedSkillText, { color: c.primary }]}>{s}</Text>
-            </View>
-          ))}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Experience</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text }}>{experience}</Text>
+        </View>
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', paddingVertical: 14, paddingHorizontal: 16 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext, marginBottom: 8 }}>Skills Required</Text>
+          <View style={[styles.previewSkillsRow, { marginTop: 0 }]}>
+            {skills.map(s => (
+              <View key={s} style={[styles.refinedSkillChip, { backgroundColor: c.primary + '10', borderColor: c.primary + '20', borderWidth: 1 }]}>
+                <Text style={[styles.refinedSkillText, { color: c.primary }]}>{s}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
 
       {/* Budget & Timeline Card */}
-      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <View style={styles.previewSectionHeader}>
-          <View style={styles.previewSectionTitleRow}>
-            <View style={[styles.sectionIndicatorDot, { backgroundColor: c.primary }]} />
-            <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>BUDGET & TIMELINE</Text>
-          </View>
+      <View style={[styles.refinedPreviewCard, { backgroundColor: c.card, borderColor: c.border, padding: 0, overflow: 'hidden', marginTop: 16 }]}>
+        <View style={[styles.previewSectionHeader, { padding: 16, borderBottomWidth: 1, borderBottomColor: c.border, backgroundColor: c.background, marginBottom: 0 }]}>
+          <Text style={[styles.refinedLabel, { color: c.text, marginBottom: 0 }]}>BUDGET & TIMELINE</Text>
           <TouchableOpacity onPress={() => setCurrentStep(2)} style={styles.editBtnSmall}>
-            <MaterialIcons name="edit" size={14} color={c.primary} />
             <Text style={[styles.editLink, { color: c.primary }]}>Edit</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.previewBudgetBox, { backgroundColor: c.primary + '05' }]}>
-          <View style={styles.previewBudgetRow}>
-            <View>
-              <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Total Budget</Text>
-              <Text style={[styles.previewBudgetValue, { color: c.text }]}>
-                {currency === 'USD' ? '$' : '₦'}{budget}
-              </Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[styles.previewLabelSmall, { color: c.subtext }]}>Deadline</Text>
-              <Text style={[styles.previewDateValue, { color: c.text }]}>{deadline}</Text>
-            </View>
-          </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Payment Type</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text, textTransform: 'capitalize' }}>
+            {jobType === 'custom' ? customBudgetType || 'Custom' : jobType.replace('-', ' ')}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border + '60' }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Total Budget</Text>
+          <Text style={{ fontSize: 16, fontWeight: '900', flex: 1, textAlign: 'right', marginLeft: 16, color: c.primary }}>₦{budget}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16 }}>
+          <Text style={{ fontSize: 13, fontWeight: '600', opacity: 0.8, color: c.subtext }}>Est. Duration</Text>
+          <Text style={{ fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'right', marginLeft: 16, color: c.text }}>{durationValue || '0'} {durationType}</Text>
         </View>
       </View>
 
@@ -1116,94 +1157,7 @@ const PostJobScreen: React.FC = () => {
     </View>
   );
 
-  const renderTypeSelection = () => (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
-      <View style={styles.selectionHeader}>
-        <Text style={[styles.selectionMainTitle, { color: c.text }]}>
-          Choose your hiring model
-        </Text>
-        <Text style={[styles.selectionSubTitle, { color: c.subtext }]}>
-          Select the best way to get your project done. You can always change this later.
-        </Text>
-      </View>
 
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
-        onPress={() => setJobMode('individual')}
-      >
-        <LinearGradient
-          colors={[c.primary, '#FF9F70']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.premiumIconCircle}
-        >
-          <MaterialIcons name="person" size={32} color="#FFF" />
-        </LinearGradient>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.premiumTypeTitle, { color: c.text }]}>Individual Expert</Text>
-          <Text style={[styles.premiumTypeDesc, { color: c.subtext }]}>
-            Perfect for specific tasks, short-term projects, or specialized roles.
-          </Text>
-          <View style={styles.featureList}>
-            <View style={styles.featureItem}>
-              <MaterialIcons name="check-circle" size={14} color={c.primary} />
-              <Text style={[styles.featureText, { color: c.subtext }]}>Direct communication</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <MaterialIcons name="check-circle" size={14} color={c.primary} />
-              <Text style={[styles.featureText, { color: c.subtext }]}>Fixed or hourly rates</Text>
-            </View>
-          </View>
-        </View>
-        <MaterialIcons name="chevron-right" size={24} color={c.border} />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={[styles.premiumTypeCard, { backgroundColor: c.card, borderColor: c.border }]}
-        onPress={() => (navigation as any).navigate('PostCollaboJob')}
-      >
-        <LinearGradient
-          colors={['#8B5CF6', '#A78BFA']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.premiumIconCircle}
-        >
-          <MaterialIcons name="groups" size={32} color="#FFF" />
-        </LinearGradient>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.premiumTypeTitle, { color: c.text }]}>Collabo Team</Text>
-            <View style={styles.newBadge}>
-              <Text style={styles.newBadgeText}>NEW</Text>
-            </View>
-          </View>
-          <Text style={[styles.premiumTypeDesc, { color: c.subtext }]}>
-            Best for complex projects requiring multiple experts working in sync.
-          </Text>
-          <View style={styles.featureList}>
-            <View style={styles.featureItem}>
-              <MaterialIcons name="check-circle" size={14} color="#8B5CF6" />
-              <Text style={[styles.featureText, { color: c.subtext }]}>AI-managed workflows</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <MaterialIcons name="check-circle" size={14} color="#8B5CF6" />
-              <Text style={[styles.featureText, { color: c.subtext }]}>Unified team budget</Text>
-            </View>
-          </View>
-        </View>
-        <MaterialIcons name="chevron-right" size={24} color={c.border} />
-      </TouchableOpacity>
-
-      <View style={[styles.infoBox, { backgroundColor: c.primary + '08', borderColor: c.primary + '20' }]}>
-        <MaterialIcons name="info-outline" size={20} color={c.primary} />
-        <Text style={[styles.infoBoxText, { color: c.subtext }]}>
-          Not sure? Most clients start with an <Text style={{ fontWeight: '700', color: c.text }}>Individual Expert</Text> for smaller tasks.
-        </Text>
-      </View>
-    </ScrollView>
-  );
 
 
   const sideContent = (
@@ -1239,20 +1193,14 @@ const PostJobScreen: React.FC = () => {
               <View style={{ width: 40 }} />
             </View>
 
-            {(!jobMode && !isEditMode) ? (
-              renderTypeSelection()
-            ) : (
-              <>
-                {renderStepIndicator()}
-                <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-                  {currentStep === 0 && renderBasics()}
-                  {currentStep === 1 && renderDetails()}
-                  {currentStep === 2 && renderBudget()}
-                  {currentStep === 3 && renderPreview()}
-                </ScrollView>
-
-                <View style={[styles.footer, { borderTopColor: 'transparent', backgroundColor: 'transparent' }]}>
-                  <View style={{ flex: 1 }} />
+            <>
+              {renderStepIndicator()}
+              <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+                {currentStep === 0 && renderBasics()}
+                {currentStep === 1 && renderDetails()}
+                {currentStep === 2 && renderBudget()}
+                {currentStep === 3 && renderPreview()}
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 32, marginBottom: 20 }}>
                   <Button
                     title={
                       currentStep === 3
@@ -1274,8 +1222,8 @@ const PostJobScreen: React.FC = () => {
                     size="medium"
                   />
                 </View>
-              </>
-            )}
+              </ScrollView>
+            </>
 
             <SuccessModal
               visible={showSuccessModal}
@@ -1296,15 +1244,274 @@ const PostJobScreen: React.FC = () => {
           CalendarModal is outside scope of this return. 
           PaymentWebView modal should be here? wait.
       */}
-      {showPaymentModal && (
-        <Modal visible={showPaymentModal} animationType="slide">
-          <PaymentWebView
-            url={paymentUrl}
-            onSuccess={handlePaymentSuccess}
-            onCancel={handlePaymentCancel}
-          />
-        </Modal>
-      )}
+      <PaymentWebView
+        visible={showPaymentModal}
+        paymentUrl={paymentUrl}
+        onSuccess={handlePaymentSuccess}
+        onCancel={handlePaymentCancel}
+      />
+
+      {/* Modern Payment Options Prompt Modal */}
+      <Modal
+        visible={showPaymentPromptModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <View style={{
+            backgroundColor: c.card,
+            borderRadius: 24,
+            width: '100%',
+            maxWidth: 400,
+            maxHeight: '90%',
+            overflow: 'hidden',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.25,
+            shadowRadius: 20,
+            elevation: 10,
+          }}>
+            <ScrollView 
+               contentContainerStyle={{ padding: 24, alignItems: 'center' }}
+               showsVerticalScrollIndicator={false}
+            >
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: c.primary + '10', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                <MaterialIcons name="payments" size={32} color={c.primary} />
+              </View>
+              
+              {/* Existing modal content here... */}
+              
+              {/* [Rest of the existing logic from the previous edit is preserved] */}
+              {/* I must re-insert the logic because I'm replacing a larger block */}
+              
+              {/* ... (re-applying the optimized content) ... */}
+            
+            <Text style={[styles.modalTitle, { color: c.text, textAlign: 'center', marginBottom: 8 }]}>Activate Your Job</Text>
+            <Text style={{ fontSize: 13, color: c.subtext, textAlign: 'center', lineHeight: 18, marginBottom: 20 }}>
+              {isTransferSelected ? "Transfer the exact fee amount to the account below." : "Post your job and start receiving proposals."}
+            </Text>
+
+            {/* Wallet Balance Status - Hide if transfer selected to save space */}
+            {walletBalance && !isTransferSelected && (
+              <View style={{ 
+                width: '100%', 
+                backgroundColor: c.isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB',
+                padding: 12,
+                borderRadius: 16,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+                borderWidth: 1,
+                borderColor: c.border
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Ionicons name="wallet-outline" size={18} color={c.subtext} />
+                  <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '600' }}>Wallet Balance</Text>
+                </View>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: walletBalance.availableBalance >= jobPostingFee ? '#10B981' : '#EF4444' }}>
+                  ₦{walletBalance.availableBalance.toLocaleString()}
+                </Text>
+              </View>
+            )}
+
+            <View style={{ width: '100%', marginBottom: isTransferSelected ? 20 : 32, gap: 8 }}>
+              {hiringType === 'freelance' && !isTransferSelected && (
+                <View style={{ 
+                  flexDirection: 'row', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  paddingHorizontal: 12,
+                  paddingVertical: 4
+                }}>
+                  <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>Project Budget (Escrow)</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text }}>₦{Number(budget || 0).toLocaleString()}</Text>
+                </View>
+              )}
+              
+              <View style={{ 
+                backgroundColor: c.primary + '10', 
+                padding: 14, 
+                borderRadius: 16, 
+                width: '100%', 
+                borderWidth: 1,
+                borderColor: c.primary + '20',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <View>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>Job Posting Fee</Text>
+                  {!isTransferSelected && <Text style={{ fontSize: 10, color: c.subtext, marginTop: 1 }}>Non-refundable platform fee</Text>}
+                </View>
+                <Text style={{ fontSize: 18, fontWeight: '900', color: c.primary }}>₦{jobPostingFee.toLocaleString()}</Text>
+              </View>
+            </View>
+
+            {isTransferSelected && virtualAccount ? (
+              <LinearGradient
+                colors={[c.primary, c.secondary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ 
+                  width: '100%', 
+                  borderRadius: 20, 
+                  padding: 20, 
+                  marginBottom: 20,
+                  ...c.shadows.medium
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                  <MaterialIcons name="account-balance" size={14} color="#FFF" />
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFF', letterSpacing: 1 }}>BANK TRANSFER</Text>
+                </View>
+
+                <View style={{ gap: 10 }}>
+                  <View>
+                    <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>BANK NAME</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFF' }}>{virtualAccount.bankName}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>ACCOUNT NUMBER</Text>
+                    <Text style={{ fontSize: 20, fontWeight: '900', color: '#FFF', letterSpacing: 1 }}>{virtualAccount.accountNumber}</Text>
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>ACCOUNT NAME</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFF' }}>{virtualAccount.accountName}</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            ) : null}
+
+            <View style={{ width: '100%', gap: 10 }}>
+              {!isTransferSelected ? (
+                <>
+                  {walletBalance && walletBalance.availableBalance >= jobPostingFee && (
+                    <TouchableOpacity
+                      style={{
+                        width: '100%',
+                        paddingVertical: 14,
+                        borderRadius: 14,
+                        backgroundColor: '#10B981',
+                        alignItems: 'center',
+                        shadowColor: '#10B981',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.2,
+                        shadowRadius: 6,
+                        elevation: 3,
+                      }}
+                      onPress={handleWalletPayment}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <MaterialIcons name="account-balance-wallet" size={18} color="#FFF" />
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>
+                          Pay with Wallet
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity
+                    style={{
+                      width: '100%',
+                      paddingVertical: 14,
+                      borderRadius: 14,
+                      backgroundColor: c.primary,
+                      alignItems: 'center',
+                    }}
+                    onPress={() => {
+                      setShowPaymentPromptModal(false);
+                      initiatePaymentForJob();
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>Pay with Card/USSD</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{
+                      width: '100%',
+                      paddingVertical: 14,
+                      borderRadius: 14,
+                      backgroundColor: c.primary + '08',
+                      borderWidth: 1,
+                      borderColor: c.primary + '20',
+                      alignItems: 'center',
+                    }}
+                    onPress={() => {
+                      setIsTransferSelected(true);
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: c.primary }}>Pay via Bank Transfer</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={{
+                      width: '100%',
+                      paddingVertical: 14,
+                      borderRadius: 14,
+                      backgroundColor: c.primary,
+                      alignItems: 'center',
+                    }}
+                    onPress={() => {
+                       setShowPaymentPromptModal(false);
+                       setShowSuccessModal(true);
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFF' }}>I have made the transfer</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={{
+                      width: '100%',
+                      paddingVertical: 12,
+                      alignItems: 'center',
+                    }}
+                    onPress={() => setIsTransferSelected(false)}
+                  >
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: c.subtext }}>Go Back</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* Duplicate buttons removed - they are handled in the conditional above */}
+              {!isTransferSelected && (
+                <TouchableOpacity
+                  style={{
+                    width: '100%',
+                    paddingVertical: 14,
+                    borderRadius: 14,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderColor: c.border,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    setShowPaymentPromptModal(false);
+                    setIsTransferSelected(false);
+                    submitJobWithStatus('pending');
+                  }}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>Skip for Now</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+
+      <StatePickerModal
+        visible={showStatePicker}
+        onClose={() => setShowStatePicker(false)}
+        selectedState={location}
+        onSelect={(state: string) => {
+          setLocation(state);
+          setShowStatePicker(false);
+          clearError('location');
+        }}
+      />
     </SafeAreaView>
   );
 };
@@ -1395,6 +1602,49 @@ const CalendarModal = ({ visible, onClose, onSelect, currentDate }: any) => {
   );
 };
 
+const StatePickerModal = ({ visible, onClose, onSelect, selectedState }: any) => {
+  const c = useThemeColors();
+  const { height } = Dimensions.get('window');
+  
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={[styles.calendarContainer, { backgroundColor: c.card, maxHeight: height * 0.8, width: Platform.OS === 'web' ? 400 : '90%' }]}>
+          <View style={styles.calendarHeader}>
+            <Text style={[styles.calendarMonthYear, { color: c.text }]}>Select Nigeria State</Text>
+            <TouchableOpacity onPress={onClose}>
+              <MaterialIcons name="close" size={24} color={c.text} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {NIGERIA_STATES.map(state => (
+              <TouchableOpacity
+                key={state}
+                onPress={() => onSelect(state)}
+                style={{
+                  paddingVertical: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: c.border,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <Text style={{ color: c.text, fontSize: 16, fontWeight: selectedState === state ? '800' : '500' }}>
+                  {state}
+                </Text>
+                {selectedState === state && (
+                  <MaterialIcons name="check-circle" size={20} color={c.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -1448,40 +1698,40 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   stepMainTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '900',
-    letterSpacing: -1,
-    marginBottom: 8,
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   stepSubTitle: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
     opacity: 0.8,
   },
-  inputGroup: { marginBottom: 24 },
-  label: { fontSize: 14, fontWeight: '700', marginBottom: 10, opacity: 0.7 },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 12, fontWeight: '700', marginBottom: 6, opacity: 0.7 },
   giantInput: {
-    fontSize: 20,
-    fontWeight: '700',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 18,
-    borderWidth: 2,
+    fontSize: 14,
+    fontWeight: '600',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   giantTextarea: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '500',
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 2,
-    minHeight: 180,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    minHeight: 100,
   },
   input: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   inputWithPrefix: {
@@ -1522,31 +1772,31 @@ const styles = StyleSheet.create({
   },
   categoryCard: {
     width: (width - 44) / 2,
-    padding: 20,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 8,
     position: 'relative',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
     overflow: 'hidden',
   },
   catIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   catTextWrapper: {
-    height: 36,
+    height: 28,
     justifyContent: 'center',
   },
   catCardText: {
-    fontSize: 13,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 14,
   },
   selectionIndicator: {
     position: 'absolute',
@@ -1805,19 +2055,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   refinedLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginBottom: 12,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 8,
     opacity: 0.6,
     textTransform: 'uppercase',
   },
   refinedInput: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   compactToggleRow: {

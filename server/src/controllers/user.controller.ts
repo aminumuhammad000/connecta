@@ -7,7 +7,6 @@ import OTP from "../models/otp.model.js";
 import { sendOTPEmail, sendWelcomeEmail } from "../services/email.service.js";
 import notificationService from "../services/notification.service.js";
 import mongoose from "mongoose";
-import SparkTransaction from "../models/SparkTransaction.model.js";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 
@@ -188,64 +187,28 @@ export const initiateSignup = async (req: Request, res: Response) => {
 export const signup = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, email, password, userType, otp, ...otherDetails } = req.body;
+    console.log(`📩 [Auth] Signup attempt for: ${email} | OTP Received: ${otp}`);
 
-    console.log('Signup completion attempt:', { firstName, lastName, email, userType });
+    if (!email || !otp || !password) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
-
-    // Verify OTP first
-    const otpRecord = await OTP.findOne({ email, otp, verified: false });
+    // Verify OTP
+    const otpRecord = await OTP.findOne({ email, otp });
 
     if (!otpRecord) return res.status(400).json({ message: "Invalid verification code" });
+
     if (new Date() > otpRecord.expiresAt) {
       await OTP.deleteOne({ _id: otpRecord._id });
       return res.status(400).json({ message: "Verification code expired" });
     }
 
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: "User already exists" });
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate unique referral code
-    const generateReferralCode = () => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = '';
-      for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    };
-
-    let referralCode = generateReferralCode();
-    // Ensure uniqueness (simple check, could be better)
-    let isUnique = false;
-    while (!isUnique) {
-      const existing = await User.findOne({ referralCode });
-      if (!existing) isUnique = true;
-      else referralCode = generateReferralCode();
-    }
-
-    const { referrerCode } = req.body;
-    let referredBy = undefined;
-    if (referrerCode) {
-      const referrer = await User.findOne({ referralCode: referrerCode.toUpperCase() });
-      if (referrer) {
-        referredBy = referrer._id;
-
-        // Award sparks to referrer
-        const referralBonus = 50;
-        referrer.sparks = (referrer.sparks || 0) + referralBonus;
-        await referrer.save();
-
-        // Record transaction for referrer
-        await SparkTransaction.create({
-          userId: referrer._id,
-          type: 'referral',
-          amount: referralBonus,
-          balanceAfter: referrer.sparks,
-          description: `Referral bonus for inviting ${firstName}`
-        });
-      }
-    }
 
     const newUser = await User.create({
       firstName,
@@ -255,28 +218,18 @@ export const signup = async (req: Request, res: Response) => {
       userType,
       isVerified: true,
       profileImage: otherDetails.avatar || otherDetails.profileImage || `https://i.pravatar.cc/300?u=${email}`,
-      referralCode,
-      referredBy,
-      sparks: 50, // Signup bonus
       ...otherDetails
-    });
-
-    // Record transaction for signup bonus
-    await SparkTransaction.create({
-      userId: newUser._id,
-      type: 'bonus',
-      amount: 50,
-      balanceAfter: 50,
-      description: 'Welcome bonus for joining Connecta! 🎉'
     });
 
     const token = jwt.sign({ id: newUser._id, userType: newUser.userType }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
 
     // Clean up OTP
-    await OTP.deleteOne({ _id: otpRecord._id });
+    if (otpRecord && (otpRecord as any)._id) {
+      await OTP.deleteOne({ _id: (otpRecord as any)._id });
+    }
 
     // Send Welcome Email
-    sendWelcomeEmail(newUser.email, newUser.firstName, newUser.preferredLanguage as 'en' | 'ha' || 'en').catch(console.error);
+    sendWelcomeEmail(newUser.email, newUser.firstName, (newUser as any).preferredLanguage as 'en' | 'ha' || 'en').catch(console.error);
 
     console.log('✅ Signup successful. Returning data for:', newUser.email);
     res.status(201).json({ user: newUser, token, success: true });
@@ -374,48 +327,6 @@ export const googleSignup = async (req: Request, res: Response) => {
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: "User already exists" });
 
-    // Generate unique referral code
-    const generateReferralCode = () => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = '';
-      for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    };
-
-    let referralCode = generateReferralCode();
-    // Ensure uniqueness
-    let isUnique = false;
-    while (!isUnique) {
-      const existing = await User.findOne({ referralCode });
-      if (!existing) isUnique = true;
-      else referralCode = generateReferralCode();
-    }
-
-    const { referrerCode } = req.body;
-    let referredBy = undefined;
-    if (referrerCode) {
-      const referrer = await User.findOne({ referralCode: referrerCode.toUpperCase() });
-      if (referrer) {
-        referredBy = referrer._id;
-
-        // Award sparks to referrer
-        const referralBonus = 50;
-        referrer.sparks = (referrer.sparks || 0) + referralBonus;
-        await referrer.save();
-
-        // Record transaction for referrer
-        await SparkTransaction.create({
-          userId: referrer._id,
-          type: 'referral',
-          amount: referralBonus,
-          balanceAfter: referrer.sparks,
-          description: `Referral bonus for inviting ${given_name}`
-        });
-      }
-    }
-
     user = await User.create({
       firstName: given_name,
       lastName: family_name,
@@ -423,18 +334,6 @@ export const googleSignup = async (req: Request, res: Response) => {
       userType,
       password: "", // no password needed for Google accounts
       profileImage: `https://i.pravatar.cc/300?u=${email}`,
-      referralCode,
-      referredBy,
-      sparks: 50 // Signup bonus
-    });
-
-    // Record transaction for signup bonus
-    await SparkTransaction.create({
-      userId: user._id,
-      type: 'bonus',
-      amount: 50,
-      balanceAfter: 50,
-      description: 'Welcome bonus for joining Connecta! 🎉'
     });
 
     const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
@@ -501,6 +400,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
     const { otp } = req.body;
+    console.log(`📩 [Auth] Email verification attempt for user: ${userId} | OTP Received: ${otp}`);
 
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
     if (!otp) return res.status(400).json({ message: "OTP is required" });
@@ -526,7 +426,9 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await user.save();
 
     // Clean up OTP
-    await OTP.deleteOne({ _id: otpRecord._id });
+    if (otpRecord && (otpRecord as any)._id && (otpRecord as any)._id !== 'dev') {
+      await OTP.deleteOne({ _id: (otpRecord as any)._id });
+    }
 
     // Send Welcome Email
     sendWelcomeEmail(user.email, user.firstName, user.preferredLanguage as 'en' | 'ha' || 'en').catch(console.error);
@@ -606,6 +508,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const verifyOTP = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
+    console.log(`📩 [Auth] Forgot password OTP verification for: ${email} | OTP Received: ${otp}`);
 
     if (!email || !otp) {
       return res.status(400).json({
@@ -625,10 +528,9 @@ export const verifyOTP = async (req: Request, res: Response) => {
 
     // Find OTP
     const otpRecord = await OTP.findOne({
-      userId: user._id,
+      $or: [{ userId: user._id }, { email: user.email }],
       otp,
-      verified: false,
-    });
+    }).sort({ createdAt: -1 });
 
     if (!otpRecord) {
       return res.status(400).json({
@@ -927,544 +829,41 @@ export const updatePushToken = async (req: Request, res: Response) => {
   }
 };
 
-// ===================
-// Claim Daily Reward
-// ===================
-export const claimDailyReward = async (req: Request, res: Response) => {
+/**
+ * @desc Update current user info
+ * @route PUT /api/users/me
+ */
+export const updateMe = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id || (req as any).user?._id;
-    if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-    // Check if claimed in last 24 hours
-    const now = new Date();
-    if (user.lastRewardClaimedAt) {
-      const hoursSinceLastClaim = (now.getTime() - new Date(user.lastRewardClaimedAt).getTime()) / (1000 * 60 * 60);
-      if (hoursSinceLastClaim < 24) {
-        return res.status(400).json({
-          success: false,
-          message: "Reward already claimed today. Come back later!",
-          nextClaimHours: Math.ceil(24 - hoursSinceLastClaim)
-        });
-      }
-    }
-
-    // Give sparks (e.g., 10 sparks)
-    const rewardAmount = 10;
-    user.sparks = (user.sparks || 0) + rewardAmount;
-    user.lastRewardClaimedAt = now;
-    await user.save();
-
-    console.log(`[ClaimReward] User ${user._id} claimed reward. New sparks: ${user.sparks}, LastClaim: ${user.lastRewardClaimedAt}`);
-
-    // Record Spark Transaction
-    await SparkTransaction.create({
-      userId: user._id,
-      type: 'daily_reward',
-      amount: rewardAmount,
-      balanceAfter: user.sparks,
-      description: 'Daily login reward'
-    });
-
-    res.status(200).json({
-      success: true,
-      message: `Daily reward claimed! You received ${rewardAmount} sparks.`,
-      user: user, // Return full updated user object
-      sparks: user.sparks,
-      rewardAmount
-    });
-  } catch (err) {
-    console.error('Claim daily reward error:', err);
-    res.status(500).json({ success: false, message: "Server error", error: err });
-  }
-};
-
-// ===================
-// Get Spark History
-// ===================
-export const getSparkHistory = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
-    const { limit = 20, page = 1 } = req.query;
-
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-
-    const history = await SparkTransaction.find({ userId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit as string));
-
-    const total = await SparkTransaction.countDocuments({ userId });
-
-    res.status(200).json({
-      success: true,
-      data: history,
-      pagination: {
-        total,
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
-        pages: Math.ceil(total / parseInt(limit as string)),
-      }
-    });
-
-  } catch (err) {
-    console.error('Spark history error:', err);
-    res.status(500).json({ success: false, message: "Server error", error: err });
-  }
-};
-
-// ===================
-// Get Spark Stats
-// ===================
-export const getSparkStats = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
+    const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Calculate some stats
-    const totalEarnedResult = await SparkTransaction.aggregate([
-      { $match: { userId: user._id, amount: { $gt: 0 } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (email) user.email = email;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (profileImage) user.profileImage = profileImage;
+    if (pushToken) user.pushToken = pushToken;
+    if (whatsapp) (user as any).whatsapp = whatsapp;
 
-    const totalSpentResult = await SparkTransaction.aggregate([
-      { $match: { userId: user._id, amount: { $lt: 0 } } },
-      { $group: { _id: null, total: { $sum: "$amount" } } }
-    ]);
-
-    // Calculate current streak
-    const dailyRewards = await SparkTransaction.find({
-      userId: user._id,
-      type: 'daily_reward'
-    }).sort({ createdAt: -1 }).limit(30);
-
-    let streak = 0;
-    if (dailyRewards.length > 0) {
-      let currentDay = new Date();
-      currentDay.setHours(0, 0, 0, 0);
-
-      for (let i = 0; i < dailyRewards.length; i++) {
-        const rewardDay = new Date(dailyRewards[i].createdAt);
-        rewardDay.setHours(0, 0, 0, 0);
-
-        const diffDays = Math.floor((currentDay.getTime() - rewardDay.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 0 || diffDays === 1) {
-          streak++;
-          currentDay = rewardDay;
-        } else {
-          break;
-        }
-      }
-    }
+    await user.save();
 
     res.status(200).json({
       success: true,
-      data: {
-        currentBalance: user.sparks || 0,
-        totalEarned: totalEarnedResult[0]?.total || 0,
-        totalSpent: Math.abs(totalSpentResult[0]?.total || 0),
-        streakDays: streak,
-        nextDailyReward: user.lastRewardClaimedAt
-          ? new Date(new Date(user.lastRewardClaimedAt).getTime() + 24 * 60 * 60 * 1000)
-          : new Date()
-      }
-    });
-
-  } catch (err) {
-    console.error('Spark stats error:', err);
-    res.status(500).json({ success: false, message: "Server error", error: err });
-  }
-};
-
-// ===================
-// Update User Profile
-// ===================
-export const updateMe = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id;
-
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized"
-      });
-    }
-
-    const { firstName, lastName, profileImage, email } = req.body;
-
-    console.log('UpdateMe request body:', { firstName, lastName, profileImage, email });
-
-    // Prepare update data
-    const updateData: any = {};
-    if (firstName) updateData.firstName = firstName;
-    if (lastName) updateData.lastName = lastName;
-    if (profileImage !== undefined) updateData.profileImage = profileImage;
-    if (email) updateData.email = email;
-    if (req.body.emailFrequency) updateData.emailFrequency = req.body.emailFrequency;
-
-    console.log('UpdateMe updateData:', updateData);
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    console.log('UpdateMe result - user email:', user?.email);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "User updated successfully",
       data: user
     });
   } catch (err) {
     console.error('Update current user error:', err);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err
-    });
-  }
-};
-
-// ===================
-// Delete User
-// ===================
-export const deleteUser = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findByIdAndDelete(id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "User deleted successfully"
-    });
-  } catch (err) {
-    console.error('Delete user error:', err);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err
-    });
-  }
-};
-
-// ===================
-// Switch User Type (Client <-> Freelancer)
-// ===================
-export const switchUserType = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
-
-    if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    // Check if user is premium
-    // Assume we have a method or property to check premium subscription
-    // If not, we should probably implement one or check subscription status
-    const Subscription = require('../models/Subscription.model').default;
-    const activeSubscription = await Subscription.findOne({
-      userId: user._id,
-      status: 'active',
-      plan: { $ne: 'free' },
-      endDate: { $gt: new Date() }
-    });
-
-    if (!activeSubscription) {
-      return res.status(403).json({
-        success: false,
-        message: "Premium subscription is required to switch user types."
-      });
-    }
-
-    // Toggle user type
-    user.userType = user.userType === 'freelancer' ? 'client' : 'freelancer';
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Switched to ${user.userType} successfully`,
-      data: { userType: user.userType }
-    });
-
-  } catch (err) {
-    console.error('Switch user type error:', err);
     res.status(500).json({ success: false, message: "Server error", error: err });
   }
 };
 
-
-// ===================
-// Update Preferred Language
-// ===================
-export const updatePreferredLanguage = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
-    const { preferredLanguage } = req.body;
-
-    if (!preferredLanguage || !["en", "ha"].includes(preferredLanguage)) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid preferred language (en or ha) is required"
-      });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { preferredLanguage },
-      { new: true }
-    ).select("-password");
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: user
-    });
-  } catch (err) {
-    console.error("Update preferred language error:", err);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err
-    });
-  }
-};
-
-// ===================
-// Validate Recipient (Search by Email)
-// ===================
-export const validateRecipient = async (req: Request, res: Response) => {
-  try {
-    const { email, userId } = req.body;
-    const currentUserId = (req as any).user?.id || (req as any).user?._id;
-
-    if (!email && !userId) {
-      return res.status(400).json({ success: false, message: "Email or User ID is required" });
-    }
-
-    let query = {};
-    if (email) {
-      query = { email: email.toLowerCase() };
-    } else if (userId) {
-      if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ success: false, message: "Invalid User ID format" });
-      }
-      query = { _id: userId };
-    }
-
-    const recipient = await User.findOne(query).select('firstName lastName email profileImage');
-
-    if (!recipient) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
-    if (recipient._id.toString() === currentUserId.toString()) {
-      return res.status(400).json({ success: false, message: "You cannot send Sparks to yourself" });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: {
-        id: recipient._id,
-        name: `${recipient.firstName} ${recipient.lastName}`,
-        email: recipient.email,
-        profileImage: recipient.profileImage
-      }
-    });
-  } catch (err) {
-    console.error('Validate recipient error:', err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// ===================
-// Set Transaction PIN
-// ===================
-export const setTransactionPin = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
-    const { pin } = req.body;
-
-    if (!pin || pin.length !== 4 || isNaN(parseInt(pin))) {
-      return res.status(400).json({ success: false, message: "Invalid 4-digit PIN" });
-    }
-
-    const hashedPin = await bcrypt.hash(pin, 10);
-    await User.findByIdAndUpdate(userId, { transactionPin: hashedPin });
-
-    res.status(200).json({ success: true, message: "Transaction PIN set successfully" });
-  } catch (err) {
-    console.error('Set transaction PIN error:', err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// ===================
-// Check if User has PIN
-// ===================
-export const checkHasPin = async (req: Request, res: Response) => {
-  try {
-    const userId = (req as any).user?.id || (req as any).user?._id;
-    const user = await User.findById(userId).select('+transactionPin');
-
-    res.status(200).json({
-      success: true,
-      hasPin: !!user?.transactionPin
-    });
-  } catch (err) {
-    console.error('Check has PIN error:', err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// ===================
-// Transfer Sparks
-// ===================
-export const transferSparks = async (req: Request, res: Response) => {
-  try {
-    const senderId = (req as any).user?.id || (req as any).user?._id;
-    const { recipientEmail, amount, pin } = req.body;
-
-    if (!recipientEmail || !amount || !pin) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
-    }
-
-    const sparkAmount = parseInt(amount);
-    if (isNaN(sparkAmount) || sparkAmount <= 0) {
-      return res.status(400).json({ success: false, message: "Invalid amount" });
-    }
-
-    // 1. Verify Sender and PIN
-    const sender = await User.findById(senderId).select('+transactionPin');
-    if (!sender) throw new Error("Sender not found");
-
-    if (!sender.transactionPin) {
-      return res.status(400).json({ success: false, message: "Transaction PIN not set" });
-    }
-
-    const isPinValid = await bcrypt.compare(pin, sender.transactionPin);
-    if (!isPinValid) {
-      return res.status(401).json({ success: false, message: "Invalid transaction PIN" });
-    }
-
-    // 2. Check Balance
-    if (sender.sparks < sparkAmount) {
-      return res.status(400).json({ success: false, message: "Insufficient Spark balance" });
-    }
-
-    // 3. Verify Recipient
-    const recipient = await User.findOne({ email: recipientEmail.toLowerCase() });
-    if (!recipient) {
-      return res.status(404).json({ success: false, message: "Recipient not found" });
-    }
-
-    if (recipient._id.toString() === senderId.toString()) {
-      return res.status(400).json({ success: false, message: "Cannot transfer to yourself" });
-    }
-
-    // Store original balances for potential rollback
-    const originalSenderSparks = sender.sparks;
-    const originalRecipientSparks = recipient.sparks;
-
-    // 4. Perform Transfer (sequential saves with manual rollback)
-    try {
-      sender.sparks -= sparkAmount;
-      await sender.save();
-
-      recipient.sparks += sparkAmount;
-      await recipient.save();
-
-      // 5. Record Transactions
-      await SparkTransaction.create({
-        userId: sender._id,
-        type: 'transfer_send',
-        amount: -sparkAmount,
-        balanceAfter: sender.sparks,
-        description: `Sent Sparks to ${recipient.firstName} ${recipient.lastName}`,
-        metadata: { recipientId: recipient._id, recipientEmail: recipient.email }
-      });
-
-      await SparkTransaction.create({
-        userId: recipient._id,
-        type: 'transfer_receive',
-        amount: sparkAmount,
-        balanceAfter: recipient.sparks,
-        description: `Received Sparks from ${sender.firstName} ${sender.lastName}`,
-        metadata: { senderId: sender._id, senderEmail: sender.email }
-      });
-
-      // 6. Notifications
-      try {
-        notificationService.sendPushNotification(
-          recipient._id.toString(),
-          "Sparks Received! ✨",
-          `You received ${sparkAmount} Sparks from ${sender.firstName}.`,
-          { type: 'spark_transfer', senderId: sender._id.toString() }
-        );
-      } catch (notificationError) {
-        console.warn("Failed to send transfer notification", notificationError);
-      }
-
-      res.status(200).json({
-        success: true,
-        message: "Transfer successful",
-        newBalance: sender.sparks
-      });
-
-    } catch (innerErr: any) {
-      // Manual Rollback: If any save or transaction creation fails, revert balances
-      console.error('Transfer Sparks inner error, attempting rollback:', innerErr);
-      sender.sparks = originalSenderSparks;
-      recipient.sparks = originalRecipientSparks;
-      await sender.save().catch(e => console.error("Failed to rollback sender sparks:", e));
-      await recipient.save().catch(e => console.error("Failed to rollback recipient sparks:", e));
-      throw innerErr; // Re-throw to be caught by outer catch block
-    }
-
-  } catch (err: any) {
-    console.error('Transfer Sparks error:', err);
-    res.status(500).json({ success: false, message: err.message || "Transfer failed" });
-  }
-};

@@ -65,7 +65,7 @@ const ChatGreeting: React.FC<ChatGreetingProps> = ({ messages, onComplete }) => 
 
             <View style={styles.bubblesList}>
                 {messages.map((msg, index) => (
-                    index < visibleMessages && (
+                    index < visibleMessages ? (
                         <NativeAnimated.View
                             key={index}
                             style={[
@@ -92,7 +92,7 @@ const ChatGreeting: React.FC<ChatGreetingProps> = ({ messages, onComplete }) => 
                                 showCursor={index === visibleMessages - 1}
                             />
                         </NativeAnimated.View>
-                    )
+                    ) : null
                 ))}
             </View>
         </View>

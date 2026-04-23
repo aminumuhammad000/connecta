@@ -7,10 +7,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Input from '../components/Input';
 import Button from '../components/Button';
-import CustomAlert, { AlertType } from '../components/CustomAlert';
+import { useInAppAlert } from '../components/InAppAlert';
 
 export default function SecurityScreen({ navigation }: any) {
     const c = useThemeColors();
+    const { showAlert } = useInAppAlert();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,13 +24,7 @@ export default function SecurityScreen({ navigation }: any) {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(20)).current;
 
-    // Alert State
-    const [alertVisible, setAlertVisible] = useState(false);
-    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType }>({
-        title: '',
-        message: '',
-        type: 'success'
-    });
+    // Alert logic handled by useInAppAlert
 
     useEffect(() => {
         Animated.parallel([
@@ -46,9 +41,8 @@ export default function SecurityScreen({ navigation }: any) {
         ]).start();
     }, []);
 
-    const showCustomAlert = (title: string, message: string, type: AlertType = 'success') => {
-        setAlertConfig({ title, message, type });
-        setAlertVisible(true);
+    const showCustomAlert = (title: string, message: string, type: any = 'success') => {
+        showAlert({ title, message, type });
         if (type === 'success') {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else if (type === 'error') {
@@ -203,13 +197,7 @@ export default function SecurityScreen({ navigation }: any) {
                 </View>
             </Animated.ScrollView>
 
-            <CustomAlert
-                visible={alertVisible}
-                title={alertConfig.title}
-                message={alertConfig.message}
-                type={alertConfig.type}
-                onClose={() => setAlertVisible(false)}
-            />
+
         </SafeAreaView>
     );
 }

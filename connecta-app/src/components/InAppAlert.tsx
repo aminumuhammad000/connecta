@@ -76,7 +76,7 @@ export function InAppAlertProvider({ children }: { children: React.ReactNode }) 
   return (
     <InAppAlertContext.Provider value={{ showAlert }}>
       {children}
-      {visible && payload && (
+      {!!(visible && payload) && (
         <Animated.View
           pointerEvents="box-none"
           style={[

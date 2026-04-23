@@ -8,19 +8,16 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Haptics from 'expo-haptics';
-import { useTranslation } from '../utils/i18n';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
 import SignupProgressBar from '../components/SignupProgressBar';
 import * as storage from '../utils/storage';
 import ChatGreeting from '../components/ChatGreeting';
 import AnimatedBackground from '../components/AnimatedBackground';
+import * as authService from '../services/authService';
 
 const SignupPasswordScreen: React.FC = () => {
     const c = useThemeColors();
     const navigation = useNavigation();
     const { showAlert } = useInAppAlert();
-    const { t, lang } = useTranslation();
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -63,68 +60,59 @@ const SignupPasswordScreen: React.FC = () => {
         setIsLoading(true);
         try {
             await storage.savePendingSignupData({
-                password
+                password,
+                country: 'Nigeria',
+                location: 'Nigeria',
             });
 
-            (navigation as any).navigate('LocationOnboarding');
+            const freshData = await storage.getPendingSignupData();
+
+            await authService.initiateSignup(
+                freshData.email,
+                freshData.firstName,
+                'en'
+            );
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+            (navigation as any).navigate('OTPVerification', {
+                email: freshData.email,
+                mode: 'signup',
+                role: freshData.userType
+            });
         } catch (error: any) {
-            showAlert({ title: t('error' as any), message: error.message || 'Saving failed', type: 'error' });
+            showAlert({ title: 'Error', message: error.message || 'Saving failed', type: 'error' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const sideContent = (
-        <View style={styles.desktopSide}>
-            <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
-                <Ionicons name="lock-closed-outline" size={70} color={c.primary} />
-            </View>
-            <Text style={[styles.sideTitle, { color: c.text }]}>Keep It{'\n'}Safe</Text>
-            <Text style={[styles.sideSub, { color: c.subtext }]}>
-                A strong password keeps your hard-earned money and private data secure.
-            </Text>
-        </View>
-    );
-
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
             <AnimatedBackground />
-            <ResponsiveOnboardingWrapper sideComponent={sideContent}>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                    <View style={styles.mainWrapper}>
-                        <ScrollView
-                            contentContainerStyle={styles.scroll}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
-                        >
-                            <View style={styles.headerRow}>
-                                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                                    <Ionicons name="chevron-back" size={24} color={c.text} />
-                                </TouchableOpacity>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <View style={styles.mainWrapper}>
+                    <View style={styles.stickyHeader}>
+                        <View style={styles.headerRow}>
+                            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                                <Ionicons name="chevron-back" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
+                        <SignupProgressBar currentStep={4} totalSteps={5} />
+                    </View>
 
-                                <TouchableOpacity
-                                    onPress={() => (navigation as any).navigate('LanguageSelect')}
-                                    style={[styles.langToggle, { backgroundColor: c.card, borderColor: c.border }]}
-                                >
-                                    <MaterialIcons name="language" size={18} color={c.primary} />
-                                    <Text style={[styles.langToggleText, { color: c.text }]}>
-                                        {lang === 'ha' ? 'Hausa' : 'English'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <SignupProgressBar currentStep={4} totalSteps={6} />
-
+                    <ScrollView
+                        contentContainerStyle={styles.scroll}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.contentContainer}>
                             <View style={styles.chatSection}>
                                 <ChatGreeting
                                     messages={[
-                                        {
-                                            text: firstName
-                                                ? (t('password_chat_title_personalized' as any) || '').replace('{{name}}', firstName)
-                                                : t('password_chat_title' as any)
-                                        },
-                                        { text: t('password_chat_sub' as any), delay: 1000 }
+                                        { text: firstName ? `Keep it safe, ${firstName}!` : 'Keep it safe!' },
+                                        { text: "Choose a password you won't forget.", delay: 1000 }
                                     ]}
                                 />
                             </View>
@@ -134,7 +122,7 @@ const SignupPasswordScreen: React.FC = () => {
                                     <Input
                                         value={password}
                                         onChangeText={(val) => { setPassword(val); setPasswordError(''); }}
-                                        placeholder={t('password')}
+                                        placeholder="Password"
                                         icon="lock-outline"
                                         secureTextEntry={!showPassword}
                                         error={passwordError}
@@ -155,12 +143,14 @@ const SignupPasswordScreen: React.FC = () => {
                             </View>
 
                             <View style={styles.footer}>
-                                <Button title={t('continue')} onPress={handleContinue} loading={isLoading} size="large" />
+                                <View style={styles.buttonWrapper}>
+                                    <Button title="Continue" onPress={handleContinue} loading={isLoading} size="large" />
+                                </View>
                             </View>
-                        </ScrollView>
-                    </View>
-                </KeyboardAvoidingView>
-            </ResponsiveOnboardingWrapper>
+                        </View>
+                    </ScrollView>
+                </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -173,12 +163,25 @@ const styles = StyleSheet.create({
         maxWidth: 500,
         alignSelf: 'center',
     },
-    scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40, paddingTop: 16 },
+    scroll: {
+        flexGrow: 1,
+        paddingHorizontal: 24,
+        paddingBottom: 40,
+        paddingTop: 20,
+        gap: 30,
+    },
+    stickyHeader: {
+        paddingTop: Platform.OS === 'ios' ? 10 : 20,
+        paddingHorizontal: 24,
+        paddingBottom: 10,
+        backgroundColor: 'rgba(255,255,255,0.01)',
+        zIndex: 10,
+    },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 8,
         width: '100%',
     },
     backButton: {
@@ -196,20 +199,15 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 2,
     },
-    langToggle: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, gap: 6 },
-    langToggleText: { fontSize: 13, fontWeight: '700' },
+    contentContainer: { gap: 40 },
     chatSection: {
-        marginBottom: 32,
+        marginBottom: 0,
     },
-    form: { gap: 20, marginBottom: 32 },
+    form: { gap: 24 },
     passContainer: { position: 'relative' },
     eye: { position: 'absolute', right: 16, top: 18 },
-    footer: { marginTop: 'auto' },
-    // Desktop
-    desktopSide: { padding: 40, alignItems: 'center', justifyContent: 'center' },
-    bigIconBox: { width: 120, height: 120, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-    sideTitle: { fontSize: 44, fontWeight: '900', textAlign: 'center', letterSpacing: -1.5, marginBottom: 16, lineHeight: 52 },
-    sideSub: { fontSize: 18, textAlign: 'center', opacity: 0.7, maxWidth: 360, lineHeight: 28 },
+    footer: { marginTop: 20, alignItems: 'flex-end' },
+    buttonWrapper: { width: '60%' },
 });
 
 export default SignupPasswordScreen;

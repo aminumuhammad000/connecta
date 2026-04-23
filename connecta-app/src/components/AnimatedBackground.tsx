@@ -68,7 +68,7 @@ const AnimatedBackground: React.FC = () => {
     };
 
     return (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
             <Animated.View
                 style={[
                     styles.blob,

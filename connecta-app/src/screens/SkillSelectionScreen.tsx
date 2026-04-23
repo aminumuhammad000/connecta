@@ -8,7 +8,6 @@ import * as profileService from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { saveToken } from '../utils/storage';
 import { Profile } from '../types';
-import { useTranslation } from '../utils/i18n';
 import ChatGreeting from '../components/ChatGreeting';
 
 const { width } = Dimensions.get('window');
@@ -16,7 +15,7 @@ const { width } = Dimensions.get('window');
 
 // --- Types ---
 interface OnboardingData {
-    entityType: 'individual' | 'team' | null;
+    entityType: 'individual' | null;
     remoteWorkType: 'remote_only' | 'hybrid' | 'onsite' | null;
     workLocation: string;
     category: string;
@@ -38,7 +37,7 @@ interface StepProps {
 }
 
 // --- Data Constants ---
-const JOB_DATA: Record<string, string[]> = {
+export const JOB_DATA: Record<string, string[]> = {
     'IT & Tech': [
         'Web Developer', 'Mobile App Developer', 'DevOps Engineer', 'Data Scientist', 'UX/UI Designer',
         'QA Engineer', 'Blockchain Developer', 'System Administrator', 'Cybersecurity Analyst', 'Cloud Architect',
@@ -121,75 +120,16 @@ const MOCK_LOCATIONS = [
 
 // --- Wizard Steps ---
 
-// 0. Entity Selection (Individual vs Team)
-const EntitySelectionStep: React.FC<StepProps> = ({ data, updateData, userType }) => {
-    const c = useThemeColors();
-    const { t } = useTranslation();
 
-    const isClient = userType === 'client';
-
-    const options = [
-        {
-            id: 'individual',
-            label: t('individual' as any),
-            icon: 'person',
-            desc: isClient ? t('individual_desc_client' as any) : t('individual_desc_freelancer' as any)
-        },
-        {
-            id: 'team',
-            label: t('team' as any),
-            icon: 'groups',
-            desc: isClient ? t('team_desc_client' as any) : t('team_desc_freelancer' as any)
-        },
-    ];
-
-    return (
-        <View style={styles.stepContainer}>
-            <View style={{ marginBottom: 24 }}>
-                <ChatGreeting
-                    messages={[
-                        { text: t('entity_title' as any) },
-                        { text: t('entity_sub' as any), delay: 800 }
-                    ]}
-                />
-            </View>
-            <View style={styles.optionsContainer}>
-                {options.map((opt) => (
-                    <TouchableOpacity
-                        key={opt.id}
-                        style={[
-                            styles.optionCard,
-                            {
-                                backgroundColor: data.entityType === opt.id ? c.primary + '15' : c.card,
-                                borderColor: data.entityType === opt.id ? c.primary : c.border
-                            }
-                        ]}
-                        onPress={() => updateData('entityType', opt.id)}
-                    >
-                        <View style={[styles.iconBox, { backgroundColor: data.entityType === opt.id ? c.primary : c.border + '40' }]}>
-                            <MaterialIcons name={opt.icon as any} size={24} color={data.entityType === opt.id ? '#fff' : c.subtext} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.optionLabel, { color: c.text }]}>{opt.label}</Text>
-                            <Text style={[styles.optionDesc, { color: c.subtext }]}>{opt.desc}</Text>
-                        </View>
-                        {data.entityType === opt.id && <MaterialIcons name="check-circle" size={24} color={c.primary} />}
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </View>
-    );
-};
 
 // 1. Remote Work Type
 const RemoteWorkStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
-    const { t } = useTranslation();
 
     const options = [
-        { id: 'remote_only', label: t('remote_only' as any), icon: 'laptop-mac', desc: t('remote_desc' as any) },
-        { id: 'hybrid', label: t('hybrid' as any), icon: 'sync-alt', desc: t('hybrid_desc' as any) },
-        { id: 'onsite', label: t('onsite' as any), icon: 'location-city', desc: t('onsite_desc' as any) },
+        { id: 'remote_only', label: 'Remote Only', icon: 'laptop-mac', desc: 'Work from anywhere' },
+        { id: 'hybrid', label: 'Hybrid', icon: 'sync-alt', desc: 'Mix of remote and onsite' },
+        { id: 'onsite', label: 'Onsite', icon: 'location-city', desc: 'Work at a physical location' },
     ];
 
     return (
@@ -197,8 +137,8 @@ const RemoteWorkStep: React.FC<StepProps> = ({ data, updateData }) => {
             <View style={{ marginBottom: 24 }}>
                 <ChatGreeting
                     messages={[
-                        { text: t('work_type_title' as any) },
-                        { text: t('work_type_sub' as any), delay: 800 }
+                        { text: 'Where do you prefer to work?' },
+                        { text: 'This helps us match you with the right opportunities.', delay: 800 }
                     ]}
                 />
             </View>
@@ -310,14 +250,13 @@ const LocationStep: React.FC<StepProps> = ({ data, updateData }) => {
 // 3. Category Selection
 const CategoryStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
-    const { t } = useTranslation();
 
     return (
         <View style={styles.stepContainer}>
             <View style={{ marginBottom: 24 }}>
                 <ChatGreeting
                     messages={[
-                        { text: t('industry_title' as any) },
+                        { text: 'What industry are you in?' },
                     ]}
                 />
             </View>
@@ -386,11 +325,8 @@ const JobTitlesStep: React.FC<StepProps> = ({ data, updateData }) => {
         }
     };
 
-    const { t, lang } = useTranslation();
 
-    const titleText = lang === 'en'
-        ? `${t('roles_title' as any)} in ${data.category}`
-        : t('roles_title' as any); // Hausa translation is generic "Choose specific jobs you do" which fits nicely without category name needed immediately or appended awkwardly
+    const titleText = `${'Your roles'} in ${data.category}`;
 
     return (
         <View style={styles.stepContainer}>
@@ -398,7 +334,7 @@ const JobTitlesStep: React.FC<StepProps> = ({ data, updateData }) => {
                 <ChatGreeting
                     messages={[
                         { text: titleText },
-                        { text: t('roles_sub' as any), delay: 800 }
+                        { text: 'Pick the roles that best describe what you do.', delay: 800 }
                     ]}
                 />
             </View>
@@ -458,15 +394,14 @@ const JobTitlesStep: React.FC<StepProps> = ({ data, updateData }) => {
 // 5. WhatsApp Number
 const WhatsAppStep: React.FC<StepProps> = ({ data, updateData }) => {
     const c = useThemeColors();
-    const { t } = useTranslation();
 
     return (
         <View style={styles.stepContainer}>
             <View style={{ marginBottom: 24 }}>
                 <ChatGreeting
                     messages={[
-                        { text: t('whatsapp_title' as any) },
-                        { text: t('whatsapp_sub' as any), delay: 800 }
+                        { text: 'Stay in the loop 📱' },
+                        { text: 'Enter your WhatsApp number to get job alerts directly.', delay: 800 }
                     ]}
                 />
             </View>
@@ -496,7 +431,6 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     const c = useThemeColors();
     const { token, user } = route.params || {};
     const { loginWithToken } = useAuth();
-    const { t } = useTranslation();
 
     const [step, setStep] = useState(0);
     const [isMatching, setIsMatching] = useState(false);
@@ -507,7 +441,7 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     const slideAnim = useRef(new NativeAnimated.Value(0)).current;
 
     const [data, setData] = useState<OnboardingData>({
-        entityType: null,
+        entityType: 'individual',
         remoteWorkType: 'remote_only', // Default to avoid null issues in Step 0
         workLocation: '',
         category: '',
@@ -556,12 +490,11 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
 
     const nextStep = () => {
         // Validation logic
-        if (step === 0 && !data.entityType) return;
-        if (step === 1 && !data.remoteWorkType) return;
-        if (step === 2 && !data.category) return;
-        if (step === 3 && data.jobTitles.length === 0) return;
+        if (step === 0 && !data.remoteWorkType) return;
+        if (step === 1 && !data.category) return;
+        if (step === 2 && data.jobTitles.length === 0) return;
 
-        if (step < 4) {
+        if (step < 3) {
             animateTransition('next', () => setStep(prev => prev + 1));
         } else {
             handleSubmit();
@@ -621,7 +554,6 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
     };
 
     const Steps = [
-        EntitySelectionStep,
         RemoteWorkStep,
         CategoryStep,
         JobTitlesStep,
@@ -645,7 +577,7 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
                     <View style={[styles.progressBar, { width: `${((step + 1) / Steps.length) * 100}%`, backgroundColor: c.primary }]} />
                 </View>
                 <TouchableOpacity onPress={handleSubmit} style={{ padding: 4 }}>
-                    <Text style={{ color: c.subtext, fontSize: 14, fontWeight: '600' }}>{t('skip')}</Text>
+                    <Text style={{ color: c.subtext, fontSize: 14, fontWeight: '600' }}>{'Skip'}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -664,17 +596,19 @@ const SkillSelectionScreen: React.FC<{ navigation: any, route: any }> = ({ navig
 
             {/* Footer */}
             <View style={[styles.footer, { backgroundColor: c.card, borderTopColor: c.border }]}>
-                <Button
-                    title={step === Steps.length - 1 ? "Start Matching" : "Continue"}
-                    onPress={nextStep}
-                    variant="primary"
-                    disabled={
-                        (step === 0 && !data.entityType) ||
-                        (step === 1 && !data.remoteWorkType) ||
-                        (step === 2 && !data.category) ||
-                        (step === 3 && data.jobTitles.length === 0)
-                    }
-                />
+                <View style={styles.buttonWrapper}>
+                    <Button
+                        title={step === Steps.length - 1 ? "Start Matching" : "Continue"}
+                        onPress={nextStep}
+                        variant="primary"
+                        disabled={
+                            (step === 0 && !data.entityType) ||
+                            (step === 1 && !data.remoteWorkType) ||
+                            (step === 2 && !data.category) ||
+                            (step === 3 && data.jobTitles.length === 0)
+                        }
+                    />
+                </View>
             </View>
         </SafeAreaView>
     );
@@ -748,65 +682,46 @@ const Balloon: React.FC<{ color: string; delay: number; startX: number }> = ({ c
 
 const MatchingScreen = ({ onFinish, navigation, isProfileSaved }: { onFinish: () => void, navigation: any, isProfileSaved: boolean }) => {
     const c = useThemeColors();
-    const { t } = useTranslation();
     const progress = useRef(new NativeAnimated.Value(0)).current;
     const iconPulse = useRef(new NativeAnimated.Value(1)).current;
-    const rewardScale = useRef(new NativeAnimated.Value(0)).current;
-    const [statusText, setStatusText] = useState(t('analyzing_profile' as any));
+    const [statusText, setStatusText] = useState('Analyzing your profile...');
     const [matchCount, setMatchCount] = useState(0);
-    const [sparksEarned, setSparksEarned] = useState(0);
     const [isComplete, setIsComplete] = useState(false);
     const [currentStage, setCurrentStage] = useState(0);
-    const [showRewards, setShowRewards] = useState(false);
 
     const stages = [
-        t('analyzing_profile' as any),
-        t('gathering_jobs' as any),
-        t('personalizing_dashboard' as any),
-        t('found_opportunities' as any)
+        'Analyzing your profile...',
+        'Gathering the best jobs for you...',
+        'Personalizing your dashboard...',
+        'Found your opportunities! 🎉'
     ];
 
     useEffect(() => {
-        // Pulsing animation for icon
         const pulseAnimation = NativeAnimated.loop(
             NativeAnimated.sequence([
-                NativeAnimated.timing(iconPulse, {
-                    toValue: 1.2,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
-                NativeAnimated.timing(iconPulse, {
-                    toValue: 1,
-                    duration: 1000,
-                    useNativeDriver: true,
-                }),
+                NativeAnimated.timing(iconPulse, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
+                NativeAnimated.timing(iconPulse, { toValue: 1, duration: 1000, useNativeDriver: true }),
             ])
         );
 
-        if (!isComplete) {
-            pulseAnimation.start();
-        }
-
+        if (!isComplete) pulseAnimation.start();
         return () => pulseAnimation.stop();
     }, [isComplete]);
 
     useEffect(() => {
         if (!isProfileSaved) {
-            // Stage progression
             const stageIntervals = [0, 1500, 3000, 4500];
             const timers = stageIntervals.map((delay, index) =>
                 setTimeout(() => {
                     setCurrentStage(index);
                     setStatusText(stages[index]);
 
-                    // Animate progress bar
                     NativeAnimated.timing(progress, {
                         toValue: (index + 1) / stages.length,
                         duration: 800,
                         useNativeDriver: false,
                     }).start();
 
-                    // Increment job count gradually
                     if (index > 0) {
                         const targetCount = index === 1 ? 50 : index === 2 ? 120 : 152;
                         let currentCount = matchCount;
@@ -820,70 +735,31 @@ const MatchingScreen = ({ onFinish, navigation, isProfileSaved }: { onFinish: ()
                         }, 50);
                     }
 
-                    // Show rewards at the final stage
-                    if (index === 3) {
-                        setTimeout(() => {
-                            setShowRewards(true);
-                            // Animate sparks counter
-                            let currentSparks = 0;
-                            const targetSparks = 50; // Reward for completing onboarding
-                            const sparksInterval = setInterval(() => {
-                                currentSparks += 2;
-                                if (currentSparks >= targetSparks) {
-                                    currentSparks = targetSparks;
-                                    clearInterval(sparksInterval);
-                                }
-                                setSparksEarned(currentSparks);
-                            }, 30);
-
-                            // Animate reward badge entrance
-                            NativeAnimated.spring(rewardScale, {
-                                toValue: 1,
-                                friction: 6,
-                                tension: 40,
-                                useNativeDriver: true,
-                            }).start();
-                        }, 500);
-                    }
+                    if (index === 3) setIsComplete(true);
                 }, delay)
             );
-
             return () => timers.forEach(timer => clearTimeout(timer));
         } else {
             setIsComplete(true);
-            setStatusText(t('found_opportunities' as any));
+            setStatusText('Found your opportunities! 🎉');
             setMatchCount(152);
-            setSparksEarned(50);
-            setShowRewards(true);
             NativeAnimated.timing(progress, {
                 toValue: 1,
                 duration: 500,
                 useNativeDriver: false,
             }).start();
-            NativeAnimated.spring(rewardScale, {
-                toValue: 1,
-                friction: 6,
-                tension: 40,
-                useNativeDriver: true,
-            }).start();
         }
     }, [isProfileSaved]);
 
     const widthInterp = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-
     const balloonColors = [c.primary, '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center', padding: 30 }]}>
-            {/* Celebratory Balloons */}
-            {showRewards && balloonColors.map((color, index) => (
-                <Balloon
-                    key={index}
-                    color={color}
-                    delay={index * 200}
-                    startX={30 + (index * 50)}
-                />
+            {isComplete && balloonColors.map((color, index) => (
+                <Balloon key={index} color={color} delay={index * 200} startX={30 + (index * 50)} />
             ))}
+            
             <View style={{ marginBottom: 40, alignItems: 'center' }}>
                 <NativeAnimated.View style={{ transform: [{ scale: isComplete ? 1 : iconPulse }] }}>
                     <MaterialIcons
@@ -894,77 +770,30 @@ const MatchingScreen = ({ onFinish, navigation, isProfileSaved }: { onFinish: ()
                 </NativeAnimated.View>
             </View>
 
-            {isComplete && (
-                <Text style={{ fontSize: 28, fontWeight: '900', color: c.primary, marginBottom: 8, textAlign: 'center' }}>
-                    {t('congratulations' as any)}
-                </Text>
-            )}
-
             <Text style={{ fontSize: 26, fontWeight: '800', color: c.text, marginBottom: 12, textAlign: 'center' }}>
                 {statusText}
             </Text>
 
             {matchCount > 0 && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, backgroundColor: c.card, borderRadius: 20, marginBottom: 16, borderWidth: 2, borderColor: c.primary + '20' }}>
+                <View style={{ 
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    gap: 8, 
+                    padding: 14, 
+                    backgroundColor: c.card, 
+                    borderRadius: 20, 
+                    marginBottom: 24, 
+                    borderWidth: 2, 
+                    borderColor: c.primary + '20' 
+                }}>
                     <MaterialIcons name="work" size={22} color={c.primary} />
                     <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>
-                        {matchCount}+ {t('jobs_found' as any)}
+                        {matchCount}+ {'jobs matched'}
                     </Text>
                 </View>
             )}
 
-            {showRewards && (
-                <NativeAnimated.View style={{
-                    transform: [{ scale: rewardScale }],
-                    marginBottom: 24,
-                    width: '100%'
-                }}>
-                    <View style={{
-                        backgroundColor: c.primary + '15',
-                        borderRadius: 16,
-                        padding: 20,
-                        borderWidth: 2,
-                        borderColor: c.primary + '30',
-                        alignItems: 'center'
-                    }}>
-                        <Text style={{ fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 12 }}>
-                            {t('rewards_earned' as any)}
-                        </Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <MaterialIcons name="bolt" size={28} color="#FFD700" />
-                            <Text style={{ fontSize: 32, fontWeight: '900', color: c.primary }}>
-                                {sparksEarned}
-                            </Text>
-                            <Text style={{ fontSize: 16, fontWeight: '600', color: c.text }}>
-                                {t('sparks_earned' as any)}
-                            </Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 8, marginBottom: 12 }}>
-                            <MaterialIcons name="info-outline" size={18} color={c.subtext} style={{ marginTop: 2 }} />
-                            <Text style={{ fontSize: 13, color: c.subtext, flex: 1, lineHeight: 18 }}>
-                                {t('rewards_help' as any)}
-                            </Text>
-                        </View>
-                        <View style={{
-                            backgroundColor: c.background,
-                            borderRadius: 12,
-                            padding: 14,
-                            width: '100%',
-                            borderWidth: 1,
-                            borderColor: c.border
-                        }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                                <MaterialIcons name="tips-and-updates" size={20} color={c.primary} style={{ marginTop: 1 }} />
-                                <Text style={{ fontSize: 13, color: c.text, flex: 1, lineHeight: 18, fontWeight: '500' }}>
-                                    {t('engagement_tip' as any)}
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </NativeAnimated.View>
-            )}
-
-            <View style={{ width: '100%', height: 10, backgroundColor: c.border, borderRadius: 5, overflow: 'hidden', marginBottom: 40 }}>
+            <View style={{ width: '80%', height: 10, backgroundColor: c.border, borderRadius: 5, overflow: 'hidden', marginBottom: 40 }}>
                 <NativeAnimated.View style={{
                     height: '100%',
                     backgroundColor: c.primary,
@@ -976,7 +805,7 @@ const MatchingScreen = ({ onFinish, navigation, isProfileSaved }: { onFinish: ()
             {isComplete && (
                 <View style={{ width: '100%', gap: 16 }}>
                     <Button
-                        title={t('start_exploring' as any)}
+                        title={'Start Exploring'}
                         onPress={onFinish}
                         variant="primary"
                     />
@@ -1133,8 +962,10 @@ const styles = StyleSheet.create({
     },
     footer: {
         padding: 24,
-        borderTopWidth: 1
-    }
+        borderTopWidth: 1,
+        alignItems: 'flex-end',
+    },
+    buttonWrapper: { width: '60%' },
 });
 
 export default SkillSelectionScreen;

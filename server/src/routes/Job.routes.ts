@@ -6,16 +6,11 @@ import {
   createJob,
   updateJob,
   deleteJob,
-  getRecommendedJobs,
-  searchJobs,
   getClientJobs,
-  saveJob,
-  unsaveJob,
-  getSavedJobs,
-  inviteFreelancer,
+  getMatchedJobs,
   updateJobStatus
 } from "../controllers/Job.controller.js";
-import { authenticate } from "../core/middleware/auth.middleware.js";
+import { authenticate, optionalAuthenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
 
 const router = express.Router();
@@ -23,26 +18,12 @@ const router = express.Router();
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", authenticate, getClientJobs);
 
-// Get saved jobs (protected)
-router.get("/saved", authenticate, getSavedJobs);
+// Get matched/recommended jobs for freelancer (protected)
+router.get("/recommended", authenticate, getMatchedJobs);
+router.get("/matched", authenticate, getMatchedJobs);
 
-// Save a job (protected)
-router.post("/:id/save", authenticate, saveJob);
-
-// Unsave a job (protected)
-router.delete("/:id/save", authenticate, unsaveJob);
-
-// Invite freelancer to job (protected)
-router.post("/:id/invite", authenticate, inviteFreelancer);
-
-// Get all jobs with filters
-router.get("/", getAllJobs);
-
-// Get recommended jobs (Jobs You May Like)
-router.get("/recommended", authenticate, getRecommendedJobs);
-
-// Search jobs
-router.get("/search", searchJobs);
+// Get all jobs with filters (Optional auth for filtering applied jobs)
+router.get("/", optionalAuthenticate, getAllJobs);
 
 // Get job by ID
 router.get("/:id", getJobById);
@@ -51,7 +32,7 @@ router.get("/:id", getJobById);
 router.post("/", authenticate, createJob);
 
 // Update job
-router.put("/:id", updateJob);
+router.put("/:id", authenticate, updateJob);
 
 // Delete job
 router.delete("/:id", authenticate, isAdmin, deleteJob);
@@ -60,3 +41,4 @@ router.delete("/:id", authenticate, isAdmin, deleteJob);
 router.patch("/:id/status", authenticate, isAdmin, updateJobStatus);
 
 export default router;
+

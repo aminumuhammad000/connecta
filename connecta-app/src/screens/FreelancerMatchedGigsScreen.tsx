@@ -13,7 +13,7 @@ import Avatar from '../components/Avatar';
 const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
   const c = useThemeColors();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'internal' | 'external' | 'fixed' | 'hourly' | 'remote' | 'entry' | 'intermediate' | 'expert'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'fixed' | 'hourly' | 'entry'>('all');
   const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
   const [likedGigs, setLikedGigs] = useState<Set<string>>(new Set());
   const [dismissedGigs, setDismissedGigs] = useState<Set<string>>(new Set());
@@ -31,10 +31,16 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
   const loadJobs = async () => {
     try {
       setIsLoading(true);
-      const jobsData = await jobService.getRecommendedJobs(50);
-      setJobs(jobsData);
-      // Initialize anim values
-      jobsData.forEach(job => {
+      const [recommended, all] = await Promise.all([
+        jobService.getRecommendedJobs(50).catch(() => []),
+        jobService.getAllJobs({ limit: 100 }).catch(() => []),
+      ]);
+      const recList = Array.isArray(recommended) ? recommended : [];
+      const allList = Array.isArray(all) ? all : [];
+      const ids = new Set(recList.map((j: any) => j._id));
+      const merged = [...recList, ...allList.filter((j: any) => !ids.has(j._id))];
+      setJobs(merged);
+      merged.forEach((job: any) => {
         if (job._id) {
           scaleAnims[job._id] = new Animated.Value(1);
           fadeAnims[job._id] = new Animated.Value(1);
@@ -144,31 +150,20 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
   };
 
   // Filter jobs based on selected filter and search query
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = jobs.filter((job: any) => {
     if (!job) return false;
-    // Hide dismissed
     if (dismissedGigs.has(job._id)) return false;
-
-    // Filter by type
-    if (selectedFilter === 'internal' && job.isExternal) return false;
-    if (selectedFilter === 'external' && !job.isExternal) return false;
     if (selectedFilter === 'fixed' && job.budgetType !== 'fixed') return false;
     if (selectedFilter === 'hourly' && job.budgetType !== 'hourly') return false;
-    if (selectedFilter === 'remote' && job.locationType !== 'remote') return false;
-    if (selectedFilter === 'entry' && job.experienceLevel !== 'Entry') return false;
-    if (selectedFilter === 'intermediate' && job.experienceLevel !== 'Intermediate') return false;
-    if (selectedFilter === 'expert' && job.experienceLevel !== 'Expert') return false;
-
-    // Filter by search query
+    if (selectedFilter === 'entry' && job.experience !== 'Entry' && job.experienceLevel !== 'Entry') return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
         job.title?.toLowerCase().includes(query) ||
         job.company?.toLowerCase().includes(query) ||
-        job.skills?.some(skill => skill.toLowerCase().includes(query))
+        job.skills?.some((skill: string) => skill.toLowerCase().includes(query))
       );
     }
-
     return true;
   });
 
@@ -218,45 +213,9 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
             </View>
           </View>
 
-          {/* Primary Source Filter (Segmented Control) */}
-          <View style={{
-            flexDirection: 'row',
-            backgroundColor: c.card,
-            borderRadius: 16,
-            padding: 4,
-            marginTop: 16,
-            borderWidth: 1,
-            borderColor: c.border
-          }}>
-            {(['all', 'internal', 'external'] as const).map((filter) => (
-              <TouchableOpacity
-                key={filter}
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 12,
-                  backgroundColor: selectedFilter === filter ? c.primary : 'transparent',
-                }}
-                onPress={() => setSelectedFilter(filter)}
-                activeOpacity={0.8}
-              >
-                <Text style={{
-                  fontSize: 13,
-                  fontWeight: '700',
-                  color: selectedFilter === filter ? '#FFF' : c.subtext,
-                  textTransform: 'capitalize'
-                }}>
-                  {filter} Jobs
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Secondary Filters */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ gap: 8 }}>
-            {['fixed', 'hourly', 'remote', 'entry', 'intermediate', 'expert'].map((filter) => (
+          {/* Filter Chips - 4 only */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12, paddingHorizontal: 16 }} contentContainerStyle={{ gap: 8 }}>
+            {(['all', 'fixed', 'hourly', 'entry'] as const).map((filter) => (
               <TouchableOpacity
                 key={filter}
                 style={[
@@ -265,10 +224,10 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
                     ? { backgroundColor: c.primary, borderWidth: 0 }
                     : { backgroundColor: c.card, borderColor: c.border }
                 ]}
-                onPress={() => setSelectedFilter(filter as any)}
+                onPress={() => setSelectedFilter(filter)}
               >
                 <Text style={selectedFilter === filter ? styles.filterChipTextActive : [styles.filterChipText, { color: c.text }]}>
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  {filter === 'all' ? 'All Jobs' : filter === 'fixed' ? 'Fixed Price' : filter === 'hourly' ? 'Hourly' : 'Entry Level'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -285,7 +244,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
                   const isInternal = !job.isExternal;
                   const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
                   const dateStr = job.createdAt || job.posted;
-                  const isNew = dateStr ? new Date(dateStr).getTime() > (Date.now() - 3 * 24 * 60 * 60 * 1000) : false; // New if < 3 days old
+                  const isNew = dateStr ? new Date(dateStr).getTime() > (Date.now() - 24 * 60 * 60 * 1000) : false; // New if < 24 hours old
 
                   return (
                     <Animated.View
@@ -310,7 +269,7 @@ const FreelancerMatchedGigsScreen: React.FC<any> = ({ navigation, route }) => {
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
                               <View style={{ position: 'relative' }}>
                                 <Avatar
-                                  uri={(job.clientId as any)?.profileImage || job.companyLogo}
+                                  uri={(job.clientId as any)?.profileImage || (job as any).companyLogo}
                                   name={job.company || (job.clientId as any)?.firstName || 'C'}
                                   size={45}
                                 />

@@ -1,4 +1,4 @@
-import { useWindowDimensions } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,32 +8,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Screens
 import ClientDashboardScreen from '../screens/ClientDashboardScreen';
 import ClientJobsScreen from '../screens/ClientJobsScreen';
-import ClientProjectsScreen from '../screens/ClientProjectsScreen';
 import ClientProfileScreen from '../screens/ClientProfileScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 import ChatsScreen from '../screens/ChatsScreen';
+import ProposalDetailScreen from '../screens/ProposalDetailScreen';
 import PostJobScreen from '../screens/PostJobScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
-import ProjectDetailScreen from '../screens/ProjectDetailScreen';
-import ProjectWorkspaceScreen from '../screens/ProjectWorkspaceScreen';
-import ClientRecommendedFreelancersScreen from '../screens/ClientRecommendedFreelancersScreen';
+import ClientWalletScreen from '../screens/ClientWalletScreen';
 import ClientPaymentsScreen from '../screens/ClientPaymentsScreen';
 import PaymentScreen from '../screens/PaymentScreen';
 import PaymentCallbackScreen from '../screens/PaymentCallbackScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
-
 import SecurityScreen from '../screens/SecurityScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
-import ContactSupportScreen from '../screens/ContactSupportScreen';
-import ConnectaAIScreen from '../screens/ConnectaAIScreen';
+
 import ClientEditProfileScreen from '../screens/ClientEditProfileScreen';
 import NotificationDetailScreen from '../screens/NotificationDetailScreen';
 import ProposalsScreen from '../screens/ProposalsScreen';
-import ManageSubscriptionScreen from '../screens/ManageSubscriptionScreen';
-import VideoCallScreen from '../screens/VideoCallScreen';
 import PublicFreelancerProfileScreen from '../screens/PublicFreelancerProfileScreen';
-import IdentityVerificationScreen from '../screens/IdentityVerificationScreen';
+import AboutScreen from '../screens/AboutScreen';
+import TermsScreen from '../screens/TermsScreen';
+import ClientWriteReviewScreen from '../screens/ClientWriteReviewScreen';
+import ClientRecommendedScreen from '../screens/ClientRecommendedScreen';
+import ClientProjectsScreen from '../screens/ClientProjectsScreen';
+import ProjectDetailScreen from '../screens/ProjectDetailScreen';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -82,12 +82,25 @@ function ClientTabs() {
 
                     if (route.name === 'Home') {
                         iconName = focused ? 'home' : 'home-outline';
-                    } else if (route.name === 'Jobs') {
-                        iconName = focused ? 'briefcase' : 'briefcase-outline';
-                    } else if (route.name === 'Projects') {
-                        iconName = focused ? 'folder-open' : 'folder-open-outline';
-                    } else if (route.name === 'Wallet') {
-                        iconName = focused ? 'wallet' : 'wallet-outline';
+                    } else if (route.name === 'PostJob') {
+                        return (
+                            <View style={{
+                                top: -16,
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                width: 48,
+                                height: 48,
+                                borderRadius: 24,
+                                backgroundColor: c.primary,
+                                shadowColor: c.primary,
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.3,
+                                shadowRadius: 8,
+                                elevation: 5,
+                            }}>
+                                <Ionicons name="add" size={28} color="#FFF" />
+                            </View>
+                        );
                     } else if (route.name === 'Profile') {
                         iconName = focused ? 'person' : 'person-outline';
                     }
@@ -104,9 +117,7 @@ function ClientTabs() {
             })}
         >
             <Tab.Screen name="Home" component={ClientDashboardScreen} />
-            <Tab.Screen name="Jobs" component={ClientJobsScreen} />
-            <Tab.Screen name="Projects" component={ClientProjectsScreen} />
-            <Tab.Screen name="Wallet" component={require('../screens/ClientWalletScreen').default} />
+            <Tab.Screen name="PostJob" component={PostJobScreen} options={{ tabBarLabel: 'Post Job' }} />
             <Tab.Screen name="Profile" component={ClientProfileScreen} />
         </Tab.Navigator>
     );
@@ -131,13 +142,8 @@ export default function ClientNavigator() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="ClientTabs" component={ClientTabs} />
             <Stack.Screen name="PostJob" component={PostJobScreen} />
-            <Stack.Screen name="PostCollaboJob" component={require('../screens/PostCollaboJobScreen').default} />
+            <Stack.Screen name="Jobs" component={ClientJobsScreen} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
-            <Stack.Screen name="CollaboWorkspace" component={require('../screens/CollaboWorkspaceScreen').default} />
-            <Stack.Screen name="SelectFreelancer" component={require('../screens/SelectFreelancerScreen').default} />
-            <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
-            <Stack.Screen name="ProjectWorkspace" component={ProjectWorkspaceScreen} />
-            <Stack.Screen name="ClientRecommended" component={ClientRecommendedFreelancersScreen} />
             <Stack.Screen name="FreelancerPublicProfile" component={PublicFreelancerProfileScreen} />
             <Stack.Screen name="ClientProfile" component={ClientProfileScreen} />
             <Stack.Screen name="ClientPayments" component={ClientPaymentsScreen} />
@@ -150,22 +156,19 @@ export default function ClientNavigator() {
             <Stack.Screen name="Security" component={SecurityScreen} />
             <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
 
-            <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
-            <Stack.Screen name="AIChat" component={ConnectaAIScreen} />
             <Stack.Screen name="ClientEditProfile" component={ClientEditProfileScreen} />
             <Stack.Screen name="Proposals" component={ProposalsScreen} />
-            <Stack.Screen name="ManageSubscription" component={ManageSubscriptionScreen} />
-            <Stack.Screen name="AdminWithdrawals" component={require('../screens/AdminWithdrawalsScreen').default} />
-            <Stack.Screen name="VideoCall" component={VideoCallScreen} />
-            <Stack.Screen name="About" component={require('../screens/AboutScreen').default} />
-            <Stack.Screen name="Terms" component={require('../screens/TermsScreen').default} />
-            <Stack.Screen name="IdentityVerification" component={IdentityVerificationScreen} />
-            <Stack.Screen name="SparkHistory" component={require('../screens/SparkHistoryScreen').default} />
-            <Stack.Screen name="Wallet" component={require('../screens/ClientWalletScreen').default} />
-            <Stack.Screen name="SendSpark" component={require('../screens/SendSparkScreen').default} />
-            <Stack.Screen name="ReceiveSpark" component={require('../screens/ReceiveSparkScreen').default} />
-            <Stack.Screen name="SetTransactionPin" component={require('../screens/SetTransactionPinScreen').default} />
+            <Stack.Screen name="ProposalDetail" component={ProposalDetailScreen} />
+            <Stack.Screen name="About" component={AboutScreen} />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+            <Stack.Screen name="Wallet" component={ClientWalletScreen} />
+            <Stack.Screen name="Chats" component={ChatsScreen} />
+            <Stack.Screen name="ClientWriteReview" component={ClientWriteReviewScreen} />
+            <Stack.Screen name="ClientRecommended" component={ClientRecommendedScreen} />
+            <Stack.Screen name="ClientProjects" component={ClientProjectsScreen} />
+            <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
         </Stack.Navigator>
+
     );
 
     if (isDesktop) {

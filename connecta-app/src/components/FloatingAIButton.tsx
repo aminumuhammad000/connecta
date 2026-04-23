@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Animated, StyleSheet, Easing, View, useWindowDimensions } from 'react-native';
+import { TouchableOpacity, Animated, StyleSheet, Easing, View, useWindowDimensions, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +26,7 @@ export const FloatingAIButton: React.FC<FloatingAIButtonProps> = ({ forcedRouteN
     const currentRouteName = forcedRouteName;
 
     // Don't show on Desktop or specific screens (including the AI chat itself)
-    const hiddenScreens = ['AIChat', 'ConnectaAI', 'Landing', 'Login', 'Signup', 'VideoCall', 'Onboarding', 'IdentityVerification'];
+    const hiddenScreens = ['AIChat', 'ConnectaAI', 'Login', 'Signup', 'VideoCall', 'Onboarding', 'IdentityVerification'];
     const isHidden = isDesktop || !isAuthenticated || (currentRouteName && hiddenScreens.includes(currentRouteName));
 
     useEffect(() => {
@@ -147,9 +147,13 @@ const styles = StyleSheet.create({
         borderRadius: 28,
         zIndex: 99999, // Ensure absolute top level
         elevation: 10,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 8,
+        ...(Platform.OS === 'web' ? {
+            boxShadow: '0px 4px 8px rgba(253, 103, 48, 0.4)',
+        } : {
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+        })
     },
     glowAura: {
         position: 'absolute',

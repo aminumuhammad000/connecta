@@ -9,15 +9,13 @@ export interface User {
     lastName?: string;
     avatar?: string;
     profileImage?: string; // Added
-    isPremium?: boolean;
-    subscriptionTier?: 'free' | 'premium' | 'enterprise';
-    subscriptionStatus?: 'active' | 'expired' | 'cancelled';
-    premiumExpiryDate?: string;
     isVerified?: boolean;
+    isPremium?: boolean;
+    averageRating?: number;
+    totalReviews?: number;
+    jobSuccessScore?: number;
     savedJobs?: string[];
     emailFrequency?: 'daily' | 'weekly' | 'monthly';
-    sparks?: number;
-    lastRewardClaimedAt?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -63,9 +61,6 @@ export interface Profile {
     timezone?: string; // Added
     preferredLanguage?: 'en' | 'ha';
     entityType?: 'individual' | 'team'; // Added
-    sparks: number;
-    streakDays: number;
-    lastCheckIn?: string;
     trustScore: number; // 0-100
     tier: 'newcomer' | 'pro' | 'expert' | 'elite';
     // Added
@@ -289,7 +284,7 @@ export interface WalletBalance {
 }
 
 export interface Bank {
-    id: string;
+    id?: string;
     name: string;
     code: string;
 }
@@ -307,7 +302,6 @@ export type NotificationType =
     | 'message_received'
     | 'review_received'
     | 'deadline_approaching'
-    | 'collabo_invite'
     | 'system'
     | 'info'
     | 'success'

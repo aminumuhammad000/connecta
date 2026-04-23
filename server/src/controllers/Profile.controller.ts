@@ -64,14 +64,15 @@ const formatProfileResponse = (profile: any, reviews: any[] = [], jobs: any[] = 
     _id: profileData._id,
     userId: userData._id || profileData.user,
     phoneNumber: profileData.phoneNumber,
+    whatsapp: profileData.whatsapp,
     location: profileData.location,
     country: profileData.country,
     city: profileData.city,
     timezone: profileData.timezone,
     preferredLanguage: profileData.preferredLanguage,
     skills: profileData.skills || [],
-    companyName: profileData.companyName,
-    website: profileData.website,
+    companyName: profileData.companyName || '',
+    website: profileData.website || '',
     bio: profileData.bio,
     avatar: profileData.avatar || userData.profileImage,
     profileImage: userData.profileImage || profileData.avatar,
@@ -175,6 +176,8 @@ export const getMyProfile = async (
     console.log('📤 Profile fields:', {
       phoneNumber: responseData.phoneNumber,
       location: responseData.location,
+      companyName: responseData.companyName,
+      website: responseData.website,
       bio: responseData.bio,
       avatar: responseData.avatar
     });
@@ -318,23 +321,25 @@ export const updateMyProfile = async (
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const {
-      phoneNumber, location, country, city, timezone, preferredLanguage, companyName, website, bio, avatar, skills,
+      phoneNumber, whatsapp, location, country, city, timezone, preferredLanguage, companyName, website, bio, avatar, skills,
       education, languages, employment, resume, portfolio,
       remoteWorkType, minimumSalary, workLocationPreferences, jobTitle,
       jobCategories, yearsOfExperience, engagementTypes, jobNotificationFrequency
     } = req.body;
 
-    console.log('📝 Update profile request:', { phoneNumber, location, country, city, timezone, preferredLanguage, bio, avatar });
+    console.log('📝 Update profile request:', { phoneNumber, whatsapp, location, country, city, timezone, preferredLanguage, companyName, website, bio, avatar });
 
     // Prepare update data
     const updateData: any = {};
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
-    if (location !== undefined) updateData.location = location;
+    if (whatsapp !== undefined) updateData.whatsapp = whatsapp;
+    if (location !== undefined) updateData.location = location || 'Nigeria';
     if (country !== undefined) updateData.country = country;
     if (city !== undefined) updateData.city = city;
     if (timezone !== undefined) updateData.timezone = timezone;
     if (preferredLanguage !== undefined) updateData.preferredLanguage = preferredLanguage;
     if (website !== undefined) updateData.website = website;
+    if (companyName !== undefined) updateData.companyName = companyName;
     if (bio !== undefined) updateData.bio = bio;
     if (avatar !== undefined) updateData.avatar = avatar;
     if (skills !== undefined) updateData.skills = skills;
@@ -387,10 +392,12 @@ export const updateMyProfile = async (
       console.log('🔄 Synced User model fields:', userUpdate);
     }
 
+    const responseData = formatProfileResponse(profile);
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: profile
+      data: responseData
     });
   } catch (error: any) {
     console.error('Update my profile error:', error);
@@ -405,94 +412,14 @@ export const updateMyProfile = async (
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { PDFParse } = require('pdf-parse');
-import LLMService from '../services/LLM.service.js';
+// import LLMService from '../services/LLM.service.js';
 
 /**
- * @desc Parse resume and return structured data
+ * @desc Parse resume and return structured data (DISABLED)
  * @route POST /api/profiles/parse-resume
  */
 export const parseResume = async (req: Request, res: Response) => {
-  try {
-    console.log('📥 Incoming parse-resume request');
-    console.log('Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('File:', req.file ? {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      hasBuffer: !!req.file.buffer
-    } : 'None');
-
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({
-        message: "No resume file uploaded",
-        debug: {
-          contentType: req.headers['content-type'],
-          hasFile: !!req.file,
-          bodyKeys: Object.keys(req.body || {})
-        }
-      });
-    }
-
-    // Extract text from PDF
-    console.log('📄 Parsing PDF Resume...');
-
-    // pdf-parse v2 usage
-    // @ts-ignore
-    const pdfLib = require('pdf-parse');
-    const PDFParse = pdfLib.PDFParse || pdfLib.default?.PDFParse || pdfLib;
-
-    // Validate constructor
-    if (typeof PDFParse !== 'function') {
-      throw new Error(`PDFParse library not loaded correctly. Type: ${typeof PDFParse}`);
-    }
-
-    // Check if buffer exists
-    if (!req.file || !req.file.buffer) {
-      throw new Error("File buffer is empty");
-    }
-
-    // pdf-parse v2 constructor expects a buffer directly or an object?
-    // Based on user's previous code it was object. Let's try standard buffer first as per v2 pattern if possible, 
-    // or checks docs. But since I can't check docs, I will trust the previous code slightly but add try/catch.
-    // Actually, safely try both or just pass the buffer?
-    // Let's assume `new PDFParse(buffer)` or `new PDFParse({data: buffer})`
-    // I will try to use the library as intended by v2.
-    // Wait, let's look at the CJS test output first.
-
-    // Instantiate parser with correct signature
-    // pdf-parse v2 expects object with 'data' property
-    const parser = new PDFParse({ data: req.file.buffer });
-    const data = await parser.getText();
-    const text = data.text;
-
-    // Log the first 200 chars to debug
-    console.log('📄 Extracted PDF Text Sample:', text.substring(0, 200) + '...');
-
-    if (!text || text.length < 50) {
-      return res.status(400).json({ message: "Could not extract text from resume" });
-    }
-
-    console.log(`🤖 Extracted ${text.length} chars. sending to AI...`);
-
-    // Parse with AI
-    const profileData = await LLMService.parseResumeText(text);
-
-    console.log('✅ AI Parse Success');
-
-    res.status(200).json({
-      success: true,
-      data: profileData
-    });
-
-  } catch (error: any) {
-    console.error('Resume Parse Error:', error);
-    // Write error to file for debugging
-    const fs = require('fs');
-    fs.writeFileSync('debug_error.txt', `Time: ${new Date().toISOString()}\nError: ${error.message}\nStack: ${error.stack}\n\n`);
-
-    res.status(500).json({ message: "Failed to parse resume: " + error.message });
-  }
+  res.status(501).json({ message: "Resume parsing is currently disabled in this simplified version." });
 };
 
 import PDFGenerationService from '../services/PDFGeneration.service.js';

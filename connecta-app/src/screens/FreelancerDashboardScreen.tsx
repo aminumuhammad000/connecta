@@ -15,11 +15,9 @@ import userService from '../services/userService';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import ProfileCompletionCard from '../components/ProfileCompletionCard';
 import SuccessModal from '../components/SuccessModal';
-import { AIButton } from '../components/AIButton';
 import Sidebar from '../components/Sidebar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSocket } from '../context/SocketContext';
-import { useTranslation } from '../utils/i18n';
 import * as storage from '../utils/storage';
 
 import { useWindowDimensions } from 'react-native';
@@ -55,7 +53,6 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { user, updateUser } = useAuth();
-  const { t } = useTranslation();
 
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [stats, setStats] = useState<any>(null);
@@ -66,8 +63,6 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   const scaleAnims = useRef<{ [key: string]: Animated.Value }>({}).current;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
-  const [rewardModalVisible, setRewardModalVisible] = useState(false);
-  const [claimingReward, setClaimingReward] = useState(false);
   const { socket, unreadNotificationCount } = useSocket();
 
   const renderBadge = (count: any) => {
@@ -82,7 +77,6 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
   useEffect(() => {
     loadDashboardData();
     checkProfileStatus();
-    checkDailyReward();
   }, []);
 
   useEffect(() => {
@@ -108,77 +102,36 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
     useCallback(() => {
       loadDashboardData();
       checkProfileStatus();
-      checkDailyReward();
     }, [user])
   );
 
-  const checkDailyReward = async () => {
-    if (!user) return;
-    try {
-      // 1. Check if we already showed it to the user today (local suppression)
-      const alreadyShownLocal = await storage.isDailyRewardShownToday();
-      if (alreadyShownLocal) {
-        console.log('[DailyReward] Already shown today (local storage). Suppression active.');
-        return;
-      }
-
-      const now = new Date();
-      if (user.lastRewardClaimedAt) {
-        const lastClaim = new Date(user.lastRewardClaimedAt);
-        const hoursDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
-        if (hoursDiff >= 24) {
-          console.log('[DailyReward] Showing modal because hoursDiff >= 24:', hoursDiff);
-          setRewardModalVisible(true);
-          await storage.saveLastDailyRewardShown(); // Mark as shown locally immediately
-        } else {
-          console.log('[DailyReward] Not showing modal. hoursDiff:', hoursDiff);
-        }
-      } else {
-        // Never claimed before
-        console.log('[DailyReward] Showing modal because never claimed before');
-        setRewardModalVisible(true);
-        await storage.saveLastDailyRewardShown(); // Mark as shown locally immediately
-      }
-    } catch (error) {
-      console.log('Error checking daily reward:', error);
-    }
-  };
-
-  const handleClaimReward = async () => {
-    try {
-      setClaimingReward(true);
-      const res = await userService.claimDailyReward();
-      if (res.success) {
-        setRewardModalVisible(false);
-        // Refresh local user state using returned user or fetch new
-        if (res.user) {
-          updateUser(res.user);
-        } else {
-          const updatedUser = await userService.getMe();
-          updateUser(updatedUser);
-        }
-        // Refresh dashboard stats
-        loadDashboardData();
-      }
-    } catch (error: any) {
-      console.log('Error claiming reward:', error);
-      setRewardModalVisible(false);
-    } finally {
-      setClaimingReward(false);
-    }
-  };
 
   const loadDashboardData = async () => {
     try {
-      const [statsData, jobsData] = await Promise.all([
+      const [statsData, recJobs, allJobs] = await Promise.all([
         dashboardService.getFreelancerStats().catch(() => null),
-        jobService.getRecommendedJobs().catch(() => []),
+        jobService.getRecommendedJobs(10).catch(() => []),
+        jobService.getAllJobs({ limit: 20 }).catch(() => []),
       ]);
       setStats(statsData);
-      setRecommendedJobs(jobsData);
+      
+      // Merge jobs: recommended first, then the rest (avoiding duplicates)
+      const recommendedJobsList = Array.isArray(recJobs) ? recJobs : [];
+      const allJobsList = Array.isArray(allJobs) ? allJobs : [];
+      
+      const combinedJobs = recommendedJobsList.map(job => ({ ...job, isRecommended: true }));
+      const jobIds = new Set(combinedJobs.map(j => j._id));
+      
+      allJobsList.forEach(job => {
+        if (job && job._id && !jobIds.has(job._id)) {
+          combinedJobs.push({ ...job, isRecommended: false });
+        }
+      });
+      
+      setRecommendedJobs(combinedJobs);
 
       // Init animations
-      jobsData.forEach((job: any) => {
+      combinedJobs.forEach((job: any) => {
         if (job._id && !scaleAnims[job._id]) {
           scaleAnims[job._id] = new Animated.Value(1);
         }
@@ -202,26 +155,53 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
       const profile = await profileService.getMyProfile();
       const missing: string[] = [];
 
-      // Check required profile fields
+      // Core profile fields
       if (!profile?.bio) missing.push('bio');
       if (!profile?.skills || profile?.skills.length === 0) missing.push('skills');
       if (!profile?.location) missing.push('location');
       if (!profile?.phone && !profile?.phoneNumber) missing.push('phone');
+      if (!profile?.whatsapp) missing.push('whatsapp');
       if (!profile?.avatar) missing.push('avatar');
+      if (!profile?.jobTitle) missing.push('title');
 
-      // Check preference fields
-      if (!profile?.jobTitle) missing.push('education');
+      // Professional sections
+      if (!profile?.education || profile?.education.length === 0) missing.push('education');
+      if (!profile?.employment || profile?.employment.length === 0) missing.push('employment');
+      if (!profile?.portfolio || profile?.portfolio.length === 0) missing.push('portfolio');
+
+      // Preferences
+      if (!profile?.jobCategories || profile?.jobCategories.length === 0) missing.push('preferences');
 
       if (missing.length > 0) {
         setMissingFields(missing);
-        setProfileModalVisible(true);
+        
+        const lastShownStr = await storage.getItem('@profile_popup_last_shown');
+        const now = Date.now();
+        const twoHours = 2 * 60 * 60 * 1000;
+        
+        if (!lastShownStr || now - parseInt(lastShownStr) > twoHours) {
+          setProfileModalVisible(true);
+          await storage.setItem('@profile_popup_last_shown', now.toString());
+        } else {
+          setProfileModalVisible(false);
+        }
       } else {
         setProfileModalVisible(false);
       }
     } catch (error: any) {
       if (error?.status === 404) {
-        setMissingFields(['bio', 'skills', 'location', 'phone', 'avatar', 'experience', 'education', 'portfolio']);
-        setProfileModalVisible(true);
+        setMissingFields(['bio', 'skills', 'location', 'phone', 'whatsapp', 'avatar', 'title', 'education', 'employment', 'portfolio', 'preferences']);
+        
+        const lastShownStr = await storage.getItem('@profile_popup_last_shown');
+        const now = Date.now();
+        const twoHours = 2 * 60 * 60 * 1000;
+        
+        if (!lastShownStr || now - parseInt(lastShownStr) > twoHours) {
+          setProfileModalVisible(true);
+          await storage.setItem('@profile_popup_last_shown', now.toString());
+        } else {
+          setProfileModalVisible(false);
+        }
       } else {
         console.error('Error checking profile status:', error);
       }
@@ -306,32 +286,34 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   </TouchableOpacity>
                 )}
                 <View>
-                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{t('welcome_back')} 👋</Text>
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || t('default_user')}</Text>
+                  <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: '500' }}>{"Welcome back"} 👋</Text>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFF' }}>{user?.firstName || "User"}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('SparkHistory')}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 20,
-                    gap: 4
-                  }}
-                >
-                  <MaterialIcons name="auto-awesome" size={16} color="#FFD700" />
-                  <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{user?.sparks || 0}</Text>
-                </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconButton}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name="notifications-outline" size={22} color="#FFF" />
-                    {unreadNotificationCount > 0 && (
-                      <View style={{ position: 'absolute', top: 8, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: '#FF7F50' }} />
+                    {(stats?.unreadNotifications || 0) > 0 && (
+                      <View style={{ 
+                        position: 'absolute', 
+                        top: -4, 
+                        right: -4, 
+                        minWidth: 16, 
+                        height: 16, 
+                        borderRadius: 8, 
+                        backgroundColor: '#EF4444', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        paddingHorizontal: 4,
+                        borderWidth: 1,
+                        borderColor: '#FF7F50'
+                      }}>
+                        <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700' }}>
+                          {stats.unreadNotifications > 9 ? '9+' : stats.unreadNotifications}
+                        </Text>
+                      </View>
                     )}
                   </View>
                 </TouchableOpacity>
@@ -340,15 +322,6 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           </View>
           <View style={{ height: 0 }} />
 
-          {/* Daily Reward Modal */}
-          <SuccessModal
-            visible={rewardModalVisible}
-            title={t('daily_reward_title')}
-            message={t('daily_reward_msg')}
-            buttonText={claimingReward ? t('claiming') : t('claim_sparks')}
-            onAction={handleClaimReward}
-            onClose={() => setRewardModalVisible(false)}
-          />
 
           {/* Profile Completion Card */}
           <ProfileCompletionCard
@@ -384,11 +357,11 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                 onPress={() => navigation.navigate('FreelancerProjects')}
                 activeOpacity={0.7}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#10B98115' }]}>
-                  <Ionicons name="briefcase" size={20} color="#10B981" />
-                  {renderBadge(stats?.activeProjects || stats?.totalProjects)}
+                <View style={[styles.quickActionIcon, { backgroundColor: c.primary + '15' }]}>
+                  <Ionicons name="briefcase" size={20} color={c.primary} />
+                  {renderBadge(stats?.activeProjects)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('my_jobs')}</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{"My Jobs"}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -400,7 +373,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="document-text" size={20} color={c.primary} />
                   {renderBadge(stats?.activeProposals)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('proposals')}</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{"Proposals"}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -412,7 +385,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="chatbubbles" size={20} color="#3B82F6" />
                   {renderBadge(stats?.newMessages)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('messages')}</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{"Messages"}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -424,19 +397,9 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   <Ionicons name="wallet" size={20} color="#F59E0B" />
                   {renderBadge(stats?.pendingPayments)}
                 </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('wallet')}</Text>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{"Wallet"}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.quickAction}
-                onPress={() => navigation.navigate('FreelancerProjects', { tab: 'collabo' })}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#6366F115' }]}>
-                  <Ionicons name="people" size={20} color="#6366F1" />
-                </View>
-                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{t('team')}</Text>
-              </TouchableOpacity>
             </ScrollView>
           </View>
 
@@ -451,7 +414,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           }}>
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => navigation.navigate('Gigs', { autoFocus: true })}
+              onPress={() => navigation.navigate('Jobs', { autoFocus: true })}
               style={{
                 flex: 1,
                 backgroundColor: c.isDark ? '#2D2D2D' : '#F0F2F5',
@@ -465,7 +428,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
               }}
             >
               <Ionicons name="search" size={18} color={c.subtext} />
-              <Text style={{ marginLeft: 10, color: c.subtext, fontSize: 14, flex: 1 }}>{t('search_placeholder')}</Text>
+              <Text style={{ marginLeft: 10, color: c.subtext, fontSize: 14, flex: 1 }}>{"Search for jobs or skills..."}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -488,9 +451,9 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
           {/* Recommended Jobs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('recommended_jobs')}</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Gigs')}>
-                <Text style={[styles.seeAll, { color: c.primary }]}>{t('view_all')}</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{"Recommended for You"}</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Jobs')}>
+                <Text style={[styles.seeAll, { color: c.primary }]}>{"View All"}</Text>
               </TouchableOpacity>
             </View>
 
@@ -500,7 +463,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   if (!job) return null;
                   const isInternal = !job.isExternal;
                   const identityColor = isInternal ? '#10B981' : '#3B82F6'; // Green for Internal, Blue for External
-                  const isNew = new Date(job.createdAt) > new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); // New if < 3 days old
+                  const isNew = new Date(job.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000); // New if < 24 hours old
 
                   return (
                     <TouchableOpacity
@@ -546,13 +509,13 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                                 </Text>
                                 {isNew && (
                                   <View style={{ backgroundColor: '#EF4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>{t('new_badge')}</Text>
+                                    <Text style={{ fontSize: 10, color: '#FFF', fontWeight: '700' }}>{"New"}</Text>
                                   </View>
                                 )}
                               </View>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                                 <Text style={{ fontSize: 13, color: c.subtext, fontWeight: '500' }}>
-                                  {job.company || t('confidential')} • {new Date(job.createdAt).toLocaleDateString()}
+                                  {job.company || "Confidential"} • {new Date(job.createdAt).toLocaleDateString()}
                                 </Text>
                               </View>
                             </View>
@@ -566,16 +529,15 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                           </TouchableOpacity>
                         </View>
 
-                        {/* Badges Row */}
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                          <Badge label={job.jobType} variant="neutral" size="small" />
+                          <Badge label={job.jobType || 'Freelance'} variant="neutral" size="small" />
                           <Badge label={job.locationType || 'Remote'} variant="neutral" size="small" />
-                          <Badge label={`₦${job.budget} / project`} variant="custom" customColor="#FF7F50" size="small" />
+                          <Badge label={`₦${job.budget} / ${job.budgetType === 'hourly' ? 'hr' : 'project'}`} variant="custom" customColor="#FF7F50" size="small" />
                         </View>
 
                         {/* Description Preview */}
                         <Text style={{ fontSize: 13, color: c.subtext, lineHeight: 20 }} numberOfLines={2}>
-                          {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : t('no_description'))}
+                          {job.description ? job.description.replace(/<[^>]*>/g, '') : (job.summary ? job.summary.replace(/<[^>]*>/g, '') : "No description provided.")}
                         </Text>
 
                         {/* Footer: Skills & Apply */}
@@ -611,7 +573,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                               gap: 6
                             }}
                           >
-                            <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>{t('apply')}</Text>
+                            <Text style={{ color: '#FFF', fontSize: 12, fontWeight: '700' }}>{"Apply"}</Text>
                             <MaterialIcons name="arrow-forward" size={14} color="#FFF" />
                           </TouchableOpacity>
                         </View>
@@ -620,7 +582,7 @@ const FreelancerDashboardScreen: React.FC<any> = () => {
                   );
                 })
               ) : (
-                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>{t('no_jobs_found')}</Text>
+                <Text style={{ textAlign: 'center', color: c.subtext, padding: 20 }}>{"No recommended jobs found."}</Text>
               )}
             </View>
           </View>

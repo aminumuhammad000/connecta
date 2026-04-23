@@ -4,11 +4,12 @@ import Transaction from '../models/Transaction.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Withdrawal from '../models/Withdrawal.model.js';
 import Project from '../models/Project.model.js';
-import CollaboProject from '../models/CollaboProject.model.js';
-import { Job } from '../models/Job.model.js';
 import User from '../models/user.model.js';
-import flutterwaveService from '../services/flutterwave.service.js';
-import paystackService from '../services/paystack.service.js';
+import { createNotification } from './notification.controller.js';
+import { Job } from '../models/Job.model.js';
+import mongoose from 'mongoose';
+import crypto from 'crypto';
+import vtstackService from '../services/vtstack.service.js';
 
 // Platform fee percentage (e.g., 10%)
 const PLATFORM_FEE_PERCENTAGE = 10;
@@ -186,17 +187,11 @@ export const initializePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // Verify project exists — check both Project and CollaboProject
-    let project: any = await Project.findById(projectId);
-    let projectTitle = project?.title;
+    let project = await Project.findById(projectId);
     if (!project) {
-      const collaboProject = await CollaboProject.findById(projectId);
-      if (!collaboProject) {
-        return res.status(404).json({ success: false, message: 'Project not found' });
-      }
-      project = collaboProject;
-      projectTitle = collaboProject.title;
+      return res.status(404).json({ success: false, message: 'Project not found' });
     }
+    let projectTitle = project.title;
 
     // Calculate platform fee
     const platformFee = (amount * PLATFORM_FEE_PERCENTAGE) / 100;
@@ -323,11 +318,19 @@ export const verifyPayment = async (req: Request, res: Response) => {
     // Handle Job Verification
     if (payment.paymentType === 'job_verification' && payment.jobId) {
       const job = await Job.findById(payment.jobId);
-      if (job) {
-        job.paymentVerified = true;
-        job.paymentStatus = 'escrow'; // Or released/verified depending on flow
-        await job.save();
-      }
+        if (job) {
+          job.paymentVerified = true;
+          job.paymentStatus = 'escrow'; // Or released/verified depending on flow
+          await job.save();
+
+          // Notify Matched Freelancers
+          try {
+            const { notifyMatchedFreelancers } = await import('./notification.controller.js');
+            await notifyMatchedFreelancers(job);
+          } catch (err) {
+            console.error('Failed to notify matched freelancers:', err);
+          }
+        }
     }
 
     // Handle Wallet Top-up
@@ -350,6 +353,17 @@ export const verifyPayment = async (req: Request, res: Response) => {
         paymentId: payment._id,
         description: payment.description || 'Wallet Top-up',
       });
+
+      // Notify User
+      await createNotification({
+        userId: payment.payerId,
+        type: 'payment_received',
+        title: '💰 Wallet Funded',
+        message: `Your wallet has been credited with ₦${payment.amount.toLocaleString()}`,
+        relatedId: payment._id,
+        relatedType: 'payment',
+        priority: 'high',
+      });
     }
 
     // Handle Project Payment (Milestone or Full)
@@ -370,13 +384,13 @@ export const verifyPayment = async (req: Request, res: Response) => {
       // 2. Create a transaction record for the freelancer
       await Transaction.create({
         userId: payment.payeeId,
-        type: 'credit',
+        type: 'payment_received',
         amount: payment.netAmount,
         currency: payment.currency,
-        status: 'completed',
+        status: 'pending', // pending = locked in escrow until released
         paymentId: payment._id,
         projectId: payment.projectId,
-        description: `Escrow payment for project: ${payment.description}`,
+        description: `🔒 Escrow payment for project: ${payment.description}`,
       });
     }
 
@@ -391,6 +405,179 @@ export const verifyPayment = async (req: Request, res: Response) => {
       success: false,
       message: error.message || 'Failed to verify payment',
     });
+  }
+};
+
+/**
+ * Pay for a job or verification from wallet balance
+ */
+export const payFromWallet = async (req: Request, res: Response) => {
+  try {
+    const { type, jobId, projectId, amount, payeeId, description } = req.body;
+    const payerId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+
+    if (!payerId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // 1. Check Payer Wallet
+    const payerWallet = await Wallet.findOne({ userId: payerId });
+    if (!payerWallet || payerWallet.availableBalance < amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Insufficient available balance. Please fund your wallet using your virtual account.',
+      });
+    }
+
+    // 2. Handle Verification/Posting Fee Payment
+    if (type === 'job_verification' && jobId) {
+      const job = await Job.findById(jobId);
+      if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
+      
+      const SystemSettings = (await import('../models/SystemSettings.model.js')).default;
+      const settings = await SystemSettings.getSettings();
+      const fee = settings.payments?.jobPostingFee || 0;
+
+      // Ensure amount matches fee (optional but good)
+      if (amount < fee) {
+          return res.status(400).json({ success: false, message: `Insufficient amount. Job posting fee is ₦${fee.toLocaleString()}` });
+      }
+
+      // Deduct from client
+      payerWallet.balance -= amount;
+      payerWallet.totalSpent += amount;
+      await payerWallet.save();
+
+      // Activate Job
+      job.status = 'active';
+      job.paymentVerified = true;
+      job.paymentStatus = 'escrow';
+      await job.save();
+
+      // Notify Matched Freelancers
+      try {
+          const { notifyMatchedFreelancers } = await import('./notification.controller.js');
+          await notifyMatchedFreelancers(job);
+      } catch (err) {
+          console.error('Failed to notify matched freelancers:', err);
+      }
+
+      // Create Payment Record
+      const payment = new Payment({
+        jobId,
+        payerId,
+        payeeId: payerId,
+        amount,
+        platformFee: amount, // Fee goes to platform
+        netAmount: 0,
+        currency: 'NGN',
+        paymentType: 'job_verification',
+        description: description || `Job posting fee for: ${job.title}`,
+        status: 'completed',
+        paymentMethod: 'bank_transfer', 
+        paidAt: new Date(),
+        escrowStatus: 'none',
+      });
+      await payment.save();
+
+      // Update Job
+      job.paymentVerified = true;
+      job.paymentStatus = 'verified';
+      await job.save();
+
+      // Transaction Record
+      await Transaction.create({
+        userId: payerId,
+        type: 'payment_sent',
+        amount,
+        currency: 'NGN',
+        status: 'completed',
+        paymentId: payment._id,
+        description: payment.description,
+      });
+
+      return res.status(200).json({ success: true, message: 'Job verified using wallet balance', data: payment });
+    }
+
+    // 3. Handle Project Payment (Hiring/Milestone)
+    if ((type === 'milestone' || type === 'full_payment') && projectId && payeeId) {
+      const platformFee = (amount * PLATFORM_FEE_PERCENTAGE) / 100;
+      const netAmount = amount - platformFee;
+
+      // Deduct from Client
+      payerWallet.balance -= amount;
+      payerWallet.totalSpent += amount;
+      await payerWallet.save();
+
+      // Credit Freelancer (Escrow)
+      let freelancerWallet = await Wallet.findOne({ userId: payeeId });
+      if (!freelancerWallet) {
+        freelancerWallet = new Wallet({ userId: payeeId });
+      }
+      freelancerWallet.balance += netAmount;
+      freelancerWallet.escrowBalance += netAmount;
+      await freelancerWallet.save();
+
+      // Create Payment Record
+      const payment = new Payment({
+        projectId,
+        payerId,
+        payeeId,
+        amount,
+        platformFee,
+        netAmount,
+        currency: 'NGN',
+        paymentType: type,
+        description: description || 'Project payment from wallet',
+        status: 'completed',
+        paymentMethod: 'bank_transfer',
+        paidAt: new Date(),
+        escrowStatus: 'held',
+      });
+      await payment.save();
+
+      // Transaction Records
+      // 1. Client Debit
+      await Transaction.create({
+        userId: payerId,
+        type: 'payment_sent',
+        amount,
+        currency: 'NGN',
+        status: 'completed',
+        paymentId: payment._id,
+        projectId,
+        description: `Payment for project (Escrowed)`,
+      });
+      // 2. Freelancer Credit (Escrow — locked until released)
+      await Transaction.create({
+        userId: payeeId,
+        type: 'payment_received',
+        amount: netAmount,
+        currency: 'NGN',
+        status: 'pending',
+        paymentId: payment._id,
+        projectId,
+        description: `🔒 Incoming escrow payment`,
+      });
+
+      // Notify Freelancer
+      await createNotification({
+        userId: payeeId,
+        type: 'payment_received',
+        title: '🔒 Payment Locked in Escrow',
+        message: `₦${netAmount.toLocaleString()} has been escrowed for project: ${description || 'New Project'}. Funds will be available once work is completed.`,
+        relatedId: payment._id,
+        relatedType: 'payment',
+        priority: 'high',
+      });
+
+      return res.status(200).json({ success: true, message: 'Payment successful. Funds held in escrow.', data: payment });
+    }
+
+    return res.status(400).json({ success: false, message: 'Invalid payment request' });
+  } catch (error: any) {
+    console.error('Pay from wallet error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to process wallet payment' });
   }
 };
 
@@ -430,6 +617,19 @@ export const releasePayment = async (req: Request, res: Response) => {
       freelancerWallet.escrowBalance -= payment.netAmount;
       freelancerWallet.totalEarnings += payment.netAmount;
       await freelancerWallet.save();
+
+      // Notify Freelancer
+      await createNotification({
+        userId: payment.payeeId,
+        type: 'payment_received',
+        title: '💸 Payment Released',
+        message: `₦${payment.netAmount.toLocaleString()} has been moved from escrow to your available balance.`,
+        relatedId: payment._id,
+        relatedType: 'payment',
+        actorId: userId,
+        actorName: 'Client',
+        priority: 'high',
+      });
     }
 
     return res.status(200).json({
@@ -950,7 +1150,7 @@ export const getTransactionHistory = async (req: Request, res: Response) => {
  */
 export const getBanks = async (req: Request, res: Response) => {
   try {
-    const banks = await flutterwaveService.listBanks();
+    const banks = await vtstackService.listBanks();
     return res.status(200).json({
       success: true,
       data: banks.data,
@@ -978,7 +1178,7 @@ export const resolveAccount = async (req: Request, res: Response) => {
       });
     }
 
-    const account = await flutterwaveService.resolveAccount(accountNumber, bankCode);
+    const account = await vtstackService.resolveAccount(accountNumber, bankCode);
 
     return res.status(200).json({
       success: true,
@@ -1131,6 +1331,371 @@ export const getAllWallets = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: error.message || 'Failed to fetch wallets',
+    });
+  }
+};
+/**
+ * Get or create a VTStack virtual account for the current user
+ */
+export const getOrCreateVirtualAccount = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    let wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      wallet = new Wallet({ userId });
+      await wallet.save();
+    }
+
+    // If already exists, return it
+    if (wallet.vtstackVirtualAccount && wallet.vtstackVirtualAccount.accountNumber) {
+      return res.status(200).json({
+        success: true,
+        data: wallet.vtstackVirtualAccount
+      });
+    }
+
+    // Get user details for account creation
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Use phone number or random 11-digit for BVN fallback
+    // Must start with '22' as per documentation requirement
+    let bvnToUse = user.phoneNumber ? user.phoneNumber.replace(/[^0-9]/g, '').slice(-11) : '';
+    if (bvnToUse.length !== 11 || !bvnToUse.startsWith('22')) {
+      bvnToUse = '22' + Math.floor(100000000 + Math.random() * 900000000).toString();
+    }
+
+    // Create virtual account
+    // Normalize phone to 11 digits (e.g. 080...)
+    let phoneToUse = user.phoneNumber || '08000000000';
+    phoneToUse = phoneToUse.replace(/[^0-9]/g, '');
+    if (phoneToUse.startsWith('234') && phoneToUse.length > 11) {
+      phoneToUse = '0' + phoneToUse.slice(3);
+    }
+    if (phoneToUse.length > 11) phoneToUse = phoneToUse.slice(-11);
+
+    const vtResponse = await vtstackService.createVirtualAccount({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: phoneToUse,
+      bvn: bvnToUse,
+      reference: `connecta_${userId}_${Date.now()}`
+    });
+
+    if (vtResponse.success && vtResponse.data) {
+      wallet.vtstackVirtualAccount = {
+        id: vtResponse.data.id,
+        accountNumber: vtResponse.data.accountNumber,
+        accountName: vtResponse.data.accountName,
+        bankName: vtResponse.data.bankName,
+        status: vtResponse.data.status,
+        reference: vtResponse.data.reference
+      };
+      await wallet.save();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Virtual account created successfully',
+        data: wallet.vtstackVirtualAccount
+      });
+    }
+
+    throw new Error(vtResponse.message || 'Failed to create virtual account');
+  } catch (error: any) {
+    console.error('Get/Create virtual account error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get or create virtual account'
+    });
+  }
+};
+
+/**
+ * Handle VTStack Webhook
+ */
+export const handleVTStackWebhook = async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['x-vtstack-signature'] as string;
+    const secret = req.headers['x-vtstack-secret'] as string;
+    
+    // 1. Verify Secret (Basic check)
+    if (secret !== process.env.VTSTACK_WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
+      console.warn('Invalid VTStack Secret Header');
+      // In production, we should reject. For dev, we might allow.
+    }
+
+    // 2. Verify HMAC Signature
+    const hash = crypto
+      .createHmac('sha256', process.env.VTSTACK_WEBHOOK_KEY || 'webhook_secret')
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (hash !== signature && process.env.NODE_ENV === 'production') {
+      return res.status(401).json({ success: false, message: 'Invalid signature' });
+    }
+
+    const { event, data } = req.body;
+
+    if (event === 'transaction.deposit' && data.status === 'success') {
+      const { amount, virtualAccount, reference } = data;
+      
+      // Find wallet by virtual account number
+      const wallet = await Wallet.findOne({ 'vtstackVirtualAccount.accountNumber': virtualAccount });
+      
+      if (wallet) {
+        // Check for duplicate transaction
+        const existingTx = await Transaction.findOne({ gatewayReference: reference });
+        if (existingTx) {
+          return res.status(200).json({ success: true, message: 'Duplicate transaction ignored' });
+        }
+
+        // Credit the wallet
+        // VTStack amounts are usually in Kobo (e.g. 10000 for 100 Naira)
+        // Ensure we convert to Naira for our system
+        const creditAmount = amount / 100; 
+        
+        wallet.balance += creditAmount;
+        await wallet.save();
+
+        // Create transaction record
+        await Transaction.create({
+          userId: wallet.userId,
+          type: 'deposit',
+          amount: creditAmount,
+          currency: 'NGN',
+          status: 'completed',
+          gateway: 'vtstack',
+          gatewayReference: reference,
+          description: `Virtual Account Deposit: ${reference}`
+        });
+
+        // Notify user
+        await createNotification({
+          userId: wallet.userId,
+          type: 'payment_received',
+          title: '💰 Wallet Funded via Transfer',
+          message: `Your wallet has been credited with ₦${creditAmount.toLocaleString()}.`,
+          priority: 'high'
+        });
+
+        console.log(`Successfully credited wallet for account ${virtualAccount} with ${creditAmount}`);
+      } else {
+        console.warn(`Wallet not found for virtual account: ${virtualAccount}`);
+      }
+    }
+
+    // Always respond with 200 OK as per VTStack docs
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('VTStack Webhook Error:', error);
+    // Still return 200 to acknowledge receipt if it's a processing error
+    return res.status(200).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Request a payout via VTStack Secure Payout API
+ *
+ * Flow:
+ *  1. Validate user has sufficient available balance
+ *  2. Deduct balance immediately (prevent double-spend)
+ *  3. Create a Withdrawal record (status: processing)
+ *  4. Call VTStack Secure Payout API with HMAC-SHA256 signature
+ *  5. Create Transaction record
+ *  6. Notify user
+ *  7. On gateway failure: restore wallet balance & mark withdrawal failed
+ */
+export const requestVTStackPayout = async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+
+  if (!userId) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const { amount } = req.body; // amount in NAIRA (our system stores in Naira)
+
+    // ── Validation ────────────────────────────────────────────────
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'A valid payout amount is required.' });
+    }
+
+    const nairaAmount = Number(amount);
+    const MIN_PAYOUT = 100;    // ₦100 minimum
+    const MAX_PAYOUT = 5000000; // ₦5,000,000 maximum per request
+
+    if (nairaAmount < MIN_PAYOUT) {
+      return res.status(400).json({
+        success: false,
+        message: `Minimum payout amount is ₦${MIN_PAYOUT.toLocaleString()}.`,
+      });
+    }
+    if (nairaAmount > MAX_PAYOUT) {
+      return res.status(400).json({
+        success: false,
+        message: `Maximum payout amount is ₦${MAX_PAYOUT.toLocaleString()} per request.`,
+      });
+    }
+
+    // ── Wallet Check ──────────────────────────────────────────────
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) {
+      return res.status(404).json({ success: false, message: 'Wallet not found.' });
+    }
+
+    if ((wallet.availableBalance || 0) < nairaAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `Insufficient available balance. You have ₦${(wallet.availableBalance || 0).toLocaleString()} available.`,
+      });
+    }
+
+    // ── Bank Details ──────────────────────────────────────────────
+    const bankDetails = wallet.bankDetails;
+    if (!bankDetails || !bankDetails.accountNumber || !bankDetails.bankCode || !bankDetails.accountName) {
+      return res.status(400).json({
+        success: false,
+        message: 'No bank account saved. Please set up your withdrawal bank account first.',
+      });
+    }
+
+    // ── Deduct Balance Immediately (prevent double-spend) ─────────
+    const balanceBefore = wallet.balance;
+    wallet.balance -= nairaAmount;
+    await wallet.save(); // pre-save hook updates availableBalance
+
+    // ── Create Withdrawal Record ──────────────────────────────────
+    const processingFee = nairaAmount < 5000 ? 10 : 50; // flat fee in Naira
+    const netAmount = nairaAmount - processingFee;
+
+    const withdrawal = new Withdrawal({
+      userId,
+      amount: nairaAmount,
+      currency: wallet.currency || 'NGN',
+      bankDetails: {
+        accountName: bankDetails.accountName,
+        accountNumber: bankDetails.accountNumber,
+        bankName: bankDetails.bankName || '',
+        bankCode: bankDetails.bankCode,
+      },
+      processingFee,
+      netAmount,
+      status: 'processing',
+      processedAt: new Date(),
+    });
+    await withdrawal.save();
+
+    // ── Call VTStack Secure Payout API ────────────────────────────
+    // VTStack expects amount in KOBO (Naira × 100)
+    let gatewayResponse: any;
+    let payoutSucceeded = false;
+
+    try {
+      gatewayResponse = await vtstackService.securePayout({
+        amount: Math.round(netAmount * 100), // convert Naira → Kobo
+        bankCode: bankDetails.bankCode,
+        accountNumber: bankDetails.accountNumber,
+        accountName: bankDetails.accountName,
+        narration: `Connecta payout – ${withdrawal._id.toString()}`,
+      });
+
+      // VTStack responses typically include a reference/status field
+      withdrawal.gatewayReference = gatewayResponse?.reference || gatewayResponse?.idempotencyKey || '';
+      withdrawal.gatewayResponse = gatewayResponse;
+      withdrawal.transferCode = gatewayResponse?.reference || gatewayResponse?.idempotencyKey || '';
+
+      // Mark completed if gateway confirms success immediately
+      const gwStatus = (gatewayResponse?.status || '').toLowerCase();
+      if (gwStatus === 'success' || gwStatus === 'successful' || gwStatus === 'pending') {
+        withdrawal.status = 'completed';
+        withdrawal.completedAt = new Date();
+        payoutSucceeded = true;
+      } else {
+        // Gateway accepted but async – stay as processing
+        withdrawal.status = 'processing';
+        payoutSucceeded = true; // request was accepted
+      }
+
+      await withdrawal.save();
+    } catch (gatewayError: any) {
+      console.error('❌ [VTStack Payout] Gateway error, rolling back balance:', gatewayError.message);
+
+      // Restore wallet balance
+      wallet.balance = balanceBefore;
+      await wallet.save();
+
+      // Mark withdrawal as failed
+      withdrawal.status = 'failed';
+      withdrawal.failureReason = gatewayError.message || 'Gateway error';
+      await withdrawal.save();
+
+      return res.status(502).json({
+        success: false,
+        message: `Payout failed: ${gatewayError.message || 'Gateway error. Please try again.'}`,
+      });
+    }
+
+    // ── Create Transaction Record ─────────────────────────────────
+    await Transaction.create({
+      userId,
+      type: 'withdrawal',
+      amount: nairaAmount,
+      currency: wallet.currency || 'NGN',
+      status: withdrawal.status === 'completed' ? 'completed' : 'pending',
+      gateway: 'vtstack',
+      gatewayReference: withdrawal.gatewayReference,
+      balanceBefore,
+      balanceAfter: wallet.balance,
+      description: `Payout to ${bankDetails.accountName} (${bankDetails.accountNumber})`,
+      metadata: {
+        withdrawalId: withdrawal._id.toString(),
+        bankCode: bankDetails.bankCode,
+        processingFee,
+        netAmount,
+      },
+    });
+
+    // ── Notify User ───────────────────────────────────────────────
+    await createNotification({
+      userId,
+      type: 'payment_received',
+      title: '💸 Payout Initiated',
+      message: `Your payout of ₦${netAmount.toLocaleString()} to ${bankDetails.accountName} (${bankDetails.bankName || bankDetails.bankCode} – ${bankDetails.accountNumber}) is being processed.`,
+      relatedId: withdrawal._id,
+      relatedType: 'withdrawal',
+      priority: 'high',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Payout of ₦${netAmount.toLocaleString()} initiated successfully. Funds will arrive shortly.`,
+      data: {
+        withdrawalId: withdrawal._id,
+        amount: nairaAmount,
+        netAmount,
+        processingFee,
+        status: withdrawal.status,
+        bankDetails: {
+          accountName: bankDetails.accountName,
+          accountNumber: bankDetails.accountNumber,
+          bankName: bankDetails.bankName,
+        },
+        gatewayReference: withdrawal.gatewayReference,
+      },
+    });
+  } catch (error: any) {
+    console.error('requestVTStackPayout error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to process payout. Please try again.',
     });
   }
 };

@@ -26,6 +26,9 @@ export interface ISystemSettings extends Document {
         geminiApiKey: string;
         model: string;
     };
+    payments: {
+        jobPostingFee: number;
+    };
     updatedAt: Date;
 }
 
@@ -58,6 +61,9 @@ const SystemSettingsSchema: Schema = new Schema({
         openaiApiKey: { type: String, default: '' },
         geminiApiKey: { type: String, default: '' },
         model: { type: String, default: '' }
+    },
+    payments: {
+        jobPostingFee: { type: Number, default: 500 } // Default 500 Naira
     }
 }, {
     timestamps: true

@@ -99,24 +99,7 @@ const DesktopLeftSidebar = () => {
                     ))}
                 </View>
 
-                {/* Premium Upsell (Freelancer Only usually) */}
-                {!isClient && !user?.isPremium && (
-                    <TouchableOpacity
-                        style={[styles.premiumRow, { borderTopColor: c.border, backgroundColor: c.primary + '10' }]}
-                        onPress={() => navigation.navigate('FreelancerMain', { screen: 'ManageSubscription' })}
-                    >
-                        <LinearGradient
-                            colors={['#F59E0B', '#D97706']}
-                            style={styles.premiumIcon}
-                        >
-                            <Ionicons name="diamond" size={10} color="#FFF" />
-                        </LinearGradient>
-                        <View>
-                            <Text style={[styles.premiumText, { color: c.subtext }]}>Upgrade to Pro</Text>
-                            <Text style={[styles.premiumLink, { color: c.text }]}>Get 2x more leads</Text>
-                        </View>
-                    </TouchableOpacity>
-                )}
+
 
                 {/* My Items Action */}
                 <TouchableOpacity
@@ -183,24 +166,7 @@ const DesktopLeftSidebar = () => {
                     </>
                 )}
 
-                <TouchableOpacity
-                    style={styles.shortcutItem}
-                    onPress={() => {
-                        if (isClient) {
-                            navigation.navigate('ClientMain', { screen: 'ClientTabs', params: { screen: 'Projects' } });
-                        } else {
-                            navigation.navigate('FreelancerMain', { screen: 'FreelancerProjects', params: { tab: 'collabo' } });
-                        }
-                    }}
-                >
-                    <View style={[styles.shortcutIcon, { backgroundColor: '#6366F115' }]}>
-                        <Ionicons name="people" size={16} color="#6366F1" />
-                    </View>
-                    <Text style={[styles.shortcutText, { color: c.text }]}>Collabo Team</Text>
-                    <View style={styles.newBadge}>
-                        <Text style={styles.newBadgeText}>NEW</Text>
-                    </View>
-                </TouchableOpacity>
+
 
                 <TouchableOpacity
                     style={styles.shortcutItem}

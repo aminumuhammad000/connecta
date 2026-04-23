@@ -96,6 +96,7 @@ export const createReview = async (req: Request, res: Response) => {
       rating,
       comment,
       tags: tags || [],
+      isPublic: true, // Make reviews by actual users public by default
     });
 
     // Update user's reputation (JSS, Rating, Badges)

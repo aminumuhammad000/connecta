@@ -62,7 +62,7 @@ const DesktopTopNav = () => {
 
     const freelancerNavItems = [
         { label: 'Home', icon: 'home', route: 'Home' },
-        { label: 'Gigs', icon: 'briefcase', route: 'Gigs' },
+        { label: 'Jobs', icon: 'briefcase', route: 'Jobs' },
         { label: 'Proposals', icon: 'document-text', route: 'Proposals' },
         { label: 'Messages', icon: 'chatbubble-ellipses', route: 'Messages' },
         { label: 'Profile', icon: 'person', route: 'Profile' },
@@ -97,7 +97,7 @@ const DesktopTopNav = () => {
                 navigation.navigate(targetMain, { screen: route });
             }
         } else {
-            const isTab = ['Home', 'Gigs', 'Messages', 'Profile'].includes(route);
+            const isTab = ['Home', 'Jobs', 'Messages', 'Profile'].includes(route);
             if (isTab) {
                 navigation.navigate(targetMain, {
                     screen: tabNavigator,

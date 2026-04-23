@@ -2,9 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IPayment extends Document {
   projectId?: mongoose.Types.ObjectId;
-  collaboProjectId?: mongoose.Types.ObjectId;
   jobId?: mongoose.Types.ObjectId;
-  milestoneId?: mongoose.Types.ObjectId;
   payerId: mongoose.Types.ObjectId; // Client
   payeeId: mongoose.Types.ObjectId; // Freelancer
   amount: number;
@@ -12,8 +10,8 @@ export interface IPayment extends Document {
   platformFee: number;
   netAmount: number; // Amount after platform fee
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
-  paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer' | 'flutterwave';
-  paymentType: 'project_payment' | 'milestone' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup';
+  paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer' | 'flutterwave' | 'vtstack' | 'wallet';
+  paymentType: 'project_payment' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup';
 
   // Payment Gateway Details
   gatewayReference: string; // Reference from payment gateway
@@ -46,17 +44,9 @@ const PaymentSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Project',
     },
-    collaboProjectId: {
-      type: Schema.Types.ObjectId,
-      ref: 'CollaboProject',
-    },
     jobId: {
       type: Schema.Types.ObjectId,
       ref: 'Job',
-    },
-    milestoneId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Project.milestones',
     },
     payerId: {
       type: Schema.Types.ObjectId,
@@ -95,13 +85,13 @@ const PaymentSchema: Schema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['paystack', 'stripe', 'paypal', 'bank_transfer', 'flutterwave'],
-      default: 'flutterwave',
+      enum: ['paystack', 'stripe', 'paypal', 'bank_transfer', 'flutterwave', 'vtstack', 'wallet'],
+      default: 'bank_transfer',
     },
     paymentType: {
       type: String,
-      enum: ['project_payment', 'milestone', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
-      default: 'milestone',
+      enum: ['project_payment', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
+      default: 'project_payment',
     },
     gatewayReference: {
       type: String,

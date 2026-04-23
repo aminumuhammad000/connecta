@@ -205,10 +205,30 @@ export interface CreateNotificationData {
   priority?: 'low' | 'medium' | 'high';
 }
 
+import NotificationService from '../services/notification.service.js';
+
 export const createNotification = async (data: CreateNotificationData) => {
   try {
-    const notification = await Notification.create(data);
+    // We use the service to handle DB, Socket, Push and Email
+    const notification = await NotificationService.createNotification({
+      userId: data.userId.toString(),
+      type: data.type,
+      title: data.title,
+      message: data.message,
+      relatedId: data.relatedId ? data.relatedId.toString() : undefined,
+      relatedType: data.relatedType,
+      actorId: data.actorId ? data.actorId.toString() : undefined,
+      actorName: data.actorName,
+      link: data.link,
+      shouldSendPush: true,
+      shouldSendEmail: true
+    });
 
+    // We still emit the socket event here if we want to keep the controller clean,
+    // but the service actually handles push/email.
+    // Actually, let's keep the Socket.IO emit in the controller or service?
+    // The service I wrote doesn't have getIO().
+    
     // Emit real-time notification via Socket.IO
     const io = getIO();
     if (io) {
@@ -218,8 +238,8 @@ export const createNotification = async (data: CreateNotificationData) => {
         title: notification.title,
         message: notification.message,
         link: notification.link,
-        icon: notification.icon,
-        priority: notification.priority,
+        icon: data.icon,
+        priority: data.priority,
         createdAt: notification.createdAt,
       });
     }
@@ -309,6 +329,37 @@ export const notifyReviewReceived = async (
     icon: 'mdi:star',
     priority: 'medium',
   });
+};
+
+export const notifyMatchedFreelancers = async (job: any) => {
+    try {
+        const Profile = (await import('../models/Profile.model.js')).default;
+        const freelancers = await Profile.find({ role: 'freelancer' }).populate('user');
+        
+        const jobSkills = job.skills || [];
+        if (jobSkills.length === 0) return;
+
+        for (const profile of freelancers) {
+            const freelancerSkills = [profile.primarySkill, ...(profile.subSkills || [])];
+            const matches = jobSkills.filter((skill: string) => freelancerSkills.includes(skill));
+            const matchPercentage = (matches.length / jobSkills.length) * 100;
+
+            if (matchPercentage >= 90) {
+                await createNotification({
+                    userId: profile.user._id,
+                    type: 'gig_matched',
+                    title: '🎯 New Perfect Match!',
+                    message: `We found a new job "${job.title}" that matches 90% or more of your skills.`,
+                    relatedId: job._id,
+                    relatedType: 'job',
+                    priority: 'high',
+                    link: `/jobs/${job._id}`
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error in notifyMatchedFreelancers:', error);
+    }
 };
 
 /**

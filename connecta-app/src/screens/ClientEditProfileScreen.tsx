@@ -35,6 +35,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
         lastName: '',
         email: '',
         phone: '',
+        whatsapp: '',
         location: '',
         companyName: '',
         website: '',
@@ -83,6 +84,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 lastName: userData.lastName || '',
                 email: userData.email || '',
                 phone: profile?.phoneNumber || '',
+                whatsapp: profile?.whatsapp || '',
                 location: profile?.location || '',
                 companyName: profile?.companyName || '',
                 website: profile?.website || '',
@@ -305,6 +307,8 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
+                phoneNumber: formData.phone,
+                whatsapp: formData.whatsapp,
                 profileImage: finalImageUrl || undefined,
             });
 
@@ -320,12 +324,12 @@ export default function ClientEditProfileScreen({ navigation }: any) {
 
             const profileData = {
                 phoneNumber: formData.phone.trim(),
+                whatsapp: formData.whatsapp.trim(),
                 location: formData.location.trim(),
                 companyName: formData.companyName.trim(),
                 website: formData.website.trim(),
                 bio: formData.bio.trim(),
                 avatar: finalImageUrl || undefined,
-
             };
 
             await profileService.updateMyProfile(profileData);
@@ -406,9 +410,9 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                         <View style={styles.inputGroup}>
                             <Text style={[styles.label, { color: c.subtext }]}>Email</Text>
                             <TextInput
-                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.subtext, borderColor: c.border, opacity: 0.7 }]}
                                 value={formData.email}
-                                onChangeText={(text) => handleInputChange('email', text)}
+                                editable={false}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
@@ -423,10 +427,24 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                             />
                         </View>
                         <View style={styles.inputGroup}>
-                            <LocationPicker
-                                value={formData.location}
-                                onValueChange={(location) => handleInputChange('location', location)}
-                                label="LOCATION"
+                            <Text style={[styles.label, { color: c.subtext }]}>WhatsApp Number</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.whatsapp}
+                                onChangeText={(text) => handleInputChange('whatsapp', text)}
+                                keyboardType="phone-pad"
+                                placeholder="+234 xxx xxx xxxx"
+                                placeholderTextColor={c.subtext}
+                            />
+                        </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={[styles.label, { color: c.subtext }]}>Location</Text>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border }]}
+                                value={formData.location || 'Nigeria'}
+                                onChangeText={(text) => handleInputChange('location', text)}
+                                placeholder="e.g. Lagos, Nigeria"
+                                placeholderTextColor={c.subtext}
                             />
                         </View>
                     </Card>
@@ -458,18 +476,6 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                         <View style={styles.inputGroup}>
                             <View style={styles.bioHeader}>
                                 <Text style={[styles.label, { color: c.subtext, marginBottom: 0 }]}>About / Bio</Text>
-                                <TouchableOpacity
-                                    onPress={generateAIBio}
-                                    disabled={isGeneratingBio}
-                                    style={[styles.aiBioBtn, { backgroundColor: c.primary + '10' }]}
-                                >
-                                    {isGeneratingBio ? <ActivityIndicator size="small" color={c.primary} /> : (
-                                        <>
-                                            <MaterialIcons name="auto-awesome" size={14} color={c.primary} />
-                                            <Text style={[styles.aiBioText, { color: c.primary }]}>AI Rewrite</Text>
-                                        </>
-                                    )}
-                                </TouchableOpacity>
                             </View>
                             <TextInput
                                 style={[styles.textArea, { backgroundColor: c.isDark ? '#1F2937' : '#F9FAFB', color: c.text, borderColor: c.border, marginTop: 12 }]}

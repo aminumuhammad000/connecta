@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeColors } from '../theme/theme';
@@ -18,7 +18,7 @@ interface ProposalCard {
 
 const MyProposalsScreen: React.FC = () => {
   const c = useThemeColors();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { user } = useAuth();
   const [tab, setTab] = useState<'all' | 'pending' | 'accepted' | 'rejected' | 'withdrawn'>('all');
   const [proposals, setProposals] = useState<any[]>([]);
@@ -39,15 +39,26 @@ const MyProposalsScreen: React.FC = () => {
       const data = await proposalService.getFreelancerProposals(user._id).catch(() => []);
 
       // Map API data to UI format
-      const mapped = data.filter((p: any) => p).map((p: any) => ({
-        id: p._id,
-        title: p.jobId?.title || p.title || 'Untitled Job',
-        company: p.jobId?.company || (p.clientId ? (p.clientId.firstName + ' ' + p.clientId.lastName) : 'Unknown Client'),
-        status: p.status,
-        submitted: `Submitted ${new Date(p.createdAt).toLocaleDateString()}`,
-        isExternal: p.jobId?.isExternal || false,
-        source: p.jobId?.source || null,
-      }));
+      const mapped = data.filter((p: any) => p).map((p: any) => {
+        const client = p.clientId || p.jobId?.clientId;
+        const clientName = (client && typeof client === 'object' && client.firstName) 
+          ? `${client.firstName} ${client.lastName}` 
+          : 'Unknown Client';
+        const clientAvatar = (client && typeof client === 'object') ? client.profileImage : null;
+          
+        return {
+          id: p._id,
+          title: p.jobId?.title || p.title || 'Untitled Job',
+          company: p.jobId?.company || clientName,
+          avatar: clientAvatar,
+          status: p.status,
+          submitted: new Date(p.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          price: p.price || p.budget?.amount || 0,
+          duration: p.deliveryTime || 0,
+          isExternal: p.jobId?.isExternal || false,
+          source: p.jobId?.source || null,
+        };
+      });
       setProposals(mapped);
     } catch (error) {
       console.error('Error loading proposals:', error);
@@ -96,47 +107,39 @@ const MyProposalsScreen: React.FC = () => {
           <MaterialIcons name="arrow-back" size={24} color={c.text} />
         </TouchableOpacity>
         <Text style={[styles.appTitle, { color: c.text }]}>My Proposals</Text>
-        <TouchableOpacity style={styles.appIcon} accessibilityRole="button" accessibilityLabel="Filters">
-          <MaterialIcons name="tune" size={24} color={c.text} />
-        </TouchableOpacity>
+        <View style={styles.appIcon} />
       </View>
+
+      <View style={{ height: 16 }} />
 
       {/* Tabs */}
-      <View style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-        >
-          {(['all', 'pending', 'accepted', 'rejected', 'withdrawn'] as const).map(k => {
-            const isActive = tab === k;
-            return (
-              <TouchableOpacity
-                key={k}
-                onPress={() => setTab(k)}
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  backgroundColor: isActive ? c.primary : c.card,
-                  borderWidth: 1,
-                  borderColor: isActive ? c.primary : c.border,
-                }}
-              >
-                <Text style={{
-                  fontSize: 13,
-                  fontWeight: '600',
-                  color: isActive ? '#FFF' : c.text,
-                  textTransform: 'capitalize'
-                }}>
-                  {k}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+      <View style={{ flexDirection: 'row', paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border }}>
+        {(['all', 'pending', 'accepted'] as const).map((t) => {
+          const active = tab === t;
+          return (
+            <TouchableOpacity
+              key={t}
+              onPress={() => setTab(t)}
+              style={{
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderBottomWidth: 2,
+                borderBottomColor: active ? c.primary : 'transparent',
+                marginRight: 8
+              }}
+            >
+              <Text style={{ 
+                fontSize: 14, 
+                fontWeight: active ? '700' : '500', 
+                color: active ? c.primary : c.subtext,
+                textTransform: 'capitalize'
+              }}>
+                {t}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
-
       {/* List */}
       <View style={{ flex: 1, maxWidth: isDesktop ? '100%' : 800, alignSelf: 'center', width: '100%' }}>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 96, gap: 12, flexDirection: isDesktop ? 'row' : 'column', flexWrap: isDesktop ? 'wrap' : 'nowrap' }}>
@@ -147,27 +150,46 @@ const MyProposalsScreen: React.FC = () => {
                 <TouchableOpacity
                   key={p.id}
                   onPress={() => (navigation as any).navigate('ProposalDetail', { id: p.id })}
-                  style={[styles.card, { backgroundColor: c.card, borderColor: c.border }, isDesktop && { width: '48%' }]}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.card,
+                    { backgroundColor: c.card, borderColor: c.border },
+                    isDesktop ? { width: '31%', marginBottom: 16 } : { width: '100%', marginBottom: 12 }
+                  ]}
                 >
                   <View style={styles.cardHeader}>
                     <View style={{ flex: 1 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                        <Text style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
-                        {p.isExternal ? (
-                          <Badge label={p.source || "External"} variant="info" size="small" />
-                        ) : (
-                          <Badge label="Connecta" variant="success" size="small" />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <Text numberOfLines={1} style={[styles.cardTitle, { color: c.text }]}>{p.title}</Text>
+                        {p.isExternal && (
+                          <Badge label={p.source || "External"} variant="neutral" size="small" />
                         )}
                       </View>
-                      <Text style={{ color: c.subtext, fontSize: 12 }}>{p.company}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        {p.avatar ? (
+                          <Image source={{ uri: p.avatar }} style={{ width: 22, height: 22, borderRadius: 11 }} />
+                        ) : (
+                          <MaterialIcons name="account-circle" size={22} color={c.subtext} />
+                        )}
+                        <Text style={{ color: c.subtext, fontSize: 13, fontWeight: '500' }}>{p.company}</Text>
+                      </View>
                     </View>
-                    <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
+                    <MaterialIcons name="chevron-right" size={24} color={c.subtext} />
                   </View>
-                  <View style={styles.cardFooter}>
-                    <View style={[styles.pill, { backgroundColor: pill.bg }]}>
-                      <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+
+                  <View style={{ height: 1, backgroundColor: c.border, marginVertical: 12, opacity: 0.5 }} />
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <View style={{ gap: 4 }}>
+                      <Text style={{ color: c.subtext, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Proposed Rate</Text>
+                      <Text style={{ color: c.text, fontSize: 16, fontWeight: '700' }}>₦{p.price.toLocaleString()}</Text>
                     </View>
-                    <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
+                    <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                      <View style={[styles.pill, { backgroundColor: pill.bg }]}>
+                        <Text style={[styles.pillText, { color: pill.text }]}>{pill.label}</Text>
+                      </View>
+                      <Text style={{ color: c.subtext, fontSize: 11 }}>{p.submitted}</Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               );
@@ -219,12 +241,21 @@ const styles = StyleSheet.create({
   appIcon: { width: 48, height: 40, alignItems: 'center', justifyContent: 'center' },
   appTitle: { fontSize: 18, fontWeight: '700' },
 
-  card: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, padding: 12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '700' },
-  cardFooter: { marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
-  pillText: { fontSize: 12, fontWeight: '700' },
+  card: { 
+    borderWidth: 1.5, 
+    borderRadius: 20, 
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 5,
+    elevation: 1,
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '700', lineHeight: 22 },
+  cardFooter: { marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pill: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  pillText: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
 });
 
 export default MyProposalsScreen;

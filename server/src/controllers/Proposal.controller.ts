@@ -1,675 +1,316 @@
 import { Request, Response } from 'express';
 import Proposal from '../models/Proposal.model.js';
-import mongoose from 'mongoose';
 import { Job } from '../models/Job.model.js';
+import Project from '../models/Project.model.js';
 import User from '../models/user.model.js';
-import * as emailService from '../services/email.service.js';
-import notificationService from '../services/notification.service.js';
-import Notification from '../models/Notification.model.js';
 import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
-import Project from '../models/Project.model.js';
-import { getIO } from '../core/utils/socketIO.js';
+import Transaction from '../models/Transaction.model.js';
+import { createNotification } from './notification.controller.js';
 
-// Get all proposals for a freelancer
-export const getFreelancerProposals = async (req: Request, res: Response) => {
+// Submit a proposal
+export const createProposal = async (req: Request, res: Response) => {
   try {
-    const { freelancerId } = req.params;
-    const { type, status } = req.query;
+    const freelancerId = (req as any).user?._id;
+    const { jobId, description, price, deliveryTime } = req.body;
 
-    let query: any = { freelancerId };
-
-    if (type && (type === 'recommendation' || type === 'referral')) {
-      query.type = type;
+    const job = await Job.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
     }
 
-    if (status) {
-      query.status = status;
-    }
-
-    const proposals = await Proposal.find(query)
-      .populate('referredBy', 'firstName lastName')
-      .populate('jobId', 'title company')
-      .populate('clientId', 'firstName lastName')
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: proposals.length,
-      data: proposals,
+    const proposal = await Proposal.create({
+      jobId,
+      clientId: job.clientId,
+      freelancerId,
+      description,
+      price,
+      deliveryTime,
+      status: 'pending'
     });
+
+    // Notification for Client (New Proposal)
+    try {
+        const { notifyProposalReceived } = await import('./notification.controller.js');
+        const freelancer = await User.findById(freelancerId);
+        await notifyProposalReceived(
+            job.clientId,
+            freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'Freelancer',
+            job.title,
+            proposal._id
+        );
+    } catch (err) {
+        console.error('Failed to notify client of new proposal:', err);
+    }
+
+    res.status(201).json({ success: true, data: proposal });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching proposals',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get all proposals for a specific job
+// Get proposals for a specific job (for client)
 export const getProposalsByJobId = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-
     const proposals = await Proposal.find({ jobId })
-      .populate('freelancerId', 'firstName lastName email profileImage isPremium subscriptionTier jobSuccessScore')
-      .populate('referredBy', 'firstName lastName')
-      .populate('clientId', 'firstName lastName');
-
-    // Sort by Job Success Score (Higher = Better chance)
-    const sortedProposals = proposals.sort((a: any, b: any) => {
-      const scoreA = a.freelancerId?.jobSuccessScore || 0;
-      const scoreB = b.freelancerId?.jobSuccessScore || 0;
-      // Secondary sort by created date
-      if (scoreA === scoreB) {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      return scoreB - scoreA;
-    });
-
-    res.status(200).json({
-      success: true,
-      count: sortedProposals.length,
-      data: sortedProposals,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching proposals for job',
-      error: error.message,
-    });
-  }
-};
-
-// Get all proposals (admin)
-export const getAllProposals = async (req: Request, res: Response) => {
-  try {
-    const { page = 1, limit = 20, type, status } = req.query;
-
-    let query: any = {};
-
-    if (type && (type === 'recommendation' || type === 'referral')) {
-      query.type = type;
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    const { userId } = req.query;
-    if (userId) {
-      query.$or = [
-        { freelancerId: userId },
-        { clientId: userId },
-        { referredBy: userId }
-      ];
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const proposals = await Proposal.find(query)
-      .populate('freelancerId', 'firstName lastName email')
-      .populate('referredBy', 'firstName lastName')
-      .populate('jobId', 'title company')
-      .populate('clientId', 'firstName lastName')
-      .sort({ createdAt: -1 })
-      .limit(Number(limit))
-      .skip(skip);
-
-    const total = await Proposal.countDocuments(query);
-
-    res.status(200).json({
-      success: true,
-      count: proposals.length,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-      data: proposals,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching proposals',
-      error: error.message,
-    });
-  }
-};
-
-// Get single proposal by ID
-export const getProposalById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const proposal = await Proposal.findById(id)
-      .populate('freelancerId', 'firstName lastName email')
-      .populate('referredBy', 'firstName lastName')
-      .populate({
-        path: 'jobId',
-        populate: { path: 'clientId', select: 'firstName lastName email location' }
-      })
-      .populate('clientId', 'firstName lastName email');
-
-    if (!proposal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Proposal not found',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: proposal,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching proposal',
-      error: error.message,
-    });
-  }
-};
-
-// Create a new proposal
-export const createProposal = async (req: Request, res: Response) => {
-  try {
-    const proposalData = req.body;
-    // Set freelancerId and clientId from authenticated user
-    if ((req as any).user) {
-      proposalData.freelancerId = (req as any).user.id;
-      proposalData.clientId = req.body.clientId || undefined; // Optionally set clientId if needed
-    }
-    // Set title if not provided (use job title or fallback)
-    if (!proposalData.title) {
-      // Try to get job title from Job model if jobId is provided
-      if (proposalData.jobId) {
-        try {
-          const job = await Job.findById(proposalData.jobId);
-          proposalData.title = job ? job.title : 'Job Application';
-        } catch (e) {
-          proposalData.title = 'Job Application';
-        }
-      } else {
-        proposalData.title = 'Job Application';
-      }
-    }
-    const proposal = await Proposal.create(proposalData);
-
-    // Notify Client of new proposal
-    try {
-      if (proposalData.jobId) {
-        const job = await Job.findById(proposalData.jobId);
-        if (job && job.clientId) {
-          const client = await User.findById(job.clientId);
-          const freelancer = (req as any).user;
-
-          if (client && client.email) {
-            const freelancerName = freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'A freelancer';
-            const link = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/jobs/${job._id}`;
-
-            await emailService.sendNewProposalNotificationToClient(
-              client.email,
-              client.firstName || 'Client',
-              freelancerName,
-              job.title,
-              link
-            );
-          }
-
-          // Also send Socket Notification to Client
-          const io = getIO();
-
-          await Notification.create({
-            userId: job.clientId,
-            type: 'proposal_new',
-            title: 'New Proposal Received',
-            message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
-            relatedId: proposal._id,
-            relatedType: 'proposal',
-            actorId: freelancer?._id || freelancer?.id,
-            actorName: freelancer ? `${freelancer.firstName} ${freelancer.lastName}` : 'Freelancer',
-            isRead: false,
-          });
-
-          io.to(job.clientId.toString()).emit('notification:new', {
-            title: 'New Proposal Received',
-            message: `${freelancer ? freelancer.firstName : 'A freelancer'} has applied for "${job.title}"`,
-            type: 'proposal_new'
-          });
-
-          // Send Push Notification
-          notificationService.sendPushNotification(
-            job.clientId.toString(),
-            'New Proposal',
-            `${freelancer ? freelancer.firstName : 'A freelancer'} applied for: ${job.title}`,
-            { proposalId: proposal._id, type: 'proposal' }
-          );
-        }
-      }
-    } catch (notifyError) {
-      console.warn('Error sending new proposal notification:', notifyError);
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Proposal created successfully',
-      data: proposal,
-    });
-  } catch (error: any) {
-    console.error('Error creating proposal:', error);
-    // EXPLICITLY return the error message for debugging
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Error creating proposal',
-      error: error
-    });
-  }
-};
-
-// Update proposal status (accept/decline)
-export const updateProposalStatus = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['pending', 'accepted', 'declined', 'expired'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be pending, accepted, declined, or expired',
-      });
-    }
-
-    const proposal = await Proposal.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true, runValidators: true }
-    );
-
-    if (!proposal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Proposal not found',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Proposal status updated successfully',
-      data: proposal,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error updating proposal status',
-      error: error.message,
-    });
-  }
-};
-
-// Update proposal
-export const updateProposal = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
-
-    const proposal = await Proposal.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!proposal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Proposal not found',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Proposal updated successfully',
-      data: proposal,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error updating proposal',
-      error: error.message,
-    });
-  }
-};
-
-// Delete proposal
-export const deleteProposal = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const proposal = await Proposal.findByIdAndDelete(id);
-
-    if (!proposal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Proposal not found',
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Proposal deleted successfully',
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting proposal',
-      error: error.message,
-    });
-  }
-};
-
-// Get proposals statistics for a freelancer
-export const getProposalStats = async (req: Request, res: Response) => {
-  try {
-    const { freelancerId } = req.params;
-
-    const stats = await Proposal.aggregate([
-      { $match: { freelancerId: freelancerId } },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const typeStats = await Proposal.aggregate([
-      { $match: { freelancerId: freelancerId } },
-      {
-        $group: {
-          _id: '$type',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        byStatus: stats,
-        byType: typeStats,
-      },
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching proposal statistics',
-      error: error.message,
-    });
-  }
-};
-
-// Get accepted proposals for a client
-export const getClientAcceptedProposals = async (req: Request, res: Response) => {
-  try {
-    const clientId = (req as any).user?.id || (req as any).user?._id?.toString();
-
-    if (!clientId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized',
-      });
-    }
-
-    const proposals = await Proposal.find({
-      clientId,
-      status: 'accepted',
-    })
-      .populate('freelancerId', 'firstName lastName email profileImage skills bio hourlyRate')
-      .populate('jobId', 'title budget description')
+      .populate('freelancerId', 'firstName lastName email profileImage')
+      .populate('clientId', 'firstName lastName email profileImage')
       .sort({ createdAt: -1 });
 
-    // Transform proposals to include coverLetter, proposedRate, estimatedDuration
-    const transformedProposals = proposals.map(proposal => ({
-      _id: proposal._id,
-      jobId: proposal.jobId,
-      freelancerId: proposal.freelancerId,
-      coverLetter: proposal.description || 'I am interested in this project and would love to work with you.',
-      proposedRate: proposal.budget?.amount || 0,
-      estimatedDuration: `${Math.ceil((new Date(proposal.dateRange.endDate).getTime() - new Date(proposal.dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24 * 7))} weeks`,
-      status: proposal.status,
-      createdAt: proposal.createdAt,
-    }));
-
-    res.status(200).json({
-      success: true,
-      data: transformedProposals,
-    });
+    res.status(200).json({ success: true, data: proposals });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching accepted proposals',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Approve a proposal and create a project
+// Get my proposals (for freelancer)
+export const getMyProposals = async (req: Request, res: Response) => {
+  try {
+    const freelancerId = (req as any).user?._id;
+    const proposals = await Proposal.find({ freelancerId })
+      .populate({
+        path: 'jobId',
+        select: 'title budget status clientId',
+        populate: {
+          path: 'clientId',
+          select: 'firstName lastName email profileImage'
+        }
+      })
+      .populate('clientId', 'firstName lastName email profileImage')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: proposals });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get all proposals (Client sees received, Freelancer sees sent)
+export const getAllProposals = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const userType = (req as any).user?.userType;
+
+    let query = {};
+    if (userType === 'client') {
+      query = { clientId: userId };
+    } else {
+      query = { freelancerId: userId };
+    }
+
+    const proposals = await Proposal.find(query)
+      .populate('freelancerId', 'firstName lastName email profileImage')
+      .populate('clientId', 'firstName lastName email profileImage')
+      .populate('jobId', 'title budget status')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: proposals });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get single proposal
+export const getProposalById = async (req: Request, res: Response) => {
+  try {
+    const proposal = await Proposal.findById(req.params.id)
+      .populate('freelancerId', 'firstName lastName email profileImage jobTitle rating jobSuccessScore isVerified')
+      .populate('clientId', 'firstName lastName email profileImage location paymentVerified isPremium')
+      .populate({
+        path: 'jobId',
+        select: 'title budget description clientId',
+        populate: {
+          path: 'clientId',
+          select: 'firstName lastName email profileImage location paymentVerified isPremium'
+        }
+      });
+
+    if (!proposal) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    res.status(200).json({ success: true, data: proposal });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Approve a proposal (Hire)
 export const approveProposal = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const clientId = (req as any).user?.id || (req as any).user?._id?.toString();
+    const clientId = (req as any).user?._id;
 
-    const proposal = await Proposal.findById(id)
-      .populate('jobId')
-      .populate('freelancerId', 'firstName lastName email')
-      .populate('clientId', 'firstName lastName');
-
+    const proposal = await Proposal.findById(id).populate('jobId');
     if (!proposal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Proposal not found',
-      });
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
     }
 
-    // Get the actual clientId (handle both populated and unpopulated)
-    const proposalClientId = (proposal.clientId as any)?._id
-      ? (proposal.clientId as any)._id.toString()
-      : proposal.clientId?.toString();
-
-    // Verify the client owns this proposal
-    if (proposalClientId !== clientId) {
-      return res.status(403).json({
-        success: false,
-        message: 'You are not authorized to approve this proposal',
-      });
+    if (proposal.status === 'accepted') {
+      return res.status(400).json({ success: false, message: 'Proposal already accepted' });
     }
 
-    // Check if already approved/accepted
-    if (proposal.status === 'accepted' || proposal.status === 'approved') {
+    const job = await Job.findById(proposal.jobId);
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+
+    const amount = proposal.price || 0;
+    const platformFee = Math.round(amount * 0.1); // 10% platform fee
+    const netAmount = amount - platformFee;        // freelancer receives this
+
+    // ── Check & deduct client wallet ──────────────────────────────
+    let clientWallet = await Wallet.findOne({ userId: clientId });
+    if (!clientWallet) {
+      clientWallet = new Wallet({ userId: clientId });
+      await clientWallet.save();
+    }
+
+    if ((clientWallet.availableBalance || 0) < amount) {
       return res.status(400).json({
         success: false,
-        message: 'This proposal has already been accepted.',
+        message: `Insufficient wallet balance. You need ₦${amount.toLocaleString()} but have ₦${(clientWallet.availableBalance || 0).toLocaleString()} available. Please top up your wallet first.`,
       });
     }
 
-    // Status update moved to end to ensure atomicity
+    // Deduct from client
+    const clientBalanceBefore = clientWallet.balance;
+    clientWallet.balance -= amount;
+    clientWallet.totalSpent = (clientWallet.totalSpent || 0) + amount;
+    await clientWallet.save(); // pre-save hook updates client's availableBalance
 
-
-    // Create a project
-    const freelancer = proposal.freelancerId as any;
-    const client = proposal.clientId as any;
-
-    // Handle case where client is not populated (get the actual ID)
-    const actualClientId = client?._id || proposal.clientId || clientId;
-    const actualFreelancerId = freelancer?._id || proposal.freelancerId;
-
-    // Get client name (fetch if not populated)
-    let clientName = client?.firstName && client?.lastName
-      ? `${client.firstName} ${client.lastName}`
-      : 'Client';
-
-    if (!client?.firstName) {
-      // Fetch client info if not populated
-      const clientUser = await User.findById(actualClientId);
-      if (clientUser) {
-        clientName = `${clientUser.firstName} ${clientUser.lastName}`;
-      }
-    }
-
-    const project = await Project.create({
-      title: proposal.title,
-      description: proposal.description,
-      summary: proposal.description.substring(0, 200) + '...',
-      status: 'ongoing',
-      statusLabel: 'Active',
-      budget: {
-        amount: proposal.budget.amount,
-        currency: proposal.budget.currency,
-        type: proposal.priceType,
-      },
-      dateRange: {
-        startDate: new Date(),
-        endDate: proposal.dateRange.endDate,
-      },
-      clientId: actualClientId,
-      clientName: clientName,
-      clientVerified: true,
-      freelancerId: actualFreelancerId,
-      projectType: 'One-time project',
-      deliverables: [],
-      activity: [{
-        date: new Date(),
-        description: `Project started with ${freelancer?.firstName || 'freelancer'} ${freelancer?.lastName || ''}`.trim(),
-      }],
-      uploads: [],
-      milestones: [],
-    });
-
-    console.log('✅ [approveProposal] Created Project with ID:', project._id);
-
-    // Check if job was prepaid (payment in escrow)
-    let paymentStatus = 'pending';
-    // FORCE 'held' for MVP flow so it shows in Freelancer's Pending Balance immediately
-    let paymentEscrowStatus = 'held';
-    let paymentVerified = false;
-    let paymentReference = '';
-
-    if (proposal.jobId) {
-      const job = await Job.findById(proposal.jobId);
-      if (job && job.paymentVerified && job.paymentStatus === 'escrow') {
-        paymentStatus = 'completed'; // Payment is already collected
-        paymentVerified = true;
-        paymentReference = job.paymentReference || '';
-      }
-    }
-
-    // Create a payment record for the project
-    const pendingPayment = await Payment.create({
-      projectId: project._id,
-      payerId: actualClientId,
-      payeeId: actualFreelancerId,
-      amount: proposal.budget.amount,
-      platformFee: (proposal.budget.amount * 10) / 100, // 10% fee
-      netAmount: proposal.budget.amount - ((proposal.budget.amount * 10) / 100),
-      currency: (proposal.budget.currency === '$' ? 'USD' : proposal.budget.currency) || 'NGN',
-      paymentType: 'full_payment',
-      description: `Payment for project: ${proposal.title}`,
-      status: paymentStatus,
-      escrowStatus: paymentEscrowStatus,
-      paymentMethod: 'paystack', // or whatever
-      gatewayReference: paymentReference || undefined, // undefined to avoid unique constraint if sparse
-      paidAt: paymentVerified ? new Date() : undefined
-    });
-
-    // If payment is already held in escrow, we should update the Freelancer's wallet escrow balance immediately
-    if (paymentEscrowStatus === 'held') {
-      let freelancerWallet = await Wallet.findOne({ userId: actualFreelancerId });
-      if (!freelancerWallet) {
-        freelancerWallet = await Wallet.create({ userId: actualFreelancerId });
-      }
-      freelancerWallet.escrowBalance += pendingPayment.netAmount;
-      // We add to balance as well because Total Balance = Available + Escrow usually? 
-      // Or usually Balance is total. Let's assume Balance includes Escrow.
-      freelancerWallet.balance += pendingPayment.netAmount;
-      await freelancerWallet.save();
-    }
-
-    // Update proposal status to approved (Moved here)
-    proposal.status = 'approved' as any;
+    // Update proposal status
+    proposal.status = 'accepted';
     await proposal.save();
 
-    res.status(200).json({
-      success: true,
-      message: 'Proposal approved and project created successfully',
-      data: {
-        proposal,
-        project,
-        payment: pendingPayment,
+    // Close job
+    job.status = 'closed';
+    await job.save();
+
+    const client = await User.findById(clientId);
+
+    // Create Project
+    const project = await Project.create({
+      title: job.title,
+      description: job.description,
+      summary: proposal.description || job.description,
+      dateRange: {
+        startDate: new Date(),
+        endDate: new Date(Date.now() + (proposal.deliveryTime || 7) * 24 * 60 * 60 * 1000)
       },
+      status: 'ongoing',
+      statusLabel: 'Active',
+      clientId: clientId,
+      clientName: client ? `${client.firstName} ${client.lastName}` : 'Client',
+      freelancerId: proposal.freelancerId,
+      budget: {
+        amount: proposal.price || 0,
+        currency: '₦',
+        type: 'fixed'
+      },
+      projectType: 'One-time project',
+      activity: [{
+        date: new Date(),
+        description: 'Project started. Proposal accepted.'
+      }]
     });
 
-    // Notify Freelancer
+    // Create Payment record (Escrow held)
+    const payment = await Payment.create({
+      projectId: project._id,
+      jobId: job._id,
+      payerId: clientId,
+      payeeId: proposal.freelancerId,
+      amount,
+      platformFee,
+      netAmount,
+      status: 'completed',
+      paymentMethod: 'wallet',
+      paymentType: 'project_payment',
+      escrowStatus: 'held',
+      description: `Payment for project: ${job.title}`,
+      paidAt: new Date(),
+      gatewayReference: `ESCROW-${Date.now()}`
+    });
+
+    // ── Credit freelancer wallet (balance + escrow) ──────────────
+    // balance increases so wallet has the funds.
+    // escrowBalance increases by the same amount so availableBalance stays 0
+    // until the client approves the completed work.
+    let freelancerWallet = await Wallet.findOne({ userId: proposal.freelancerId });
+    if (!freelancerWallet) {
+      freelancerWallet = new Wallet({ userId: proposal.freelancerId });
+    }
+    const freelancerBalanceBefore = freelancerWallet.balance;
+    freelancerWallet.balance = (freelancerWallet.balance || 0) + netAmount;
+    freelancerWallet.escrowBalance = (freelancerWallet.escrowBalance || 0) + netAmount;
+    // pre-save hook: availableBalance = balance - escrowBalance → 0 while locked
+    await freelancerWallet.save();
+
+    // ── Transaction records ───────────────────────────────────────
+    // 1. Client debit
+    await Transaction.create({
+      userId: clientId,
+      type: 'payment_sent',
+      amount,
+      currency: 'NGN',
+      status: 'completed',
+      gateway: 'vtstack',
+      paymentId: payment._id,
+      projectId: project._id,
+      balanceBefore: clientBalanceBefore,
+      balanceAfter: clientWallet.balance,
+      description: `Escrow payment for project: ${job.title}`,
+      metadata: { platformFee, netAmount, proposalId: proposal._id.toString() },
+    });
+
+    // 2. Freelancer escrow credit (locked — not yet available)
+    await Transaction.create({
+      userId: proposal.freelancerId,
+      type: 'payment_received',
+      amount: netAmount,
+      currency: 'NGN',
+      status: 'pending', // pending = locked in escrow
+      paymentId: payment._id,
+      projectId: project._id,
+      balanceBefore: freelancerBalanceBefore,
+      balanceAfter: freelancerWallet.balance,
+      description: `🔒 Funds locked in escrow for project: ${job.title}. Will be released when client approves completion.`,
+      metadata: { escrow: true, platformFee, proposalId: proposal._id.toString() },
+    });
+
+    // ── Notifications ─────────────────────────────────────────────
     try {
-      const io = getIO(); // Import here to avoid circular dependency issues if any
-
-      // Create notification record
-      await Notification.create({
-        userId: actualFreelancerId,
-        type: 'proposal_accepted',
-        title: 'Proposal Accepted',
-        message: `Your proposal for "${proposal.title}" has been accepted!`,
-        relatedId: project._id,
-        relatedType: 'project',
-        actorId: actualClientId,
-        actorName: clientName,
-        isRead: false,
-      });
-
-      // Emit live event
-      io.to(actualFreelancerId.toString()).emit('notification:new', {
-        title: 'Proposal Accepted',
-        message: `Your proposal for "${proposal.title}" has been accepted!`,
-        type: 'proposal_accepted'
-      });
-
-      // Send Push Notification
-      notificationService.sendPushNotification(
-        actualFreelancerId.toString(),
-        'Proposal Accepted',
-        `Your proposal for "${proposal.title}" has been accepted!`,
-        { projectId: project._id, type: 'project' }
+      const { notifyProposalAccepted } = await import('./notification.controller.js');
+      await notifyProposalAccepted(
+        proposal.freelancerId,
+        client ? `${client.firstName} ${client.lastName}` : 'Client',
+        job.title,
+        project._id
       );
-    } catch (socketError) {
-      console.warn('Socket/Notification error (non-fatal):', socketError);
-      // Continue execution - do not fail the request just because notification failed
+    } catch (err) {
+      console.error('Failed to notify proposal acceptance:', err);
     }
 
-    // Send Email to Freelancer
-    try {
-      const freelancerUser = await User.findById(actualFreelancerId);
-
-      if (freelancerUser && freelancerUser.email) {
-        const projectLink = `${process.env.FRONTEND_URL || 'https://app.myconnecta.ng'}/projects/${project._id}`; // TODO: Adjust deep link schema if mobile
-
-        await emailService.sendProposalAcceptedEmail(
-          freelancerUser.email,
-          freelancerUser.firstName || 'Freelancer',
-          project.title,
-          clientName,
-          projectLink
-        );
-      }
-    } catch (emailError) {
-      console.error('Failed to send acceptance email:', emailError);
-      // Don't fail the request if email fails
-    }
-
-  } catch (error: any) {
-    console.error('Error approving proposal:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error approving proposal',
-      error: error.message,
+    // Notify freelancer about locked funds
+    await createNotification({
+      userId: proposal.freelancerId,
+      type: 'payment_received',
+      title: '🔒 Payment Locked in Escrow',
+      message: `₦${netAmount.toLocaleString()} has been locked for your project "${job.title}". Funds will be released to your available balance once the client approves your work.`,
+      relatedId: payment._id,
+      relatedType: 'payment',
+      priority: 'high',
     });
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Proposal approved and project created', 
+      data: { proposal, project } 
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -677,88 +318,62 @@ export const approveProposal = async (req: Request, res: Response) => {
 export const rejectProposal = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const clientId = (req as any).user?.id || (req as any).user?._id?.toString();
-
-    const proposal = await Proposal.findById(id)
-      .populate('freelancerId', 'firstName lastName email')
-      .populate('clientId', 'firstName lastName')
-      .populate('jobId', 'title');
+    
+    const proposal = await Proposal.findByIdAndUpdate(
+      id, 
+      { status: 'rejected' }, 
+      { new: true }
+    );
 
     if (!proposal) {
-      return res.status(404).json({
-        success: false,
-        message: 'Proposal not found',
-      });
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
     }
 
-    // Verify the client owns this proposal (Skipped as per existing logic, but good practice to keep comments)
-    // if (proposal.clientId?.toString() !== clientId) ...
-
-    proposal.status = 'declined' as any;
-    await proposal.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Proposal rejected successfully',
-      data: proposal,
-    });
-
-    // --- Notifications ---
+    // Notification for Freelancer (Proposal Rejected)
     try {
-      const freelancer = proposal.freelancerId as any;
-      const client = proposal.clientId as any;
-      const jobTitle = (proposal.jobId as any)?.title || 'Project';
-      const clientName = client?.firstName ? `${client.firstName} ${client.lastName}` : 'Client';
-
-      if (freelancer?._id) {
-        const io = getIO();
-
-        // 1. DB Notification
-        await Notification.create({
-          userId: freelancer._id,
-          type: 'proposal_rejected',
-          title: 'Proposal Declined',
-          message: `${clientName} has declined your proposal for "${jobTitle}".`,
-          relatedId: proposal._id,
-          relatedType: 'proposal',
-          actorId: clientId,
-          actorName: clientName,
-          isRead: false,
+        const { createNotification } = await import('./notification.controller.js');
+        await createNotification({
+            userId: proposal.freelancerId,
+            type: 'proposal_rejected',
+            title: 'Proposal Status Update',
+            message: `Your proposal for a job has been reviewed and declined.`,
+            relatedId: proposal.jobId,
+            relatedType: 'job',
+            priority: 'medium'
         });
-
-        // 2. Socket Notification
-        io.to(freelancer._id.toString()).emit('notification:new', {
-          title: 'Proposal Declined',
-          message: `${clientName} has declined your proposal for "${jobTitle}".`,
-          type: 'proposal_rejected'
-        });
-
-        // Send Push Notification
-        notificationService.sendPushNotification(
-          freelancer._id.toString(),
-          'Proposal Declined',
-          `${clientName} declined your proposal for "${jobTitle}".`,
-          { type: 'proposal' }
-        );
-
-        // 3. Email Notification
-        if (freelancer.email) {
-          await emailService.sendProposalRejectedEmail(
-            freelancer.email,
-            freelancer.firstName || 'Freelancer',
-            clientName,
-            jobTitle
-          );
-        }
-      }
-    } catch (notifyError) {
-      console.warn('Error sending rejection notifications:', notifyError);
+    } catch (err) {
+        console.error('Failed to notify proposal rejection:', err);
     }
+
+    res.status(200).json({ success: true, message: 'Proposal rejected', data: proposal });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Error rejecting proposal',
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Update proposal status
+export const updateProposalStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['declined', 'rejected', 'accepted'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status update for proposal' });
+    }
+
+    const proposal = await Proposal.findByIdAndUpdate(id, { status }, { new: true });
+    res.status(200).json({ success: true, data: proposal });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Delete proposal
+export const deleteProposal = async (req: Request, res: Response) => {
+  try {
+    await Proposal.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Proposal deleted' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

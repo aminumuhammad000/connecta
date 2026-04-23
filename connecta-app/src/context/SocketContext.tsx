@@ -13,10 +13,13 @@ interface SocketContextType {
     refreshUnreadNotificationCount: () => Promise<void>;
 }
 
+import { useInAppAlert } from '../components/InAppAlert';
+
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { user, token } = useAuth();
+    const { showAlert } = useInAppAlert();
     const [socket, setSocket] = useState<Socket | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
@@ -115,6 +118,17 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
         // Notification events
         socketInstance.on('notification:new', () => {
+            refreshUnreadNotificationCount();
+        });
+
+        socketInstance.on('notification', (data: any) => {
+            showAlert({
+                title: data.title || 'New Notification',
+                message: data.message || '',
+                type: data.type === 'success' || data.type === 'proposal_accepted' ? 'success' : 
+                      data.type === 'error' ? 'error' : 
+                      data.type === 'warning' ? 'warning' : 'info'
+            });
             refreshUnreadNotificationCount();
         });
 

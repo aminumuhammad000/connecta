@@ -1,6 +1,7 @@
 import { get, put, post, uploadFile } from './api';
 import { API_ENDPOINTS } from '../utils/constants';
 import { Profile } from '../types';
+import { saveProfileData, getProfileData, saveCachedProfile, getCachedProfile } from '../utils/storage';
 
 let hasLoggedMissingProfile = false;
 
@@ -10,40 +11,48 @@ const unwrapProfile = (response: any): Profile | null => {
 
     // Handle API envelope shapes
     if (data?.success === false) return null;
+    
+    // If the data is nested in a 'data' property (standard for our newer controllers)
+    const profileObj = (data?.success === true && data?.data != null) ? data.data : data;
 
     // Treat successful responses with null data as present to avoid repeated prompts
-    if (data?.success === true && data?.data === null) return {} as Profile;
+    if (data?.success === true && profileObj === null) return {} as Profile;
 
-    // If it's a flattened profile (our new standard) or has profile fields, return as is
-    // We check for fields that only exist in a Profile, not a User
-    const hasProfileFields = data && (data.bio !== undefined || data.skills !== undefined || data.employment !== undefined || data.portfolio !== undefined);
+    // Check for profile fields in the extracted object
+    // Use stable discriminating fields that are always present in a profile response
+    const finalData = profileObj;
+    const hasProfileFields = finalData && (
+        finalData.bio !== undefined ||
+        finalData.skills !== undefined ||
+        finalData.employment !== undefined ||
+        finalData.portfolio !== undefined ||
+        finalData.companyName !== undefined ||
+        finalData.location !== undefined ||
+        finalData.phoneNumber !== undefined ||
+        finalData.createdAt !== undefined
+    );
 
-    if (data?.profile) {
-        // If it's wrapped in a 'profile' key, return that
-        return data.profile as Profile;
+    if (finalData?.profile) {
+        return finalData.profile as Profile;
     }
 
     if (hasProfileFields) {
-        // If the root object has profile fields, return the root object
-        // Merging user data if it's nested but we are in the root
-        if (data.user && typeof data.user === 'object') {
+        if (finalData.user && typeof finalData.user === 'object') {
             return {
-                ...data.user,
-                ...data,
-                userId: data.user._id || data.user.id || data.userId
+                ...finalData.user,
+                ...finalData,
+                userId: finalData.user._id || finalData.user.id || finalData.userId
             } as Profile;
         }
-        return data as Profile;
+        return finalData as Profile;
     }
 
-    if (data?.user && typeof data.user === 'object') {
-        // Only return just the user if no profile fields were found at root
-        return data.user as Profile;
+    if (finalData?.user && typeof finalData.user === 'object') {
+        return finalData.user as Profile;
     }
 
-    // Fallback: return root object if it's an object
-    if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        return data as Profile;
+    if (finalData && typeof finalData === 'object' && Object.keys(finalData).length > 0) {
+        return finalData as Profile;
     }
 
     return null;
@@ -60,8 +69,21 @@ const unwrapProfile = (response: any): Profile | null => {
 export const getMyProfile = async (): Promise<Profile | null> => {
     try {
         const response = await get<Profile>(API_ENDPOINTS.PROFILE_ME);
-        return unwrapProfile(response);
+        const profile = unwrapProfile(response);
+        
+        // Only save if we have actual profile data (not just an empty object)
+        if (profile && Object.keys(profile).length > 2) { 
+            await saveProfileData(profile);
+        }
+        return profile;
     } catch (error: any) {
+        // Fallback to cache if error (e.g. offline)
+        const cached = await getProfileData();
+        if (cached) {
+            console.log('[ProfileService] Using cached profile data');
+            return cached;
+        }
+
         if (error?.status === 404) {
             return null;
         }
@@ -73,18 +95,40 @@ export const getMyProfile = async (): Promise<Profile | null> => {
  * Get profile by ID
  */
 export const getProfileById = async (id: string): Promise<Profile> => {
-    const response = await get<Profile>(API_ENDPOINTS.PROFILE_BY_ID(id));
-    const data = unwrapProfile(response);
-    return data as Profile;
+    try {
+        const response = await get<Profile>(API_ENDPOINTS.PROFILE_BY_ID(id));
+        const data = unwrapProfile(response);
+        if (data && data.userId) {
+            await saveCachedProfile(data.userId, data);
+        }
+        return data as Profile;
+    } catch (error) {
+        // Since we don't have userId easily from just 'id' (which is profile _id),
+        // fallback might be limited unless we find it in cache by some other means.
+        // But getProfileByUserId is more common.
+        throw error;
+    }
 };
 
 /**
  * Get profile by User ID
  */
 export const getProfileByUserId = async (userId: string): Promise<Profile> => {
-    const response = await get<Profile>(API_ENDPOINTS.PROFILE_BY_USER_ID(userId));
-    const data = unwrapProfile(response);
-    return data as Profile;
+    try {
+        const response = await get<Profile>(API_ENDPOINTS.PROFILE_BY_USER_ID(userId));
+        const data = unwrapProfile(response);
+        if (data) {
+            await saveCachedProfile(userId, data);
+        }
+        return data as Profile;
+    } catch (error) {
+        const cached = await getCachedProfile(userId);
+        if (cached) {
+            console.log('[ProfileService] Using cached profile for userId:', userId);
+            return cached;
+        }
+        throw error;
+    }
 };
 
 /**
@@ -103,6 +147,9 @@ export const updateMyProfile = async (profileData: Partial<Profile>): Promise<Pr
     try {
         const response = await put<Profile>(API_ENDPOINTS.PROFILE_ME, profileData);
         const data = unwrapProfile(response);
+        if (data) {
+            await saveProfileData(data);
+        }
         return data as Profile;
     } catch (error: any) {
         // If profile doesn't exist yet, create it with the provided data

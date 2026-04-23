@@ -41,7 +41,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => {
         // Return the data directly for successful responses
-        console.log('✅ API Response:', response.config.method?.toUpperCase(), response.status, (response.config.baseURL || '') + (response.config.url || ''));
+        console.log('✅ API Response:', response.config.method?.toUpperCase(), response.status, (response.config.baseURL || '') + (response.config.url || ''), 'Data:', response.data);
         // Handle both direct data and wrapped responses
         return response.data?.data !== undefined ? response.data.data : response.data;
     },
@@ -145,7 +145,6 @@ export const uploadFile = async (url: string, formData: FormData): Promise<ApiRe
     return await apiClient.post(url, formData, {
         headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
         },
         timeout: 60000, // 60s timeout for uploads
     });
@@ -160,9 +159,7 @@ export const uploadFilePublic = async (url: string, formData: FormData): Promise
 
     try {
         const response = await apiClient.post(url, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
+            headers: {},
             timeout: 60000, // 60s timeout for uploads
         });
         return response as any;

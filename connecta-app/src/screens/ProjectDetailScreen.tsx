@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import projectService from '../services/projectService';
 import paymentService from '../services/paymentService';
@@ -10,6 +10,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { uploadFile } from '../services/api';
 import { API_ENDPOINTS } from '../utils/constants';
 import { useInAppAlert } from '../components/InAppAlert';
+import JobCompletionFlyer from '../components/JobCompletionFlyer';
 
 export default function ProjectDetailScreen({ navigation, route }: any) {
     const c = useThemeColors();
@@ -22,8 +23,10 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
     const [error, setError] = useState<string | null>(null);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
     const [submissionSummary, setSubmissionSummary] = useState('');
+    const [submissionFiles, setSubmissionFiles] = useState<any[]>([]);
     const [showRevisionModal, setShowRevisionModal] = useState(false);
     const [revisionFeedback, setRevisionFeedback] = useState('');
+    const [showFlyer, setShowFlyer] = useState(false);
 
     useEffect(() => {
         if (projectId) {
@@ -104,6 +107,15 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                         
                         showAlert({ title: 'Success', message: 'Work approved! Funds released.', type: 'success' });
                         fetchProjectDetails(); // Refresh
+                        
+                        // Navigate to review
+                        navigation.navigate('ClientWriteReview', {
+                            projectId: project._id,
+                            revieweeId: project.freelancerId?._id || project.freelancerId,
+                            projectTitle: project.title,
+                            freelancerName: project.freelancerName || (project.freelancerId?.firstName ? `${project.freelancerId.firstName} ${project.freelancerId.lastName}` : 'Freelancer'),
+                            freelancerAvatar: project.freelancerAvatar || project.freelancerId?.profileImage
+                        });
                     } catch (err: any) {
                         showAlert({ title: 'Error', message: err.message || 'Failed to approve work', type: 'error' });
                     } finally {
@@ -115,23 +127,68 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
     };
 
     const handleConfirmSubmit = async () => {
-        if (!submissionSummary.trim()) {
-            showAlert({ title: 'Error', message: 'Please provide a summary of your work.', type: 'error' });
-            return;
-        }
-
         try {
             setActionLoading(true);
             await projectService.submitProject(project._id, {
                 summary: submissionSummary,
-                files: [] // In a full implementation, files from uploads section would be here
+                files: submissionFiles
             });
             setShowSubmitModal(false);
             setSubmissionSummary('');
+            setSubmissionFiles([]);
             showAlert({ title: 'Success', message: 'Work submitted for review!', type: 'success' });
             fetchProjectDetails();
         } catch (err: any) {
             showAlert({ title: 'Error', message: err.message || 'Failed to submit work', type: 'error' });
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handlePickSubmissionFile = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: '*/*',
+                copyToCacheDirectory: true,
+            });
+
+            if (result.canceled) return;
+
+            const asset = result.assets[0];
+            if (!asset) return;
+
+            setActionLoading(true);
+
+            // 1. Upload file
+            const formData = new FormData();
+            const fileName = asset.name || `file_${Date.now()}`;
+            const fileType = asset.mimeType || 'application/octet-stream';
+            
+            console.log('📤 [Upload] Selected:', { name: fileName, type: fileType, uri: asset.uri });
+
+            formData.append('file', {
+                uri: asset.uri,
+                name: fileName,
+                type: fileType,
+            } as any);
+
+            const uploadResponse = await uploadFile(API_ENDPOINTS.UPLOAD_FILE, formData);
+            const fileUrl = uploadResponse.data?.url;
+
+            if (!fileUrl) throw new Error("File upload failed to return URL");
+
+            // 2. Add to submission files state
+            setSubmissionFiles(prev => [...prev, {
+                fileName: asset.name,
+                fileUrl: fileUrl,
+                fileType: asset.mimeType || 'unknown',
+                uploadedAt: new Date()
+            }]);
+
+            showAlert({ title: 'Success', message: 'File attached to submission!', type: 'success' });
+        } catch (err: any) {
+            console.error(err);
+            showAlert({ title: 'Error', message: err.message || 'Upload failed', type: 'error' });
         } finally {
             setActionLoading(false);
         }
@@ -392,24 +449,32 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 )}
 
                 {project.submission && (
-                    <View style={[styles.section, styles.submissionBox, { backgroundColor: c.isDark ? '#1E293B' : '#F1F5F9', borderColor: c.border }]}>
-                        <Text style={[styles.sectionTitle, { color: c.text }]}>Submission Details</Text>
-                        <Text style={[styles.infoLabel, { color: c.subtext, marginBottom: 4 }]}>Submitted On: {formatDate(project.submission.submittedAt)}</Text>
-                        <Text style={[styles.sectionText, { color: c.text, fontWeight: '500' }]}>{project.submission.summary}</Text>
+                    <View style={[styles.section, styles.submissionBox, { backgroundColor: project.status === 'submitted' ? '#F0FDF4' : (c.isDark ? '#1E293B' : '#F1F5F9'), borderColor: project.status === 'submitted' ? '#22C55E' : c.border, borderWidth: project.status === 'submitted' ? 1.5 : 1 }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                            <MaterialIcons name="fact-check" size={20} color={project.status === 'submitted' ? '#22C55E' : c.primary} />
+                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>Work Submission</Text>
+                        </View>
+                        
+                        <Text style={[styles.infoLabel, { color: c.subtext, marginBottom: 8 }]}>Submitted On: {formatDate(project.submission.submittedAt)}</Text>
+                        <View style={{ backgroundColor: c.background, padding: 12, borderRadius: 10, marginBottom: 16 }}>
+                           <Text style={[styles.sectionText, { color: c.text, fontSize: 14, fontWeight: '500' }]}>{project.submission.summary}</Text>
+                        </View>
                         
                         {project.submission.files && project.submission.files.length > 0 && (
-                            <View style={{ marginTop: 12 }}>
-                                <Text style={[styles.infoLabel, { color: c.subtext, marginBottom: 8 }]}>Attached Files:</Text>
-                                {project.submission.files.map((file: any, index: number) => (
-                                    <TouchableOpacity 
-                                        key={index} 
-                                        style={styles.fileItem}
-                                        onPress={() => Linking.openURL(file.fileUrl)}
-                                    >
-                                        <Ionicons name="document-attach" size={16} color={c.primary} />
-                                        <Text style={[styles.fileText, { color: c.primary }]}>{file.fileName}</Text>
-                                    </TouchableOpacity>
-                                ))}
+                            <View>
+                                <Text style={[styles.infoLabel, { color: c.subtext, marginBottom: 8, fontWeight: 'bold' }]}>Attachments:</Text>
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                    {project.submission.files.map((file: any, index: number) => (
+                                        <TouchableOpacity 
+                                            key={index} 
+                                            style={[styles.fileItem, { backgroundColor: c.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: c.border }]}
+                                            onPress={() => Linking.openURL(file.fileUrl)}
+                                        >
+                                            <Ionicons name="document-attach" size={16} color={c.primary} />
+                                            <Text style={[styles.fileText, { color: c.text, fontSize: 13, marginLeft: 6 }]}>{file.fileName}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
                             </View>
                         )}
                     </View>
@@ -463,29 +528,33 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                 {isProjectOwner && (project.status === 'ongoing' || project.status === 'submitted' || project.status === 'revision_requested') && (
                     <View style={{ gap: 12, marginBottom: 16 }}>
                         {/* If Submitted, show Approve/Reject */}
+                        {/* If Submitted, show Approve/Reject Actions */}
                         {project.status === 'submitted' && (
-                            <>
-                                <View style={{ padding: 12, backgroundColor: '#EFF6FF', borderRadius: 8, marginBottom: 8 }}>
-                                    <Text style={{ color: '#1E40AF', fontSize: 14 }}>Freelancer has submitted work. Please review and approve.</Text>
+                            <View style={{ backgroundColor: c.card, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#10B981', gap: 12 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <MaterialIcons name="stars" size={24} color="#10B981" />
+                                    <Text style={{ color: c.text, fontSize: 16, fontWeight: 'bold' }}>Review Work Submission</Text>
                                 </View>
+                                <Text style={{ color: c.subtext, fontSize: 13 }}>Please review the submitted deliverables above. If satisfied, approve to release funds.</Text>
+                                
                                 <TouchableOpacity
-                                    style={[styles.chatButton, { backgroundColor: '#10B981', opacity: actionLoading ? 0.7 : 1 }]}
+                                    style={[styles.chatButton, { backgroundColor: '#10B981', height: 50, borderRadius: 12, marginTop: 4, opacity: actionLoading ? 0.7 : 1 }]}
                                     onPress={handleApproveWork}
                                     disabled={actionLoading}
                                 >
                                     {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="checkmark-circle" size={20} color="white" style={{ marginRight: 8 }} />}
-                                    <Text style={styles.chatButtonText}>Satisfied (Approve & Release)</Text>
+                                    <Text style={[styles.chatButtonText, { fontSize: 15, fontWeight: '700' }]}>Approve & Satisfy Job</Text>
                                 </TouchableOpacity>
-
+                                
                                 <TouchableOpacity
-                                    style={[styles.chatButton, { backgroundColor: '#F59E0B', opacity: actionLoading ? 0.7 : 1 }]}
+                                    style={[styles.chatButton, { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#F59E0B', height: 48, borderRadius: 12, opacity: actionLoading ? 0.7 : 1 }]}
                                     onPress={() => setShowRevisionModal(true)}
                                     disabled={actionLoading}
                                 >
-                                    {actionLoading ? <ActivityIndicator color="#fff" /> : <Ionicons name="refresh" size={20} color="white" style={{ marginRight: 8 }} />}
-                                    <Text style={styles.chatButtonText}>Request Revision</Text>
+                                    {actionLoading ? <ActivityIndicator color="#F59E0B" /> : <MaterialIcons name="edit-note" size={20} color="#F59E0B" style={{ marginRight: 8 }} />}
+                                    <Text style={[styles.chatButtonText, { color: '#F59E0B', fontSize: 14, fontWeight: '600' }]}>Decline & Request Revision</Text>
                                 </TouchableOpacity>
-                            </>
+                            </View>
                         )}
 
                         {/* If Ongoing, allow manual release or end */}
@@ -520,7 +589,50 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
                     <Text style={styles.chatButtonText}>{isProjectOwner ? 'Chat with Freelancer' : 'Chat with Client'}</Text>
                 </TouchableOpacity>
 
+                {project.status === 'completed' && !isProjectOwner && (
+                    <TouchableOpacity
+                        style={[styles.chatButton, { backgroundColor: '#10B981', marginTop: 12 }]}
+                        onPress={() => navigation.navigate('FreelancerWriteReview', {
+                            projectId: project._id,
+                            revieweeId: project.clientId?._id || project.clientId,
+                            projectTitle: project.title,
+                            clientName: project.clientName || (project.clientId?.firstName ? `${project.clientId.firstName} ${project.clientId.lastName}` : 'Client'),
+                            clientAvatar: project.clientAvatar || project.clientId?.profileImage
+                        })}
+                    >
+                        <MaterialIcons name="rate-review" size={20} color="white" style={{ marginRight: 8 }} />
+                        <Text style={styles.chatButtonText}>Review Client</Text>
+                    </TouchableOpacity>
+                )}
+
+                {project.status === 'completed' && !isProjectOwner && (
+                    <TouchableOpacity
+                        style={[styles.chatButton, { backgroundColor: '#FF8C00', marginTop: 12 }]}
+                        onPress={() => setShowFlyer(true)}
+                    >
+                        <Ionicons name="sparkles" size={20} color="white" style={{ marginRight: 8 }} />
+                        <Text style={styles.chatButtonText}>Share Completion Flyer</Text>
+                    </TouchableOpacity>
+                )}
+
             </ScrollView>
+
+            {project.status === 'completed' && !isProjectOwner && (
+                <JobCompletionFlyer
+                    visible={showFlyer}
+                    onClose={() => setShowFlyer(false)}
+                    projectData={{
+                        title: project.title,
+                        clientName: project.clientName || 'Client',
+                        amount: project.budget?.amount || project.budget || 0,
+                        currency: project.budget?.currency || '₦',
+                        freelancerName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (project.freelancerName || 'Expert Freelancer'),
+                        freelancerAvatar: user?.profileImage || project.freelancerAvatar,
+                        completedDate: new Date().toLocaleDateString(),
+                        category: user?.profession || 'Digital Expert'
+                    }}
+                />
+            )}
 
             {/* Submission Modal */}
             <Modal
@@ -531,35 +643,54 @@ export default function ProjectDetailScreen({ navigation, route }: any) {
             >
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalContent, { backgroundColor: c.card }]}>
-                        <Text style={[styles.modalTitle, { color: c.text }]}>Submit Project</Text>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <Text style={[styles.modalTitle, { color: c.text }]}>Submit Project</Text>
+                            <TouchableOpacity onPress={() => setShowSubmitModal(false)} style={{ padding: 4 }}>
+                                <Ionicons name="close" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
                         <Text style={[styles.modalLabel, { color: c.subtext }]}>Upload final files, add a short summary, and submit for client review.</Text>
                         
                         <TextInput
                             style={[styles.modalInput, { backgroundColor: c.background, color: c.text, borderColor: c.border }]}
-                            placeholder="Add a short summary of what you've completed..."
+                            placeholder="Add project information (e.g. website domain, login details, or a long summary of what you've done)..."
                             placeholderTextColor={c.subtext}
                             multiline
-                            numberOfLines={4}
+                            numberOfLines={6}
                             value={submissionSummary}
                             onChangeText={setSubmissionSummary}
                         />
 
-                        <View style={styles.modalButtons}>
+                        {submissionFiles.length > 0 && (
+                            <View style={{ gap: 8 }}>
+                                <Text style={{ color: c.text, fontWeight: 'bold', fontSize: 13 }}>Attached Files:</Text>
+                                {submissionFiles.map((f, i) => (
+                                    <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.background, padding: 8, borderRadius: 8 }}>
+                                        <Text style={{ color: c.text, fontSize: 12, flex: 1 }} numberOfLines={1}>{f.fileName}</Text>
+                                        <TouchableOpacity onPress={() => setSubmissionFiles(prev => prev.filter((_, idx) => idx !== i))}>
+                                            <Ionicons name="close-circle" size={18} color="#EF4444" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
+                        <TouchableOpacity 
+                            style={[styles.uploadButton, { borderColor: c.primary, borderStyle: 'solid', height: 44 }]}
+                            onPress={handlePickSubmissionFile}
+                            disabled={actionLoading}
+                        >
+                            <Ionicons name="attach" size={20} color={c.primary} />
+                            <Text style={[styles.uploadButtonText, { color: c.primary, fontSize: 14 }]}>Attach File (Optional)</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ marginTop: 8 }}>
                             <TouchableOpacity 
-                                style={[styles.modalButton, { backgroundColor: c.border }]} 
-                                onPress={() => {
-                                    setShowSubmitModal(false);
-                                    setSubmissionSummary('');
-                                }}
-                            >
-                                <Text style={[styles.modalButtonText, { color: c.text }]}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                style={[styles.modalButton, { backgroundColor: c.primary }]} 
+                                style={[styles.modalButton, { backgroundColor: c.primary, width: '100%', flex: 0 }]} 
                                 onPress={handleConfirmSubmit}
                                 disabled={actionLoading}
                             >
-                                {actionLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalButtonText}>Submit as Completed</Text>}
+                                {actionLoading ? <ActivityIndicator color="#fff" /> : <Text style={[styles.modalButtonText, { color: '#fff' }]}>Submit as Completed</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>

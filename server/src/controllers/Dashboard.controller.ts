@@ -8,9 +8,9 @@ import Proposal from '../models/Proposal.model.js';
 import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
 import mongoose from 'mongoose';
-import CollaboProject from '../models/CollaboProject.model.js';
 import Profile from '../models/Profile.model.js';
 import Contract from '../models/Contract.model.js';
+import Notification from '../models/Notification.model.js';
 
 // Get Admin Dashboard Data
 export const getAdminStats = async (req: Request, res: Response) => {
@@ -87,11 +87,6 @@ export const getClientDashboard = async (req: Request, res: Response) => {
       status: { $in: ['active', 'in_progress'] },
     });
 
-    // Get active collabo projects count
-    const activeCollaboCount = await CollaboProject.countDocuments({
-      clientId: userId,
-      status: { $in: ['active', 'planning'] },
-    });
 
     // Get active projects count (from Project model)
     const activeProjectsCount = await Project.countDocuments({
@@ -99,7 +94,7 @@ export const getClientDashboard = async (req: Request, res: Response) => {
       status: { $in: ['ongoing', 'submitted', 'revision_requested'] },
     });
 
-    const totalActiveProjects = activeJobsCount + activeCollaboCount + activeProjectsCount;
+    const totalActiveProjects = activeJobsCount + activeProjectsCount;
 
     // Get unread messages count
     const conversations = await Conversation.find({
@@ -107,14 +102,17 @@ export const getClientDashboard = async (req: Request, res: Response) => {
         { clientId: userId },
         { freelancerId: userId },
       ],
-    }).select('_id');
+    }).select('_id unreadCount');
 
-    const conversationIds = conversations.map((conv) => conv._id);
-
-    const unreadMessagesCount = await Message.countDocuments({
-      conversationId: { $in: conversationIds },
-      sender: { $ne: userId },
-      isRead: false,
+    // Get unread messages count from conversations' unreadCount Map
+    let unreadMessagesCount = 0;
+    conversations.forEach((conv: any) => {
+      if (conv.unreadCount) {
+        const count = conv.unreadCount instanceof Map 
+          ? conv.unreadCount.get(userId) 
+          : conv.unreadCount[userId];
+        unreadMessagesCount += Number(count) || 0;
+      }
     });
 
     // Get pending payments (unverified or held in escrow)
@@ -141,11 +139,25 @@ export const getClientDashboard = async (req: Request, res: Response) => {
     ]);
     const totalSpent = totalSpentResult[0]?.total || 0;
 
+    // Get submitted projects count
+    const submittedProjectsCount = await Project.countDocuments({
+      clientId: userId,
+      status: 'submitted',
+    });
+
+    // Get pending (active) proposals count
+    const activeProposalsCount = await Proposal.countDocuments({
+      clientId: userId,
+      status: 'pending'
+    });
+
     res.status(200).json({
       activeProjects: totalActiveProjects,
       pendingPayments: pendingPayments,
+      submittedProjects: submittedProjectsCount,
       newMessages: unreadMessagesCount,
-      totalSpent: totalSpent
+      totalSpent: totalSpent,
+      activeProposals: activeProposalsCount
     });
   } catch (error) {
     console.error('Error fetching client dashboard:', error);
@@ -168,11 +180,6 @@ export const getActiveProjects = async (req: Request, res: Response) => {
       status: { $in: ['active', 'in_progress'] },
     }).sort({ createdAt: -1 });
 
-    // 2. Fetch active collabo projects
-    const activeCollabos = await CollaboProject.find({
-      clientId: userId,
-      status: { $in: ['active', 'planning'] },
-    }).sort({ createdAt: -1 });
 
     // 3. Fetch ongoing projects (from Project model)
     const ongoingProjects = await Project.find({
@@ -190,16 +197,6 @@ export const getActiveProjects = async (req: Request, res: Response) => {
         budget: job.budget,
         createdAt: job.createdAt,
         projectType: 'job'
-      })),
-      ...activeCollabos.map(collabo => ({
-        _id: collabo._id,
-        title: collabo.title,
-        description: collabo.description,
-        status: collabo.status,
-        budget: collabo.totalBudget,
-        teamName: collabo.teamName,
-        createdAt: collabo.createdAt,
-        projectType: 'collabo'
       })),
       ...ongoingProjects.map(project => ({
         _id: project._id,
@@ -244,11 +241,6 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
       status: { $in: ['pending', 'accepted', 'viewed'] },
     });
 
-    // Get completed jobs count (proposals that are approved/completed)
-    const completedJobsCount = await Proposal.countDocuments({
-      freelancerId: userId,
-      status: 'approved', // Assuming 'approved' means completed in this context, or add a 'completed' status
-    });
 
     // Get total earnings from Wallet
     let totalEarnings = 0;
@@ -286,10 +278,22 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
       totalEarnings = earningsResult[0]?.total || 0;
     }
 
-    // Get total projects (engagements) - where status is accepted, active, or completed
-    const totalProjectsCount = await Proposal.countDocuments({
+    // Get active projects count (ongoing engagements)
+    const activeProjectsCount = await Proposal.countDocuments({
       freelancerId: userId,
-      status: { $in: ['accepted', 'active', 'in_progress', 'approved', 'completed', 'submitted', 'revision_requested'] },
+      status: { $in: ['accepted', 'active', 'in_progress', 'revision_requested'] },
+    });
+
+    // Get submitted projects count (waiting for client approval)
+    const submittedProjectsCount = await Proposal.countDocuments({
+      freelancerId: userId,
+      status: 'submitted',
+    });
+
+    // Get completed jobs count (historically finished)
+    const completedJobsCount = await Proposal.countDocuments({
+      freelancerId: userId,
+      status: { $in: ['approved', 'completed'] },
     });
 
     // Get unread messages count
@@ -298,13 +302,22 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
         { clientId: userId },
         { freelancerId: userId },
       ],
-    }).select('_id');
+    }).select('_id unreadCount');
 
-    const conversationIds = conversations.map((conv) => conv._id);
+    // Get unread messages count from conversations' unreadCount Map
+    let unreadMessagesCount = 0;
+    conversations.forEach((conv: any) => {
+      if (conv.unreadCount) {
+        const count = conv.unreadCount instanceof Map 
+          ? conv.unreadCount.get(userId) 
+          : conv.unreadCount[userId];
+        unreadMessagesCount += Number(count) || 0;
+      }
+    });
 
-    const unreadMessagesCount = await Message.countDocuments({
-      conversationId: { $in: conversationIds },
-      sender: { $ne: userId },
+    // Get unread notifications count
+    const unreadNotificationsCount = await Notification.countDocuments({
+      userId,
       isRead: false,
     });
 
@@ -312,8 +325,11 @@ export const getFreelancerDashboard = async (req: Request, res: Response) => {
       activeProposals: activeProposalsCount,
       completedJobs: completedJobsCount,
       totalEarnings: totalEarnings,
-      totalProjects: totalProjectsCount,
+      activeProjects: activeProjectsCount,
+      submittedProjects: submittedProjectsCount,
+      totalProjects: activeProjectsCount + submittedProjectsCount + completedJobsCount,
       newMessages: unreadMessagesCount,
+      unreadNotifications: unreadNotificationsCount,
     });
   } catch (error) {
     console.error('Error fetching freelancer dashboard:', error);
@@ -471,12 +487,13 @@ export const getRecentMessages = async (req: Request, res: Response) => {
           otherParticipant = conv.freelancerId;
         }
 
-        // Check if there are unread messages
-        const unreadCount = await Message.countDocuments({
-          conversationId: conv._id,
-          sender: { $ne: userId },
-          isRead: false,
-        });
+        // Check if there are unread messages for the current user
+        let unreadCount = 0;
+        if (conv.unreadCount) {
+          unreadCount = conv.unreadCount instanceof Map
+            ? conv.unreadCount.get(userId)
+            : conv.unreadCount[userId];
+        }
 
         const lastMsg = conv.lastMessage as any;
 

@@ -92,6 +92,13 @@ export const unsaveJob = async (id: string): Promise<any> => {
 };
 
 /**
+ * Delete job
+ */
+export const deleteJob = async (id: string): Promise<any> => {
+    return await del(API_ENDPOINTS.JOB_BY_ID(id));
+};
+
+/**
  * Invite freelancer to job
  */
 export const inviteFreelancer = async (jobId: string, freelancerId: string): Promise<any> => {
@@ -110,4 +117,5 @@ export default {
     saveJob,
     unsaveJob,
     inviteFreelancer,
+    deleteJob,
 };

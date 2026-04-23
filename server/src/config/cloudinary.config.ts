@@ -19,6 +19,7 @@ const isCloudinaryConfigured = !!(process.env.CLOUDINARY_CLOUD_NAME && process.e
 
 let avatarStorage: any;
 let portfolioStorage: any;
+let projectStorage: any;
 
 if (isCloudinaryConfigured) {
     console.log('☁️ Using Cloudinary for storage');
@@ -42,6 +43,13 @@ if (isCloudinaryConfigured) {
             transformation: [{ width: 1200, height: 800, crop: 'limit' }],
         },
     });
+
+    projectStorage = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+            folder: 'connecta/projects',
+        },
+    });
 } else {
     console.warn('📁 Cloudinary not configured. Falling back to local disk storage.');
 
@@ -50,7 +58,7 @@ if (isCloudinaryConfigured) {
     const multer = await import('multer');
 
     // Create uploads directory if it doesn't exist
-    const uploadDirs = ['uploads/avatars', 'uploads/portfolio'];
+    const uploadDirs = ['uploads/avatars', 'uploads/portfolio', 'uploads/projects'];
     uploadDirs.forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -76,6 +84,16 @@ if (isCloudinaryConfigured) {
             cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
         }
     });
+
+    projectStorage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, 'uploads/projects');
+        },
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    });
 }
 
-export { cloudinary, avatarStorage, portfolioStorage, isCloudinaryConfigured };
+export { cloudinary, avatarStorage, portfolioStorage, projectStorage, isCloudinaryConfigured };

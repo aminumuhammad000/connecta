@@ -1,17 +1,14 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert, Dimensions, FlatList, Animated } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import paymentService from '../services/paymentService';
-import * as rewardService from '../services/rewardService';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useInAppAlert } from '../components/InAppAlert';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 32;
 
 interface WalletData {
   balance: number;
@@ -32,9 +29,7 @@ const WalletScreen = () => {
   const navigation = useNavigation() as any;
   const { showAlert } = useInAppAlert();
 
-  const [activeWallet, setActiveWallet] = useState<'naira' | 'spark'>('naira');
   const [wallet, setWallet] = useState<WalletData | null>(null);
-  const [sparkBalance, setSparkBalance] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,31 +38,22 @@ const WalletScreen = () => {
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
-
   const loadData = useCallback(async () => {
     try {
-      const [walletData, txnsData, sparks, sparkHist] = await Promise.all([
+      const [walletData, txnsData] = await Promise.all([
         paymentService.getWalletBalance().catch(() => null),
         paymentService.getTransactions().catch(() => []),
-        rewardService.getRewardBalance().catch(() => 0),
-        rewardService.getSparkHistory().catch(() => ({ data: [] })),
       ]);
 
       if (walletData) {
         setWallet(walletData);
         if (!walletData.isVerified && !walletData.bankDetails) {
-          // Only show setup if they have balance but no bank details
           if (walletData.balance > 0) setShowSetupModal(true);
         }
       }
 
-      setSparkBalance(sparks);
-
       const mappedTxns = txnsData.map((t: any) => ({
         id: t._id,
-        kind: 'naira',
         type: mapTransactionType(t.type, t.status),
         title: t.description,
         date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -76,40 +62,7 @@ const WalletScreen = () => {
         rawDate: new Date(t.createdAt)
       }));
 
-      const sparkHistData = Array.isArray(sparkHist) ? sparkHist : (sparkHist as any)?.data || (sparkHist as any)?.transactions || [];
-      const mappedSparks = sparkHistData.map((t: any) => {
-        // Build a context-aware title based on transaction type
-        let title = t.description || 'Spark Transaction';
-        let subtitle = '';
-        if (t.type === 'transfer_send') {
-          // Extract name from description: "Sent Sparks to John Doe"
-          const match = t.description?.match(/to (.+)$/) || [];
-          title = `Sent to ${match[1] || (t.metadata?.recipientEmail || 'someone')}`;
-          subtitle = t.metadata?.recipientEmail || '';
-        } else if (t.type === 'transfer_receive') {
-          const match = t.description?.match(/from (.+)$/) || [];
-          title = `Received from ${match[1] || (t.metadata?.senderEmail || 'someone')}`;
-          subtitle = t.metadata?.senderEmail || '';
-        } else if (t.type === 'daily_reward') {
-          title = '🌅 Daily Login Reward';
-        }
-        return {
-          id: t._id,
-          kind: 'spark',
-          type: t.amount > 0 ? 'income' : 'withdrawal',
-          txnType: t.type,
-          title,
-          subtitle,
-          date: new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          amount: t.amount,
-          status: 'completed',
-          rawDate: new Date(t.createdAt)
-        };
-      });
-
-      // Combine and Sort
-      const combined = [...mappedTxns, ...mappedSparks].sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime());
-      setTransactions(combined);
+      setTransactions(mappedTxns.sort((a: any, b: any) => b.rawDate.getTime() - a.rawDate.getTime()));
 
     } catch (error) {
       console.error('Error loading wallet:', error);
@@ -131,18 +84,19 @@ const WalletScreen = () => {
   };
 
   const mapTransactionType = (type: string, status: string) => {
+    if (status === 'pending' && type === 'payment_received') return 'escrow';
     if (status === 'pending') return 'pending';
     if (type === 'withdrawal') return 'withdrawal';
+    if (type === 'payment_sent') return 'withdrawal';
     return 'income';
   };
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => t.kind === activeWallet);
-  }, [activeWallet, transactions]);
-
   const handleWithdrawPress = () => {
-    if (!wallet?.isVerified) {
+    if (!wallet?.bankDetails?.accountNumber) {
+      // No bank saved — send to setup screen
       setShowSetupModal(true);
+    } else if ((wallet?.availableBalance || 0) <= 0) {
+      showAlert({ title: 'No Available Balance', message: 'You have no funds available to withdraw.', type: 'error' });
     } else {
       setShowWithdrawModal(true);
     }
@@ -151,63 +105,66 @@ const WalletScreen = () => {
   const submitWithdrawal = async () => {
     const amount = parseFloat(withdrawAmount);
     if (isNaN(amount) || amount <= 0) {
-      showAlert({ title: 'Invalid Amount', message: 'Please enter a valid amount', type: 'error' });
+      showAlert({ title: 'Invalid Amount', message: 'Please enter a valid amount.', type: 'error' });
+      return;
+    }
+    if (amount < 100) {
+      showAlert({ title: 'Too Low', message: 'Minimum payout is ₦100.', type: 'error' });
       return;
     }
     if (amount > (wallet?.availableBalance || 0)) {
-      showAlert({ title: 'Insufficient Funds', message: 'Amount exceeds available balance', type: 'error' });
+      showAlert({ title: 'Insufficient Funds', message: 'Amount exceeds your available balance.', type: 'error' });
       return;
     }
 
     try {
       setIsWithdrawing(true);
-      await paymentService.requestWithdrawal({
-        amount,
-        bankCode: wallet?.bankDetails?.bankCode || '',
-        accountNumber: wallet?.bankDetails?.accountNumber || '',
-      });
-
-      showAlert({ title: 'Success', message: 'Withdrawal request submitted', type: 'success' });
+      await paymentService.requestVTStackPayout(amount);
+      showAlert({ title: '✅ Payout Initiated', message: 'Your funds are on the way to your bank account.', type: 'success' });
       setShowWithdrawModal(false);
       setWithdrawAmount('');
       loadData();
     } catch (error: any) {
-      showAlert({ title: 'Error', message: error.message || 'Withdrawal failed', type: 'error' });
+      showAlert({ title: 'Payout Failed', message: error.message || 'Something went wrong. Please try again.', type: 'error' });
     } finally {
       setIsWithdrawing(false);
     }
   };
 
-  const switchWallet = (type: 'naira' | 'spark') => {
-    const index = type === 'naira' ? 0 : 1;
-    flatListRef.current?.scrollToIndex({ index, animated: true });
-    setActiveWallet(type);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
   const renderNairaCard = () => (
     <View style={styles.cardWrapper}>
       <LinearGradient
-        colors={[c.primary, c.primary + 'CC']}
+        colors={[c.primary, c.secondary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.balanceCard}
       >
-        <Image
-          source={{ uri: 'https://www.transparenttextures.com/patterns/carbon-fibre.png' }}
-          style={[StyleSheet.absoluteFillObject, { opacity: 0.1, tintColor: '#fff' }]}
-        />
-
-        <View style={{ position: 'relative', zIndex: 2 }}>
+        <View style={{ position: 'relative', zIndex: 2, flex: 1, justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View>
               <Text style={styles.cardLabel}>Available Balance</Text>
               <Text style={styles.cardCurrency}>Nigerian Naira (NGN)</Text>
             </View>
-            <View style={[styles.cardTypeBadge, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-              <FontAwesome5 name="wallet" size={14} color="#fff" />
-              <Text style={styles.cardTypeText}>Cash</Text>
-            </View>
+            <TouchableOpacity 
+              onPress={handleWithdrawPress}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.95)',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2
+              }}
+            >
+              <MaterialIcons name="south-west" size={14} color={c.primary} />
+              <Text style={{ color: c.primary, fontSize: 11, fontWeight: '800' }}>Withdraw</Text>
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.cardBalance}>
@@ -215,94 +172,19 @@ const WalletScreen = () => {
           </Text>
 
           <View style={styles.cardMetrics}>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.metricLabel}>Total Balance</Text>
               <Text style={styles.metricValue}>
-                {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(wallet?.balance || 0)}
+                {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(wallet?.balance || 0)}
               </Text>
             </View>
             <View style={styles.cardDivider} />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.metricLabel}>In Escrow</Text>
               <Text style={styles.metricValue}>
-                {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(wallet?.escrowBalance || 0)}
+                {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(wallet?.escrowBalance || 0)}
               </Text>
             </View>
-          </View>
-        </View>
-
-        <TouchableOpacity onPress={handleWithdrawPress} style={[styles.cardActionBtn, { backgroundColor: '#fff' }]}>
-          <Text style={[styles.cardActionText, { color: '#1E1B4B' }]}>Withdraw Cash</Text>
-          <MaterialIcons name="arrow-forward" size={16} color="#1E1B4B" />
-        </TouchableOpacity>
-      </LinearGradient>
-    </View>
-  );
-
-  const renderSparkCard = () => (
-    <View style={styles.cardWrapper}>
-      <LinearGradient
-        colors={['#F59E0B', '#FBBF24']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.balanceCard}
-      >
-        <Image
-          source={{ uri: 'https://www.transparenttextures.com/patterns/cubes.png' }}
-          style={[StyleSheet.absoluteFillObject, { opacity: 0.1, tintColor: '#fff' }]}
-        />
-
-        <View style={{ position: 'relative', zIndex: 2 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View>
-              <Text style={styles.cardLabel}>Spark Balance</Text>
-              <Text style={styles.cardCurrency}>Digital Currency (SPK)</Text>
-            </View>
-            <View style={[styles.cardTypeBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <MaterialIcons name="bolt" size={16} color="#FBBF24" />
-              <Text style={styles.cardTypeText}>Reward</Text>
-            </View>
-          </View>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-            <Text style={[styles.cardBalance, { marginTop: 0 }]}>
-              {sparkBalance.toLocaleString()}
-            </Text>
-            <MaterialIcons name="bolt" size={32} color="#FBBF24" style={{ marginLeft: 6 }} />
-          </View>
-
-          <View style={styles.cardActionsRow}>
-            <TouchableOpacity
-              style={styles.sparkAction}
-              onPress={async () => {
-                const hasPin = await rewardService.checkHasPin();
-                if (!hasPin) {
-                  Alert.alert(
-                    "Set Transaction PIN",
-                    "You need to set a 4-digit security PIN before you can transfer Sparks.",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Set PIN Now", onPress: () => navigation.navigate('SetTransactionPin') }
-                    ]
-                  );
-                } else {
-                  navigation.navigate('SendSpark');
-                }
-              }}
-            >
-              <View style={styles.sparkActionIcon}><MaterialIcons name="send" size={20} color="#fff" /></View>
-              <Text style={styles.sparkActionText}>Send</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.sparkAction} onPress={() => navigation.navigate('ReceiveSpark')}>
-              <View style={styles.sparkActionIcon}><MaterialIcons name="call-received" size={20} color="#fff" /></View>
-              <Text style={styles.sparkActionText}>Receive</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.sparkAction} onPress={() => showAlert({ title: 'Coming Soon', message: 'Buying Sparks directly will be available soon!', type: 'info' })}>
-              <View style={[styles.sparkActionIcon, { backgroundColor: 'rgba(251, 191, 36, 0.3)' }]}><MaterialIcons name="shopping-cart" size={20} color="#fff" /></View>
-              <Text style={styles.sparkActionText}>Buy</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </LinearGradient>
@@ -311,7 +193,6 @@ const WalletScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
-      {/* Header */}
       <View style={[styles.appBar, { borderBottomColor: c.border }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -319,8 +200,12 @@ const WalletScreen = () => {
           </TouchableOpacity>
           <Text style={[styles.screenTitle, { color: c.text }]}>My Wallet</Text>
         </View>
-        <TouchableOpacity onPress={() => navigation.navigate('WithdrawalSetup')}>
-          <Ionicons name="settings-outline" size={24} color={c.text} />
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('WithdrawalSetup')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}
+        >
+          <MaterialIcons name="account-balance" size={18} color={c.primary} />
+          <Text style={{ color: c.primary, fontWeight: '700', fontSize: 13 }}>Bank</Text>
         </TouchableOpacity>
       </View>
 
@@ -328,116 +213,51 @@ const WalletScreen = () => {
         contentContainerStyle={{ paddingBottom: 40 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[c.primary]} />}
       >
-        {/* Wallet Switcher */}
-        <View style={styles.switcherContainer}>
-          <View style={[styles.switcherBg, { backgroundColor: c.card, borderColor: c.border }]}>
-            <TouchableOpacity
-              style={[styles.switcherBtn, activeWallet === 'naira' && { backgroundColor: c.isDark ? '#1E1B4B' : '#E0E7FF' }]}
-              onPress={() => switchWallet('naira')}
-            >
-              <Text style={[styles.switcherText, { color: activeWallet === 'naira' ? c.primary : c.subtext, fontWeight: activeWallet === 'naira' ? '800' : '600' }]}>Naira Wallet</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.switcherBtn, activeWallet === 'spark' && { backgroundColor: c.isDark ? '#312E81' : '#E0E7FF' }]}
-              onPress={() => switchWallet('spark')}
-            >
-              <Text style={[styles.switcherText, { color: activeWallet === 'spark' ? c.primary : c.subtext, fontWeight: activeWallet === 'spark' ? '800' : '600' }]}>Spark Wallet</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={[styles.cardsContainer, { marginTop: 24 }]}>
+           {renderNairaCard()}
         </View>
 
-        {/* Swipeable Cards */}
-        <View style={styles.cardsContainer}>
-          <FlatList
-            ref={flatListRef}
-            data={[0, 1]}
-            renderItem={({ item }) => item === 0 ? renderNairaCard() : renderSparkCard()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
-            onMomentumScrollEnd={(e) => {
-              const index = Math.round(e.nativeEvent.contentOffset.x / width);
-              setActiveWallet(index === 0 ? 'naira' : 'spark');
-              Haptics.selectionAsync();
-            }}
-            keyExtractor={(i) => i.toString()}
-          />
-
-          {/* Pagination Indicators */}
-          <View style={styles.dotsRow}>
-            {[0, 1].map((i) => {
-              const scale = scrollX.interpolate({
-                inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-                outputRange: [1, 1.5, 1],
-                extrapolate: 'clamp'
-              });
-              const opacity = scrollX.interpolate({
-                inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-                outputRange: [0.3, 1, 0.3],
-                extrapolate: 'clamp'
-              });
-              return <Animated.View key={i} style={[styles.dot, { opacity, transform: [{ scale }], backgroundColor: c.primary }]} />;
-            })}
-          </View>
-        </View>
-
-        {/* Transactions Section */}
         <View style={styles.transactionsHeader}>
-          <Text style={[styles.sectionTitle, { color: c.text }]}>
-            {activeWallet === 'naira' ? 'Recent Activity' : 'Spark History'}
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SparkHistory')}>
-            <Text style={{ color: c.primary, fontSize: 13, fontWeight: '700' }}>See Detailed History</Text>
-          </TouchableOpacity>
+          <Text style={[styles.sectionTitle, { color: c.text }]}>Recent Activity</Text>
         </View>
 
         <View style={styles.transactionsList}>
           {isLoading ? (
             <ActivityIndicator size="large" color={c.primary} style={{ marginTop: 20 }} />
-          ) : filteredTransactions.length > 0 ? (
-            filteredTransactions.slice(0, 10).map((t, index) => {
-              const isIncome = t.type === 'income';
-              const isPending = t.status === 'pending';
-              const color = isPending ? '#F59E0B' : isIncome ? '#10B981' : '#EF4444';
+          ) : transactions.length > 0 ? (
+            transactions.slice(0, 20).map((t, index) => {
+              const isIncome  = t.type === 'income';
+              const isEscrow  = t.type === 'escrow';
+              const isPending = t.status === 'pending' && !isEscrow;
+              const isOut     = t.type === 'withdrawal';
+              const color = isEscrow ? '#F59E0B' : isPending ? '#94A3B8' : isIncome ? '#10B981' : '#EF4444';
+              const iconName  = isEscrow ? 'lock' : isPending ? 'access-time' : isIncome ? 'call-received' : 'call-made';
+              const bgColor   = isEscrow
+                ? 'rgba(245,158,11,0.1)'
+                : isPending ? 'rgba(148,163,184,0.1)'
+                : isIncome ? 'rgba(16,185,129,0.1)'
+                : 'rgba(239,68,68,0.1)';
+              const label     = isEscrow ? 'In Escrow' : t.status;
 
               return (
                 <View key={`${t.id}-${index}`} style={[styles.txnItem, { backgroundColor: c.card, borderColor: c.border }]}>
-                  <View style={[styles.txnIconCtx, { backgroundColor: isPending ? 'rgba(245,158,11,0.1)' : isIncome ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
-                    {t.kind === 'spark' ? (
-                      <MaterialIcons name="bolt" size={24} color={color} />
-                    ) : (
-                      <MaterialIcons name={isPending ? "access-time" : isIncome ? "call-received" : "call-made"} size={24} color={color} />
-                    )}
+                  <View style={[styles.txnIconCtx, { backgroundColor: bgColor }]}>
+                    <MaterialIcons name={iconName as any} size={24} color={color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.txnTitle, { color: c.text }]} numberOfLines={1}>{t.title}</Text>
                     <View style={styles.txnMeta}>
                       <Text style={[styles.txnDate, { color: c.subtext }]}>{t.date}</Text>
-                      {t.subtitle ? (
-                        <Text style={[styles.txnStatusText, { color: c.subtext, marginLeft: 6 }]} numberOfLines={1}>{t.subtitle}</Text>
-                      ) : (
-                        <View style={[styles.txnStatusBadge, { backgroundColor: isPending ? 'rgba(245,158,11,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                          <Text style={[styles.txnStatusText, { color: isPending ? '#F59E0B' : c.subtext }]}>{t.status}</Text>
-                        </View>
-                      )}
+                      <View style={[styles.txnStatusBadge, { backgroundColor: isEscrow ? 'rgba(245,158,11,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                        <Text style={[styles.txnStatusText, { color: isEscrow ? '#F59E0B' : c.subtext }]}>{label}</Text>
+                      </View>
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={[styles.txnAmount, { color, fontSize: 16 }]}>
-                      {isIncome ? '+' : ''}
-                      {t.kind === 'spark'
-                        ? `${t.amount}`
-                        : new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(t.amount)
-                      }
+                      {isIncome ? '+' : isOut ? '-' : isEscrow ? '🔒' : ''}
+                      {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Math.abs(t.amount))}
                     </Text>
-                    {t.kind === 'spark' && t.txnType === 'transfer_send' && (
-                      <MaterialIcons name="arrow-upward" size={12} color="#EF4444" style={{ marginRight: 2 }} />
-                    )}
-                    {t.kind === 'spark' && t.txnType === 'transfer_receive' && (
-                      <MaterialIcons name="arrow-downward" size={12} color="#10B981" style={{ marginRight: 2 }} />
-                    )}
-                    {t.kind === 'spark' && <Text style={{ fontSize: 10, color: c.subtext }}>Sparks</Text>}
                   </View>
                 </View>
               );
@@ -448,13 +268,11 @@ const WalletScreen = () => {
                 <Ionicons name="receipt-outline" size={32} color={c.subtext} />
               </View>
               <Text style={{ color: c.subtext, marginTop: 16, fontWeight: '600' }}>No transactions recorded yet</Text>
-              <Text style={{ color: c.subtext, fontSize: 12, marginTop: 4 }}>Your history will appear here once you make a move.</Text>
             </View>
           )}
         </View>
       </ScrollView>
 
-      {/* Setup Required Modal */}
       <Modal visible={showSetupModal} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: c.card }]}>
@@ -463,10 +281,10 @@ const WalletScreen = () => {
             </View>
             <Text style={[styles.modalTitle, { color: c.text }]}>Withdrawal Setup</Text>
             <Text style={[styles.modalBody, { color: c.subtext }]}>
-              You have {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(wallet?.balance || 0)} ready for withdrawal. Please set up your bank details to claim it.
+              Please set up your bank details to enable withdrawals.
             </Text>
             <TouchableOpacity
-              style={[styles.modalBtn, { backgroundColor: c.primary }]}
+              style={[styles.modalBtn, { backgroundColor: '#FD6730', width: '100%' }]}
               onPress={() => { setShowSetupModal(false); navigation.navigate('WithdrawalSetup'); }}
             >
               <Text style={styles.modalBtnText}>Set Up My Bank</Text>
@@ -478,17 +296,17 @@ const WalletScreen = () => {
         </View>
       </Modal>
 
-      {/* Withdraw Modal */}
       <Modal visible={showWithdrawModal} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View style={[styles.modalCard, { backgroundColor: c.card, width: '90%' }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: c.text, marginBottom: 0 }]}>Withdraw Cash</Text>
-              <TouchableOpacity onPress={() => setShowWithdrawModal(false)} style={styles.closeBtn}>
+              <Text style={[styles.modalTitle, { color: c.text }]}>Withdraw Funds</Text>
+              <TouchableOpacity onPress={() => setShowWithdrawModal(false)}>
                 <MaterialIcons name="close" size={24} color={c.text} />
               </TouchableOpacity>
             </View>
 
+            {/* Amount input */}
             <View style={[styles.amountInputCtx, { borderColor: c.border }]}>
               <Text style={[styles.currencySymbol, { color: c.text }]}>₦</Text>
               <TextInput
@@ -498,21 +316,64 @@ const WalletScreen = () => {
                 keyboardType="numeric"
                 value={withdrawAmount}
                 onChangeText={setWithdrawAmount}
-                autoFocus
               />
             </View>
 
-            <View style={styles.availableCtx}>
-              <Text style={{ color: c.subtext, fontSize: 13 }}>Available for withdrawal:</Text>
-              <Text style={{ color: c.text, fontWeight: '700', fontSize: 13 }}> {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(wallet?.availableBalance || 0)}</Text>
+            {/* Available balance hint */}
+            <Text style={{ color: c.subtext, fontSize: 12, marginTop: 8, alignSelf: 'flex-end' }}>
+              Available: {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(wallet?.availableBalance || 0)}
+            </Text>
+
+            {/* Fee breakdown */}
+            {parseFloat(withdrawAmount) > 0 && !isNaN(parseFloat(withdrawAmount)) && (
+              <View style={{ width: '100%', backgroundColor: c.isDark ? '#1F2937' : '#F3F4F6', padding: 14, borderRadius: 14, marginTop: 14, gap: 6 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: c.subtext, fontSize: 13 }}>Processing Fee</Text>
+                  <Text style={{ color: c.text, fontWeight: '700', fontSize: 13 }}>
+                    ₦{(parseFloat(withdrawAmount) < 5000 ? 10 : 50).toLocaleString()}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ color: c.subtext, fontSize: 13 }}>You'll receive</Text>
+                  <Text style={{ color: '#10B981', fontWeight: '800', fontSize: 14 }}>
+                    ₦{Math.max(0, parseFloat(withdrawAmount) - (parseFloat(withdrawAmount) < 5000 ? 10 : 50)).toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Bank destination */}
+            {wallet?.bankDetails && (
+              <View style={{ width: '100%', backgroundColor: c.isDark ? '#1F2937' : '#F3F4F6', padding: 16, borderRadius: 16, marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ backgroundColor: c.primary + '20', padding: 8, borderRadius: 10 }}>
+                  <MaterialIcons name="account-balance" size={20} color={c.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>Sending to</Text>
+                  <Text style={{ color: c.text, fontWeight: '700', fontSize: 14 }}>{wallet.bankDetails.bankName}</Text>
+                  <Text style={{ color: c.subtext, fontSize: 12 }}>{wallet.bankDetails.accountNumber} • {wallet.bankDetails.accountName}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* VTStack badge */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, opacity: 0.6 }}>
+              <MaterialIcons name="lock" size={12} color={c.subtext} />
+              <Text style={{ color: c.subtext, fontSize: 11 }}>Secured by VTStack · HMAC-SHA256</Text>
             </View>
 
             <TouchableOpacity
-              style={[styles.modalBtn, { backgroundColor: c.primary, width: '100%', marginTop: 24 }]}
+              style={[
+                styles.modalBtn,
+                { backgroundColor: c.primary, width: '100%', marginTop: 16,
+                  opacity: isWithdrawing || !parseFloat(withdrawAmount) ? 0.6 : 1 }
+              ]}
               onPress={submitWithdrawal}
-              disabled={isWithdrawing}
+              disabled={isWithdrawing || !parseFloat(withdrawAmount)}
             >
-              {isWithdrawing ? <ActivityIndicator color="white" /> : <Text style={styles.modalBtnText}>Confirm Withdrawal</Text>}
+              {isWithdrawing
+                ? <ActivityIndicator color="white" />
+                : <Text style={styles.modalBtnText}>Confirm Payout</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -522,34 +383,11 @@ const WalletScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  appBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
+  appBar: { paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: StyleSheet.hairlineWidth },
   screenTitle: { fontSize: 20, fontWeight: '800' },
-  switcherContainer: { paddingHorizontal: 20, marginTop: 20 },
-  switcherBg: { flexDirection: 'row', borderRadius: 16, padding: 4, borderWidth: 1 },
-  switcherBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
-  switcherText: { fontSize: 13 },
   cardsContainer: { marginTop: 16, marginBottom: 24 },
   cardWrapper: { width: width, paddingHorizontal: 20 },
-  balanceCard: {
-    height: 220,
-    borderRadius: 32,
-    overflow: 'hidden',
-    padding: 24,
-    justifyContent: 'center',
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-  },
-  cardOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
+  balanceCard: { height: 220, borderRadius: 32, overflow: 'hidden', padding: 24, justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 15 },
   cardLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
   cardCurrency: { color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 2 },
   cardTypeBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, gap: 6 },
@@ -559,25 +397,7 @@ const styles = StyleSheet.create({
   cardDivider: { width: 1, height: 24, backgroundColor: 'rgba(255,255,255,0.1)' },
   metricLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 10, marginBottom: 2, textTransform: 'uppercase' },
   metricValue: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  cardActionBtn: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    elevation: 4,
-  },
-  cardActionText: { fontWeight: '800', fontSize: 13 },
-  cardActionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, gap: 12 },
-  sparkAction: { flex: 1, alignItems: 'center', gap: 6 },
-  sparkActionIcon: { width: 44, height: 44, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  sparkActionText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 16 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+
   transactionsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '900' },
   transactionsList: { paddingHorizontal: 20, gap: 12 },
@@ -589,13 +409,11 @@ const styles = StyleSheet.create({
   txnStatusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   txnStatusText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
   txnAmount: { fontWeight: '900' },
-  txnStatus: { fontSize: 11, textTransform: 'capitalize', marginTop: 2 },
   emptyState: { alignItems: 'center', marginTop: 60 },
   emptyIconCtx: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(0,0,0,0.1)' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   modalCard: { padding: 28, borderRadius: 36, alignItems: 'center', width: '100%', maxWidth: 380, elevation: 20 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 24 },
-  closeBtn: { padding: 4 },
   iconCircle: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
   modalBody: { textAlign: 'center', marginBottom: 28, lineHeight: 24, fontSize: 16 },
@@ -604,7 +422,6 @@ const styles = StyleSheet.create({
   amountInputCtx: { flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderRadius: 20, paddingHorizontal: 20, width: '100%', height: 70 },
   currencySymbol: { fontSize: 28, fontWeight: '900', marginRight: 10 },
   input: { flex: 1, fontSize: 32, fontWeight: '900' },
-  availableCtx: { flexDirection: 'row', marginTop: 12, alignSelf: 'flex-start' }
 });
 
 export default WalletScreen;

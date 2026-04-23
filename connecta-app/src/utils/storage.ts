@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { STORAGE_KEYS } from './constants';
-import { User } from '../types';
+import { User, Profile } from '../types';
 
 /**
  * Storage utility for managing AsyncStorage operations
@@ -65,6 +65,56 @@ export const removeUserData = async (): Promise<void> => {
     }
 };
 
+// Profile Data Management
+export const saveProfileData = async (profile: Profile): Promise<void> => {
+    try {
+        await AsyncStorage.setItem(STORAGE_KEYS.PROFILE_DATA, JSON.stringify(profile));
+    } catch (error) {
+        console.error('Error saving profile data:', error);
+        throw error;
+    }
+};
+
+export const getProfileData = async (): Promise<Profile | null> => {
+    try {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.PROFILE_DATA);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error('Error getting profile data:', error);
+        return null;
+    }
+};
+
+export const removeProfileData = async (): Promise<void> => {
+    try {
+        await AsyncStorage.removeItem(STORAGE_KEYS.PROFILE_DATA);
+    } catch (error) {
+        console.error('Error removing profile data:', error);
+        throw error;
+    }
+};
+
+// Cached Profiles (Public Profiles)
+export const saveCachedProfile = async (userId: string, profile: Profile): Promise<void> => {
+    try {
+        const key = `${STORAGE_KEYS.PROFILE_CACHE}${userId}`;
+        await AsyncStorage.setItem(key, JSON.stringify(profile));
+    } catch (error) {
+        console.error(`Error caching profile for ${userId}:`, error);
+    }
+};
+
+export const getCachedProfile = async (userId: string): Promise<Profile | null> => {
+    try {
+        const key = `${STORAGE_KEYS.PROFILE_CACHE}${userId}`;
+        const data = await AsyncStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error(`Error getting cached profile for ${userId}:`, error);
+        return null;
+    }
+};
+
 // User Role Management
 export const saveUserRole = async (role: 'client' | 'freelancer'): Promise<void> => {
     try {
@@ -101,6 +151,7 @@ export const clearAllData = async (): Promise<void> => {
             STORAGE_KEYS.AUTH_TOKEN,
             STORAGE_KEYS.USER_DATA,
             STORAGE_KEYS.USER_ROLE,
+            STORAGE_KEYS.PROFILE_DATA,
         ]);
     } catch (error) {
         console.error('Error clearing all data:', error);

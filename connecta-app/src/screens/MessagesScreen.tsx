@@ -15,7 +15,7 @@ import { Message } from '../types';
 type ChatMessage = Message & {
   senderId: any;
   receiverId: any;
-  content: string;
+  text: string;
   read: boolean;
 };
 
@@ -27,6 +27,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
   /* State */
   const { conversationId: paramConversationId, userName, userAvatar } = route?.params || {};
   const [activeConversationId, setActiveConversationId] = useState<string | null>(paramConversationId || null);
+  const [otherUser, setOtherUser] = useState<any>(null);
 
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -47,6 +48,7 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
 
         // If we already have an ID, load messages
         if (activeConversationId) {
+          fetchConversationDetails(activeConversationId);
           loadMessages(activeConversationId);
           markRead(activeConversationId);
           return;
@@ -82,6 +84,13 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
             const conv = await messageService.getOrCreateConversation(payload);
             if (isMounted && conv?._id) {
               setActiveConversationId(conv._id);
+              
+              // Identify other participant
+              const other = conv.participants?.find((p: any) => (p._id || p) !== user._id);
+              if (other && typeof other === 'object') {
+                setOtherUser(other);
+              }
+              
               // After getting ID, load messages
               const msgs = await messageService.getConversationMessages(conv._id);
               setMessages(Array.isArray(msgs) ? (msgs as unknown as ChatMessage[]) : []);
@@ -193,6 +202,21 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
     }
   };
 
+  const fetchConversationDetails = async (convId: string) => {
+    try {
+      const response = await messageService.getConversationById(convId);
+      if (response) {
+        // Identify other participant
+        const other = response.participants?.find((p: any) => (p._id || p) !== user?._id);
+        if (other && typeof other === 'object') {
+          setOtherUser(other);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching conversation details:', error);
+    }
+  };
+
   const loadMessages = async (convId: string) => {
     try {
       setIsLoading(true);
@@ -210,31 +234,21 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
     const mine = item.senderId?._id === user?._id || item.senderId === user?._id;
     const time = new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Check for video call invite
-    const videoCallMatch = item.content.match(/\[VIDEO_CALL_INVITE:(.*?)\]/);
-    const isVideoCall = !!videoCallMatch;
-    const roomName = videoCallMatch ? videoCallMatch[1] : '';
 
     return (
       <View style={[styles.row, mine ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }]}>
         {!mine && (
           <View style={styles.avatar}>
-            <Avatar uri={userAvatar || undefined} name={userName} size={32} />
+            <Avatar 
+                uri={otherUser?.profileImage || otherUser?.avatar || userAvatar || undefined} 
+                name={otherUser?.firstName ? `${otherUser.firstName} ${otherUser.lastName}` : (userName || 'User')} 
+                size={32} 
+            />
           </View>
         )}
         <View style={[styles.bubbleWrap, { maxWidth: '75%' }, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }]}>
           <View style={[styles.bubble, mine ? { backgroundColor: c.primary, borderTopRightRadius: 8 } : { backgroundColor: c.card, borderTopLeftRadius: 8 }]}>
-            {isVideoCall ? (
-              <TouchableOpacity
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
-                onPress={() => navigation.navigate('VideoCall', { roomName, userName: user?.firstName || 'User' })}
-              >
-                <MaterialIcons name="videocam" size={24} color={mine ? 'white' : c.primary} />
-                <Text style={{ color: mine ? 'white' : c.text, fontWeight: 'bold' }}>Join Video Call</Text>
-              </TouchableOpacity>
-            ) : (
-              <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.content}</Text>
-            )}
+              <Text style={[styles.msg, { color: mine ? '#fff' : c.text }]}>{item.text}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
@@ -304,7 +318,9 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
 
       const newMessage = await messageService.sendMessage({
         conversationId: finalConvId,
-        content: messageText,
+        text: messageText,
+        senderId: user._id,
+        receiverId: targetReceiverId
       });
 
       // Add message to list
@@ -338,40 +354,27 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
           <MaterialIcons name="arrow-back-ios-new" size={20} color={c.text} />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Avatar uri={userAvatar || undefined} name={userName} size={28} />
+          <Avatar 
+            uri={otherUser?.profileImage || otherUser?.avatar || userAvatar || undefined} 
+            name={otherUser?.firstName ? `${otherUser.firstName} ${otherUser.lastName}` : (userName || 'User')} 
+            size={28} 
+          />
           <View style={{ alignItems: 'flex-start' }}>
-            <Text style={[styles.title, { color: c.text }]}>{userName || 'Chat'}</Text>
+            <Text style={[styles.title, { color: c.text }]}>
+              {otherUser?.firstName ? `${otherUser.firstName} ${otherUser.lastName}` : (userName || 'Chat')}
+            </Text>
             <Text style={[styles.subtitle, { color: isOnline ? c.primary : c.subtext }]}>
               {isOnline ? 'Online' : 'Offline'}
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity
-            style={[styles.iconBtn, { marginRight: 4 }]}
-            onPress={() => {
-              const roomName = `Connecta-${activeConversationId || Date.now()}`;
-              // Send a system message indicating call started (optional, for other user to see)
-              onSend(`[VIDEO_CALL_INVITE:${roomName}] Join my video call`);
-
-              navigation.navigate('VideoCall', {
-                roomName,
-                userName: user?.firstName || 'User'
-              });
-            }}
-          >
-            <MaterialIcons name="videocam" size={24} color={c.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <MaterialIcons name="more-vert" size={22} color={c.text} />
-          </TouchableOpacity>
-        </View>
+        <View style={{ width: 40 }} />
       </View>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 40}
       >
         {/* Messages */}
         <FlatList
@@ -389,18 +392,15 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
         />
 
         {/* Composer */}
-        <View style={[styles.composerWrap, { borderTopColor: c.border, backgroundColor: c.background, paddingBottom: insets.bottom }]}>
+        <View style={[styles.composerWrap, { borderTopColor: c.border, backgroundColor: c.background, paddingBottom: insets.bottom || 4 }]}>
           {otherUserTyping && (
-            <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+            <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
               <Text style={{ fontSize: 12, color: c.subtext, fontStyle: 'italic' }}>
-                {userName.split(' ')[0]} is typing...
+                {(otherUser?.firstName || userName || 'User').split(' ')[0]} is typing...
               </Text>
             </View>
           )}
-          <View style={[styles.composer, { backgroundColor: c.card }]}>
-            <TouchableOpacity style={styles.addBtn}>
-              <MaterialIcons name="add-circle" size={22} color={c.subtext} />
-            </TouchableOpacity>
+          <View style={[styles.composer, { backgroundColor: c.card, borderColor: c.border }]}>
             <TextInput
               value={input}
               onChangeText={handleInputChange}
@@ -408,22 +408,20 @@ const MessagesScreen: React.FC<any> = ({ navigation, route }) => {
               placeholderTextColor={c.subtext}
               style={[styles.input, { color: c.text }]}
               editable={!isSending}
+              multiline
             />
-            <TouchableOpacity style={styles.emojiBtn}>
-              <MaterialIcons name="sentiment-satisfied" size={22} color={c.subtext} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onSend()}
-              style={[styles.sendBtn, { backgroundColor: c.primary, opacity: (!input.trim() || isSending) ? 0.5 : 1 }]}
-              disabled={(!input.trim() && !isSending) || isSending}
-            >
-              {isSending ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <MaterialIcons name="send" size={18} color="#fff" />
-              )}
-            </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            onPress={() => onSend()}
+            style={[styles.sendBtn, { backgroundColor: c.primary, opacity: (!input.trim() || isSending) ? 0.5 : 1 }]}
+            disabled={(!input.trim() && !isSending) || isSending}
+          >
+            {isSending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <MaterialIcons name="send" size={18} color="#fff" />
+            )}
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -457,7 +455,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   avatar: {
     width: 32,
@@ -480,20 +478,21 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   composerWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
   composer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+    minHeight: 40,
   },
   addBtn: { padding: 6 },
   emojiBtn: { padding: 6 },

@@ -12,7 +12,6 @@ import { useThemeColors } from './src/theme/theme';
 import { configureNotifications, registerForPushNotificationsAsync, areNotificationsAvailable } from './src/utils/notifications';
 import { InAppAlertProvider, useInAppAlert } from './src/components/InAppAlert';
 import authService from './src/services/authService';
-import EmailVerificationScreen from './src/screens/EmailVerificationScreen';
 
 // Navigators
 import AuthNavigator from './src/navigation/AuthNavigator';
@@ -42,16 +41,16 @@ export default function App() {
   }
 
   return (
-    <View style={{ flex: 1, height: Platform.OS === 'web' ? '100vh' : '100%' }}>
+    <View style={{ flex: 1 } as any}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
             <RoleProvider>
-              <SocketProvider>
                 <InAppAlertProvider>
-                  <AppContent />
+                  <SocketProvider>
+                    <AppContent />
+                  </SocketProvider>
                 </InAppAlertProvider>
-              </SocketProvider>
             </RoleProvider>
           </AuthProvider>
         </ThemeProvider>
@@ -168,13 +167,11 @@ function AppContent() {
     >
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={c.background} />
       <RootNavigation />
-      <FloatingAIButton forcedRouteName={currentRoute || undefined} navigationRef={navigationRef} />
     </NavigationContainer>
   );
 }
 
 
-import GettingStartedGuideScreen from './src/screens/GettingStartedGuideScreen';
 import * as storage from './src/utils/storage';
 
 // ... imports ...
@@ -191,7 +188,7 @@ function RootNavigation() {
   useEffect(() => {
     if (user) {
       setRole(user.userType);
-      setUserId(user.id || user._id || null);
+      setUserId((user as any).id || (user as any)._id || null);
       logEvent('login_success', { userType: user.userType });
     } else {
       setRole(null);

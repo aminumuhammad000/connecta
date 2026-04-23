@@ -5,10 +5,8 @@ import { useThemeColors } from '../theme/theme';
 import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { sendPasswordResetOTP } from '../services/authService';
-import CustomAlert, { AlertType } from '../components/CustomAlert';
-import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
+import { useInAppAlert } from '../components/InAppAlert';
 import ChatGreeting from '../components/ChatGreeting';
-import { useTranslation } from '../utils/i18n';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import AnimatedBackground from '../components/AnimatedBackground';
@@ -22,30 +20,10 @@ interface ForgotPasswordScreenProps {
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBackToLogin, onOTPSent }) => {
     const navigation = useNavigation();
     const c = useThemeColors();
-    const { t, lang } = useTranslation();
+    const { showAlert } = useInAppAlert();
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [emailError, setEmailError] = useState('');
-
-    // Alert State
-    const [alertVisible, setAlertVisible] = useState(false);
-    const [alertConfig, setAlertConfig] = useState<{ title: string; message: string; type: AlertType; onOk?: () => void }>({
-        title: '',
-        message: '',
-        type: 'success'
-    });
-
-    const showAlert = (title: string, message: string, type: AlertType = 'success', onOk?: () => void) => {
-        setAlertConfig({ title: t(title as any) || title, message: t(message as any) || message, type, onOk });
-        setAlertVisible(true);
-    };
-
-    const handleAlertClose = () => {
-        setAlertVisible(false);
-        if (alertConfig.onOk) {
-            alertConfig.onOk();
-        }
-    };
 
     const handleSendOTP = async () => {
         setEmailError('');
@@ -66,109 +44,83 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBackToLog
 
         try {
             await sendPasswordResetOTP(email);
-            showAlert(
-                'success',
-                'A 4-digit verification code has been sent to your email.',
-                'success',
-                () => onOTPSent?.(email)
-            );
+            showAlert({
+                title: 'Success',
+                message: 'A 4-digit verification code has been sent to your email.',
+                type: 'success'
+            });
+            onOTPSent?.(email);
         } catch (error: any) {
             console.error('Forgot Password Error:', error);
             const errorMessage = error.response?.data?.message || error.message || 'Failed to send OTP. Please try again.';
-            showAlert('error', errorMessage, 'error');
+            showAlert({ title: 'Error', message: errorMessage, type: 'error' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const sideContent = (
-        <View style={styles.desktopSide}>
-            <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
-                <Ionicons name="key-outline" size={70} color={c.primary} />
-            </View>
-            <Text style={[styles.sideTitle, { color: c.text }]}>Safe &{'\n'}Secure</Text>
-            <Text style={[styles.sideSub, { color: c.subtext }]}>
-                Recovering your account is easy. We'll send a secure code to your registered email to help you set a new password.
-            </Text>
-        </View>
-    );
-
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
             <AnimatedBackground />
-            <ResponsiveOnboardingWrapper sideComponent={sideContent}>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                    <View style={styles.mainWrapper}>
-                        <ScrollView
-                            contentContainerStyle={styles.scrollContent}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
-                        >
-                            <View style={styles.headerRow}>
-                                <TouchableOpacity onPress={onBackToLogin} style={styles.backButton}>
-                                    <Ionicons name="chevron-back" size={24} color={c.text} />
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    onPress={() => (navigation as any).navigate('LanguageSelect')}
-                                    style={[styles.langToggle, { backgroundColor: c.card, borderColor: c.border }]}
-                                >
-                                    <MaterialIcons name="language" size={18} color={c.primary} />
-                                    <Text style={[styles.langToggleText, { color: c.text }]}>
-                                        {lang === 'ha' ? 'Hausa' : 'English'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.chatSection}>
-                                <ChatGreeting
-                                    messages={[
-                                        { text: t('forgot_header') },
-                                        { text: t('forgot_sub'), delay: 1000 }
-                                    ]}
-                                />
-                            </View>
-
-                            <View style={styles.form}>
-                                <Input
-                                    value={email}
-                                    onChangeText={(val) => { setEmail(val); setEmailError(''); }}
-                                    placeholder={t('email')}
-                                    icon="mail-outline"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    editable={!isLoading}
-                                    error={emailError}
-                                />
-
-                                <Button
-                                    title={t('send_code')}
-                                    onPress={handleSendOTP}
-                                    loading={isLoading}
-                                    size="large"
-                                    variant="primary"
-                                />
-                            </View>
-
-                            <View style={styles.footer}>
-                                <Text style={[styles.footerText, { color: c.subtext }]}>{t('remember_password')}</Text>
-                                <TouchableOpacity onPress={onBackToLogin}>
-                                    <Text style={[styles.footerLink, { color: c.primary }]}>{t('back_to_login')}</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </ScrollView>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <View style={styles.mainWrapper}>
+                    <View style={styles.stickyHeader}>
+                        <View style={styles.headerRow}>
+                            <TouchableOpacity onPress={onBackToLogin} style={styles.backButton}>
+                                <Ionicons name="chevron-back" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </KeyboardAvoidingView>
-            </ResponsiveOnboardingWrapper>
 
-            <CustomAlert
-                visible={alertVisible}
-                title={alertConfig.title}
-                message={alertConfig.message}
-                type={alertConfig.type}
-                onClose={handleAlertClose}
-            />
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.chatSection}>
+                            <ChatGreeting
+                                messages={[
+                                    { text: 'Forgot Password?' },
+                                    { text: 'No worries! Enter your email and we\'ll send you a verification code.', delay: 1000 }
+                                ]}
+                            />
+                        </View>
+
+                        <View style={styles.form}>
+                            <Input
+                                value={email}
+                                onChangeText={(val) => { setEmail(val); setEmailError(''); }}
+                                placeholder="Email Address"
+                                icon="mail-outline"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                                editable={!isLoading}
+                                error={emailError}
+                            />
+
+                            <View style={styles.buttonContainer}>
+                                <View style={styles.buttonWrapper}>
+                                    <Button
+                                        title="Send Code"
+                                        onPress={handleSendOTP}
+                                        loading={isLoading}
+                                        size="large"
+                                        variant="primary"
+                                    />
+                                </View>
+                            </View>
+                        </View>
+
+                        <View style={styles.footer}>
+                            <Text style={[styles.footerText, { color: c.subtext }]}>Remember your password?</Text>
+                            <TouchableOpacity onPress={onBackToLogin}>
+                                <Text style={[styles.footerLink, { color: c.primary }]}>Back to Login</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -183,16 +135,23 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 24,
-        paddingTop: 16,
+        paddingTop: 20,
         paddingBottom: 40,
         flexGrow: 1,
+    },
+    stickyHeader: {
+        paddingTop: Platform.OS === 'ios' ? 10 : 20,
+        paddingHorizontal: 24,
+        paddingBottom: 10,
+        backgroundColor: 'rgba(255,255,255,0.01)',
+        zIndex: 10,
     },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
         width: '100%',
+        marginBottom: 8,
     },
     backButton: {
         width: 44,
@@ -209,14 +168,20 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 2,
     },
-    langToggle: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, gap: 6 },
-    langToggleText: { fontSize: 13, fontWeight: '700' },
     chatSection: {
         marginBottom: 32,
     },
     form: {
         width: '100%',
         gap: 20,
+    },
+    buttonContainer: {
+        width: '100%',
+        alignItems: 'flex-end',
+        marginTop: 10,
+    },
+    buttonWrapper: {
+        width: '60%',
     },
     footer: {
         marginTop: 'auto',
@@ -228,11 +193,6 @@ const styles = StyleSheet.create({
     },
     footerText: { fontSize: 14, fontWeight: '500' },
     footerLink: { fontSize: 14, fontWeight: '700' },
-    // Desktop
-    desktopSide: { padding: 40, alignItems: 'center', justifyContent: 'center' },
-    bigIconBox: { width: 120, height: 120, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-    sideTitle: { fontSize: 44, fontWeight: '900', textAlign: 'center', letterSpacing: -1.5, marginBottom: 16, lineHeight: 52 },
-    sideSub: { fontSize: 18, textAlign: 'center', opacity: 0.7, maxWidth: 360, lineHeight: 28 },
 });
 
 export default ForgotPasswordScreen;

@@ -3,9 +3,6 @@ import bcrypt from 'bcryptjs';
 import User from '../models/user.model.js';
 import Profile from '../models/Profile.model.js';
 import { Job } from '../models/Job.model.js';
-import CollaboProject from '../models/CollaboProject.model.js';
-import ProjectRole from '../models/ProjectRole.model.js';
-import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
 import Notification from '../models/Notification.model.js';
 
 const freelancersData = [
@@ -131,89 +128,7 @@ export const seedFreelancersIfMissing = async () => {
             }
         }
 
-        // 4. Mock Collabo Projects
-        const projCount = await CollaboProject.countDocuments({ clientId: validClientId });
-        if (projCount === 0) {
-            console.log('Creating 5 Collabo Projects...');
-            const collaboTitles = [
-                'Next-Gen Fintech Platform', 'AI-Powered Health App', 'Blockchain Marketplace',
-                'Smart Home IoT System', 'EdTech Learning Portal'
-            ];
-            for (let i = 0; i < 5; i++) {
-                const projId = `6600000000000000000000${50 + i}`;
-                await CollaboProject.create({
-                    _id: projId,
-                    clientId: validClientId,
-                    title: collaboTitles[i],
-                    description: `Big team project for ${collaboTitles[i]}.`,
-                    totalBudget: 500000,
-                    status: 'planning',
-                    recommendedStack: ['React', 'Node.js']
-                });
-            }
-        }
-
-        // 5. Create Specific Collabo Scenario (Multi-Vendor E-commerce)
-        const mvId = '660000000000000000000200';
-        const existsMV = await CollaboProject.findOne({ _id: mvId });
-        if (!existsMV) {
-            console.log('Creating Multi-Vendor Ecommerce Project & Invites...');
-            const project = await CollaboProject.create({
-                _id: mvId,
-                clientId: validClientId,
-                title: 'Multi-Vendor Ecommerce Platform',
-                description: 'Building a scalable multi-vendor marketplace like Amazon/Etsy.',
-                totalBudget: 15000,
-                status: 'active',
-                recommendedStack: ['Next.js', 'Node.js', 'MongoDB', 'AWS'],
-                milestones: [{ title: 'MVP Launch', duration: '2 months', description: 'Core features' }]
-            });
-
-            const workspace = await CollaboWorkspace.create({
-                projectId: project._id,
-                channels: [{ name: 'General', roleIds: [] }]
-            });
-            project.workspaceId = workspace._id as any;
-            await project.save();
-
-            const inviteList = [
-                { email: 'a@gmail.com', role: 'Frontend Dev', budget: 3000, skills: ['React'] },
-                { email: 'b@gmail.com', role: 'Backend Dev', budget: 4000, skills: ['Node.js'] },
-                { email: 'd@gmail.com', role: 'DevOps Engineer', budget: 4000, skills: ['AWS'] },
-                { email: 'f@gmail.com', role: 'UI/UX Designer', budget: 2000, skills: ['Figma'] }
-            ];
-
-            for (const invite of inviteList) {
-                const user = await User.findOne({ email: invite.email });
-                if (user) {
-                    const role = await ProjectRole.create({
-                        projectId: project._id,
-                        title: invite.role,
-                        description: `Responsible for ${invite.role}`,
-                        budget: invite.budget,
-                        skills: invite.skills,
-                        status: 'open'
-                    });
-
-                    // Check duplicate notification via relatedId
-                    const existingNotif = await Notification.findOne({ relatedId: role._id, type: 'collabo_invite' });
-                    if (!existingNotif) {
-                        await Notification.create({
-                            userId: user._id,
-                            type: 'collabo_invite',
-                            title: `Team Invite: ${invite.role}`,
-                            message: `You have been invited to join "Multi-Vendor Ecommerce" as ${invite.role}.`,
-                            relatedId: role._id,
-                            relatedType: 'project',
-                            link: `/collabo/invite/${role._id}`,
-                            isRead: false
-                        });
-                    }
-                }
-            }
-        }
-
-        console.log('✅ Seeding complete with deterministic IDs.');
+        console.log('✅ Seeding complete (excluding Collabo features).');
     } catch (error) {
         console.error('❌ Error in seeder:', error);
     }

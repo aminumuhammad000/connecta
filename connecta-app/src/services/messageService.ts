@@ -25,14 +25,23 @@ export const getUserConversations = async (): Promise<Conversation[]> => {
     const response = await get<Conversation[]>(API_ENDPOINTS.CONVERSATIONS);
     return Array.isArray(response) ? response : (response as any)?.data || [];
 };
+ 
+/**
+ * Get single conversation details
+ */
+export const getConversationById = async (conversationId: string): Promise<Conversation> => {
+    const response = await get<Conversation>(API_ENDPOINTS.CONVERSATION_DETAILS(conversationId));
+    return (response as any)?.data || response;
+};
 
 /**
  * Get messages and details for a conversation
  */
 export const getConversationMessages = async (conversationId: string): Promise<Message[]> => {
-    const response = await get<any>(API_ENDPOINTS.CONVERSATION_DETAILS(conversationId));
-    // The chat-service returns { conversation, messages }
-    return response?.data?.messages || response?.messages || [];
+    const response = await get<any>(API_ENDPOINTS.CONVERSATION_MESSAGES(conversationId));
+    // Handle both wrapped and unwrapped (by api.ts interceptor) responses
+    if (Array.isArray(response)) return response;
+    return response?.data || response?.messages || [];
 };
 
 /**
@@ -40,7 +49,9 @@ export const getConversationMessages = async (conversationId: string): Promise<M
  */
 export const sendMessage = async (messageData: {
     conversationId: string;
-    content: string;
+    text: string;
+    senderId?: string;
+    receiverId?: string;
     messageType?: string;
     attachments?: string[];
 }): Promise<Message> => {
@@ -59,13 +70,15 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
  * Get total unread messages count for the current user
  */
 export const getTotalUnreadCount = async (): Promise<number> => {
-    const response = await get<{ unreadCount: number }>(API_ENDPOINTS.UNREAD_COUNT_TOTAL);
-    return (response as any)?.data?.unreadCount || 0;
+    const response = await get<any>(API_ENDPOINTS.UNREAD_COUNT_TOTAL);
+    // Handle both wrapped and unwrapped (by api.ts interceptor) responses
+    return response?.unreadCount !== undefined ? response.unreadCount : (response as any)?.data?.unreadCount || 0;
 };
 
 export default {
     getOrCreateConversation,
     getUserConversations,
+    getConversationById,
     getConversationMessages,
     sendMessage,
     markMessagesAsRead,

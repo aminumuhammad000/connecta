@@ -27,15 +27,24 @@ const ResponsiveOnboardingWrapper: React.FC<ResponsiveOnboardingWrapperProps> = 
                         {sideComponent}
                     </View>
                 )}
-                <View style={[styles.formPanel, { flex: sideComponent ? 1 : 1, alignItems: 'center', justifyContent: 'center' }]}>
+                <View style={[styles.formPanel, { flex: 1.2, alignItems: 'center', justifyContent: 'center' }]}>
                     <ScrollView
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={[
-                            styles.desktopContent,
-                            { width: '100%', maxWidth: maxWidth }
-                        ]}
+                        contentContainerStyle={styles.desktopContent}
+                        style={{ width: '100%' }}
                     >
-                        <View style={[styles.desktopCard, { backgroundColor: c.card, borderRadius: 32, padding: 40 }, style]}>
+                        <View style={[
+                            styles.desktopCard,
+                            {
+                                backgroundColor: c.card,
+                                borderRadius: 32,
+                                padding: 40,
+                                width: '100%',
+                                maxWidth: maxWidth,
+                                alignSelf: 'center'
+                            },
+                            style
+                        ]}>
                             {children}
                         </View>
                     </ScrollView>
@@ -45,7 +54,7 @@ const ResponsiveOnboardingWrapper: React.FC<ResponsiveOnboardingWrapperProps> = 
     }
 
     return (
-        <View style={[{ flex: 1, backgroundColor: c.background }, style]} {...props}>
+        <View style={[{ flex: 1, height: '100%', minHeight: Platform.OS === 'web' ? '100vh' : '100%', backgroundColor: c.background } as any, style]} {...props}>
             {children}
         </View>
     );
@@ -62,6 +71,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRightWidth: 1,
         borderRightColor: 'rgba(0,0,0,0.05)',
+        padding: 40,
+    },
+    container: { flex: 1, height: Platform.OS === 'web' ? '100vh' : '100%' } as any,
+    mainWrapper: {
+        flex: 1,
+        height: '100%',
     },
     formPanel: {
         flex: 1,
@@ -69,8 +84,9 @@ const styles = StyleSheet.create({
     },
     desktopContent: {
         flexGrow: 1,
+        paddingVertical: 60,
+        paddingHorizontal: 20,
         justifyContent: 'center',
-        paddingVertical: 40,
     },
     desktopCard: {
         shadowColor: '#000',
@@ -79,6 +95,7 @@ const styles = StyleSheet.create({
         shadowRadius: 30,
         elevation: 5,
         marginHorizontal: 20,
+        overflow: 'visible', // Ensure shadows and content aren't clipped
     }
 });
 

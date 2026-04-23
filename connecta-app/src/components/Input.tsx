@@ -16,7 +16,9 @@ export default function Input({ label, error, icon, containerStyle, ...textInput
 
     return (
         <View style={[styles.container, containerStyle]}>
-            {label && <Text style={[styles.label, { color: c.text }]}>{label}</Text>}
+            {label && (
+                <Text style={[styles.label, { color: c.text }]}>{label}</Text>
+            )}
             <View
                 style={[
                     styles.inputContainer,
@@ -55,7 +57,9 @@ export default function Input({ label, error, icon, containerStyle, ...textInput
                     }}
                 />
             </View>
-            {error && <Text style={styles.error}>{error}</Text>}
+            {error && (
+                <Text style={styles.error}>{error}</Text>
+            )}
         </View>
     );
 }

@@ -6,9 +6,9 @@ import Avatar from '../components/Avatar';
 import { useThemeColors } from '../theme/theme';
 import { useFocusEffect } from '@react-navigation/native';
 import * as messageService from '../services/messageService';
-import * as collaboService from '../services/collaboService';
 import * as proposalService from '../services/proposalService';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,8 +16,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function ChatsScreen({ navigation }: any) {
     const c = useThemeColors();
     const { user } = useAuth();
+    const { onlineUsers } = useSocket();
     const [conversations, setConversations] = useState<any[]>([]);
-    const [collaboChats, setCollaboChats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -40,19 +40,6 @@ export default function ChatsScreen({ navigation }: any) {
             const convData = await messageService.getUserConversations();
             setConversations(Array.isArray(convData) ? convData : []);
 
-            // Fetch collabo projects based on user type
-            let collaboData = [];
-            try {
-                if (user.userType === 'client') {
-                    collaboData = await collaboService.getMyCollaboProjects();
-                } else {
-                    collaboData = await collaboService.getFreelancerCollaboProjects();
-                }
-            } catch (collaboError) {
-                console.log('No collabo projects found:', collaboError);
-            }
-
-            setCollaboChats(Array.isArray(collaboData) ? collaboData : []);
 
             // Fetch clients for new chat if user is freelancer
             if (user.userType === 'freelancer') {
@@ -61,7 +48,6 @@ export default function ChatsScreen({ navigation }: any) {
         } catch (error) {
             console.error('Error fetching conversations:', error);
             setConversations([]);
-            setCollaboChats([]);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -103,147 +89,125 @@ export default function ChatsScreen({ navigation }: any) {
         fetchConversations();
     };
 
-    const handleConversationPress = (conversation: any) => {
-        // Determine the other user
-        let otherUser;
-        if (conversation.participants && conversation.participants.length > 0) {
-            otherUser = conversation.participants.find((p: any) => p._id !== user?._id);
-        }
-        if (!otherUser) {
-            otherUser = conversation.clientId?._id === user?._id
-                ? conversation.freelancerId
-                : conversation.clientId;
-        }
-
+    const handleConversationPress = (item: any) => {
+        const otherUser = item.otherUser;
         navigation.navigate('MessagesDetail', {
-            conversationId: conversation._id,
+            conversationId: item._id,
             userName: `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User',
             userAvatar: otherUser?.profileImage || otherUser?.avatar,
-            receiverId: otherUser?._id // Pass receiverId to help MessagesScreen if needed
+            receiverId: otherUser?._id,
+            projectId: item.projectId?._id || item.projectId
         });
     };
 
-    // Combine regular conversations and collabo chats
-    const allChats = [
-        ...conversations.map(c => ({ ...c, type: 'conversation' })),
-        ...collaboChats.map(c => ({ ...c, type: 'collabo' }))
-    ];
+    const groupedChats = React.useMemo(() => {
+        const groups = new Map<string, any>();
+        
+        conversations.forEach(conv => {
+            let otherUser;
+            const currentUserId = user?._id?.toString();
+            
+            if (conv.participants && conv.participants.length > 0) {
+                otherUser = conv.participants.find((p: any) => {
+                    const pId = (p._id || p).toString();
+                    return pId !== currentUserId;
+                });
+            }
+            
+            if (!otherUser) {
+                const client = conv.clientId;
+                const freelancer = conv.freelancerId;
+                const clientId = (client?._id || client)?.toString();
+                otherUser = clientId === currentUserId ? freelancer : client;
+            }
+            
+            if (!otherUser) return;
+            
+            const otherId = otherUser._id;
+            const unread = conv.unreadCount?.[user?._id || ''] || 0;
+            
+            if (groups.has(otherId)) {
+                // merge
+                const existing = groups.get(otherId);
+                existing.unreadCountTotal = (existing.unreadCountTotal || 0) + unread;
+                
+                // take the latest message
+                if (new Date(conv.lastMessageAt) > new Date(existing.lastMessageAt || 0)) {
+                    existing._id = conv._id;
+                    existing.lastMessage = conv.lastMessage;
+                    existing.lastMessageAt = conv.lastMessageAt;
+                    existing.projectId = conv.projectId;
+                }
+            } else {
+                groups.set(otherId, {
+                    ...conv,
+                    otherUser,
+                    unreadCountTotal: unread
+                });
+            }
+        });
+        
+        return Array.from(groups.values()).sort((a, b) => 
+            new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime()
+        );
+    }, [conversations, user?._id]);
 
-    const filteredConversations = allChats.filter(conv => {
-        if (conv.type === 'collabo') {
-            const projectTitle = conv.title || '';
-            return projectTitle.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-
-        let otherUser;
-        if (conv.participants && conv.participants.length > 0) {
-            otherUser = conv.participants.find((p: any) => p._id !== user?._id);
-        }
-        if (!otherUser) {
-            const client = conv.clientId;
-            const freelancer = conv.freelancerId;
-            otherUser = client?._id === user?._id ? freelancer : client;
-        }
-        const name = `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.toLowerCase();
+    const filteredConversations = groupedChats.filter(conv => {
+        const name = `${conv.otherUser?.firstName || ''} ${conv.otherUser?.lastName || ''}`.toLowerCase();
         return name.includes(searchQuery.toLowerCase());
     });
 
     const renderItem = ({ item }: { item: any }) => {
-        // Handle collabo team chats
-        if (item.type === 'collabo') {
-            const teamSize = item.roles?.filter((r: any) => r.status === 'filled').length || 0;
-            const totalRoles = item.roles?.length || 0;
-
-            const unread = item.workspaceId?.unreadCount?.[user?._id || ''] || 0;
-
-            return (
-                <TouchableOpacity
-                    style={[styles.conversationItem, { backgroundColor: c.card, borderColor: c.border }]}
-                    onPress={() => navigation.navigate('CollaboWorkspace', { projectId: item._id })}
-                >
-                    <View style={[styles.avatar, { backgroundColor: c.primary + '20', alignItems: 'center', justifyContent: 'center' }]}>
-                        <Ionicons name="people" size={28} color={c.primary} />
-                    </View>
-                    <View style={styles.conversationDetails}>
-                        <View style={styles.row}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-                                <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>{item.title}</Text>
-                                <View style={{ backgroundColor: '#8B5CF6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
-                                    <Text style={{ color: '#FFF', fontSize: 10, fontWeight: '700' }}>TEAM</Text>
-                                </View>
-                            </View>
-                        </View>
-                        <View style={styles.row}>
-                            <Text numberOfLines={1} style={[styles.lastMessage, { color: c.subtext }]}>
-                                {teamSize}/{totalRoles} members • {item.status || 'Active'}
-                            </Text>
-                            {unread > 0 && (
-                                <View style={[styles.unreadBadge, { backgroundColor: c.primary }]}>
-                                    <Text style={styles.unreadText}>{unread}</Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            );
-        }
-
-        // Regular conversation
-        // Determine the other user
-        let otherUser;
-
-        // Strategy 1: Check participants array (new generic chats)
-        if (item.participants && item.participants.length > 0) {
-            otherUser = item.participants.find((p: any) => p._id !== user?._id);
-        }
-
-        // Strategy 2: Fallback to legacy clientId/freelancerId
-        if (!otherUser) {
-            otherUser = item.clientId?._id === user?._id
-                ? item.freelancerId
-                : item.clientId;
-        }
+        const otherUser = item.otherUser;
 
         const name = `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || 'User';
         const lastMsg = item.lastMessage || 'No messages';
         const time = item.lastMessageAt
             ? new Date(item.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : '';
-        const unread = item.unreadCount?.[user?._id || ''] || 0;
-        const isPremium = otherUser?.isPremium;
+        const unread = item.unreadCountTotal || 0;
+        const isOnline = onlineUsers.includes(otherUser?._id);
+        
+        const isInternal = user?.userType === 'freelancer' && otherUser?.userType === 'client'; // Simple check, adapt if you have an isInternal flag on user
 
         return (
             <TouchableOpacity
                 style={[styles.conversationItem, { backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => handleConversationPress(item)}
+                activeOpacity={0.7}
             >
-                <View style={styles.avatar}>
-                    <Avatar uri={otherUser?.profileImage || otherUser?.avatar || undefined} name={name} size={50} />
+                <View style={styles.avatarContainer}>
+                    <Avatar 
+                        uri={otherUser?.profileImage || otherUser?.avatar || undefined} 
+                        name={name} 
+                        size={56} 
+                    />
+                    {isOnline && (
+                        <View style={[styles.onlineStatus, { backgroundColor: '#10B981', borderColor: c.card }]} />
+                    )}
                 </View>
+                
                 <View style={styles.conversationDetails}>
                     <View style={styles.row}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
-                            <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>{name}</Text>
-                            {isPremium && (
-                                <Ionicons name="checkmark-circle" size={16} color="#F59E0B" />
-                            )}
-                        </View>
-                        <Text style={[styles.time, { color: c.subtext, marginLeft: 8 }]}>{time}</Text>
+                        <Text style={[styles.name, { color: c.text }]} numberOfLines={1}>{name}</Text>
+                        <Text style={[styles.time, { color: c.subtext }]}>{time}</Text>
                     </View>
+                    
                     <View style={styles.row}>
-                        <Text numberOfLines={1} style={[styles.lastMessage, { color: c.subtext }]}>
+                        <Text numberOfLines={1} style={[styles.lastMessage, { color: unread > 0 ? c.text : c.subtext, fontWeight: unread > 0 ? '700' : '400' }]}>
                             {lastMsg}
                         </Text>
                         {unread > 0 && (
-                            <View style={[styles.unreadBadge, { backgroundColor: c.primary }]}>
+                            <View style={[styles.unreadBadge, { backgroundColor: '#EF4444' }]}>
                                 <Text style={styles.unreadText}>{unread}</Text>
                             </View>
                         )}
                     </View>
+                    
                     {item.projectId && (
-                        <View style={styles.projectTag}>
-                            <Ionicons name="briefcase-outline" size={12} color={c.primary} />
-                            <Text style={[styles.projectTitle, { color: c.primary }]}>{item.projectId.title}</Text>
+                        <View style={[styles.projectTag, { backgroundColor: c.primary + '10' }]}>
+                             <MaterialIcons name="work-outline" size={12} color={c.primary} />
+                             <Text style={[styles.projectTitle, { color: c.primary }]}>{item.projectId.title}</Text>
                         </View>
                     )}
                 </View>
@@ -264,12 +228,6 @@ export default function ChatsScreen({ navigation }: any) {
                         </TouchableOpacity>
                         <Text style={[styles.headerTitle, { color: c.text }]}>Chats</Text>
                     </View>
-                    <TouchableOpacity
-                        onPress={() => user?.userType === 'freelancer' ? setShowNewChatModal(true) : navigation.navigate('PublicFreelancerSearch')}
-                        style={[styles.newChatBtn, { backgroundColor: c.primary }]}
-                    >
-                        <Ionicons name="add" size={24} color="#FFF" />
-                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.searchContainer}>
@@ -326,8 +284,14 @@ export default function ChatsScreen({ navigation }: any) {
                         renderItem={renderItem}
                         keyExtractor={item => item._id}
                         contentContainerStyle={styles.listContent}
+                        showsVerticalScrollIndicator={false}
                         refreshControl={
                             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[c.primary]} />
+                        }
+                        ListHeaderComponent={
+                            <View style={{ marginBottom: 16 }}>
+                                <Text style={[styles.sectionTitle, { color: c.text, opacity: 0.5 }]}>Recent Messages</Text>
+                            </View>
                         }
                         ListEmptyComponent={
                             <View style={styles.emptyState}>
@@ -341,9 +305,9 @@ export default function ChatsScreen({ navigation }: any) {
                                 {user?.userType === 'freelancer' && (
                                     <TouchableOpacity
                                         style={[styles.emptyStateBtn, { backgroundColor: c.primary }]}
-                                        onPress={() => navigation.navigate('Gigs')}
+                                        onPress={() => navigation.navigate('Jobs')}
                                     >
-                                        <Text style={styles.emptyStateBtnText}>Find Gigs</Text>
+                                        <Text style={styles.emptyStateBtnText}>Find Jobs</Text>
                                     </TouchableOpacity>
                                 )}
                                 {user?.userType === 'client' && (
@@ -488,16 +452,28 @@ const styles = StyleSheet.create({
     conversationItem: {
         flexDirection: 'row',
         padding: 16,
-        borderRadius: 16,
-        borderWidth: 1,
+        borderRadius: 20,
         marginBottom: 12,
         alignItems: 'center',
+        borderWidth: 1,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
     },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+    avatarContainer: {
+        position: 'relative',
         marginRight: 16,
+    },
+    onlineStatus: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 2,
     },
     conversationDetails: {
         flex: 1,
@@ -506,199 +482,106 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     name: {
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 17,
+        fontWeight: '800',
+        flex: 1,
     },
     time: {
-        fontSize: 12,
+        fontSize: 11,
+        fontWeight: '600',
     },
     lastMessage: {
         fontSize: 14,
         flex: 1,
-        marginRight: 8,
+        marginRight: 12,
     },
     unreadBadge: {
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
+        minWidth: 22,
+        height: 22,
+        borderRadius: 11,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 6,
     },
     unreadText: {
         color: 'white',
-        fontSize: 10,
-        fontWeight: 'bold',
+        fontSize: 11,
+        fontWeight: '900',
     },
     projectTag: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 4,
-        gap: 4,
+        marginTop: 8,
+        gap: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
     },
     projectTitle: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 11,
+        fontWeight: '700',
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 48,
-        marginTop: 40,
+        marginTop: 60,
     },
     emptyTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        marginTop: 16,
+        fontSize: 22,
+        fontWeight: '800',
+        marginTop: 20,
     },
     emptyText: {
-        marginTop: 8,
-        fontSize: 14,
+        marginTop: 10,
+        fontSize: 15,
         textAlign: 'center',
-        opacity: 0.7,
-        lineHeight: 20,
+        opacity: 0.6,
+        lineHeight: 22,
     },
     emptyStateBtn: {
-        marginTop: 24,
-        paddingHorizontal: 32,
-        paddingVertical: 14,
-        borderRadius: 25,
-        shadowColor: '#000',
+        marginTop: 32,
+        paddingHorizontal: 40,
+        paddingVertical: 16,
+        borderRadius: 16,
+        shadowColor: '#FD6730',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 6,
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 8,
     },
     emptyStateBtnText: {
         color: '#FFF',
         fontSize: 16,
-        fontWeight: '700',
-    },
-    newChatBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        justifyContent: 'flex-end',
-    },
-    modalContent: {
-        height: '88%',
-        borderTopLeftRadius: 40,
-        borderTopRightRadius: 40,
-        overflow: 'hidden',
-    },
-    modalHeaderBlur: {
-        width: '100%',
-    },
-    modalHeaderGradient: {
-        padding: 24,
-        paddingBottom: 32,
-    },
-    modalHeaderRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    closeBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    modalTitle: {
-        fontSize: 24,
         fontWeight: '800',
-        color: '#FFF',
-        letterSpacing: -0.5,
-    },
-    modalSearchBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        height: 50,
-    },
-    modalSearchInput: {
-        flex: 1,
-        marginLeft: 12,
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    clientListContainer: {
-        flex: 1,
-        padding: 20,
-    },
-    sectionLabel: {
-        fontSize: 12,
-        fontWeight: '800',
-        letterSpacing: 1,
-        marginBottom: 16,
-    },
-    clientItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-    },
-    clientInfo: {
-        flex: 1,
-        marginLeft: 16,
-    },
-    clientName: {
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    clientSub: {
-        fontSize: 13,
-        marginTop: 2,
-    },
-    emptyClients: {
-        alignItems: 'center',
-        padding: 40,
     },
     quickChatContainer: {
-        paddingVertical: 8,
-        marginBottom: 8,
+        paddingVertical: 12,
+        marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 14,
-        fontWeight: '800',
+        fontSize: 12,
+        fontWeight: '900',
         marginLeft: 16,
-        marginBottom: 12,
+        marginBottom: 16,
         textTransform: 'uppercase',
-        letterSpacing: 1,
-        opacity: 0.6,
+        letterSpacing: 1.5,
     },
     quickChatList: {
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
     },
     quickChatItem: {
         alignItems: 'center',
         width: 80,
-        marginHorizontal: 4,
+        marginRight: 12,
     },
     quickAvatarWrapper: {
         position: 'relative',
-        padding: 3,
+        padding: 2,
         borderRadius: 35,
         borderWidth: 2,
         borderColor: '#FD6730',
@@ -715,6 +598,6 @@ const styles = StyleSheet.create({
     quickName: {
         marginTop: 8,
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '700',
     }
 });

@@ -11,7 +11,6 @@ import { useInAppAlert } from '../components/InAppAlert';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as storage from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
-import { useLanguage } from '../utils/i18n';
 
 export default function SettingsScreen({ navigation }: any) {
     const c = useThemeColors();
@@ -21,7 +20,6 @@ export default function SettingsScreen({ navigation }: any) {
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [biometricEnabled, setBiometricEnabled] = useState(false);
     const { showAlert } = useInAppAlert();
-    const { language, setLanguage } = useLanguage();
 
     useEffect(() => {
         loadBiometricSettings();
@@ -107,16 +105,7 @@ export default function SettingsScreen({ navigation }: any) {
         }
     };
 
-    const handleLanguageChange = () => {
-        const newLanguage = language === 'en' ? 'ha' : 'en';
-        setLanguage(newLanguage);
-        const languageName = newLanguage === 'en' ? 'English' : 'Hausa';
-        showAlert({
-            title: 'Language Changed',
-            message: `Language switched to ${languageName}`,
-            type: 'success'
-        });
-    };
+
 
     const handleLogout = async () => {
         try {
@@ -125,7 +114,7 @@ export default function SettingsScreen({ navigation }: any) {
             setTimeout(() => {
                 navigation.reset({
                     index: 0,
-                    routes: [{ name: 'Landing' }],
+                    routes: [{ name: 'Auth' }],
                 });
                 showAlert({ title: 'Logged out', message: 'You have been logged out successfully', type: 'success' });
             }, 100);
@@ -203,18 +192,8 @@ export default function SettingsScreen({ navigation }: any) {
                             value={biometricEnabled}
                             onToggle={handleBiometricToggle}
                         />
-                        <SettingItem
-                            icon="briefcase-outline"
-                            color="#FD6730"
-                            label="Job Preferences"
-                            onPress={() => navigation.navigate('JobPreferences')}
-                        />
-                        <SettingItem
-                            icon="language-outline"
-                            color="#8B5CF6"
-                            label={`Language (${language === 'en' ? 'English' : 'Hausa'})`}
-                            onPress={handleLanguageChange}
-                        />
+
+
                     </View>
                 </View>
 
@@ -244,12 +223,6 @@ export default function SettingsScreen({ navigation }: any) {
                             color="#8B5CF6"
                             label="Help Center"
                             onPress={() => navigation.navigate('HelpSupport')}
-                        />
-                        <SettingItem
-                            icon="mail-outline"
-                            color="#EC4899"
-                            label="Contact Us"
-                            onPress={() => navigation.navigate('ContactSupport')}
                         />
                     </View>
                 </View>

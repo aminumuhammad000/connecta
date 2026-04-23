@@ -3,38 +3,46 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingVi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { verifyOTP, signup, verifyEmail, resendVerification, initiateSignup, sendPasswordResetOTP } from '../services/authService';
+import { verifyOTP, signup, resendVerification, initiateSignup, sendPasswordResetOTP } from '../services/authService';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
-import { useTranslation } from '../utils/i18n';
 import { useInAppAlert } from '../components/InAppAlert';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
-import ResponsiveOnboardingWrapper from '../components/ResponsiveOnboardingWrapper';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring, withSequence, withTiming } from 'react-native-reanimated';
 import * as storage from '../utils/storage';
 import ChatGreeting from '../components/ChatGreeting';
 import AnimatedBackground from '../components/AnimatedBackground';
 import SignupProgressBar from '../components/SignupProgressBar';
+import Button from '../components/Button';
 
 const OTPVerificationScreen: React.FC = () => {
     const c = useThemeColors();
     const navigation = useNavigation();
     const route = useRoute();
-    const { t, lang } = useTranslation();
     const { showAlert } = useInAppAlert();
     const { signup: performSignup } = useAuth();
 
-    const { email, mode = 'forgotPassword' } = (route.params as any) || {};
+    const { email: initialEmail, mode = 'forgotPassword' } = (route.params as any) || {};
 
+    const [userEmail, setUserEmail] = useState(initialEmail || '');
     const [otp, setOtp] = useState(['', '', '', '']);
     const [isLoading, setIsLoading] = useState(false);
     const [resendTimer, setResendTimer] = useState(60);
     const inputRefs = useRef<(TextInput | null)[]>([]);
 
-    // Animation values
+    const activeIndex = useSharedValue(0);
     const boxesScale = [useSharedValue(1), useSharedValue(1), useSharedValue(1), useSharedValue(1)];
 
     useEffect(() => {
+        const fetchEmail = async () => {
+            if (!userEmail) {
+                const data = await storage.getPendingSignupData();
+                if (data?.email) setUserEmail(data.email);
+            }
+        };
+
+        if (!userEmail) fetchEmail();
+        
         if (inputRefs.current[0]) inputRefs.current[0].focus();
 
         const interval = setInterval(() => {
@@ -55,45 +63,43 @@ const OTPVerificationScreen: React.FC = () => {
 
         if (value && index < 3) {
             inputRefs.current[index + 1]?.focus();
-        }
-
-        if (newOtp.every(digit => digit !== '') && index === 3) {
-            handleVerifyOTP(newOtp.join(''));
+            activeIndex.value = index + 1;
         }
     };
 
     const handleKeyPress = (e: any, index: number) => {
         if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
             inputRefs.current[index - 1]?.focus();
+            activeIndex.value = index - 1;
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
     };
 
     const handleVerifyOTP = async (otpCode?: string) => {
+        if (isLoading) return;
         const code = otpCode || otp.join('');
         if (code.length !== 4) return;
 
         setIsLoading(true);
         try {
+            console.log(`[OTP] Verifying code: ${code} for mode: ${mode}`);
             if (mode === 'signup') {
                 const pendingData = await storage.getPendingSignupData();
 
                 const response = await performSignup({
                     ...pendingData,
                     otp: code,
-                }, true); // autoLogin: true
+                }, true);
 
                 const user = response.user || (response as any).data?.user;
 
                 await storage.clearPendingSignupData();
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-                // Navigate immediately
                 if (user?.userType === 'freelancer') {
                     (navigation as any).reset({
                         index: 0,
-                        routes: [{ name: 'SkillSelection', params: { user } }],
+                        routes: [{ name: 'FreelancerProfileSetup', params: { user } }],
                     });
                 } else {
                     (navigation as any).reset({
@@ -102,19 +108,22 @@ const OTPVerificationScreen: React.FC = () => {
                     });
                 }
             } else {
-                const response = await verifyOTP(email, code);
-                const token = (response as any).token || (response as any).data?.token;
+                const response = await verifyOTP(userEmail || initialEmail, code);
+                const token = (response as any).token || (response as any).data?.token || (response as any).resetToken || (response as any).data?.resetToken;
 
                 if (token) {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    (navigation as any).navigate('ResetPassword', { email, resetToken: token });
+                    (navigation as any).navigate('ResetPassword', { email: userEmail || initialEmail, resetToken: token });
+                } else {
+                    console.warn('[OTP] Success response but no token found:', response);
                 }
             }
         } catch (error: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            showAlert({ title: t('error' as any), message: error.message || 'Verification failed', type: 'error' });
+            showAlert({ title: 'Error', message: error.message || 'Verification failed', type: 'error' });
             setOtp(['', '', '', '']);
             inputRefs.current[0]?.focus();
+            activeIndex.value = 0;
         } finally {
             setIsLoading(false);
         }
@@ -127,88 +136,72 @@ const OTPVerificationScreen: React.FC = () => {
         try {
             if (mode === 'signup') {
                 const pendingData = await storage.getPendingSignupData();
-                await initiateSignup(email || pendingData?.email, pendingData?.firstName || 'User', lang);
+                await initiateSignup(userEmail || email || pendingData?.email, pendingData?.firstName || 'User', 'en');
             } else if (mode === 'forgotPassword') {
-                await sendPasswordResetOTP(email);
+                await sendPasswordResetOTP(userEmail || email);
             } else {
-                await resendVerification(email);
+                await resendVerification(userEmail || email);
             }
 
             setResendTimer(60);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            showAlert({ title: t('success' as any), message: 'New verification code sent!', type: 'success' });
+            showAlert({ title: 'Success', message: 'New verification code sent!', type: 'success' });
         } catch (error: any) {
-            showAlert({ title: t('error' as any), message: error.message || 'Resend failed', type: 'error' });
+            showAlert({ title: 'Error', message: error.message || 'Resend failed', type: 'error' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const sideContent = (
-        <View style={styles.desktopSide}>
-            <View style={[styles.bigIconBox, { backgroundColor: c.primary + '15' }]}>
-                <Ionicons name="mail-unread" size={80} color={c.primary} />
-            </View>
-            <Text style={[styles.sideTitle, { color: c.text }]}>Check Your{'\n'}Inbox</Text>
-            <Text style={[styles.sideSub, { color: c.subtext }]}>
-                We've sent a 4-digit verification code to your email.
-            </Text>
-        </View>
-    );
-
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
             <StatusBar barStyle={c.isDark ? 'light-content' : 'dark-content'} />
             <AnimatedBackground />
-            <ResponsiveOnboardingWrapper sideComponent={sideContent}>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-                    <View style={styles.mainWrapper}>
-                        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                            <View style={styles.headerRow}>
-                                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                                    <Ionicons name="chevron-back" size={24} color={c.text} />
-                                </TouchableOpacity>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+                <View style={styles.mainWrapper}>
+                    <View style={styles.stickyHeader}>
+                        <View style={styles.headerRow}>
+                            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                                <Ionicons name="chevron-back" size={24} color={c.text} />
+                            </TouchableOpacity>
+                        </View>
+                        <SignupProgressBar currentStep={5} totalSteps={5} />
+                    </View>
 
-                                <TouchableOpacity
-                                    onPress={() => (navigation as any).navigate('LanguageSelect')}
-                                    style={[styles.langToggle, { backgroundColor: c.card, borderColor: c.border }]}
-                                >
-                                    <MaterialIcons name="language" size={18} color={c.primary} />
-                                    <Text style={[styles.langToggleText, { color: c.text }]}>
-                                        {lang === 'ha' ? 'Hausa' : 'English'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <SignupProgressBar currentStep={6} totalSteps={6} />
-
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.contentContainer}>
                             <View style={styles.chatSection}>
                                 <ChatGreeting
                                     messages={[
-                                        { text: t('verify_email') },
-                                        { text: t('otp_sub') },
-                                        { text: email, delay: 500 }
+                                        { text: 'Verify your email' },
+                                        { text: `A 4-digit code was sent to: ${userEmail || 'your email'}.`, delay: 1000 }
                                     ]}
                                 />
                             </View>
 
-                            <View style={styles.otpContainer}>
-                                <View style={styles.otpGrid}>
+                            <View style={styles.otpSection}>
+                                <View style={styles.otpInputsContainer}>
                                     {otp.map((digit, index) => {
-                                        const animatedStyle = useAnimatedStyle(() => ({
-                                            transform: [{ scale: boxesScale[index].value }],
-                                            borderColor: digit ? c.primary : withTiming(c.border),
-                                        }));
+                                        const animatedStyle = useAnimatedStyle(() => {
+                                            const scale = index === activeIndex.value ? 1.05 : 1;
+                                            return { transform: [{ scale: withSpring(scale) }] };
+                                        });
+
                                         return (
-                                            <Animated.View key={index} style={[styles.otpBox, animatedStyle, { backgroundColor: c.card }]}>
+                                            <Animated.View key={index} style={[styles.otpInputBox, { backgroundColor: c.card, borderColor: otp[index] ? c.primary : c.border }, animatedStyle]}>
                                                 <TextInput
-                                                    ref={(ref) => { inputRefs.current[index] = ref; }}
-                                                    value={digit}
-                                                    onChangeText={(v) => handleOTPChange(v, index)}
-                                                    onKeyPress={(e) => handleKeyPress(e, index)}
+                                                    ref={(el) => { inputRefs.current[index] = el; }}
                                                     style={[styles.otpInput, { color: c.text }]}
+                                                    value={digit}
+                                                    onChangeText={(value) => handleOTPChange(value, index)}
+                                                    onKeyPress={(e) => handleKeyPress(e, index)}
                                                     keyboardType="number-pad"
                                                     maxLength={1}
+                                                    selectTextOnFocus
                                                     editable={!isLoading}
                                                 />
                                             </Animated.View>
@@ -217,21 +210,55 @@ const OTPVerificationScreen: React.FC = () => {
                                 </View>
 
                                 <View style={styles.resendContainer}>
-                                    <TouchableOpacity
-                                        disabled={resendTimer > 0 || isLoading}
-                                        onPress={handleResend}
-                                        style={styles.resendBtn}
-                                    >
-                                        <Text style={[styles.resendText, { color: resendTimer > 0 || isLoading ? c.subtext : c.primary }]}>
-                                            {resendTimer > 0 ? `${t('resend_in')} ${resendTimer}s` : t('resend_code')}
-                                        </Text>
+                                    {resendTimer > 0 ? (
+                                        <View style={styles.timerRow}>
+                                            <Ionicons name="time-outline" size={16} color={c.subtext} />
+                                            <Text style={[styles.timerText, { color: c.subtext }]}>
+                                                Resend in <Text style={{ color: c.primary, fontWeight: '700' }}>{resendTimer}s</Text>
+                                            </Text>
+                                        </View>
+                                    ) : (
+                                        <TouchableOpacity
+                                            disabled={isLoading}
+                                            onPress={handleResend}
+                                            style={styles.resendBtn}
+                                        >
+                                            <Text style={[styles.resendText, { color: c.primary }]}>
+                                                Resend Code
+                                            </Text>
+                                        </TouchableOpacity>
+                                    )}
+                                </View>
+
+                                <View style={styles.verifyContainer}>
+                                    <View style={styles.buttonWrapper}>
+                                        <Button
+                                            title="Verify Code"
+                                            onPress={() => handleVerifyOTP()}
+                                            loading={isLoading}
+                                            disabled={otp.some(d => !d) || isLoading}
+                                            size="large"
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={styles.changeEmailRow}>
+                                    <Text style={[styles.changeEmailText, { color: c.subtext }]}>Incorrect email?</Text>
+                                    <TouchableOpacity onPress={() => {
+                                        if (mode === 'signup') {
+                                            (navigation as any).navigate('SignupDetails');
+                                        } else {
+                                            navigation.goBack();
+                                        }
+                                    }}>
+                                        <Text style={[styles.changeEmailLink, { color: c.primary }]}>Change it</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
-                        </ScrollView>
-                    </View>
-                </KeyboardAvoidingView>
-            </ResponsiveOnboardingWrapper>
+                        </View>
+                    </ScrollView>
+                </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -244,13 +271,26 @@ const styles = StyleSheet.create({
         maxWidth: 500,
         alignSelf: 'center',
     },
-    scroll: { flexGrow: 1, paddingHorizontal: 24, paddingBottom: 40, paddingTop: 16 },
+    scrollContent: {
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 40,
+        flexGrow: 1,
+        gap: 30,
+    },
+    stickyHeader: {
+        paddingTop: Platform.OS === 'ios' ? 10 : 20,
+        paddingHorizontal: 24,
+        paddingBottom: 10,
+        backgroundColor: 'rgba(255,255,255,0.01)',
+        zIndex: 10,
+    },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
         width: '100%',
+        marginBottom: 8,
     },
     backButton: {
         width: 44,
@@ -267,25 +307,16 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 2,
     },
-    langToggle: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, borderWidth: 1, gap: 6 },
-    langToggleText: { fontSize: 13, fontWeight: '700' },
-    chatSection: {
-        marginBottom: 32,
-    },
-    otpContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-    },
-    otpGrid: {
+    contentContainer: { gap: 40 },
+    chatSection: { marginBottom: 0 },
+    otpSection: { gap: 32 },
+    otpInputsContainer: {
         flexDirection: 'row',
         gap: 12,
-        marginBottom: 40,
         justifyContent: 'center',
         width: '100%',
     },
-    otpBox: {
+    otpInputBox: {
         width: 64,
         height: 76,
         borderRadius: 20,
@@ -299,14 +330,16 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     otpInput: { fontSize: 32, fontWeight: '900', textAlign: 'center', width: '100%' },
-    resendContainer: { width: '100%', alignItems: 'center' },
-    resendBtn: { padding: 12 },
+    resendContainer: { width: '100%', alignItems: 'flex-end', marginBottom: -10 },
+    verifyContainer: { width: '100%', alignItems: 'flex-end' },
+    buttonWrapper: { width: '60%' },
+    timerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 12 },
+    timerText: { fontSize: 15, fontWeight: '500' },
+    resendBtn: { padding: 8 },
     resendText: { fontSize: 16, fontWeight: '700' },
-    // Desktop
-    desktopSide: { padding: 40, alignItems: 'center', justifyContent: 'center' },
-    bigIconBox: { width: 120, height: 120, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
-    sideTitle: { fontSize: 44, fontWeight: '900', textAlign: 'center', letterSpacing: -1.5, marginBottom: 16, lineHeight: 52 },
-    sideSub: { fontSize: 18, textAlign: 'center', opacity: 0.7, maxWidth: 360, lineHeight: 28 }
+    changeEmailRow: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 10, width: '100%' },
+    changeEmailText: { fontSize: 14, fontWeight: '500' },
+    changeEmailLink: { fontSize: 14, fontWeight: '700' },
 });
 
 export default OTPVerificationScreen;

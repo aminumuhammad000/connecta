@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
@@ -10,16 +10,14 @@ import { useAuth } from '../context/AuthContext';
 import SuccessModal from '../components/SuccessModal';
 import Badge from '../components/Badge';
 import Avatar from '../components/Avatar';
-import { useTranslation } from '../utils/i18n';
 
-const JobDetailScreen: React.FC = () => {
+function JobDetailScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { id } = route.params || {};
   const { user } = useAuth();
-  const { t } = useTranslation();
 
   const [job, setJob] = React.useState<any>(null);
   const [isSaved, setIsSaved] = React.useState(false);
@@ -98,7 +96,7 @@ const JobDetailScreen: React.FC = () => {
       // API might return populated objects, handle both string ID and object ID
       const applied = proposals.some((p: any) => {
         const pJobId = typeof p.jobId === 'object' ? p.jobId?._id : p.jobId;
-        return pJobId === id;
+        return String(pJobId) === String(id);
       });
       setHasApplied(applied);
     } catch (error) {
@@ -133,13 +131,13 @@ const JobDetailScreen: React.FC = () => {
 
       setSuccessModal({
         visible: true,
-        title: t('freelancer_hired'),
-        message: t('proposal_accepted_msg'),
+        title: "Freelancer Hired!",
+        message: "You've successfully accepted the proposal. A new project has been created.",
         data: { projectId } // Pass projectId to modal
       } as any);
     } catch (error: any) {
       console.error('Error accepting proposal:', error);
-      alert(error?.message || t('proposal_accept_fail'));
+      alert(error?.message || "Failed to accept proposal.");
     } finally {
       setActionLoading(null);
     }
@@ -151,10 +149,40 @@ const JobDetailScreen: React.FC = () => {
       setProposals(prev => prev.map(p => p._id === proposalId ? { ...p, status: 'declined' } : p));
     } catch (error) {
       console.error('Error rejecting proposal:', error);
-      alert(t('proposal_reject_fail'));
+      alert("Failed to reject proposal.");
     }
   };
+  const handleDeleteJob = async () => {
+    Alert.alert(
+      "Delete Job",
+      "Are you sure you want to delete this job? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await jobService.deleteJob(id);
+              navigation.goBack();
+            } catch (error: any) {
+              console.error('Delete error:', error);
+              Alert.alert("Error", error?.message || "Failed to delete job.");
+            } finally {
+              setIsLoading(false);
+            }
+          } 
+        }
+      ]
+    );
+  };
 
+  const canDelete = React.useMemo(() => {
+    if (!job || !isJobOwner) return false;
+    // Allow delete if job is not started (not in_progress, completed, or cancelled)
+    return !['in_progress', 'completed', 'cancelled'].includes(job.status);
+  }, [job, isJobOwner]);
   if (isLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: c.background, alignItems: 'center', justifyContent: 'center' }}>
@@ -170,11 +198,11 @@ const JobDetailScreen: React.FC = () => {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
             <MaterialIcons name="arrow-back" size={22} color={c.text} />
           </TouchableOpacity>
-          <Text style={[styles.appBarTitle, { color: c.text }]}>{t('job_details')}</Text>
+          <Text style={[styles.appBarTitle, { color: c.text }]}>{"Job Details"}</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <Text style={{ color: c.subtext, fontSize: 16 }}>{t('job_load_fail')}</Text>
+          <Text style={{ color: c.subtext, fontSize: 16 }}>{"Failed to load job"}</Text>
         </View>
       </SafeAreaView>
     );
@@ -187,37 +215,67 @@ const JobDetailScreen: React.FC = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Go back">
           <MaterialIcons name="arrow-back" size={24} color={c.text} />
         </TouchableOpacity>
-        <Text style={[styles.appBarTitle, { color: c.text }]}>{t('job_details')}</Text>
-        <TouchableOpacity
-          style={styles.iconBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Save"
-          onPress={handleSave}
-        >
-          <MaterialIcons
-            name={isSaved ? "bookmark" : "bookmark-border"}
-            size={24}
-            color={isSaved ? c.primary : c.text}
-          />
-        </TouchableOpacity>
+        <Text style={[styles.appBarTitle, { color: c.text }]}>{"Job Details"}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {canDelete && (
+            <TouchableOpacity
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Delete Job"
+              onPress={handleDeleteJob}
+            >
+              <MaterialIcons name="delete-outline" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={styles.iconBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Save"
+            onPress={handleSave}
+          >
+            <MaterialIcons
+              name={isSaved ? "bookmark" : "bookmark-border"}
+              size={24}
+              color={isSaved ? c.primary : c.text}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}>
         <View style={{ padding: 20 }}>
+          {hasApplied && (
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#ECFDF5',
+              padding: 12,
+              borderRadius: 12,
+              marginBottom: 20,
+              borderWidth: 1,
+              borderColor: '#10B981'
+            }}>
+              <MaterialIcons name="check-circle" size={20} color="#059669" />
+              <Text style={{ marginLeft: 8, color: '#065F46', fontWeight: '700', fontSize: 13 }}>
+                You have already applied for this job
+              </Text>
+            </View>
+          )}
+
           {/* Header Section */}
           <View style={{ gap: 8 }}>
             <Text style={[styles.title, { color: c.text }]}>{job.title}</Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
               <Text style={{ fontSize: 14, color: c.subtext, fontWeight: '500' }}>
-                {job.company || t('confidential')}
+                {job.company || "Confidential"}
               </Text>
               {job.isExternal ? (
-                <Badge label={job.source || t('external')} variant="neutral" size="small" />
+                <Badge label={job.source || "External"} variant="neutral" size="small" />
               ) : (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <MaterialIcons name="verified" size={16} color="#FF7F50" />
-                  <Text style={{ fontSize: 13, color: '#FF7F50', fontWeight: '600' }}>{t('verified')}</Text>
+                  <Text style={{ fontSize: 13, color: '#FF7F50', fontWeight: '600' }}>{"Verified"}</Text>
                 </View>
               )}
               <Text style={{ fontSize: 14, color: c.subtext }}>•</Text>
@@ -234,9 +292,9 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="attach-money" size={20} color="#10B981" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('budget')}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{"Budget"}</Text>
                 <Text style={[styles.statValue, { color: c.text }]}>₦{job.budget}</Text>
-                <Text style={{ fontSize: 11, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : t('fixed_price')}</Text>
+                <Text style={{ fontSize: 11, color: c.subtext }}>{job.budgetType === 'hourly' ? '/hr' : "Fixed"}</Text>
               </View>
             </View>
 
@@ -245,8 +303,8 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="work-outline" size={20} color="#3B82F6" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('type')}</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>{job.jobType || t('full_time')}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{"Type"}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>{job.jobType || "Full-time"}</Text>
               </View>
             </View>
 
@@ -255,8 +313,8 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="timeline" size={20} color="#F59E0B" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('level')}</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>{job.experienceLevel || t('intermediate')}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{"Level"}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>{job.experienceLevel || "Intermediate"}</Text>
               </View>
             </View>
 
@@ -265,26 +323,26 @@ const JobDetailScreen: React.FC = () => {
                 <MaterialIcons name="place" size={20} color="#8B5CF6" />
               </View>
               <View>
-                <Text style={[styles.statLabel, { color: c.subtext }]}>{t('location')}</Text>
-                <Text style={[styles.statValue, { color: c.text }]}>{job.location || t('remote')}</Text>
+                <Text style={[styles.statLabel, { color: c.subtext }]}>{"Location"}</Text>
+                <Text style={[styles.statValue, { color: c.text }]}>{job.location || "Remote"}</Text>
               </View>
             </View>
           </View>
 
           {/* Description */}
           <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>{t('description')}</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>{"Description"}</Text>
             <Text style={{ color: c.subtext, lineHeight: 24, fontSize: 15 }}>
               {isExpanded
-                ? (job.description ? job.description.replace(/<[^>]*>/g, '') : t('no_description'))
-                : (job.description ? job.description.replace(/<[^>]*>/g, '').substring(0, 200) + (job.description.length > 200 ? '...' : '') : t('no_description'))
+                ? (job.description ? job.description.replace(/<[^>]*>/g, '') : "No description provided.")
+                : (job.description ? job.description.replace(/<[^>]*>/g, '').substring(0, 200) + (job.description.length > 200 ? '...' : '') : "No description provided.")
               }
               {!isExpanded && job.description && job.description.replace(/<[^>]*>/g, '').length > 200 && (
                 <Text
                   style={{ color: c.primary, fontWeight: '600' }}
                   onPress={() => setIsExpanded(true)}
                 >
-                  {' '}{t('read_more')}
+                  {' '}{"Read more"}
                 </Text>
               )}
             </Text>
@@ -292,7 +350,7 @@ const JobDetailScreen: React.FC = () => {
 
           {/* Skills */}
           <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionTitle, { color: c.text }]}>{t('skills_requirements')}</Text>
+            <Text style={[styles.sectionTitle, { color: c.text }]}>{"Skills & Requirements"}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {job.skills?.map((s: string) => (
                 <Text key={s} style={[styles.skill, { color: c.subtext, backgroundColor: c.card, borderColor: c.border, borderWidth: 1 }]}>{s}</Text>
@@ -300,42 +358,11 @@ const JobDetailScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Connecta AI Match Insights */}
-          {!isJobOwner && !job.isExternal && (
-            <View style={{ marginTop: 32, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: c.isDark ? '#4338ca' : '#e0e7ff' }}>
-              <View style={{ backgroundColor: c.isDark ? '#312e81' : '#eef2ff', padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <MaterialIcons name="auto-awesome" size={20} color={c.primary} />
-                <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>{t('ai_insights')}</Text>
-              </View>
-
-              <View style={{ padding: 20, backgroundColor: c.card, gap: 24 }}>
-                {/* Match Reason */}
-                <View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 6 }}>{t('why_fits_you')}</Text>
-                  <Text style={{ fontSize: 14, color: c.subtext, lineHeight: 22 }}>
-                    {t('your_skills_in')} <Text style={{ fontWeight: '700' }}>React Native</Text> and <Text style={{ fontWeight: '700' }}>TypeScript</Text> {t('match_requirements')}
-                  </Text>
-                </View>
-
-                {/* Key Phrases */}
-                <View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: c.text, marginBottom: 8 }}>{t('key_phrases')}</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                    {['Clean Architecture', 'Performance', 'Responsive'].map((phrase) => (
-                      <View key={phrase} style={{ backgroundColor: c.isDark ? '#374151' : '#f3f4f6', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}>
-                        <Text style={{ fontSize: 12, color: c.text, fontWeight: '500' }}>{phrase}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
 
           {/* Client Info */}
           {!isJobOwner && (
             <View style={{ marginTop: 32 }}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('about_client')}</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{"About the Client"}</Text>
               <TouchableOpacity
                 activeOpacity={job.isExternal ? 1 : 0.7}
                 onPress={() => {
@@ -374,10 +401,10 @@ const JobDetailScreen: React.FC = () => {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>
-                      {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? t('external_client') : t('unknown_client')))}
+                      {job.clientId ? `${job.clientId.firstName} ${job.clientId.lastName}` : (job.clientName || (job.isExternal ? "External Client" : "Unknown"))}
                     </Text>
                     <Text style={{ color: c.subtext, fontSize: 13, marginTop: 2 }}>
-                      {t('member_since')} {new Date(job.createdAt).getFullYear()}
+                      {"Member since"} {new Date(job.createdAt).getFullYear()}
                     </Text>
                   </View>
                   {!job.isExternal && (
@@ -387,13 +414,13 @@ const JobDetailScreen: React.FC = () => {
 
                 <View style={{ flexDirection: 'row', gap: 24, borderTopWidth: 1, borderTopColor: c.border, paddingTop: 16 }}>
                   <View>
-                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>{t('location')}</Text>
+                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>{"Location"}</Text>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
-                      {job.locationType === 'remote' ? t('remote') : (job.clientLocation || job.location)}
+                      {job.locationType === 'remote' ? "Remote" : (job.clientLocation || job.location)}
                     </Text>
                   </View>
                   <View>
-                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>{t('responsiveness')}</Text>
+                    <Text style={{ fontSize: 12, color: c.subtext, marginBottom: 4 }}>{"Responsiveness"}</Text>
                     <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
                       ~{job.clientId?.performanceMetrics?.responseTime || 24}h
                     </Text>
@@ -406,34 +433,56 @@ const JobDetailScreen: React.FC = () => {
           {/* Proposals List (Job Owner) */}
           {isJobOwner && (
             <View style={{ marginTop: 32 }}>
-              <Text style={[styles.sectionTitle, { color: c.text }]}>{t('proposals')} ({proposals.length})</Text>
+              <Text style={[styles.sectionTitle, { color: c.text }]}>{"Proposals"} ({proposals.length})</Text>
+              
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  backgroundColor: c.primary + '15',
+                  borderRadius: 12,
+                  marginBottom: 16,
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: c.primary + '30'
+                }}
+                onPress={() => (navigation as any).navigate('ClientRecommended', { jobId: id })}
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' }}>
+                  <MaterialIcons name="person-add" size={22} color="#FFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '700', color: c.text }}>Invite Freelancers</Text>
+                  <Text style={{ fontSize: 13, color: c.subtext }}>Find and invite the best talent for this job</Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={24} color={c.primary} />
+              </TouchableOpacity>
+
               {proposals.length === 0 ? (
-                <Text style={{ color: c.subtext, marginTop: 8 }}>{t('no_proposals')}</Text>
+                <Text style={{ color: c.subtext, marginTop: 8 }}>{"No proposals yet."}</Text>
               ) : (
                 <View style={{ gap: 16, marginTop: 12 }}>
-                  {proposals.map((p) => {
-                    const isPremium = p.freelancerId?.isPremium;
-                    return (
-                      <TouchableOpacity
-                        key={p._id}
-                        style={{
-                          padding: 16,
-                          backgroundColor: isPremium ? (c.isDark ? '#3D2800' : '#FFFBEB') : c.card,
-                          borderRadius: 16,
-                          borderWidth: isPremium ? 1.5 : 1,
-                          borderColor: isPremium ? '#F59E0B' : c.border
-                        }}
-                        onPress={() => (navigation as any).navigate('ProposalDetail', { id: p._id })}
-                      >
-                        {/* Proposal Card Content - Simplified for brevity but keeping logic */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                          <Text style={{ fontWeight: '700', color: c.text }}>{p.freelancerId?.firstName}</Text>
-                          <Text style={{ fontWeight: '700', color: c.primary }}>₦{p.budget?.amount}</Text>
-                        </View>
-                        <Text numberOfLines={2} style={{ color: c.subtext, marginTop: 8 }}>{p.description}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {proposals.map((p) => (
+                    <TouchableOpacity
+                      key={p._id}
+                      style={{
+                        padding: 16,
+                        backgroundColor: c.card,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderColor: c.border
+                      }}
+                      onPress={() => (navigation as any).navigate('ProposalDetail', { id: p._id })}
+                    >
+                      {/* Proposal Card Content - Simplified for brevity but keeping logic */}
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                        <Text style={{ fontWeight: '700', color: c.text }}>{p.freelancerId?.firstName}</Text>
+                        <Text style={{ fontWeight: '700', color: c.primary }}>₦{p.budget?.amount}</Text>
+                      </View>
+                      <Text numberOfLines={2} style={{ color: c.subtext, marginTop: 8 }}>{p.description}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               )}
             </View>
@@ -448,11 +497,9 @@ const JobDetailScreen: React.FC = () => {
             disabled={hasApplied}
             onPress={() => {
               if (job.isExternal && job.applyUrl) {
-                import('react-native').then(({ Linking }) => {
-                  Linking.openURL(job.applyUrl!);
-                });
+                Linking.openURL(job.applyUrl!);
               } else {
-                (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget });
+                (navigation as any).navigate('ApplyJob', { jobId: job._id, jobTitle: job.title, jobBudget: job.budget, jobDuration: job.duration });
               }
             }}
             style={[styles.applyBtn, {
@@ -462,7 +509,7 @@ const JobDetailScreen: React.FC = () => {
             }]}
           >
             <Text style={[styles.applyText, hasApplied && { color: c.subtext }]}>
-              {job.isExternal ? t('visit_job') : (hasApplied ? t('applied') : t('apply_now'))}
+              {job.isExternal ? "Visit Job" : (hasApplied ? "Applied" : "Apply Now")}
             </Text>
             {!hasApplied && <MaterialIcons name="arrow-forward" size={20} color="#FFF" />}
           </TouchableOpacity>
@@ -474,11 +521,11 @@ const JobDetailScreen: React.FC = () => {
         title={successModal.title}
         message={successModal.message}
         onClose={() => setSuccessModal({ ...successModal, visible: false })}
-        buttonText={t('view_project')}
+        buttonText={"View Project"}
         onAction={() => {
           setSuccessModal({ ...successModal, visible: false });
           if ((successModal as any).data?.projectId) {
-            (navigation as any).navigate('ProjectWorkspace', { id: (successModal as any).data.projectId });
+            (navigation as any).navigate('ProjectDetail', { projectId: (successModal as any).data.projectId });
           } else {
             (navigation as any).navigate('ClientProjects');
           }
@@ -486,7 +533,7 @@ const JobDetailScreen: React.FC = () => {
       />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   appBar: {

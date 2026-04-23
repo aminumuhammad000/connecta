@@ -66,10 +66,6 @@ const faqData: FAQCategory[] = [
         answer: 'Browse the "Jobs" tab to see available projects that match your skills. You can filter by category, budget, and difficulty. When you find a job you like, submit a detailed proposal outlining why you are the best fit.'
       },
       {
-        question: 'What is Connecta Collabo?',
-        answer: 'Connecta Collabo is our unique feature for team-based hiring. It allows clients to hire a complete team (e.g., a developer, designer, and product manager) for complex projects, rather than managing individual freelancers separately.'
-      },
-      {
         question: 'How does the bidding system work?',
         answer: 'When applying for a job, you submit a "bid" which is your proposed price for the project. You can bid the client\'s budget, or higher/lower depending on your expertise and the project scope.'
       }
@@ -143,23 +139,6 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
     }));
   };
 
-  const handleContact = async (type: 'whatsapp' | 'email' | 'call') => {
-    try {
-      switch (type) {
-        case 'whatsapp':
-          await Linking.openURL('whatsapp://send?phone=2348128655555');
-          break;
-        case 'email':
-          await Linking.openURL('mailto:support@myconnecta.ng');
-          break;
-        case 'call':
-          await Linking.openURL('tel:08128655555');
-          break;
-      }
-    } catch (error) {
-      console.error('Error opening link:', error);
-    }
-  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: c.background }}>
@@ -251,52 +230,7 @@ const HelpSupportScreen: React.FC<any> = ({ navigation }) => {
             ))}
           </View>
 
-          {/* Contact Options */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 32, gap: 12 }}>
-            <Text style={{ color: c.text, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>Still need help?</Text>
 
-            <TouchableOpacity
-              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => handleContact('whatsapp')}
-            >
-              <View style={[styles.iconBox, { backgroundColor: '#25D36620' }]}>
-                <MaterialIcons name="chat" size={24} color="#25D366" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: c.text }]}>WhatsApp Support</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>Chat instantly with our team</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => handleContact('email')}
-            >
-              <View style={[styles.iconBox, { backgroundColor: c.primary + '20' }]}>
-                <MaterialIcons name="email" size={24} color={c.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: c.text }]}>Email Support</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>support@myconnecta.ng</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.contactRow, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => handleContact('call')}
-            >
-              <View style={[styles.iconBox, { backgroundColor: '#3B82F620' }]}>
-                <MaterialIcons name="call" size={24} color="#3B82F6" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.contactLabel, { color: c.text }]}>Call Us</Text>
-                <Text style={{ color: c.subtext, fontSize: 13 }}>Mon-Fri, 9am - 5pm</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={20} color={c.subtext} />
-            </TouchableOpacity>
-          </View>
         </ScrollView>
       </View>
     </SafeAreaView>

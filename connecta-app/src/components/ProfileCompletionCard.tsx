@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Modal }
 import { MaterialIcons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import Button from './Button';
-import { useTranslation } from '../utils/i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface ProfileCompletionCardProps {
@@ -22,7 +21,6 @@ const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
     onSkip
 }) => {
     const c = useThemeColors();
-    const { t } = useTranslation();
     const scaleAnim = useRef(new Animated.Value(0)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -59,8 +57,8 @@ const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
 
     if (!visible) return null;
 
-    const totalFields = 6;
-    const completedFields = totalFields - missingFields.length;
+    const totalFields = 11;
+    const completedFields = Math.max(0, totalFields - missingFields.length);
     const progressPercentage = (completedFields / totalFields) * 100;
     const rewardSparks = missingFields.length * 10;
 
@@ -71,35 +69,51 @@ const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
         switch (item) {
             case 'bio':
                 iconName = 'description';
-                label = t('bio' as any) || 'Bio / Description';
+                label = 'Bio / Description';
                 break;
             case 'skills':
                 iconName = 'star';
-                label = t('skills' as any) || 'Skills';
+                label = 'Skills';
                 break;
             case 'location':
                 iconName = 'location-on';
-                label = t('location' as any) || 'Location';
+                label = 'Location';
                 break;
             case 'avatar':
                 iconName = 'account-circle';
-                label = t('profile_picture' as any) || 'Profile Picture';
+                label = 'Profile Picture';
                 break;
             case 'phone':
                 iconName = 'phone';
-                label = t('phone' as any) || 'Phone Number';
+                label = 'Phone Number';
                 break;
             case 'experience':
                 iconName = 'work';
-                label = t('experience' as any) || 'Work Experience';
+                label = 'Work Experience';
                 break;
             case 'education':
                 iconName = 'school';
-                label = t('education' as any) || 'Education';
+                label = 'Education';
+                break;
+            case 'whatsapp':
+                iconName = 'chat';
+                label = 'WhatsApp Number';
+                break;
+            case 'title':
+                iconName = 'work-outline';
+                label = 'Professional Title';
+                break;
+            case 'preferences':
+                iconName = 'settings';
+                label = 'Job Preferences';
                 break;
             case 'portfolio':
                 iconName = 'folder-open';
-                label = t('portfolio' as any) || 'Portfolio';
+                label = 'Portfolio';
+                break;
+            case 'employment':
+                iconName = 'business-center';
+                label = 'Work Experience';
                 break;
         }
 
@@ -156,18 +170,18 @@ const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                             <View style={styles.header}>
                                 <View>
                                     <Text style={[styles.title, { color: c.text }]}>
-                                        {t('complete_profile_title' as any) || 'Complete Your Profile'}
+                                        {'Complete Your Profile'}
                                     </Text>
-                                    <Text style={[styles.subtitle, { color: c.subtext }]}>
-                                        {t('complete_profile_sub' as any) || 'Unlock all features and earn rewards'}
-                                    </Text>
+                                     <Text style={[styles.subtitle, { color: c.subtext }]}>
+                                         {'Complete these steps to unlock all features'}
+                                     </Text>
                                 </View>
                             </View>
 
                             <View style={styles.progressSection}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                                     <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
-                                        {completedFields} / {totalFields} {t('completed' as any) || 'Completed'}
+                                        {completedFields} / {totalFields} {'Completed'}
                                     </Text>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                                         <Text style={{ fontSize: 16, fontWeight: '700', color: c.primary }}>
@@ -196,37 +210,22 @@ const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                                 </View>
                             </View>
 
-                            <View style={[styles.rewardBadge, { backgroundColor: '#FFD70020', borderColor: '#FFD700' }]}>
-                                <View style={{ flex: 1 }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                        <MaterialIcons name="bolt" size={22} color="#FFD700" />
-                                        <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>
-                                            {t('earn_reward' as any) || 'Earn'} <Text style={{ color: '#FFD700' }}>{rewardSparks} Sparks</Text>
-                                        </Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
-                                        <MaterialIcons name="info-outline" size={16} color={c.subtext} style={{ marginTop: 2 }} />
-                                        <Text style={{ fontSize: 12, color: c.subtext, flex: 1, lineHeight: 17 }}>
-                                            {t('rewards_benefit' as any) || 'Complete your profile to earn rewards! Rewards help you get priority job match emails, WhatsApp notifications, and other important updates.'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
+
 
                             <View style={styles.listContainer}>
                                 <Text style={{ fontSize: 13, fontWeight: '500', color: c.subtext, marginBottom: 8 }}>
-                                    {t('missing_fields' as any) || 'Complete these sections:'}
+                                    {'Complete these sections:'}
                                 </Text>
                                 {missingFields.slice(0, 3).map(renderMissingItem)}
                                 {missingFields.length > 3 && (
                                     <Text style={{ fontSize: 12, color: c.subtext, fontWeight: '600', marginTop: 4 }}>
-                                        +{missingFields.length - 3} {t('more' as any) || 'more'}
+                                        +{missingFields.length - 3} {'more'}
                                     </Text>
                                 )}
                             </View>
 
                             <Button
-                                title={t('complete_now' as any) || 'Complete Profile Now'}
+                                title="Complete Profile Now"
                                 onPress={onComplete}
                                 variant="primary"
                                 size="medium"

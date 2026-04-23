@@ -9,6 +9,9 @@ import { useAuth } from '../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import Svg, { Circle } from 'react-native-svg';
+import projectService from '../services/projectService';
+import JobCompletionFlyer from '../components/JobCompletionFlyer';
 
 const AVATAR = 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHAtdQiUgt2BKEOZ74E88IdnTkPeT872UYB4CRTnNZVaX9Ceane9jsutA5LDIBHIUdm-5YaTJV4g5T-KHx51RbZz9GJtCHNjzvjKNgl4ROoSrxQ8wS8E9_EnRblUVQCBri1V-SVrGlF0fNJpV7iEUfgALZdUdSdEK4x4ZXjniKd-62zI6B_VrhpemzmR97eKrBJcyf4BR8vBgXnyRjJYOdIBjiU6bIA0jni9splDm26Qo2-6GEWsXBbCJoWJtxiNGW67rtsOuA-Wc';
 const { width } = Dimensions.get('window');
@@ -18,11 +21,14 @@ export default function ProfileScreen({ navigation }: any) {
   const { user } = useAuth();
   const { width: windowWidth } = useWindowDimensions();
   const isDesktop = windowWidth > 768;
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'reviews' | 'job_cards'>('portfolio');
   const [profile, setProfile] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [completedProjects, setCompletedProjects] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedFlyerProject, setSelectedFlyerProject] = useState<any>(null);
+  const [showFlyer, setShowFlyer] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -38,9 +44,14 @@ export default function ProfileScreen({ navigation }: any) {
   const loadProfile = async () => {
     try {
       setIsLoading(true);
-      const [profileData, reviewsData] = await Promise.all([
+      const [profileData, reviewsData, projectsData] = await Promise.all([
         profileService.getMyProfile(),
-        user?._id ? reviewService.getUserReviews(user._id) : Promise.resolve([])
+        user?._id ? reviewService.getUserReviews(user._id) : Promise.resolve([]),
+        user?._id 
+          ? (user.userType === 'client' 
+              ? projectService.getClientProjects(user._id) 
+              : projectService.getFreelancerProjects(user._id))
+          : Promise.resolve([])
       ]);
 
       const merged = {
@@ -54,6 +65,9 @@ export default function ProfileScreen({ navigation }: any) {
       // Handle reviews data structure (could be array or object with data property)
       const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData?.data || []);
       setReviews(reviewsList);
+      
+      const allProjects = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+      setCompletedProjects(allProjects.filter((p: any) => p.status === 'completed'));
 
       setErrorMessage(profileData ? null : 'Profile not found. Create your profile to get started.');
     } catch (error: any) {
@@ -88,12 +102,15 @@ export default function ProfileScreen({ navigation }: any) {
   const calculateCompleteness = () => {
     if (!profile) return 0;
     let score = 0;
-    const totalFields = 8;
+    const totalFields = 11;
 
     if (profile.avatar) score++;
-    if (profile.bio && profile.bio.length > 20) score++;
+    if (profile.bio && profile.bio.length > 10) score++;
     if (profile.skills && profile.skills.length > 0) score++;
-    if (profile.jobTitle) score++;
+    if (profile.location) score++;
+    if (profile.phoneNumber || profile.phone) score++;
+    if (profile.whatsapp) score++;
+    if (profile.jobTitle || profile.title) score++;
     if (profile.education && profile.education.length > 0) score++;
     if (profile.employment && profile.employment.length > 0) score++;
     if (profile.portfolio && profile.portfolio.length > 0) score++;
@@ -145,9 +162,7 @@ export default function ProfileScreen({ navigation }: any) {
               <Ionicons name="chevron-back" size={24} color={c.text} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: c.text }]}>{profile?.firstName}'s Profile</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.iconBtn}>
-              <Ionicons name="settings-outline" size={24} color={c.text} />
-            </TouchableOpacity>
+            <View style={{ width: 40 }} />
           </View>
         </SafeAreaView>
       </Animated.View>
@@ -192,7 +207,7 @@ export default function ProfileScreen({ navigation }: any) {
           {/* Cover Image Area */}
           <View style={styles.coverContainer}>
             <LinearGradient
-              colors={['#FF7F50', '#f39170ff']}
+              colors={[c.isDark ? '#2D2D2D' : '#F8F9FA', c.isDark ? '#1A1A1A' : '#E9ECEF']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.coverGradient}
@@ -202,50 +217,64 @@ export default function ProfileScreen({ navigation }: any) {
 
           {/* Profile Info Card */}
           <View style={styles.profileCardContainer}>
-            <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
+            <View style={[styles.profileCard, { backgroundColor: c.card, shadowColor: c.shadows.small.shadowColor, elevation: 2, shadowOpacity: 0.05 }]}>
               <View style={styles.avatarRow}>
-                <View style={[styles.avatarContainer, { borderColor: c.card, backgroundColor: c.primary }]}>
-                  {profile?.avatar ? (
-                    <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-                  ) : (
-                    <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
-                      <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
-                        {profile?.firstName?.charAt(0).toUpperCase() || '?'}
-                      </Text>
+                <View style={[styles.avatarContainer, { width: 92, height: 92, marginTop: -46, backgroundColor: 'transparent', borderColor: 'transparent' }]}>
+                  {/* Avatar Base */}
+                  <View style={{ width: 84, height: 84, borderRadius: 42, overflow: 'hidden', backgroundColor: c.primary }}>
+                    {profile?.avatar ? (
+                      <Image source={{ uri: profile.avatar }} style={styles.avatar} />
+                    ) : (
+                      <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.primary }]}>
+                        <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFF' }}>
+                          {profile?.firstName?.charAt(0).toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Progress Ring */}
+                  <Svg width="92" height="92" style={{ position: 'absolute' }}>
+                    <Circle
+                      cx="46"
+                      cy="46"
+                      r="44"
+                      stroke={c.isDark ? '#333' : '#E5E7EB'}
+                      strokeWidth="3.5"
+                      fill="none"
+                    />
+                    <Circle
+                      cx="46"
+                      cy="46"
+                      r="44"
+                      stroke="#FF7F50"
+                      strokeWidth="3.5"
+                      strokeDasharray={`${2 * Math.PI * 44}`}
+                      strokeDashoffset={`${2 * Math.PI * 44 * (1 - (completeness || 0) / 100)}`}
+                      strokeLinecap="round"
+                      fill="none"
+                      transform="rotate(-90 46 46)"
+                    />
+                  </Svg>
+
+                  {user?.isVerified && (
+                    <View style={[styles.avatarBadge, { backgroundColor: '#1D9BF0', bottom: 4, right: 4, zIndex: 10 }]}>
+                      <MaterialIcons name="verified" size={12} color="#FFF" />
                     </View>
                   )}
                 </View>
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.completedJobs || '0'}</Text>
-                    <Text style={[styles.statLabel, { color: c.subtext }]}>Jobs</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.averageRating || '5.0'}</Text>
-                    <Text style={[styles.statLabel, { color: c.subtext }]}>Rating</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: c.text }]}>{profile?.totalHours || '0'}</Text>
-                    <Text style={[styles.statLabel, { color: c.subtext }]}>Hours</Text>
-                  </View>
                 </View>
-              </View>
 
               <View style={styles.infoSection}>
                 <View style={styles.nameRow}>
                   <Text style={[styles.name, { color: c.text }]}>{profile?.firstName} {profile?.lastName}</Text>
-                  {user?.isVerified && (
-                    <MaterialIcons name="verified" size={20} color={c.primary} style={{ marginLeft: 6 }} />
-                  )}
                 </View>
                 <Text style={[styles.role, { color: c.primary }]}>{profile?.jobTitle || profile?.title || 'Freelancer'}</Text>
 
                 <View style={styles.detailsRow}>
                   <View style={styles.detailItem}>
                     <Ionicons name="location-outline" size={14} color={c.subtext} />
-                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'No location'}</Text>
+                    <Text style={[styles.detailText, { color: c.subtext }]}>{profile?.location || 'Nigeria'}</Text>
                   </View>
                   <View style={styles.detailDivider} />
                   <View style={styles.detailItem}>
@@ -275,32 +304,23 @@ export default function ProfileScreen({ navigation }: any) {
                 </View>
                 <Text style={[styles.bio, { color: c.text }]}>{profile?.bio || 'No bio added yet.'}</Text>
 
-                <View style={[styles.actionButtons, { marginBottom: 16 }]}>
-                  <TouchableOpacity
-                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card, flex: 1.2 }]}
-                    onPress={() => navigation.navigate('ManageCV')}
-                  >
-                    <Ionicons name="document-text-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Manage CV</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
+                <View style={[styles.actionButtons, { marginBottom: 16, gap: 12 }]}>
+                    <TouchableOpacity
+                    style={[styles.profileActionBtn, { borderColor: c.primary, backgroundColor: c.primary + '08', flex: 1 }]}
                     onPress={() => navigation.navigate('EditProfile')}
                   >
-                    <Ionicons name="pencil-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Edit</Text>
+                    <Ionicons name="create-outline" size={18} color={c.primary} style={{ marginRight: 8 }} />
+                    <Text style={[styles.profileActionText, { color: c.primary, fontWeight: '700' }]}>Edit Profile</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card }]}
-                    onPress={() => navigation.navigate('JobPreferences')}
+                    style={[styles.profileActionBtn, { borderColor: c.border, backgroundColor: c.card, flex: 1 }]}
+                    onPress={() => navigation.navigate('Settings')}
                   >
-                    <Ionicons name="options-outline" size={14} color={c.text} style={{ marginRight: 6 }} />
-                    <Text style={[styles.profileActionText, { color: c.text }]}>Prefs</Text>
+                    <Ionicons name="settings-outline" size={18} color={c.text} style={{ marginRight: 8 }} />
+                    <Text style={[styles.profileActionText, { color: c.text }]}>Settings</Text>
                   </TouchableOpacity>
-
-
+                </View>
 
                   {!user?.isVerified && (
                     <TouchableOpacity
@@ -312,28 +332,8 @@ export default function ProfileScreen({ navigation }: any) {
                     </TouchableOpacity>
                   )}
                 </View>
-
-                {/* Profile Strength with Description */}
-                <View style={{ marginBottom: 10 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <View>
-                      <Text style={{ fontSize: 12, color: c.text, fontWeight: '700' }}>Profile Strength</Text>
-                      <Text style={{ fontSize: 10, color: c.subtext }}>Complete your profile to unlock more jobs</Text>
-                    </View>
-                    <Text style={{ fontSize: 14, color: c.primary, fontWeight: '800' }}>{completeness}%</Text>
-                  </View>
-                  <View style={{ height: 8, backgroundColor: c.border, borderRadius: 4, overflow: 'hidden' }}>
-                    <LinearGradient
-                      colors={[c.primary, '#FF9F70']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{ width: `${completeness}%`, height: '100%' }}
-                    />
-                  </View>
-                </View>
-              </View>
+               </View>
             </View>
-          </View>
 
           {/* Skills Section */}
           <View style={styles.sectionContainer}>
@@ -365,13 +365,25 @@ export default function ProfileScreen({ navigation }: any) {
             >
               <Text style={[styles.tabText, { color: activeTab === 'reviews' ? c.primary : c.subtext }]}>Reviews</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabItem, activeTab === 'job_cards' && { borderBottomColor: c.primary }]}
+              onPress={() => setActiveTab('job_cards')}
+            >
+              <Text style={[styles.tabText, { color: activeTab === 'job_cards' ? c.primary : c.subtext }]}>Job Cards</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Tab Content */}
           <View style={styles.contentContainer}>
             {activeTab === 'portfolio' ? (
               <View>
-
+                <TouchableOpacity
+                  style={[styles.addProjectBtn, { borderColor: c.primary, backgroundColor: c.primary + '08' }]}
+                  onPress={() => navigation.navigate('EditProfile', { scrollTo: 'portfolio' })}
+                >
+                  <Ionicons name="add-circle-outline" size={24} color={c.primary} />
+                  <Text style={{ marginLeft: 10, color: c.primary, fontSize: 16, fontWeight: '700' }}>Add Project to Portfolio</Text>
+                </TouchableOpacity>
 
                 {profile?.portfolio?.length > 0 ? (
                   <View style={styles.portfolioGrid}>
@@ -387,6 +399,48 @@ export default function ProfileScreen({ navigation }: any) {
                 ) : (
                   <View style={styles.emptyTabState}>
                     <Text style={{ color: c.subtext }}>No projects yet.</Text>
+                  </View>
+                )}
+              </View>
+            ) : activeTab === 'job_cards' ? (
+              <View>
+                {completedProjects.length > 0 ? (
+                  <View style={styles.portfolioGrid}>
+                    {completedProjects.map((project: any, index: number) => (
+                      <TouchableOpacity 
+                        key={index} 
+                        style={[styles.portfolioItem, { backgroundColor: c.card, borderBlockColor: c.border, borderWidth: 1 }]} 
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setSelectedFlyerProject(project);
+                          setShowFlyer(true);
+                        }}
+                      >
+                         <LinearGradient
+                            colors={['#FD6730', '#FF8C00']}
+                            style={styles.portfolioImage}
+                          >
+                             <View style={{flex: 1, padding: 12, justifyContent: 'center', alignItems: 'center'}}>
+                                <Ionicons name="sparkles" size={24} color="#FFF" style={{marginBottom: 8}} />
+                                <Text style={{color: '#FFF', fontWeight: 'bold', textAlign: 'center', fontSize: 13}} numberOfLines={2}>{project.title}</Text>
+                                <View style={{marginTop: 8, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10}}>
+                                   <Text style={{color: '#FFF', fontSize: 10, fontWeight: '700'}}>VIEW CARD</Text>
+                                </View>
+                             </View>
+                          </LinearGradient>
+                        <View style={styles.portfolioOverlay}>
+                          <Text style={styles.portfolioTitle} numberOfLines={1}>{project.clientName || 'Completed Project'}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptyTabState}>
+                    <Ionicons name="documents-outline" size={40} color={c.border} style={{ marginBottom: 12 }} />
+                    <Text style={{ color: c.text, fontSize: 16, fontWeight: '600' }}>No completed jobs</Text>
+                    <Text style={{ color: c.subtext, textAlign: 'center', marginTop: 4 }}>
+                      Complete your first job to see your job cards here.
+                    </Text>
                   </View>
                 )}
               </View>
@@ -448,6 +502,23 @@ export default function ProfileScreen({ navigation }: any) {
 
         </View>
       </Animated.ScrollView>
+
+      {selectedFlyerProject && (
+        <JobCompletionFlyer
+          visible={showFlyer}
+          onClose={() => setShowFlyer(false)}
+          projectData={{
+            title: selectedFlyerProject.title,
+            clientName: selectedFlyerProject.clientName || 'Client',
+            amount: selectedFlyerProject.budget?.amount || selectedFlyerProject.budget || 0,
+            currency: selectedFlyerProject.budget?.currency || '₦',
+            freelancerName: profile?.firstName && profile?.lastName ? `${profile.firstName} ${profile.lastName}` : (selectedFlyerProject.freelancerName || 'Expert Freelancer'),
+            freelancerAvatar: profile?.avatar || selectedFlyerProject.freelancerAvatar,
+            completedDate: new Date(selectedFlyerProject.updatedAt || Date.now()).toLocaleDateString(),
+            category: profile?.jobTitle || 'Digital Expert'
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -505,12 +576,13 @@ const styles = StyleSheet.create({
     marginTop: -40,
   },
   profileCard: {
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 20,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   avatarRow: {
     flexDirection: 'row',
@@ -521,14 +593,27 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 42,
-    borderWidth: 4,
     position: 'relative',
-    marginTop: -42, // Pull avatar up
+    marginTop: -42,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   avatar: {
     width: '100%',
     height: '100%',
     borderRadius: 40,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
   },
   premiumBadge: {
     position: 'absolute',
@@ -793,12 +878,16 @@ const styles = StyleSheet.create({
   },
   profileActionBtn: {
     flex: 1,
-    height: 32,
+    height: 38,
     flexDirection: 'row',
-    borderRadius: 6,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.2,
+  },
+  profileActionText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   profileActionIconBtn: {
     width: 32,
@@ -807,10 +896,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-  },
-  profileActionText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   ultraSleekCompleteness: {
     marginTop: 14,

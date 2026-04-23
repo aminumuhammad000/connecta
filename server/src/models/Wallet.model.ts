@@ -28,6 +28,14 @@ export interface IWallet extends Document {
   // Payment gateway customer ID
   paystackCustomerId?: string;
   stripeCustomerId?: string;
+  vtstackVirtualAccount?: {
+    id: string;
+    accountNumber: string;
+    accountName: string;
+    bankName: string;
+    status: string;
+    reference: string;
+  };
 
   // Status
   isActive: boolean;
@@ -85,6 +93,14 @@ const WalletSchema: Schema = new Schema(
     },
     stripeCustomerId: {
       type: String,
+    },
+    vtstackVirtualAccount: {
+      id: String,
+      accountNumber: String,
+      accountName: String,
+      bankName: String,
+      status: String,
+      reference: String,
     },
     isActive: {
       type: Boolean,

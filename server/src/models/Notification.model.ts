@@ -33,7 +33,7 @@ export interface INotification extends Document {
 
   // Related entities
   relatedId?: mongoose.Types.ObjectId; // Job, Project, Proposal, etc.
-  relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment';
+  relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment' | 'withdrawal';
 
   // Actor (who triggered the notification)
   actorId?: mongoose.Types.ObjectId;
@@ -102,7 +102,7 @@ const NotificationSchema = new Schema<INotification>(
     },
     relatedType: {
       type: String,
-      enum: ['job', 'project', 'proposal', 'message', 'review', 'payment', 'user'],
+      enum: ['job', 'project', 'proposal', 'message', 'review', 'payment', 'user', 'withdrawal'],
     },
     actorId: {
       type: Schema.Types.ObjectId,
