@@ -1,0 +1,33 @@
+import mongoose, { Schema } from "mongoose";
+const ProfileSchema = new Schema({
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    primarySkill: { type: String },
+    subSkills: [{ type: String }],
+    yearsOfExperience: { type: Number },
+    remoteWorkType: { type: String, enum: ['remote', 'onsite', 'hybrid'] },
+    jobCategories: [{ type: String }],
+    bio: { type: String },
+    whatsapp: { type: String },
+    phoneNumber: { type: String },
+    location: { type: String, default: 'Nigeria' },
+    country: { type: String },
+    city: { type: String },
+    timezone: { type: String },
+    preferredLanguage: { type: String },
+    website: { type: String },
+    companyName: { type: String },
+    jobTitle: { type: String },
+    avatar: { type: String },
+    skills: [{ type: String }],
+    education: [Schema.Types.Mixed],
+    languages: [Schema.Types.Mixed],
+    employment: [Schema.Types.Mixed],
+    portfolio: [Schema.Types.Mixed],
+    resume: { type: String },
+    minimumSalary: { type: Number },
+    workLocationPreferences: [{ type: String }],
+    engagementTypes: [{ type: String }],
+    jobNotificationFrequency: { type: String },
+}, { timestamps: true });
+const Profile = mongoose.model("Profile", ProfileSchema);
+export default Profile;

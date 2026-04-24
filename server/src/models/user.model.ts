@@ -14,6 +14,7 @@ export interface IUser extends Document {
   pushToken?: string;
   preferredLanguage?: 'en' | 'ha';
   whatsapp?: string;
+  sparks?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +38,7 @@ const UserSchema: Schema<IUser> = new Schema(
     pushToken: { type: String, required: false },
     preferredLanguage: { type: String, enum: ['en', 'ha'], default: 'en' },
     whatsapp: { type: String, required: false },
+    sparks: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

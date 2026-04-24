@@ -273,6 +273,9 @@ export const sendMessage = async (req: Request, res: Response) => {
     await message.populate('senderId', 'firstName lastName email');
     await message.populate('receiverId', 'firstName lastName email');
 
+    const sender = message.senderId as any;
+    const senderName = `${sender.firstName} ${sender.lastName}`;
+
     // Update conversation
     await Conversation.findByIdAndUpdate(targetConversationId, {
       lastMessage: messageText,

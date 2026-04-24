@@ -171,6 +171,43 @@ class VTStackService {
       throw new Error(error.response?.data?.message || 'Failed to fetch payout status');
     }
   }
+
+  /**
+   * Initialize a payment transaction
+   */
+  async initializePayment(
+    email: string,
+    amount: number,
+    reference: string,
+    metadata?: any
+  ) {
+    try {
+      const response = await this.api.post('/transactions/initialize', {
+        email,
+        amount: amount * 100, // Kobo
+        reference,
+        metadata,
+        callback_url: `${process.env.FRONTEND_URL}/payment/callback`,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('VTStack Initialize Payment Error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to initialize payment');
+    }
+  }
+
+  /**
+   * Verify a payment transaction
+   */
+  async verifyPayment(reference: string) {
+    try {
+      const response = await this.api.get(`/transactions/verify/${reference}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('VTStack Verify Payment Error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to verify payment');
+    }
+  }
 }
 
 export default new VTStackService();

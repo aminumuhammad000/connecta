@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IContract extends Document {
   jobId: mongoose.Types.ObjectId;
+  projectId?: mongoose.Types.ObjectId;
   clientId: mongoose.Types.ObjectId;
   freelancerId: mongoose.Types.ObjectId;
   proposalId: mongoose.Types.ObjectId;
@@ -33,6 +34,10 @@ const ContractSchema = new Schema<IContract>(
       type: Schema.Types.ObjectId,
       ref: 'Job',
       required: true,
+    },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Project',
     },
     clientId: {
       type: Schema.Types.ObjectId,

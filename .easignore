@@ -1,0 +1,8 @@
+server/
+node_modules/
+app/
+docs/
+workflows/
+.venv/
+build/
+dist/

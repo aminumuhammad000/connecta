@@ -11,7 +11,9 @@ export interface IPayment extends Document {
   netAmount: number; // Amount after platform fee
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
   paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer' | 'flutterwave' | 'vtstack' | 'wallet';
-  paymentType: 'project_payment' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup';
+  paymentType: 'project_payment' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup' | 'milestone';
+
+  milestoneId?: mongoose.Types.ObjectId;
 
   // Payment Gateway Details
   gatewayReference: string; // Reference from payment gateway
@@ -90,8 +92,11 @@ const PaymentSchema: Schema = new Schema(
     },
     paymentType: {
       type: String,
-      enum: ['project_payment', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup'],
+      enum: ['project_payment', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup', 'milestone'],
       default: 'project_payment',
+    },
+    milestoneId: {
+      type: Schema.Types.ObjectId,
     },
     gatewayReference: {
       type: String,

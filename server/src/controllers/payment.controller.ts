@@ -69,7 +69,7 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
 
     console.log('Initializing Flutterwave payment for:', user.email, 'Amount:', amount, 'Ref:', payment._id.toString());
 
-    const flutterwaveResponse = await flutterwaveService.initializePayment(
+    const vtstackResponse = await vtstackService.initializePayment(
       user.email,
       amount,
       payment._id.toString(), // Use payment ID as tx_ref
@@ -85,7 +85,7 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
       message: 'Job verification payment initialized',
       data: {
         paymentId: payment._id,
-        authorizationUrl: flutterwaveResponse.data.link,
+        authorizationUrl: (vtstackResponse.data as any).authorization_url || (vtstackResponse.data as any).link,
         reference: payment._id.toString(),
       },
     });
@@ -140,7 +140,7 @@ export const initializeTopup = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    const flutterwaveResponse = await flutterwaveService.initializePayment(
+    const vtstackResponse = await vtstackService.initializePayment(
       user.email,
       amount,
       payment._id.toString(),
@@ -155,7 +155,7 @@ export const initializeTopup = async (req: Request, res: Response) => {
       message: 'Top-up initialized successfully',
       data: {
         paymentId: payment._id,
-        authorizationUrl: flutterwaveResponse.data.link,
+        authorizationUrl: (vtstackResponse.data as any).authorization_url || (vtstackResponse.data as any).link,
         reference: payment._id.toString(),
       },
     });
@@ -235,7 +235,7 @@ export const initializePayment = async (req: Request, res: Response) => {
 
     // Initialize Flutterwave payment
     const user = (req as any).user;
-    const flutterwaveResponse = await flutterwaveService.initializePayment(
+    const vtstackResponse = await vtstackService.initializePayment(
       user.email,
       amount,
       payment._id.toString(),
@@ -256,7 +256,7 @@ export const initializePayment = async (req: Request, res: Response) => {
       message: 'Payment initialized successfully',
       data: {
         paymentId: payment._id,
-        authorizationUrl: flutterwaveResponse.data.link,
+        authorizationUrl: (vtstackResponse.data as any).authorization_url || (vtstackResponse.data as any).link,
         reference: payment._id.toString(),
       },
     });
@@ -290,10 +290,10 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Transaction ID is required' });
     }
 
-    // Verify with Flutterwave
-    const flwResponse = await flutterwaveService.verifyPayment(transactionId);
+    // Verify with VTStack
+    const vtResponse = await vtstackService.verifyPayment(transactionId);
 
-    if (flwResponse.status !== 'success' || flwResponse.data.status !== 'successful') {
+    if (!vtResponse.status || vtResponse.data.status !== 'success') {
       return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
     }
 
@@ -305,32 +305,32 @@ export const verifyPayment = async (req: Request, res: Response) => {
     }
 
     // Verify amount (allow small diff for floating point?)
-    if (payment.amount > flwResponse.data.amount) {
+    if (payment.amount > vtResponse.data.amount) {
       return res.status(400).json({ success: false, message: 'Payment amount mismatch' });
     }
 
     // Update Payment
     payment.status = 'completed';
-    payment.gatewayResponse = flwResponse.data;
+    payment.gatewayResponse = vtResponse.data;
     payment.paidAt = new Date();
     await payment.save();
 
     // Handle Job Verification
     if (payment.paymentType === 'job_verification' && payment.jobId) {
       const job = await Job.findById(payment.jobId);
-        if (job) {
-          job.paymentVerified = true;
-          job.paymentStatus = 'escrow'; // Or released/verified depending on flow
-          await job.save();
+      if (job) {
+        job.paymentVerified = true;
+        job.paymentStatus = 'escrow'; // Or released/verified depending on flow
+        await job.save();
 
-          // Notify Matched Freelancers
-          try {
-            const { notifyMatchedFreelancers } = await import('./notification.controller.js');
-            await notifyMatchedFreelancers(job);
-          } catch (err) {
-            console.error('Failed to notify matched freelancers:', err);
-          }
+        // Notify Matched Freelancers
+        try {
+          const { notifyMatchedFreelancers } = await import('./notification.controller.js');
+          await notifyMatchedFreelancers(job);
+        } catch (err) {
+          console.error('Failed to notify matched freelancers:', err);
         }
+      }
     }
 
     // Handle Wallet Top-up
@@ -433,14 +433,14 @@ export const payFromWallet = async (req: Request, res: Response) => {
     if (type === 'job_verification' && jobId) {
       const job = await Job.findById(jobId);
       if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
-      
+
       const SystemSettings = (await import('../models/SystemSettings.model.js')).default;
       const settings = await SystemSettings.getSettings();
       const fee = settings.payments?.jobPostingFee || 0;
 
       // Ensure amount matches fee (optional but good)
       if (amount < fee) {
-          return res.status(400).json({ success: false, message: `Insufficient amount. Job posting fee is ₦${fee.toLocaleString()}` });
+        return res.status(400).json({ success: false, message: `Insufficient amount. Job posting fee is ₦${fee.toLocaleString()}` });
       }
 
       // Deduct from client
@@ -456,10 +456,10 @@ export const payFromWallet = async (req: Request, res: Response) => {
 
       // Notify Matched Freelancers
       try {
-          const { notifyMatchedFreelancers } = await import('./notification.controller.js');
-          await notifyMatchedFreelancers(job);
+        const { notifyMatchedFreelancers } = await import('./notification.controller.js');
+        await notifyMatchedFreelancers(job);
       } catch (err) {
-          console.error('Failed to notify matched freelancers:', err);
+        console.error('Failed to notify matched freelancers:', err);
       }
 
       // Create Payment Record
@@ -474,7 +474,7 @@ export const payFromWallet = async (req: Request, res: Response) => {
         paymentType: 'job_verification',
         description: description || `Job posting fee for: ${job.title}`,
         status: 'completed',
-        paymentMethod: 'bank_transfer', 
+        paymentMethod: 'bank_transfer',
         paidAt: new Date(),
         escrowStatus: 'none',
       });
@@ -1020,23 +1020,25 @@ export const processWithdrawal = async (req: Request, res: Response) => {
     withdrawal.processedAt = new Date();
     await withdrawal.save();
 
-    // Initiate Flutterwave transfer
+    // Initiate VTStack payout
     try {
-      // Initiate transfer directly (Flutterwave doesn't need separate recipient creation for simple transfers usually, or we use the bank code/account number directly)
-      const transfer = await flutterwaveService.initiateTransfer(
-        withdrawal.bankDetails.bankCode,
-        withdrawal.bankDetails.accountNumber,
-        withdrawal.netAmount,
-        'Withdrawal from Connecta',
-        withdrawal._id.toString()
-      );
+      // 1. Resolve/Verify account if needed (already done in previous steps usually)
 
-      withdrawal.gatewayReference = transfer.data.id.toString(); // Flutterwave returns numeric ID
-      withdrawal.transferCode = transfer.data.id.toString(); // Use ID as code
-      withdrawal.gatewayResponse = transfer.data;
+      // 2. Initiate payout
+      const payoutResponse = await vtstackService.securePayout({
+        accountNumber: withdrawal.bankDetails.accountNumber,
+        bankCode: withdrawal.bankDetails.bankCode,
+        accountName: withdrawal.bankDetails.accountName,
+        amount: withdrawal.netAmount * 100, // Convert to kobo if service expects it
+        narration: 'Withdrawal from Connecta'
+      });
 
-      // Flutterwave transfers are often async, status might be "NEW" or "SUCCESSFUL"
-      if (transfer.status === 'success' && transfer.data.status === 'SUCCESSFUL') {
+      withdrawal.gatewayReference = payoutResponse.reference || payoutResponse.idempotencyKey;
+      withdrawal.transferCode = payoutResponse.reference || payoutResponse.idempotencyKey;
+      withdrawal.gatewayResponse = payoutResponse;
+
+      // VTStack payout response status
+      if (payoutResponse.status === 'success' || payoutResponse.status === 'processing' || payoutResponse.status === true) {
         withdrawal.status = 'completed';
         withdrawal.completedAt = new Date();
       } else {
@@ -1053,7 +1055,7 @@ export const processWithdrawal = async (req: Request, res: Response) => {
         amount: -withdrawal.amount,
         currency: withdrawal.currency,
         status: withdrawal.status === 'completed' ? 'completed' : 'pending',
-        gatewayReference: transfer.data.id.toString(),
+        gatewayReference: payoutResponse.reference || payoutResponse.idempotencyKey,
         description: 'Withdrawal to bank account',
       });
 
@@ -1340,7 +1342,7 @@ export const getAllWallets = async (req: Request, res: Response) => {
 export const getOrCreateVirtualAccount = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
-    
+
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -1425,7 +1427,7 @@ export const handleVTStackWebhook = async (req: Request, res: Response) => {
   try {
     const signature = req.headers['x-vtstack-signature'] as string;
     const secret = req.headers['x-vtstack-secret'] as string;
-    
+
     // 1. Verify Secret (Basic check)
     if (secret !== process.env.VTSTACK_WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
       console.warn('Invalid VTStack Secret Header');
@@ -1446,10 +1448,10 @@ export const handleVTStackWebhook = async (req: Request, res: Response) => {
 
     if (event === 'transaction.deposit' && data.status === 'success') {
       const { amount, virtualAccount, reference } = data;
-      
+
       // Find wallet by virtual account number
       const wallet = await Wallet.findOne({ 'vtstackVirtualAccount.accountNumber': virtualAccount });
-      
+
       if (wallet) {
         // Check for duplicate transaction
         const existingTx = await Transaction.findOne({ gatewayReference: reference });
@@ -1460,8 +1462,8 @@ export const handleVTStackWebhook = async (req: Request, res: Response) => {
         // Credit the wallet
         // VTStack amounts are usually in Kobo (e.g. 10000 for 100 Naira)
         // Ensure we convert to Naira for our system
-        const creditAmount = amount / 100; 
-        
+        const creditAmount = amount / 100;
+
         wallet.balance += creditAmount;
         await wallet.save();
 

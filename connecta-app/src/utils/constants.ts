@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = true;
+const USE_LOCAL_SERVER = false;
 
 // Dynamic local IP detection for development
 const getLocalIP = () => {

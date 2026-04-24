@@ -13,6 +13,11 @@ export interface IJob extends Document {
   budgetType?: string;
   jobType?: string;
   locationType?: string;
+  paymentVerified?: boolean;
+  paymentStatus?: 'pending' | 'escrow' | 'released' | 'verified';
+  requirements?: string[];
+  isExternal?: boolean;
+  company?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +39,11 @@ const JobSchema: Schema<IJob> = new Schema(
     budgetType: { type: String, default: 'fixed' },
     jobType: { type: String, default: 'freelance' },
     locationType: { type: String, default: 'remote' },
+    paymentVerified: { type: Boolean, default: false },
+    paymentStatus: { type: String, enum: ['pending', 'escrow', 'released', 'verified'], default: 'pending' },
+    requirements: [{ type: String }],
+    isExternal: { type: Boolean, default: false },
+    company: { type: String },
   },
   { timestamps: true }
 );

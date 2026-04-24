@@ -13,7 +13,7 @@ class NotificationService {
         title: string;
         message: string;
         relatedId?: string;
-        relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment';
+        relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment' | 'withdrawal';
         actorId?: string;
         actorName?: string;
         link?: string;

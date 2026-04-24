@@ -197,7 +197,7 @@ export interface CreateNotificationData {
   title: string;
   message: string;
   relatedId?: any;
-  relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment';
+  relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment' | 'withdrawal';
   actorId?: any;
   actorName?: string;
   link?: string;
@@ -346,7 +346,7 @@ export const notifyMatchedFreelancers = async (job: any) => {
 
             if (matchPercentage >= 90) {
                 await createNotification({
-                    userId: profile.user._id,
+                    userId: (profile.user as any)._id,
                     type: 'gig_matched',
                     title: '🎯 New Perfect Match!',
                     message: `We found a new job "${job.title}" that matches 90% or more of your skills.`,
