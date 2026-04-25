@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Briefcase, Clock, MapPin, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { API_BASE_URL, APP_DOMAIN } from '../../../utils/constants';
+import { API_BASE_URL, APP_DOMAIN, PLAY_STORE_URL } from '../../../utils/constants';
 
 const SampleJobs = () => {
     const [jobs, setJobs] = useState<any[]>([]);
@@ -74,7 +74,9 @@ const SampleJobs = () => {
                     <motion.a
                         whileHover={{ x: 5 }}
                         className="hidden md:flex items-center gap-2 text-gray-500 font-bold hover:text-[#FD6730] transition-colors cursor-pointer"
-                        href={`${APP_DOMAIN}/search`}
+                        href={PLAY_STORE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
                     >
                         View All Gigs <ArrowRight className="w-4 h-4" />
                     </motion.a>
@@ -100,7 +102,7 @@ const SampleJobs = () => {
                                         transition={{ delay: i * 0.1 }}
                                         whileHover={{ y: -8, scale: 1.02 }}
                                         className={`p-6 rounded-3xl border-2 ${borderColor} bg-white shadow-xl shadow-gray-100 relative group cursor-pointer`}
-                                        onClick={() => window.location.href = `${APP_DOMAIN}/job/${job._id}`}
+                                        onClick={() => window.location.href = PLAY_STORE_URL}
                                     >
                                         {/* Top Badge */}
                                         <div className={`inline-block px-3 py-1 rounded-lg ${colorClass} text-xs font-bold mb-4`}>

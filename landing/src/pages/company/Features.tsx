@@ -3,6 +3,7 @@ import Nav from '../landing_page/layout/Nav';
 import Footer from '../landing_page/layout/Footer';
 import { motion } from 'framer-motion';
 import { BrainCircuit, ShieldCheck, Users, ArrowRight, CheckCircle } from 'lucide-react';
+import { PLAY_STORE_URL } from '../../utils/constants';
 
 // Import Assets
 import featuresHero from '../../assets/features_hero_cartoon.png';
@@ -35,11 +36,11 @@ const Features = () => {
                             Everything you need to <span className="text-[#FD6730]">succeed</span>
                         </h1>
                         <p className="text-xl text-gray-600 leading-relaxed mb-8">
-                            Connecta brings together powerful tools to help you find work, hire talent, and manage projects—all in one place.
+                            Connecta brings together powerful tools to help you find work, hire talent, and manage projects, all in one place.
                         </p>
                         <div className="flex flex-wrap gap-4">
-                            <a href="https://app.myconnecta.ng" target="_blank" rel="noopener noreferrer" className="bg-[#FD6730] text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-orange-600 transition-colors flex items-center gap-2">
-                                Get Started <ArrowRight size={20} />
+                            <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="bg-[#FD6730] text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-orange-600 transition-colors flex items-center gap-2">
+                                Get App Free <ArrowRight size={20} />
                             </a>
                         </div>
                     </motion.div>
@@ -198,8 +199,8 @@ const Features = () => {
                         <p className="text-xl text-white/90 mb-10">
                             Join Connecta today and start working the way you want.
                         </p>
-                        <a href="https://app.myconnecta.ng" target="_blank" rel="noopener noreferrer" className="bg-white text-[#FD6730] px-10 py-4 rounded-full font-bold text-lg shadow-xl hover:bg-gray-100 hover:scale-105 transition-all inline-block">
-                            Create Free Account
+                        <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="bg-white text-[#FD6730] px-10 py-4 rounded-full font-bold text-lg shadow-xl hover:bg-gray-100 hover:scale-105 transition-all inline-block">
+                            Get App Now
                         </a>
                     </motion.div>
                 </div>

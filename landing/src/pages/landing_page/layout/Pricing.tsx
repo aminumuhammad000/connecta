@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Star, Zap, Shield, Crown, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { APP_DOMAIN } from '../../../utils/constants';
+import { APP_DOMAIN, PLAY_STORE_URL } from '../../../utils/constants';
 
 const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -107,7 +107,9 @@ const Pricing = () => {
               </ul>
 
               <a
-                href={plan.button === "Contact Sales" ? "/contact" : APP_DOMAIN}
+                href={plan.button === "Contact Sales" ? "/contact" : PLAY_STORE_URL}
+                target={plan.button === "Contact Sales" ? "_self" : "_blank"}
+                rel={plan.button === "Contact Sales" ? "" : "noopener noreferrer"}
                 className={`w-full py-4 rounded-xl font-bold text-lg text-center transition-all transform active:scale-95 border-none outline-none flex items-center justify-center ${plan.popular
                   ? 'bg-[#FD6730] text-white hover:bg-[#e05625] shadow-lg shadow-orange-500/25'
                   : 'bg-gray-50 text-gray-900 hover:bg-gray-100'

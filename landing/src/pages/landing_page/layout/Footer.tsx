@@ -2,6 +2,7 @@ import style from "../../../styles/layouts/Footer.module.css"
 import logo from "../../../assets/logo.png"
 import { Icon } from '@iconify/react'
 import { useState } from 'react'
+import { PLAY_STORE_URL } from '../../../utils/constants'
 
 const Footer = () => {
   const [email, setEmail] = useState('');
@@ -70,7 +71,7 @@ const Footer = () => {
               <li><a href="#how-it-works">How It Works</a></li>
               <li><a href="#features">Features</a></li>
               <li><a href="#pricing">Pricing</a></li>
-              <li><a href="/signup">Sign Up</a></li>
+              <li><a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">Download App</a></li>
             </ul>
           </div>
 
@@ -79,7 +80,7 @@ const Footer = () => {
             <ul className={style.linksList}>
               <li><a href="#how-it-works">Post a Job</a></li>
               <li><a href="#features">Find Talent</a></li>
-              <li><a href="/signup">Get Started</a></li>
+              <li><a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">Get App Now</a></li>
               <li><a href="/contact">Contact Us</a></li>
             </ul>
           </div>

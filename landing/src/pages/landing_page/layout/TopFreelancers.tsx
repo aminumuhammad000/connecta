@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Star, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { API_BASE_URL, APP_DOMAIN } from '../../../utils/constants';
+import { API_BASE_URL, APP_DOMAIN, PLAY_STORE_URL } from '../../../utils/constants';
 
 const TopFreelancers = () => {
     const [freelancers, setFreelancers] = useState<any[]>([]);
@@ -55,7 +55,7 @@ const TopFreelancers = () => {
                     <motion.button
                         whileHover={{ x: 5 }}
                         className="hidden md:flex px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-medium hover:bg-[#FD6730] hover:text-white hover:border-[#FD6730] transition-all items-center gap-2"
-                        onClick={() => window.location.href = `${APP_DOMAIN}/search?type=freelancer`}
+                        onClick={() => window.location.href = PLAY_STORE_URL}
                     >
                         View All Talent
                         <ArrowRight className="w-4 h-4" />
@@ -76,7 +76,7 @@ const TopFreelancers = () => {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.1 }}
                                     className="group relative p-6 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-gray-100 hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-500/30 transition-all duration-300 cursor-pointer"
-                                    onClick={() => window.location.href = `${APP_DOMAIN}/u/${f._id}`}
+                                    onClick={() => window.location.href = PLAY_STORE_URL}
                                 >
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className="relative">

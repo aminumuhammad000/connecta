@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Search, Briefcase, Users, Star, DollarSign, Code, Zap, Globe, Rocket, ShieldCheck } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Search, Briefcase, Users, Star, DollarSign, Code, Globe, Rocket, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "../../../assets/logo.png";
-import { APP_DOMAIN } from "../../../utils/constants";
+import { PLAY_STORE_URL } from "../../../utils/constants";
 
 const Hero = () => {
     const [active, setActive] = useState("freelancer");
@@ -10,12 +10,9 @@ const Hero = () => {
     const [query, setQuery] = useState("");
 
     const handleSearch = () => {
-        const typeParam = active === 'freelancer' ? 'freelancer' : 'job';
-        if (!query.trim()) {
-            window.location.href = `${APP_DOMAIN}/search?type=${typeParam}`;
-            return;
-        }
-        window.location.href = `${APP_DOMAIN}/search?q=${encodeURIComponent(query)}&type=${typeParam}`;
+        // Redirect all search actions to Play Store as requested
+        window.location.href = PLAY_STORE_URL;
+        return;
     };
 
     const titles = [
@@ -142,8 +139,13 @@ const Hero = () => {
                             className="mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-8"
                         >
                             <div className="flex -space-x-3">
-                                {[1, 2, 3, 4].map(i => (
-                                    <img key={i} src={`https://i.pravatar.cc/150?u=${i + 10}`} className="w-10 h-10 rounded-full border-2 border-white shadow-md" alt="User" />
+                                {[
+                                    "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=150&h=150&auto=format&fit=crop",
+                                    "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=150&h=150&auto=format&fit=crop",
+                                    "https://images.unsplash.com/photo-1531123414780-f74242c2b052?q=80&w=150&h=150&auto=format&fit=crop",
+                                    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&h=150&auto=format&fit=crop"
+                                ].map((url, i) => (
+                                    <img key={i} src={url} className="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover" alt="Nigerian User" />
                                 ))}
                                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-500 border-2 border-white">+2k</div>
                             </div>

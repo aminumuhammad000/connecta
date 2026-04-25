@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Upload, Briefcase, FileText, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import cvOptimizationImg from '../../../assets/cv_optimization_3d.png'; // Assuming image path
+import { PLAY_STORE_URL } from '../../../utils/constants';
 
 const CvOptimization = () => {
     const benefits = [
@@ -73,8 +74,8 @@ const CvOptimization = () => {
                             ))}
                         </div>
 
-                        <a href="https://app.myconnecta.ng" className="inline-flex items-center justify-center px-8 py-4 bg-[#FD6730] text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 hover:bg-[#e05625] hover:-translate-y-1 transition-all group">
-                            Build My CV Now
+                        <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-8 py-4 bg-[#FD6730] text-white font-bold rounded-xl shadow-lg shadow-orange-500/20 hover:bg-[#e05625] hover:-translate-y-1 transition-all group">
+                            Get App Free
                             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </a>
                     </motion.div>

@@ -5,9 +5,10 @@ import { motion } from 'framer-motion';
 import { Download, Smartphone, Apple, ArrowRight, Star, Shield, Zap } from 'lucide-react';
 import downloadHero from '../../assets/download_hero_cartoon.png';
 import appMockup from '../../assets/connectAPP.png';
+import { PLAY_STORE_URL } from '../../utils/constants';
 
 const DownloadApp = () => {
-    const apkLink = "https://expo.dev/artifacts/eas/pPCfm8hHyBmVTkekp48Y7s.apk";
+    const apkLink = PLAY_STORE_URL;
 
     const fadeIn = {
         initial: { opacity: 0, y: 20 },
@@ -40,7 +41,7 @@ const DownloadApp = () => {
                                 href={apkLink}
                                 className="bg-[#FD6730] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-orange-600 transition-all transform hover:-translate-y-1 flex items-center gap-2"
                             >
-                                <Download size={22} /> Download for Android
+                                <Download size={22} /> Download on Google Play
                             </a>
                         </div>
                     </motion.div>
@@ -121,7 +122,7 @@ const DownloadApp = () => {
                     <motion.div {...fadeIn}>
                         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Available Everywhere Soon</h2>
                         <p className="text-lg text-gray-600 mb-12">
-                            We are currently in a limited release on Android. Stay tuned for our official Play Store and App Store launches.
+                            We are now live on the Google Play Store! Download the app today to experience the full power of Connecta.
                         </p>
                     </motion.div>
 
@@ -133,16 +134,14 @@ const DownloadApp = () => {
                         >
                             <Smartphone size={32} />
                             <div className="text-left">
-                                <div className="text-xs opacity-70">Download for</div>
-                                <div className="text-xl font-bold font-primary">Android (.apk)</div>
+                                <div className="text-xs opacity-70">Get it on</div>
+                                <div className="text-xl font-bold font-primary">Google Play</div>
                             </div>
                         </a>
 
                         {/* Coming Soon Stores */}
-                        {[
-                            { icon: Smartphone, label: "Google Play", sub: "Coming Soon" },
                             { icon: Apple, label: "App Store", sub: "Coming Soon" }
-                        ].map((store, i) => (
+.map((store, i) => (
                             <div
                                 key={i}
                                 className="flex items-center gap-4 bg-white border border-gray-200 text-gray-400 px-8 py-4 rounded-2xl cursor-not-allowed opacity-70 grayscale shadow-sm"
@@ -179,7 +178,7 @@ const DownloadApp = () => {
                             href={apkLink}
                             className="inline-flex items-center gap-2 bg-white text-orange-600 px-10 py-4 rounded-full font-bold text-lg hover:bg-orange-50 transition-all transform hover:scale-105 shadow-2xl shadow-black/20"
                         >
-                            Get Started <ArrowRight size={20} />
+                            Get App Free <ArrowRight size={20} />
                         </a>
                     </motion.div>
                 </div>

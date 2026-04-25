@@ -41,7 +41,7 @@ const HowItWorks = () => {
         },
         {
             title: "Grow Your Credibility",
-            description: "As you complete work and receive feedback, your profile credibility improves — helping you attract better opportunities over time.",
+            description: "As you complete work and receive feedback, your profile credibility improves, helping you attract better opportunities over time.",
             icon: TrendingUp
         }
     ];
@@ -54,7 +54,7 @@ const HowItWorks = () => {
         },
         {
             title: "Review Talent Profiles",
-            description: "Browse freelancer profiles, review skills and experience, and choose professionals that fit your needs. Take your time — quality matters.",
+            description: "Browse freelancer profiles, review skills and experience, and choose professionals that fit your needs. Take your time, quality matters.",
             icon: Users
         },
         {
@@ -295,7 +295,7 @@ const HowItWorks = () => {
                     </div>
 
                     <div className="text-center mt-16">
-                        <p className="text-2xl font-bold text-gray-900">Connecta — Real Talent. Real Work.</p>
+                        <p className="text-2xl font-bold text-gray-900">Connecta. Real Talent. Real Work.</p>
                     </div>
                 </div>
             </section>

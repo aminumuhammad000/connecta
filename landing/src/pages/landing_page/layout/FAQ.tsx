@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Minus, HelpCircle } from 'lucide-react';
 
@@ -8,7 +8,7 @@ const FAQ = () => {
     const faqs = [
         {
             question: "What makes Connecta different from other platforms?",
-            answer: "Connecta is the first AI-powered platform that combines individual freelancing with 'Collabo'—our dedicated workspace for freelance teams. We also use AI to auto-match you with jobs across the web, not just on our site."
+            answer: "Connecta is the first AI-powered platform that combines individual freelancing with 'Collabo', our dedicated workspace for freelance teams. We also use AI to auto-match you with jobs across the web, not just on our site."
         },
         {
             question: "Is it free to join?",

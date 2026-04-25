@@ -9,7 +9,6 @@ import About from './pages/company/About';
 import Contact from './pages/company/Contact';
 import HowItWorks from './pages/company/HowItWorks';
 import Features from './pages/company/Features';
-import DownloadApp from './pages/company/DownloadApp';
 
 function App() {
   return (
@@ -27,7 +26,6 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/features" element={<Features />} />
-        <Route path="/download-app" element={<DownloadApp />} />
 
         {/* Redirect all other paths to landing page */}
         <Route path="*" element={<Navigate to="/" replace />} />

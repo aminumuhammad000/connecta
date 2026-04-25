@@ -14,3 +14,4 @@ export const SOCKET_URL = isModeOnline
     : 'http://localhost:5000';
 
 export const APP_DOMAIN = 'https://app.myconnecta.ng';
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.connecta.app';
