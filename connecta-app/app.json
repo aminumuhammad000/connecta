@@ -16,14 +16,16 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.amee.connecta"
+      "bundleIdentifier": "com.connecta.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.amee.connecta"
+      "package": "com.connecta.app",
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 4
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -33,6 +35,9 @@
       "eas": {
         "projectId": "f66f256a-220f-4c65-af46-5e68627cadd6"
       }
-    }
+    },
+    "plugins": [
+      "@react-native-firebase/app"
+    ]
   }
 }
