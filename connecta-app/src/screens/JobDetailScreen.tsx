@@ -158,9 +158,9 @@ function JobDetailScreen() {
       "Are you sure you want to delete this job? This action cannot be undone.",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive", 
+        {
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
               setIsLoading(true);
@@ -172,7 +172,7 @@ function JobDetailScreen() {
             } finally {
               setIsLoading(false);
             }
-          } 
+          }
         }
       ]
     );
@@ -434,7 +434,7 @@ function JobDetailScreen() {
           {isJobOwner && (
             <View style={{ marginTop: 32 }}>
               <Text style={[styles.sectionTitle, { color: c.text }]}>{"Proposals"} ({proposals.length})</Text>
-              
+
               <TouchableOpacity
                 style={{
                   flexDirection: 'row',

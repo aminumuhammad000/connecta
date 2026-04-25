@@ -145,6 +145,7 @@ export const uploadFile = async (url: string, formData: FormData): Promise<ApiRe
     return await apiClient.post(url, formData, {
         headers: {
             'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
         },
         timeout: 60000, // 60s timeout for uploads
     });
@@ -159,7 +160,9 @@ export const uploadFilePublic = async (url: string, formData: FormData): Promise
 
     try {
         const response = await apiClient.post(url, formData, {
-            headers: {},
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
             timeout: 60000, // 60s timeout for uploads
         });
         return response as any;

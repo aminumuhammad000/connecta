@@ -38,58 +38,58 @@ const WelcomeScreen: React.FC<{ navigation?: any, onLogin?: () => void, onSignup
       <View style={[styles.content, isDesktop && styles.desktopContent]}>
         {/* Logo Area */}
         <Animated.View entering={FadeInDown.duration(1000).springify()} style={styles.logoContainer}>
-            <View style={[styles.logoGlow, { backgroundColor: c.primary + '30' }]} />
-            <Image source={require('../../assets/logo copy.png')} style={styles.logo} resizeMode="contain" />
+          <View style={[styles.logoGlow, { backgroundColor: c.primary + '30' }]} />
+          <Image source={require('../../assets/logo copy.png')} style={styles.logo} resizeMode="contain" />
         </Animated.View>
 
         {/* Text Area */}
         <View style={styles.textContainer}>
-            <Animated.Text entering={FadeInDown.delay(200)} style={[styles.title, { color: c.text }]}>
+          <Animated.Text entering={FadeInDown.delay(200)} style={[styles.title, { color: c.text }]}>
             Connecta
-            </Animated.Text>
+          </Animated.Text>
 
-            <View style={styles.taglineWrapper}>
+          <View style={styles.taglineWrapper}>
             <Animated.View
-                key={index}
-                entering={FadeInUp.springify()}
-                exiting={FadeOutUp}
+              key={index}
+              entering={FadeInUp.springify()}
+              exiting={FadeOutUp}
             >
-                <Animated.Text
+              <Animated.Text
                 style={[styles.dynamicTagline, { color: c.text }]}
-                >
+              >
                 {taglines[index]}
-                </Animated.Text>
+              </Animated.Text>
             </Animated.View>
-            </View>
+          </View>
         </View>
 
         {/* Action Area */}
         <Animated.View entering={FadeInUp.delay(600).springify()} style={styles.actionZone}>
-            <TouchableOpacity
+          <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                if (onSignup) onSignup();
-                else navigation?.navigate('RoleSelection');
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              if (onSignup) onSignup();
+              else navigation?.navigate('RoleSelection');
             }}
             style={[styles.primaryBtn, { backgroundColor: c.primary }]}
-            >
+          >
             <Text style={styles.primaryBtnText}>Get Started</Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
 
-            <TouchableOpacity
+          <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                if (onLogin) onLogin();
-                else navigation?.navigate('Login');
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              if (onLogin) onLogin();
+              else navigation?.navigate('Login');
             }}
             style={[styles.secondaryBtn, { borderColor: c.border }]}
-            >
+          >
             <Text style={[styles.secondaryBtnText, { color: c.text }]}>
-                Already have an account? <Text style={{ color: c.primary, fontWeight: '800' }}>Log In</Text>
+              Already have an account? <Text style={{ color: c.primary, fontWeight: '800' }}>Log In</Text>
             </Text>
-            </TouchableOpacity>
+          </TouchableOpacity>
         </Animated.View>
       </View>
     </SafeAreaView>
@@ -98,10 +98,10 @@ const WelcomeScreen: React.FC<{ navigation?: any, onLogin?: () => void, onSignup
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { 
-    flex: 1, 
-    paddingHorizontal: 24, 
-    justifyContent: 'space-between', 
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
     paddingVertical: 60,
     alignSelf: 'center',
     width: '100%',
