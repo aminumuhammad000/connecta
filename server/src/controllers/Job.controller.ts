@@ -45,7 +45,34 @@ export const getAllJobs = async (req: Request, res: Response) => {
   }
 };
 
-// Get Matched Jobs for Freelancer
+// Admin: Get ALL jobs (no status filter)
+export const getAllJobsAdmin = async (req: Request, res: Response) => {
+  try {
+    const { status, search, limit = 50, page = 1 } = req.query;
+    const filter: any = {};
+    if (status && status !== 'all') filter.status = status;
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const skip = (Number(page) - 1) * Number(limit);
+    const [jobs, total] = await Promise.all([
+      Job.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .populate('clientId', 'firstName lastName email profileImage'),
+      Job.countDocuments(filter),
+    ]);
+    res.status(200).json({ success: true, data: jobs, total, page: Number(page), limit: Number(limit) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
+
 export const getMatchedJobs = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id;

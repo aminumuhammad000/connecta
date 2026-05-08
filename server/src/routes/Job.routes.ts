@@ -2,6 +2,7 @@
 import express from "express";
 import {
   getAllJobs,
+  getAllJobsAdmin,
   getJobById,
   createJob,
   updateJob,
@@ -15,6 +16,9 @@ import { isAdmin } from "../core/middleware/admin.middleware.js";
 
 const router = express.Router();
 
+// Admin: Get all jobs regardless of status (must be BEFORE /:id)
+router.get("/admin/all", authenticate, isAdmin, getAllJobsAdmin);
+
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", authenticate, getClientJobs);
 
@@ -22,11 +26,13 @@ router.get("/client/my-jobs", authenticate, getClientJobs);
 router.get("/recommended", authenticate, getMatchedJobs);
 router.get("/matched", authenticate, getMatchedJobs);
 
+
 // Get all jobs with filters (Optional auth for filtering applied jobs)
 router.get("/", optionalAuthenticate, getAllJobs);
 
 // Get job by ID
 router.get("/:id", getJobById);
+
 
 // Create new job (protected)
 router.post("/", authenticate, createJob);

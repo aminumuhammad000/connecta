@@ -111,6 +111,35 @@ export const getAllProposals = async (req: Request, res: Response) => {
   }
 };
 
+// Admin: Get ALL proposals (no user filter)
+export const getAllProposalsAdmin = async (req: Request, res: Response) => {
+  try {
+    const { status, search, limit = 100, page = 1 } = req.query;
+    const filter: any = {};
+    if (status && status !== 'all') filter.status = status;
+    if (search) {
+      filter.$or = [
+        { coverLetter: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const skip = (Number(page) - 1) * Number(limit);
+    const [proposals, total] = await Promise.all([
+      Proposal.find(filter)
+        .populate('freelancerId', 'firstName lastName email profileImage')
+        .populate('clientId', 'firstName lastName email profileImage')
+        .populate('jobId', 'title budget status')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit)),
+      Proposal.countDocuments(filter),
+    ]);
+    res.status(200).json({ success: true, data: proposals, total, page: Number(page), limit: Number(limit) });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Get single proposal
 export const getProposalById = async (req: Request, res: Response) => {
   try {

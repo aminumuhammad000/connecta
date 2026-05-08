@@ -196,7 +196,7 @@ export const projectsAPI = {
 // ============================================
 export const jobsAPI = {
   getAll: async (params?: { status?: string; search?: string; limit?: number; page?: number }) => {
-    const { data } = await api.get('/api/jobs', { params })
+    const { data } = await api.get('/api/jobs/admin/all', { params })
     return data
   },
   getById: async (id: string) => {

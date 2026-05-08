@@ -195,3 +195,33 @@ export const getContractById = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error fetching contract details', error: error.message });
     }
 };
+// Admin: Get ALL contracts (no user filter)
+export const getAllContractsAdmin = async (req, res) => {
+    try {
+        const { status, search, limit = 50, page = 1 } = req.query;
+        const filter = {};
+        if (status && status !== 'all')
+            filter.status = status;
+        if (search) {
+            filter.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+            ];
+        }
+        const skip = (Number(page) - 1) * Number(limit);
+        const [contracts, total] = await Promise.all([
+            Contract.find(filter)
+                .populate('clientId', 'firstName lastName email profileImage')
+                .populate('freelancerId', 'firstName lastName email profileImage')
+                .populate('jobId', 'title budget')
+                .sort({ updatedAt: -1 })
+                .skip(skip)
+                .limit(Number(limit)),
+            Contract.countDocuments(filter),
+        ]);
+        res.status(200).json({ success: true, data: contracts, total, page: Number(page), limit: Number(limit) });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
