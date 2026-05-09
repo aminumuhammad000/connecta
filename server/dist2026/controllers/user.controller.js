@@ -767,3 +767,47 @@ export const updateMe = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
+/**
+ * @desc Delete user by ID
+ * @route DELETE /api/users/:id
+ */
+export const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findByIdAndDelete(id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        res.status(200).json({ success: true, message: "User deleted successfully" });
+    }
+    catch (err) {
+        console.error('Delete user error:', err);
+        res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};
+/**
+ * @desc Create a new admin user
+ * @route POST /api/users/admin
+ */
+export const createAdmin = async (req, res) => {
+    try {
+        const { firstName, lastName, email, password, phoneNumber } = req.body;
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: "User already exists" });
+        }
+        const user = await User.create({
+            firstName,
+            lastName,
+            email,
+            password,
+            phoneNumber,
+            userType: 'admin',
+            isVerified: true
+        });
+        res.status(201).json({ success: true, data: user });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
+    }
+};

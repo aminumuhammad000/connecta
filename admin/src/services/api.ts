@@ -93,7 +93,7 @@ export const authAPI = {
 // USERS
 // ============================================
 export const usersAPI = {
-  getAll: async (params?: { userType?: string; skills?: string; limit?: number; page?: number; search?: string }) => {
+  getAll: async (params?: { userType?: string; skills?: string; limit?: number; page?: number; search?: string; includeAdmins?: string }) => {
     const { data } = await api.get('/api/users', { params })
     return data
   },
@@ -115,6 +115,10 @@ export const usersAPI = {
   },
   unban: async (id: string) => {
     const { data } = await api.put(`/api/users/${id}/unban`)
+    return data
+  },
+  createAdmin: async (adminData: any) => {
+    const { data } = await api.post('/api/users/admin', adminData)
     return data
   },
 }

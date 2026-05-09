@@ -18,6 +18,7 @@ import Settings from './pages/Settings'
 import EmailBroadcast from './pages/EmailBroadcast'
 import Verifications from './pages/Verifications'
 import SupportMessages from './pages/SupportMessages'
+import Admins from './pages/Admins'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
@@ -47,6 +48,7 @@ function App() {
           <Route path="/broadcast" element={<EmailBroadcast />} />
           <Route path="/verifications" element={<Verifications />} />
           <Route path="/support" element={<SupportMessages />} />
+          <Route path="/admins" element={<Admins />} />
         </Route>
       </Route>
 

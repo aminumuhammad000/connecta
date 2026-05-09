@@ -30,6 +30,7 @@ export default function Jobs() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'internal' | 'external'>('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const jobsPerPage = 10
 
   const [confirmModal, setConfirmModal] = useState<{
@@ -56,7 +57,7 @@ export default function Jobs() {
 
   useEffect(() => {
     fetchJobs()
-  }, [filterType, statusFilter])
+  }, [filterType, statusFilter, sortOrder])
 
   useEffect(() => {
     if (viewModal.isOpen && viewModal.job && viewModal.job.clientId && typeof viewModal.job.clientId !== 'string') {
@@ -85,7 +86,8 @@ export default function Jobs() {
       setLoading(true)
       const params: any = {
         limit: 100,
-        status: statusFilter // Fetch based on filter, default 'all'
+        status: statusFilter,
+        sortOrder: sortOrder
       }
 
       if (filterType === 'external') {
@@ -149,8 +151,8 @@ export default function Jobs() {
   }
 
   const filteredJobs = jobs.filter(job =>
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.company.toLowerCase().includes(searchTerm.toLowerCase())
+    (job.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (job.company || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalPages = Math.ceil(filteredJobs.length / jobsPerPage)
@@ -200,6 +202,14 @@ export default function Jobs() {
                 <option value="all">All Gigs</option>
                 <option value="internal">Internal Only</option>
                 <option value="external">External Only</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as any)}
+                className="px-4 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="desc">Newest First</option>
+                <option value="asc">Oldest First</option>
               </select>
             </div>
           </div>

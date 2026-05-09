@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe } from "../controllers/user.controller.js";
+import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, deleteUser, createAdmin } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 const router = express.Router();
 // Auth routes
@@ -36,5 +36,6 @@ router.get("/:id", getUserById);
 // User management routes
 router.put("/:id/ban", banUser);
 router.put("/:id/unban", unbanUser);
-// router.delete("/:id", deleteUser); // Missing in controller
+router.post("/admin", authenticate, createAdmin);
+router.delete("/:id", deleteUser);
 export default router;

@@ -51,6 +51,8 @@ import {
   MdBlock,
   MdAccountCircle,
   MdAccountBalanceWallet,
+  MdVerifiedUser,
+  MdSupportAgent,
 } from 'react-icons/md'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number; color?: string }>> = {
@@ -105,6 +107,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string; size?: n
   block: MdBlock,
   account_circle: MdAccountCircle,
   account_balance_wallet: MdAccountBalanceWallet,
+  verified_user: MdVerifiedUser,
+  support_agent: MdSupportAgent,
 }
 
 export default function Icon({ name, className, size, color }: { name: string; className?: string; size?: number; color?: string }) {

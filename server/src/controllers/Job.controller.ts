@@ -48,7 +48,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
 // Admin: Get ALL jobs (no status filter)
 export const getAllJobsAdmin = async (req: Request, res: Response) => {
   try {
-    const { status, search, limit = 50, page = 1 } = req.query;
+    const { status, search, limit = 50, page = 1, isExternal, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     const filter: any = {};
     if (status && status !== 'all') filter.status = status;
     if (search) {
@@ -57,10 +57,18 @@ export const getAllJobsAdmin = async (req: Request, res: Response) => {
         { description: { $regex: search, $options: 'i' } },
       ];
     }
+    
+    if (isExternal !== undefined) {
+      filter.isExternal = isExternal === 'true';
+    }
+
     const skip = (Number(page) - 1) * Number(limit);
+    const sort: any = {};
+    sort[sortBy as string] = sortOrder === 'asc' ? 1 : -1;
+
     const [jobs, total] = await Promise.all([
       Job.find(filter)
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .skip(skip)
         .limit(Number(limit))
         .populate('clientId', 'firstName lastName email profileImage'),

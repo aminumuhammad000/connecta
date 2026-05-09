@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon'
-import { usersAPI, jobsAPI, projectsAPI, proposalsAPI, paymentsAPI, contractsAPI } from '../services/api'
+import { usersAPI, jobsAPI, projectsAPI, dashboardAPI } from '../services/api'
 
 interface DashboardData {
   totalUsers: number
@@ -42,24 +42,21 @@ export default function Dashboard() {
     try {
       setLoading(true)
 
-      // Fetch all data in parallel for maximum performance
+      // Fetch stats from the dedicated dashboard stats endpoint
+      // and other data for "Recent" sections in parallel
       const [
+        statsResponse,
         usersResponse,
         jobsResponse,
-        projectsResponse,
-        proposalsResponse,
-        paymentsResponse,
-        contractsResponse
+        projectsResponse
       ] = await Promise.allSettled([
-        usersAPI.getAll(),
-        jobsAPI.getAll(),
-        projectsAPI.getAll(),
-        proposalsAPI.getAll(),
-        paymentsAPI.getHistory(),
-        contractsAPI.getAll()
+        dashboardAPI.getStats(),
+        usersAPI.getAll({ limit: 5 }),
+        jobsAPI.getAll({ limit: 5 }),
+        projectsAPI.getAll({ limit: 5 })
       ])
 
-      // Extract data from responses and ensure arrays
+      const stats = statsResponse.status === 'fulfilled' ? (statsResponse.value.data || statsResponse.value) : {}
       const usersData: any = usersResponse.status === 'fulfilled' ? usersResponse.value : {}
       const users = Array.isArray(usersData) ? usersData : (usersData.data || [])
 
@@ -69,42 +66,30 @@ export default function Dashboard() {
       const projectsData: any = projectsResponse.status === 'fulfilled' ? projectsResponse.value : {}
       const projects = Array.isArray(projectsData) ? projectsData : (projectsData.data || [])
 
-      const proposalsData: any = proposalsResponse.status === 'fulfilled' ? proposalsResponse.value : {}
-      const proposals = Array.isArray(proposalsData) ? proposalsData : (proposalsData.data || [])
-
-      const paymentsData: any = paymentsResponse.status === 'fulfilled' ? paymentsResponse.value : {}
-      const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData.data || [])
-
-      const contractsData: any = contractsResponse.status === 'fulfilled' ? contractsResponse.value : {}
-      const contracts = Array.isArray(contractsData) ? contractsData : (contractsData.data || [])
-
-      // Calculate statistics
-      console.log('Dashboard Data:', { users: users.length, jobs: jobs.length, projects: projects.length, proposals: proposals.length, payments: payments.length, contracts: contracts.length });
-
       const dashboardData: DashboardData = {
-        totalUsers: users.length || 0,
-        totalClients: users.filter((u: any) => u.userType === 'client' || u.role === 'client').length || 0,
-        totalFreelancers: users.filter((u: any) => u.userType === 'freelancer' || u.role === 'freelancer').length || 0,
+        totalUsers: stats.totalUsers || 0,
+        totalClients: stats.totalClients || 0,
+        totalFreelancers: stats.totalFreelancers || 0,
 
-        totalJobs: jobs.length || 0,
-        activeJobs: jobs.filter((j: any) => j.status === 'Open' || j.status === 'open' || j.status === 'active').length || 0,
+        totalJobs: stats.totalJobs || 0,
+        activeJobs: stats.activeJobs || 0,
 
-        totalProjects: projects.length || 0,
-        activeProjects: projects.filter((p: any) => p.status === 'In-Progress' || p.status === 'in-progress' || p.status === 'ongoing' || p.status === 'active').length || 0,
-        completedProjects: projects.filter((p: any) => p.status === 'Completed' || p.status === 'completed').length || 0,
+        totalProjects: stats.totalProjects || 0,
+        activeProjects: stats.activeProjects || 0,
+        completedProjects: stats.completedProjects || 0,
 
-        totalProposals: proposals.length || 0,
-        pendingProposals: proposals.filter((p: any) => p.status === 'pending').length || 0,
+        totalProposals: stats.totalProposals || 0,
+        pendingProposals: stats.pendingProposals || 0,
 
-        totalContracts: contracts.length || 0,
-        activeContracts: contracts.filter((c: any) => c.status === 'active' || c.status === 'in-progress' || c.status === 'ongoing').length || 0,
+        totalContracts: stats.totalContracts || 0,
+        activeContracts: stats.activeContracts || 0,
 
-        totalRevenue: payments.filter((p: any) => p.status === 'completed').reduce((sum: number, p: any) => sum + (p.amount || 0), 0),
-        pendingPayments: payments.filter((p: any) => p.status === 'pending').length || 0,
+        totalRevenue: stats.totalRevenue || 0,
+        pendingPayments: stats.pendingPayments || 0,
 
-        recentUsers: users.slice(-5).reverse() || [],
-        recentJobs: jobs.slice(-3).reverse() || [],
-        recentProjects: projects.slice(-3).reverse() || [],
+        recentUsers: users.slice(0, 5) || [],
+        recentJobs: jobs.slice(0, 3) || [],
+        recentProjects: projects.slice(0, 3) || [],
 
         trends: {
           users: 12.5,
@@ -113,8 +98,6 @@ export default function Dashboard() {
           revenue: 23.1
         }
       }
-
-      console.log('Dashboard Stats:', dashboardData);
 
       setData(dashboardData)
     } catch (error) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import Icon from './Icon'
+import { notificationsAPI } from '../services/api'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -15,6 +16,8 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const [darkMode, setDarkMode] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     // Get admin user from localStorage
@@ -30,6 +33,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
     // Check dark mode preference
     const isDark = document.documentElement.classList.contains('dark')
     setDarkMode(isDark)
+
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 60000) // Refresh every minute
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -67,11 +74,64 @@ export default function Header({ onMenuClick }: HeaderProps) {
     }
   }
 
-  const mockNotifications = [
-    { id: 1, type: 'payment', message: 'New payment received: ₦250,000', time: '5 min ago', unread: true },
-    { id: 2, type: 'user', message: 'New user registered: John Doe', time: '1 hour ago', unread: true },
-    { id: 3, type: 'contract', message: 'Contract signed by client', time: '2 hours ago', unread: false },
-  ]
+  const fetchNotifications = async () => {
+    try {
+      const response = await notificationsAPI.getAll({ limit: 5 })
+      const data = response.data || response
+      if (Array.isArray(data)) {
+        setNotifications(data)
+        setUnreadCount(data.filter((n: any) => !n.read).length)
+      } else if (data && Array.isArray(data.notifications)) {
+        setNotifications(data.notifications)
+        setUnreadCount(data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationsAPI.markAllAsRead()
+      setNotifications(notifications.map(n => ({ ...n, read: true })))
+      setUnreadCount(0)
+      toast.success('All notifications marked as read')
+    } catch (error) {
+      console.error('Error marking all read:', error)
+      toast.error('Failed to mark all as read')
+    }
+  }
+
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInMs = now.getTime() - date.getTime()
+    const diffInMins = Math.floor(diffInMs / 60000)
+    const diffInHours = Math.floor(diffInMs / 3600000)
+    const diffInDays = Math.floor(diffInMs / 86400000)
+
+    if (diffInMins < 1) return 'Just now'
+    if (diffInMins < 60) return `${diffInMins}m ago`
+    if (diffInHours < 24) return `${diffInHours}h ago`
+    if (diffInDays === 1) return 'Yesterday'
+    return `${diffInDays}d ago`
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'payment':
+      case 'payment_received':
+        return { name: 'payments', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' }
+      case 'user':
+      case 'user_registered':
+        return { name: 'person_add', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' }
+      case 'contract':
+      case 'contract_signed':
+        return { name: 'description', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' }
+      default:
+        return { name: 'notifications', color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-900/30' }
+    }
+  }
 
   return (
     <header className="sticky top-0 z-20 flex h-16 md:h-18 items-center justify-between whitespace-nowrap border-b border-border-light dark:border-border-dark bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-lg shadow-sm px-4 md:px-8">
@@ -129,10 +189,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
             className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-background-light dark:bg-background-dark text-text-light-secondary dark:text-dark-secondary hover:bg-border-light dark:hover:bg-border-dark hover:text-primary transition-all"
           >
             <Icon name="notifications" size={20} />
-            <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-card-light dark:ring-card-dark"></span>
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-card-light dark:ring-card-dark"></span>
+              </span>
+            )}
           </button>
 
           {/* Notifications Dropdown */}
@@ -140,40 +202,45 @@ export default function Header({ onMenuClick }: HeaderProps) {
             <div className="absolute right-0 mt-2 w-80 rounded-xl bg-card-light dark:bg-card-dark shadow-xl border border-border-light dark:border-border-dark overflow-hidden z-50">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark">
                 <h3 className="text-sm font-semibold text-text-light-primary dark:text-dark-primary">Notifications</h3>
-                <button className="text-xs font-medium text-primary hover:text-primary/80">
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-xs font-medium text-primary hover:text-primary/80"
+                >
                   Mark all read
                 </button>
               </div>
               <div className="max-h-96 overflow-y-auto">
-                {mockNotifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className={`flex items-start gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-background-dark cursor-pointer transition-colors ${notif.unread ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
-                      }`}
-                  >
-                    <div className={`p-2 rounded-lg ${notif.type === 'payment' ? 'bg-green-100 dark:bg-green-900/30' :
-                      notif.type === 'user' ? 'bg-blue-100 dark:bg-blue-900/30' :
-                        'bg-purple-100 dark:bg-purple-900/30'
-                      }`}>
-                      <Icon
-                        name={notif.type === 'payment' ? 'payments' : notif.type === 'user' ? 'person_add' : 'description'}
-                        size={18}
-                        className={
-                          notif.type === 'payment' ? 'text-green-600 dark:text-green-400' :
-                            notif.type === 'user' ? 'text-blue-600 dark:text-blue-400' :
-                              'text-purple-600 dark:text-purple-400'
-                        }
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-text-light-primary dark:text-dark-primary font-medium">{notif.message}</p>
-                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-0.5">{notif.time}</p>
-                    </div>
-                    {notif.unread && (
-                      <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
-                    )}
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => {
+                    const iconConfig = getNotificationIcon(notif.type)
+                    return (
+                      <div
+                        key={notif._id}
+                        className={`flex items-start gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-background-dark cursor-pointer transition-colors ${!notif.read ? 'bg-primary/5' : ''
+                          }`}
+                      >
+                        <div className={`p-2 rounded-lg ${iconConfig.bg}`}>
+                          <Icon
+                            name={iconConfig.name}
+                            size={18}
+                            className={iconConfig.color}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-text-light-primary dark:text-dark-primary font-medium">{notif.message || notif.title}</p>
+                          <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-0.5">{getRelativeTime(notif.createdAt)}</p>
+                        </div>
+                        {!notif.read && (
+                          <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
+                        )}
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="px-4 py-8 text-center">
+                    <p className="text-sm text-text-light-secondary dark:text-dark-secondary">No new notifications</p>
                   </div>
-                ))}
+                )}
               </div>
               <Link
                 to="/notifications"

@@ -108,6 +108,9 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/verifications", verificationRoutes);
 
+import broadcastRoutes from "./routes/broadcast.routes.js";
+app.use("/api/broadcast", broadcastRoutes);
+
 import settingsRoutes from "./routes/settings.routes.js";
 app.use("/api/settings", settingsRoutes);
 

@@ -10,7 +10,7 @@ interface User {
   email: string
   userType: 'client' | 'freelancer' | 'admin'
   profileImage?: string
-  phone?: string
+  phoneNumber?: string;
   location?: string
   createdAt: string
   isVerified?: boolean
@@ -838,7 +838,7 @@ export default function Users() {
                               </div>
                               <div>
                                 <p className="text-xs font-semibold text-text-light-secondary dark:text-dark-secondary uppercase mb-1">Phone</p>
-                                <p className="text-text-light-primary dark:text-dark-primary font-medium">{userDetails.user.phone || 'N/A'}</p>
+                                <p className="text-text-light-primary dark:text-dark-primary font-medium">{userDetails.user.phoneNumber || 'N/A'}</p>
                               </div>
                             </div>
                           </div>
