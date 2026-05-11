@@ -31,6 +31,8 @@ export default function Settings() {
     aiProvider: 'openai' as 'openai' | 'gemini',
     openaiApiKey: '',
     geminiApiKey: '',
+    // Payment Settings
+    jobPostingFee: 500,
   })
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export default function Settings() {
           aiProvider: ai.provider || 'openai',
           openaiApiKey: ai.openaiApiKey || '',
           geminiApiKey: ai.geminiApiKey || '',
+          jobPostingFee: response.data.payments?.jobPostingFee || 500,
         }));
       }
     } catch (error) {
@@ -102,6 +105,12 @@ export default function Settings() {
         };
         await settingsAPI.updateApiKeys(apiKeysData);
         toast.success('API keys saved successfully!');
+      } else if (activeTab === 'payments') {
+        const paymentsData = {
+          jobPostingFee: settings.jobPostingFee
+        };
+        await settingsAPI.updatePayments(paymentsData);
+        toast.success('Payment settings saved successfully!');
       } else {
         // Save other settings logic (placeholder)
         toast.success('Settings saved successfully!');
@@ -249,6 +258,22 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      Job Posting Fee (₦)
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.jobPostingFee}
+                      onChange={(e) => setSettings({ ...settings, jobPostingFee: Number(e.target.value) })}
+                      placeholder="500"
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                      Amount charged to clients for each job posting
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
                       Payment Gateway
                     </label>
                     <select className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary">
@@ -266,16 +291,6 @@ export default function Settings() {
                       <option>USD ($)</option>
                       <option>EUR (€)</option>
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
-                      Transaction Fee (%)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="2.5"
-                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
                   </div>
                 </div>
               </div>

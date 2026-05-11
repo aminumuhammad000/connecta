@@ -530,6 +530,10 @@ export const settingsAPI = {
     const { data } = await api.put('/api/settings/api-keys', apiKeysData)
     return data
   },
+  updatePayments: async (paymentsData: any) => {
+    const { data } = await api.put('/api/settings/payments', paymentsData)
+    return data
+  },
 }
 
 // ============================================
