@@ -319,8 +319,9 @@ export const verifyPayment = async (req: Request, res: Response) => {
     if (payment.paymentType === 'job_verification' && payment.jobId) {
       const job = await Job.findById(payment.jobId);
       if (job) {
+        job.status = 'active';
         job.paymentVerified = true;
-        job.paymentStatus = 'escrow'; // Or released/verified depending on flow
+        job.paymentStatus = 'verified'; // Update to 'verified' since payment is verified
         await job.save();
 
         // Notify Matched Freelancers

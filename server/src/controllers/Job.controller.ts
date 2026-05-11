@@ -138,7 +138,19 @@ export const getJobById = async (req: Request, res: Response) => {
 export const createJob = async (req: Request, res: Response) => {
   try {
     const clientId = (req as any).user?._id;
-    const { title, description, budget, duration, category, skills } = req.body;
+    const { 
+      title, 
+      description, 
+      budget, 
+      duration, 
+      category, 
+      skills, 
+      jobType, 
+      locationType, 
+      budgetType, 
+      requirements,
+      status 
+    } = req.body;
 
     const newJob = await Job.create({
       title,
@@ -148,7 +160,11 @@ export const createJob = async (req: Request, res: Response) => {
       category,
       skills,
       clientId,
-      status: "active" // Defaulting to active for simple flow
+      jobType: jobType || 'freelance',
+      locationType: locationType || 'remote',
+      budgetType: budgetType || 'fixed',
+      requirements: requirements || [],
+      status: status || "active" 
     });
 
     // Notify Matched Freelancers
