@@ -137,7 +137,7 @@ class VTStackService {
 
     try {
       const response = await axios.post(
-        'https://api.vtstack.com.ng/api/payout/secure/request',
+        'https://api.vtstack.com.ng/api/v1/payout/secure/request',
         bodyString,  // send pre-serialised string so signature matches exactly
         {
           headers: {
