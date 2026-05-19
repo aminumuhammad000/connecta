@@ -21,6 +21,7 @@ const JobSchema = new Schema({
     requirements: [{ type: String }],
     isExternal: { type: Boolean, default: false },
     company: { type: String },
+    location: { type: String, default: 'Remote' },
 }, { timestamps: true });
 export const Job = mongoose.model("Job", JobSchema);
 export default Job;

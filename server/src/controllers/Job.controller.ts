@@ -149,7 +149,10 @@ export const createJob = async (req: Request, res: Response) => {
       locationType, 
       budgetType, 
       requirements,
-      status 
+      status,
+      isExternal,
+      company,
+      location
     } = req.body;
 
     const newJob = await Job.create({
@@ -164,7 +167,10 @@ export const createJob = async (req: Request, res: Response) => {
       locationType: locationType || 'remote',
       budgetType: budgetType || 'fixed',
       requirements: requirements || [],
-      status: status || "active" 
+      status: status || "active",
+      isExternal: isExternal || false,
+      company: company || '',
+      location: location || 'Remote'
     });
 
     // Notify Matched Freelancers
@@ -176,6 +182,35 @@ export const createJob = async (req: Request, res: Response) => {
     }
 
     res.status(201).json({ success: true, data: newJob });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+// Bulk Create Jobs
+export const bulkCreateJobs = async (req: Request, res: Response) => {
+  try {
+    const clientId = (req as any).user?._id;
+    const { jobs } = req.body;
+
+    if (!Array.isArray(jobs)) {
+      return res.status(400).json({ success: false, message: "Jobs must be an array" });
+    }
+
+    const jobsToCreate = jobs.map((job: any) => ({
+      ...job,
+      clientId: job.clientId || clientId,
+      status: job.status || "active",
+      isExternal: job.isExternal || false,
+    }));
+
+    const createdJobs = await Job.insertMany(jobsToCreate);
+
+    res.status(201).json({ 
+      success: true, 
+      message: `${createdJobs.length} jobs created successfully`,
+      data: createdJobs 
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: "Server error", error: err.message });
   }

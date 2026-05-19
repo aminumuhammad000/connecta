@@ -53,6 +53,13 @@ import {
   MdAccountBalanceWallet,
   MdVerifiedUser,
   MdSupportAgent,
+  MdUploadFile,
+  MdCloudUpload,
+  MdFileDownloadDone,
+  MdCancel,
+  MdLocationOn,
+  MdLanguage,
+  MdWorkOff
 } from 'react-icons/md'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; size?: number; color?: string }>> = {
@@ -109,6 +116,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string; size?: n
   account_balance_wallet: MdAccountBalanceWallet,
   verified_user: MdVerifiedUser,
   support_agent: MdSupportAgent,
+  upload_file: MdUploadFile,
+  cloud_upload: MdCloudUpload,
+  file_download_done: MdFileDownloadDone,
+  cancel: MdCancel,
+  location_on: MdLocationOn,
+  language: MdLanguage,
+  work_off: MdWorkOff
 }
 
 export default function Icon({ name, className, size, color }: { name: string; className?: string; size?: number; color?: string }) {

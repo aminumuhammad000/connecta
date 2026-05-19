@@ -219,6 +219,10 @@ export const jobsAPI = {
     const { data } = await api.post('/api/jobs', jobData)
     return data
   },
+  bulkCreate: async (jobs: any[]) => {
+    const { data } = await api.post('/api/jobs/bulk', { jobs })
+    return data
+  },
   update: async (id: string, jobData: any) => {
     const { data } = await api.put(`/api/jobs/${id}`, jobData)
     return data

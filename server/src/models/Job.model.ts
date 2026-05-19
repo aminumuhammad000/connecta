@@ -18,6 +18,7 @@ export interface IJob extends Document {
   requirements?: string[];
   isExternal?: boolean;
   company?: string;
+  location?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +45,7 @@ const JobSchema: Schema<IJob> = new Schema(
     requirements: [{ type: String }],
     isExternal: { type: Boolean, default: false },
     company: { type: String },
+    location: { type: String, default: 'Remote' },
   },
   { timestamps: true }
 );

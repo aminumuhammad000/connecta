@@ -55,6 +55,32 @@ export default function Jobs() {
   const [clientProfile, setClientProfile] = useState<any>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
 
+  const [createModal, setCreateModal] = useState({
+    isOpen: false,
+    loading: false
+  })
+
+  const [importModal, setImportModal] = useState({
+    isOpen: false,
+    loading: false,
+    file: null as File | null,
+    preview: [] as any[]
+  })
+
+  const [newJob, setNewJob] = useState({
+    title: '',
+    company: '',
+    location: '',
+    category: '',
+    budget: '',
+    duration: '',
+    jobType: 'freelance',
+    description: '',
+    skills: '',
+    isExternal: true,
+    applyUrl: ''
+  })
+
   useEffect(() => {
     fetchJobs()
   }, [filterType, statusFilter, sortOrder])
@@ -150,6 +176,134 @@ export default function Jobs() {
     })
   }
 
+  const handleCreateJob = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      setCreateModal({ ...createModal, loading: true })
+      const jobData = {
+        ...newJob,
+        skills: newJob.skills.split(',').map(s => s.trim()).filter(s => s),
+        budget: parseFloat(newJob.budget) || 0,
+        duration: parseInt(newJob.duration) || 1,
+        status: 'active'
+      }
+
+      const response: any = await jobsAPI.create(jobData)
+      if (response.success) {
+        toast.success('Job created successfully')
+        setCreateModal({ isOpen: false, loading: false })
+        setNewJob({
+          title: '',
+          company: '',
+          location: '',
+          category: '',
+          budget: '',
+          duration: '',
+          jobType: 'freelance',
+          description: '',
+          skills: '',
+          isExternal: true,
+          applyUrl: ''
+        })
+        fetchJobs()
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create job')
+    } finally {
+      setCreateModal({ ...createModal, loading: false })
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      toast.error('Please upload a CSV file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      parseCSV(text)
+    }
+    reader.readAsText(file)
+    setImportModal({ ...importModal, file })
+  }
+
+  const parseCSV = (text: string) => {
+    const lines = text.split('\n')
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+    
+    const results = lines.slice(1).filter(line => line.trim()).map(line => {
+      // Simple CSV parser that handles commas inside quotes (basic version)
+      const values: string[] = []
+      let current = ''
+      let inQuotes = false
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        if (char === '"') {
+          inQuotes = !inQuotes
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      values.push(current.trim())
+
+      const job: any = {}
+      headers.forEach((header, index) => {
+        let val = values[index] || ''
+        // Remove quotes if present
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.substring(1, val.length - 1)
+        }
+        
+        if (header === 'skills') {
+          job[header] = val.split(';').map(s => s.trim()).filter(s => s)
+        } else if (header === 'budget') {
+          job[header] = parseFloat(val) || 0
+        } else if (header === 'duration') {
+          job[header] = parseInt(val) || 1
+        } else if (header === 'isexternal') {
+          job['isExternal'] = val.toLowerCase() === 'true' || val === '1'
+        } else {
+          job[header] = val
+        }
+      })
+      
+      // Defaults if missing
+      job.isExternal = job.isExternal !== undefined ? job.isExternal : true
+      if (!job.status) job.status = 'active'
+      
+      return job
+    })
+
+    setImportModal(prev => ({ ...prev, preview: results }))
+  }
+
+  const handleBulkImport = async () => {
+    if (importModal.preview.length === 0) return
+
+    try {
+      setImportModal(prev => ({ ...prev, loading: true }))
+      const response: any = await jobsAPI.bulkCreate(importModal.preview)
+      if (response.success) {
+        toast.success(response.message || `${importModal.preview.length} jobs imported successfully`)
+        setImportModal({ isOpen: false, loading: false, file: null, preview: [] })
+        fetchJobs()
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to import jobs')
+    } finally {
+      setImportModal(prev => ({ ...prev, loading: false }))
+    }
+  }
+
   const filteredJobs = jobs.filter(job =>
     (job.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (job.company || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -161,14 +315,32 @@ export default function Jobs() {
   return (
     <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-light-primary dark:text-dark-primary">
-            Job Management
-          </h1>
-          <p className="text-text-light-secondary dark:text-dark-secondary mt-1">
-            Manage all jobs and external gigs on the platform
-          </p>
-        </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-text-light-primary dark:text-dark-primary">
+                Job Management
+              </h1>
+              <p className="text-text-light-secondary dark:text-dark-secondary mt-1">
+                Manage all jobs and external gigs on the platform
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setImportModal({ ...importModal, isOpen: true })}
+                className="flex items-center gap-2 px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg text-text-light-primary dark:text-dark-primary hover:bg-border-light/10 transition-colors"
+              >
+                <Icon name="upload_file" size={20} />
+                <span>Import CSV</span>
+              </button>
+              <button
+                onClick={() => setCreateModal({ ...createModal, isOpen: true })}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
+              >
+                <Icon name="add" size={20} />
+                <span>Post Job</span>
+              </button>
+            </div>
+          </div>
 
         <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
           <div className="p-4 sm:p-6 border-b border-border-light dark:border-border-dark">
@@ -556,6 +728,265 @@ export default function Jobs() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Delete Job
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post Job Modal */}
+      {createModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 max-w-3xl w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-text-light-primary dark:text-dark-primary">Post New Job</h3>
+              <button onClick={() => setCreateModal({ ...createModal, isOpen: false })} className="text-text-light-secondary hover:text-text-light-primary">
+                <Icon name="close" size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateJob} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Job Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={newJob.title}
+                    onChange={e => setNewJob({ ...newJob, title: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                    placeholder="e.g. Frontend Developer"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Company</label>
+                  <input
+                    type="text"
+                    required
+                    value={newJob.company}
+                    onChange={e => setNewJob({ ...newJob, company: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                    placeholder="e.g. Connecta Inc."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Location</label>
+                  <input
+                    type="text"
+                    required
+                    value={newJob.location}
+                    onChange={e => setNewJob({ ...newJob, location: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                    placeholder="e.g. Lagos, Nigeria"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Category</label>
+                  <select
+                    required
+                    value={newJob.category}
+                    onChange={e => setNewJob({ ...newJob, category: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="development">Development</option>
+                    <option value="design">Design</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="writing">Writing</option>
+                    <option value="data">Data Science</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Budget (₦)</label>
+                  <input
+                    type="number"
+                    required
+                    value={newJob.budget}
+                    onChange={e => setNewJob({ ...newJob, budget: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                    placeholder="50000"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Duration (Days)</label>
+                  <input
+                    type="number"
+                    required
+                    value={newJob.duration}
+                    onChange={e => setNewJob({ ...newJob, duration: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                    placeholder="7"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Job Type</label>
+                  <select
+                    value={newJob.jobType}
+                    onChange={e => setNewJob({ ...newJob, jobType: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="freelance">Freelance</option>
+                    <option value="full-time">Full-time</option>
+                    <option value="part-time">Part-time</option>
+                    <option value="contract">Contract</option>
+                  </select>
+                </div>
+                <div className="space-y-2 flex items-center pt-8">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newJob.isExternal}
+                      onChange={e => setNewJob({ ...newJob, isExternal: e.target.checked })}
+                      className="w-5 h-5 rounded border-border-light text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Is External Job?</span>
+                  </label>
+                </div>
+              </div>
+
+              {newJob.isExternal && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Application URL</label>
+                  <input
+                    type="url"
+                    required={newJob.isExternal}
+                    value={newJob.applyUrl}
+                    onChange={e => setNewJob({ ...newJob, applyUrl: e.target.value })}
+                    className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                    placeholder="https://example.com/apply"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Skills (comma separated)</label>
+                <input
+                  type="text"
+                  value={newJob.skills}
+                  onChange={e => setNewJob({ ...newJob, skills: e.target.value })}
+                  className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                  placeholder="React, TypeScript, Tailwind"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-light-secondary dark:text-dark-secondary">Description</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={newJob.description}
+                  onChange={e => setNewJob({ ...newJob, description: e.target.value })}
+                  className="w-full px-4 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:ring-2 focus:ring-primary/50"
+                  placeholder="Enter job description..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setCreateModal({ ...createModal, isOpen: false })}
+                  className="px-4 py-2 text-text-light-secondary hover:bg-background-light dark:hover:bg-background-dark rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createModal.loading}
+                  className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2"
+                >
+                  {createModal.loading ? (
+                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <Icon name="send" size={20} />
+                      Post Job
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Import CSV Modal */}
+      {importModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-text-light-primary dark:text-dark-primary">Import Jobs via CSV</h3>
+              <button onClick={() => setImportModal({ ...importModal, isOpen: false })} className="text-text-light-secondary hover:text-text-light-primary">
+                <Icon name="close" size={24} />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-4">
+                Upload a CSV file with the following headers: <code className="bg-background-light dark:bg-background-dark px-1 rounded">title, company, description, budget, category, duration, location, skills, isExternal, applyUrl</code>
+              </p>
+              
+              <div className="flex items-center justify-center w-full">
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border-light dark:border-border-dark rounded-xl cursor-pointer hover:bg-background-light dark:hover:bg-background-dark/30 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Icon name="cloud_upload" size={40} className="text-primary mb-2" />
+                    <p className="mb-2 text-sm text-text-light-secondary dark:text-dark-secondary">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-text-light-secondary/60">CSV files only</p>
+                  </div>
+                  <input type="file" className="hidden" accept=".csv" onChange={handleFileChange} />
+                </label>
+              </div>
+            </div>
+
+            {importModal.preview.length > 0 && (
+              <div className="flex-1 overflow-hidden flex flex-col">
+                <h4 className="font-semibold mb-2">Preview ({importModal.preview.length} jobs)</h4>
+                <div className="flex-1 overflow-auto border border-border-light dark:border-border-dark rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-background-light dark:bg-background-dark sticky top-0">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Title</th>
+                        <th className="px-4 py-2 text-left">Company</th>
+                        <th className="px-4 py-2 text-left">Category</th>
+                        <th className="px-4 py-2 text-left">Budget</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-light dark:divide-border-dark">
+                      {importModal.preview.map((job, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-2 truncate max-w-[200px]">{job.title}</td>
+                          <td className="px-4 py-2">{job.company}</td>
+                          <td className="px-4 py-2">{job.category}</td>
+                          <td className="px-4 py-2">₦{job.budget}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-6 border-t border-border-light dark:border-border-dark mt-4">
+              <button
+                onClick={() => setImportModal({ ...importModal, isOpen: false })}
+                className="px-4 py-2 text-text-light-secondary hover:bg-background-light dark:hover:bg-background-dark rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkImport}
+                disabled={importModal.loading || importModal.preview.length === 0}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center gap-2"
+              >
+                {importModal.loading ? (
+                  <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <Icon name="file_download_done" size={20} />
+                    Import {importModal.preview.length} Jobs
+                  </>
+                )}
               </button>
             </div>
           </div>

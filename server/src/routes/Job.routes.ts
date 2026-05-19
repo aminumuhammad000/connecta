@@ -5,6 +5,7 @@ import {
   getAllJobsAdmin,
   getJobById,
   createJob,
+  bulkCreateJobs,
   updateJob,
   deleteJob,
   getClientJobs,
@@ -18,6 +19,9 @@ const router = express.Router();
 
 // Admin: Get all jobs regardless of status (must be BEFORE /:id)
 router.get("/admin/all", authenticate, isAdmin, getAllJobsAdmin);
+
+// Admin: Bulk create jobs
+router.post("/bulk", authenticate, isAdmin, bulkCreateJobs);
 
 // Get jobs for the current client (protected)
 router.get("/client/my-jobs", authenticate, getClientJobs);

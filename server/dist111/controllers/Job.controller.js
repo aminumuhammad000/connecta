@@ -125,7 +125,7 @@ export const getJobById = async (req, res) => {
 export const createJob = async (req, res) => {
     try {
         const clientId = req.user?._id;
-        const { title, description, budget, duration, category, skills, jobType, locationType, budgetType, requirements, status } = req.body;
+        const { title, description, budget, duration, category, skills, jobType, locationType, budgetType, requirements, status, isExternal, company, location } = req.body;
         const newJob = await Job.create({
             title,
             description,
@@ -138,7 +138,10 @@ export const createJob = async (req, res) => {
             locationType: locationType || 'remote',
             budgetType: budgetType || 'fixed',
             requirements: requirements || [],
-            status: status || "active"
+            status: status || "active",
+            isExternal: isExternal || false,
+            company: company || '',
+            location: location || 'Remote'
         });
         // Notify Matched Freelancers
         try {
@@ -149,6 +152,31 @@ export const createJob = async (req, res) => {
             console.error('Failed to notify matched freelancers:', err);
         }
         res.status(201).json({ success: true, data: newJob });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
+    }
+};
+// Bulk Create Jobs
+export const bulkCreateJobs = async (req, res) => {
+    try {
+        const clientId = req.user?._id;
+        const { jobs } = req.body;
+        if (!Array.isArray(jobs)) {
+            return res.status(400).json({ success: false, message: "Jobs must be an array" });
+        }
+        const jobsToCreate = jobs.map((job) => ({
+            ...job,
+            clientId: job.clientId || clientId,
+            status: job.status || "active",
+            isExternal: job.isExternal || false,
+        }));
+        const createdJobs = await Job.insertMany(jobsToCreate);
+        res.status(201).json({
+            success: true,
+            message: `${createdJobs.length} jobs created successfully`,
+            data: createdJobs
+        });
     }
     catch (err) {
         res.status(500).json({ success: false, message: "Server error", error: err.message });
