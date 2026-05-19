@@ -6,6 +6,12 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "notification": {
+      "androidMode": "default",
+      "androidCollapsedTitle": "Connecta",
+      "color": "#1e5faf",
+      "iosDisplayInForeground": true
+    },
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
@@ -25,7 +31,13 @@
       },
       "package": "com.connecta.app",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 6
+      "versionCode": 6,
+      "permissions": [
+        "NOTIFICATIONS",
+        "USE_FULL_SCREEN_INTENT",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

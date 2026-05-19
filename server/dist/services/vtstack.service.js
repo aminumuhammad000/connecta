@@ -114,7 +114,7 @@ class VTStackService {
         console.log(`🔐 [VTStack Payout] Initiating secure payout: ₦${payload.amount / 100} → ${payload.accountNumber} (${payload.bankCode})`);
         console.log(`🔑 [VTStack Payout] Idempotency Key: ${idempotencyKey}`);
         try {
-            const response = await axios.post('https://api.vtstack.com.ng/api/payout/secure/request', bodyString, // send pre-serialised string so signature matches exactly
+            const response = await axios.post('https://api.vtstack.com.ng/api/v1/payout/secure/request', bodyString, // send pre-serialised string so signature matches exactly
             {
                 headers: {
                     'Content-Type': 'application/json',

@@ -76,6 +76,9 @@ class NotificationService {
                 title,
                 body,
                 data: data || {},
+                priority: 'high', // ensures delivery even when device was off
+                channelId: 'default', // matches the Android notification channel
+                badge: 1,
             };
             const response = await axios.post('https://exp.host/--/api/v2/push/send', message, {
                 headers: {

@@ -45,24 +45,29 @@ export async function configureNotifications() {
   }
 
   try {
-    // Foreground presentation options
+    // Foreground presentation options — show alert, play sound, set badge
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
         shouldShowAlert: true,
-        shouldPlaySound: false,
-        shouldSetBadge: false,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
         shouldShowBanner: true,
         shouldShowList: true,
       }),
     });
 
     if (Platform.OS === 'android') {
+      // Default channel — HIGH importance so notifications appear as popup heads-up
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Default',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: undefined,
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'default',               // system default notification sound
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',
+        enableVibrate: true,
+        enableLights: true,
+        showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       });
     }
   } catch (error) {
@@ -102,7 +107,12 @@ export async function registerForPushNotificationsAsync(): Promise<PushRegistrat
       return { token: null, reason: 'expo-go' };
     }
 
-    const token = await Notifications.getExpoPushTokenAsync();
+    // Get the Expo project ID from app config
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const token = await Notifications.getExpoPushTokenAsync({
+      projectId: projectId || undefined,
+    });
+    console.log('[Notifications] Push token obtained:', token.data);
     return { token: token.data };
   } catch (error) {
     console.warn('[Notifications] Failed to fetch Expo push token', error);
@@ -124,7 +134,8 @@ export async function scheduleLocalNotification(title: string, body: string) {
       content: {
         title,
         body,
-        // On Android, ensure we post to the HIGH-importance default channel
+        sound: 'default',
+        priority: Notifications.AndroidNotificationPriority?.MAX || 'max',
       },
       trigger: null, // immediate
     });
