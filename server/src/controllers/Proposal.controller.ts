@@ -7,6 +7,7 @@ import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Transaction from '../models/Transaction.model.js';
 import { createNotification } from './notification.controller.js';
+import { createFeedPost } from '../services/feed.service.js';
 
 // Submit a proposal
 export const createProposal = async (req: Request, res: Response) => {
@@ -332,6 +333,23 @@ export const approveProposal = async (req: Request, res: Response) => {
       relatedType: 'payment',
       priority: 'high',
     });
+
+    // Publish to Feed
+    try {
+      const freelancerUser = await User.findById(proposal.freelancerId).select('firstName lastName').lean();
+      const freelancerName = freelancerUser ? `${(freelancerUser as any).firstName || ''} ${(freelancerUser as any).lastName || ''}`.trim() : 'a freelancer';
+      createFeedPost({
+        type: 'proposal_accepted',
+        emoji: '🤝',
+        title: `${freelancerName} got hired!`,
+        body: `${freelancerName} was just hired for the project "${job.title}". Congratulations! 🎉`,
+        relatedType: 'project',
+        relatedId: project._id?.toString(),
+        targetAudience: 'all',
+      });
+    } catch (feedErr) {
+      console.warn('[Proposal] Feed post failed:', feedErr);
+    }
 
     res.status(200).json({ 
       success: true, 

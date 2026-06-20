@@ -10,12 +10,13 @@ import { useThemeColors } from '../theme/theme';
 
 interface JobCompletionFlyerProps {
   visible: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  inline?: boolean;
   projectData: {
     title: string;
     clientName: string;
-    amount: number;
-    currency: string;
+    amount?: number | string;
+    currency?: string;
     freelancerName: string;
     freelancerAvatar?: string;
     completedDate: string;
@@ -25,7 +26,7 @@ interface JobCompletionFlyerProps {
 
 const { width, height } = Dimensions.get('window');
 
-export default function JobCompletionFlyer({ visible, onClose, projectData }: JobCompletionFlyerProps) {
+export default function JobCompletionFlyer({ visible, onClose, inline = false, projectData }: JobCompletionFlyerProps) {
   const viewShotRef = useRef<any>(null);
   const [capturing, setCapturing] = React.useState(false);
   const c = useThemeColors();
@@ -46,6 +47,122 @@ export default function JobCompletionFlyer({ visible, onClose, projectData }: Jo
     }
   };
 
+  const FlyerContent = (
+    <LinearGradient
+      colors={['#FD6730', '#FF8C00']}
+      style={[styles.background, inline && styles.inlineBackground]}
+    >
+      <SafeAreaView style={{ flex: 1, padding: inline ? 0 : undefined }} edges={inline ? [] : ['top', 'bottom']}>
+        {/* Decorative spheres */}
+        <View style={[styles.sphere, { top: -20, right: -20, width: 150, height: 150, opacity: 0.3 }]} />
+        <View style={[styles.sphere, { bottom: 100, left: -40, width: 200, height: 200, opacity: 0.2 }]} />
+
+        <View style={styles.innerContent}>
+          <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: inline ? 0 : 10 }}>
+            <View style={styles.topLogo}>
+              <Image
+                source={require('../../assets/app-icon-fixed.jpg')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+              <Text style={styles.logoText}>Connecta</Text>
+            </View>
+            {!inline && onClose && (
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+                <Ionicons name="close" size={28} color="white" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <Text style={[styles.title, inline && { fontSize: 18, marginTop: -5 }]}>PROJECT{'\n'}COMPLETED</Text>
+
+          <View style={[styles.profileSection, inline && { marginVertical: 10 }]}>
+            <View style={styles.avatarBorder}>
+              <Image
+                source={projectData.freelancerAvatar ? { uri: projectData.freelancerAvatar } : { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(projectData.freelancerName)}&background=random` }}
+                style={[styles.avatar, inline && { width: 60, height: 60, borderRadius: 30 }]}
+              />
+            </View>
+            <Text style={styles.freelancerName}>{projectData.freelancerName}</Text>
+            <Text style={styles.label}>{projectData.category || 'Expert Freelancer'}</Text>
+          </View>
+
+          <BlurView intensity={20} tint="light" style={styles.glassCard}>
+            <View style={[styles.glassInner, inline && { padding: 15 }]}>
+              <View style={styles.detailRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailLabel}>JOB TITLE</Text>
+                  <Text style={[styles.detailValue, inline && { fontSize: 14 }]} numberOfLines={1}>{projectData.title}</Text>
+                </View>
+              </View>
+
+              {!inline && projectData.clientName && (
+                <View style={styles.detailRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.detailLabel}>CLIENT</Text>
+                    <Text style={styles.detailValue} numberOfLines={1}>{projectData.clientName}</Text>
+                  </View>
+                </View>
+              )}
+
+              {!inline && projectData.amount && (
+                <View style={styles.earningsSection}>
+                  <Text style={styles.detailLabel}>EARNINGS AMOUNT</Text>
+                  <View style={styles.earningsRow}>
+                    <Text style={styles.earningsValue}>{projectData.currency}{projectData.amount.toLocaleString()}</Text>
+                    <View style={styles.trendIcon}>
+                      <MaterialIcons name="trending-up" size={20} color="white" />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.statsContainer}>
+                <View style={styles.statItem}>
+                  <MaterialIcons name="verified" size={16} color="#FFD700" />
+                  <Text style={styles.statLabel}>STATUS: Success</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <MaterialIcons name="event-available" size={16} color="#FFD700" />
+                  <Text style={styles.statLabel}>{projectData.completedDate}</Text>
+                </View>
+              </View>
+            </View>
+          </BlurView>
+
+          <View style={[styles.footer, inline && { marginTop: 10, paddingBottom: 10 }]}>
+            <Text style={styles.tagline}>Empowering African Freelancers</Text>
+            <Text style={styles.website}>www.myconnecta.ng</Text>
+
+            <TouchableOpacity
+              style={[styles.shareBtn, { backgroundColor: 'white' }, inline && { height: 36, paddingHorizontal: 16, marginTop: 12 }]}
+              onPress={handleShare}
+              disabled={capturing}
+            >
+              {capturing ? (
+                <ActivityIndicator color="#FD6730" size="small" />
+              ) : (
+                <>
+                  <Ionicons name="share-social" size={inline ? 16 : 20} color="#FD6730" />
+                  <Text style={[styles.shareBtnText, { color: '#FD6730' }, inline && { fontSize: 12 }]}>Share Achievement</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
+  );
+
+  if (inline) {
+    if (!visible) return null;
+    return (
+      <View style={styles.inlineWrapper}>
+        {FlyerContent}
+      </View>
+    );
+  }
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -54,104 +171,7 @@ export default function JobCompletionFlyer({ visible, onClose, projectData }: Jo
           options={{ format: 'png', quality: 1.0 }}
           style={styles.flyerContainer}
         >
-          <LinearGradient
-            colors={['#FD6730', '#FF8C00']}
-            style={styles.background}
-          >
-            <SafeAreaView style={{ flex: 1 }}>
-              {/* Decorative spheres */}
-              <View style={[styles.sphere, { top: -20, right: -20, width: 150, height: 150, opacity: 0.3 }]} />
-              <View style={[styles.sphere, { bottom: 100, left: -40, width: 200, height: 200, opacity: 0.2 }]} />
-
-              <View style={styles.innerContent}>
-                <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={styles.topLogo}>
-                    <Image
-                      source={require('../../assets/app-icon-fixed.jpg')}
-                      style={styles.logo}
-                      resizeMode="contain"
-                    />
-                    <Text style={styles.logoText}>Connecta</Text>
-                  </View>
-                  <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                    <Ionicons name="close" size={28} color="white" />
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.title}>PROJECT{'\n'}COMPLETED</Text>
-
-                <View style={styles.profileSection}>
-                  <View style={styles.avatarBorder}>
-                    <Image
-                      source={projectData.freelancerAvatar ? { uri: projectData.freelancerAvatar } : { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(projectData.freelancerName)}&background=random` }}
-                      style={styles.avatar}
-                    />
-                  </View>
-                  <Text style={styles.freelancerName}>{projectData.freelancerName}</Text>
-                  <Text style={styles.label}>{projectData.category || 'Expert Freelancer'}</Text>
-                </View>
-
-                <BlurView intensity={20} tint="light" style={styles.glassCard}>
-                  <View style={styles.glassInner}>
-                    <View style={styles.detailRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.detailLabel}>JOB TITLE</Text>
-                        <Text style={styles.detailValue} numberOfLines={1}>{projectData.title}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.detailLabel}>CLIENT</Text>
-                        <Text style={styles.detailValue} numberOfLines={1}>{projectData.clientName}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.earningsSection}>
-                      <Text style={styles.detailLabel}>EARNINGS AMOUNT</Text>
-                      <View style={styles.earningsRow}>
-                        <Text style={styles.earningsValue}>{projectData.currency}{projectData.amount.toLocaleString()}</Text>
-                        <View style={styles.trendIcon}>
-                          <MaterialIcons name="trending-up" size={20} color="white" />
-                        </View>
-                      </View>
-                    </View>
-
-                    <View style={styles.statsContainer}>
-                      <View style={styles.statItem}>
-                        <MaterialIcons name="verified" size={16} color="#FFD700" />
-                        <Text style={styles.statLabel}>STATUS: Success</Text>
-                      </View>
-                      <View style={styles.statItem}>
-                        <MaterialIcons name="event-available" size={16} color="#FFD700" />
-                        <Text style={styles.statLabel}>DATE: {projectData.completedDate}</Text>
-                      </View>
-                    </View>
-                  </View>
-                </BlurView>
-
-                <View style={styles.footer}>
-                  <Text style={styles.tagline}>Empowering African Freelancers</Text>
-                  <Text style={styles.website}>www.myconnecta.ng</Text>
-
-                  <TouchableOpacity
-                    style={[styles.shareBtn, { backgroundColor: 'white' }]}
-                    onPress={handleShare}
-                    disabled={capturing}
-                  >
-                    {capturing ? (
-                      <ActivityIndicator color="#FD6730" />
-                    ) : (
-                      <>
-                        <Ionicons name="share-social" size={20} color="#FD6730" />
-                        <Text style={[styles.shareBtnText, { color: '#FD6730' }]}>Share Achievement</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </SafeAreaView>
-          </LinearGradient>
+          {FlyerContent}
         </ViewShot>
       </View>
     </Modal>
@@ -170,6 +190,16 @@ const styles = StyleSheet.create({
   },
   flyerContainer: {
     flex: 1,
+  },
+  inlineWrapper: {
+    width: '100%',
+    aspectRatio: 3 / 4,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginVertical: 12,
+  },
+  inlineBackground: {
+    padding: 16,
   },
   background: {
     flex: 1,

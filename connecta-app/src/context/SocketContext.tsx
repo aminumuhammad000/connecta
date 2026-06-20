@@ -9,8 +9,10 @@ interface SocketContextType {
     onlineUsers: string[];
     unreadCount: number;
     unreadNotificationCount: number;
+    unreadFeedCount: number;
     refreshUnreadCount: () => Promise<void>;
     refreshUnreadNotificationCount: () => Promise<void>;
+    clearUnreadFeedCount: () => void;
 }
 
 import { useInAppAlert } from '../components/InAppAlert';
@@ -25,6 +27,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+    const [unreadFeedCount, setUnreadFeedCount] = useState(0);
 
     // Function to fetch unread message count
     const refreshUnreadCount = async () => {
@@ -51,7 +54,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         }
     };
-
+    // Function to clear feed badge
+    const clearUnreadFeedCount = () => {
+        setUnreadFeedCount(0);
+    };
     useEffect(() => {
         if (!user || !token || !API_BASE_URL) {
             if (!API_BASE_URL && user && token) {
@@ -136,6 +142,13 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             refreshUnreadNotificationCount();
         });
 
+        // Feed events
+        socketInstance.on('feed:new_post', () => {
+            // Only increment if feed is not currently active screen
+            // Will handle the logic in the badge component
+            setUnreadFeedCount(prev => prev + 1);
+        });
+
         setSocket(socketInstance);
 
         return () => {
@@ -158,8 +171,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             onlineUsers,
             unreadCount,
             unreadNotificationCount,
+            unreadFeedCount,
             refreshUnreadCount,
-            refreshUnreadNotificationCount
+            refreshUnreadNotificationCount,
+            clearUnreadFeedCount
         }}>
             {children}
         </SocketContext.Provider>

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Project from '../models/Project.model.js';
+import { createFeedPost } from '../services/feed.service.js';
 
 // Get all projects for a freelancer
 export const getFreelancerProjects = async (req: Request, res: Response) => {
@@ -273,6 +274,33 @@ export const updateProjectStatus = async (req: Request, res: Response) => {
         success: false,
         message: 'Project not found',
       });
+    }
+
+    // Auto-generate Job Completion Flyer for Feed
+    if (status === 'completed') {
+      try {
+        await project.populate('freelancerId', 'firstName lastName profileImage');
+        const freelancer: any = project.freelancerId;
+        
+        // Mocking a beautiful flyer image generator using a cinematic tech workspace image
+        const flyerImage = 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop';
+        
+        createFeedPost({
+          type: 'project_completed',
+          actor: freelancer._id,
+          actorName: `${freelancer.firstName} ${freelancer.lastName}`,
+          actorAvatar: freelancer.profileImage,
+          title: `Project Success: ${project.title}`,
+          body: `${freelancer.firstName} perfectly executed and delivered the project ahead of expectations.`,
+          emoji: '🏆',
+          imageUrl: flyerImage,
+          relatedType: 'project',
+          relatedId: project._id,
+          targetAudience: 'all'
+        }).catch(err => console.error("Feed error:", err)); // Non-blocking
+      } catch (e) {
+        console.error("Failed to post completion flyer:", e);
+      }
     }
 
     res.status(200).json({
@@ -566,6 +594,32 @@ export const acceptProjectSubmission = async (req: Request, res: Response) => {
     } catch (paymentError) {
       console.error('Error auto-releasing payment:', paymentError);
       // Don't fail the whole request — project status WAS updated
+    }
+
+    // 🎉 Publish project completion to Feed
+    try {
+      const User = (await import('../models/user.model.js')).default;
+      const freelancerUser = await User.findById(project.freelancerId).select('firstName lastName profileImage').lean();
+      if (freelancerUser) {
+        const freelancerName = `${(freelancerUser as any).firstName || ''} ${(freelancerUser as any).lastName || ''}`.trim();
+        createFeedPost({
+          type: 'project_completed',
+          actor: {
+            _id: (project.freelancerId as any).toString(),
+            firstName: (freelancerUser as any).firstName,
+            lastName: (freelancerUser as any).lastName,
+            profileImage: (freelancerUser as any).profileImage,
+          },
+          emoji: '🎉',
+          title: `${freelancerName} completed a project!`,
+          body: `${freelancerName} just successfully completed "${project.title}" on Connecta. Another great job delivered! 💪`,
+          relatedType: 'project',
+          relatedId: project._id?.toString(),
+          targetAudience: 'all',
+        });
+      }
+    } catch (feedErr) {
+      console.warn('[Project] Feed post failed:', feedErr);
     }
 
     res.status(200).json({

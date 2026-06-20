@@ -166,7 +166,7 @@ const MobileApp = () => {
                             </div>
                             <div>
                                 <div className="text-xs text-gray-400 font-bold uppercase">Downloads</div>
-                                <div className="text-2xl font-black text-gray-900">50k+</div>
+                                <div className="text-2xl font-black text-gray-900">50+</div>
                             </div>
                         </motion.div>
                     </motion.div>

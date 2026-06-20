@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
 import ClientDashboardScreen from '../screens/ClientDashboardScreen';
+import FeedScreen from '../screens/FeedScreen';
 import ClientJobsScreen from '../screens/ClientJobsScreen';
 import ClientProfileScreen from '../screens/ClientProfileScreen';
 import MessagesScreen from '../screens/MessagesScreen';
@@ -49,7 +50,7 @@ function ClientTabs() {
     const c = useThemeColors();
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
-    const { unreadCount } = useSocket();
+    const { unreadCount, unreadFeedCount, clearUnreadFeedCount } = useSocket();
     const { width } = useWindowDimensions();
     const isDesktop = width > 768;
 
@@ -82,41 +83,42 @@ function ClientTabs() {
 
                     if (route.name === 'Home') {
                         iconName = focused ? 'home' : 'home-outline';
+                    } else if (route.name === 'Jobs') {
+                        iconName = focused ? 'briefcase' : 'briefcase-outline';
+                    } else if (route.name === 'Feed') {
+                        iconName = focused ? 'file-tray-full' : 'file-tray-full-outline';
                     } else if (route.name === 'PostJob') {
-                        return (
-                            <View style={{
-                                top: -16,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                width: 48,
-                                height: 48,
-                                borderRadius: 24,
-                                backgroundColor: c.primary,
-                                shadowColor: c.primary,
-                                shadowOffset: { width: 0, height: 4 },
-                                shadowOpacity: 0.3,
-                                shadowRadius: 8,
-                                elevation: 5,
-                            }}>
-                                <Ionicons name="add" size={28} color="#FFF" />
-                            </View>
-                        );
+                        iconName = focused ? 'add-circle' : 'add-circle-outline';
                     } else if (route.name === 'Profile') {
                         iconName = focused ? 'person' : 'person-outline';
                     }
 
                     return <Ionicons name={iconName} size={24} color={color} />;
                 },
-                tabBarBadge: route.name === 'Messages' && unreadCount > 0 ? unreadCount : undefined,
+                tabBarBadge: route.name === 'Messages' && unreadCount > 0 ? unreadCount : 
+                             route.name === 'Feed' && unreadFeedCount > 0 ? '' : undefined,
                 tabBarBadgeStyle: {
                     backgroundColor: '#EF4444', // Red color
                     color: 'white',
-                    fontSize: 10,
+                    fontSize: route.name === 'Feed' ? 0 : 10,
                     fontWeight: 'bold',
+                    minWidth: route.name === 'Feed' ? 10 : undefined,
+                    height: route.name === 'Feed' ? 10 : undefined,
+                    borderRadius: route.name === 'Feed' ? 5 : undefined,
+                    marginTop: route.name === 'Feed' ? 3 : 0,
                 }
+            })}
+            screenListeners={({ route }) => ({
+                tabPress: (e) => {
+                    if (route.name === 'Feed') {
+                        clearUnreadFeedCount(); // Clear badge when navigating to it
+                    }
+                },
             })}
         >
             <Tab.Screen name="Home" component={ClientDashboardScreen} />
+            <Tab.Screen name="Jobs" component={ClientJobsScreen} />
+            <Tab.Screen name="Feed" component={FeedScreen} />
             <Tab.Screen name="PostJob" component={PostJobScreen} options={{ tabBarLabel: 'Post Job' }} />
             <Tab.Screen name="Profile" component={ClientProfileScreen} />
         </Tab.Navigator>

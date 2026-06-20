@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 // ==========================================
 
 // 🟢 TOGGLE THIS: Set to true for Local Server, false for Online Server
-const USE_LOCAL_SERVER = false;
+const USE_LOCAL_SERVER = true;
 
 // Dynamic local IP detection for development
 const getLocalIP = () => {
@@ -142,6 +142,15 @@ export const API_ENDPOINTS = {
     // System Settings
     SETTINGS: '/api/settings',
 
+    // Feed
+    FEED: '/api/feed',
+    FEED_TRENDING: '/api/feed/trending',
+    FEED_STATS: '/api/feed/stats',
+    FEED_POST_BY_ID: (id: string) => `/api/feed/${id}`,
+    FEED_REACT: (id: string) => `/api/feed/${id}/react`,
+    FEED_COMMENTS: (id: string) => `/api/feed/${id}/comments`,
+    FEED_POLL_VOTE: (id: string) => `/api/feed/${id}/poll/vote`,
+
     // Uploads
     UPLOAD_FILE: '/api/uploads/upload',
     UPLOAD_AVATAR: '/api/avatars/upload',
@@ -167,4 +176,7 @@ export const SOCKET_EVENTS = {
     MESSAGE_RECEIVED: 'messageReceived',
     TYPING: 'typing',
     STOP_TYPING: 'stopTyping',
+    FEED_NEW_POST: 'feed:new_post',
+    FEED_REACTION: 'feed:reaction',
+    FEED_COMMENT: 'feed:comment',
 } as const;

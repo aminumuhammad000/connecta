@@ -21,6 +21,7 @@ import contractRoutes from "./routes/contract.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import feedRoutes from "./routes/feed.routes.js";
 import verificationRoutes from "./routes/verification.routes.js";
 import projectRoutes from "./routes/Project.routes.js";
 import redisClient from "./config/redis.js";
@@ -106,6 +107,7 @@ app.use("/api/contracts", contractRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/feed", feedRoutes);
 app.use("/api/verifications", verificationRoutes);
 
 import broadcastRoutes from "./routes/broadcast.routes.js";
@@ -150,10 +152,68 @@ app.get("/debug/users", async (req, res) => {
   try {
     const mongoose = await import('mongoose');
     const User = mongoose.model('User');
-    const users = await User.find({}, 'email _id firstName');
+    const users = await User.find({}, 'email _id firstName userType');
     res.json(users);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/debug/seed-full", async (req, res) => {
+  try {
+    const bcrypt = await import('bcryptjs');
+    const mongoose = await import('mongoose');
+    const User = mongoose.model('User');
+    const Job = (await import('./models/Job.model.js')).default;
+    const FeedPost = (await import('./models/Feed.model.js')).default;
+
+    await User.deleteMany({ email: { $ne: 'testuser@gmail.com' }, userType: { $in: ['client', 'freelancer'] } });
+    await Job.deleteMany({});
+    await FeedPost.deleteMany({});
+
+    const hashedPassword = await bcrypt.default.hash('Password123!', 10);
+
+    const usersToCreate = [
+      { firstName: 'Sarah', lastName: 'Chen', email: 'sarah.client@example.com', password: hashedPassword, userType: 'client', isVerified: true, profileImage: 'https://ui-avatars.com/api/?name=Sarah+Chen&background=random', jobTitle: 'Product Manager' },
+      { firstName: 'David', lastName: 'Okafor', email: 'david.client@example.com', password: hashedPassword, userType: 'client', isVerified: true, profileImage: 'https://ui-avatars.com/api/?name=David+Okafor&background=random', jobTitle: 'Startup Founder' },
+      { firstName: 'Elena', lastName: 'Rodriguez', email: 'elena.freelancer@example.com', password: hashedPassword, userType: 'freelancer', isVerified: true, profileImage: 'https://ui-avatars.com/api/?name=Elena+Rodriguez&background=random', jobTitle: 'UI Designer' },
+      { firstName: 'James', lastName: 'Smith', email: 'james.freelancer@example.com', password: hashedPassword, userType: 'freelancer', isVerified: true, profileImage: 'https://ui-avatars.com/api/?name=James+Smith&background=random', jobTitle: 'Backend Engineer' }
+    ];
+
+    const createdUsers = await User.insertMany(usersToCreate);
+    const client1 = createdUsers.find(u => u.email === 'sarah.client@example.com');
+    const client2 = createdUsers.find(u => u.email === 'david.client@example.com');
+    const freelancer1 = createdUsers.find(u => u.email === 'elena.freelancer@example.com');
+    const freelancer2 = createdUsers.find(u => u.email === 'james.freelancer@example.com');
+
+    for (const user of createdUsers) {
+      await FeedPost.create({
+        type: 'new_member', actor: user._id, actorName: `${user.firstName} ${user.lastName}`, actorAvatar: user.profileImage, actorRole: user.jobTitle, title: `Welcome ${user.firstName}!`, body: `${user.firstName} joined Connecta.`, emoji: '👋', targetAudience: 'all'
+      });
+    }
+
+    const jobs = [
+      { clientId: client1._id, title: 'Mobile App Redesign (Figma)', description: 'Overhaul our mobile app interface.', category: 'Design & Creative', skills: ['Figma', 'UI/UX'], budget: 1500, duration: 30, status: 'active' },
+      { clientId: client1._id, title: 'Senior Node.js Developer', description: 'Integrate third-party APIs into Express.', category: 'Development & IT', skills: ['Node.js', 'API', 'AWS'], budget: 50, duration: 14, status: 'active' },
+      { clientId: client2._id, title: 'Web3 / Smart Contract Developer', description: 'Write and audit smart contracts.', category: 'Web3 & Blockchain', skills: ['Solidity', 'Blockchain'], budget: 4000, duration: 90, status: 'active' }
+    ];
+
+    const createdJobs = await Job.insertMany(jobs);
+
+    for (const job of createdJobs) {
+      const owner = createdUsers.find(u => u._id.toString() === job.clientId.toString());
+      await FeedPost.create({
+        type: 'job_posted', actor: owner._id, actorName: `${owner.firstName} ${owner.lastName}`, actorAvatar: owner.profileImage, actorRole: owner.jobTitle, title: `New Job: ${job.title}`, body: job.description, emoji: '💼', relatedType: 'job', relatedId: job._id, targetAudience: 'all'
+      });
+    }
+
+    await FeedPost.create({ type: 'project_completed', actor: freelancer1._id, actorName: `${freelancer1.firstName} ${freelancer1.lastName}`, actorAvatar: freelancer1.profileImage, title: `Project Success: App Redesign`, body: 'Elena perfectly executed the app design.', emoji: '🏆', imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop', targetAudience: 'all' });
+    await FeedPost.create({ type: 'review_received', actor: freelancer2._id, actorName: `${freelancer2.firstName} ${freelancer2.lastName}`, actorAvatar: freelancer2.profileImage, title: `5-Star Rating Received`, body: '"James delivered exactly what we needed!"', emoji: '⭐', targetAudience: 'all' });
+    await FeedPost.create({ type: 'platform_win', isSystemPost: true, title: `Connecta Milestone!`, body: 'We just passed 10,000 active projects completed on the platform!', emoji: '🎉', imageUrl: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=2070&auto=format&fit=crop', targetAudience: 'all' });
+
+    res.json({ success: true, message: 'Comprehensive seed completed' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

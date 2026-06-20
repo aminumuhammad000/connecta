@@ -23,7 +23,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
     { id: 'Design', label: 'Design' },
     { id: 'Mobile', label: 'Mobile' },
     { id: 'Remote', label: 'Remote' },
-    { id: 'Budget', label: 'Budget ₦50k+' },
+    { id: 'Budget', label: 'Budget ₦50+' },
     { id: 'AI', label: 'AI matched' }
   ];
 

@@ -8,6 +8,7 @@ import { useWindowDimensions, View } from 'react-native';
 
 // Screens
 import FreelancerDashboardScreen from '../screens/FreelancerDashboardScreen';
+import FeedScreen from '../screens/FeedScreen';
 import FreelancerMatchedGigsScreen from '../screens/FreelancerMatchedGigsScreen';
 import MyProposalsScreen from '../screens/MyProposalsScreen';
 import ChatsScreen from '../screens/ChatsScreen';
@@ -50,7 +51,7 @@ function FreelancerTabs() {
     const isDesktop = width > 768;
     const insets = useSafeAreaInsets();
     const { user } = useAuth();
-    const { unreadCount } = useSocket();
+    const { unreadCount, unreadFeedCount, clearUnreadFeedCount } = useSocket();
 
     return (
         <Tab.Navigator
@@ -81,6 +82,8 @@ function FreelancerTabs() {
 
                     if (route.name === 'Home') {
                     iconName = focused ? 'home' : 'home-outline';
+                    } else if (route.name === 'Feed') {
+                        iconName = focused ? 'file-tray-full' : 'file-tray-full-outline';
                     } else if (route.name === 'Jobs') {
                         iconName = focused ? 'briefcase' : 'briefcase-outline';
                     } else if (route.name === 'Messages') {
@@ -91,17 +94,30 @@ function FreelancerTabs() {
 
                     return <Ionicons name={iconName} size={24} color={color} />;
                 },
-                tabBarBadge: route.name === 'Messages' && unreadCount > 0 ? unreadCount : undefined,
+                tabBarBadge: route.name === 'Messages' && unreadCount > 0 ? unreadCount : 
+                             route.name === 'Feed' && unreadFeedCount > 0 ? '' : undefined,
                 tabBarBadgeStyle: {
                     backgroundColor: '#EF4444', // Red color
                     color: 'white',
-                    fontSize: 10,
+                    fontSize: route.name === 'Feed' ? 0 : 10,
                     fontWeight: 'bold',
+                    minWidth: route.name === 'Feed' ? 10 : undefined,
+                    height: route.name === 'Feed' ? 10 : undefined,
+                    borderRadius: route.name === 'Feed' ? 5 : undefined,
+                    marginTop: route.name === 'Feed' ? 3 : 0,
                 }
+            })}
+            screenListeners={({ route }) => ({
+                tabPress: (e) => {
+                    if (route.name === 'Feed') {
+                        clearUnreadFeedCount(); // Clear badge when navigating to it
+                    }
+                },
             })}
         >
             <Tab.Screen name="Home" component={FreelancerDashboardScreen} />
             <Tab.Screen name="Jobs" component={FreelancerMatchedGigsScreen} />
+            <Tab.Screen name="Feed" component={FeedScreen} />
 
             <Tab.Screen name="Messages" component={ChatsScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
