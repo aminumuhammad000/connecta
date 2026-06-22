@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { FeedPost } from '../services/feedService';
 import FeedReactionBar from './FeedReactionBar';
 import { formatDistanceToNow } from 'date-fns';
 import JobCompletionFlyer from './JobCompletionFlyer';
+import FeedPollWidget from './FeedPollWidget';
 
 interface FeedPostCardProps {
     post: FeedPost;
@@ -21,8 +22,12 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
         return { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.actorName || 'User')}&background=random` };
     };
 
+    const isOfficial = post.actorRole === 'admin';
+
     return (
-        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={isOfficial 
+            ? [styles.card, { backgroundColor: c.card, borderColor: '#F59E0B', borderWidth: 2 }]
+            : [styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => onPressProfile(post.actor)}>
@@ -30,11 +35,11 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
                 </TouchableOpacity>
                 <View style={styles.headerTextInfo}>
                     <View style={styles.nameRow}>
-                        <Text style={[styles.actorName, { color: c.text }]} numberOfLines={1}>
+                        <Text style={[styles.actorName, { color: isOfficial ? '#F59E0B' : c.text }]} numberOfLines={1}>
                             {post.actorName || 'System'}
                         </Text>
-                        {post.isSystemPost && (
-                            <Ionicons name="checkmark-circle" size={14} color={c.primary} style={styles.verifiedIcon} />
+                        {(post.isSystemPost || isOfficial) && (
+                            <Ionicons name="checkmark-circle" size={14} color={isOfficial ? '#F59E0B' : c.primary} style={styles.verifiedIcon} />
                         )}
                     </View>
                     <Text style={[styles.metaText, { color: c.subtext }]}>
@@ -47,18 +52,60 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
             </View>
 
             {/* Title & Body */}
-            <View style={styles.content}>
-                <Text style={[styles.title, { color: c.text }]}>
-                    {post.emoji && <Text>{post.emoji} </Text>}
-                    {post.title}
-                </Text>
-                <Text style={[styles.body, { color: c.text }]} numberOfLines={5}>
-                    {post.body}
-                </Text>
-            </View>
+            {post.type === 'user_post' && !post.imageUrl ? (
+                // Facebook-style Color Box for User Posts (Now uniform)
+                <View style={[styles.coloredBox, { backgroundColor: c.primary }]}>
+                    <Text style={styles.coloredBoxText} numberOfLines={4} ellipsizeMode="tail">
+                        {post.emoji && <Text>{post.emoji} </Text>}
+                        {post.body}
+                    </Text>
+                </View>
+            ) : post.type === 'job_posted' || post.type === 'proposal_accepted' || post.type === 'proposal_submitted' ? (
+                // Special Transparent Activity Cards
+                <View style={[styles.activityContent, { backgroundColor: c.isDark ? '#1F2937' : '#F3F4F6', borderColor: c.border }]}>
+                    <View style={styles.activityIconWrapper}>
+                        <Text style={styles.activityEmoji}>{post.emoji}</Text>
+                    </View>
+                    <View style={styles.activityTextWrapper}>
+                        <Text style={[styles.activityTitle, { color: c.text }]}>{post.title}</Text>
+                        <Text style={[styles.activityBody, { color: c.subtext }]} numberOfLines={3}>
+                            {post.body}
+                        </Text>
+                        {post.type === 'job_posted' && (
+                           <TouchableOpacity style={[styles.activityBtn, { backgroundColor: c.primary }]}>
+                               <Text style={styles.activityBtnText}>View Job</Text>
+                           </TouchableOpacity>
+                        )}
+                    </View>
+                </View>
+            ) : (
+                // Standard Text Layout for general System Posts
+                <View style={styles.content}>
+                    {post.title && post.type !== 'user_post' && (
+                        <Text style={[styles.title, { color: c.text }]}>
+                            {post.emoji && <Text>{post.emoji} </Text>}
+                            {post.title}
+                        </Text>
+                    )}
+                    <Text style={[styles.body, { color: c.text }]} numberOfLines={8}>
+                        {post.type === 'user_post' && post.emoji && <Text>{post.emoji} </Text>}
+                        {post.body}
+                    </Text>
+                </View>
+            )}
+
+            {/* Video Play Container */}
+            {post.videoUrl && (
+                <TouchableOpacity style={styles.videoContainer} onPress={() => Linking.openURL(post.videoUrl!)}>
+                    <View style={styles.videoPlayOverlay}>
+                        <Ionicons name="play-circle" size={60} color="#FFFFFF" />
+                        <Text style={styles.videoPlayText}>Watch Video</Text>
+                    </View>
+                </TouchableOpacity>
+            )}
 
             {/* Flyer Image Container (Fallback for non-project_completed image URLs) */}
-            {post.type !== 'project_completed' && post.imageUrl && (
+            {post.type !== 'project_completed' && post.imageUrl && !post.videoUrl && (
                 <View style={styles.flyerContainer}>
                     <Image 
                         source={{ uri: post.imageUrl }} 
@@ -84,6 +131,16 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
                         }}
                     />
                 </View>
+            )}
+
+            {/* Poll Widget */}
+            {post.type === 'community_poll' && post.poll && (
+                <FeedPollWidget 
+                    postId={post._id}
+                    question={post.poll.question}
+                    options={post.poll.options}
+                    closesAt={post.poll.closesAt}
+                />
             )}
 
             {/* Action Bar (Reactions & Comments) */}
@@ -164,6 +221,20 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         fontWeight: '400',
     },
+    coloredBox: {
+        marginHorizontal: -20,
+        paddingHorizontal: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 240, // Strict consistent height
+    },
+    coloredBoxText: {
+        fontSize: 24,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        textAlign: 'center',
+        lineHeight: 34,
+    },
     flyerContainer: {
         marginBottom: 16,
         borderRadius: 12,
@@ -176,5 +247,69 @@ const styles = StyleSheet.create({
         width: '100%',
         aspectRatio: 16 / 9, // Native cinematic landscape bounds
         height: undefined,
+    },
+    activityContent: {
+        flexDirection: 'row',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 16,
+        alignItems: 'center',
+    },
+    activityIconWrapper: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 14,
+    },
+    activityEmoji: {
+        fontSize: 24,
+    },
+    activityTextWrapper: {
+        flex: 1,
+    },
+    activityTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        marginBottom: 4,
+    },
+    activityBody: {
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    activityBtn: {
+        marginTop: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+    },
+    activityBtnText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    videoContainer: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        backgroundColor: '#000',
+        borderRadius: 12,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    videoPlayOverlay: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    videoPlayText: {
+        color: '#FFFFFF',
+        marginTop: 8,
+        fontWeight: '600',
+        fontSize: 16,
     }
 });

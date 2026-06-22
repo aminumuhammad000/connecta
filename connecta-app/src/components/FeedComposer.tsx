@@ -4,6 +4,7 @@ import {
     Image, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useThemeColors } from '../theme/theme';
 import { useAuth } from '../context/AuthContext';
 import apiClient from '../services/api';
@@ -19,6 +20,23 @@ export default function FeedComposer({ onPostCreated }: FeedComposerProps) {
     const [modalVisible, setModalVisible] = useState(false);
     const [text, setText] = useState('');
     const [posting, setPosting] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<{ uri: string, base64?: string | null } | null>(null);
+
+    const pickImage = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.5,
+            base64: true
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            setSelectedImage({
+                uri: result.assets[0].uri,
+                base64: result.assets[0].base64
+            });
+        }
+    };
 
     const avatarUri = user?.profileImage || user?.avatar
         ? { uri: (user?.profileImage || user?.avatar) as string }
@@ -32,9 +50,9 @@ export default function FeedComposer({ onPostCreated }: FeedComposerProps) {
         try {
             const payload = {
                 type: 'user_post',
-                title: text.trim().slice(0, 80), // first 80 chars as title
+                title: text.trim().slice(0, 80),
                 body: text.trim(),
-                emoji: '📝',
+                imageUrl: selectedImage?.base64 ? `data:image/jpeg;base64,${selectedImage.base64}` : undefined,
                 actorName: displayName,
                 actorAvatar: user?.profileImage || user?.avatar || '',
                 actorRole: user?.userType === 'client' ? 'Client' : 'Freelancer',
@@ -43,8 +61,10 @@ export default function FeedComposer({ onPostCreated }: FeedComposerProps) {
             const newPost = await apiClient.post(`${API_ENDPOINTS.FEED}/create`, payload);
             onPostCreated(newPost);
             setText('');
+            setSelectedImage(null);
             setModalVisible(false);
         } catch (err: any) {
+            console.error(err);
             Alert.alert('Error', 'Could not publish post. Please try again.');
         } finally {
             setPosting(false);
@@ -125,12 +145,30 @@ export default function FeedComposer({ onPostCreated }: FeedComposerProps) {
                         maxLength={1000}
                     />
 
-                    {/* Char count */}
-                    {text.length > 800 && (
-                        <Text style={[styles.charCount, { color: text.length > 950 ? '#EF4444' : c.subtext }]}>
-                            {1000 - text.length} remaining
-                        </Text>
+                    {/* Image Preview */}
+                    {selectedImage && (
+                        <View style={styles.imagePreviewContainer}>
+                            <Image source={{ uri: selectedImage.uri }} style={styles.imagePreview} />
+                            <TouchableOpacity style={styles.removeImageBtn} onPress={() => setSelectedImage(null)}>
+                                <Ionicons name="close-circle" size={24} color="#EF4444" />
+                            </TouchableOpacity>
+                        </View>
                     )}
+
+                    {/* Toolbar */}
+                    <View style={[styles.toolbar, { borderTopColor: c.border }]}>
+                        <TouchableOpacity style={styles.toolbarBtn} onPress={pickImage}>
+                            <Ionicons name="image-outline" size={24} color={c.primary} />
+                            <Text style={[styles.toolbarText, { color: c.text }]}>Photo</Text>
+                        </TouchableOpacity>
+                        
+                        {/* Char count */}
+                        {text.length > 800 ? (
+                            <Text style={[styles.charCount, { color: text.length > 950 ? '#EF4444' : c.subtext }]}>
+                                {1000 - text.length} remaining
+                            </Text>
+                        ) : <View />}
+                    </View>
                 </KeyboardAvoidingView>
             </Modal>
         </>
@@ -237,10 +275,45 @@ const styles = StyleSheet.create({
         lineHeight: 26,
         textAlignVertical: 'top',
     },
-    charCount: {
-        textAlign: 'right',
-        fontSize: 12,
+    imagePreviewContainer: {
+        margin: 16,
+        borderRadius: 12,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    imagePreview: {
+        width: '100%',
+        height: 200,
+        backgroundColor: '#eee',
+    },
+    removeImageBtn: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+    },
+    toolbar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingBottom: 8,
+        paddingVertical: 12,
+        borderTopWidth: 1,
+    },
+    toolbarBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: 'rgba(0,0,0,0.02)',
+    },
+    toolbarText: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    charCount: {
+        fontSize: 12,
     },
 });

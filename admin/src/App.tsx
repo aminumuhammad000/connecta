@@ -19,6 +19,7 @@ import EmailBroadcast from './pages/EmailBroadcast'
 import Verifications from './pages/Verifications'
 import SupportMessages from './pages/SupportMessages'
 import Admins from './pages/Admins'
+import FeedAnnouncements from './pages/FeedAnnouncements'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './components/AppLayout'
 
@@ -46,6 +47,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/broadcast" element={<EmailBroadcast />} />
+          <Route path="/feed-broadcast" element={<FeedAnnouncements />} />
           <Route path="/verifications" element={<Verifications />} />
           <Route path="/support" element={<SupportMessages />} />
           <Route path="/admins" element={<Admins />} />

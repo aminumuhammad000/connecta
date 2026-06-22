@@ -280,22 +280,27 @@ export const updateProjectStatus = async (req: Request, res: Response) => {
     if (status === 'completed') {
       try {
         await project.populate('freelancerId', 'firstName lastName profileImage');
+        await project.populate('clientId', 'firstName lastName');
         const freelancer: any = project.freelancerId;
+        const client: any = project.clientId;
         
         // Mocking a beautiful flyer image generator using a cinematic tech workspace image
         const flyerImage = 'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop';
         
         createFeedPost({
           type: 'project_completed',
-          actor: freelancer._id,
-          actorName: `${freelancer.firstName} ${freelancer.lastName}`,
-          actorAvatar: freelancer.profileImage,
+          actor: {
+            _id: freelancer._id.toString(),
+            firstName: freelancer.firstName,
+            lastName: freelancer.lastName,
+            profileImage: freelancer.profileImage,
+          },
           title: `Project Success: ${project.title}`,
-          body: `${freelancer.firstName} perfectly executed and delivered the project ahead of expectations.`,
+          body: `${freelancer.firstName} perfectly executed and delivered the project for ${client?.firstName || 'a top client'} ahead of expectations.`,
           emoji: '🏆',
           imageUrl: flyerImage,
           relatedType: 'project',
-          relatedId: project._id,
+          relatedId: project._id?.toString(),
           targetAudience: 'all'
         }).catch(err => console.error("Feed error:", err)); // Non-blocking
       } catch (e) {

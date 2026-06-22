@@ -6,6 +6,7 @@ import OTP from "../models/otp.model.js";
 import { sendOTPEmail, sendWelcomeEmail } from "../services/email.service.js";
 import notificationService from "../services/notification.service.js";
 import mongoose from "mongoose";
+import { createFeedPost } from '../services/feed.service.js';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // ===================
 // Check if Email Exists
@@ -201,6 +202,21 @@ export const signup = async (req, res) => {
         }
         // Send Welcome Email
         sendWelcomeEmail(newUser.email, newUser.firstName, newUser.preferredLanguage || 'en').catch(console.error);
+        // Publish to Feed
+        try {
+            createFeedPost({
+                type: 'new_member',
+                emoji: '👋',
+                title: `Say hi to ${newUser.firstName}!`,
+                body: `${newUser.firstName} ${newUser.lastName || ''} just joined Connecta as a ${newUser.userType}. Welcome to the community!`,
+                relatedType: 'user',
+                relatedId: newUser._id?.toString(),
+                targetAudience: 'all',
+            });
+        }
+        catch (feedErr) {
+            console.warn('[UserSignup] Feed post failed:', feedErr);
+        }
         console.log('✅ Signup successful. Returning data for:', newUser.email);
         res.status(201).json({ user: newUser, token, success: true });
     }

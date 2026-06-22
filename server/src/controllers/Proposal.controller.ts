@@ -44,6 +44,28 @@ export const createProposal = async (req: Request, res: Response) => {
         console.error('Failed to notify client of new proposal:', err);
     }
 
+    // Publish to Feed
+    try {
+        const freelancer = await User.findById(freelancerId);
+        createFeedPost({
+          type: 'proposal_submitted',
+          actor: {
+            _id: freelancerId.toString(),
+            firstName: freelancer ? freelancer.firstName : 'A',
+            lastName: freelancer ? freelancer.lastName : 'Freelancer',
+            profileImage: freelancer?.profileImage || '',
+          },
+          title: `New Proposal Submitted`,
+          body: `${freelancer ? freelancer.firstName : 'A Freelancer'} just applied for a new role in ${job.category || 'their field'}.`,
+          emoji: '🚀',
+          relatedType: 'job',
+          relatedId: job._id?.toString(),
+          targetAudience: 'freelancers',
+        }).catch(err => console.error("Feed error:", err));
+    } catch(err) {
+        console.error("Feed emit error:", err);
+    }
+
     res.status(201).json({ success: true, data: proposal });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

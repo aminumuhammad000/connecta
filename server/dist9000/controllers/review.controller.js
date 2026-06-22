@@ -1,6 +1,8 @@
 import Review from '../models/Review.model.js';
 import Project from '../models/Project.model.js';
+import User from '../models/user.model.js';
 import ReputationService from '../services/Reputation.service.js';
+import { createFeedPost } from '../services/feed.service.js';
 /**
  * Create a review for a completed project
  */
@@ -92,6 +94,28 @@ export const createReview = async (req, res) => {
         await ReputationService.updateFreelancerReputation(revieweeId);
         // Populate reviewer details
         await review.populate('reviewerId', 'firstName lastName profilePicture');
+        // Publish to Feed (only for 4+ star reviews to keep feed positive)
+        if (rating >= 4) {
+            try {
+                const reviewer = await User.findById(userId).select('firstName lastName').lean();
+                const reviewee = await User.findById(revieweeId).select('firstName lastName').lean();
+                const reviewerName = reviewer ? `${reviewer.firstName} ${reviewer.lastName}`.trim() : 'A client';
+                const revieweeName = reviewee ? `${reviewee.firstName} ${reviewee.lastName}`.trim() : 'a freelancer';
+                const stars = '⭐'.repeat(rating);
+                createFeedPost({
+                    type: 'review_received',
+                    emoji: '⭐',
+                    title: `${stars} Review for ${revieweeName}`,
+                    body: `${reviewerName} gave ${revieweeName} a ${rating}-star review: "${comment.substring(0, 120)}${comment.length > 120 ? '...' : ''}"`,
+                    relatedType: 'review',
+                    relatedId: review._id?.toString(),
+                    targetAudience: 'all',
+                });
+            }
+            catch (feedErr) {
+                console.warn('[Review] Feed post failed:', feedErr);
+            }
+        }
         return res.status(201).json({
             success: true,
             message: 'Review created successfully',

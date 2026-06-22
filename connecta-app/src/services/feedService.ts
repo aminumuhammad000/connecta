@@ -15,7 +15,9 @@ export type FeedPostType =
     | 'daily_tip'
     | 'leaderboard_update'
     | 'community_poll'
-    | 'job_trending';
+    | 'job_trending'
+    | 'proposal_submitted'
+    | 'user_post';
 
 export type ReactionType = 'celebrate' | 'insightful' | 'clap' | 'fire' | 'love';
 
@@ -39,6 +41,7 @@ export interface FeedPost {
     body: string;
     emoji: string;
     imageUrl?: string;
+    videoUrl?: string;
     relatedType?: 'job' | 'project' | 'proposal' | 'review' | 'user';
     relatedId?: string;
     targetAudience: 'all' | 'freelancers' | 'clients';

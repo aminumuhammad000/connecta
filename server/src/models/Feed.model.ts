@@ -15,6 +15,7 @@ export type FeedPostType =
   | 'leaderboard_update'
   | 'community_poll'
   | 'job_trending'
+  | 'proposal_submitted'
   | 'user_post';
 
 export interface IFeedReactions {

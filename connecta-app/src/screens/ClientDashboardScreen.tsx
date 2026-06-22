@@ -393,6 +393,17 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
 
               <TouchableOpacity
                 style={styles.quickAction}
+                onPress={() => navigation.navigate('Feed')}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
+                  <Ionicons name="layers" size={18} color="#8B5CF6" />
+                </View>
+                <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{"Feed"}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.quickAction}
                 onPress={() => navigation.navigate('Wallet')}
                 activeOpacity={0.7}
               >

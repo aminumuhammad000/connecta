@@ -6,6 +6,7 @@ import Payment from '../models/Payment.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Transaction from '../models/Transaction.model.js';
 import { createNotification } from './notification.controller.js';
+import { createFeedPost } from '../services/feed.service.js';
 // Submit a proposal
 export const createProposal = async (req, res) => {
     try {
@@ -32,6 +33,28 @@ export const createProposal = async (req, res) => {
         }
         catch (err) {
             console.error('Failed to notify client of new proposal:', err);
+        }
+        // Publish to Feed
+        try {
+            const freelancer = await User.findById(freelancerId);
+            createFeedPost({
+                type: 'proposal_submitted',
+                actor: {
+                    _id: freelancerId.toString(),
+                    firstName: freelancer ? freelancer.firstName : 'A',
+                    lastName: freelancer ? freelancer.lastName : 'Freelancer',
+                    profileImage: freelancer?.profileImage || '',
+                },
+                title: `New Proposal Submitted`,
+                body: `${freelancer ? freelancer.firstName : 'A Freelancer'} just applied for a new role in ${job.category || 'their field'}.`,
+                emoji: '🚀',
+                relatedType: 'job',
+                relatedId: job._id?.toString(),
+                targetAudience: 'freelancers',
+            }).catch(err => console.error("Feed error:", err));
+        }
+        catch (err) {
+            console.error("Feed emit error:", err);
         }
         res.status(201).json({ success: true, data: proposal });
     }
@@ -296,6 +319,23 @@ export const approveProposal = async (req, res) => {
             relatedType: 'payment',
             priority: 'high',
         });
+        // Publish to Feed
+        try {
+            const freelancerUser = await User.findById(proposal.freelancerId).select('firstName lastName').lean();
+            const freelancerName = freelancerUser ? `${freelancerUser.firstName || ''} ${freelancerUser.lastName || ''}`.trim() : 'a freelancer';
+            createFeedPost({
+                type: 'proposal_accepted',
+                emoji: '🤝',
+                title: `${freelancerName} got hired!`,
+                body: `${freelancerName} was just hired for the project "${job.title}". Congratulations! 🎉`,
+                relatedType: 'project',
+                relatedId: project._id?.toString(),
+                targetAudience: 'all',
+            });
+        }
+        catch (feedErr) {
+            console.warn('[Proposal] Feed post failed:', feedErr);
+        }
         res.status(200).json({
             success: true,
             message: 'Proposal approved and project created',

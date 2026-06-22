@@ -187,6 +187,7 @@ export default function Sidebar({
         <NavItem to="/analytics" icon="bar_chart" label="Analytics" collapsed={isCollapsed} />
         <NavItem to="/notifications" icon="notifications" label="Notifications" collapsed={isCollapsed} />
         <NavItem to="/broadcast" icon="send" label="Email Broadcast" collapsed={isCollapsed} />
+        <NavItem to="/feed-broadcast" icon="campaign" label="Feed Posts" collapsed={isCollapsed} />
         <NavItem to="/verifications" icon="verified_user" label="Verifications" collapsed={isCollapsed} />
         <NavItem to="/settings" icon="settings" label="Settings" collapsed={isCollapsed} />
         <NavItem to="/support" icon="support_agent" label="Contact Messages" collapsed={isCollapsed} />

@@ -1,6 +1,7 @@
 import { Job } from "../models/Job.model.js";
 import Profile from "../models/Profile.model.js";
 import Proposal from "../models/Proposal.model.js";
+import { createFeedPost } from '../services/feed.service.js';
 // Get Jobs for Current Client
 export const getClientJobs = async (req, res) => {
     try {
@@ -151,6 +152,16 @@ export const createJob = async (req, res) => {
         catch (err) {
             console.error('Failed to notify matched freelancers:', err);
         }
+        // Publish to Feed
+        createFeedPost({
+            type: 'job_posted',
+            emoji: '📢',
+            title: `New Job: ${title}`,
+            body: `A new ${jobType || 'freelance'} job has been posted — ${title}. Budget: ₦${budget}. Skills needed: ${(skills || []).slice(0, 3).join(', ')}.`,
+            relatedType: 'job',
+            relatedId: newJob._id?.toString(),
+            targetAudience: 'freelancers',
+        });
         res.status(201).json({ success: true, data: newJob });
     }
     catch (err) {
