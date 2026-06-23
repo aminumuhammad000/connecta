@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList,ActivityIndicator, RefreshControl, StyleSheet, Text, Platform } from 'react-native';
+import { View, FlatList,ActivityIndicator, RefreshControl, StyleSheet, Text, Platform, Alert, Modal, TextInput, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { feedService, FeedPost } from '../services/feedService';
@@ -21,6 +21,10 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
 
     // Comment Sheet State
     const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+
+    // Edit Post State
+    const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
+    const [editBody, setEditBody] = useState('');
 
     // Clear badge when screen is focused
     useFocusEffect(
@@ -106,6 +110,28 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
         }
     };
 
+    const handleDeletePost = async (postId: string) => {
+        try {
+            const success = await feedService.deletePost(postId);
+            if (success) {
+                setPosts(prev => prev.filter(p => !p._id || p._id !== postId));
+            }
+        } catch (error) {
+            Alert.alert("Error", "Could not delete post.");
+        }
+    };
+
+    const handleEditSave = async () => {
+        if (!editingPost || !editBody.trim()) return;
+        try {
+            const updated = await feedService.editPost(editingPost._id, editingPost.title, editBody.trim());
+            setPosts(prev => prev.map(p => p._id === editingPost._id ? { ...p, body: updated.body } : p));
+            setEditingPost(null);
+        } catch (error) {
+            Alert.alert("Error", "Could not save edits.");
+        }
+    };
+
     if (loading && page === 1) {
         return (
             <View style={[styles.centerContainer, { backgroundColor: c.background }]}>
@@ -129,6 +155,11 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
                         post={item} 
                         onPressProfile={navigateToProfile}
                         onCommentPress={setSelectedPostId}
+                        onDeletePress={handleDeletePost}
+                        onEditPress={(post) => {
+                            setEditingPost(post);
+                            setEditBody(post.body || '');
+                        }}
                     />
                 )}
                 refreshControl={
@@ -166,6 +197,29 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
                     }
                 }}
             />
+
+            {/* Edit Post Modal */}
+            <Modal visible={!!editingPost} transparent animationType="fade">
+                <View style={styles.modalBg}>
+                    <View style={[styles.editModalContent, { backgroundColor: c.card }]}>
+                        <Text style={[styles.headerTitle, { color: c.text, marginBottom: 15 }]}>Edit Post</Text>
+                        <TextInput 
+                            style={[styles.editInput, { color: c.text, borderColor: c.border, backgroundColor: c.background }]}
+                            multiline
+                            value={editBody}
+                            onChangeText={setEditBody}
+                        />
+                        <View style={styles.editBtnRow}>
+                            <TouchableOpacity onPress={() => setEditingPost(null)} style={styles.editBtn}>
+                                <Text style={{ color: c.subtext }}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleEditSave} style={[styles.editBtn, { backgroundColor: c.primary }]}>
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -203,5 +257,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 15,
         lineHeight: 22,
+    },
+    modalBg: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center'
+    },
+    editModalContent: {
+        width: '85%', padding: 20, borderRadius: 15
+    },
+    editInput: {
+        height: 120, borderWidth: 1, borderRadius: 10, padding: 15, textAlignVertical: 'top'
+    },
+    editBtnRow: {
+        flexDirection: 'row', justifyContent: 'flex-end', marginTop: 15, gap: 10
+    },
+    editBtn: {
+        paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20
     }
 });

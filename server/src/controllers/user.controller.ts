@@ -233,18 +233,20 @@ export const signup = async (req: Request, res: Response) => {
     sendWelcomeEmail(newUser.email, newUser.firstName, (newUser as any).preferredLanguage as 'en' | 'ha' || 'en').catch(console.error);
 
     // Publish to Feed
-    try {
-      createFeedPost({
-        type: 'new_member',
-        emoji: '👋',
-        title: `Say hi to ${newUser.firstName}!`,
-        body: `${newUser.firstName} ${newUser.lastName || ''} just joined Connecta as a ${newUser.userType}. Welcome to the community!`,
-        relatedType: 'user',
-        relatedId: newUser._id?.toString(),
-        targetAudience: 'all',
-      });
-    } catch (feedErr) {
-      console.warn('[UserSignup] Feed post failed:', feedErr);
+    if (newUser.privacySettings?.allowBroadcast !== false) {
+      try {
+        createFeedPost({
+          type: 'new_member',
+          emoji: '👋',
+          title: `Say hi to ${newUser.firstName}!`,
+          body: `${newUser.firstName} ${newUser.lastName || ''} just joined Connecta as a ${newUser.userType}. Welcome to the community!`,
+          relatedType: 'user',
+          relatedId: newUser._id?.toString(),
+          targetAudience: 'all',
+        });
+      } catch (feedErr) {
+        console.warn('[UserSignup] Feed post failed:', feedErr);
+      }
     }
 
     console.log('✅ Signup successful. Returning data for:', newUser.email);

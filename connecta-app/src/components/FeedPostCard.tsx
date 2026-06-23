@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { FeedPost } from '../services/feedService';
@@ -7,15 +7,22 @@ import FeedReactionBar from './FeedReactionBar';
 import { formatDistanceToNow } from 'date-fns';
 import JobCompletionFlyer from './JobCompletionFlyer';
 import FeedPollWidget from './FeedPollWidget';
+import { useAuth } from '../context/AuthContext';
 
 interface FeedPostCardProps {
     post: FeedPost;
     onPressProfile: (userId?: string) => void;
     onCommentPress: (postId: string) => void;
+    onEditPress?: (post: FeedPost) => void;
+    onDeletePress?: (postId: string) => void;
 }
 
-export default function FeedPostCard({ post, onPressProfile, onCommentPress }: FeedPostCardProps) {
+export default function FeedPostCard({ post, onPressProfile, onCommentPress, onEditPress, onDeletePress }: FeedPostCardProps) {
     const c = useThemeColors();
+    const { user } = useAuth();
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const isLongText = post.body && post.body.length > 150;
 
     const getActorImage = () => {
         if (post.actorAvatar) return { uri: post.actorAvatar };
@@ -46,21 +53,40 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
                         {post.actorRole || 'Member'} • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                     </Text>
                 </View>
-                <TouchableOpacity style={styles.menuIcon}>
-                    <Ionicons name="ellipsis-horizontal" size={20} color={c.subtext} />
-                </TouchableOpacity>
+                
+                {user && user._id === post.actor && (
+                    <TouchableOpacity 
+                        style={styles.menuIcon}
+                        onPress={() => {
+                            Alert.alert("Post Options", "What would you like to do?", [
+                                { text: "Cancel", style: "cancel" },
+                                { text: "Edit Post", onPress: () => onEditPress && onEditPress(post) },
+                                { text: "Delete Post", style: "destructive", onPress: () => onDeletePress && onDeletePress(post._id) }
+                            ]);
+                        }}
+                    >
+                        <Ionicons name="ellipsis-horizontal" size={20} color={c.subtext} />
+                    </TouchableOpacity>
+                )}
             </View>
 
             {/* Title & Body */}
             {post.type === 'user_post' && !post.imageUrl ? (
                 // Facebook-style Color Box for User Posts (Now uniform)
                 <View style={[styles.coloredBox, { backgroundColor: c.primary }]}>
-                    <Text style={styles.coloredBoxText} numberOfLines={4} ellipsizeMode="tail">
+                    <Text style={styles.coloredBoxText} numberOfLines={isExpanded ? undefined : 4} ellipsizeMode="tail">
                         {post.emoji && <Text>{post.emoji} </Text>}
                         {post.body}
                     </Text>
+                    {isLongText && (
+                        <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} style={{ marginTop: 8 }}>
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                                {isExpanded ? 'See Less' : 'Read More'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
-            ) : post.type === 'job_posted' || post.type === 'proposal_accepted' || post.type === 'proposal_submitted' ? (
+            ) : post.type === 'job_posted' || post.type === 'proposal_accepted' || post.type === 'proposal_submitted' || post.type === 'new_member' ? (
                 // Special Transparent Activity Cards
                 <View style={[styles.activityContent, { backgroundColor: c.isDark ? '#1F2937' : '#F3F4F6', borderColor: c.border }]}>
                     <View style={styles.activityIconWrapper}>
@@ -76,6 +102,11 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
                                <Text style={styles.activityBtnText}>View Job</Text>
                            </TouchableOpacity>
                         )}
+                        {post.type === 'new_member' && (
+                           <TouchableOpacity onPress={() => onPressProfile(post.relatedId || post.actor)} style={[styles.activityBtn, { backgroundColor: c.primary }]}>
+                               <Text style={styles.activityBtnText}>View Profile</Text>
+                           </TouchableOpacity>
+                        )}
                     </View>
                 </View>
             ) : (
@@ -87,10 +118,17 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress }: F
                             {post.title}
                         </Text>
                     )}
-                    <Text style={[styles.body, { color: c.text }]} numberOfLines={8}>
+                    <Text style={[styles.body, { color: c.text }]} numberOfLines={isExpanded ? undefined : 4}>
                         {post.type === 'user_post' && post.emoji && <Text>{post.emoji} </Text>}
                         {post.body}
                     </Text>
+                    {isLongText && (
+                        <TouchableOpacity onPress={() => setIsExpanded(!isExpanded)} style={{ marginTop: 4 }}>
+                            <Text style={{ color: c.primary, fontWeight: '600' }}>
+                                {isExpanded ? 'See Less' : 'Read More...'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
 

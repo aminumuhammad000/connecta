@@ -76,6 +76,14 @@ export interface FeedComment {
 }
 
 class FeedService {
+    cachedPosts: FeedPost[] = [];
+    cachedPage: number = 1;
+
+    setCache(posts: FeedPost[], page: number) {
+        this.cachedPosts = posts;
+        this.cachedPage = page;
+    }
+
     async getFeed(page = 1, limit = 20, audience = 'all') {
         return apiClient.get(`${API_ENDPOINTS.FEED}?page=${page}&limit=${limit}&audience=${audience}`);
     }
@@ -110,6 +118,16 @@ class FeedService {
 
     async voteOnPoll(postId: string, optionIndex: number) {
         return apiClient.post(API_ENDPOINTS.FEED_POLL_VOTE(postId), { optionIndex });
+    }
+
+    async editPost(postId: string, title: string, body: string) {
+        const response: any = await apiClient.put(`/feed/user/${postId}`, { title, body });
+        return response?.data;
+    }
+
+    async deletePost(postId: string) {
+        const response: any = await apiClient.delete(`/feed/user/${postId}`);
+        return response?.success;
     }
 }
 

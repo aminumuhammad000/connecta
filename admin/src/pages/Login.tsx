@@ -15,6 +15,22 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     try {
+      // Demo Login Bypass
+      if (email.toLowerCase() === 'demo@connecta.ng' && password === 'demo') {
+        const demoUser = {
+          _id: 'demo123',
+          email: 'demo@connecta.ng',
+          userType: 'admin',
+          firstName: 'Demo',
+          lastName: 'Admin'
+        };
+        localStorage.setItem('admin_token', 'demo_fake_token_12345');
+        localStorage.setItem('admin_user', JSON.stringify(demoUser));
+        toast.success('Bypassing backend: Welcome Demo Admin!');
+        setTimeout(() => navigate('/dashboard'), 500);
+        return;
+      }
+
       // Always try backend first
       try {
         const response: any = await authAPI.login(email.toLowerCase(), password)

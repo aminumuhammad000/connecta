@@ -15,6 +15,9 @@ export interface IUser extends Document {
   preferredLanguage?: 'en' | 'ha';
   whatsapp?: string;
   sparks?: number;
+  privacySettings: {
+    allowBroadcast: boolean;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +42,9 @@ const UserSchema: Schema<IUser> = new Schema(
     preferredLanguage: { type: String, enum: ['en', 'ha'], default: 'en' },
     whatsapp: { type: String, required: false },
     sparks: { type: Number, default: 0 },
+    privacySettings: {
+      allowBroadcast: { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );

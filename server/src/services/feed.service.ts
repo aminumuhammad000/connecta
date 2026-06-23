@@ -4,7 +4,9 @@
  * after a significant event to publish it to the platform feed.
  */
 import FeedPost, { FeedPostType } from '../models/Feed.model.js';
+import User from '../models/user.model.js';
 import { getIO } from '../core/utils/socketIO.js';
+import NotificationService from './notification.service.js';
 
 interface CreateFeedPostOptions {
   type: FeedPostType;
@@ -92,6 +94,34 @@ export const createFeedPost = async (options: CreateFeedPostOptions): Promise<vo
     }
 
     console.log(`✅ [FeedService] Post created: [${type}] ${title}`);
+
+    // Push Notifications for major system posts or Admin Broadcasts
+    if (isSystemPost || post.actorRole === 'admin') {
+      // Run async detached so we don't block the HTTP response
+      setImmediate(async () => {
+        try {
+          const audienceQuery: any = { pushToken: { $exists: true, $ne: null } };
+          if (targetAudience === 'freelancers') audienceQuery.userType = 'freelancer';
+          if (targetAudience === 'clients') audienceQuery.userType = 'client';
+
+          const users = await User.find(audienceQuery).select('_id pushToken');
+          console.log(`[FeedService] Dispatching mass push to ${users.length} targets`);
+
+          for (const user of users) {
+             // We use the notification service we found
+             await NotificationService.sendPushNotification(
+                 user._id.toString(),
+                 title, 
+                 post.emoji ? `${post.emoji} ${body.substring(0, 80)}...` : body.substring(0, 80) + '...',
+                 { feedPostId: post._id, type: 'feed_update' }
+             );
+          }
+        } catch (pushErr) {
+          console.error('[FeedService] Mass broadcast push failed:', pushErr);
+        }
+      });
+    }
+
   } catch (error) {
     // Feed errors should NEVER crash the calling controller
     console.error('[FeedService] Error creating feed post:', error);

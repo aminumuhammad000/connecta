@@ -579,4 +579,23 @@ export const contactAPI = {
   },
 }
 
+export const feedAPI = {
+  getAll: async (params?: { page?: number; limit?: number }) => {
+    const { data } = await api.get('/api/feed/admin/all', { params })
+    return data
+  },
+  create: async (postData: any) => {
+    const { data } = await api.post('/api/feed/create', postData)
+    return data
+  },
+  update: async (id: string, postData: any) => {
+    const { data } = await api.put(`/api/feed/${id}`, postData)
+    return data
+  },
+  delete: async (id: string) => {
+    const { data } = await api.delete(`/api/feed/${id}`)
+    return data
+  }
+}
+
 export default api

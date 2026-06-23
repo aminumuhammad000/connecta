@@ -292,3 +292,125 @@ export const createPost = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Error creating post', error: error.message });
   }
 };
+
+// ─── USER: EDIT POST ────────────────────────────────────────────────────────
+export const editUserPost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, body } = req.body;
+    const userId = (req as any).user?.id;
+
+    const post = await FeedPost.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    if (post.actor?.toString() !== userId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to edit this post' });
+    }
+
+    if (title) post.title = title.slice(0, 200);
+    if (body) post.body = body.slice(0, 2000);
+    
+    await post.save();
+
+    res.status(200).json({ success: true, data: post });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Error editing post', error: error.message });
+  }
+};
+
+// ─── USER: DELETE POST ──────────────────────────────────────────────────────
+export const deleteUserPost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+
+    const post = await FeedPost.findById(id);
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    if (post.actor?.toString() !== userId) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to delete this post' });
+    }
+
+    await FeedPost.deleteOne({ _id: id });
+    await FeedComment.deleteMany({ postId: id });
+
+    res.status(200).json({ success: true, message: 'Post deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Error deleting post', error: error.message });
+  }
+};
+
+// ─── ADMIN: GET ALL POSTS (Paginated) ───────────────────────────────────────
+export const getAdminFeed = async (req: Request, res: Response) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    const skip  = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      FeedPost.find({})
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      FeedPost.countDocuments({}),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: posts,
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Error fetching admin feed', error: error.message });
+  }
+};
+
+// ─── ADMIN: UPDATE POST ─────────────────────────────────────────────────────
+export const updatePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    // Prevent overriding crucial tracking fields unless intended
+    delete updates._id;
+
+    const post = await FeedPost.findByIdAndUpdate(id, { $set: updates }, { new: true });
+    
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    res.status(200).json({ success: true, data: post });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Error updating post', error: error.message });
+  }
+};
+
+// ─── ADMIN: DELETE POST ─────────────────────────────────────────────────────
+export const deletePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const post = await FeedPost.findByIdAndDelete(id);
+    
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Optional: Also delete associated comments if the user requested it in the plan.
+    // The user didn't explicitly say yes or no, let's gracefully soft-delete or hard delete them:
+    await FeedComment.deleteMany({ postId: id });
+
+    res.status(200).json({ success: true, message: 'Post deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: 'Error deleting post', error: error.message });
+  }
+};

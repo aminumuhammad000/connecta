@@ -35,7 +35,7 @@ export default function FeedReactionBar({
     const c = useThemeColors();
     const { user } = useAuth();
     
-    const [reactions, setReactions] = useState<FeedReactions>(initialReactions);
+    const [reactions, setReactions] = useState<FeedReactions>(initialReactions || { celebrate: [], insightful: [], clap: [], fire: [], love: [] });
     const [myReaction, setMyReaction] = useState<ReactionType | undefined>(initialMyReaction);
     const [showReactionMenu, setShowReactionMenu] = useState(false);
     const scaleAnim = React.useRef(new Animated.Value(1)).current;
