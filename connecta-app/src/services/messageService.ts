@@ -41,7 +41,8 @@ export const getConversationMessages = async (conversationId: string): Promise<M
     const response = await get<any>(API_ENDPOINTS.CONVERSATION_MESSAGES(conversationId));
     // Handle both wrapped and unwrapped (by api.ts interceptor) responses
     if (Array.isArray(response)) return response;
-    return response?.data || response?.messages || [];
+    const resAny = response as any;
+    return resAny?.data || resAny?.messages || [];
 };
 
 /**
@@ -72,7 +73,8 @@ export const markMessagesAsRead = async (conversationId: string): Promise<void> 
 export const getTotalUnreadCount = async (): Promise<number> => {
     const response = await get<any>(API_ENDPOINTS.UNREAD_COUNT_TOTAL);
     // Handle both wrapped and unwrapped (by api.ts interceptor) responses
-    return response?.unreadCount !== undefined ? response.unreadCount : (response as any)?.data?.unreadCount || 0;
+    const resAny = response as any;
+    return resAny?.unreadCount !== undefined ? resAny.unreadCount : resAny?.data?.unreadCount || 0;
 };
 
 export default {

@@ -44,6 +44,9 @@ export const API_ENDPOINTS = {
     GOOGLE_SIGNUP: '/api/users/google/signup',
     GOOGLE_SIGNIN: '/api/users/google/signin',
 
+    // AI Agent
+    AI_AGENT: '/api/agent/query',
+
     // Users
     USERS: '/api/users',
     USER_ME: '/api/users/me',

@@ -15,7 +15,12 @@ export interface User {
     totalReviews?: number;
     jobSuccessScore?: number;
     savedJobs?: string[];
+    whatsapp?: string;
     emailFrequency?: 'daily' | 'weekly' | 'monthly';
+    phone?: string;
+    phoneNumber?: string;
+    profession?: string;
+    jobTitle?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -135,6 +140,7 @@ export interface Job {
     experienceLevel?: string;
     experience?: string;
     deadline?: string;
+    paymentVerified?: boolean;
     status: JobStatus;
     proposalCount?: number;
     location?: string;
@@ -393,6 +399,7 @@ export interface DashboardStats {
     completedJobs?: number;
     activeProposals?: number;
     totalProjects?: number;
+    submittedProjects?: number;
 }
 
 // API Response Types

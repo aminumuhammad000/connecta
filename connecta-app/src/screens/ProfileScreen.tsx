@@ -63,10 +63,10 @@ export default function ProfileScreen({ navigation }: any) {
       setProfile(merged);
 
       // Handle reviews data structure (could be array or object with data property)
-      const reviewsList = Array.isArray(reviewsData) ? reviewsData : (reviewsData?.data || []);
+      const reviewsList = Array.isArray(reviewsData) ? reviewsData : ((reviewsData as any)?.data || []);
       setReviews(reviewsList);
       
-      const allProjects = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+      const allProjects = Array.isArray(projectsData) ? projectsData : ((projectsData as any)?.data || []);
       setCompletedProjects(allProjects.filter((p: any) => p.status === 'completed'));
 
       setErrorMessage(profileData ? null : 'Profile not found. Create your profile to get started.');

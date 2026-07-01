@@ -330,8 +330,7 @@ const PostJobScreen: React.FC = () => {
         // If fee is 0, activate immediately
         await jobService.updateJob(createdJob._id, { status: 'active' as any, paymentVerified: true });
         setIsLoading(false);
-        setSuccessMessage('Job posted successfully! It is now active and freelancers can see it.');
-        setIsSuccessVisible(true);
+        setShowSuccessModal(true);
       } else {
         // Show payment prompt
         setIsLoading(false);
@@ -777,7 +776,6 @@ const PostJobScreen: React.FC = () => {
               style={[
                 styles.refinedInput,
                 {
-                  color: c.text,
                   backgroundColor: c.card,
                   borderColor: errors.location ? '#EF4444' : c.border,
                   height: 48,
@@ -1286,7 +1284,7 @@ const PostJobScreen: React.FC = () => {
               
               {/* ... (re-applying the optimized content) ... */}
             
-            <Text style={[styles.modalTitle, { color: c.text, textAlign: 'center', marginBottom: 8 }]}>Activate Your Job</Text>
+            <Text style={[(styles as any).modalTitle, { color: c.text, textAlign: 'center', marginBottom: 8 }]}>Activate Your Job</Text>
             <Text style={{ fontSize: 13, color: c.subtext, textAlign: 'center', lineHeight: 18, marginBottom: 20 }}>
               {isTransferSelected ? "Transfer the exact fee amount to the account below." : "Post your job and start receiving proposals."}
             </Text>

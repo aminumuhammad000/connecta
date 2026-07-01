@@ -15,9 +15,10 @@ interface FeedPostCardProps {
     onCommentPress: (postId: string) => void;
     onEditPress?: (post: FeedPost) => void;
     onDeletePress?: (postId: string) => void;
+    onPressJob?: (jobId: string) => void;
 }
 
-export default function FeedPostCard({ post, onPressProfile, onCommentPress, onEditPress, onDeletePress }: FeedPostCardProps) {
+export default function FeedPostCard({ post, onPressProfile, onCommentPress, onEditPress, onDeletePress, onPressJob }: FeedPostCardProps) {
     const c = useThemeColors();
     const { user } = useAuth();
     const [isExpanded, setIsExpanded] = useState(false);
@@ -98,7 +99,10 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress, onE
                             {post.body}
                         </Text>
                         {post.type === 'job_posted' && (
-                           <TouchableOpacity style={[styles.activityBtn, { backgroundColor: c.primary }]}>
+                           <TouchableOpacity 
+                               onPress={() => onPressJob && post.relatedId && onPressJob(post.relatedId)} 
+                               style={[styles.activityBtn, { backgroundColor: c.primary }]}
+                           >
                                <Text style={styles.activityBtnText}>View Job</Text>
                            </TouchableOpacity>
                         )}

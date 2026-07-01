@@ -63,7 +63,7 @@ function AppContent() {
   const { isDark } = useTheme();
   const c = useThemeColors();
   const { showAlert } = useInAppAlert();
-  const navigationRef = useRef<any>();
+  const navigationRef = useRef<any>(null);
   const routeNameRef = useRef<string | null>(null);
   const [currentRoute, setCurrentRoute] = React.useState<string | null>(null);
 

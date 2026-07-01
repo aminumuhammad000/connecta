@@ -13,10 +13,10 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
     const insets = useSafeAreaInsets();
     const { clearUnreadFeedCount, socket } = useSocket();
 
-    const [posts, setPosts] = useState<FeedPost[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [posts, setPosts] = useState<FeedPost[]>(feedService.cachedPosts || []);
+    const [loading, setLoading] = useState(feedService.cachedPosts?.length === 0);
     const [refreshing, setRefreshing] = useState(false);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(feedService.cachedPage || 1);
     const [hasMore, setHasMore] = useState(true);
 
     // Comment Sheet State
@@ -34,7 +34,11 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
     );
 
     useEffect(() => {
-        loadFeed(1);
+        if (!feedService.cachedPosts || feedService.cachedPosts.length === 0) {
+            loadFeed(1);
+        } else {
+            setLoading(false);
+        }
     }, []);
 
     // Listen for real-time posts
@@ -75,12 +79,18 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
     const loadFeed = async (pageNumber: number, isRefresh = false) => {
         try {
             if (pageNumber === 1 && !isRefresh) setLoading(true);
-            const responseData = await feedService.getFeed(pageNumber, 15);
+            const response = await feedService.getFeed(pageNumber, 15);
+            const responseData = response.data?.data || response.data || [];
             
             if (isRefresh || pageNumber === 1) {
                 setPosts(responseData);
+                feedService.setCache(responseData, pageNumber);
             } else {
-                setPosts(prev => [...prev, ...responseData]);
+                setPosts(prev => {
+                    const merged = [...prev, ...responseData];
+                    feedService.setCache(merged, pageNumber);
+                    return merged;
+                });
             }
             
             setHasMore(responseData.length === 15);
@@ -107,6 +117,12 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
     const navigateToProfile = (userId?: string) => {
         if (userId) {
             navigation.navigate('ClientProfile', { userId }); // Using ClientProfile as a generic profile viewer for now
+        }
+    };
+
+    const navigateToJob = (jobId?: string) => {
+        if (jobId) {
+            navigation.navigate('JobDetail', { jobId }); 
         }
     };
 
@@ -154,6 +170,7 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
                     <FeedPostCard 
                         post={item} 
                         onPressProfile={navigateToProfile}
+                        onPressJob={navigateToJob}
                         onCommentPress={setSelectedPostId}
                         onDeletePress={handleDeletePost}
                         onEditPress={(post) => {

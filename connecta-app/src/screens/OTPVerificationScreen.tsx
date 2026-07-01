@@ -136,11 +136,11 @@ const OTPVerificationScreen: React.FC = () => {
         try {
             if (mode === 'signup') {
                 const pendingData = await storage.getPendingSignupData();
-                await initiateSignup(userEmail || email || pendingData?.email, pendingData?.firstName || 'User', 'en');
+                await initiateSignup(userEmail || initialEmail || pendingData?.email, pendingData?.firstName || 'User', 'en');
             } else if (mode === 'forgotPassword') {
-                await sendPasswordResetOTP(userEmail || email);
+                await sendPasswordResetOTP(userEmail || initialEmail);
             } else {
-                await resendVerification(userEmail || email);
+                await resendVerification(userEmail || initialEmail);
             }
 
             setResendTimer(60);

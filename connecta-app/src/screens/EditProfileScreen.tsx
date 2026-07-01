@@ -518,7 +518,7 @@ export default function EditProfileScreen({ navigation }: any) {
                     whatsapp: formData.whatsapp,
                     whatsappNumber: formData.whatsapp,
                     profileImage: profileImage || undefined,
-                });
+                } as any);
                 console.log('User updated, response:', updatedUserData);
 
                 updateUser({
@@ -782,7 +782,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             <Text style={[styles.sectionTitle, { color: c.text }]}>Professional Preferences</Text>
                         </View>
 
-                        <View style={styles.field}>
+                        <View style={(styles as any).field}>
                             <Text style={[styles.label, { color: c.subtext }]}>Work Style</Text>
                             <View style={styles.optionsRow}>
                                 {REMOTE_OPTIONS.map(opt => (
@@ -803,7 +803,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             </View>
                         </View>
 
-                        <View style={styles.field}>
+                        <View style={(styles as any).field}>
                             <Text style={[styles.label, { color: c.subtext }]}>Experience Level</Text>
                             <View style={styles.optionsRow}>
                                 {EXP_OPTIONS.map(opt => (
@@ -824,7 +824,7 @@ export default function EditProfileScreen({ navigation }: any) {
                             </View>
                         </View>
 
-                        <View style={styles.field}>
+                        <View style={(styles as any).field}>
                             <Text style={[styles.label, { color: c.subtext }]}>Job Categories (Select up to 5)</Text>
                             <View style={styles.tagsContainer}>
                                 {CATEGORIES.map(cat => {

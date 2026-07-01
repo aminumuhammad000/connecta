@@ -23,7 +23,7 @@ const DesktopRightSidebar = () => {
 
     const fetchRecentChats = async () => {
         try {
-            const data = await messageService.getUserConversations(user!._id);
+            const data = await messageService.getUserConversations();
             if (Array.isArray(data)) {
                 // Take top 3
                 setConversations(data.slice(0, 3));
@@ -225,9 +225,8 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 13,
         height: '100%',
-        // @ts-ignore
         outlineStyle: 'none'
-    },
+    } as any,
     aiSendBtn: {
         padding: 4,
     },

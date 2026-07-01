@@ -90,7 +90,9 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
         { icon: "help-circle-outline", label: "Help & Support", screen: "HelpSupport", color: "#EC4899" },
         { icon: "shield-checkmark-outline", label: "Terms & Conditions", screen: "Terms", color: "#8B5CF6" },
         { icon: "information-circle-outline", label: "About Connecta", screen: "About", color: "#3B82F6" },
-    ].filter(Boolean);
+    ] as (false | { icon: string; label: string; screen: string; color: string })[];
+
+    const activeMenuItems = menuItems.filter(Boolean) as { icon: string; label: string; screen: string; color: string }[];
 
     return (
         <Modal
@@ -170,7 +172,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
                         contentContainerStyle={styles.menuContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        {menuItems.map((item, index) => (
+                        {activeMenuItems.map((item, index) => (
                             <TouchableOpacity
                                 key={`menu-item-${index}`}
                                 style={[styles.menuItem, { borderBottomColor: c.border }]}

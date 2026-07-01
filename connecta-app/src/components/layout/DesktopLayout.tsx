@@ -3,14 +3,13 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import DesktopTopNav from '../navigation/DesktopTopNav';
 import DesktopLeftSidebar from '../navigation/DesktopLeftSidebar';
 import DesktopRightSidebar from '../navigation/DesktopRightSidebar';
-import { useNavigation } from '@react-navigation/native';
+
 
 interface DesktopLayoutProps {
     children: React.ReactNode;
 }
 
 const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
-    const navigation = useNavigation<any>();
 
     return (
         <View style={styles.container}>
@@ -19,7 +18,7 @@ const DesktopLayout: React.FC<DesktopLayoutProps> = ({ children }) => {
             <View style={styles.contentWrapper}>
                 {/* Left Column - Profile Card */}
                 <View style={styles.leftColumn}>
-                    <DesktopLeftSidebar navigation={navigation} />
+                    <DesktopLeftSidebar />
                 </View>
 
                 {/* Center Column - Feed/Content */}

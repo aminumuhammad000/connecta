@@ -310,7 +310,7 @@ export default function ClientEditProfileScreen({ navigation }: any) {
                 phoneNumber: formData.phone,
                 whatsapp: formData.whatsapp,
                 profileImage: finalImageUrl || undefined,
-            });
+            } as any);
 
             if (user) {
                 updateUser({

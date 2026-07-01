@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, ActivityIndicator, RefreshControl, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Avatar from '../components/Avatar';
 import { useThemeColors } from '../theme/theme';
 import { useFocusEffect } from '@react-navigation/native';
@@ -325,89 +325,94 @@ export default function ChatsScreen({ navigation }: any) {
                 }
 
                 {/* New Chat Modal */}
-                <Modal
-                    visible={showNewChatModal}
-                    animationType="slide"
-                    transparent={true}
-                    onRequestClose={() => setShowNewChatModal(false)}
-                >
-                    <View style={[styles.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
-                        <View style={[
-                            styles.modalContent,
-                            { backgroundColor: c.background },
-                            isDesktop && { width: '100%', maxWidth: 500, height: '70%', borderRadius: 24 }
-                        ]}>
-                            <BlurView intensity={80} tint={c.isDark ? 'dark' : 'light'} style={styles.modalHeaderBlur}>
-                                <LinearGradient
-                                    colors={[c.primary, c.primary + 'CC']}
-                                    style={styles.modalHeaderGradient}
-                                >
-                                    <View style={styles.modalHeaderRow}>
-                                        <Text style={styles.modalTitle}>New Chat</Text>
-                                        <TouchableOpacity
-                                            onPress={() => setShowNewChatModal(false)}
-                                            style={styles.closeBtn}
+                {(() => {
+                    const s = styles as any;
+                    return (
+                        <Modal
+                            visible={showNewChatModal}
+                            animationType="slide"
+                            transparent={true}
+                            onRequestClose={() => setShowNewChatModal(false)}
+                        >
+                            <View style={[s.modalOverlay, isDesktop && { justifyContent: 'center', alignItems: 'center' }]}>
+                                <View style={[
+                                    s.modalContent,
+                                    { backgroundColor: c.background },
+                                    isDesktop && { width: '100%', maxWidth: 500, height: '70%', borderRadius: 24 }
+                                ]}>
+                                    <BlurView intensity={80} tint={c.isDark ? 'dark' : 'light'} style={s.modalHeaderBlur}>
+                                        <LinearGradient
+                                            colors={[c.primary, c.primary + 'CC']}
+                                            style={s.modalHeaderGradient}
                                         >
-                                            <Ionicons name="close" size={24} color="#FFF" />
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    <View style={styles.modalSearchBox}>
-                                        <Ionicons name="search" size={20} color="rgba(255,255,255,0.7)" />
-                                        <TextInput
-                                            style={styles.modalSearchInput}
-                                            placeholder="Search clients..."
-                                            placeholderTextColor="rgba(255,255,255,0.5)"
-                                            value={clientSearch}
-                                            onChangeText={setClientSearch}
-                                        />
-                                    </View>
-                                </LinearGradient>
-                            </BlurView>
-
-                            <View style={styles.clientListContainer}>
-                                <Text style={[styles.sectionLabel, { color: c.subtext }]}>CLIENTS FROM PROPOSALS</Text>
-
-                                {loadingClients ? (
-                                    <ActivityIndicator size="small" color={c.primary} style={{ marginTop: 20 }} />
-                                ) : (
-                                    <FlatList
-                                        data={clients.filter(cl =>
-                                            `${cl.firstName} ${cl.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())
-                                        )}
-                                        keyExtractor={item => item._id}
-                                        renderItem={({ item }) => (
-                                            <TouchableOpacity
-                                                style={styles.clientItem}
-                                                onPress={() => startNewChat(item)}
-                                            >
-                                                <Avatar
-                                                    uri={item.profileImage || item.avatar}
-                                                    name={`${item.firstName} ${item.lastName}`}
-                                                    size={44}
-                                                />
-                                                <View style={styles.clientInfo}>
-                                                    <Text style={[styles.clientName, { color: c.text }]}>
-                                                        {item.firstName} {item.lastName}
-                                                    </Text>
-                                                    <Text style={[styles.clientSub, { color: c.subtext }]}>
-                                                        {item.email}
-                                                    </Text>
-                                                </View>
-                                                <Ionicons name="chevron-forward" size={20} color={c.border} />
-                                            </TouchableOpacity>
-                                        )}
-                                        ListEmptyComponent={
-                                            <View style={styles.emptyClients}>
-                                                <Text style={{ color: c.subtext }}>No clients found</Text>
+                                            <View style={s.modalHeaderRow}>
+                                                <Text style={s.modalTitle}>New Chat</Text>
+                                                <TouchableOpacity
+                                                    onPress={() => setShowNewChatModal(false)}
+                                                    style={s.closeBtn}
+                                                >
+                                                    <Ionicons name="close" size={24} color="#FFF" />
+                                                </TouchableOpacity>
                                             </View>
-                                        }
-                                    />
-                                )}
+
+                                            <View style={s.modalSearchBox}>
+                                                <Ionicons name="search" size={20} color="rgba(255,255,255,0.7)" />
+                                                <TextInput
+                                                    style={s.modalSearchInput}
+                                                    placeholder="Search clients..."
+                                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                                    value={clientSearch}
+                                                    onChangeText={setClientSearch}
+                                                />
+                                            </View>
+                                        </LinearGradient>
+                                    </BlurView>
+
+                                    <View style={s.clientListContainer}>
+                                        <Text style={[s.sectionLabel, { color: c.subtext }]}>CLIENTS FROM PROPOSALS</Text>
+
+                                        {loadingClients ? (
+                                            <ActivityIndicator size="small" color={c.primary} style={{ marginTop: 20 }} />
+                                        ) : (
+                                            <FlatList
+                                                data={clients.filter(cl =>
+                                                    `${cl.firstName} ${cl.lastName}`.toLowerCase().includes(clientSearch.toLowerCase())
+                                                )}
+                                                keyExtractor={item => item._id}
+                                                renderItem={({ item }) => (
+                                                    <TouchableOpacity
+                                                        style={s.clientItem}
+                                                        onPress={() => startNewChat(item)}
+                                                    >
+                                                        <Avatar
+                                                            uri={item.profileImage || item.avatar}
+                                                            name={`${item.firstName} ${item.lastName}`}
+                                                            size={44}
+                                                        />
+                                                        <View style={s.clientInfo}>
+                                                            <Text style={[s.clientName, { color: c.text }]}>
+                                                                {item.firstName} {item.lastName}
+                                                            </Text>
+                                                            <Text style={[s.clientSub, { color: c.subtext }]}>
+                                                                {item.email}
+                                                            </Text>
+                                                        </View>
+                                                        <Ionicons name="chevron-forward" size={20} color={c.border} />
+                                                    </TouchableOpacity>
+                                                )}
+                                                ListEmptyComponent={
+                                                    <View style={s.emptyClients}>
+                                                        <Text style={{ color: c.subtext }}>No clients found</Text>
+                                                    </View>
+                                                }
+                                            />
+                                        )}
+                                    </View>
+                                </View>
                             </View>
-                        </View>
-                    </View>
-                </Modal>
+                        </Modal>
+                    );
+                })()}
             </View>
         </SafeAreaView>
     );

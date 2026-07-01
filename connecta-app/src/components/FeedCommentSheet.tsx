@@ -33,7 +33,8 @@ export default function FeedCommentSheet({ postId, visible, onClose, onCommentAd
     const loadComments = async () => {
         try {
             setLoading(true);
-            const data = await feedService.getComments(postId);
+            const res = await feedService.getComments(postId);
+            const data = res.data?.data || res.data || [];
             setComments(data);
         } catch (error) {
             console.error('Failed to load comments:', error);
@@ -49,7 +50,8 @@ export default function FeedCommentSheet({ postId, visible, onClose, onCommentAd
 
         try {
             setSubmitting(true);
-            const comment = await feedService.addComment(postId, newComment.trim(), userName, user.profileImage);
+            const res = await feedService.addComment(postId, newComment.trim(), userName, user.profileImage);
+            const comment = res.data?.data || res.data;
             setComments(prev => [...prev, comment]);
             setNewComment('');
             Keyboard.dismiss();

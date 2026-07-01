@@ -43,13 +43,13 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "extra": {
-      "eas": {
-        "projectId": "f66f256a-220f-4c65-af46-5e68627cadd6"
-      }
-    },
     "plugins": [
       "@react-native-firebase/app"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "540d6510-eeca-43b6-96b3-d066d9184b0f"
+      }
+    }
   }
 }
