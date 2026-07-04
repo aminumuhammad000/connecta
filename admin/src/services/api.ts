@@ -10,8 +10,8 @@ export interface ApiResponse<T = any> {
 }
 
 // API Base Configuration
-// Use 'http://localhost:5000' for local development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// Use 'https://api.myconnecta.ng' for production
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng'
 console.log('[API] Base URL:', API_BASE_URL);
 
 const api = axios.create({
