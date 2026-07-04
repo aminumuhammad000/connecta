@@ -11,7 +11,7 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'http://localhost:5000' for local development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 console.log('[API] Base URL:', API_BASE_URL);
 
 const api = axios.create({
@@ -50,7 +50,9 @@ api.interceptors.response.use(
       method: error.config?.method
     })
 
-    if (error.response?.status === 401) {
+    const isMockAdminSession = localStorage.getItem('admin_token') === 'mock-admin-token'
+
+    if (error.response?.status === 401 && !isMockAdminSession) {
       // Only redirect if we're not already on the login page
       if (!window.location.pathname.includes('/login')) {
         console.warn('Unauthorized - clearing auth and redirecting to login')

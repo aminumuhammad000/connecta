@@ -88,7 +88,8 @@ const FeedPostSchema = new Schema<IFeedPost>(
       enum: [
         'project_completed', 'job_posted', 'proposal_accepted',
         'review_received', 'new_member', 'identity_verified',
-        'portfolio_added', 'milestone_hit', 'first_hire',
+          'portfolio_added', 'milestone_hit', 'first_hire',
+          'proposal_submitted',
         'platform_win', 'daily_tip', 'leaderboard_update',
         'community_poll', 'job_trending', 'user_post',
       ],

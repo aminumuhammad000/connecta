@@ -263,6 +263,7 @@ export const getTrendingPosts = async (req: Request, res: Response) => {
 export const createPost = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
+    const isValidObjectId = typeof userId === 'string' && /^[0-9a-fA-F]{24}$/.test(userId);
     const { type = 'user_post', title, body, emoji, actorName, actorAvatar, actorRole, targetAudience } = req.body;
 
     if (!title || !body) {
@@ -271,10 +272,10 @@ export const createPost = async (req: Request, res: Response) => {
 
     const post = await FeedPost.create({
       type,
-      actor: userId,
-      actorName: actorName || 'User',
+      actor: isValidObjectId ? userId : undefined,
+      actorName: actorName || 'Connecta Admin',
       actorAvatar: actorAvatar || '',
-      actorRole: actorRole || 'Member',
+      actorRole: actorRole || 'admin',
       title: title.slice(0, 200),
       body: body.slice(0, 2000),
       emoji: emoji || '📝',

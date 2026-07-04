@@ -13,7 +13,7 @@ async function main() {
   console.log('🔗 Connecting to MongoDB:', MONGO_URI);
   await mongoose.connect(MONGO_URI);
 
-  const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({}, { strict: false }));
+  const User = (mongoose.models.User || mongoose.model('User', new mongoose.Schema({}, { strict: false }))) as mongoose.Model<any>;
   const adminEmail = 'admin@connecta.ng';
   const newPassword = 'Password123!';
 

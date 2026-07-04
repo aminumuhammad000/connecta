@@ -14,14 +14,14 @@ async function main() {
   await mongoose.connect(MONGO_URI);
 
   // Fallback dynamic schema to create User if not fully imported
-  const User = mongoose.models.User || mongoose.model('User', new mongoose.Schema({
+  const User = (mongoose.models.User || mongoose.model('User', new mongoose.Schema({
     firstName: String,
     lastName: String,
     email: String,
     password: String,
     role: String,
     isEmailVerified: Boolean,
-  }, { strict: false }));
+  }, { strict: false }))) as mongoose.Model<any>;
 
   const adminEmail = 'admin@connecta.ng';
   const adminPassword = 'AdminPassword123!';

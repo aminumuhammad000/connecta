@@ -36,7 +36,8 @@
         "NOTIFICATIONS",
         "USE_FULL_SCREEN_INTENT",
         "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "INTERNET"
       ]
     },
     "web": {
@@ -48,7 +49,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "540d6510-eeca-43b6-96b3-d066d9184b0f"
+        "projectId": "7a372738-20fb-49d2-b7c1-cecbe68b1a06"
       }
     }
   }

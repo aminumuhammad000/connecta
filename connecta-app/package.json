@@ -4,7 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start --go --lan",
-    "start:usb": "expo start --go --localhost",
+    "start:usb": "expo start --go --lan",
     "start:online": "expo start --go --tunnel",
     "start:offline": "expo start --go --offline",
     "start:lan": "expo start --go --lan",

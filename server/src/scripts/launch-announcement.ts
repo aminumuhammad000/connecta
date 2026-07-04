@@ -18,7 +18,7 @@ async function main() {
   await mongoose.connect(MONGO_URI);
   
   // Dynamically import the model to ensure it loads Mongoose properly
-  const FeedPost = mongoose.models.FeedPost || mongoose.model('FeedPost', new mongoose.Schema({}, { strict: false }));
+  const FeedPost = (mongoose.models.FeedPost || mongoose.model('FeedPost', new mongoose.Schema({}, { strict: false }))) as mongoose.Model<any>;
 
   console.log('📢 Creating Official Launch Announcement in Feed...');
   
