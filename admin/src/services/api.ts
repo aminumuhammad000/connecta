@@ -50,9 +50,7 @@ api.interceptors.response.use(
       method: error.config?.method
     })
 
-    const isMockAdminSession = localStorage.getItem('admin_token') === 'mock-admin-token'
-
-    if (error.response?.status === 401 && !isMockAdminSession) {
+    if (error.response?.status === 401) {
       // Only redirect if we're not already on the login page
       if (!window.location.pathname.includes('/login')) {
         console.warn('Unauthorized - clearing auth and redirecting to login')

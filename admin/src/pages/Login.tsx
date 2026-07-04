@@ -4,9 +4,6 @@ import toast from 'react-hot-toast'
 import Icon from '../components/Icon'
 import { authAPI } from '../services/api'
 
-const MOCK_ADMIN_EMAIL = 'admin@connecta.com'
-const MOCK_ADMIN_PASSWORD = 'admin123'
-
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -19,43 +16,22 @@ export default function Login() {
     setLoading(true)
 
     try {
-      if (email.toLowerCase() === MOCK_ADMIN_EMAIL && password === MOCK_ADMIN_PASSWORD) {
-        const mockUser = {
-          _id: 'mock-admin-1',
-          email: MOCK_ADMIN_EMAIL,
-          userType: 'admin',
-          firstName: 'Mock',
-          lastName: 'Admin'
+      const response: any = await authAPI.login(email.toLowerCase(), password)
+      if (response.success && response.token) {
+        if (response.user?.userType !== 'admin') {
+          toast.error('Access denied. Admin privileges required.')
+          setLoading(false)
+          return
         }
 
-        localStorage.setItem('admin_token', 'mock-admin-token')
-        localStorage.setItem('admin_user', JSON.stringify(mockUser))
-        toast.success('Mock admin login successful!')
+        localStorage.setItem('admin_token', response.token)
+        localStorage.setItem('admin_user', JSON.stringify(response.user || { email }))
+        toast.success('Welcome back! Redirecting...')
         setTimeout(() => navigate('/dashboard'), 300)
         return
       }
 
-      try {
-        const response: any = await authAPI.login(email.toLowerCase(), password)
-        if (response.success && response.token) {
-          if (response.user?.userType !== 'admin') {
-            toast.error('Access denied. Admin privileges required.')
-            setLoading(false)
-            return
-          }
-
-          localStorage.setItem('admin_token', response.token)
-          localStorage.setItem('admin_user', JSON.stringify(response.user || { email }))
-          toast.success('Welcome back! Redirecting...')
-          setTimeout(() => navigate('/dashboard'), 300)
-          return
-        }
-
-        throw new Error('No token received from server')
-      } catch (backendError: any) {
-        console.error('Backend login error:', backendError.response?.data || backendError.message)
-        toast.error('Mock login only. Use admin@connecta.com / admin123')
-      }
+      throw new Error('No token received from server')
     } catch (error: any) {
       console.error('Login error:', error)
       const errorMessage = error.response?.data?.message || 'Invalid credentials. Please check your email and password.'
@@ -83,11 +59,6 @@ export default function Login() {
         </div>
         <h2 className="text-xl font-semibold mb-1 text-text-light-primary dark:text-dark-primary">Sign in</h2>
         <p className="text-sm text-text-light-secondary dark:text-dark-secondary mb-6">Use your admin credentials to access the portal.</p>
-        <div className="mb-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 text-sm text-text-light-secondary dark:text-dark-secondary">
-          <p className="font-medium text-text-light-primary dark:text-dark-primary">Mock login</p>
-          <p>Email: {MOCK_ADMIN_EMAIL}</p>
-          <p>Password: {MOCK_ADMIN_PASSWORD}</p>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
