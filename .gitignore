@@ -12,6 +12,10 @@ node_modules/
 # Build outputs
 # dist/
 build/
+server/dist1212/
+server/dist9000/
+server/dist9001/
+server/dist100/
 
 # IDE
 .vscode/
