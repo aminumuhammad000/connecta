@@ -29,6 +29,8 @@ export const authenticate = (
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       id?: string;
       _id?: string;
+      userType?: string;
+      role?: string;
       [key: string]: any;
     };
 
@@ -38,7 +40,14 @@ export const authenticate = (
       return res.status(401).json({ message: 'Invalid token payload' });
     }
 
-    (req as any).user = { id: userId, _id: userId, ...decoded };
+    const normalizedRole = decoded.role || decoded.userType;
+
+    (req as any).user = {
+      id: userId,
+      _id: userId,
+      role: normalizedRole,
+      ...decoded,
+    };
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid or expired token' });
