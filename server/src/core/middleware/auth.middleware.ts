@@ -41,11 +41,13 @@ export const authenticate = (
     }
 
     const normalizedRole = decoded.role || decoded.userType;
+    const normalizedUserType = decoded.userType || (normalizedRole === 'admin' ? 'admin' : undefined);
 
     (req as any).user = {
       id: userId,
       _id: userId,
       role: normalizedRole,
+      userType: normalizedUserType,
       ...decoded,
     };
     next();
@@ -86,9 +88,17 @@ export const requireRole = (roles: string[]) => {
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
-    if (!roles.includes(user.role)) {
+
+    const roleValues = [user.role, user.userType, user.userRole]
+      .filter(Boolean)
+      .map((value) => String(value).toLowerCase());
+
+    const allowedRoles = new Set(roles.map((role) => role.toLowerCase()));
+
+    if (!roleValues.some((value) => allowedRoles.has(value))) {
       return res.status(403).json({ message: 'Forbidden' });
     }
+
     next();
   };
 };
