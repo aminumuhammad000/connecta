@@ -25,33 +25,39 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress, onE
 
     const isLongText = post.body && post.body.length > 150;
 
+    const isOfficial = post.actorRole === 'admin';
+    const isSystemPost = post.isSystemPost || post.type === 'system' || post.actorRole === 'system';
+    const displayName = isOfficial ? 'Connecta Official' : (isSystemPost ? 'System' : (post.actorName || 'User'));
+    const displayRole = isOfficial ? 'Official' : (isSystemPost ? 'System' : (post.actorRole || 'Member'));
+
     const getActorImage = () => {
         if (post.actorAvatar) return { uri: post.actorAvatar };
-        return { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.actorName || 'User')}&background=random` };
+        const name = isOfficial ? 'Connecta Official' : (isSystemPost ? 'System' : (post.actorName || 'User'));
+        return { uri: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random` };
     };
 
-    const isOfficial = post.actorRole === 'admin';
-
     return (
-        <View style={isOfficial 
-            ? [styles.card, { backgroundColor: c.card, borderColor: '#F59E0B', borderWidth: 2 }]
-            : [styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={[styles.card, { backgroundColor: c.card }]}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => onPressProfile(post.actor)}>
-                    <Image source={getActorImage()} style={styles.avatar} />
+                <TouchableOpacity onPress={() => post.actor && onPressProfile(post.actor)}>
+                    <Image 
+                        source={getActorImage()} 
+                        style={[styles.avatar, { backgroundColor: '#E5E7EB' }]}
+                        resizeMode="cover"
+                    />
                 </TouchableOpacity>
                 <View style={styles.headerTextInfo}>
                     <View style={styles.nameRow}>
-                        <Text style={[styles.actorName, { color: isOfficial ? '#F59E0B' : c.text }]} numberOfLines={1}>
-                            {post.actorName || 'System'}
+                        <Text style={[styles.actorName, { color: isOfficial ? '#FD6730' : (isSystemPost ? '#FD6730' : c.text) }]} numberOfLines={1}>
+                            {displayName}
                         </Text>
-                        {(post.isSystemPost || isOfficial) && (
-                            <Ionicons name="checkmark-circle" size={14} color={isOfficial ? '#F59E0B' : c.primary} style={styles.verifiedIcon} />
+                        {(isSystemPost || isOfficial) && (
+                            <Ionicons name="checkmark-circle" size={14} color={isOfficial || isSystemPost ? '#FD6730' : c.primary} style={styles.verifiedIcon} />
                         )}
                     </View>
                     <Text style={[styles.metaText, { color: c.subtext }]}>
-                        {post.actorRole || 'Member'} • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                        {displayRole} • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                     </Text>
                 </View>
                 
@@ -76,7 +82,6 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress, onE
                 // Facebook-style Color Box for User Posts (Now uniform)
                 <View style={[styles.coloredBox, { backgroundColor: c.primary }]}>
                     <Text style={styles.coloredBoxText} numberOfLines={isExpanded ? undefined : 4} ellipsizeMode="tail">
-                        {post.emoji && <Text>{post.emoji} </Text>}
                         {post.body}
                     </Text>
                     {isLongText && (
@@ -118,12 +123,10 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress, onE
                 <View style={styles.content}>
                     {post.title && post.type !== 'user_post' && (
                         <Text style={[styles.title, { color: c.text }]}>
-                            {post.emoji && <Text>{post.emoji} </Text>}
                             {post.title}
                         </Text>
                     )}
                     <Text style={[styles.body, { color: c.text }]} numberOfLines={isExpanded ? undefined : 4}>
-                        {post.type === 'user_post' && post.emoji && <Text>{post.emoji} </Text>}
                         {post.body}
                     </Text>
                     {isLongText && (
@@ -201,30 +204,23 @@ export default function FeedPostCard({ post, onPressProfile, onCommentPress, onE
 
 const styles = StyleSheet.create({
     card: {
-        marginBottom: 16,
-        padding: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        marginBottom: 12,
+        marginHorizontal: 8,
+        padding: 16,
+        paddingBottom: 12,
+        borderRadius: 12,
         backgroundColor: '#FFFFFF',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     avatar: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        marginRight: 14,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        marginRight: 12,
     },
     headerTextInfo: {
         flex: 1,
@@ -234,17 +230,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     actorName: {
-        fontSize: 16,
-        fontWeight: '800',
-        letterSpacing: -0.3,
+        fontSize: 15,
+        fontWeight: '700',
+        letterSpacing: -0.2,
     },
     verifiedIcon: {
         marginLeft: 4,
     },
     metaText: {
-        fontSize: 13,
-        marginTop: 3,
-        fontWeight: '500',
+        fontSize: 12,
+        marginTop: 2,
+        fontWeight: '400',
     },
     menuIcon: {
         padding: 4,
@@ -253,37 +249,36 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     title: {
-        fontSize: 17,
-        fontWeight: '800',
+        fontSize: 15,
+        fontWeight: '700',
         marginBottom: 8,
-        letterSpacing: -0.2,
+        lineHeight: 22,
     },
     body: {
-        fontSize: 15,
-        lineHeight: 24,
+        fontSize: 14,
+        lineHeight: 21,
         fontWeight: '400',
     },
     coloredBox: {
-        marginHorizontal: -20,
-        paddingHorizontal: 30,
+        marginHorizontal: -16,
+        paddingHorizontal: 24,
         alignItems: 'center',
         justifyContent: 'center',
-        height: 240, // Strict consistent height
+        height: 220,
+        borderRadius: 14,
     },
     coloredBoxText: {
-        fontSize: 24,
-        fontWeight: '800',
+        fontSize: 18,
+        fontWeight: '600',
         color: '#FFFFFF',
         textAlign: 'center',
-        lineHeight: 34,
+        lineHeight: 28,
     },
     flyerContainer: {
         marginBottom: 16,
         borderRadius: 12,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.05)',
-        backgroundColor: '#1E1E2D', // Subtle fallback
+        backgroundColor: '#1E1E2D',
     },
     flyerImage: {
         width: '100%',
@@ -294,7 +289,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         padding: 16,
         borderRadius: 12,
-        borderWidth: 1,
         marginBottom: 16,
         alignItems: 'center',
     },

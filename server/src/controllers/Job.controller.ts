@@ -81,6 +81,28 @@ export const getAllJobsAdmin = async (req: Request, res: Response) => {
   }
 };
 
+// Admin/Public Search Jobs
+export const searchJobs = async (req: Request, res: Response) => {
+  try {
+    const { q, limit = 50 } = req.query;
+    if (!q) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+    const filter = {
+      $or: [
+        { title: { $regex: q as string, $options: 'i' } },
+        { description: { $regex: q as string, $options: 'i' } },
+      ]
+    };
+    const jobs = await Job.find(filter)
+      .limit(Number(limit))
+      .populate('clientId', 'firstName lastName email profileImage');
+    res.status(200).json({ success: true, data: jobs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
 
 export const getMatchedJobs = async (req: Request, res: Response) => {
   try {

@@ -85,7 +85,10 @@ class FeedService {
     }
 
     async getFeed(page = 1, limit = 20, audience = 'all') {
-        return apiClient.get(`${API_ENDPOINTS.FEED}?page=${page}&limit=${limit}&audience=${audience}`);
+        const response: any = await apiClient.get(`${API_ENDPOINTS.FEED}?page=${page}&limit=${limit}&audience=${audience}`);
+        if (Array.isArray(response)) return response;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        return [];
     }
 
     async getTrendingPosts() {

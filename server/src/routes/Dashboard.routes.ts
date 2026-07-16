@@ -6,10 +6,15 @@ import {
   getRecentMessages,
   getAdminStats,
   getActiveProjects,
+  getPublicStats,
 } from '../controllers/Dashboard.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
+import { isAdmin } from '../core/middleware/admin.middleware.js';
 
 const router = Router();
+
+// Public stats endpoint (no authentication required)
+router.get('/public/stats', getPublicStats);
 
 // All dashboard routes require authentication
 router.use(authenticate);
@@ -20,8 +25,8 @@ router.get('/stats', getClientDashboard);
 // Get active projects for client
 router.get('/active-projects', getActiveProjects);
 
-// Get admin dashboard stats
-router.get('/admin/stats', getAdminStats);
+// Get admin dashboard stats (requires admin)
+router.get('/admin/stats', isAdmin, getAdminStats);
 
 // Get freelancer dashboard stats
 router.get('/freelancer/stats', getFreelancerDashboard);

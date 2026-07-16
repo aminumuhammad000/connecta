@@ -242,7 +242,7 @@ export const jobsAPI = {
 // ============================================
 export const proposalsAPI = {
   getAll: async (params?: { status?: string; search?: string; limit?: number; page?: number; userId?: string }) => {
-    const { data } = await api.get('/api/proposals', { params })
+    const { data } = await api.get('/api/proposals/admin/all', { params })
     return data
   },
   getById: async (id: string) => {
@@ -296,21 +296,8 @@ export const paymentsAPI = {
     return data
   },
   getStats: async () => {
-    // Calculate stats from all payments
-    const { data: response } = await api.get('/api/payments/admin/all')
-    const payments = Array.isArray(response) ? response : response?.data || []
-
-    const totalRevenue = payments
-      .filter((p: any) => p.status === 'completed')
-      .reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-
-    const pendingWithdrawals = payments
-      .filter((p: any) => p.status === 'pending')
-      .reduce((sum: number, p: any) => sum + (p.amount || 0), 0)
-
-    const successfulTransactions = payments.filter((p: any) => p.status === 'completed').length
-
-    return { totalRevenue, pendingWithdrawals, successfulTransactions }
+    const { data } = await api.get('/api/payments/admin/stats')
+    return data
   },
   release: async (paymentId: string) => {
     const { data } = await api.post(`/api/payments/${paymentId}/release`)
@@ -538,6 +525,14 @@ export const settingsAPI = {
     const { data } = await api.put('/api/settings/payments', paymentsData)
     return data
   },
+  updateGeneral: async (generalData: any) => {
+    const { data } = await api.put('/api/settings/general', generalData)
+    return data
+  },
+  updateSecurity: async (securityData: any) => {
+    const { data } = await api.put('/api/settings/security', securityData)
+    return data
+  },
 }
 
 // ============================================
@@ -575,6 +570,16 @@ export const verificationsAPI = {
 export const contactAPI = {
   getAll: async () => {
     const { data } = await api.get('/api/contact')
+    return data
+  },
+}
+
+// ============================================
+// AUDIT LOGS
+// ============================================
+export const auditLogsAPI = {
+  getAll: async (params?: { page?: number; limit?: number; action?: string; entityType?: string }) => {
+    const { data } = await api.get('/api/audit-logs', { params })
     return data
   },
 }

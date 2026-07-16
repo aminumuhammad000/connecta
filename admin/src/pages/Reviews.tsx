@@ -235,10 +235,15 @@ export default function Reviews() {
                     {showActionSheet === review._id && (
                       <div className="mt-3 pt-3 border-t border-border-light dark:border-border-dark space-y-2">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (confirm('Are you sure you want to flag this review?')) {
-                              console.log('Flagging review:', review._id)
-                              setShowActionSheet(null)
+                              try {
+                                await reviewsAPI.flag(review._id, 'Flagged by admin');
+                                fetchReviews();
+                                setShowActionSheet(null);
+                              } catch (e) {
+                                console.error('Error flagging review', e);
+                              }
                             }
                           }}
                           className="w-full px-4 py-3 min-h-[44px] bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg font-medium flex items-center gap-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
@@ -319,9 +324,14 @@ export default function Reviews() {
                         <td className="px-4 py-4 text-right">
                           <button
                             className="text-text-light-secondary dark:text-dark-secondary hover:text-red-500"
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm('Are you sure you want to flag this review?')) {
-                                console.log('Flagging review:', review._id)
+                                try {
+                                  await reviewsAPI.flag(review._id, 'Flagged by admin');
+                                  fetchReviews();
+                                } catch (e) {
+                                  console.error('Error flagging review', e);
+                                }
                               }
                             }}
                           >

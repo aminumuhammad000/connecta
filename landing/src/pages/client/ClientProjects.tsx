@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import ClientSidebar from './components/ClientSidebar';
 import ClientHeader from './components/ClientHeader';
+import { API_BASE_URL } from '../../utils/constants';
 import styles from './styles/ClientProjects.module.css';
 
 interface Project {
@@ -74,13 +75,13 @@ const ClientProjects = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/projects/client/my-projects', {
+      const response = await fetch(`${API_BASE_URL}/projects/client/my-projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setProjects(data.data || []);
       }
@@ -94,13 +95,13 @@ const ClientProjects = () => {
   const fetchProposals = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/proposals/client/accepted', {
+      const response = await fetch(`${API_BASE_URL}/proposals/client/accepted`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setProposals(data.data || []);
       }
@@ -113,7 +114,7 @@ const ClientProjects = () => {
     setActionLoading(proposalId);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/proposals/${proposalId}/approve`, {
+      const response = await fetch(`${API_BASE_URL}/proposals/${proposalId}/approve`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -121,7 +122,7 @@ const ClientProjects = () => {
         },
       });
       const data = await response.json();
-      
+
       if (data.success) {
         alert('Proposal approved! You can now start chatting with the freelancer.');
         fetchProposals();
@@ -141,11 +142,11 @@ const ClientProjects = () => {
     if (!confirm('Are you sure you want to decline this proposal?')) {
       return;
     }
-    
+
     setActionLoading(proposalId);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/proposals/${proposalId}/reject`, {
+      const response = await fetch(`${API_BASE_URL}/proposals/${proposalId}/reject`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -153,7 +154,7 @@ const ClientProjects = () => {
         },
       });
       const data = await response.json();
-      
+
       if (data.success) {
         alert('Proposal declined');
         fetchProposals();

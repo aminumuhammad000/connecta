@@ -1296,9 +1296,44 @@ export const saveWithdrawalSettings = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Save withdrawal settings error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Failed to save settings' });
+  }
+};
+
+/**
+ * Get payment stats for admin dashboard
+ */
+export const getPaymentStatsAdmin = async (req: Request, res: Response) => {
+  try {
+    const [completedPayments, pendingWithdrawalsData, successfulCount] = await Promise.all([
+      Payment.aggregate([
+        { $match: { status: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      Withdrawal.aggregate([
+        { $match: { status: 'pending' } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]),
+      Payment.countDocuments({ status: 'completed' })
+    ]);
+
+    const totalRevenue = completedPayments.length > 0 ? completedPayments[0].total : 0;
+    const pendingWithdrawals = pendingWithdrawalsData.length > 0 ? pendingWithdrawalsData[0].total : 0;
+    const successfulTransactions = successfulCount;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalRevenue,
+        pendingWithdrawals,
+        successfulTransactions
+      }
+    });
+  } catch (error: any) {
+    console.error('Get admin payment stats error:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to save withdrawal settings',
+      message: error.message || 'Failed to fetch payment stats',
     });
   }
 };

@@ -220,7 +220,7 @@ export default function SettingsScreen({ navigation }: any) {
                     <View style={[styles.sectionCard, { backgroundColor: c.card }]}>
                         <SettingItem
                             icon="help-circle-outline"
-                            color="#8B5CF6"
+                            color="#FD6730"
                             label="Help Center"
                             onPress={() => navigation.navigate('HelpSupport')}
                         />

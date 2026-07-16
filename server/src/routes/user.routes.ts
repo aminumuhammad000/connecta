@@ -5,9 +5,10 @@ import {
     verifyOTP, resetPassword, banUser, unbanUser, 
     getMe, verifyEmail, resendVerificationOTP,
     updatePushToken, changePassword, checkEmailExists, checkPhoneExists,
-    updateMe, deleteUser, createAdmin
+    updateMe, deleteUser, createAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById
 } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
+import { isAdmin } from "../core/middleware/admin.middleware.js";
 
 const router = express.Router();
 
@@ -48,9 +49,15 @@ router.get("/", getUsers);
 router.get("/:id", getUserById);
 
 // User management routes
-router.put("/:id/ban", banUser);
-router.put("/:id/unban", unbanUser);
+router.put("/:id", authenticate, isAdmin, updateUserById);
+router.put("/:id/ban", authenticate, isAdmin, banUser);
+router.put("/:id/unban", authenticate, isAdmin, unbanUser);
 router.post("/admin", createAdmin); // Temporarily without auth for initial setup
-router.delete("/:id", deleteUser);
+router.delete("/:id", authenticate, isAdmin, deleteUser);
+
+// Bulk operations (admin only)
+router.post("/bulk/delete", authenticate, isAdmin, bulkDeleteUsers);
+router.post("/bulk/ban", authenticate, isAdmin, bulkBanUsers);
+router.post("/bulk/unban", authenticate, isAdmin, bulkUnbanUsers);
 
 export default router;

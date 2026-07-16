@@ -1,6 +1,20 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ISystemSettings extends Document {
+    general: {
+        platformName: string;
+        commissionRate: number;
+        minWithdrawal: number;
+        autoApproveProjects: boolean;
+        emailNotifications: boolean;
+        allowNewRegistrations: boolean;
+        maintenanceMode: boolean;
+    };
+    security: {
+        require2FA: boolean;
+        sessionTimeout: number;
+        maxLoginAttempts: number;
+    };
     smtp: {
         provider: 'gmail' | 'other';
         host: string;
@@ -37,6 +51,20 @@ interface ISystemSettingsModel extends Model<ISystemSettings> {
 }
 
 const SystemSettingsSchema: Schema = new Schema({
+    general: {
+        platformName: { type: String, default: 'Connecta' },
+        commissionRate: { type: Number, default: 15 },
+        minWithdrawal: { type: Number, default: 50 },
+        autoApproveProjects: { type: Boolean, default: false },
+        emailNotifications: { type: Boolean, default: true },
+        allowNewRegistrations: { type: Boolean, default: true },
+        maintenanceMode: { type: Boolean, default: false }
+    },
+    security: {
+        require2FA: { type: Boolean, default: false },
+        sessionTimeout: { type: Number, default: 30 },
+        maxLoginAttempts: { type: Number, default: 5 }
+    },
     smtp: {
         provider: { type: String, enum: ['gmail', 'other'], default: 'other' },
         host: { type: String, default: '' },

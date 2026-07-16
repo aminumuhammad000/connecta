@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList,ActivityIndicator, RefreshControl, StyleSheet, Text, Platform, Alert, Modal, TextInput, TouchableOpacity } from 'react-native';
+import { View, FlatList, ActivityIndicator, RefreshControl, StyleSheet, Text, Platform, Alert, Modal, TextInput, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors } from '../theme/theme';
 import { feedService, FeedPost } from '../services/feedService';
@@ -7,6 +7,7 @@ import FeedPostCard from '../components/FeedPostCard';
 import FeedCommentSheet from '../components/FeedCommentSheet';
 import { useSocket } from '../context/SocketContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 export default function FeedScreen({ navigation }: { navigation: any }) {
     const c = useThemeColors();
@@ -80,7 +81,11 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
         try {
             if (pageNumber === 1 && !isRefresh) setLoading(true);
             const response = await feedService.getFeed(pageNumber, 15);
-            const responseData = response.data?.data || response.data || [];
+            const responseData = Array.isArray(response)
+                ? response
+                : (response?.data && Array.isArray(response.data)
+                    ? response.data
+                    : []);
             
             if (isRefresh || pageNumber === 1) {
                 setPosts(responseData);
@@ -157,13 +162,125 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: c.background, paddingTop: insets.top }]}>
-            {/* Header */}
-            <View style={[styles.header, { borderBottomColor: c.border, backgroundColor: c.card }]}>
-                <Text style={[styles.headerTitle, { color: c.text }]}>Feed</Text>
+        <View style={[styles.container, { backgroundColor: c.background }]}>
+            {/* Facebook-Style Top Navbar - FIXED/STICKY */}
+            <View style={[styles.fbNavBar, { 
+                backgroundColor: c.card,
+                paddingTop: insets.top,
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1000,
+            }]}>
+                {/* Left: App Logo/Name */}
+                <View style={styles.navBarLeft}>
+                    <Ionicons name="layers" size={28} color="#FD6730" />
+                    <Text style={[styles.navBarTitle, { color: c.text }]}>Feed</Text>
+                </View>
+
+                {/* Right: Icons */}
+                <View style={styles.navBarRight}>
+                    <TouchableOpacity 
+                        style={[styles.navBarIcon, { backgroundColor: c.background }]}
+                        onPress={() => navigation.navigate('Chats')}
+                    >
+                        <Ionicons name="chatbubble-outline" size={20} color={c.text} />
+                        <View style={styles.navBarBadge}>
+                            <Text style={styles.navBarBadgeText}>1</Text>
+                        </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={[styles.navBarIcon, { backgroundColor: c.background }]}
+                        onPress={() => navigation.navigate('Notifications')}
+                    >
+                        <Ionicons name="notifications-outline" size={20} color={c.text} />
+                        <View style={styles.navBarBadge}>
+                            <Text style={styles.navBarBadgeText}>3</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
             </View>
 
+            {/* Quick Actions Card - Overlapping Navbar - SCROLLABLE */}
+            <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                nestedScrollEnabled={true}
+                style={{
+                    backgroundColor: c.card,
+                    borderRadius: 20,
+                    marginHorizontal: 16,
+                    marginTop: -45,
+                    marginBottom: 20,
+                    zIndex: 100,
+                    height: 130,
+                }}
+                contentContainerStyle={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 15,
+                    gap: 12,
+                }}
+            >
+                    <TouchableOpacity
+                        style={styles.dashboardQuickAction}
+                        onPress={() => navigation.navigate('ClientProjects')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.dashboardActionIcon, { backgroundColor: c.primary + '15' }]}>
+                            <Ionicons name="briefcase" size={18} color={c.primary} />
+                        </View>
+                        <Text style={[styles.dashboardActionLabel, { color: c.text }]}>My Projects</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dashboardQuickAction}
+                        onPress={() => navigation.navigate('Jobs')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.dashboardActionIcon, { backgroundColor: '#10B98115' }]}>
+                            <Ionicons name="list" size={18} color="#10B981" />
+                        </View>
+                        <Text style={[styles.dashboardActionLabel, { color: c.text }]}>Postings</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dashboardQuickAction}
+                        onPress={() => navigation.navigate('Proposals')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.dashboardActionIcon, { backgroundColor: c.primary + '15' }]}>
+                            <Ionicons name="document-text" size={18} color={c.primary} />
+                        </View>
+                        <Text style={[styles.dashboardActionLabel, { color: c.text }]}>Proposals</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dashboardQuickAction}
+                        onPress={() => navigation.navigate('Chats')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.dashboardActionIcon, { backgroundColor: '#3B82F615' }]}>
+                            <Ionicons name="chatbubbles" size={18} color="#3B82F6" />
+                        </View>
+                        <Text style={[styles.dashboardActionLabel, { color: c.text }]}>Chats</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.dashboardQuickAction}
+                        onPress={() => navigation.navigate('Feed')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={[styles.dashboardActionIcon, { backgroundColor: '#FD673015' }]}>
+                            <Ionicons name="layers" size={18} color="#FD6730" />
+                        </View>
+                        <Text style={[styles.dashboardActionLabel, { color: c.text }]}>Feed</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+
             <FlatList
+                style={{ marginTop: 20 }}
                 data={posts}
                 keyExtractor={item => item._id}
                 renderItem={({ item }) => (
@@ -191,6 +308,7 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
+                        <Ionicons name="layers" size={48} color={c.subtext} style={{ marginBottom: 8, opacity: 0.6 }} />
                         <Text style={[styles.emptyText, { color: c.subtext }]}>
                             No activities yet. Connect with others to see more!
                         </Text>
@@ -208,7 +326,7 @@ export default function FeedScreen({ navigation }: { navigation: any }) {
                     if (selectedPostId) {
                         setPosts(prev => prev.map(post => 
                             post._id === selectedPostId 
-                                ? { ...post, commentCount: post.commentCount + 1 } 
+                                ? { ...post, commentCount: (post.commentCount || 0) + 1 } 
                                 : post
                         ));
                     }
@@ -250,18 +368,70 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    header: {
+    fbNavBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingBottom: 12,
-        paddingTop: Platform.OS === 'android' ? 16 : 8,
-        borderBottomWidth: 1,
+        paddingVertical: 14,
     },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
+    navBarLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    navBarTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    navBarRight: {
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'center',
+    },
+    navBarIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    navBarBadge: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        backgroundColor: '#EF4444',
+        borderRadius: 10,
+        minWidth: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+    },
+    navBarBadgeText: {
+        color: '#FFF',
+        fontSize: 10,
+        fontWeight: '700',
+    },
+    dashboardQuickAction: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 80,
+        paddingHorizontal: 12,
+    },
+    dashboardActionIcon: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    dashboardActionLabel: {
+        fontSize: 11,
+        fontWeight: '600',
+        textAlign: 'center',
     },
     footerLoader: {
         paddingVertical: 20,
@@ -269,6 +439,8 @@ const styles = StyleSheet.create({
     emptyContainer: {
         padding: 40,
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 400,
     },
     emptyText: {
         textAlign: 'center',

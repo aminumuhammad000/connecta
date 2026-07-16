@@ -17,11 +17,15 @@ import {
   getProjectStats,
 } from '../controllers/Project.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
+import { isAdmin } from '../core/middleware/admin.middleware.js';
 
 const router = Router();
 
+// Secure all project routes
+router.use(authenticate);
+
 // Get all projects (admin)
-router.get('/', getAllProjects);
+router.get('/', isAdmin, getAllProjects);
 
 // Get logged-in client's own projects (protected)
 router.get('/client/my-projects', authenticate, getMyProjects);

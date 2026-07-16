@@ -752,7 +752,7 @@ const MatchingScreen = ({ onFinish, navigation, isProfileSaved }: { onFinish: ()
     }, [isProfileSaved]);
 
     const widthInterp = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-    const balloonColors = [c.primary, '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
+    const balloonColors = [c.primary, '#10B981', '#F59E0B', '#EF4444', '#FD6730', '#EC4899', '#06B6D4'];
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: c.background, justifyContent: 'center', alignItems: 'center', padding: 30 }]}>

@@ -10,10 +10,11 @@ import {
   testWhatsAppNotification
 } from '../controllers/notification.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
+import { isAdmin } from '../core/middleware/admin.middleware.js';
 
 const router = express.Router();
-// Admin: Get all notifications (no auth)
-router.get('/admin/all', getAllNotifications);
+// Admin: Get all notifications (requires admin)
+router.get('/admin/all', authenticate, isAdmin, getAllNotifications);
 
 // Test WhatsApp (Admin/Public for testing)
 router.post('/test-whatsapp', testWhatsAppNotification);

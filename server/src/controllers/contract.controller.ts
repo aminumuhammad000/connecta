@@ -248,3 +248,48 @@ export const getAllContractsAdmin = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Terminate a contract
+export const terminateContract = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const contract = await Contract.findById(id);
+    if (!contract) {
+      return res.status(404).json({ success: false, message: 'Contract not found' });
+    }
+
+    contract.status = 'terminated';
+    // optionally save the termination reason if schema supports it or log it
+    await contract.save();
+
+    res.status(200).json({ success: true, message: 'Contract terminated', data: contract });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get contract template
+export const getContractTemplate = async (req: Request, res: Response) => {
+  try {
+    const { type } = req.params;
+    
+    let template = {};
+    if (type === 'standard') {
+      template = {
+        title: 'Standard Freelance Agreement',
+        content: 'This is a standard contract template...'
+      };
+    } else {
+      template = {
+        title: 'Default Agreement',
+        content: 'Default contract content...'
+      };
+    }
+
+    res.status(200).json({ success: true, data: template });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

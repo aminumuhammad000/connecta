@@ -102,7 +102,7 @@ const NotificationScreen = () => {
       case 'message_received':
         return { name: 'chatbox-ellipses', color: '#3B82F6', type: 'io' };
       case 'job_invite':
-        return { name: 'mail', color: '#8B5CF6', type: 'mi' };
+        return { name: 'mail', color: '#FD6730', type: 'mi' };
       default:
         return { name: 'notifications', color: c.primary, type: 'mi' };
     }

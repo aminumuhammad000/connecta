@@ -105,8 +105,8 @@ export default function Analytics() {
 
   const overview = stats?.overview || {}
   const userGrowth = stats?.userGrowth || []
-  const proposalStats = stats?.proposalStats || {}
-  const jobStats = stats?.jobStats || {}
+  const proposalStats = stats?.proposals || {}
+  const jobStats = stats?.jobs || {}
   // const weeklyRevenue = stats?.weeklyRevenue || []
 
   return (

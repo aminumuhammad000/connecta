@@ -32,7 +32,12 @@ export default function Settings() {
     openaiApiKey: '',
     geminiApiKey: '',
     // Payment Settings
+    // Payment Settings
     jobPostingFee: 500,
+    // Security Settings
+    require2FA: false,
+    sessionTimeout: 30,
+    maxLoginAttempts: 5,
   })
 
   useEffect(() => {
@@ -65,6 +70,16 @@ export default function Settings() {
           openaiApiKey: ai.openaiApiKey || '',
           geminiApiKey: ai.geminiApiKey || '',
           jobPostingFee: response.data.payments?.jobPostingFee || 500,
+          platformName: response.data.general?.platformName || 'Connecta',
+          commissionRate: response.data.general?.commissionRate || 15,
+          minWithdrawal: response.data.general?.minWithdrawal || 50,
+          autoApproveProjects: response.data.general?.autoApproveProjects || false,
+          emailNotifications: response.data.general?.emailNotifications !== false,
+          maintenanceMode: response.data.general?.maintenanceMode || false,
+          allowNewRegistrations: response.data.general?.allowNewRegistrations !== false,
+          require2FA: response.data.security?.require2FA || false,
+          sessionTimeout: response.data.security?.sessionTimeout || 30,
+          maxLoginAttempts: response.data.security?.maxLoginAttempts || 5,
         }));
       }
     } catch (error) {
@@ -111,8 +126,27 @@ export default function Settings() {
         };
         await settingsAPI.updatePayments(paymentsData);
         toast.success('Payment settings saved successfully!');
+      } else if (activeTab === 'general') {
+        const generalData = {
+          platformName: settings.platformName,
+          commissionRate: settings.commissionRate,
+          minWithdrawal: settings.minWithdrawal,
+          autoApproveProjects: settings.autoApproveProjects,
+          emailNotifications: settings.emailNotifications,
+          maintenanceMode: settings.maintenanceMode,
+          allowNewRegistrations: settings.allowNewRegistrations,
+        };
+        await settingsAPI.updateGeneral(generalData);
+        toast.success('General settings saved successfully!');
+      } else if (activeTab === 'security') {
+        const securityData = {
+          require2FA: settings.require2FA,
+          sessionTimeout: settings.sessionTimeout,
+          maxLoginAttempts: settings.maxLoginAttempts,
+        };
+        await settingsAPI.updateSecurity(securityData);
+        toast.success('Security settings saved successfully!');
       } else {
-        // Save other settings logic (placeholder)
         toast.success('Settings saved successfully!');
       }
     } catch (error) {
@@ -437,7 +471,12 @@ export default function Settings() {
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
+                      <input 
+                        type="checkbox" 
+                        checked={settings.require2FA}
+                        onChange={(e) => setSettings({ ...settings, require2FA: e.target.checked })}
+                        className="sr-only peer" 
+                      />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </div>
@@ -447,6 +486,8 @@ export default function Settings() {
                     </label>
                     <input
                       type="number"
+                      value={settings.sessionTimeout}
+                      onChange={(e) => setSettings({ ...settings, sessionTimeout: Number(e.target.value) })}
                       placeholder="30"
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />
@@ -457,6 +498,8 @@ export default function Settings() {
                     </label>
                     <input
                       type="number"
+                      value={settings.maxLoginAttempts}
+                      onChange={(e) => setSettings({ ...settings, maxLoginAttempts: Number(e.target.value) })}
                       placeholder="5"
                       className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
                     />

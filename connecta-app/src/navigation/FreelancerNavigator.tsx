@@ -139,6 +139,7 @@ export default function FreelancerNavigator() {
     const stack = (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="FreelancerTabs" component={FreelancerTabs} />
+            <Stack.Screen name="Chats" component={ChatsScreen} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="JobDetail" component={JobDetailScreen} />
             <Stack.Screen name="ApplyJob" component={ApplyJobScreen} />

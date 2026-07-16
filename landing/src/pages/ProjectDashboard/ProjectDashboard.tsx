@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import Header from '../../components/Header';
 import { useNotification } from '../../contexts/NotificationContext';
+import { API_BASE_URL } from '../../utils/constants';
 import styles from './styles/ProjectDashboard.module.css';
 
 interface Project {
@@ -38,10 +39,10 @@ const ProjectDashboard: React.FC = () => {
     try {
       setLoading(true);
       showLoader();
-      
+
       // Get all projects (for demo purposes)
       // TODO: Replace with user-specific endpoint when auth is implemented
-      const response = await fetch(`http://localhost:5000/api/projects?limit=50`);
+      const response = await fetch(`${API_BASE_URL}/projects?limit=50`);
       const data = await response.json();
 
       if (data.success) {

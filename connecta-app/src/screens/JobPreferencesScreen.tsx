@@ -235,8 +235,8 @@ const JobPreferencesScreen: React.FC<any> = ({ navigation }) => {
                     {activeSection === 'categories' && (
                     <View style={[styles.sectionCard, { backgroundColor: c.card, shadowColor: c.shadows.medium.shadowColor }]}>
                         <View style={styles.sectionHeaderRow}>
-                            <View style={[styles.iconContainer, { backgroundColor: '#8B5CF620' }]}>
-                                <MaterialIcons name="category" size={20} color="#8B5CF6" />
+                            <View style={[styles.iconContainer, { backgroundColor: '#FD673020' }]}>
+                                <MaterialIcons name="category" size={20} color="#FD6730" />
                             </View>
                             <Text style={[styles.sectionTitle, { color: c.text }]}>Categories</Text>
                         </View>

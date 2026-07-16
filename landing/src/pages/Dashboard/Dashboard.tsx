@@ -38,10 +38,18 @@ const Dashboard: React.FC = () => {
   const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [userStats, setUserStats] = useState({
+    totalUsers: 0,
+    totalClients: 0,
+    totalFreelancers: 0,
+    totalJobs: 0,
+    activeJobs: 0,
+  });
   const { showError } = useNotification();
 
   useEffect(() => {
     fetchJobs();
+    fetchUserStats();
     // Load saved jobs from localStorage
     const saved = localStorage.getItem('savedJobs');
     if (saved) {
@@ -65,6 +73,19 @@ const Dashboard: React.FC = () => {
       showError('Failed to load jobs. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserStats = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/dashboard/public/stats`);
+      const data = await response.json();
+
+      if (data.success) {
+        setUserStats(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
     }
   };
 
@@ -199,17 +220,41 @@ const Dashboard: React.FC = () => {
   return (
     <div className={styles.dashboard}>
       <Header />
-      <SearchBar 
+      <SearchBar
         onSearch={handleSearch}
         onClear={handleClearSearch}
         onFilter={handleFilterChange}
       />
       <DashboardNav />
-      <JobSection 
+      <JobSection
         activeFilter={activeFilter}
         onFilterChange={handleTabChange}
       />
-      
+
+      {/* User Statistics Banner */}
+      <div className={styles.statsBanner}>
+        <div className={styles.statItem}>
+          <span className={styles.statNumber}>{userStats.totalUsers.toLocaleString()}</span>
+          <span className={styles.statLabel}>Total Users</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statNumber}>{userStats.totalClients.toLocaleString()}</span>
+          <span className={styles.statLabel}>Clients</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statNumber}>{userStats.totalFreelancers.toLocaleString()}</span>
+          <span className={styles.statLabel}>Freelancers</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statNumber}>{userStats.totalJobs.toLocaleString()}</span>
+          <span className={styles.statLabel}>Total Jobs</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statNumber}>{userStats.activeJobs.toLocaleString()}</span>
+          <span className={styles.statLabel}>Active Jobs</span>
+        </div>
+      </div>
+
       {loading ? (
         <div className={styles.loadingContainer}>
           <p>Loading jobs...</p>
@@ -227,8 +272,8 @@ const Dashboard: React.FC = () => {
           <div className={styles.jobsList}>
             {filteredJobs.length > 0 ? (
               filteredJobs.map((job) => (
-                <JobCard 
-                  key={job._id} 
+                <JobCard
+                  key={job._id}
                   job={transformJob(job)}
                   isSaved={savedJobIds.includes(job._id)}
                   onSaveToggle={() => handleSaveJob(job._id)}
@@ -237,8 +282,8 @@ const Dashboard: React.FC = () => {
             ) : (
               <div className={styles.noJobs}>
                 <p>
-                  {activeFilter === 'Saved Jobs' 
-                    ? 'No saved jobs yet. Save jobs to view them here later.' 
+                  {activeFilter === 'Saved Jobs'
+                    ? 'No saved jobs yet. Save jobs to view them here later.'
                     : 'No jobs available at the moment.'}
                 </p>
               </div>

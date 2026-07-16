@@ -110,6 +110,9 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/feed", feedRoutes);
 app.use("/api/verifications", verificationRoutes);
 
+import contactRoutes from "./routes/contact.routes.js";
+app.use("/api/contact", contactRoutes);
+
 import broadcastRoutes from "./routes/broadcast.routes.js";
 app.use("/api/broadcast", broadcastRoutes);
 
@@ -121,6 +124,15 @@ app.use("/api/webhooks", webhookRoutes);
 
 import avatarRoutes from "./routes/avatar.routes.js";
 app.use("/api/avatars", avatarRoutes);
+
+import subscriptionRoutes from "./routes/Subscription.routes.js";
+app.use("/api/subscriptions", subscriptionRoutes);
+
+import analyticsRoutes from "./routes/Analytics.routes.js";
+app.use("/api/analytics", analyticsRoutes);
+
+import auditLogRoutes from "./routes/AuditLog.routes.js";
+app.use("/api/audit-logs", auditLogRoutes);
 
 
 app.get("/health", (req, res) => {

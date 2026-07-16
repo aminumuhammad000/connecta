@@ -4,6 +4,7 @@ import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '../theme/theme';
 import { FeedReactions, ReactionType, feedService } from '../services/feedService';
 import { useAuth } from '../context/AuthContext';
+import ShareFlyer from './ShareFlyer';
 
 interface FeedReactionBarProps {
     postId: string;
@@ -76,24 +77,6 @@ export default function FeedReactionBar({
             // Revert on failure
             setMyReaction(previousReaction);
             setReactions(previousReactions);
-        }
-    };
-
-    const handleShare = async () => {
-        try {
-            const importShare = await import('react-native');
-            const Share = importShare.Share;
-            
-            const shareTitle = postTitle ? `Check out this Connecta post: ${postTitle}` : 'Check out this post on Connecta!';
-            const shareBody = postBody ? `\n\n"${postBody}"` : '';
-            const shareUrl = `\n\nRead more at: https://myconnecta.ng/post/${postId}`;
-            
-            await Share.share({
-                message: `${shareTitle}${shareBody}${shareUrl}`,
-                title: 'Share Connecta Post' // For Android/Email intents
-            });
-        } catch (error) {
-            console.error('Error sharing post', error);
         }
     };
 
@@ -170,10 +153,16 @@ export default function FeedReactionBar({
                     <Text style={[styles.actionText, { color: c.subtext }]}>Comment</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-                    <Ionicons name="share-social-outline" size={20} color={c.subtext} />
-                    <Text style={[styles.actionText, { color: c.subtext }]}>Share</Text>
-                </TouchableOpacity>
+                <ShareFlyer 
+                    postTitle={postTitle}
+                    postBody={postBody || ''}
+                    postType="post"
+                    actorName="Connecta User"
+                    buttonStyle={[styles.actionButton, styles.shareButton]}
+                    textStyle={[styles.actionText, { color: c.subtext }]}
+                    label="Share"
+                    iconSize={18}
+                />
             </View>
         </View>
     );
@@ -213,16 +202,22 @@ const styles = StyleSheet.create({
     },
     actionBar: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         paddingTop: 8,
-        position: 'relative',
     },
     actionButton: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        justifyContent: 'center',
+        paddingVertical: 10,
         paddingHorizontal: 12,
-        borderRadius: 8,
+        borderRadius: 12,
+        marginHorizontal: 4,
+    },
+    shareButton: {
+        minWidth: 90,
     },
     actionText: {
         fontSize: 13,

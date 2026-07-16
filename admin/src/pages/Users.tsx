@@ -144,10 +144,15 @@ export default function Users() {
         })
       ])
 
-      const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value?.data || []) : []
-      const payments = paymentsRes.status === 'fulfilled' ? (paymentsRes.value?.data || []) : []
-      const proposals = proposalsRes.status === 'fulfilled' ? (proposalsRes.value?.data || []) : []
-      const profile = profileRes.status === 'fulfilled' ? profileRes.value : null
+      const projectsData = projectsRes.status === 'fulfilled' ? projectsRes.value : [];
+      const paymentsData = paymentsRes.status === 'fulfilled' ? paymentsRes.value : [];
+      const proposalsData = proposalsRes.status === 'fulfilled' ? proposalsRes.value : [];
+      const profileData = profileRes.status === 'fulfilled' ? profileRes.value : null;
+
+      const projects = Array.isArray(projectsData) ? projectsData : (projectsData?.data || []);
+      const payments = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.data || []);
+      const proposals = Array.isArray(proposalsData) ? proposalsData : (proposalsData?.data || []);
+      const profile = profileData?.data || profileData || null;
 
       // Calculate stats
       const totalEarnings = payments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0)

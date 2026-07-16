@@ -320,7 +320,7 @@ function JobDetailScreen() {
 
             <View style={[styles.statCard, { backgroundColor: c.card, borderColor: c.border }]}>
               <View style={[styles.statIcon, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
-                <MaterialIcons name="place" size={20} color="#8B5CF6" />
+                <MaterialIcons name="place" size={20} color="#FD6730" />
               </View>
               <View>
                 <Text style={[styles.statLabel, { color: c.subtext }]}>{"Location"}</Text>

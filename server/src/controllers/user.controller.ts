@@ -158,6 +158,26 @@ export const getUserById = async (req: Request, res: Response) => {
 };
 
 // ===================
+// Update User By ID (Admin)
+// ===================
+export const updateUserById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const user = await User.findByIdAndUpdate(id, updateData, { new: true }).select('-password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    console.error('Update user by ID error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
+
+// ===================
 export const initiateSignup = async (req: Request, res: Response) => {
   try {
     const { email, firstName, preferredLanguage } = req.body;
@@ -929,6 +949,99 @@ export const createAdmin = async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: user });
   } catch (err: any) {
     res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+// ===================
+// Bulk Operations
+// ===================
+export const bulkDeleteUsers = async (req: Request, res: Response) => {
+  try {
+    const { userIds } = req.body;
+    
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "User IDs array is required" 
+      });
+    }
+
+    const result = await User.deleteMany({ _id: { $in: userIds } });
+
+    res.status(200).json({
+      success: true,
+      message: `Deleted ${result.deletedCount} users successfully`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (err: any) {
+    console.error('Bulk delete users error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+export const bulkBanUsers = async (req: Request, res: Response) => {
+  try {
+    const { userIds } = req.body;
+    
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "User IDs array is required" 
+      });
+    }
+
+    const result = await User.updateMany(
+      { _id: { $in: userIds } },
+      { isActive: false }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Banned ${result.modifiedCount} users successfully`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (err: any) {
+    console.error('Bulk ban users error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
+  }
+};
+
+export const bulkUnbanUsers = async (req: Request, res: Response) => {
+  try {
+    const { userIds } = req.body;
+    
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "User IDs array is required" 
+      });
+    }
+
+    const result = await User.updateMany(
+      { _id: { $in: userIds } },
+      { isActive: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Unbanned ${result.modifiedCount} users successfully`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (err: any) {
+    console.error('Bulk unban users error:', err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message
+    });
   }
 };
 

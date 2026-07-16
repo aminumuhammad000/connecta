@@ -9,10 +9,15 @@ import {
   getProposalsByJobId,
   approveProposal,
   rejectProposal,
+  getAllProposalsAdmin
 } from '../controllers/Proposal.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
+import { isAdmin } from '../core/middleware/admin.middleware.js';
 
 const router = Router();
+
+// Admin: Get all proposals
+router.get('/admin/all', authenticate, isAdmin, getAllProposalsAdmin);
 
 // Get all proposals (Client received / Freelancer sent)
 router.get('/', authenticate, getAllProposals);

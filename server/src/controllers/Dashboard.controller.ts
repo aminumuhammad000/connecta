@@ -15,20 +15,41 @@ import Notification from '../models/Notification.model.js';
 // Get Admin Dashboard Data
 export const getAdminStats = async (req: Request, res: Response) => {
   try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
     // 1. User Stats
-    const totalUsers = await User.countDocuments();
+    const totalUsers = await User.countDocuments({ userType: { $ne: 'admin' } });
     const totalClients = await User.countDocuments({ userType: 'client' });
     const totalFreelancers = await User.countDocuments({ userType: 'freelancer' });
+    const usersThisMonth = await User.countDocuments({ createdAt: { $gte: startOfMonth }, userType: { $ne: 'admin' } });
+    const usersLastMonth = await User.countDocuments({ 
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth },
+      userType: { $ne: 'admin' }
+    });
+    const userGrowth = usersLastMonth > 0 ? ((usersThisMonth - usersLastMonth) / usersLastMonth) * 100 : 0;
 
     // 2. Job Stats
     const totalJobs = await Job.countDocuments();
     const activeJobs = await Job.countDocuments({ status: { $in: ['Open', 'open', 'active'] } });
     const pendingJobs = await Job.countDocuments({ status: 'pending' });
+    const jobsThisMonth = await Job.countDocuments({ createdAt: { $gte: startOfMonth } });
+    const jobsLastMonth = await Job.countDocuments({ 
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } 
+    });
+    const jobGrowth = jobsLastMonth > 0 ? ((jobsThisMonth - jobsLastMonth) / jobsLastMonth) * 100 : 0;
 
     // 3. Project Stats
     const totalProjects = await Project.countDocuments();
     const activeProjects = await Project.countDocuments({ status: { $in: ['ongoing', 'active', 'In-Progress', 'submitted', 'revision_requested'] } });
     const completedProjects = await Project.countDocuments({ status: 'completed' });
+    const projectsThisMonth = await Project.countDocuments({ createdAt: { $gte: startOfMonth } });
+    const projectsLastMonth = await Project.countDocuments({ 
+      createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } 
+    });
+    const projectGrowth = projectsLastMonth > 0 ? ((projectsThisMonth - projectsLastMonth) / projectsLastMonth) * 100 : 0;
 
     // 4. Financial Stats
     const revenueResult = await Payment.aggregate([
@@ -36,6 +57,29 @@ export const getAdminStats = async (req: Request, res: Response) => {
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
     const totalRevenue = revenueResult[0]?.total || 0;
+
+    const revenueThisMonth = await Payment.aggregate([
+      { 
+        $match: { 
+          status: 'completed',
+          createdAt: { $gte: startOfMonth }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const monthlyRevenue = revenueThisMonth[0]?.total || 0;
+
+    const revenueLastMonth = await Payment.aggregate([
+      { 
+        $match: { 
+          status: 'completed',
+          createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const lastMonthRevenue = revenueLastMonth[0]?.total || 0;
+    const revenueGrowth = lastMonthRevenue > 0 ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
     const pendingPaymentsCount = await Payment.countDocuments({ status: 'pending' });
 
@@ -62,7 +106,13 @@ export const getAdminStats = async (req: Request, res: Response) => {
         pendingPayments: pendingPaymentsCount,
         totalProposals,
         pendingProposals,
-        pendingJobs
+        pendingJobs,
+        trends: {
+          users: Math.round(userGrowth * 10) / 10,
+          jobs: Math.round(jobGrowth * 10) / 10,
+          projects: Math.round(projectGrowth * 10) / 10,
+          revenue: Math.round(revenueGrowth * 10) / 10,
+        }
       }
     });
 
@@ -517,6 +567,34 @@ export const getRecentMessages = async (req: Request, res: Response) => {
     res.status(200).json({ success: true, data: messagesData });
   } catch (error) {
     console.error('Error fetching recent messages:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+// Get Public User Statistics (no authentication required)
+export const getPublicStats = async (req: Request, res: Response) => {
+  try {
+    // Get user statistics
+    const totalUsers = await User.countDocuments();
+    const totalClients = await User.countDocuments({ userType: 'client' });
+    const totalFreelancers = await User.countDocuments({ userType: 'freelancer' });
+
+    // Get job statistics
+    const totalJobs = await Job.countDocuments();
+    const activeJobs = await Job.countDocuments({ status: { $in: ['Open', 'open', 'active'] } });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalClients,
+        totalFreelancers,
+        totalJobs,
+        activeJobs,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching public stats:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };

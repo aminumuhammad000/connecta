@@ -88,7 +88,7 @@ export default function Sidebar({ isVisible, onClose, navigation }: SidebarProps
         user?.userType === 'client' && { icon: "add-circle-outline", label: "Post a Job", screen: "PostJob", color: "#6366F1" },
         { icon: "settings-outline", label: "Settings", screen: "Settings", color: "#6B7280" },
         { icon: "help-circle-outline", label: "Help & Support", screen: "HelpSupport", color: "#EC4899" },
-        { icon: "shield-checkmark-outline", label: "Terms & Conditions", screen: "Terms", color: "#8B5CF6" },
+        { icon: "shield-checkmark-outline", label: "Terms & Conditions", screen: "Terms", color: "#FD6730" },
         { icon: "information-circle-outline", label: "About Connecta", screen: "About", color: "#3B82F6" },
     ] as (false | { icon: string; label: string; screen: string; color: string })[];
 

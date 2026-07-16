@@ -92,10 +92,10 @@ export default function Dashboard() {
         recentProjects: projects.slice(0, 3) || [],
 
         trends: {
-          users: 12.5,
-          jobs: 8.2,
-          projects: 15.3,
-          revenue: 23.1
+          users: stats.trends?.users || 0,
+          jobs: stats.trends?.jobs || 0,
+          projects: stats.trends?.projects || 0,
+          revenue: stats.trends?.revenue || 0
         }
       }
 

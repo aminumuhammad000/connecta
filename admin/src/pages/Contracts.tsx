@@ -15,6 +15,7 @@ interface ContractDisplay extends Contract {
   jobTitle?: string
   clientName?: string
   freelancerName?: string
+  totalPrice?: number
 }
 
 export default function Contracts() {
@@ -94,7 +95,14 @@ export default function Contracts() {
         ? `${c.clientName} ${c.freelancerName} ${c.jobTitle}`.toLowerCase().includes(search.trim().toLowerCase())
         : true
       const matchesStatus = status === 'all' ? true : c.status === status
-      const matchesDate = dateRange === 'all' ? true : true // Date filtering can be implemented later
+      let matchesDate = true;
+      if (dateRange !== 'all') {
+        const days = parseInt(dateRange, 10);
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const dateToCompare = c.updatedAt || c.createdAt || c.startDate || new Date();
+        matchesDate = new Date(dateToCompare) >= cutoff;
+      }
       return matchesSearch && matchesStatus && matchesDate
     })
   }, [contracts, search, status, dateRange])
@@ -108,7 +116,7 @@ export default function Contracts() {
   const summary = useMemo(() => {
     const totals = filteredContracts.reduce(
       (acc: Record<string, number>, c: ContractDisplay) => {
-        acc.total += c.amount ?? 0
+        acc.total += (c.totalPrice ?? c.amount ?? 0)
         acc.count += 1
         acc[c.status] = (acc[c.status] ?? 0) + 1
         return acc
@@ -340,8 +348,8 @@ export default function Contracts() {
                       <div className="flex items-center gap-1.5 text-xs text-text-light-secondary dark:text-dark-secondary">
                         <Icon name="calendar_today" size={14} />
                         <span>
-                          {new Date(c.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          {c.endDate && ` - ${new Date(c.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                          {new Date(c.createdAt || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {c.updatedAt && ` - ${new Date(c.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                         </span>
                       </div>
                     </div>
@@ -349,7 +357,7 @@ export default function Contracts() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-text-light-secondary dark:text-dark-secondary">Amount</span>
                       <span className="text-base font-bold text-text-light-primary dark:text-dark-primary">
-                        ₦{(c.amount ?? 0).toLocaleString('en-NG')}
+                        ₦{(c.totalPrice ?? c.amount ?? 0).toLocaleString('en-NG')}
                       </span>
                     </div>
 
@@ -402,13 +410,13 @@ export default function Contracts() {
                         </td>
                         <td className="px-4 py-4 align-top">
                           <p className="text-sm text-text-light-secondary dark:text-dark-secondary">
-                            {new Date(c.startDate).toLocaleDateString()}
-                            {c.endDate && ` - ${new Date(c.endDate).toLocaleDateString()}`}
+                            {new Date(c.createdAt || new Date()).toLocaleDateString()}
+                            {c.updatedAt && ` - ${new Date(c.updatedAt).toLocaleDateString()}`}
                           </p>
                         </td>
                         <td className="px-4 py-4 align-top">
                           <p className="text-sm font-semibold text-text-light-primary dark:text-dark-primary">
-                            ₦{(c.amount ?? 0).toLocaleString('en-NG')}
+                            ₦{(c.totalPrice ?? c.amount ?? 0).toLocaleString('en-NG')}
                           </p>
                         </td>
                         <td className="px-4 py-4 text-right">
@@ -511,7 +519,7 @@ export default function Contracts() {
               <div className="p-4 bg-background-light dark:bg-background-dark rounded-lg border border-border-light dark:border-border-dark">
                 <p className="text-xs uppercase font-semibold text-text-light-secondary dark:text-dark-secondary mb-2">Contract Amount</p>
                 <p className="text-lg font-bold text-text-light-primary dark:text-dark-primary">
-                  ₦{(selectedContract.amount ?? 0).toLocaleString('en-NG')}
+                  ₦{(selectedContract.totalPrice ?? selectedContract.amount ?? 0).toLocaleString('en-NG')}
                 </p>
               </div>
             </div>
@@ -523,14 +531,14 @@ export default function Contracts() {
                 <div>
                   <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Start Date</p>
                   <p className="font-medium text-text-light-primary dark:text-dark-primary">
-                    {new Date(selectedContract.startDate).toLocaleDateString('en-US', { dateStyle: 'long' })}
+                    {new Date(selectedContract.createdAt || new Date()).toLocaleDateString('en-US', { dateStyle: 'long' })}
                   </p>
                 </div>
-                {selectedContract.endDate && (
+                {selectedContract.updatedAt && (
                   <div>
                     <p className="text-xs text-text-light-secondary dark:text-dark-secondary">End Date</p>
                     <p className="font-medium text-text-light-primary dark:text-dark-primary">
-                      {new Date(selectedContract.endDate).toLocaleDateString('en-US', { dateStyle: 'long' })}
+                      {new Date(selectedContract.updatedAt).toLocaleDateString('en-US', { dateStyle: 'long' })}
                     </p>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-root@vm933yhzh:/var/www/connecta# cd /var/www/connecta
+rm root@vm933yhzh:/var/www/connecta# cd /var/www/connecta
 
 git merge --abort || true
 git reset --hard HEAD || true

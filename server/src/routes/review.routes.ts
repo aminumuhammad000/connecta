@@ -10,6 +10,7 @@ import {
   updateReview,
 } from '../controllers/review.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
+import { isAdmin } from '../core/middleware/admin.middleware.js';
 
 const router = express.Router();
 // Public: Get featured testimonials for landing page (no auth)
@@ -18,8 +19,8 @@ router.get('/featured', getFeaturedTestimonials);
 // Public: Submit guest review
 router.post('/guest', createGuestReview);
 
-// Admin: Get all reviews (no auth)
-router.get('/admin/all', getAllReviews);
+// Admin: Get all reviews (requires admin)
+router.get('/admin/all', authenticate, isAdmin, getAllReviews);
 
 // Create review (protected)
 router.post('/', authenticate, createReview);

@@ -1,8 +1,10 @@
 {
   "expo": {
     "name": "Connecta",
-    "slug": "connecta-app",
+    
+   "slug": "connecta-app",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -45,7 +47,10 @@
       "bundler": "metro"
     },
     "plugins": [
-      "@react-native-firebase/app"
+      "@react-native-firebase/app",
+      "expo-font",
+      "expo-web-browser",
+      "expo-updates"
     ],
     "extra": {
       "eas": {

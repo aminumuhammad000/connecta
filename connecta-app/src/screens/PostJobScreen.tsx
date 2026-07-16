@@ -2010,7 +2010,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   newBadge: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#FD6730',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,

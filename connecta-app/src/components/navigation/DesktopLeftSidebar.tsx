@@ -58,7 +58,7 @@ const DesktopLeftSidebar = () => {
                 {/* Cover Banner with Gradient */}
                 <View style={styles.bannerContainer}>
                     <LinearGradient
-                        colors={isClient ? [c.primary, '#2563EB'] : [c.primary, '#7C3AED']}
+                        colors={isClient ? [c.primary, '#2563EB'] : [c.primary, '#FD6730']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.banner}
@@ -178,8 +178,8 @@ const DesktopLeftSidebar = () => {
                         }
                     }}
                 >
-                    <View style={[styles.shortcutIcon, { backgroundColor: '#8B5CF615' }]}>
-                        <Ionicons name="settings" size={16} color="#8B5CF6" />
+                    <View style={[styles.shortcutIcon, { backgroundColor: '#FD673015' }]}>
+                        <Ionicons name="settings" size={16} color="#FD6730" />
                     </View>
                     <Text style={[styles.shortcutText, { color: c.text }]}>Settings</Text>
                 </TouchableOpacity>

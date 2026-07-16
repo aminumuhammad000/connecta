@@ -134,3 +134,33 @@ export const updatePaymentSettings = async (req: Request, res: Response) => {
         });
     }
 };
+
+/**
+ * Update General settings
+ */
+export const updateGeneralSettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await SystemSettings.getSettings();
+        settings.general = { ...settings.general, ...req.body };
+        await settings.save();
+        res.json({ success: true, message: 'General settings updated successfully', data: settings });
+    } catch (error) {
+        console.error('Error updating general settings:', error);
+        res.status(500).json({ success: false, message: 'Failed to update general settings' });
+    }
+};
+
+/**
+ * Update Security settings
+ */
+export const updateSecuritySettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await SystemSettings.getSettings();
+        settings.security = { ...settings.security, ...req.body };
+        await settings.save();
+        res.json({ success: true, message: 'Security settings updated successfully', data: settings });
+    } catch (error) {
+        console.error('Error updating security settings:', error);
+        res.status(500).json({ success: false, message: 'Failed to update security settings' });
+    }
+};

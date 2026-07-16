@@ -10,7 +10,8 @@ import {
   deleteJob,
   getClientJobs,
   getMatchedJobs,
-  updateJobStatus
+  updateJobStatus,
+  searchJobs
 } from "../controllers/Job.controller.js";
 import { authenticate, optionalAuthenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
@@ -33,6 +34,9 @@ router.get("/matched", authenticate, getMatchedJobs);
 
 // Get all jobs with filters (Optional auth for filtering applied jobs)
 router.get("/", optionalAuthenticate, getAllJobs);
+
+// Search jobs
+router.get("/search", authenticate, searchJobs);
 
 // Get job by ID
 router.get("/:id", getJobById);

@@ -396,8 +396,8 @@ const ClientDashboardScreen: React.FC<any> = ({ navigation }) => {
                 onPress={() => navigation.navigate('Feed')}
                 activeOpacity={0.7}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: '#8B5CF615' }]}>
-                  <Ionicons name="layers" size={18} color="#8B5CF6" />
+                <View style={[styles.quickActionIcon, { backgroundColor: '#FD673015' }]}>
+                  <Ionicons name="layers" size={18} color="#FD6730" />
                 </View>
                 <Text style={[styles.quickActionText, { color: c.text }]} numberOfLines={1}>{"Feed"}</Text>
               </TouchableOpacity>

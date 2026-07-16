@@ -121,10 +121,10 @@ export const getClientProjects = async (req: Request, res: Response) => {
   }
 };
 
-// Get all projects (admin)
+// Get all projects (admin/public)
 export const getAllProjects = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 50, status } = req.query;
     let query: any = {};
 
     if (status) {
@@ -134,21 +134,39 @@ export const getAllProjects = async (req: Request, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const projects = await Project.find(query)
-      .populate('clientId', 'firstName lastName email')
-      .populate('freelancerId', 'firstName lastName email')
+      .populate('clientId', 'firstName lastName email profileImage')
+      .populate('freelancerId', 'firstName lastName email profileImage')
       .sort({ createdAt: -1 })
       .limit(Number(limit))
       .skip(skip);
 
     const total = await Project.countDocuments(query);
 
+    // Transform projects to match frontend expectations
+    const transformedProjects = projects.map(project => ({
+      _id: project._id,
+      title: project.title,
+      description: project.description,
+      dateRange: {
+        startDate: project.dateRange.startDate,
+        endDate: project.dateRange.endDate,
+      },
+      status: project.status,
+      statusLabel: project.statusLabel || (project.status === 'ongoing' ? 'Active' : 'Completed'),
+      clientId: project.clientId,
+      clientName: project.clientName || (project.clientId ? `${(project.clientId as any).firstName} ${(project.clientId as any).lastName}` : 'Unknown'),
+      freelancerId: project.freelancerId,
+      budget: project.budget,
+      createdAt: project.createdAt,
+    }));
+
     res.status(200).json({
       success: true,
-      count: projects.length,
+      count: transformedProjects.length,
       total,
       page: Number(page),
       pages: Math.ceil(total / Number(limit)),
-      data: projects,
+      data: transformedProjects,
     });
   } catch (error: any) {
     res.status(500).json({

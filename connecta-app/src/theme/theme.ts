@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 export const palette = {
   primary: '#FD6730',
   secondary: '#FF8F6B',
-  accent: '#7C3AED', // Violet accent for premium feel
+  accent: '#FD6730', // Violet accent for premium feel
   backgroundLight: '#FFFFFF',
   backgroundDark: '#121212',
   cardLight: '#FFFFFF',

@@ -66,13 +66,13 @@ export default function Notifications() {
 
     const matchesStatus =
       statusFilter === 'all' ||
-      (statusFilter === 'read' && notif.read) ||
-      (statusFilter === 'unread' && !notif.read)
+      (statusFilter === 'read' && notif.isRead) ||
+      (statusFilter === 'unread' && !notif.isRead)
 
     return matchesSearch && matchesStatus
   })
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.isRead).length
 
   return (
     <main className="flex-1 flex-col p-4 md:p-6 lg:p-8">
@@ -131,7 +131,7 @@ export default function Notifications() {
           ) : (
             filteredNotifications.map((notif) => {
               const icon = getNotificationIcon(notif.type)
-              const isUnread = !notif.read
+              const isUnread = !notif.isRead
               const isWithin24Hours = (new Date().getTime() - new Date(notif.createdAt).getTime()) < 86400000
               const showNewBadge = isUnread && isWithin24Hours
 

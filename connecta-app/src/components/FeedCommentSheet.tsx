@@ -51,7 +51,13 @@ export default function FeedCommentSheet({ postId, visible, onClose, onCommentAd
         try {
             setSubmitting(true);
             const res = await feedService.addComment(postId, newComment.trim(), userName, user.profileImage);
-            const comment = res.data?.data || res.data;
+            const comment = res?.data?.data || res?.data || res;
+
+            if (!comment || !comment._id) {
+                console.warn('Unexpected feed comment response:', res);
+                return;
+            }
+
             setComments(prev => [...prev, comment]);
             setNewComment('');
             Keyboard.dismiss();

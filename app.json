@@ -1,3 +1,12 @@
 {
-  "expo": {}
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "3af54e94-dca5-4dff-a975-85ed0fce56f2"
+      }
+    },
+    "android": {
+      "package": "com.bordechain.connecta"
+    }
+  }
 }

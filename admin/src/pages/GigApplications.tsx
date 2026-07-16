@@ -20,8 +20,10 @@ interface Proposal {
     firstName: string
     lastName: string
   }
-  coverLetter: string
+  coverLetter?: string
+  description?: string
   proposedBudget?: number
+  price?: number
   status: 'pending' | 'accepted' | 'rejected'
   createdAt: string
 }
@@ -378,11 +380,11 @@ export default function GigApplications() {
                   {selectedApplication.status === 'accepted' ? 'Approved' : selectedApplication.status}
                 </span>
               </div>
-              {selectedApplication.proposedBudget && (
+              {(selectedApplication.proposedBudget || selectedApplication.price) && (
                 <div className="p-4 bg-background-light dark:bg-background-dark rounded-lg">
                   <p className="text-xs uppercase font-semibold text-text-light-secondary dark:text-dark-secondary mb-2">Proposed Budget</p>
                   <p className="text-lg font-bold text-text-light-primary dark:text-dark-primary">
-                    ${selectedApplication.proposedBudget.toLocaleString()}
+                    ${(selectedApplication.proposedBudget || selectedApplication.price)?.toLocaleString()}
                   </p>
                 </div>
               )}
@@ -393,7 +395,7 @@ export default function GigApplications() {
               <p className="text-sm uppercase font-semibold text-text-light-secondary dark:text-dark-secondary mb-3">Cover Letter</p>
               <div className="p-4 bg-background-light dark:bg-background-dark rounded-lg">
                 <p className="text-text-light-primary dark:text-dark-primary leading-relaxed whitespace-pre-wrap">
-                  {selectedApplication.coverLetter || 'No cover letter provided.'}
+                  {selectedApplication.coverLetter || selectedApplication.description || 'No cover letter provided.'}
                 </p>
               </div>
             </div>

@@ -22,16 +22,19 @@ import {
   handleVTStackWebhook,
   payFromWallet,
   requestVTStackPayout,
+  getPaymentStatsAdmin,
 } from '../controllers/payment.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
+import { isAdmin } from '../core/middleware/admin.middleware.js';
 
 const router = Router();
 
-// Admin route - Get all payments (no auth)
-router.get('/admin/all', getAllPayments);
-router.get('/admin/withdrawals', authenticate, getPendingWithdrawals);
-router.get('/admin/withdrawals/all', authenticate, getAllWithdrawals);
-router.get('/admin/wallets/all', authenticate, getAllWallets);
+// Admin routes - Require authentication and admin role
+router.get('/admin/all', authenticate, isAdmin, getAllPayments);
+router.get('/admin/stats', authenticate, isAdmin, getPaymentStatsAdmin);
+router.get('/admin/withdrawals', authenticate, isAdmin, getPendingWithdrawals);
+router.get('/admin/withdrawals/all', authenticate, isAdmin, getAllWithdrawals);
+router.get('/admin/wallets/all', authenticate, isAdmin, getAllWallets);
 
 // Payment routes
 router.post('/initialize', authenticate, initializePayment);
