@@ -1,8 +1,25 @@
+# Exclude other monorepo packages - only connecta-app needed for mobile build
+admin/
 server/
+landing/
+scripts/
+
+# Exclude dependencies and build artifacts
 node_modules/
-app/
-docs/
-workflows/
-.venv/
-build/
+**/node_modules/
 dist/
+**/dist/
+build/
+**/build/
+web-build/
+dist000172/
+
+# Exclude docker and CI files
+docker-compose*.yml
+.github/
+
+# Exclude docs and misc
+docs/
+app/
+.venv/
+workflows/
