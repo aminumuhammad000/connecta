@@ -6,7 +6,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "rootDir": "./src",
-    "outDir": "dist000172",
+    "outDir": "distfx
     "strict": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
