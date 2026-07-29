@@ -1,0 +1,489 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+:root {
+  /* Brand Colors from Mobile App theme.ts */
+  --primary: #FD6730;
+  --primary-hover: #e55520;
+  --secondary: #FF8F6B;
+  --accent: #FD6730;
+  --success: #10B981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --error: #EF4444;
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  
+  /* Gradients */
+  --grad-primary: linear-gradient(135deg, #FD6730 0%, #FF8F6B 100%);
+  --grad-primary-hover: linear-gradient(135deg, #e55520 0%, #fd7a52 100%);
+  --grad-glow: radial-gradient(circle, rgba(253, 103, 48, 0.25) 0%, rgba(255, 143, 107, 0) 70%);
+  
+  /* Light Theme Defaults */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F7F8FC;
+  --bg-tertiary: #EEF2F6;
+  --card-bg: #FFFFFF;
+  --card-glass: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(229, 231, 235, 0.8);
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-muted: #9CA3AF;
+  --border-color: #E5E7EB;
+  --input-bg: #F9FAFB;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 12px 30px -4px rgba(253, 103, 48, 0.35);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #121212;
+  --bg-secondary: #1A1A1E;
+  --bg-tertiary: #24242A;
+  --card-bg: #1E1E1E;
+  --card-glass: rgba(30, 30, 30, 0.85);
+  --card-border: rgba(55, 65, 81, 0.7);
+  --text-primary: #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --text-muted: #9CA3AF;
+  --border-color: #374151;
+  --input-bg: #27272A;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 12px 35px -4px rgba(253, 103, 48, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-hover);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: var(--font-family);
+}
+
+input, textarea, select {
+  font-family: var(--font-family);
+  outline: none;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Utility Animations & Glass Effects */
+.glass-card {
+  background: var(--card-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.gradient-text {
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.btn-primary {
+  background: var(--grad-primary);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-glow);
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 35px -2px rgba(253, 103, 48, 0.45);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px 16px;
+  padding-left: 44px;
+  background: var(--input-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: var(--transition-fast);
+}
+
+.input-field.no-icon {
+  padding-left: 16px;
+}
+
+.input-icon-left {
+  position: absolute;
+  left: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: var(--transition-fast);
+}
+
+.input-icon-right {
+  position: absolute;
+  right: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(253, 103, 48, 0.15);
+  background: var(--card-bg);
+}
+
+.input-field:focus + .input-icon-left,
+.input-wrapper:focus-within .input-icon-left {
+  color: var(--primary);
+}
+
+.input-error {
+  border-color: var(--error) !important;
+}
+
+.input-success {
+  border-color: var(--success) !important;
+}
+
+.error-text {
+  font-size: 0.8rem;
+  color: var(--error);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.success-text {
+  font-size: 0.8rem;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+/* Background animated elements */
+.bg-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.bg-glow-orange {
+  background: rgba(253, 103, 48, 0.2);
+  width: 400px;
+  height: 400px;
+}
+
+.bg-glow-coral {
+  background: rgba(255, 143, 107, 0.18);
+  width: 350px;
+  height: 350px;
+}
+
+/* ==========================================
+   MOBILE & TABLET RESPONSIVE SYSTEM
+   ========================================== */
+
+.mobile-hamburger-btn {
+  display: none;
+}
+
+@media (max-width: 992px) {
+  .mobile-hamburger-btn {
+    display: flex !important;
+  }
+
+  /* Sidebar hide on desktop view, show drawer on mobile */
+  .desktop-sidebar {
+    display: none !important;
+  }
+
+  .main-content-container {
+    padding: 16px 14px 40px 14px !important;
+  }
+
+  /* Stack 2-column grids (like Dashboard feed + quick actions) into a single clean column */
+  div[style*="grid-template-columns: 2.2fr 1fr"],
+  div[style*="gridTemplateColumns: '2.2fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  /* Responsive Grid Adjustments */
+  .grid-responsive-3 {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  }
+
+  .grid-responsive-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mobile-flex-column {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .mobile-full-width {
+    width: 100% !important;
+  }
+
+  /* Show mobile bottom navigation */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background: var(--card-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-color);
+    z-index: 150;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 10px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobile-nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex: 1;
+    height: 100%;
+    transition: var(--transition-fast);
+  }
+
+  .mobile-nav-link.active {
+    color: var(--primary);
+  }
+
+  .messages-layout-container {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+
+  /* Form inner grids (e.g. First Name / Last Name, Phone / WhatsApp) stack vertically on tablet/mobile */
+  div[style*="gridTemplateColumns: '1fr 1fr'"],
+  div[style*="grid-template-columns: 1fr 1fr"],
+  div[style*="gridTemplateColumns: '1fr 1fr 1fr'"],
+  div[style*="grid-template-columns: 1fr 1fr 1fr"],
+  div[style*="gridTemplateColumns: 'repeat(3, 1fr)'"],
+  div[style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  header {
+    padding: 0 12px !important;
+    height: 60px !important;
+  }
+
+  .header-copilot-btn-text {
+    display: none;
+  }
+
+  .dashboard-hero-card {
+    padding: 18px 16px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    text-align: left;
+  }
+
+  .dashboard-hero-card button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Reduce Header Icon Button Sizes & Spacing specifically on Mobile */
+  .header-actions-wrapper {
+    gap: 6px !important;
+  }
+
+  .header-action-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .header-action-btn svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .header-user-profile img,
+  .header-user-profile div[style*="width: 36px"] {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .glass-card {
+    padding: 16px !important;
+  }
+
+  /* Form inputs & textareas fill mobile viewport cleanly without clipping */
+  input, textarea, select, .input-field {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .ai-chat-container {
+    height: calc(100vh - 200px) !important;
+    min-height: 400px !important;
+  }
+
+  .ai-msg-wrapper {
+    max-width: 92% !important;
+  }
+
+  h1 {
+    font-size: 1.35rem !important;
+  }
+
+  h2 {
+    font-size: 1.15rem !important;
+  }
+
+  .mobile-bottom-nav {
+    height: 62px;
+  }
+
+  .mobile-nav-link span {
+    font-size: 0.65rem;
+  }
+}

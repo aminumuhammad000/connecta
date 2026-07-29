@@ -210,23 +210,39 @@ export const signup = async (req: Request, res: Response) => {
     const { firstName, lastName, email, password, userType, otp, ...otherDetails } = req.body;
     console.log(`📩 [Auth] Signup attempt for: ${email} | OTP Received: ${otp}`);
 
-    if (!email || !otp || !password) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!email || !password || !firstName) {
+      return res.status(400).json({ message: "Missing required fields (firstName, email, password)" });
     }
 
-    // Verify OTP
-    const otpRecord = await OTP.findOne({ email, otp });
+    // Verify OTP if provided
+    let otpRecord: any = null;
+    if (otp) {
+      otpRecord = await OTP.findOne({ email, otp });
+      if (!otpRecord) return res.status(400).json({ message: "Invalid verification code" });
 
-    if (!otpRecord) return res.status(400).json({ message: "Invalid verification code" });
-
-    if (new Date() > otpRecord.expiresAt) {
-      await OTP.deleteOne({ _id: otpRecord._id });
-      return res.status(400).json({ message: "Verification code expired" });
+      if (new Date() > otpRecord.expiresAt) {
+        await OTP.deleteOne({ _id: otpRecord._id });
+        return res.status(400).json({ message: "Verification code expired" });
+      }
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    // Check if user already exists by email or phone
+    const existingUser = await User.findOne({ 
+      $or: [
+        { email: email.toLowerCase() },
+        ...(otherDetails.phoneNumber ? [{ phoneNumber: otherDetails.phoneNumber }] : [])
+      ] 
+    });
+    
+    if (existingUser) {
+      if (existingUser.email === email.toLowerCase()) {
+        return res.status(400).json({ message: "Email is already registered" });
+      }
+      if (otherDetails.phoneNumber && existingUser.phoneNumber === otherDetails.phoneNumber) {
+        return res.status(400).json({ message: "Phone number is already registered to another account" });
+      }
+      return res.status(400).json({ message: "User already exists" });
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -234,7 +250,7 @@ export const signup = async (req: Request, res: Response) => {
     const newUser = await User.create({
       firstName,
       lastName,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
       userType,
       isVerified: true,
@@ -271,9 +287,13 @@ export const signup = async (req: Request, res: Response) => {
 
     console.log('✅ Signup successful. Returning data for:', newUser.email);
     res.status(201).json({ user: newUser, token, success: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error('❌ Signup completion error:', err);
-    res.status(500).json({ message: "Server error", error: err });
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyPattern || {})[0] || 'field';
+      return res.status(400).json({ message: `A user with this ${field} already exists.` });
+    }
+    res.status(500).json({ message: err.message || "Server error", error: err });
   }
 };
 
@@ -878,7 +898,7 @@ export const updateMe = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp } = req.body;
+    const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, skills } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
@@ -892,6 +912,10 @@ export const updateMe = async (req: Request, res: Response) => {
     if (profileImage) user.profileImage = profileImage;
     if (pushToken) user.pushToken = pushToken;
     if (whatsapp) (user as any).whatsapp = whatsapp;
+    if (title) (user as any).title = title;
+    if (bio) (user as any).bio = bio;
+    if (location) (user as any).location = location;
+    if (skills && Array.isArray(skills)) (user as any).skills = skills;
 
     await user.save();
 

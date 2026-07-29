@@ -1,0 +1,56 @@
+import mongoose, { Schema } from 'mongoose';
+const SystemSettingsSchema = new Schema({
+    general: {
+        platformName: { type: String, default: 'Connecta' },
+        commissionRate: { type: Number, default: 15 },
+        minWithdrawal: { type: Number, default: 50 },
+        autoApproveProjects: { type: Boolean, default: false },
+        emailNotifications: { type: Boolean, default: true },
+        allowNewRegistrations: { type: Boolean, default: true },
+        maintenanceMode: { type: Boolean, default: false }
+    },
+    security: {
+        require2FA: { type: Boolean, default: false },
+        sessionTimeout: { type: Number, default: 30 },
+        maxLoginAttempts: { type: Number, default: 5 }
+    },
+    smtp: {
+        provider: { type: String, enum: ['gmail', 'other'], default: 'other' },
+        host: { type: String, default: '' },
+        port: { type: Number, default: 587 },
+        user: { type: String, default: '' },
+        pass: { type: String, default: '' },
+        secure: { type: Boolean, default: false },
+        fromEmail: { type: String, default: '' },
+        fromName: { type: String, default: 'Connecta' }
+    },
+    apiKeys: {
+        openrouter: { type: String, default: '' },
+        huggingface: { type: String, default: '' },
+        google: {
+            clientId: { type: String, default: '' },
+            clientSecret: { type: String, default: '' },
+            callbackUrl: { type: String, default: '' }
+        }
+    },
+    ai: {
+        provider: { type: String, enum: ['openai', 'gemini'], default: 'openai' },
+        openaiApiKey: { type: String, default: '' },
+        geminiApiKey: { type: String, default: '' },
+        model: { type: String, default: '' }
+    },
+    payments: {
+        jobPostingFee: { type: Number, default: 500 } // Default 500 Naira
+    }
+}, {
+    timestamps: true
+});
+// Ensure only one settings document exists
+SystemSettingsSchema.statics.getSettings = async function () {
+    let settings = await this.findOne();
+    if (!settings) {
+        settings = await this.create({});
+    }
+    return settings;
+};
+export default mongoose.model('SystemSettings', SystemSettingsSchema);
