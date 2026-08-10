@@ -1,0 +1,1426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Connecta — African talent, woven into the world's work</title>
+<meta name="description" content="Connecta is a job and freelance marketplace linking skilled African professionals across every sector — tech, design, marketing, business & finance, writing, hospitality, health and education — with clients worldwide. Discover talent with AI matching, hire whole squads, and pay safely through escrow." />
+<meta name="theme-color" content="#FD6730" />
+<link rel="icon" type="image/png" href="icon.png" />
+<link rel="shortcut icon" href="icon.png" />
+<link rel="apple-touch-icon" href="icon.png" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Connecta" />
+<meta property="og:title" content="Connecta — African talent, woven into the world's work" />
+<meta property="og:description" content="A job and freelance marketplace linking skilled African professionals across every sector with clients worldwide. AI matching, squads, and escrow-protected payments." />
+<meta property="og:image" content="app_mockup.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Connecta — African talent, woven into the world's work" />
+<meta name="twitter:description" content="AI matching, Collabo squads, and escrow-protected payments — for African professionals across every sector." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Connecta","url":"https://connecta.app","logo":"https://connecta.app/connecta_logo.png","description":"A job and freelance marketplace linking skilled African professionals across every sector with clients worldwide, powered by AI matching and escrow-protected payments.","areaServed":"Africa","sameAs":["https://www.facebook.com/profile.php?id=61587476974482","https://www.tiktok.com/@connecta_inc","https://www.instagram.com/connecta_inc"]}
+</script>
+<style>
+/* ============================================================
+   CONNECTA — design tokens
+   Palette: warm paper ground, deep pine near-black, tomato
+   primary, African saffron gold, global indigo. A dedicated
+   success-green is reserved for "approved / verified" only.
+   ============================================================ */
+:root{
+  /* Color Palette aligned perfectly with connecta-web / connecta-app design system */
+  --ink:#111827;        /* Clean slate dark text (#111827) */
+  --ink-2:#374151;      /* Slate secondary text (#374151) */
+  --jade:#FD6730;       /* Connecta Brand Primary Orange (#FD6730) */
+  --jade-2:#FF8F6B;     /* Connecta Brand Secondary Orange (#FF8F6B) */
+  --jade-deep:#E55520;  /* Connecta Primary Hover (#E55520) */
+  --success:#10B981;    /* Approved/Verified Status Green (#10B981) */
+  --saffron:#FD6730;    /* Primary highlight accent */
+  --saffron-deep:#E55520;
+  --indigo:#8B5CF6;     /* Purple accent (#8B5CF6) */
+  --clay:#D9613C;       /* Warm accent */
+  --paper:#FFFFFF;      /* Clean White Background (#FFFFFF) */
+  --paper-2:#F7F8FC;    /* Subtle Secondary Background (#F7F8FC) */
+  --card:#FFFFFF;
+  --white:#ffffff;
+  --muted:#4B5563;      /* Muted text (#4B5563) */
+  --muted-2:#9CA3AF;    /* Soft muted text (#9CA3AF) */
+  --line:rgba(229,231,235,0.8);
+  --line-strong:#E5E7EB;
+
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md:0 8px 24px -4px rgba(0,0,0,0.08);
+  --shadow-lg:0 16px 36px -6px rgba(0,0,0,0.12);
+  --shadow-jade:0 12px 30px -4px rgba(253,103,48,0.35);
+
+  --r-xs:8px; --r-sm:14px; --r-md:20px; --r-lg:30px; --r-xl:44px; --r-pill:9999px;
+
+  --grad-hero:radial-gradient(1200px 700px at 78% -8%, rgba(253,103,48,.12), transparent 60%),
+              radial-gradient(900px 600px at 6% 8%, rgba(255,143,107,.10), transparent 55%);
+  --grad-jade:linear-gradient(135deg,#FD6730 0%,#FF8F6B 100%);
+  --grad-sun:linear-gradient(135deg,#FD6730 0%,#FF8F6B 100%);
+  --grad-dark:linear-gradient(165deg,#1F2937,#111827 78%);
+
+  --font-d:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-b:"Manrope",system-ui,-apple-system,sans-serif;
+  --font-m:"DM Mono","SFMono-Regular",ui-monospace,monospace;
+
+  --wrap:1200px;
+  --gutter:clamp(20px,5vw,64px);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:200;background:var(--ink);color:#fff;padding:.75rem 1.15rem;border-radius:0 0 10px 0;font-weight:700;font-size:.9rem}
+.skip-link:focus{left:0}
+body{
+  margin:0;
+  font-family:var(--font-b);
+  color:var(--ink);
+  background:var(--paper);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:var(--font-d);font-weight:700;line-height:1.02;margin:0;color:var(--ink);letter-spacing:-.02em}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+button{font-family:inherit}
+svg{display:block}
+::selection{background:var(--saffron);color:var(--ink)}
+:focus-visible{outline:3px solid var(--indigo);outline-offset:3px;border-radius:6px}
+
+.wrap{max-width:var(--wrap);margin-inline:auto;padding-inline:var(--gutter)}
+.eyebrow{
+  font-family:var(--font-m);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--jade-deep);display:inline-flex;align-items:center;gap:.6em;font-weight:500;
+}
+.eyebrow::before{content:"";width:22px;height:1.5px;background:var(--saffron);display:inline-block}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:.55em;justify-content:center;
+  font-weight:700;font-size:.98rem;padding:.92em 1.5em;border-radius:var(--r-pill);
+  border:1.5px solid transparent;cursor:pointer;transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s,background .25s,color .2s;
+  will-change:transform;line-height:1;
+}
+.btn svg{width:1.1em;height:1.1em}
+.btn-primary{background:var(--grad-jade);color:#fff;box-shadow:var(--shadow-jade)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 26px 60px rgba(253,103,48,.36)}
+.btn-ghost{background:transparent;border-color:var(--line-strong);color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:#fff;border-color:var(--ink);transform:translateY(-2px)}
+.btn-light{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+.btn-light:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-lg{padding:1.05em 1.8em;font-size:1.04rem}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav{
+  position:sticky;top:0;z-index:60;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  background:rgba(251,247,239,.72);border-bottom:1px solid transparent;
+  transition:border-color .3s,background .3s,box-shadow .3s;
+}
+.nav.scrolled{border-color:var(--line);box-shadow:var(--shadow-sm);background:rgba(251,247,239,.9)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:74px;gap:1.5rem}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:var(--font-d);font-weight:800;font-size:1.32rem;letter-spacing:-.03em}
+.brand .mark{width:34px;height:34px;flex:none}
+.brand .logo-img{height:34px;width:auto;flex:none;display:block}
+.footer .brand .logo-img{height:38px}
+.nav-links{display:flex;align-items:center;gap:2rem;list-style:none;margin:0;padding:0}
+.nav-links a{font-size:.95rem;font-weight:600;color:var(--ink-2);position:relative;padding:.2em 0}
+.nav-links a::after{content:"";position:absolute;left:0;right:100%;bottom:-2px;height:2px;background:var(--jade);transition:right .3s cubic-bezier(.2,.8,.3,1);border-radius:2px}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a:hover::after{right:0}
+.nav-cta{display:flex;align-items:center;gap:.9rem}
+.nav-cta .signin{font-weight:700;font-size:.95rem;color:var(--ink)}
+.hamburger{display:none;flex-direction:column;gap:5px;background:none;border:0;cursor:pointer;padding:8px}
+.hamburger span{width:24px;height:2px;background:var(--ink);border-radius:2px;transition:.3s}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{position:relative;background:var(--grad-hero);padding-top:clamp(48px,7vw,88px);padding-bottom:clamp(40px,6vw,72px);overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(28px,4vw,60px);align-items:center}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:.6rem;background:#fff;border:1px solid var(--line);
+  padding:.5rem .9rem .5rem .55rem;border-radius:var(--r-pill);box-shadow:var(--shadow-sm);font-size:.82rem;font-weight:600;color:var(--ink-2);
+}
+.hero-badge .flag{display:inline-flex;gap:2px}
+.hero-badge .dot{width:8px;height:8px;border-radius:50%}
+.hero h1{
+  font-size:clamp(2.6rem,6.2vw,4.6rem);line-height:.98;margin:1.3rem 0 0;font-weight:700;letter-spacing:-.035em;
+}
+.hero h1 .weave{position:relative;white-space:nowrap;color:var(--jade-deep)}
+.hero h1 .weave svg{position:absolute;left:0;right:0;bottom:-.12em;width:100%;height:.28em}
+.hero .lede{font-size:clamp(1.05rem,1.5vw,1.22rem);color:var(--muted);max-width:34ch;margin-top:1.5rem}
+.hero-actions{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:2rem}
+.hero-proof{display:flex;align-items:center;gap:1.4rem;margin-top:2.4rem;flex-wrap:wrap}
+.avatars{display:flex}
+.avatars span{width:38px;height:38px;border-radius:50%;border:2.5px solid var(--paper);margin-left:-12px;background-size:cover;display:grid;place-items:center;font-weight:700;color:#fff;font-size:.82rem;font-family:var(--font-d)}
+.avatars span:first-child{margin-left:0}
+.hero-proof .proof-txt{font-size:.9rem;color:var(--muted)}
+.hero-proof .proof-txt b{color:var(--ink)}
+.stars{color:var(--saffron);letter-spacing:2px;font-size:.8rem}
+
+/* --- Hero signature: the woven network --- */
+.weave-stage{position:relative;aspect-ratio:1/1;width:100%;max-width:560px;margin-inline:auto}
+.weave-stage svg{width:100%;height:100%;overflow:visible}
+.thread{fill:none;stroke-linecap:round}
+.node-card{
+  position:absolute;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
+  box-shadow:var(--shadow-md);padding:.6rem .8rem;display:flex;align-items:center;gap:.55rem;
+  font-size:.8rem;font-weight:700;color:var(--ink);white-space:nowrap;
+}
+.node-card .ring{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-size:.82rem;flex:none}
+.node-card small{display:block;font-weight:500;color:var(--muted);font-size:.68rem;font-family:var(--font-m);letter-spacing:.02em}
+.node-a{top:6%;left:-4%}
+.node-b{top:30%;right:-8%}
+.node-c{bottom:20%;left:-8%}
+.node-d{bottom:2%;right:2%}
+.match-core{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:var(--grad-dark);color:#fff;border-radius:var(--r-lg);padding:1.1rem 1.15rem;width:190px;
+  box-shadow:var(--shadow-lg);border:1px solid rgba(255,255,255,.08);
+}
+.match-core .k{font-family:var(--font-m);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--saffron)}
+.match-core .big{font-family:var(--font-d);font-size:1.9rem;font-weight:700;line-height:1;margin-top:.35rem}
+.match-core .bar{height:6px;border-radius:99px;background:rgba(255,255,255,.14);margin-top:.7rem;overflow:hidden}
+.match-core .bar i{display:block;height:100%;width:0;border-radius:99px;background:var(--grad-sun)}
+.match-core .cap{font-size:.72rem;color:rgba(255,255,255,.72);margin-top:.55rem}
+
+/* marquee */
+.trust{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,255,255,.4);padding:1.3rem 0;overflow:hidden}
+.trust-inner{display:flex;align-items:center;gap:clamp(2rem,5vw,4.5rem);white-space:nowrap;animation:marq 34s linear infinite;width:max-content}
+.trust:hover .trust-inner{animation-play-state:paused}
+.trust .item{font-family:var(--font-d);font-weight:700;font-size:1.15rem;color:var(--ink-2);opacity:.62;display:flex;align-items:center;gap:.5rem}
+.trust .item svg{width:20px;height:20px;opacity:.7}
+@keyframes marq{to{transform:translateX(-50%)}}
+
+/* ============================================================
+   SECTION SCAFFOLD
+   ============================================================ */
+section{position:relative}
+.section{padding-block:clamp(64px,9vw,120px)}
+.section-head{max-width:640px}
+.section-head.center{margin-inline:auto;text-align:center}
+.section-head.center .eyebrow{justify-content:center}
+.section-head h2{font-size:clamp(2rem,4.4vw,3.2rem);margin-top:1rem;letter-spacing:-.03em}
+.section-head p{color:var(--muted);font-size:1.1rem;margin-top:1.1rem}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.8,.3,1),transform .7s cubic-bezier(.2,.8,.3,1)}
+.reveal.in{opacity:1;transform:none}
+[data-delay="1"]{transition-delay:.08s}
+[data-delay="2"]{transition-delay:.16s}
+[data-delay="3"]{transition-delay:.24s}
+[data-delay="4"]{transition-delay:.32s}
+
+/* ============================================================
+   AUDIENCE SPLIT (clients / freelancers / teams)
+   ============================================================ */
+.who{background:var(--paper)}
+.who-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:3rem}
+.who-card{
+  position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:1.9rem 1.7rem;overflow:hidden;transition:transform .35s cubic-bezier(.2,.8,.3,1),box-shadow .35s,border-color .35s;
+}
+.who-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-md);border-color:transparent}
+.who-card .glyph{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;margin-bottom:1.1rem}
+.who-card h3{font-size:1.35rem}
+.who-card p{color:var(--muted);margin-top:.5rem;font-size:.98rem}
+.who-card ul{list-style:none;padding:0;margin:1.1rem 0 0;display:grid;gap:.55rem}
+.who-card li{display:flex;gap:.6rem;align-items:flex-start;font-size:.92rem;color:var(--ink-2);font-weight:500}
+.who-card li svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--jade)}
+.who-card .tag{position:absolute;top:1.4rem;right:1.4rem;font-family:var(--font-m);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+.who-card::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(160deg,transparent,transparent);pointer-events:none}
+
+/* ============================================================
+   SECTORS — Connecta works for every field, not just tech
+   ============================================================ */
+.sectors{background:var(--paper-2);border-top:1px solid var(--line)}
+.sectors .section-head{max-width:720px}
+.sector-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:2.8rem}
+.sector-card{
+  position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:1.5rem 1.4rem;transition:transform .25s cubic-bezier(.2,.8,.3,1),box-shadow .25s,border-color .25s;overflow:hidden;
+}
+.sector-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-md);border-color:transparent}
+.sector-card .s-ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;margin-bottom:1rem;background:rgba(253,103,48,.1);color:var(--jade)}
+.sector-card .s-ic svg{width:24px;height:24px}
+.sector-card h4{font-size:1.08rem;letter-spacing:-.02em}
+.sector-card p{color:var(--muted);font-size:.9rem;margin-top:.45rem;line-height:1.5}
+.sector-card .roles{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem}
+.sector-card .roles span{font-size:.72rem;font-weight:600;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--line);padding:.28em .7em;border-radius:var(--r-pill)}
+.sector-card::after{content:"";position:absolute;left:0;top:0;height:3px;width:0;background:var(--grad-jade);transition:width .35s cubic-bezier(.2,.8,.3,1)}
+.sector-card:hover::after{width:100%}
+.sectors-note{display:flex;align-items:center;justify-content:center;gap:.7rem;flex-wrap:wrap;margin-top:2.4rem;text-align:center;color:var(--muted);font-size:.98rem}
+.sectors-note b{color:var(--ink);font-weight:700}
+.sectors-note .chip{display:inline-flex;align-items:center;gap:.45rem;background:var(--card);border:1px solid var(--line);border-radius:var(--r-pill);padding:.4em .95em;font-size:.85rem;font-weight:600;color:var(--ink-2)}
+.sectors-note .chip svg{width:15px;height:15px;color:var(--jade)}
+
+/* ============================================================
+   HOW IT WORKS — genuine sequence, numbered
+   ============================================================ */
+.how{background:var(--grad-dark);color:#fff;border-radius:clamp(24px,4vw,48px);margin-inline:var(--gutter);position:relative;overflow:hidden}
+.how::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 85% 0%,rgba(253,103,48,.22),transparent 60%),radial-gradient(600px 400px at 0% 100%,rgba(246,168,28,.14),transparent 55%);pointer-events:none}
+.how .wrap{position:relative;max-width:1100px}
+.how h2{color:#fff}
+.how .section-head p{color:rgba(255,255,255,.72)}
+.how .eyebrow{color:var(--saffron)}
+.how .eyebrow::before{background:var(--saffron)}
+.how-tabs{display:inline-flex;gap:.4rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:.35rem;border-radius:var(--r-pill);margin-top:1.7rem}
+.how-tabs button{background:none;border:0;color:rgba(255,255,255,.7);font-weight:700;font-size:.92rem;padding:.6em 1.2em;border-radius:var(--r-pill);cursor:pointer;transition:.25s}
+.how-tabs button.active{background:#fff;color:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-top:2.6rem;counter-reset:step;transition:opacity .35s ease}
+.steps[hidden]{display:none!important;opacity:0}
+.step{position:relative;padding:1.6rem 1.3rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);transition:transform .35s,background .35s}
+.step:hover{transform:translateY(-5px);background:rgba(255,255,255,.09)}
+.step .num{font-family:var(--font-m);font-size:.78rem;color:var(--saffron);letter-spacing:.1em}
+.step h4{color:#fff;font-size:1.12rem;margin-top:.7rem}
+.step p{color:rgba(255,255,255,.68);font-size:.9rem;margin-top:.5rem}
+.step .line{position:absolute;top:2.3rem;right:-.7rem;width:1.4rem;height:2px;background:linear-gradient(90deg,var(--saffron),transparent);display:none}
+.step:not(:last-child) .line{display:block}
+@media(max-width:820px){.step .line{display:none!important}}
+
+/* ============================================================
+   AI MATCHING — feature spotlight (asymmetric)
+   ============================================================ */
+.spot{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,5vw,72px);align-items:center}
+.spot.flip{direction:rtl}
+.spot.flip>*{direction:ltr}
+.spot-body h2{font-size:clamp(1.9rem,3.6vw,2.8rem)}
+.spot-body p{color:var(--muted);font-size:1.08rem;margin-top:1.1rem}
+.spot-list{list-style:none;padding:0;margin:1.6rem 0 0;display:grid;gap:1rem}
+.spot-list li{display:flex;gap:.85rem;align-items:flex-start}
+.spot-list .ic{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;background:var(--paper-2);color:var(--jade-deep)}
+.spot-list b{display:block;font-family:var(--font-d);font-size:1rem}
+.spot-list span{font-size:.92rem;color:var(--muted)}
+.spot-visual{position:relative}
+
+/* AI panel */
+.ai-panel{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden}
+.ai-head{padding:1.1rem 1.3rem;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:.7rem;background:var(--paper)}
+.ai-head .dots{display:flex;gap:6px}
+.ai-head .dots i{width:10px;height:10px;border-radius:50%;background:var(--line-strong)}
+.ai-head .title{font-family:var(--font-m);font-size:.78rem;color:var(--muted);letter-spacing:.04em}
+.ai-body{padding:1.3rem}
+.ai-prompt{background:var(--paper-2);border-radius:var(--r-sm);padding:.9rem 1rem;font-size:.9rem;color:var(--ink-2)}
+.ai-prompt .cursor{display:inline-block;width:2px;height:1em;background:var(--jade);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.ai-thinking{display:flex;align-items:center;gap:.6rem;margin:1rem 0;font-family:var(--font-m);font-size:.76rem;color:var(--jade-deep)}
+.ai-thinking .pulse{width:8px;height:8px;border-radius:50%;background:var(--jade);animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.3)}}
+.match-row{display:flex;align-items:center;gap:.85rem;padding:.75rem;border-radius:var(--r-sm);border:1px solid var(--line);margin-top:.7rem;transition:transform .3s,border-color .3s,box-shadow .3s}
+.match-row:hover{transform:translateX(4px);border-color:var(--jade);box-shadow:var(--shadow-sm)}
+.match-row .ava{width:42px;height:42px;border-radius:12px;flex:none;display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-weight:700}
+.match-row .info{flex:1;min-width:0}
+.match-row .info b{font-size:.94rem;font-family:var(--font-d)}
+.match-row .info small{display:block;color:var(--muted);font-size:.78rem;font-family:var(--font-m);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-row .score{text-align:right;flex:none}
+.match-row .score b{font-family:var(--font-d);font-size:1.1rem;color:var(--jade-deep)}
+.match-row .score small{font-size:.62rem;color:var(--muted-2);font-family:var(--font-m);letter-spacing:.08em;text-transform:uppercase}
+
+/* ============================================================
+   ESCROW — milestone flow
+   ============================================================ */
+.escrow{background:var(--paper-2)}
+.escrow-visual{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:1.6rem;box-shadow:var(--shadow-md)}
+.escrow-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:1.1rem;border-bottom:1px dashed var(--line-strong)}
+.escrow-top .bal small{font-family:var(--font-m);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.escrow-top .bal b{font-family:var(--font-d);font-size:1.7rem;display:block;line-height:1.1}
+.escrow-top .lock{width:44px;height:44px;border-radius:12px;background:var(--grad-jade);display:grid;place-items:center;color:#fff}
+.mstones{list-style:none;padding:0;margin:1.3rem 0 0;display:grid;gap:.7rem}
+.mstone{display:flex;align-items:center;gap:.9rem;padding:.8rem .9rem;border-radius:var(--r-sm);background:var(--paper);border:1px solid var(--line)}
+.mstone .tick{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-size:.8rem}
+.mstone.done .tick{background:var(--jade)}
+.mstone.active .tick{background:var(--saffron);color:var(--ink);box-shadow:0 0 0 4px rgba(246,168,28,.2)}
+.mstone.next .tick{background:var(--paper-2);color:var(--muted);border:1.5px solid var(--line-strong)}
+.mstone .m-info{flex:1}
+.mstone .m-info b{font-size:.92rem;font-family:var(--font-d)}
+.mstone .m-info small{display:block;color:var(--muted);font-size:.78rem}
+.mstone .amt{font-family:var(--font-m);font-weight:500;font-size:.86rem;color:var(--ink)}
+.mstone.active{border-color:var(--saffron)}
+.escrow-foot{display:flex;align-items:center;gap:.6rem;margin-top:1.2rem;font-size:.82rem;color:var(--muted)}
+.escrow-foot svg{width:16px;height:16px;color:var(--jade-deep)}
+
+/* ============================================================
+   COLLABO — squad cluster
+   ============================================================ */
+.collabo{background:var(--ink);color:#fff;position:relative;overflow:hidden}
+.collabo::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 500px at 20% 0%,rgba(253,103,48,.2),transparent 60%),radial-gradient(700px 500px at 100% 100%,rgba(246,168,28,.12),transparent 55%)}
+.collabo .wrap{position:relative}
+.collabo h2{color:#fff}
+.collabo .section-head p{color:rgba(255,255,255,.72)}
+.collabo .eyebrow{color:var(--saffron)}
+.collabo .eyebrow::before{background:var(--saffron)}
+.squad{position:relative;aspect-ratio:1.05/1;max-width:520px;margin-inline:auto}
+.squad-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:3;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.14);
+  border-radius:var(--r-lg);padding:1.1rem 1.3rem;text-align:center;box-shadow:var(--shadow-lg);width:200px;
+}
+.squad-center .k{font-family:var(--font-m);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;color:var(--saffron)}
+.squad-center b{font-family:var(--font-d);font-size:1.35rem;display:block;margin-top:.3rem}
+.squad-center p{font-size:.78rem;color:rgba(255,255,255,.7);margin-top:.3rem}
+.squad-center .mini{display:flex;justify-content:center;margin-top:.7rem}
+.squad-center .mini span{width:28px;height:28px;border-radius:50%;margin-left:-8px;border:2px solid var(--ink);display:grid;place-items:center;font-size:.68rem;font-weight:700;color:#fff;font-family:var(--font-d)}
+.squad-center .mini span:first-child{margin-left:0}
+.member{position:absolute;z-index:2;display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);padding:.5rem .8rem .5rem .55rem;border-radius:var(--r-pill);font-size:.8rem;font-weight:700;backdrop-filter:blur(6px)}
+.member .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-size:.72rem;flex:none}
+.member small{display:block;font-weight:500;color:rgba(255,255,255,.6);font-size:.64rem;font-family:var(--font-m)}
+.m1{top:4%;left:8%}
+.m2{top:12%;right:2%}
+.m3{bottom:16%;left:0%}
+.m4{bottom:4%;right:10%}
+.collabo-points{list-style:none;padding:0;margin:1.9rem 0 0;display:grid;gap:1.1rem}
+.collabo-points li{display:flex;gap:.85rem;align-items:flex-start}
+.collabo-points .ic{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;background:rgba(255,255,255,.08);color:var(--saffron)}
+.collabo-points b{display:block;font-family:var(--font-d);font-size:1.02rem;color:#fff}
+.collabo-points span{font-size:.92rem;color:rgba(255,255,255,.68)}
+
+/* ============================================================
+   FEATURE GRID (bento)
+   ============================================================ */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:1.1rem;margin-top:3rem}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:1.6rem;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.2,.8,.3,1),box-shadow .35s,border-color .35s}
+.tile:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:transparent}
+.tile .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;margin-bottom:1rem;background:var(--paper-2);color:var(--jade-deep)}
+.tile h4{font-size:1.12rem}
+.tile p{color:var(--muted);font-size:.92rem;margin-top:.45rem}
+.tile.wide{grid-column:span 3}
+.tile.third{grid-column:span 2}
+.tile.tall{grid-column:span 3}
+.tile.feature{background:var(--grad-jade);color:#fff;grid-column:span 3}
+.tile.feature h4,.tile.feature p{color:#fff}
+.tile.feature p{color:rgba(255,255,255,.82)}
+.tile.feature .ic{background:rgba(255,255,255,.16);color:#fff}
+.tile.feature .stat{font-family:var(--font-d);font-size:2.6rem;line-height:1;margin-top:1.2rem}
+.tile.saff{background:var(--grad-sun);color:var(--ink);grid-column:span 3}
+.tile.saff .ic{background:rgba(18,46,39,.12);color:var(--ink)}
+
+/* ============================================================
+   STATS band
+   ============================================================ */
+.stats{background:var(--paper)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.4rem;text-align:center}
+.stat-cell{padding:1.4rem 1rem;border-right:1px solid var(--line)}
+.stat-cell:last-child{border-right:0}
+.stat-cell .n{font-family:var(--font-d);font-size:clamp(2.4rem,4.5vw,3.4rem);line-height:1;color:var(--ink);letter-spacing:-.03em}
+.stat-cell .n .suf{color:var(--jade-deep)}
+.stat-cell .l{font-size:.9rem;color:var(--muted);margin-top:.6rem;font-weight:600}
+
+/* ============================================================
+   TESTIMONIAL CAROUSEL
+   ============================================================ */
+.quote-wrap{max-width:920px;margin-inline:auto;text-align:center;position:relative;min-height:220px}
+.quote-slide{display:none;opacity:0;transform:translateY(12px);transition:opacity .6s ease,transform .6s ease}
+.quote-slide.active{display:block;opacity:1;transform:translateY(0)}
+.quote{font-family:var(--font-d);font-size:clamp(1.45rem,3.2vw,2.2rem);line-height:1.24;font-weight:600;letter-spacing:-.02em}
+.quote .hl{background:linear-gradient(180deg,transparent 62%,rgba(253,103,48,.25) 62%)}
+.quote-by{display:flex;align-items:center;justify-content:center;gap:.85rem;margin-top:1.8rem}
+.quote-by .av{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-weight:700;font-size:1.1rem;flex:none}
+.quote-by .meta{text-align:left}
+.quote-by .meta b{font-family:var(--font-d);font-size:1rem;color:var(--ink)}
+.quote-by .meta small{display:block;color:var(--muted);font-size:.82rem}
+.quote-dots{display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:2.2rem}
+.quote-dot{width:10px;height:10px;border-radius:50%;background:var(--line);border:none;cursor:pointer;transition:background .3s,transform .3s;padding:0}
+.quote-dot.active{background:var(--jade);transform:scale(1.3)}
+.quote{font-family:var(--font-d);font-size:clamp(1.5rem,3.2vw,2.3rem);line-height:1.22;font-weight:600;letter-spacing:-.02em}
+.quote .hl{background:linear-gradient(180deg,transparent 62%,rgba(246,168,28,.42) 62%)}
+.quote-by{display:flex;align-items:center;justify-content:center;gap:.85rem;margin-top:2rem}
+.quote-by .av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-weight:700;font-size:1.1rem}
+.quote-by .meta{text-align:left}
+.quote-by .meta b{font-family:var(--font-d);font-size:1rem}
+.quote-by .meta small{display:block;color:var(--muted);font-size:.82rem}
+
+/* ============================================================
+   DOWNLOAD / MOBILE APP
+   ============================================================ */
+.download{position:relative;padding:clamp(60px,8vw,100px) 0;background:var(--paper)}
+.download-card{
+  position:relative;background:transparent;color:var(--ink);
+  display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,5vw,64px);align-items:center;
+}
+.download-copy{position:relative;z-index:2}
+.download-copy .eyebrow{color:var(--jade)}
+.download-copy .eyebrow::before{background:var(--saffron)}
+.download-copy h2{color:var(--ink);font-size:clamp(2.2rem,4.5vw,3.4rem);margin-top:1.1rem}
+.download-copy p{color:var(--muted);font-size:1.1rem;margin-top:1.1rem;max-width:46ch}
+.app-points{list-style:none;padding:0;margin:1.6rem 0 0;display:grid;gap:.75rem}
+.app-points li{display:flex;align-items:center;gap:.7rem;font-weight:600;color:var(--ink);font-size:.98rem}
+.app-points .tk{width:24px;height:24px;border-radius:50%;background:rgba(16,185,129,.15);color:#10B981;display:grid;place-items:center;flex:none}
+.app-points .tk svg{width:14px;height:14px}
+.store-row{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:2rem}
+.store-btn{display:inline-flex;align-items:center;gap:.7rem;background:var(--ink);color:#fff;border-radius:14px;padding:.75rem 1.25rem;font-weight:700;transition:transform .25s,box-shadow .25s}
+.store-btn:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,.2)}
+.store-btn svg{width:26px;height:26px;flex:none}
+.store-btn small{display:block;font-family:var(--font-m);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:500;line-height:1.3}
+.store-btn b{font-family:var(--font-d);font-size:1.05rem;line-height:1.1}
+.download-meta{display:flex;align-items:center;gap:1rem;margin-top:1.6rem;color:var(--muted);font-size:.86rem;font-family:var(--font-m);flex-wrap:wrap}
+.download-meta .rate{display:inline-flex;align-items:center;gap:.35rem;color:var(--jade)}
+.download-visual{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;padding:12px 0}
+.iphone-frame{
+  position:relative;
+  width:100%;
+  max-width:290px;
+  background:#0B0F17;
+  border-radius:44px;
+  padding:10px;
+  box-shadow:0 24px 60px rgba(0,0,0,.22), inset 0 0 0 2px rgba(255,255,255,.15);
+}
+.iphone-screen{
+  position:relative;
+  width:100%;
+  border-radius:34px;
+  overflow:hidden;
+  background:#fff;
+}
+.iphone-island{
+  position:absolute;
+  top:6px;
+  left:50%;
+  transform:translateX(-50%);
+  width:84px;
+  height:22px;
+  background:#000;
+  border-radius:12px;
+  z-index:10;
+}
+.iphone-screen img{
+  width:100%;
+  height:auto;
+  display:block;
+}
+.download-visual{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;padding:0;overflow:visible}
+.download-visual .phone{width:100%;max-width:720px;min-width:520px;height:auto;border-radius:0;box-shadow:none;display:block;margin:0 auto;transform:scale(1.08);transform-origin:center right}
+.qr-chip{position:absolute;left:-8%;bottom:4%;background:#fff;color:var(--ink);border-radius:14px;padding:.6rem .8rem;display:flex;align-items:center;gap:.5rem;box-shadow:0 12px 30px rgba(0,0,0,.15);border:1px solid var(--line);font-size:.7rem;font-weight:700;max-width:170px;z-index:15}
+.qr-chip .qr{width:38px;height:38px;flex:none;border-radius:6px}
+
+/* ============================================================
+   FINAL CTA
+   ============================================================ */
+.cta-final{position:relative;overflow:hidden;background:var(--grad-dark);color:#fff;border-radius:clamp(24px,4vw,48px);margin-inline:var(--gutter);padding:clamp(56px,8vw,96px) var(--gutter);text-align:center}
+.cta-final::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 400px at 50% -10%,rgba(253,103,48,.3),transparent 60%)}
+.cta-final .wrap{position:relative;max-width:760px}
+.cta-final h2{color:#fff;font-size:clamp(2.1rem,5vw,3.6rem)}
+.cta-final p{color:rgba(255,255,255,.76);font-size:1.14rem;margin-top:1.2rem}
+.cta-final .hero-actions{justify-content:center}
+.cta-final .fineprint{margin-top:1.6rem;font-size:.84rem;color:rgba(255,255,255,.55);font-family:var(--font-m)}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.footer{padding-block:clamp(48px,6vw,72px) 2.5rem;background:var(--paper)}
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:2rem}
+.footer .brand{margin-bottom:1rem}
+.footer .about{color:var(--muted);font-size:.92rem;max-width:32ch}
+.footer .socials{display:flex;gap:.6rem;margin-top:1.3rem}
+.footer .socials a{width:40px;height:40px;border-radius:11px;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2);transition:.25s}
+.footer .socials a:hover{background:var(--ink);color:#fff;border-color:var(--ink);transform:translateY(-3px)}
+.footer h5{font-family:var(--font-d);font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-2);margin:0 0 1rem}
+.footer ul{list-style:none;padding:0;margin:0;display:grid;gap:.7rem}
+.footer ul a{color:var(--ink-2);font-size:.92rem;font-weight:500;transition:.2s}
+.footer ul a:hover{color:var(--jade-deep)}
+.footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:3rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.84rem;color:var(--muted);flex-wrap:wrap;gap:1rem}
+.footer-bar .made{display:flex;align-items:center;gap:.5rem;font-family:var(--font-m)}
+.footer-legal{display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap}
+.footer-legal a{color:var(--muted);font-weight:600;transition:color .2s}
+.footer-legal a:hover{color:var(--jade-deep)}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:960px){
+  .hero-grid{grid-template-columns:1fr;gap:2.5rem}
+  .weave-stage{max-width:440px;margin-top:1rem}
+  .who-grid{grid-template-columns:1fr}
+  .sector-grid{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .spot{grid-template-columns:1fr;gap:2.5rem}
+  .spot.flip{direction:ltr}
+  .spot-visual{order:-1}
+  .bento{grid-template-columns:repeat(2,1fr)}
+  .tile.wide,.tile.third,.tile.tall,.tile.feature,.tile.saff{grid-column:span 2}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:1.6rem}
+  .stat-cell:nth-child(2){border-right:0}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .download-card{grid-template-columns:1fr;gap:2.5rem;text-align:center}
+  .download-copy .eyebrow{justify-content:center}
+  .download-copy p{max-width:none}
+  .app-points{max-width:340px;margin-inline:auto}
+  .store-row,.download-meta{justify-content:center}
+  .download-visual{order:-1}
+}
+@media(max-width:640px){
+  .nav-links,.nav-cta .signin{display:none}
+  .hamburger{display:flex}
+  .steps{grid-template-columns:1fr}
+  .sector-grid{grid-template-columns:1fr 1fr;gap:.7rem}
+  .sector-card{padding:1.15rem 1.05rem}
+  .sector-card p{display:none}
+  .bento{grid-template-columns:1fr}
+  .tile.wide,.tile.third,.tile.tall,.tile.feature,.tile.saff{grid-column:span 1}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  /* footer: brand spans full width, link groups sit in a tidy 2-col grid */
+  .footer-grid{grid-template-columns:1fr 1fr;gap:1.9rem 1.3rem}
+  .footer-grid>div:first-child{grid-column:1/-1;margin-bottom:.4rem}
+  .footer .about{max-width:48ch}
+  .footer h5{margin-bottom:.85rem}
+  .footer ul{gap:.65rem}
+  .hero h1 .weave{white-space:normal}
+  .qr-chip{display:none}
+  .download-visual .phone{transform:none;min-width:0;width:100%;max-width:360px}
+}
+@media(max-width:560px){
+  /* nav: compact the primary CTA so logo + CTA + hamburger never clip */
+  .nav-inner{gap:.6rem}
+  .nav-cta{gap:.5rem}
+  .nav-cta .btn-primary{padding:.74em 1.05em;font-size:.9rem}
+  .brand .logo-img{height:30px}
+
+  /* footer bottom bar: stack cleanly with roomy tap targets */
+  .footer-bar{flex-direction:column;align-items:flex-start;gap:1.1rem;margin-top:2.2rem}
+  .footer-legal{gap:1.75rem}
+  .footer-legal a{padding-block:.15rem}
+
+  /* hero woven visual: pull floating cards in-bounds + shrink so nothing clips */
+  .weave-stage{max-width:340px}
+  .node-card{font-size:.72rem;padding:.5rem .65rem;gap:.45rem}
+  .node-card .ring{width:26px;height:26px;font-size:.74rem}
+  .node-card small{font-size:.62rem}
+  .node-a{top:1%;left:0}
+  .node-b{top:24%;right:0}
+  .node-c{bottom:24%;left:0}
+  .node-d{bottom:0;right:0}
+  .match-core{width:154px;padding:.9rem .95rem}
+  .match-core .big{font-size:1.6rem}
+
+  /* collabo squad cluster: shrink members + core, pull in-bounds */
+  .squad{max-width:330px}
+  .squad-center{width:158px;padding:.9rem 1rem}
+  .squad-center b{font-size:1.15rem}
+  .member{font-size:.72rem;padding:.42rem .6rem .42rem .45rem}
+  .member .av{width:24px;height:24px;font-size:.66rem}
+  .m1{top:0;left:0}
+  .m2{top:6%;right:0}
+  .m3{bottom:16%;left:0}
+  .m4{bottom:0;right:2%}
+}
+@media(max-width:440px){
+  /* Narrow phones: the two decorative clusters can't guarantee non-overlap of
+     absolutely-positioned chips over the center card, so drop the floating chips.
+     Hero keeps its woven SVG with the centered match-core (154px fits easily).
+     Squad has no background art, so it collapses to a centered card. No overlap possible. */
+  .node-card{display:none}
+  .weave-stage{max-width:300px}
+  .member{display:none}
+  .squad{aspect-ratio:auto;min-height:0}
+  .squad-center{position:static;transform:none;width:100%;max-width:260px;margin:0 auto}
+}
+@media(max-width:380px){
+  /* tightest phones (≤360–380px): trim gutter + CTA so nothing overflows */
+  .nav .wrap{padding-inline:14px}
+  .nav-cta .btn-primary{padding:.7em .9em;font-size:.85rem}
+  .hero h1{font-size:clamp(2.2rem,8vw,2.8rem)}
+}
+
+/* mobile drawer */
+.drawer{position:fixed;inset:0;z-index:80;background:rgba(18,46,39,.4);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer.open{opacity:1;pointer-events:auto}
+.drawer-panel{position:absolute;top:0;right:0;height:100%;width:min(320px,86vw);background:var(--paper);box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .35s cubic-bezier(.2,.8,.3,1);padding:1.8rem 1.6rem;display:flex;flex-direction:column;gap:.4rem}
+.drawer.open .drawer-panel{transform:none}
+.drawer-panel .close{align-self:flex-end;background:none;border:0;font-size:1.6rem;cursor:pointer;color:var(--ink);line-height:1}
+.drawer-panel a{padding:.9rem .4rem;font-family:var(--font-d);font-size:1.2rem;font-weight:600;border-bottom:1px solid var(--line)}
+.drawer-panel .btn{margin-top:1.2rem}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#top">Skip to content</a>
+
+<!-- ============================ NAV ============================ -->
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="Connecta home">
+      <img class="logo-img" src="connecta_logo.png" alt="Connecta" width="259" height="68" />
+    </a>
+    <nav aria-label="Primary">
+      <ul class="nav-links">
+        <li><a href="how.html">How it works</a></li>
+        <li><a href="ai.html">AI Matching</a></li>
+        <li><a href="collabo.html">Collabo</a></li>
+        <li><a href="download.html">Get the app</a></li>
+      </ul>
+    </nav>
+    <div class="nav-cta">
+      <a class="signin" href="https://app.myconnecta.ng">Sign in</a>
+      <a class="btn btn-primary" href="https://app.myconnecta.ng">Join Connecta</a>
+      <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- mobile drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-panel">
+    <button class="close" id="drawerClose" aria-label="Close menu">&times;</button>
+    <a href="how.html">How it works</a>
+    <a href="ai.html">AI Matching</a>
+    <a href="collabo.html">Collabo</a>
+    <a href="download.html">Get the app</a>
+    <a class="btn btn-primary" href="https://app.myconnecta.ng">Join Connecta</a>
+  </div>
+</div>
+
+<main id="top">
+
+<!-- ============================ HERO ============================ -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="hero-badge">
+        <span class="flag"><span class="dot" style="background:#FD6730"></span><span class="dot" style="background:#F6A81C"></span><span class="dot" style="background:#2B2A6B"></span></span>
+        Built for African talent, hired worldwide
+      </span>
+      <h1>
+        African talent,<br>
+        <span class="weave">woven
+          <svg viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12 C 60 2, 90 18, 150 10 S 240 2, 298 12" stroke="#F6A81C" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+        </span> into<br>
+        the world's work.
+      </h1>
+      <p class="lede">From developers and designers to marketers, accountants, writers, tutors, event planners and trainers — Connecta links skilled African professionals in every field with clients everywhere. Matched by AI, paid through escrow, free to team up as squads.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="https://app.myconnecta.ng">
+          Find talent
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="https://app.myconnecta.ng">Work as a freelancer</a>
+      </div>
+      <div class="hero-proof">
+        <div class="avatars" aria-hidden="true">
+          <span style="background:linear-gradient(135deg,#FD6730,#E24E1B)">A</span>
+          <span style="background:linear-gradient(135deg,#F6A81C,#E08A00)">K</span>
+          <span style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span>
+          <span style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span>
+          <span style="background:var(--ink);font-size:.7rem">+9k</span>
+        </div>
+        <div class="proof-txt">
+          <div class="stars">★★★★★</div>
+          <div><b>9,200+ professionals</b> across 30+ countries</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGNATURE: the woven matching network -->
+    <div class="hero-visual">
+      <div class="weave-stage" id="weaveStage">
+        <svg viewBox="0 0 560 560" aria-hidden="true" id="weaveSvg">
+          <defs>
+            <linearGradient id="tg1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FD6730"/><stop offset="1" stop-color="#F6A81C"/>
+            </linearGradient>
+            <linearGradient id="tg2" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#2B2A6B"/><stop offset="1" stop-color="#FD6730"/>
+            </linearGradient>
+            <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#FD6730" stop-opacity=".16"/><stop offset="1" stop-color="#FD6730" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="280" cy="280" r="250" fill="url(#halo)"/>
+          <!-- concentric weave rings -->
+          <circle cx="280" cy="280" r="205" fill="none" stroke="rgba(18,46,39,.08)" stroke-width="1"/>
+          <circle cx="280" cy="280" r="150" fill="none" stroke="rgba(18,46,39,.08)" stroke-width="1"/>
+          <!-- woven threads from talent nodes into the core -->
+          <path class="thread t" d="M70 120 C 170 170, 200 230, 280 280" stroke="url(#tg1)" stroke-width="2.4"/>
+          <path class="thread t" d="M500 210 C 400 220, 360 250, 280 280" stroke="url(#tg2)" stroke-width="2.4"/>
+          <path class="thread t" d="M60 430 C 160 380, 210 330, 280 280" stroke="url(#tg1)" stroke-width="2.4"/>
+          <path class="thread t" d="M480 500 C 400 430, 350 320, 280 280" stroke="url(#tg2)" stroke-width="2.4"/>
+          <!-- outward routing to the world -->
+          <path class="thread t" d="M280 280 C 360 250, 430 150, 520 90" stroke="#F6A81C" stroke-width="2.4" stroke-dasharray="1 8"/>
+          <path class="thread t" d="M280 280 C 220 360, 150 470, 90 520" stroke="#FD6730" stroke-width="2.4" stroke-dasharray="1 8"/>
+          <!-- small node markers -->
+          <g fill="#122E27">
+            <circle cx="70" cy="120" r="5"/><circle cx="500" cy="210" r="5"/>
+            <circle cx="60" cy="430" r="5"/><circle cx="480" cy="500" r="5"/>
+          </g>
+          <circle class="pulse-ring" cx="280" cy="280" r="150" fill="none" stroke="#FD6730" stroke-width="1.5" opacity="0"/>
+        </svg>
+
+        <!-- floating talent cards -->
+        <div class="node-card node-a"><span class="ring" style="background:var(--grad-jade)">A</span><div>Amara O.<small>UI/UX · Lagos</small></div></div>
+        <div class="node-card node-b"><span class="ring" style="background:var(--grad-sun);color:var(--ink)">K</span><div>Kwame B.<small>Backend · Accra</small></div></div>
+        <div class="node-card node-c"><span class="ring" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span><div>Naledi M.<small>Brand · Nairobi</small></div></div>
+        <div class="node-card node-d"><span class="ring" style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span><div>Tunde A.<small>Motion · Kigali</small></div></div>
+
+        <!-- match core -->
+        <div class="match-core">
+          <div class="k">Connecta AI</div>
+          <div class="big" data-count="97" data-suffix="%">0%</div>
+          <div class="bar"><i id="matchBar"></i></div>
+          <div class="cap">Best-fit squad matched in 1.2s</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ TRUST MARQUEE ============================ -->
+<div class="trust" aria-hidden="true">
+  <div class="trust-inner">
+    <span class="item">Developers</span><span class="item">•</span>
+    <span class="item">Designers</span><span class="item">•</span>
+    <span class="item">Marketers</span><span class="item">•</span>
+    <span class="item">Accountants</span><span class="item">•</span>
+    <span class="item">Writers &amp; Translators</span><span class="item">•</span>
+    <span class="item">Event Planners</span><span class="item">•</span>
+    <span class="item">Fitness Coaches</span><span class="item">•</span>
+    <span class="item">Tutors &amp; Trainers</span><span class="item">•</span>
+    <span class="item">Developers</span><span class="item">•</span>
+    <span class="item">Designers</span><span class="item">•</span>
+    <span class="item">Marketers</span><span class="item">•</span>
+    <span class="item">Accountants</span><span class="item">•</span>
+    <span class="item">Writers &amp; Translators</span><span class="item">•</span>
+    <span class="item">Event Planners</span><span class="item">•</span>
+    <span class="item">Fitness Coaches</span><span class="item">•</span>
+    <span class="item">Tutors &amp; Trainers</span><span class="item">•</span>
+  </div>
+</div>
+
+<!-- ============================ SECTORS ============================ -->
+<section class="section sectors" id="sectors">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">Not just tech</span>
+      <h2>Whatever your field, there's work for it here.</h2>
+      <p>Connecta isn't a tech-only job board. From programming to planning a launch event, coaching to accounting — talent across every sector finds work and gets hired, locally or worldwide.</p>
+    </div>
+    <div class="sector-grid">
+
+      <article class="sector-card reveal">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6M13 4l-2 16"/></svg></div>
+        <h4>Technology &amp; Programming</h4>
+        <p>Web, mobile, data and DevOps talent building and shipping software.</p>
+        <div class="roles"><span>Developers</span><span>Data</span><span>QA</span></div>
+      </article>
+
+      <article class="sector-card reveal" data-delay="1">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7a2 2 0 000-3l-1-1-9 9zM12 19l-4 2 1-4M14 6l4 4"/></svg></div>
+        <h4>Design &amp; Creative</h4>
+        <p>Brand, UI/UX, illustration, motion and photography for any project.</p>
+        <div class="roles"><span>Designers</span><span>Illustrators</span><span>Photo</span></div>
+      </article>
+
+      <article class="sector-card reveal" data-delay="2">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg></div>
+        <h4>Marketing &amp; Sales</h4>
+        <p>Social, SEO, campaigns, growth and sales that bring in customers.</p>
+        <div class="roles"><span>Marketers</span><span>Social</span><span>SEO</span></div>
+      </article>
+
+      <article class="sector-card reveal" data-delay="3">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <h4>Business &amp; Finance</h4>
+        <p>Accounting, bookkeeping, consulting, admin and virtual assistance.</p>
+        <div class="roles"><span>Accountants</span><span>Consultants</span><span>VAs</span></div>
+      </article>
+
+      <article class="sector-card reveal">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></div>
+        <h4>Writing &amp; Translation</h4>
+        <p>Copy, content, editing and translation across every language you need.</p>
+        <div class="roles"><span>Writers</span><span>Editors</span><span>Translators</span></div>
+      </article>
+
+      <article class="sector-card reveal" data-delay="1">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10l8-6 8 6v11M9 21v-6h6v6M3 10h18"/></svg></div>
+        <h4>Hospitality &amp; Events</h4>
+        <p>Event planning, catering, hosting and on-site crews for any occasion.</p>
+        <div class="roles"><span>Planners</span><span>Caterers</span><span>Hosts</span></div>
+      </article>
+
+      <article class="sector-card reveal" data-delay="2">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 6a5 5 0 00-8.8-2 5 5 0 00-8.8 2c-1 4 4.5 8 8.8 11 4.3-3 9.8-7 8.8-11z"/></svg></div>
+        <h4>Health &amp; Fitness</h4>
+        <p>Trainers, coaches, nutrition and wellness pros — online or in person.</p>
+        <div class="roles"><span>Coaches</span><span>Trainers</span><span>Nutrition</span></div>
+      </article>
+
+      <article class="sector-card reveal" data-delay="3">
+        <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5zM6 12v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg></div>
+        <h4>Education &amp; Training</h4>
+        <p>Tutors, instructors and course creators teaching any subject or skill.</p>
+        <div class="roles"><span>Tutors</span><span>Trainers</span><span>Courses</span></div>
+      </article>
+
+    </div>
+    <div class="sectors-note reveal">
+      <span>Don't see your field? <b>Post it anyway</b> — Connecta covers every sector, plus anything else.</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg> Remote</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 1114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg> Onsite</span>
+      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 7l3-3M4 7l3 3M20 17H4M20 17l-3-3M20 17l-3 3"/></svg> Local &amp; international</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ WHO ============================ -->
+<section class="section who" id="who">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">One platform, three ways in</span>
+      <h2>Whether you're hiring, freelancing, or building a squad.</h2>
+    </div>
+    <div class="who-grid">
+      <article class="who-card reveal" data-delay="1">
+        <span class="tag">For clients</span>
+        <div class="glyph" style="background:var(--paper-2);color:var(--jade-deep)">
+          <svg viewBox="0 0 24 24" width="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V8l6-4 6 4v13M10 21v-5h4v5"/></svg>
+        </div>
+        <h3>Clients</h3>
+        <p>Startups, agencies and global companies who need qualified people, fast — without the guesswork.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Describe the work, get matched talent</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Fund milestones through escrow</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Hire one person or a whole squad</li>
+        </ul>
+      </article>
+      <article class="who-card reveal" data-delay="2">
+        <span class="tag">For freelancers</span>
+        <div class="glyph" style="background:var(--paper-2);color:var(--saffron-deep)">
+          <svg viewBox="0 0 24 24" width="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </div>
+        <h3>Freelancers</h3>
+        <p>Skilled professionals across Africa — in tech, design, marketing, finance, writing, events, health and education — reaching global clients on fair, protected terms.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Get matched to relevant projects</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Payment protected before you start</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Local payouts where available</li>
+        </ul>
+      </article>
+      <article class="who-card reveal" data-delay="3">
+        <span class="tag">For teams</span>
+        <div class="glyph" style="background:var(--paper-2);color:var(--indigo)">
+          <svg viewBox="0 0 24 24" width="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 20c0-2 2-3.4 4-3.4"/></svg>
+        </div>
+        <h3>Collabo Squads</h3>
+        <p>Multidisciplinary teams who take on bigger briefs together — with shared workspace and split payments.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Combine skills into one profile</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Assign roles and track tasks</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Get paid as a team, fairly split</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ HOW IT WORKS ============================ -->
+<section class="section how" id="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">The journey</span>
+      <h2>From brief to payout, in one flow.</h2>
+      <p>A real sequence — every project moves through the same protected path, whichever side you're on.</p>
+      <div class="how-tabs" role="tablist">
+        <button class="active" data-tab="client" role="tab" aria-selected="true">I'm hiring</button>
+        <button data-tab="freelancer" role="tab" aria-selected="false">I'm freelancing</button>
+      </div>
+    </div>
+
+    <div class="steps" id="stepsClient">
+      <div class="step reveal" data-delay="1"><div class="line"></div><div class="num">STEP 01</div><h4>Describe the work</h4><p>Post a project or just tell Connecta AI what you need in plain words.</p></div>
+      <div class="step reveal" data-delay="2"><div class="line"></div><div class="num">STEP 02</div><h4>Get matched</h4><p>AI surfaces the best-fit freelancers and squads, ranked by real fit.</p></div>
+      <div class="step reveal" data-delay="3"><div class="line"></div><div class="num">STEP 03</div><h4>Fund escrow</h4><p>Deposit milestone funds. Talent starts, knowing the money is secured.</p></div>
+      <div class="step reveal" data-delay="4"><div class="num">STEP 04</div><h4>Approve &amp; release</h4><p>Review each milestone, release payment, and leave a review.</p></div>
+    </div>
+
+    <div class="steps" id="stepsFreelancer" hidden>
+      <div class="step reveal" data-delay="1"><div class="line"></div><div class="num">STEP 01</div><h4>Build your profile</h4><p>Add skills, portfolio, rates and get verified with a trust badge.</p></div>
+      <div class="step reveal" data-delay="2"><div class="line"></div><div class="num">STEP 02</div><h4>Get discovered</h4><p>Receive matched jobs and send proposals with AI-assisted drafting.</p></div>
+      <div class="step reveal" data-delay="3"><div class="line"></div><div class="num">STEP 03</div><h4>Do the work</h4><p>Deliver solo or as a Collabo Squad in a shared project workspace.</p></div>
+      <div class="step reveal" data-delay="4"><div class="num">STEP 04</div><h4>Get paid</h4><p>Milestone approved, escrow releases to your wallet — cash out locally.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ AI MATCHING ============================ -->
+<section class="section" id="matching">
+  <div class="wrap spot">
+    <div class="spot-body reveal">
+      <span class="eyebrow">Connecta AI Matching</span>
+      <h2>Describe the need. Meet the right people in seconds.</h2>
+      <p>No endless scrolling through profiles. Tell Connecta what the project needs and the matching engine weighs skills, experience, ratings, availability and budget to surface talent that actually fits.</p>
+      <ul class="spot-list">
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg></span>
+          <div><b>Fit-ranked recommendations</b><span>Every match comes with a transparent score, not a random shuffle.</span></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6 4 4 6-8"/><path d="M4 21h16"/></svg></span>
+          <div><b>Learns from outcomes</b><span>Ratings and completed work sharpen future matches over time.</span></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></span>
+          <div><b>Proposal assistance</b><span>Freelancers get help drafting proposals that speak to the brief.</span></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="spot-visual reveal" data-delay="1">
+      <div class="ai-panel">
+        <div class="ai-head">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="title">connecta · new match request</span>
+        </div>
+        <div class="ai-body">
+          <div class="ai-prompt">"I'm opening a restaurant in Nairobi — I need a brand identity, a launch-night event, and social media to fill tables."<span class="cursor"></span></div>
+          <div class="ai-thinking"><span class="pulse"></span> Analyzing 9,200 profiles · weighing skills, rating &amp; availability</div>
+          <div class="match-row"><span class="ava" style="background:var(--grad-jade)">K</span><div class="info"><b>Kabelo M.</b><small>Brand &amp; Identity · Nairobi</small></div><div class="score"><b>98</b><small>fit</small></div></div>
+          <div class="match-row"><span class="ava" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span><div class="info"><b>Naledi M.</b><small>Events &amp; Hospitality · Nairobi</small></div><div class="score"><b>95</b><small>fit</small></div></div>
+          <div class="match-row"><span class="ava" style="background:var(--grad-sun);color:var(--ink)">A</span><div class="info"><b>Amara O.</b><small>Social &amp; Content · Lagos</small></div><div class="score"><b>93</b><small>fit</small></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ ESCROW ============================ -->
+<section class="section escrow" id="escrow">
+  <div class="wrap spot flip">
+    <div class="spot-body reveal">
+      <span class="eyebrow">Escrow &amp; Payments</span>
+      <h2>Money held safely, released only when work is approved.</h2>
+      <p>Clients fund milestones up front. Freelancers see the money is secured before they start. Nobody chases invoices — funds release the moment a milestone is approved.</p>
+      <ul class="spot-list">
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></span>
+          <div><b>Protected milestones</b><span>Funds sit in escrow until each deliverable is signed off.</span></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+          <div><b>Local payouts</b><span>Cash out to local methods across Africa where available.</span></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></span>
+          <div><b>Fair dispute handling</b><span>If something goes wrong, a clear resolution process steps in.</span></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="spot-visual reveal" data-delay="1">
+      <div class="escrow-visual">
+        <div class="escrow-top">
+          <div class="bal"><small>In escrow · Brand &amp; launch</small><b>₦6,400,000</b></div>
+          <div class="lock"><svg viewBox="0 0 24 24" width="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></div>
+        </div>
+        <ul class="mstones">
+          <li class="mstone done"><span class="tick"><svg viewBox="0 0 24 24" width="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></span><div class="m-info"><b>Brand strategy</b><small>Approved · released</small></div><span class="amt">₦1,600,000</span></li>
+          <li class="mstone done"><span class="tick"><svg viewBox="0 0 24 24" width="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l4 4L19 6"/></svg></span><div class="m-info"><b>Visual identity &amp; menu</b><small>Approved · released</small></div><span class="amt">₦1,600,000</span></li>
+          <li class="mstone active"><span class="tick"><svg viewBox="0 0 24 24" width="13" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span><div class="m-info"><b>Launch event</b><small>In review</small></div><span class="amt">₦1,600,000</span></li>
+          <li class="mstone next"><span class="tick"></span><div class="m-info"><b>Social campaign</b><small>Upcoming</small></div><span class="amt">₦1,600,000</span></li>
+        </ul>
+        <div class="escrow-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg> Escrow-protected · funds move only on approval</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ COLLABO ============================ -->
+<section class="section collabo" id="collabo">
+  <div class="wrap spot">
+    <div class="spot-visual reveal">
+      <div class="squad">
+        <svg viewBox="0 0 520 490" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true">
+          <defs><linearGradient id="sq" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FD6730"/><stop offset="1" stop-color="#F6A81C"/></linearGradient></defs>
+          <path d="M95 90 C 180 160, 200 200, 260 245" stroke="url(#sq)" stroke-width="2" fill="none" opacity=".6"/>
+          <path d="M430 110 C 340 170, 320 200, 260 245" stroke="url(#sq)" stroke-width="2" fill="none" opacity=".6"/>
+          <path d="M70 360 C 160 320, 200 290, 260 245" stroke="url(#sq)" stroke-width="2" fill="none" opacity=".6"/>
+          <path d="M430 430 C 350 360, 320 300, 260 245" stroke="url(#sq)" stroke-width="2" fill="none" opacity=".6"/>
+        </svg>
+        <div class="squad-center">
+          <div class="k">Collabo Squad</div>
+          <b>Studio Baobab</b>
+          <p>Multidisciplinary team · 4 members</p>
+          <div class="mini">
+            <span style="background:var(--grad-jade)">A</span>
+            <span style="background:var(--grad-sun);color:var(--ink)">K</span>
+            <span style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span>
+            <span style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span>
+          </div>
+        </div>
+        <div class="member m1"><span class="av" style="background:var(--grad-jade)">A</span><div>Amara<small>Design lead</small></div></div>
+        <div class="member m2"><span class="av" style="background:var(--grad-sun);color:var(--ink)">K</span><div>Kwame<small>Marketing</small></div></div>
+        <div class="member m3"><span class="av" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span><div>Naledi<small>Copywriting</small></div></div>
+        <div class="member m4"><span class="av" style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span><div>Tunde<small>Events</small></div></div>
+      </div>
+    </div>
+    <div class="spot-body reveal" data-delay="1">
+      <span class="eyebrow">Connecta Collabo</span>
+      <h2>Great work is rarely a solo act.</h2>
+      <p>Freelancers don't have to go it alone. Form a Collabo Squad, combine your skills into one profile, and take on the briefs that are too big for one person.</p>
+      <ul class="collabo-points">
+        <li><span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></svg></span><div><b>One profile, combined skills</b><span>Clients hire the whole squad for larger projects.</span></div></li>
+        <li><span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg></span><div><b>Shared workspace</b><span>Roles, tasks and progress tracked together in one place.</span></div></li>
+        <li><span class="ic"><svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><div><b>Split payments, fairly</b><span>Team payouts divide automatically on milestone release.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ FEATURE BENTO ============================ -->
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">The whole ecosystem</span>
+      <h2>Everything a working relationship needs.</h2>
+      <p>Discovery, a social feed, real-time chat, projects and payments — one connected app, not a stack of disconnected tools.</p>
+    </div>
+    <div class="bento">
+      <div class="tile feature reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+        <h4>Live dashboard</h4>
+        <p>Active projects, proposals, deadlines, wallet and notifications — your whole working life at a glance.</p>
+        <div class="stat" data-count="24" data-suffix="/7">0/7</div>
+      </div>
+      <div class="tile wide reveal" data-delay="1">
+        <div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+        <h4>Real-time chat</h4>
+        <p>Instant messaging powered by live connections — project conversations, file sharing, typing indicators and read receipts for people and squads.</p>
+      </div>
+      <div class="tile third reveal"><div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8M8 13h5"/></svg></div><h4>Community feed &amp; connections</h4><p>Post updates, follow talent, grow your network and get discovered beyond the job board.</p></div>
+      <div class="tile third reveal" data-delay="1"><div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 4 4 2-4 2-2 4-2-4-4-2 4-2z"/><path d="M18 14l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/></svg></div><h4>Connecta AI Assistant</h4><p>An in-app assistant that drafts briefs, sharpens proposals and answers questions in plain language.</p></div>
+      <div class="tile third reveal" data-delay="2"><div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg></div><h4>Reviews &amp; reputation</h4><p>Two-way ratings and verified work build trust that feeds back into matching.</p></div>
+      <div class="tile third reveal"><div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7L9 18l-5-5"/></svg></div><h4>Verification &amp; badges</h4><p>Identity checks and trust badges so clients hire with confidence.</p></div>
+      <div class="tile third reveal" data-delay="1"><div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5M9 13h6M9 17h6"/></svg></div><h4>Proposals &amp; projects</h4><p>Post jobs, submit proposals, shortlist and track from brief to done.</p></div>
+      <div class="tile third reveal" data-delay="2"><div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div><h4>Wallet &amp; payouts</h4><p>Balance, local payouts and a reconciled record of every milestone and release.</p></div>
+      <div class="tile saff reveal">
+        <div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H5.2L4 18z"/><circle cx="9" cy="10" r="1"/><circle cx="13" cy="10" r="1"/><circle cx="17" cy="10" r="1"/></svg></div>
+        <h4>Notifications that matter</h4>
+        <p>Job matches, milestones, payments, deadlines and team activity — timely, never noisy.</p>
+      </div>
+      <div class="tile wide reveal" data-delay="1">
+        <div class="ic"><svg viewBox="0 0 24 24" width="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 109 9 7 7 0 01-9-9z"/></svg></div>
+        <h4>Light &amp; dark mode</h4>
+        <p>A comfortable interface day or night — Connecta adapts to your device theme, built in from the start.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ STATS ============================ -->
+<section class="section stats">
+  <div class="wrap">
+    <div class="stats-grid">
+      <div class="stat-cell reveal"><div class="n" data-count="9200" data-suffix="+">0</div><div class="l">Professionals onboard</div></div>
+      <div class="stat-cell reveal" data-delay="1"><div class="n" data-count="30" data-suffix="+">0</div><div class="l">Countries across Africa</div></div>
+      <div class="stat-cell reveal" data-delay="2"><div class="n" data-count="100" data-suffix="%">0</div><div class="l">Milestones escrow-protected</div></div>
+      <div class="stat-cell reveal" data-delay="3"><div class="n" data-count="1" data-prefix="&lt;" data-suffix="s">0</div><div class="l">Avg. AI match time</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ QUOTE CAROUSEL ============================ -->
+<section class="section">
+  <div class="wrap quote-wrap reveal" id="quoteCarousel">
+    <svg viewBox="0 0 24 24" width="44" style="margin:0 auto 1.4rem" fill="var(--jade)" aria-hidden="true"><path d="M10 7H6a4 4 0 00-4 4v7h8v-8H6a2 2 0 012-2zm12 0h-4a4 4 0 00-4 4v7h8v-8h-2a2 2 0 012-2z"/></svg>
+    
+    <div class="quote-slide active">
+      <p class="quote">"We described a brand launch and had a <span class="hl">matched squad working within two days</span> — a designer, a copywriter and an events lead, all African, all paid safely through escrow."</p>
+      <div class="quote-by">
+        <span class="av" style="background:var(--grad-jade)">Z</span>
+        <div class="meta"><b>Zainab Adeyemi</b><small>Founder, Marula &amp; Co · Lagos, Nigeria</small></div>
+      </div>
+    </div>
+
+    <div class="quote-slide">
+      <p class="quote">"As a Senior UI/UX Designer in Nairobi, Connecta connected me to <span class="hl">global tech startups paying international rates</span> with instant wallet withdrawals to M-Pesa."</p>
+      <div class="quote-by">
+        <span class="av" style="background:linear-gradient(135deg,#8B5CF6,#6366F1)">K</span>
+        <div class="meta"><b>Kwame Ochieng</b><small>Lead Product Designer · Nairobi, Kenya</small></div>
+      </div>
+    </div>
+
+    <div class="quote-slide">
+      <p class="quote">"Finding verified Full-Stack React engineers used to take 6 weeks. With <span class="hl">Connecta AI matching</span>, we interviewed and hired 3 senior devs in less than 48 hours."</p>
+      <div class="quote-by">
+        <span class="av" style="background:linear-gradient(135deg,#10B981,#059669)">A</span>
+        <div class="meta"><b>Amina Diallo</b><small>CTO, FinTech Africa · Dakar, Senegal</small></div>
+      </div>
+    </div>
+
+    <div class="quote-slide">
+      <p class="quote">"The <span class="hl">Escrow milestone system</span> gives me 100% peace of mind. I know funds are locked before I begin writing code, and payouts land instantly upon approval."</p>
+      <div class="quote-by">
+        <span class="av" style="background:linear-gradient(135deg,#F59E0B,#D97706)">T</span>
+        <div class="meta"><b>Tariq Mensah</b><small>Full-Stack Engineer · Accra, Ghana</small></div>
+      </div>
+    </div>
+
+    <div class="quote-dots">
+      <button class="quote-dot active" aria-label="Slide 1"></button>
+      <button class="quote-dot" aria-label="Slide 2"></button>
+      <button class="quote-dot" aria-label="Slide 3"></button>
+      <button class="quote-dot" aria-label="Slide 4"></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ DOWNLOAD APP ============================ -->
+<section class="section download" id="download">
+  <div class="wrap">
+    <div class="download-card reveal">
+      <div class="download-copy">
+        <span class="eyebrow">Get the mobile app</span>
+        <h2>Connecta lives in your pocket.</h2>
+        <p>Find work, hire talent, chat in real time and get paid — all from the Connecta app for iOS and Android. Built for the way Africa works, on the go.</p>
+        <ul class="app-points">
+          <li><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg></span>AI matching &amp; a smart in-app assistant</li>
+          <li><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg></span>Real-time chat, feed &amp; push notifications</li>
+          <li><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg></span>Escrow wallet, payouts &amp; biometric login</li>
+          <li><span class="tk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 6"/></svg></span>Light &amp; dark mode, built in</li>
+        </ul>
+        <div class="store-row">
+          <a class="store-btn" href="#" aria-label="Download on the App Store">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.417 2.2-1.114 2.99-.746.85-1.96 1.5-3.13 1.41-.14-1.12.42-2.31 1.08-3.05.74-.83 2.02-1.46 3.16-1.35zM20.5 17.02c-.57 1.31-.84 1.9-1.57 3.06-1.02 1.61-2.46 3.62-4.24 3.63-1.58.02-1.99-1.03-4.14-1.02-2.15.01-2.6 1.04-4.19 1.02-1.78-.02-3.14-1.83-4.16-3.44C-.03 15.6-.32 9.53 2.44 6.7c.98-1.02 2.35-1.66 3.83-1.66 1.5 0 2.44 1.03 4.13 1.03 1.63 0 2.62-1.03 4.36-1.03 1.31 0 2.7.71 3.69 1.94-3.24 1.77-2.71 6.39.05 8.04z"/></svg>
+            <span><small>Download on the</small><b>App Store</b></span>
+          </a>
+          <a class="store-btn" href="https://play.google.com/store/apps/details?id=com.connecta.app" target="_blank" rel="noopener" aria-label="Get it on Google Play">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M3.6 2.3C3.3 2.6 3.1 3 3.1 3.6v16.8c0 .6.2 1 .5 1.3l.1.1L13 12.6v-.2L3.7 2.2z"/><path fill="#FBBC04" d="M16.2 15.6l-3.2-3v-.2l3.2-3 .1.1 3.8 2.2c1.1.6 1.1 1.6 0 2.3l-3.9 2.3z"/><path fill="#4285F4" d="M16.3 15.5L13 12.5 3.6 21.9c.4.4 1 .4 1.7.1l11-6.5"/><path fill="#34A853" d="M16.3 9.5l-11-6.2C4.6 2.9 4 3 3.6 3.4l9.4 9.1z"/></svg>
+            <span><small>Get it on</small><b>Google Play</b></span>
+          </a>
+        </div>
+        <div class="download-meta">
+          <span class="rate">★★★★★ <span style="color:var(--muted)">4.8 rating</span></span>
+          <span>·</span>
+          <span>Free to download</span>
+        </div>
+      </div>
+      <div class="download-visual">
+        <img class="phone" src="iphone17_front.png" alt="Connecta Mobile App Find Jobs Screen on iPhone 17 Pro" width="600" height="600" loading="lazy" />
+        <div class="qr-chip">
+          <svg class="qr" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="6" fill="#122E27"/><g fill="#fff"><rect x="6" y="6" width="10" height="10" rx="1"/><rect x="24" y="6" width="10" height="10" rx="1"/><rect x="6" y="24" width="10" height="10" rx="1"/><rect x="9" y="9" width="4" height="4" fill="#122E27"/><rect x="27" y="9" width="4" height="4" fill="#122E27"/><rect x="9" y="27" width="4" height="4" fill="#122E27"/><rect x="22" y="22" width="4" height="4"/><rect x="30" y="22" width="4" height="4"/><rect x="26" y="26" width="4" height="4"/><rect x="22" y="30" width="4" height="4"/><rect x="30" y="30" width="4" height="4"/></g></svg>
+          <span>Scan to install on your phone</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ FINAL CTA ============================ -->
+<section class="cta-final" id="join">
+  <div class="wrap">
+    <span class="eyebrow" style="color:var(--saffron);justify-content:center">Join Connecta</span>
+    <h2>African talent is ready. Are you?</h2>
+    <p>Post a project and meet your match today, or build the profile that puts your work in front of the world.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary btn-lg" href="https://app.myconnecta.ng">Hire African talent</a>
+      <a class="btn btn-light btn-lg" href="https://app.myconnecta.ng">Start freelancing</a>
+    </div>
+    <div class="fineprint">Free to join · Escrow-protected · Local payouts available</div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================ FOOTER ============================ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="#top">
+          <img class="logo-img" src="connecta_logo.png" alt="Connecta" width="259" height="68" />
+        </a>
+        <p class="about">A job and freelance marketplace weaving skilled African professionals — across every sector — into the world's work. Discovered by AI, protected by escrow.</p>
+        <div class="socials">
+          <a href="https://www.facebook.com/profile.php?id=61587476974482" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+          <a href="https://www.tiktok.com/@connecta_inc?is_from_webapp=1&amp;sender_device=pc" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" width="18" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.82.56-1.36 1.49-1.41 2.49-.1 1.38.65 2.74 1.87 3.37.97.51 2.15.53 3.13.06 1.13-.53 1.88-1.66 1.93-2.9.04-3.53.01-7.06.02-10.59.02-1.37.01-2.74.02-4.11z"/></svg></a>
+          <a href="https://www.instagram.com/connecta_inc?utm_source=ig_web_button_share_sheet&amp;igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+        </div>
+      </div>
+      <div><h5>Platform</h5><ul><li><a href="ai.html">AI Matching</a></li><li><a href="collabo.html">Collabo Squads</a></li><li><a href="escrow.html">Escrow &amp; Payments</a></li><li><a href="platform.html">Platform Dashboard</a></li><li><a href="download.html">Get the App</a></li></ul></div>
+      <div><h5>For You</h5><ul><li><a href="hire.html">Hire Talent</a></li><li><a href="find.html">Find Work</a></li><li><a href="how.html">How it Works</a></li><li><a href="trust.html">Trust &amp; Safety</a></li></ul></div>
+      <div><h5>Company</h5><ul><li><a href="about.html">About Us</a></li><li><a href="careers.html">Careers</a></li><li><a href="help.html">Help Center</a></li><li><a href="contact.html">Contact Us</a></li></ul></div>
+    </div>
+    <div class="footer-bar">
+      <span>© 2026 Connecta. Weaving African talent into global work.</span>
+      <nav class="footer-legal" aria-label="Legal">
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="cookies.html">Cookies</a>
+      </nav>
+      <span class="made">Made across the continent ✦</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* nav shadow on scroll */
+  var nav = document.getElementById('nav');
+  var onScroll = function(){ nav.classList.toggle('scrolled', window.scrollY > 12); };
+  onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
+
+  /* mobile drawer */
+  var drawer = document.getElementById('drawer');
+  var burger = document.getElementById('hamburger');
+  var closeB = document.getElementById('drawerClose');
+  function openD(){ drawer.classList.add('open'); burger.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
+  function closeD(){ drawer.classList.remove('open'); burger.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+  burger.addEventListener('click', openD);
+  closeB.addEventListener('click', closeD);
+  drawer.addEventListener('click', function(e){ if(e.target===drawer) closeD(); });
+  drawer.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeD); });
+
+  /* how-it-works tabs */
+  var tabs = document.querySelectorAll('.how-tabs button');
+  var paneC = document.getElementById('stepsClient');
+  var paneF = document.getElementById('stepsFreelancer');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(e){
+      e.preventDefault();
+      tabs.forEach(function(x){ x.classList.remove('active'); x.setAttribute('aria-selected','false'); });
+      t.classList.add('active'); t.setAttribute('aria-selected','true');
+      var isClient = (t.dataset.tab === 'client');
+      if(paneC && paneF){
+        if(isClient){
+          paneC.removeAttribute('hidden');
+          paneF.setAttribute('hidden', '');
+        } else {
+          paneF.removeAttribute('hidden');
+          paneC.setAttribute('hidden', '');
+        }
+        var activePane = isClient ? paneC : paneF;
+        activePane.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
+      }
+    });
+  });
+
+  /* reveal on scroll + counters */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+        e.target.querySelectorAll && e.target.querySelectorAll('[data-count]').forEach(runCount);
+        if(e.target.hasAttribute && e.target.hasAttribute('data-count')) runCount(e.target);
+        io.unobserve(e.target);
+      }
+    });
+  }, {threshold:.16, rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+  document.querySelectorAll('[data-count]').forEach(function(el){ io.observe(el); });
+
+  function runCount(el){
+    if(el.dataset.done) return; el.dataset.done = '1';
+    var target = parseFloat(el.dataset.count);
+    var suffix = el.dataset.suffix || '';
+    var prefix = el.dataset.prefix || '';
+    if(reduce){ el.textContent = prefix + fmt(target) + suffix; return; }
+    var dur = 1400, start = null;
+    function step(ts){
+      if(!start) start = ts;
+      var p = Math.min((ts-start)/dur, 1);
+      var eased = 1 - Math.pow(1-p, 3);
+      el.textContent = prefix + fmt(Math.round(target*eased)) + suffix;
+      if(p<1) requestAnimationFrame(step);
+      else el.textContent = prefix + fmt(target) + suffix;
+    }
+    requestAnimationFrame(step);
+  }
+  function fmt(n){ return n >= 1000 ? n.toLocaleString('en-US') : String(n); }
+
+  /* hero: draw the woven threads, then reveal cards + fill bar */
+  var stage = document.getElementById('weaveStage');
+  var threads = stage ? stage.querySelectorAll('.thread') : [];
+  var bar = document.getElementById('matchBar');
+  var coreCount = stage ? stage.querySelector('.match-core [data-count]') : null;
+
+  if(!reduce && threads.length){
+    threads.forEach(function(p, i){
+      var len = p.getTotalLength();
+      p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+      p.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1) ' + (0.15 + i*0.13) + 's';
+    });
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        threads.forEach(function(p){
+          // keep dashed-routing threads dashed by only animating solid ones fully
+          if(p.getAttribute('stroke-dasharray')) return;
+          p.style.strokeDashoffset = '0';
+        });
+      });
+    });
+    // cards + bar after threads
+    setTimeout(function(){
+      if(bar) bar.style.transition = 'width 1.3s cubic-bezier(.2,.8,.3,1)';
+      if(bar) bar.style.width = '97%';
+      if(coreCount) runCount(coreCount);
+      stage.querySelectorAll('.node-card').forEach(function(c,i){
+        c.style.transition='opacity .6s ease '+(i*0.12)+'s, transform .6s cubic-bezier(.2,.8,.3,1) '+(i*0.12)+'s';
+        c.style.opacity='1'; c.style.transform='none';
+      });
+    }, 900);
+  } else if(stage){
+    if(bar){ bar.style.width='97%'; }
+    if(coreCount) runCount(coreCount);
+  }
+
+  /* Quote Carousel 10-Second Auto-Play */
+  (function(){
+    var container = document.getElementById('quoteCarousel');
+    if(!container) return;
+    var slides = container.querySelectorAll('.quote-slide');
+    var dots = container.querySelectorAll('.quote-dot');
+    if(!slides.length) return;
+    var currentIndex = 0;
+    var timer = null;
+
+    function goToSlide(index){
+      slides[currentIndex].classList.remove('active');
+      if(dots[currentIndex]) dots[currentIndex].classList.remove('active');
+      currentIndex = (index + slides.length) % slides.length;
+      slides[currentIndex].classList.add('active');
+      if(dots[currentIndex]) dots[currentIndex].classList.add('active');
+    }
+
+    function startTimer(){
+      stopTimer();
+      timer = setInterval(function(){
+        goToSlide(currentIndex + 1);
+      }, 10000); // 10 seconds per slide
+    }
+
+    function stopTimer(){
+      if(timer) clearInterval(timer);
+    }
+
+    dots.forEach(function(dot, idx){
+      dot.addEventListener('click', function(){
+        goToSlide(idx);
+        startTimer(); // reset 10s timer on manual click
+      });
+    });
+
+    startTimer();
+  })();
+})();
+</script>
+<!-- SabiBot chat widget -->
+<script src="https://sabibot.ng/sabi-widget.js" data-client-id="u-teach" async></script>
+</body>
+</html>

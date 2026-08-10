@@ -5,286 +5,301 @@ import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
-  Users,
   ShieldCheck,
-  Zap,
-  CheckCircle,
+  CheckCircle2,
   Star,
   Sparkles,
-  Search
+  Search,
+  UserCheck,
+  TrendingUp,
+  Award,
+  Lock,
+  ArrowUpRight
 } from 'lucide-react';
+import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflowX: 'hidden' }}>
       <Navbar />
 
-      {/* Background Animated Glow Orbs */}
-      <div className="bg-glow-orb bg-glow-orange" style={{ top: '-100px', left: '-100px' }} />
-      <div className="bg-glow-orb bg-glow-coral" style={{ top: '300px', right: '-50px' }} />
-
-      {/* HERO SECTION */}
+      {/* ── HERO SECTION ── */}
       <section style={{
-        padding: '80px 24px 100px',
-        maxWidth: '1280px',
+        padding: '60px 24px 80px',
+        maxWidth: '1360px',
         margin: '0 auto',
         width: '100%',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '60px',
-        alignItems: 'center',
         position: 'relative',
         zIndex: 10
       }}>
+        {/* Top Hero Banner Matching Modern Dashboard Theme */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          className="dashboard-hero-card"
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Badge */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '6px 16px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--success-bg)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            color: 'var(--success)',
-            fontWeight: 600,
-            fontSize: '0.85rem',
-            marginBottom: '24px'
-          }}>
-            <Sparkles size={16} /> Africa's Premier Talent Marketplace
-          </div>
-
-          <h1 style={{
-            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
-            fontWeight: 900,
-            lineHeight: 1.15,
-            letterSpacing: '-1px',
-            marginBottom: '24px'
-          }}>
-            Hire Verified Experts. <br />
-            <span className="gradient-text">Build Great Things.</span>
-          </h1>
-
-          <p style={{
-            fontSize: '1.2rem',
-            color: 'var(--text-secondary)',
-            lineHeight: 1.6,
-            marginBottom: '36px',
-            maxWidth: '560px'
-          }}>
-            Connecta seamlessly pairs visionaries with vetted African freelancers and top-tier talent. Secure payments, real-time collaboration, and guaranteed satisfaction.
-          </p>
-
-          {/* Action CTAs */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '48px' }}>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => navigate('/register/role')}
-              className="btn-primary"
-              style={{ padding: '16px 32px', fontSize: '1.05rem' }}
-            >
-              Get Started Now <ArrowRight size={20} />
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/jobs')}
-              className="btn-secondary"
-              style={{ padding: '16px 28px', fontSize: '1.05rem' }}
-            >
-              <Search size={18} style={{ marginRight: '4px' }} /> Explore Jobs
-            </motion.button>
-          </div>
-
-          {/* Trust Metrics */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '32px',
-            paddingTop: '24px',
-            borderTop: '1px solid var(--border-color)'
-          }}>
-            <div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>10k+</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Vetted Freelancers</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>₦500M+</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Earned by Talent</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>99.4%</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Job Success Rate</div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Hero Interactive Glass Showcase Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="glass-card"
+          transition={{ duration: 0.5 }}
           style={{
-            padding: '32px',
+            background: 'var(--grad-primary)',
+            borderRadius: '24px',
+            padding: '40px 48px',
+            color: '#ffffff',
+            marginBottom: '40px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             position: 'relative',
-            background: 'var(--card-glass)',
-            boxShadow: 'var(--shadow-glow)'
+            overflow: 'hidden',
+            boxShadow: '0 12px 35px rgba(253,103,48,0.22)',
           }}
         >
+          {/* Background Vector Art Overlay */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '24px',
-            paddingBottom: '16px',
-            borderBottom: '1px solid var(--border-color)'
+            position: 'absolute',
+            right: '-10px',
+            top: '-20px',
+            bottom: '-20px',
+            width: '400px',
+            opacity: 0.22,
+            pointerEvents: 'none',
+            zIndex: 1,
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: 'var(--grad-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontWeight: 700
-              }}>
-                KA
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '1rem' }}>Kabiru Abubakar</div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600 }}>Senior React & Mobile Engineer</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F59E0B', fontWeight: 700, fontSize: '0.9rem' }}>
-              <Star size={16} fill="#F59E0B" /> 5.0 (42 reviews)
-            </div>
+            <DashboardHeaderArt />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Top Skills</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {['React.js', 'React Native', 'Node.js', 'TypeScript', 'Tailwind'].map((skill) => (
-                <span key={skill} style={{
-                  padding: '4px 12px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '0.8rem',
-                  fontWeight: 500
-                }}>
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div style={{
-            background: 'var(--bg-secondary)',
-            padding: '16px',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '24px'
-          }}>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Hourly Rate</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>₦15,000 / hr</div>
-            </div>
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: '680px' }}>
             <div style={{
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              color: 'var(--success)',
-              fontWeight: 600,
-              fontSize: '0.85rem'
+              background: 'rgba(255,255,255,0.2)',
+              backdropFilter: 'blur(10px)',
+              padding: '5px 14px',
+              borderRadius: '20px',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              letterSpacing: '0.04em',
+              marginBottom: '14px',
+              textTransform: 'uppercase',
             }}>
-              <CheckCircle size={16} /> Verified Badge
+              <Sparkles size={14} /> Africa's Premier Talent Marketplace
+            </div>
+
+            <h1 style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.4rem)', fontWeight: 900, margin: '0 0 12px', color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
+              Connecting African Talent with Global Opportunities
+            </h1>
+            <p style={{ opacity: 0.95, fontSize: '1.05rem', lineHeight: 1.55, margin: '0 0 28px', maxWidth: '580px' }}>
+              Connecta seamlessly pairs tech visionaries with vetted freelancers. Instant smart matching, 100% Paystack escrow protection, and real-time chat.
+            </p>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px' }}>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate('/register/role')}
+                style={{
+                  background: '#ffffff',
+                  color: 'var(--primary)',
+                  border: 'none',
+                  padding: '14px 28px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '0.98rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.12)',
+                }}
+              >
+                Get Started Now <ArrowRight size={18} />
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate('/jobs')}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  backdropFilter: 'blur(10px)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  padding: '14px 24px',
+                  borderRadius: '14px',
+                  fontWeight: 700,
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Search size={16} /> Explore Open Jobs
+              </motion.button>
             </div>
           </div>
 
-          <button
-            onClick={() => navigate('/register/role')}
-            className="btn-primary"
-            style={{ width: '100%', padding: '14px', borderRadius: 'var(--radius-md)' }}
-          >
-            Hire Talent Like Kabiru
-          </button>
-        </motion.div>
-      </section>
-
-      {/* WHY CHOOSE CONNECTA */}
-      <section style={{
-        padding: '80px 24px',
-        background: 'var(--bg-secondary)',
-        borderTop: '1px solid var(--border-color)',
-        borderBottom: '1px solid var(--border-color)'
-      }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '16px' }}>
-            Built for Modern African Work
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto 60px' }}>
-            Whether you need a quick landing page or a full enterprise mobile app, Connecta provides the tools to succeed.
-          </p>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '32px'
-          }}>
-            {[
-              {
-                icon: <ShieldCheck size={32} color="var(--primary)" />,
-                title: 'Escrow Protection',
-                desc: 'Client funds are safely held in escrow and released only when project deliverables are approved.'
-              },
-              {
-                icon: <Zap size={32} color="var(--primary)" />,
-                title: 'AI Smart Matching',
-                desc: 'Our intelligent system matches job requirements with talent skills instantly for maximum fit.'
-              },
-              {
-                icon: <Users size={32} color="var(--primary)" />,
-                title: 'Vetted Talent Pool',
-                desc: 'Freelancers go through skill checks and identity verification before accepting contracts.'
-              }
-            ].map((feature, idx) => (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -6 }}
-                className="glass-card"
-                style={{ padding: '36px 28px', textAlign: 'left' }}
-              >
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '16px',
-                  background: 'var(--grad-glow)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '20px'
-                }}>
-                  {feature.icon}
-                </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '12px' }}>{feature.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>{feature.desc}</p>
-              </motion.div>
-            ))}
+          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '240px' }} className="desktop-sidebar">
+            <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.25)' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>10,000+</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Vetted African Talent</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.25)' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>₦500M+</div>
+              <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Secure Escrow Payments</div>
+            </div>
           </div>
+        </motion.div>
+
+        {/* ── 2. METRIC STATS ROW (Matching Dashboard Layout) ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '40px' }}>
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="glass-card"
+            style={{ padding: '20px 24px', borderRadius: '18px', border: '1px solid var(--border-color)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Active Talent Pool</span>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserCheck size={18} />
+              </div>
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>10k+ Experts</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+              <TrendingUp size={13} /> Vetted & Skill-Tested
+            </span>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="glass-card"
+            style={{ padding: '20px 24px', borderRadius: '18px', border: '1px solid var(--border-color)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Escrow Security</span>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShieldCheck size={18} />
+              </div>
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>100% Protected</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+              <Lock size={13} /> Milestone Release
+            </span>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="glass-card"
+            style={{ padding: '20px 24px', borderRadius: '18px', border: '1px solid var(--border-color)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Project Success</span>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59,130,246,0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Award size={18} />
+              </div>
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>99.4% Rating</div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>Verified Client Reviews</span>
+          </motion.div>
+        </div>
+
+        {/* ── 3. FEATURED HIGHLIGHT CARDS GRID ── */}
+        <div className="grid-responsive-2" style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: '28px', marginBottom: '40px' }}>
+          
+          {/* Left Column: How Connecta Works */}
+          <div className="glass-card" style={{ padding: '32px', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Why Top Visionaries Choose Connecta
+              </h2>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '4px 12px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)' }}>
+                African Platform
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--bg-tertiary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 800 }}>
+                  01
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px', color: 'var(--text-primary)' }}>Post a Project or Discover Gigs</h3>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    Define contract scopes, specify tech stacks, or search live freelance job postings with fixed or hourly rates.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--bg-tertiary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 800 }}>
+                  02
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px', color: 'var(--text-primary)' }}>AI Copilot & Vetted Proposals</h3>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    Receive pitch proposals from vetted engineers. Use built-in AI Copilot to refine requirements and benchmark pricing.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'var(--bg-tertiary)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 800 }}>
+                  03
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 4px', color: 'var(--text-primary)' }}>Paystack Escrow & Real-Time Messaging</h3>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    Hire talent, deposit funds into milestone Escrow, and collaborate via direct Socket.io chat until project signoff.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Featured Talent Showcase Card */}
+          <div className="glass-card" style={{ padding: '28px', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
+                  alt="Featured Freelancer"
+                  style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+                />
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Usman Umar <CheckCircle2 size={15} color="var(--primary)" />
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600 }}>Senior Full-Stack Engineer</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F59E0B', fontWeight: 700, fontSize: '0.88rem', marginBottom: '14px' }}>
+                <Star size={15} fill="#F59E0B" /> 5.0 (38 delivered projects)
+              </div>
+
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '18px' }}>
+                "Connecta allows me to collaborate with international clients securely with guaranteed milestone Escrow payouts."
+              </p>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
+                {['React.js', 'React Native', 'Node.js', 'TypeScript'].map((skill) => (
+                  <span key={skill} style={{ fontSize: '0.72rem', fontWeight: 600, padding: '3px 9px', borderRadius: '6px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/register/role')}
+              className="btn-primary"
+              style={{ width: '100%', padding: '12px', borderRadius: '12px', fontWeight: 700, fontSize: '0.88rem' }}
+            >
+              Join Connecta Platform <ArrowUpRight size={16} />
+            </button>
+          </div>
+
         </div>
       </section>
 

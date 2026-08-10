@@ -6,6 +6,7 @@ import { RoleProvider } from './contexts/RoleContext';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Pages
+import { LandingPage } from './pages/auth/LandingPage';
 import { OnboardingScreen } from './pages/auth/OnboardingScreen';
 import { RoleSelectionPage } from './pages/auth/RoleSelectionPage';
 import { SignupPage } from './pages/auth/SignupPage';
@@ -40,8 +41,9 @@ export const App: React.FC = () => {
           <ToastProvider>
             <BrowserRouter>
               <Routes>
-                {/* Onboarding & Welcome */}
+                {/* Default Onboarding & Landing */}
                 <Route path="/" element={<OnboardingScreen />} />
+                <Route path="/landing" element={<LandingPage />} />
                 
                 {/* Onboarding & Auth */}
                 <Route path="/register/role" element={<RoleSelectionPage />} />
