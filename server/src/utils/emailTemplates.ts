@@ -11,7 +11,7 @@ export interface EmailTemplateOptions {
 export const getBaseTemplate = (options: EmailTemplateOptions) => {
     const { title, content, actionUrl, actionText, subject, bannerUrl } = options;
     const year = new Date().getFullYear();
-    const heroBanner = bannerUrl || 'https://myconnecta.ng/email_banner.jpg';
+    const heroBanner = bannerUrl || 'https://myconnecta.ng/banner_email.jpg';
 
     return `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -30,7 +30,7 @@ export const getBaseTemplate = (options: EmailTemplateOptions) => {
                     <tr>
                         <td align="center">
                             <a href="https://myconnecta.ng" style="text-decoration: none; display: inline-block;">
-                                <img src="https://myconnecta.ng/icon.png" alt="Connecta Logo" width="38" height="38" style="vertical-align: middle; border: 0; outline: none; text-decoration: none;" />
+                                <img src="https://myconnecta.ng/logo_email.png" alt="Connecta Logo" width="38" height="38" style="vertical-align: middle; border: 0; outline: none; text-decoration: none;" />
                                 <span style="font-size: 26px; font-weight: 800; color: #0F172A; vertical-align: middle; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Connecta</span>
                             </a>
                         </td>
