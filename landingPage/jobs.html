@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Jobs — Connecta</title>
+  <meta name="description" content="Explore and find top tech jobs, freelance projects, and remote roles on Connecta.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Find Jobs Page Layout */
+    .jobs-page-hero {
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+
+    .jobs-page-title {
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .jobs-page-desc {
+      font-size: 1.1rem;
+      color: var(--text-gray);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    /* Filter Bar Component */
+    .filter-bar-container {
+      background: #FFFFFF;
+      border: 1px solid #E5E5E5;
+      border-radius: 28px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow-soft);
+      max-width: 960px;
+      margin: 0 auto 56px;
+    }
+
+    .filter-input-group {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-right: 1px solid #EAEAEA;
+      padding-right: 16px;
+    }
+
+    .filter-input-group:last-of-type {
+      border-right: none;
+    }
+
+    .filter-input-group input, .filter-input-group select {
+      border: none;
+      outline: none;
+      font-size: 0.95rem;
+      font-family: var(--font-main);
+      color: var(--text-dark);
+      width: 100%;
+      background: transparent;
+    }
+
+    .btn-search-jobs {
+      height: 48px;
+      padding: 0 28px;
+      border-radius: var(--radius-pill);
+      background: var(--connecta-orange-gradient);
+      color: #FFFFFF;
+      border: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(253, 103, 48, 0.25);
+      white-space: nowrap;
+    }
+
+    /* Pagination Bar */
+    .pagination-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 48px;
+      margin-bottom: 100px;
+    }
+
+    .page-num-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid #EAEAEA;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--text-dark);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .page-num-btn.active {
+      background: var(--connecta-orange-gradient);
+      color: #FFFFFF;
+      border: none;
+      box-shadow: 0 6px 18px rgba(253, 103, 48, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Grid Line Pattern -->
+  <div class="grid-bg-overlay"></div>
+
+  <!-- ── 1. HEADER ── -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+        <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="jobs.html" class="nav-link" style="color: var(--connecta-orange); font-weight: 700;">Find Jobs</a></li>
+        <li><a href="index.html#ai" class="nav-link">Connecta AI</a></li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="contact.html" class="nav-link">Reach Us</a></li>
+      </ul>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button id="themeToggleBtn" onclick="toggleDarkMode()" style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid #EAEAEA; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-dark);">
+          <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+        </button>
+        <a href="http://localhost:5173/register/role" class="btn-connecta-pill">Hire Talent!</a>
+      </div>
+      </a>
+    </div>
+  </header>
+
+  <!-- ── 2. FIND JOBS HERO SECTION ── -->
+  <section class="jobs-page-hero">
+      <div style="max-width: 680px; margin: 0 auto;">
+        <div class="why-sub-label">Verified Hiring Network</div>
+        <h1 class="cta-main-title" style="font-size: 3.5rem; margin-bottom: 20px;">
+          Find Your Next <br>
+          Dream Tech Role
+        </h1>
+        <p style="color: var(--text-gray); font-size: 1.1rem; line-height: 1.6; margin-bottom: 40px;">
+          Browse verified remote and contract tech jobs from top global companies and African startups. All payments protected by 100% Connecta Milestone Escrow.
+        </p>
+      </div>
+      <!-- Search & Filter Bar -->
+      <div class="filter-bar-container">
+        
+        <div class="filter-input-group">
+          <i data-lucide="search" style="width: 20px; height: 20px; color: var(--connecta-orange);"></i>
+          <input type="text" placeholder="Job title, skill, or keyword...">
+        </div>
+
+        <div class="filter-input-group">
+          <i data-lucide="map-pin" style="width: 20px; height: 20px; color: var(--connecta-orange);"></i>
+          <select>
+            <option value="">All Locations</option>
+            <option value="remote">Remote (Global)</option>
+            <option value="lagos">Lagos, Nigeria</option>
+            <option value="abuja">Abuja, Nigeria</option>
+            <option value="accra">Accra, Ghana</option>
+            <option value="nairobi">Nairobi, Kenya</option>
+          </select>
+        </div>
+
+        <div class="filter-input-group">
+          <i data-lucide="briefcase" style="width: 20px; height: 20px; color: var(--connecta-orange);"></i>
+          <select>
+            <option value="">All Categories</option>
+            <option value="frontend">Frontend & React</option>
+            <option value="backend">Backend & Node.js</option>
+            <option value="uiux">UI/UX & Product Design</option>
+            <option value="mobile">Mobile (React Native)</option>
+          </select>
+        </div>
+
+        <button class="btn-search-jobs">
+          Search Jobs
+        </button>
+
+      </div>
+
+      <!-- 6 Jobs Cards Grid -->
+      <div class="jobs-cards-grid">
+        
+        <!-- Job 1 -->
+        <div class="job-card-item card-bg-purple">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #4285F4;">G</div>
+              <span class="card-time-tag">5 minutes ago</span>
+            </div>
+            <div class="job-card-company">Google</div>
+            <h3 class="job-card-title">Junior UI/UX Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Junior level</span>
+              <span class="job-pill-tag">Project work</span>
+              <span class="job-pill-tag">Flexible schedule</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦170,000/proj</div>
+              <div class="job-card-location">Lagos, Nigeria</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 2 -->
+        <div class="job-card-item card-bg-pink">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #E91E63;">Dr</div>
+              <span class="card-time-tag">23 June 2026</span>
+            </div>
+            <div class="job-card-company">Dribbble</div>
+            <h3 class="job-card-title">Senior Motion Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Part time</span>
+              <span class="job-pill-tag">Senior level</span>
+              <span class="job-pill-tag">Shift work</span>
+              <span class="job-pill-tag">Flexible schedule</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦260,000/proj</div>
+              <div class="job-card-location">Remote, Africa</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 3 -->
+        <div class="job-card-item card-bg-green">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #1DBF73;">Fv</div>
+              <span class="card-time-tag">1 June 2026</span>
+            </div>
+            <div class="job-card-company">Fiverr</div>
+            <h3 class="job-card-title">Mid UI/UX Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Part time</span>
+              <span class="job-pill-tag">Middle level</span>
+              <span class="job-pill-tag">Project work</span>
+              <span class="job-pill-tag">Full day</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦380,000/proj</div>
+              <div class="job-card-location">Abuja, Nigeria</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 4 -->
+        <div class="job-card-item card-bg-blue">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #1DA1F2;">Tw</div>
+              <span class="card-time-tag">10 June 2026</span>
+            </div>
+            <div class="job-card-company">Twitter</div>
+            <h3 class="job-card-title">Graphic Motion Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Senior level</span>
+              <span class="job-pill-tag">Project work</span>
+              <span class="job-pill-tag">Full day</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦320,000/proj</div>
+              <div class="job-card-location">Lagos, Nigeria</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 5 -->
+        <div class="job-card-item card-bg-pink">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #CC0000;">Ap</div>
+              <span class="card-time-tag">12 June 2026</span>
+            </div>
+            <div class="job-card-company">Apple</div>
+            <h3 class="job-card-title">Junior UI/UX Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Junior level</span>
+              <span class="job-pill-tag">Project work</span>
+              <span class="job-pill-tag">Flexible schedule</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦150,000/proj</div>
+              <div class="job-card-location">Port Harcourt, NG</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 6 -->
+        <div class="job-card-item card-bg-blue">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #0061FF;">Db</div>
+              <span class="card-time-tag">9 June 2026</span>
+            </div>
+            <div class="job-card-company">Dropbox</div>
+            <h3 class="job-card-title">Sr. UI/UX Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Senior level</span>
+              <span class="job-pill-tag">Project work</span>
+              <span class="job-pill-tag">Full day</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦490,000/proj</div>
+              <div class="job-card-location">Remote, Africa</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <a href="#" class="page-num-btn active">1</a>
+        <a href="#" class="page-num-btn">2</a>
+        <a href="#" class="page-num-btn">3</a>
+        <a href="#" class="page-num-btn"><i data-lucide="chevron-right" style="width: 18px; height: 18px;"></i></a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 11. MODERN MINIMALIST FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-grid-overlay"></div>
+    <div class="container">
+      
+      <div class="footer-top-grid">
+        
+        <!-- Brand Column -->
+        <div class="footer-brand-col">
+          <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+          </a>
+          <p class="footer-brand-desc">
+            Connecta is an AI-powered freelance marketplace connecting talented African tech professionals with clients worldwide. We make finding top talent or the perfect gig simple, fast, and rewarding.
+          </p>
+          <div class="footer-socials-row">
+            <a href="https://x.com/Connectainc" target="_blank" class="social-icon-btn"><i data-lucide="twitter" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61583324766005" target="_blank" class="social-icon-btn"><i data-lucide="facebook" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.instagram.com/connecta_inc" target="_blank" class="social-icon-btn"><i data-lucide="instagram" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://github.com" target="_blank" class="social-icon-btn"><i data-lucide="github" style="width: 18px; height: 18px;"></i></a>
+          </div>
+        </div>
+
+        <!-- Quick Links Column -->
+        <div>
+          <h4 class="footer-col-title">Platform</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="jobs.html">Find Jobs</a></li>
+            <li class="footer-link-item"><a href="ai.html">Connecta AI Copilot</a></li>
+            <li class="footer-link-item"><a href="about.html">About Us</a></li>
+            <li class="footer-link-item"><a href="contact.html">Reach Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources Column -->
+        <div>
+          <h4 class="footer-col-title">Resources</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Freelancer Portal</a></li>
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Client Portal</a></li>
+            <li class="footer-link-item"><a href="contact.html">Help Center</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Column -->
+        <div class="footer-contact-info">
+          <h4 class="footer-col-title">Reach Us</h4>
+          <p><i data-lucide="mail" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> hello@myconnecta.ng</p>
+          <p><i data-lucide="phone" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> +234 (0) 800 CONNECTA</p>
+          <p><i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> Connecta HQ, Kano, Nigeria</p>
+        </div>
+
+      </div>
+
+      <!-- Footer Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div>© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</div>
+        <div class="footer-bottom-links">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="security.html">Security</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

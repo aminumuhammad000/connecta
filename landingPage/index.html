@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecta — Your Dream Career Starts Here</title>
+  <meta name="description" content="Job Hunting Made Easy: Get instant alerts for jobs matching your skills and innovative job finder.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Background Grid Line Pattern -->
+  <div class="grid-bg-overlay"></div>
+
+  <!-- ── 1. HEADER ── -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+        <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="jobs.html" class="nav-link">Find Jobs</a></li>
+        <li><a href="ai.html" class="nav-link">Connecta AI</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+        <li><a href="contact.html" class="nav-link">Reach Us</a></li>
+      </ul>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <!-- Dark Mode Toggle Button -->
+        <button id="themeToggleBtn" onclick="toggleDarkMode()" style="width: 42px; height: 42px; border-radius: 50%; border: 1px solid #EAEAEA; background: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-dark);">
+          <i data-lucide="moon" style="width: 18px; height: 18px;"></i>
+        </button>
+
+        <a href="http://localhost:5173/register/role" class="btn-connecta-pill">
+          Hire Talent!
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── 2. HERO SPLIT SECTION MATCHING REFERENCE EXACTLY ── -->
+  <section class="hero-split-section">
+    <div class="container">
+      <div class="hero-split-grid">
+        
+        <!-- Left Hero Column -->
+        <div class="hero-left-col">
+          <h1 class="hero-big-title">
+            Your Dream <br>
+            Career Starts <br>
+            Here
+          </h1>
+
+          <div class="hero-split-subtext">
+            <p>
+              Job Hunting Made Easy: Get instant alerts for jobs matching your skills and innovative job finder.
+            </p>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="hero-search-box">
+            <input type="text" placeholder="Ask Connecta AI to match developers...">
+            <button class="btn-search-trigger" onclick="window.location.href='http://localhost:5173/register/role'">
+              Find Talent
+            </button>
+          </div>
+
+          <!-- 60k+ Talents Found Badge with Hand-Drawn Arrow Annotations -->
+          <div class="talents-found-wrapper">
+            <!-- Left Purple Curved Arrow -->
+            <svg class="arrow-purple-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M50 15 C40 40 20 20 10 45" stroke="#A855F7" stroke-width="3" stroke-linecap="round"/>
+              <path d="M10 45 L20 42 M10 45 L15 35" stroke="#A855F7" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+
+            <div class="talents-found-pill">
+              <div class="avatar-stack">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80">
+                <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=100&q=80">
+              </div>
+              <div style="font-size: 0.85rem; font-weight: 700; color: #111;">
+                <span style="color: #FD6730;">60k+</span> Talents Found Their Dream Job!
+              </div>
+            </div>
+
+            <!-- Right Yellow Upward Arrow -->
+            <svg class="arrow-yellow-svg" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 50 C25 25 35 35 45 10" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+              <path d="M45 10 L35 12 M45 10 L42 22" stroke="#F59E0B" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+        </div>
+
+        <!-- Right Hero Column & Curved Card Mockups -->
+        <div class="hero-right-col">
+          <div class="right-mockup-wrapper">
+            
+            <!-- Reference Soft Curved Gradient Background Layer -->
+            <div class="mockup-bg-card"></div>
+
+            <!-- Floating Badge Top Right (Verified Talent) -->
+            <div class="floating-job-badge badge-top-right-cnn">
+              <div class="badge-logo-icon" style="background: #FD6730;">★</div>
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #111;">Verified Talent</div>
+                <div style="font-size: 0.72rem; color: #666;">Software & UI/UX • <span style="color: #10B981; font-weight: 700;">✓ Top 1%</span></div>
+              </div>
+            </div>
+
+            <!-- Floating Badge Left Middle (Escrow Secured) -->
+            <div class="floating-job-badge badge-left-middle-upwork">
+              <div class="badge-logo-icon" style="background: #10B981;">🛡</div>
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: #111;">Milestone Protected</div>
+                <div style="font-size: 0.72rem; color: #666;">Secure Escrow • <span style="color: #10B981; font-weight: 700;">✓ 100% Guaranteed</span></div>
+              </div>
+            </div>
+
+            <!-- Center Smartphone Mockup Frame -->
+            <div class="phone-mockup-frame">
+              <img src="connecta_user_app.png" alt="Connecta Mobile App Screenshot">
+            </div>
+
+            <!-- Bottom Curved Stat Cards (African Talent 15k+ & Escrow Volume ₦500M+) -->
+            <div class="curved-bottom-grid">
+              <div class="curved-card-blue">
+                <i data-lucide="users" style="width: 32px; height: 32px; color: #FD6730;"></i>
+                <div style="font-size: 0.88rem; color: #666; font-weight: 600; margin-top: 8px;">Vetted Talent</div>
+                <div class="card-big-stat" style="color: #FD6730;">15,000+</div>
+              </div>
+
+              <div class="curved-card-pink">
+                <i data-lucide="shield-check" style="width: 32px; height: 32px; color: #8B5CF6;"></i>
+                <div style="font-size: 0.88rem; color: #666; font-weight: 600; margin-top: 8px;">Escrow Paid</div>
+                <div class="card-big-stat" style="color: #8B5CF6;">₦500M+</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. TRUSTED COMPANIES & MARQUEE ── -->
+  <section class="trusted-companies-bar">
+    <div class="container">
+      <div class="companies-label">Trusted by technology leaders and companies hiring top talent</div>
+      <div class="companies-flex">
+        <span class="company-name">Flutterwave</span>
+        <span class="company-name">Moniepoint</span>
+        <span class="company-name">Microsoft</span>
+        <span class="company-name">Google</span>
+        <span class="company-name">GitHub</span>
+        <span class="company-name">AWS</span>
+        <span class="company-name">Stripe</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3.5 INFINITE CATEGORIES MARQUEE ── -->
+  <section class="marquee-categories-section">
+    <div class="marquee-container">
+      <!-- Group 1 -->
+      <span class="marquee-pill-item"><i data-lucide="code" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Programming & Tech</span>
+      <span class="marquee-pill-item"><i data-lucide="palette" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Graphics & UI/UX Design</span>
+      <span class="marquee-pill-item"><i data-lucide="sparkles" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Connecta AI Services</span>
+      <span class="marquee-pill-item"><i data-lucide="smartphone" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Mobile App Engineering</span>
+      <span class="marquee-pill-item"><i data-lucide="database" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Data Science & Analytics</span>
+      <span class="marquee-pill-item"><i data-lucide="shield-check" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Milestone Payment Protection</span>
+      <span class="marquee-pill-item"><i data-lucide="users" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Collabo Squad Team Workspaces</span>
+      
+      <!-- Group 2 (Duplicate for Seamless Loop) -->
+      <span class="marquee-pill-item"><i data-lucide="code" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Programming & Tech</span>
+      <span class="marquee-pill-item"><i data-lucide="palette" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Graphics & UI/UX Design</span>
+      <span class="marquee-pill-item"><i data-lucide="sparkles" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Connecta AI Services</span>
+      <span class="marquee-pill-item"><i data-lucide="smartphone" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Mobile App Engineering</span>
+      <span class="marquee-pill-item"><i data-lucide="database" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Data Science & Analytics</span>
+      <span class="marquee-pill-item"><i data-lucide="shield-check" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Milestone Payment Protection</span>
+      <span class="marquee-pill-item"><i data-lucide="users" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i> Collabo Squad Team Workspaces</span>
+    </div>
+  </section>
+
+  <!-- ── 4. EXPERIENCE WITH NUMBER STATS SECTION MATCHING REFERENCE EXACTLY ── -->
+  <section class="stats-numbers-section">
+    <div class="container">
+      <div class="stats-grid-container">
+        
+        <!-- Left Title -->
+        <div class="stats-heading-col">
+          <div class="stats-sub-label">Join Connect Today</div>
+          <h2 class="stats-main-title">
+            Experience <br>
+            with Number
+          </h2>
+        </div>
+
+        <!-- Right 3 Stats Columns -->
+        <div class="stats-columns-wrapper">
+          <div class="stat-column-item" style="padding-left: 0;">
+            <div class="stat-big-number">92%</div>
+            <p class="stat-desc-text">
+              Many users find relevant jobs according to skills
+            </p>
+          </div>
+
+          <div class="stat-column-item">
+            <div class="stat-big-number">90%</div>
+            <p class="stat-desc-text">
+              Data filtering from companies doesn't take long
+            </p>
+          </div>
+
+          <div class="stat-column-item">
+            <div class="stat-big-number">89%</div>
+            <p class="stat-desc-text">
+              Many top employers and can connect with Many users
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. EXPLORE & FIND YOUR JOB HERE SECTION MATCHING REFERENCE EXACTLY FOR CONNECTA ── -->
+  <section class="explore-jobs-section" id="jobs">
+    <div class="container">
+      
+      <div class="explore-sub-label">Live Opportunities</div>
+      <h2 class="explore-main-title">
+        Explore and Find <br>
+        your Job Here
+      </h2>
+
+      <!-- Search Input & Location Dropdown Bar -->
+      <div class="explore-search-bar">
+        <input type="text" id="jobSearchInput" oninput="filterJobsLive()" placeholder="Search for tech jobs, roles, or skills (e.g. React, UI/UX, Python)...">
+        <div class="explore-location-select">
+          <select id="locationSelect" onchange="filterJobsLive()" style="border: none; background: transparent; font-weight: 700; font-family: var(--font-main); outline: none; cursor: pointer;">
+            <option value="all">All Locations</option>
+            <option value="Lagos">Lagos, Nigeria</option>
+            <option value="Abuja">Abuja, Nigeria</option>
+            <option value="Accra">Accra, Ghana</option>
+            <option value="Remote">Remote, Africa</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Upload Resume Callout Banner -->
+      <div class="upload-resume-banner">
+        ⚡ Upload your resume — let employers & Connecta AI find you
+      </div>
+
+      <!-- Filter Tabs (Popular Roles, Recommended Gigs, New Jobs) -->
+      <div class="tab-buttons-row">
+        <button class="tab-btn active" onclick="setRoleTab(this, 'all')">All Roles</button>
+        <button class="tab-btn" onclick="setRoleTab(this, 'developer')">Developers</button>
+        <button class="tab-btn" onclick="setRoleTab(this, 'designer')">Designers</button>
+        <button class="tab-btn" onclick="setRoleTab(this, 'squad')">Collabo Squads</button>
+      </div>
+
+      <!-- 6 Authentic Connecta Job Cards Grid -->
+      <div class="jobs-cards-grid" id="jobsContainer">
+        
+        <!-- Job 1 -->
+        <div class="job-card-item card-bg-purple" data-title="Senior React & Node.js Developer" data-category="developer" data-location="Lagos">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #FD6730;">FS</div>
+              <span class="card-time-tag">5 minutes ago</span>
+            </div>
+            <div class="job-card-company">Fintech Startup</div>
+            <h3 class="job-card-title">Senior React & Node.js Developer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Senior level</span>
+              <span class="job-pill-tag">Milestone Escrow</span>
+              <span class="job-pill-tag">Flexible schedule</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦450,000/proj</div>
+              <div class="job-card-location">Lagos, Nigeria</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 2 -->
+        <div class="job-card-item card-bg-pink" data-title="Mobile Product UI/UX Designer" data-category="designer" data-location="Remote">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #E91E63;">UX</div>
+              <span class="card-time-tag">23 June 2026</span>
+            </div>
+            <div class="job-card-company">Creative Studio</div>
+            <h3 class="job-card-title">Mobile Product UI/UX Designer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Contract</span>
+              <span class="job-pill-tag">Middle level</span>
+              <span class="job-pill-tag">Figma Design</span>
+              <span class="job-pill-tag">Remote</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦300,000/proj</div>
+              <div class="job-card-location">Remote, Africa</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 3 -->
+        <div class="job-card-item card-bg-green" data-title="React Native & Expo Engineer" data-category="developer" data-location="Abuja">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #1DBF73;">RN</div>
+              <span class="card-time-tag">1 June 2026</span>
+            </div>
+            <div class="job-card-company">Mobile App Co.</div>
+            <h3 class="job-card-title">React Native & Expo Engineer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Senior level</span>
+              <span class="job-pill-tag">EAS Local Build</span>
+              <span class="job-pill-tag">Full day</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦600,000/proj</div>
+              <div class="job-card-location">Abuja, Nigeria</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 4 -->
+        <div class="job-card-item card-bg-blue" data-title="Python Data & AI Engineer" data-category="developer" data-location="Lagos">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #1DA1F2;">AI</div>
+              <span class="card-time-tag">10 June 2026</span>
+            </div>
+            <div class="job-card-company">Tech Hub</div>
+            <h3 class="job-card-title">Python Data & AI Engineer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Full time</span>
+              <span class="job-pill-tag">Senior level</span>
+              <span class="job-pill-tag">AI Tuning</span>
+              <span class="job-pill-tag">Full day</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦500,000/proj</div>
+              <div class="job-card-location">Lagos, Nigeria</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 5 -->
+        <div class="job-card-item card-bg-pink" data-title="Full Squad Mobile API Build" data-category="squad" data-location="Remote">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #CC0000;">CS</div>
+              <span class="card-time-tag">12 June 2026</span>
+            </div>
+            <div class="job-card-company">Collabo Squad #4</div>
+            <h3 class="job-card-title">Full Squad Mobile API Build</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Squad Hiring</span>
+              <span class="job-pill-tag">Team Lead</span>
+              <span class="job-pill-tag">Project Work</span>
+              <span class="job-pill-tag">Flexible</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦1,200,000/squad</div>
+              <div class="job-card-location">Remote, Africa</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+        <!-- Job 6 -->
+        <div class="job-card-item card-bg-blue" data-title="Frontend React & Vite Developer" data-category="developer" data-location="Accra">
+          <div>
+            <div class="job-card-top-bar">
+              <div class="company-badge-icon" style="background: #0061FF;">FE</div>
+              <span class="card-time-tag">9 June 2026</span>
+            </div>
+            <div class="job-card-company">Global Web Agency</div>
+            <h3 class="job-card-title">Frontend React & Vite Developer</h3>
+            <div class="job-pills-row">
+              <span class="job-pill-tag">Part time</span>
+              <span class="job-pill-tag">Middle level</span>
+              <span class="job-pill-tag">UI/UX Layout</span>
+              <span class="job-pill-tag">Full day</span>
+            </div>
+          </div>
+          <div class="job-card-bottom">
+            <div>
+              <div class="job-card-price">₦350,000/proj</div>
+              <div class="job-card-location">Accra, Ghana</div>
+            </div>
+            <a href="http://localhost:5173/login" class="btn-card-details">Apply Now</a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Show More Pill Button -->
+      <a href="http://localhost:5173/register/role" class="btn-connecta-pill" style="background: #F8F5FF; color: var(--connecta-orange); box-shadow: none; border: 1px solid #EAEAEA;">
+        Show More
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── 6. BUILDING YOUR NETWORK COMMUNITY SECTION MATCHING REFERENCE EXACTLY FOR CONNECTA ── -->
+  <section class="community-network-section" id="about">
+    <div class="container">
+      <div class="community-grid-container">
+        
+        <!-- Left Content -->
+        <div class="community-left-col">
+          <div class="community-sub-label">Join the Community</div>
+          <h2 class="community-main-title">
+            Building Your <br>
+            Network: The Job <br>
+            Finder Community
+          </h2>
+          <p class="community-description">
+            This description highlights the key benefits of the community features, emphasizing connection, visibility, and professional development.
+          </p>
+          <a href="http://localhost:5173/register/role" class="btn-connecta-pill">
+            Get Started
+          </a>
+        </div>
+
+        <!-- Right Asymmetric Cards Grid -->
+        <div class="community-right-grid">
+          
+          <!-- Stack of 2 Cards on Left -->
+          <div class="community-left-cards-stack">
+            
+            <!-- Card 1: Jobs in Tech -->
+            <div class="comm-card-blue">
+              <h3 class="comm-card-title">Jobs in Tech</h3>
+              <p class="comm-card-text">
+                Many tech companies foster innovative and collaborative work environments.
+              </p>
+              <a href="http://localhost:5173/login" class="btn-card-details">Details</a>
+            </div>
+
+            <!-- Card 2: Designers -->
+            <div class="comm-card-yellow">
+              <h3 class="comm-card-title">Designers</h3>
+              <p class="comm-card-text">
+                Design jobs are all about creating visual components that communicate ideas and information.
+              </p>
+              <a href="http://localhost:5173/login" class="btn-card-details">Details</a>
+            </div>
+
+          </div>
+
+          <!-- Tall Card on Right: 20K+ Users & Salaries in Tech -->
+          <div style="display: flex; flex-direction: column;">
+            <div class="comm-card-purple-tall" style="flex: 1;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                  <div class="comm-big-stat">20K+</div>
+                  <i data-lucide="users" style="width: 28px; height: 28px; color: var(--connecta-orange);"></i>
+                </div>
+                <div class="comm-stat-label">User joined the Community</div>
+                
+                <div class="comm-divider"></div>
+
+                <h3 class="comm-card-title">Salaries in Tech</h3>
+                <p class="comm-card-text">
+                  Tech salaries are generally quite competitive compared to the average across all occupations.
+                </p>
+              </div>
+
+              <a href="http://localhost:5173/login" class="btn-card-details" style="align-self: flex-start;">Details</a>
+            </div>
+
+            <a href="http://localhost:5173/register/role" class="btn-more-pill">
+              More <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 7. TOP COMPANIES BEST PLACES TO WORK SECTION MATCHING REFERENCE EXACTLY FOR CONNECTA ── -->
+  <section class="top-companies-section">
+    <div class="container">
+      
+      <!-- Top Header Grid -->
+      <div class="companies-top-header-grid">
+        
+        <div class="companies-header-left">
+          <div class="companies-sub-label">Top Hiring Employers</div>
+          <h2 class="companies-main-title">
+            Best Tech Workplaces <br>
+            2026
+          </h2>
+        </div>
+
+        <div class="companies-header-right">
+          <p class="companies-right-desc">
+            Explore verified employer reviews, culture insights, and milestone funding history from top African tech startups and global engineering teams.
+          </p>
+          <div class="company-search-box">
+            <input type="text" placeholder="Search tech companies & hubs...">
+            <button class="btn-company-search" onclick="window.location.href='http://localhost:5173/register/role'">
+              Find Work
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3 Company Cards Grid with Arrow Badges -->
+      <div class="company-cards-grid">
+        
+        <!-- Card 1: Flutterwave -->
+        <div class="company-card-item">
+          <div>
+            <div class="company-card-top">
+              <div class="company-logo-circle" style="background: #FD6730;">FW</div>
+              <a href="http://localhost:5173/login" class="btn-arrow-corner">
+                <i data-lucide="arrow-up-right" style="width: 22px; height: 22px;"></i>
+              </a>
+            </div>
+            <div class="company-card-category">Fintech Leader</div>
+            <h3 class="company-card-heading">Flutterwave Engineering Hub</h3>
+          </div>
+          <p class="company-card-body">
+            Hire African software engineers, API developers, and payment security specialists building cross-border payment infrastructure.
+          </p>
+        </div>
+
+        <!-- Card 2: Connecta Escrow -->
+        <div class="company-card-item">
+          <div>
+            <div class="company-card-top">
+              <div class="company-card-category" style="margin: 0;">Connecta Vaults</div>
+            </div>
+            <h3 class="company-card-heading">Connecta Milestone Ecosystem</h3>
+            <p class="company-card-body">
+              Powers Connecta's automated milestone escrow vaults, guaranteeing instant local bank payouts for African freelancers upon milestone approval.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 24px;">
+            <div class="company-logo-circle" style="background: #00C3F7;">CE</div>
+            <a href="http://localhost:5173/login" class="btn-arrow-corner">
+              <i data-lucide="arrow-up-right" style="width: 22px; height: 22px;"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- Card 3: Moniepoint -->
+        <div class="company-card-item">
+          <div>
+            <div class="company-card-top">
+              <div class="company-logo-circle" style="background: #0A66C2;">MP</div>
+              <a href="http://localhost:5173/login" class="btn-arrow-corner">
+                <i data-lucide="arrow-up-right" style="width: 22px; height: 22px;"></i>
+              </a>
+            </div>
+            <div class="company-card-category">Banking & Tech</div>
+            <h3 class="company-card-heading">Moniepoint Scaleup Workspace</h3>
+          </div>
+          <p class="company-card-body">
+            Empowering mobile software developers, DevOps engineers, and UI/UX designers scaling financial inclusion across West & East Africa.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 8. WHY CONNECT IS RIGHT FOR YOU 6-CARD GRID SECTION MATCHING REFERENCE EXACTLY FOR CONNECTA ── -->
+  <section class="why-connect-section" id="ai">
+    <div class="container">
+      
+      <div class="why-sub-label">Why Choose Us</div>
+      <h2 class="why-main-title">
+        Why Connecta is Right <br>
+        for You?
+      </h2>
+
+      <!-- Connecta Advantage Tag Pill Row -->
+      <div class="why-tags-row">
+        <span class="why-tag-pill why-tag-yellow">Hire</span>
+        <span class="why-tag-pill why-tag-green">vetted</span>
+        <span class="why-tag-pill why-tag-pink">talent</span>
+        <span class="why-tag-pill why-tag-lavender">with</span>
+        <span class="why-tag-pill why-tag-connecta">Connecta AI</span>
+      </div>
+
+      <!-- 6 Why Cards Grid -->
+      <div class="why-cards-grid">
+        
+        <!-- Card 01 -->
+        <div class="why-card-item">
+          <div class="why-card-top-bar">
+            <div class="why-card-icon">
+              <i data-lucide="clock" style="width: 22px; height: 22px;"></i>
+            </div>
+            <span class="why-card-num">01</span>
+          </div>
+          <h3 class="why-card-title">Time-Saving Efficiency</h3>
+          <p class="why-card-desc">
+            Stop wasting time scouring multiple job boards and company websites. Our comprehensive search engine aggregates listings from a vast network of sources.
+          </p>
+        </div>
+
+        <!-- Card 02 -->
+        <div class="why-card-item">
+          <div class="why-card-top-bar">
+            <div class="why-card-icon">
+              <i data-lucide="user" style="width: 22px; height: 22px;"></i>
+            </div>
+            <span class="why-card-num">02</span>
+          </div>
+          <h3 class="why-card-title">Personalized Results</h3>
+          <p class="why-card-desc">
+            Tailor your job hunt to your unique goals. Save your search filters and receive instant alerts whenever new opportunities matching your criteria are posted.
+          </p>
+        </div>
+
+        <!-- Card 03 -->
+        <div class="why-card-item">
+          <div class="why-card-top-bar">
+            <div class="why-card-icon">
+              <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
+            </div>
+            <span class="why-card-num">03</span>
+          </div>
+          <h3 class="why-card-title">Uncover Hidden Gems</h3>
+          <p class="why-card-desc">
+            Go beyond basic job boards and access a wider pool of job postings from diverse sources.
+          </p>
+        </div>
+
+        <!-- Card 04 -->
+        <div class="why-card-item">
+          <div class="why-card-top-bar">
+            <div class="why-card-icon">
+              <i data-lucide="target" style="width: 22px; height: 22px;"></i>
+            </div>
+            <span class="why-card-num">04</span>
+          </div>
+          <h3 class="why-card-title">Unmatched Accuracy</h3>
+          <p class="why-card-desc">
+            Our advanced search and filter system allows you to target the exact type of job you're looking for.
+          </p>
+        </div>
+
+        <!-- Card 05 -->
+        <div class="why-card-item">
+          <div class="why-card-top-bar">
+            <div class="why-card-icon">
+              <i data-lucide="zap" style="width: 22px; height: 22px;"></i>
+            </div>
+            <span class="why-card-num">05</span>
+          </div>
+          <h3 class="why-card-title">Save Valuable Time</h3>
+          <p class="why-card-desc">
+            No more sifting through irrelevant postings! Find the perfect job faster with precise filtering options.
+          </p>
+        </div>
+
+        <!-- Card 06 -->
+        <div class="why-card-item">
+          <div class="why-card-top-bar">
+            <div class="why-card-icon">
+              <i data-lucide="search" style="width: 22px; height: 22px;"></i>
+            </div>
+            <span class="why-card-num">06</span>
+          </div>
+          <h3 class="why-card-title">Laser Focus Your Search</h3>
+          <p class="why-card-desc">
+            Explore industries and roles you might not have considered before, broadening your job search horizons.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 9. WHAT OUR USERS SAY ABOUT CONNECT TESTIMONIAL SECTION MATCHING REFERENCE EXACTLY FOR CONNECTA ── -->
+  <section class="testimonials-section">
+    <div class="container">
+      
+      <div class="testimonial-card-container">
+        
+        <!-- Left 3D Memoji Avatar Card -->
+        <div class="testimonial-avatar-stack">
+          <div class="avatar-backdrop-card"></div>
+          <div class="avatar-main-card">
+            <img src="connecta_user_avatar_layla_1785947148841.jpg" alt="Layla Abbas Connecta User">
+          </div>
+        </div>
+
+        <!-- Right Content & Quote Box -->
+        <div class="testimonial-content-col">
+          
+          <div class="testimonial-top-row">
+            <div class="testimonial-sub-label">Connect's Users</div>
+            <div class="testimonial-arrows-group">
+              <button class="btn-arrow-circle">
+                <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i>
+              </button>
+              <button class="btn-arrow-circle">
+                <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <h2 class="testimonial-main-title">
+            What Our Users Say <br>
+            About Connect
+          </h2>
+
+          <div class="testimonial-quote-box">
+            
+            <div class="testimonial-dots-row">
+              <span class="dot-item"></span>
+              <span class="dot-item active"></span>
+              <span class="dot-item"></span>
+            </div>
+
+            <div class="user-author-name">Layla Abbas</div>
+            <div class="user-author-role">Marketing Manager</div>
+
+            <p class="user-quote-text">
+              "I was using several job boards and getting overwhelmed. At Connect, it saved me tons of time and I landed my dream job at a great company!"
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 10. CTA BANNER READY TO TAKE YOUR CAREER SECTION MATCHING REFERENCE EXACTLY FOR CONNECTA ── -->
+  <section class="cta-banner-section" id="contact">
+    <div class="container">
+      
+      <div class="cta-banner-card">
+        
+        <!-- Top Floating Badges (Google & Notion) -->
+        <div class="cta-floating-badge badge-cta-google">
+          <div>
+            <div style="font-size: 0.72rem; color: #666; font-weight: 600;">Google</div>
+            <div style="font-size: 0.95rem; font-weight: 800; color: #111;">Sr. UI/UX Designer</div>
+          </div>
+          <div class="company-logo-circle" style="width: 32px; height: 32px; background: #4285F4; font-size: 0.8rem;">G</div>
+        </div>
+
+        <div class="cta-floating-badge badge-cta-notion">
+          <div>
+            <div style="font-size: 0.72rem; color: #666; font-weight: 600;">Notion</div>
+            <div style="font-size: 0.95rem; font-weight: 800; color: #111;">Senior Motion Designer</div>
+          </div>
+          <div class="company-logo-circle" style="width: 32px; height: 32px; background: #111; font-size: 0.8rem;">N</div>
+        </div>
+
+        <div class="cta-banner-content-grid">
+          
+          <div>
+            <div class="cta-sub-label">Let's Find your Dream Job</div>
+            <h2 class="cta-main-title">
+              Ready to take <br>
+              your career to <br>
+              the next level?
+            </h2>
+            <p class="cta-description">
+              Our job finder website is more than just a search engine. Sign up today and unlock a world of possibilities!
+            </p>
+          </div>
+
+          <div>
+            <div class="cta-subscribe-box">
+              <input type="email" placeholder="Enter your email">
+              <button class="btn-cta-subscribe" onclick="window.location.href='http://localhost:5173/register/role'">
+                Subscribe
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 10.5 MOBILE APP DOWNLOAD CTA SECTION ── -->
+  <section class="container">
+    <div class="app-download-section">
+      <div class="container">
+        <div class="app-download-grid">
+          <div style="text-align: left;">
+            <div class="cta-sub-label">Mobile Experience</div>
+            <h2 class="cta-main-title" style="font-size: 2.8rem; margin-bottom: 16px;">
+              Take Connecta <br>
+              Everywhere You Go
+            </h2>
+            <p class="cta-description" style="margin-bottom: 28px;">
+              Get instant job alerts, chat with clients on Socket.io live messaging, track milestone escrows, and hire Collabo Squads directly from your Android smartphone.
+            </p>
+            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+              <a href="https://play.google.com" target="_blank" class="app-store-btn">
+                <i data-lucide="smartphone" style="width: 22px; height: 22px; color: var(--connecta-orange);"></i> Google Play App
+              </a>
+              <a href="http://localhost:5173/register/role" class="app-store-btn" style="background: transparent; color: var(--text-dark); border: 1px solid #EAEAEA;">
+                <i data-lucide="globe" style="width: 22px; height: 22px; color: var(--connecta-orange);"></i> Web Portal
+              </a>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <img src="connecta_user_app.png" alt="Connecta Mobile App View" style="width: 240px; height: auto; border-radius: 32px; box-shadow: var(--shadow-float); border: 6px solid #111;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 10.8 SWISS-STYLE FAQ ACCORDION SECTION ── -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      
+      <div style="text-align: center; margin-bottom: 56px;">
+        <div class="why-sub-label">Got Questions?</div>
+        <h2 class="why-main-title">
+          Frequently Asked <br>
+          Questions
+        </h2>
+      </div>
+
+      <div class="faq-container">
+        
+        <!-- FAQ Item 1 -->
+        <div class="faq-accordion-item active">
+          <button class="faq-question-button" onclick="toggleFaq(this)">
+            <span>How does Milestone Escrow protect my payments?</span>
+            <div class="faq-icon-chevron"><i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i></div>
+          </button>
+          <div class="faq-answer-content">
+            <p>
+              When a project or milestone is funded, client funds are deposited safely into a Connecta Escrow Vault. Funds are only released to the freelancer after the client inspects and approves the submitted work deliverables.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 2 -->
+        <div class="faq-accordion-item">
+          <button class="faq-question-button" onclick="toggleFaq(this)">
+            <span>What is a Connecta Collabo Squad?</span>
+            <div class="faq-icon-chevron"><i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i></div>
+          </button>
+          <div class="faq-answer-content">
+            <p>
+              Collabo Squads allow freelancers to assemble cross-functional teams (e.g. 2 Developers + 1 UI/UX Designer) to bid on larger enterprise projects and split milestone earnings automatically through escrow contracts.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 3 -->
+        <div class="faq-accordion-item">
+          <button class="faq-question-button" onclick="toggleFaq(this)">
+            <span>How does Connecta AI match talent with jobs?</span>
+            <div class="faq-icon-chevron"><i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i></div>
+          </button>
+          <div class="faq-answer-content">
+            <p>
+              Connecta AI Copilot analyzes verified GitHub code repositories, portfolio items, past milestone ratings, and project descriptions to recommend 99.4% accurate candidate matches in under 5 seconds.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ Item 4 -->
+        <div class="faq-accordion-item">
+          <button class="faq-question-button" onclick="toggleFaq(this)">
+            <span>What are the platform transaction fees?</span>
+            <div class="faq-icon-chevron"><i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i></div>
+          </button>
+          <div class="faq-answer-content">
+            <p>
+              Connecta charges a transparent 10% platform fee on completed contracts. Clients post jobs for free, and freelancers enjoy instant withdrawal payouts directly to local African bank accounts.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 11. MODERN MINIMALIST FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-grid-overlay"></div>
+    <div class="container">
+      
+      <div class="footer-top-grid">
+        
+        <!-- Brand Column -->
+        <div class="footer-brand-col">
+          <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+          </a>
+          <p class="footer-brand-desc">
+            Connecta is an AI-powered freelance marketplace connecting talented African tech professionals with clients worldwide. We make finding top talent or the perfect gig simple, fast, and rewarding.
+          </p>
+          <div class="footer-socials-row">
+            <a href="https://x.com/Connectainc" target="_blank" class="social-icon-btn"><i data-lucide="twitter" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61583324766005" target="_blank" class="social-icon-btn"><i data-lucide="facebook" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.instagram.com/connecta_inc" target="_blank" class="social-icon-btn"><i data-lucide="instagram" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://github.com" target="_blank" class="social-icon-btn"><i data-lucide="github" style="width: 18px; height: 18px;"></i></a>
+          </div>
+        </div>
+
+        <!-- Quick Links Column -->
+        <div>
+          <h4 class="footer-col-title">Platform</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="jobs.html">Find Jobs</a></li>
+            <li class="footer-link-item"><a href="ai.html">Connecta AI Copilot</a></li>
+            <li class="footer-link-item"><a href="about.html">About Us</a></li>
+            <li class="footer-link-item"><a href="contact.html">Reach Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources Column -->
+        <div>
+          <h4 class="footer-col-title">Resources</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Freelancer Portal</a></li>
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Client Portal</a></li>
+            <li class="footer-link-item"><a href="contact.html">Help Center</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Column -->
+        <div class="footer-contact-info">
+          <h4 class="footer-col-title">Reach Us</h4>
+          <p><i data-lucide="mail" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> hello@myconnecta.ng</p>
+          <p><i data-lucide="phone" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> +234 (0) 800 CONNECTA</p>
+          <p><i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> Connecta HQ, Kano, Nigeria</p>
+        </div>
+
+      </div>
+
+      <!-- Footer Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div>© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</div>
+        <div class="footer-bottom-links">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="security.html">Security</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Custom Glow Cursor Element -->
+  <div class="custom-cursor-dot" id="cursorDot"></div>
+
+  <script>
+    lucide.createIcons();
+
+    /* 1. Dark Mode Toggle & Persistence */
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('connecta_theme', isDark ? 'dark' : 'light');
+      
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) {
+        btn.style.background = isDark ? '#141B26' : '#FFFFFF';
+        btn.style.borderColor = isDark ? '#263346' : '#EAEAEA';
+        btn.style.color = isDark ? '#F3F4F6' : '#0D0D0D';
+        btn.innerHTML = isDark 
+          ? '<i data-lucide="sun" style="width: 18px; height: 18px; color: #F59E0B;"></i>' 
+          : '<i data-lucide="moon" style="width: 18px; height: 18px;"></i>';
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    if (localStorage.getItem('connecta_theme') === 'dark') {
+      document.body.classList.add('dark-mode');
+      window.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) {
+          btn.style.background = '#141B26';
+          btn.style.borderColor = '#263346';
+          btn.style.color = '#F3F4F6';
+          btn.innerHTML = '<i data-lucide="sun" style="width: 18px; height: 18px; color: #F59E0B;"></i>';
+          if (window.lucide) lucide.createIcons();
+        }
+      });
+    }
+
+    /* 2. Custom Glow Cursor Following Logic */
+    const cursor = document.getElementById('cursorDot');
+    document.addEventListener('mousemove', (e) => {
+      if (cursor) {
+        cursor.style.top = e.clientY + 'px';
+        cursor.style.left = e.clientX + 'px';
+      }
+    });
+
+    /* 3. Real-Time Simulated WebSocket Job Alert Toast Notifications */
+    function triggerSimulatedSocketJobAlert() {
+      const sampleAlerts = [
+        "🔥 New Gig Posted: React Native Lead (₦750,000)",
+        "⚡ Milestone Escrow Released: ₦450,000 for Mobile API",
+        "✨ Connecta AI Matched: Aminu M. (99.4% Score)",
+        "🚀 Collabo Squad #8: 3 Developers Online"
+      ];
+      
+      const randomMsg = sampleAlerts[Math.floor(Math.random() * sampleAlerts.length)];
+      
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #111111;
+        color: #FFFFFF;
+        padding: 14px 20px;
+        border-radius: 16px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        z-index: 10000;
+        box-shadow: 0 16px 36px rgba(0,0,0,0.2);
+        border: 1px solid #FD6730;
+        transition: all 0.4s ease;
+        opacity: 0;
+        transform: translateY(20px);
+      `;
+      toast.innerHTML = `<span style="color: #FD6730;">● Live Signal:</span> ${randomMsg}`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+      }, 100);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        setTimeout(() => toast.remove(), 400);
+      }, 4500);
+    }
+
+    // Trigger initial WebSocket live alert after 4 seconds
+    setTimeout(triggerSimulatedSocketJobAlert, 4000);
+    setInterval(triggerSimulatedSocketJobAlert, 14000);
+
+    /* 4. Live Frontend Search & Filtering */
+    let currentRoleCategory = 'all';
+
+    function setRoleTab(btn, category) {
+      document.querySelectorAll('.tab-buttons-row .tab-btn').forEach(el => el.classList.remove('active'));
+      btn.classList.add('active');
+      currentRoleCategory = category;
+      filterJobsLive();
+    }
+
+    function filterJobsLive() {
+      const searchInput = document.getElementById('jobSearchInput');
+      const locationSelect = document.getElementById('locationSelect');
+      
+      const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      const selectedLoc = locationSelect ? locationSelect.value : 'all';
+
+      const cards = document.querySelectorAll('.job-card-item');
+
+      cards.forEach(card => {
+        const title = (card.getAttribute('data-title') || '').toLowerCase();
+        const category = card.getAttribute('data-category') || 'all';
+        const location = card.getAttribute('data-location') || 'all';
+
+        const matchesQuery = !query || title.includes(query);
+        const matchesLocation = (selectedLoc === 'all') || (location === selectedLoc);
+        const matchesCategory = (currentRoleCategory === 'all') || (category === currentRoleCategory);
+
+        if (matchesQuery && matchesLocation && matchesCategory) {
+          card.style.display = 'flex';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    /* Live Backend API Stats Fetch */
+    async function fetchLiveConnectaStats() {
+      try {
+        const response = await fetch('http://localhost:5001/api/analytics/stats');
+        const data = await response.json();
+        if (data.success && data.data?.overview) {
+          const { totalUsers } = data.data.overview;
+          const talentEl = document.querySelector('.card-big-stat');
+          if (talentEl && totalUsers) {
+            talentEl.textContent = (totalUsers >= 1000 ? (totalUsers / 1000).toFixed(1) + 'k+' : totalUsers);
+          }
+        }
+      } catch (err) {
+        console.log('Using cached stats data');
+      }
+    }
+    fetchLiveConnectaStats();
+  </script>
+</body>
+</html>

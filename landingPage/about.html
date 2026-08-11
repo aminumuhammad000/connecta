@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us — Connecta</title>
+  <meta name="description" content="Learn about Connecta's mission to empower African tech visionaries with global career opportunities, AI matching, and Paystack escrow protection.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .about-hero-section {
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+
+    .about-main-title {
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .about-subtitle-desc {
+      font-size: 1.1rem;
+      color: var(--text-gray);
+      max-width: 620px;
+      margin: 0 auto 56px;
+      line-height: 1.6;
+    }
+
+    .about-values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+      margin-bottom: 80px;
+    }
+
+    .about-value-card {
+      background: #FFFFFF;
+      border: 1px solid #EFEFEF;
+      border-radius: 28px;
+      padding: 36px 30px;
+      text-align: left;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .about-value-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(253, 103, 48, 0.3);
+    }
+
+    .about-value-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(253, 103, 48, 0.08);
+      color: var(--connecta-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .about-value-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 12px;
+    }
+
+    .about-value-desc {
+      font-size: 0.92rem;
+      color: var(--text-gray);
+      line-height: 1.6;
+    }
+
+    .about-mission-banner {
+      background: #FFFDF0;
+      border-radius: 36px;
+      padding: 60px 48px;
+      margin-bottom: 100px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 48px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Grid Line Pattern -->
+  <div class="grid-bg-overlay"></div>
+
+  <!-- ── 1. HEADER ── -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+        <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="jobs.html" class="nav-link">Find Jobs</a></li>
+        <li><a href="ai.html" class="nav-link">Connecta AI</a></li>
+        <li><a href="about.html" class="nav-link" style="color: var(--connecta-orange); font-weight: 700;">About</a></li>
+        <li><a href="contact.html" class="nav-link">Reach Us</a></li>
+      </ul>
+
+      <a href="http://localhost:5173/register/role" class="btn-connecta-pill">
+        Hire Talent!
+      </a>
+    </div>
+  </header>
+
+  <!-- ── 2. ABOUT US HERO SECTION ── -->
+  <section class="about-hero-section">
+    <div class="container">
+      <div class="why-sub-label">Our Story & Vision</div>
+      <h1 class="about-main-title">
+        Bridging African Tech Talent <br>
+        with Global Opportunity
+      </h1>
+      <p class="about-subtitle-desc">
+        Connecta is Africa's premier AI-powered hiring ecosystem and team workspace. We empower developers, UI/UX designers, and Collabo Squads to build world-class products with guaranteed Milestone Escrow security.
+      </p>
+
+      <!-- 3 Core Pillars Grid -->
+      <div class="about-values-grid">
+        
+        <div class="about-value-card">
+          <div class="about-value-icon">
+            <i data-lucide="globe" style="width: 22px; height: 22px;"></i>
+          </div>
+          <h3 class="about-value-title">Global Opportunity</h3>
+          <p class="about-value-desc">
+            We break down geographical barriers, connecting top-tier African tech visionaries directly with international companies and scaleups.
+          </p>
+        </div>
+
+        <div class="about-value-card">
+          <div class="about-value-icon">
+            <i data-lucide="sparkles" style="width: 22px; height: 22px;"></i>
+          </div>
+          <h3 class="about-value-title">AI-Driven Precision</h3>
+          <p class="about-value-desc">
+            Our Connecta AI Copilot analyzes verified GitHub repositories and portfolios to match talent with 99.4% precision in seconds.
+          </p>
+        </div>
+
+        <div class="about-value-card">
+          <div class="about-value-icon">
+            <i data-lucide="shield-check" style="width: 22px; height: 22px;"></i>
+          </div>
+          <h3 class="about-value-title">100% Escrow Protection</h3>
+          <p class="about-value-desc">
+            Every contract is backed by Connecta Escrow Vaults, ensuring clients get verified work and freelancers get instant bank payouts.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Mission Statement Banner -->
+      <div class="about-mission-banner">
+        <div style="text-align: left;">
+          <div class="why-sub-label">Our Mission</div>
+          <h2 class="cta-main-title" style="font-size: 2.6rem; margin-bottom: 16px;">
+            Empowering 100,000 African Tech Creators by 2030
+          </h2>
+          <p class="cta-description">
+            Africa has the fastest-growing developer population in the world. Connecta provides the tools, team workspaces, and payment security needed to showcase African excellence to global employers.
+          </p>
+        </div>
+        <div style="text-align: center;">
+          <img src="connecta_team_workspace_1785941631024.jpg" alt="Connecta African Tech Workspace" style="width: 100%; max-width: 340px; border-radius: 28px; box-shadow: var(--shadow-float);">
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 3. MODERN MINIMALIST FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-grid-overlay"></div>
+    <div class="container">
+      
+      <div class="footer-top-grid">
+        
+        <!-- Brand Column -->
+        <div class="footer-brand-col">
+          <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+          </a>
+          <p class="footer-brand-desc">
+            Connecting African Tech Visionaries with Global Opportunities. Match with top developers, UI/UX designers, and team workspaces with 100% Paystack Escrow Protection.
+          </p>
+          <div class="footer-socials-row">
+            <a href="https://twitter.com" target="_blank" class="social-icon-btn"><i data-lucide="twitter" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://linkedin.com" target="_blank" class="social-icon-btn"><i data-lucide="linkedin" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://github.com" target="_blank" class="social-icon-btn"><i data-lucide="github" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://instagram.com" target="_blank" class="social-icon-btn"><i data-lucide="instagram" style="width: 18px; height: 18px;"></i></a>
+          </div>
+        </div>
+
+        <!-- Quick Links Column -->
+        <div>
+          <h4 class="footer-col-title">Platform</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="jobs.html">Find Jobs</a></li>
+            <li class="footer-link-item"><a href="ai.html">Connecta AI Copilot</a></li>
+            <li class="footer-link-item"><a href="about.html">About Community</a></li>
+            <li class="footer-link-item"><a href="contact.html">Reach Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources Column -->
+        <div>
+          <h4 class="footer-col-title">Resources</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Freelancer Portal</a></li>
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Client Portal</a></li>
+            <li class="footer-link-item"><a href="escrow.html">Paystack Escrow Guide</a></li>
+            <li class="footer-link-item"><a href="contact.html">Help Center</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Column -->
+        <div class="footer-contact-info">
+          <h4 class="footer-col-title">Reach Us</h4>
+          <p><i data-lucide="mail" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> hello@myconnecta.ng</p>
+          <p><i data-lucide="phone" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> +234 (0) 800 CONNECTA</p>
+          <p><i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> Connecta HQ, Kano, Nigeria</p>
+        </div>
+
+      </div>
+
+      <!-- Footer Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div>© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</div>
+        <div class="footer-bottom-links">
+          <a href="contact.html">Privacy Policy</a>
+          <a href="contact.html">Terms of Service</a>
+          <a href="contact.html">Security</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

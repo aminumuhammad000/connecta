@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecta AI Copilot — Smart AI Job & Talent Matching</title>
+  <meta name="description" content="Meet Connecta AI Copilot - AI-powered talent matching, automated project scoping, and instant proposal screening for African tech talent.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Connecta AI Page Layout */
+    .ai-hero-section {
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+
+    .ai-badge-pill {
+      background: rgba(253, 103, 48, 0.1);
+      color: var(--connecta-orange);
+      padding: 6px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .ai-page-title {
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    .ai-page-desc {
+      font-size: 1.1rem;
+      color: var(--text-gray);
+      max-width: 580px;
+      margin: 0 auto 48px;
+      line-height: 1.6;
+    }
+
+    /* AI Interactive Prompt Simulator Card */
+    .ai-simulator-card {
+      background: #FFFFFF;
+      border: 1px solid #EAEAEA;
+      border-radius: 36px;
+      padding: 36px;
+      max-width: 800px;
+      margin: 0 auto 80px;
+      box-shadow: var(--shadow-float);
+      text-align: left;
+      position: relative;
+    }
+
+    .ai-prompt-box {
+      background: #FAFAFA;
+      border: 1px solid #E5E5E5;
+      border-radius: 20px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .ai-prompt-box input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 1rem;
+      font-family: var(--font-main);
+      color: var(--text-dark);
+      width: 80%;
+    }
+
+    .btn-ai-generate {
+      background: var(--connecta-orange-gradient);
+      color: #FFFFFF;
+      border: none;
+      height: 42px;
+      padding: 0 24px;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(253, 103, 48, 0.25);
+    }
+
+    .ai-response-preview {
+      background: #FFF5F2;
+      border-radius: 20px;
+      padding: 24px;
+      border-left: 4px solid var(--connecta-orange);
+    }
+
+    .ai-response-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-weight: 700;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+    }
+
+    .ai-match-item {
+      background: #FFFFFF;
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88rem;
+    }
+
+    /* 4 AI Feature Cards Grid */
+    .ai-features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+      margin-bottom: 100px;
+    }
+
+    .ai-feature-card {
+      background: #FFFFFF;
+      border: 1px solid #EFEFEF;
+      border-radius: 28px;
+      padding: 36px 32px;
+      text-align: left;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .ai-feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(253, 103, 48, 0.3);
+    }
+
+    .ai-feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(253, 103, 48, 0.08);
+      color: var(--connecta-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .ai-feature-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+    }
+
+    .ai-feature-desc {
+      font-size: 0.95rem;
+      color: var(--text-gray);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Grid Line Pattern -->
+  <div class="grid-bg-overlay"></div>
+
+  <!-- ── 1. HEADER ── -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+        <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="jobs.html" class="nav-link">Find Jobs</a></li>
+        <li><a href="ai.html" class="nav-link" style="color: var(--connecta-orange); font-weight: 700;">Connecta AI</a></li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="contact.html" class="nav-link">Reach Us</a></li>
+      </ul>
+
+      <a href="http://localhost:5173/register/role" class="btn-connecta-pill">
+        Hire Talent!
+      </a>
+    </div>
+  </header>
+
+  <!-- ── 2. CONNECTA AI HERO SECTION ── -->
+  <section class="ai-hero-section">
+    <div class="container">
+      
+      <div class="ai-badge-pill">
+        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Connecta AI 2.0 Engine
+      </div>
+      
+      <h1 class="ai-page-title">
+        Instant AI Matching for <br>
+        Global Companies & African Talent
+      </h1>
+      
+      <p class="ai-page-desc">
+        Connecta AI Copilot analyzes skills, past projects, and code repos to generate 99.4% accurate talent recommendations in under 5 seconds.
+      </p>
+
+      <!-- AI Interactive Prompt Simulator Card -->
+      <div class="ai-simulator-card">
+        
+        <div class="ai-prompt-box">
+          <input type="text" value="Match me with a Senior React Native dev in Lagos for a Fintech App...">
+          <button class="btn-ai-generate">Match Talent</button>
+        </div>
+
+        <div class="ai-response-preview">
+          <div class="ai-response-header">
+            <i data-lucide="sparkles" style="width: 18px; height: 18px; color: var(--connecta-orange);"></i>
+            <span>Connecta AI Found 3 Perfect Matches (99.4% Match Score):</span>
+          </div>
+
+          <div class="ai-match-item">
+            <div>
+              <strong style="color: #111;">Aminu M.</strong> — Senior React Native & Node.js Developer
+              <div style="color: #666; font-size: 0.78rem;">Lagos, NG • 5+ yrs exp • Paystack & Flutterwave expert</div>
+            </div>
+            <span style="background: rgba(16,185,129,0.1); color: #10B981; font-weight: 700; padding: 4px 10px; border-radius: 6px;">99.4% Match</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ── 3. 4 AI FEATURES GRID ── -->
+      <div class="ai-features-grid">
+        
+        <div class="ai-feature-card">
+          <div class="ai-feature-icon">
+            <i data-lucide="target" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 class="ai-feature-title">Semantic Resume & Code Analysis</h3>
+          <p class="ai-feature-desc">
+            Goes beyond simple keyword searches. Connecta AI inspects real GitHub repositories and project portfolios to match exact technical depth.
+          </p>
+        </div>
+
+        <div class="ai-feature-card">
+          <div class="ai-feature-icon">
+            <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 class="ai-feature-title">Automated Scope & Milestones</h3>
+          <p class="ai-feature-desc">
+            Convert raw project briefs into structured Milestone Escrow vaults automatically with realistic timelines and budget estimates.
+          </p>
+        </div>
+
+        <div class="ai-feature-card">
+          <div class="ai-feature-icon">
+            <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 class="ai-feature-title">AI Proposal Screening</h3>
+          <p class="ai-feature-desc">
+            Save hours for clients. AI ranks freelancer proposals based on relevance, verified skill badges, and past delivery rates.
+          </p>
+        </div>
+
+        <div class="ai-feature-card">
+          <div class="ai-feature-icon">
+            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 class="ai-feature-title">Collabo Squad AI Assembler</h3>
+          <p class="ai-feature-desc">
+            Need a full team? Connecta AI pairs frontend devs, backend engineers, and product designers into balanced Collabo Squads.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 11. MODERN MINIMALIST FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-grid-overlay"></div>
+    <div class="container">
+      
+      <div class="footer-top-grid">
+        
+        <!-- Brand Column -->
+        <div class="footer-brand-col">
+          <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+          </a>
+          <p class="footer-brand-desc">
+            Connecta is an AI-powered freelance marketplace connecting talented African tech professionals with clients worldwide. We make finding top talent or the perfect gig simple, fast, and rewarding.
+          </p>
+          <div class="footer-socials-row">
+            <a href="https://x.com/Connectainc" target="_blank" class="social-icon-btn"><i data-lucide="twitter" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61583324766005" target="_blank" class="social-icon-btn"><i data-lucide="facebook" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.instagram.com/connecta_inc" target="_blank" class="social-icon-btn"><i data-lucide="instagram" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://github.com" target="_blank" class="social-icon-btn"><i data-lucide="github" style="width: 18px; height: 18px;"></i></a>
+          </div>
+        </div>
+
+        <!-- Quick Links Column -->
+        <div>
+          <h4 class="footer-col-title">Platform</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="jobs.html">Find Jobs</a></li>
+            <li class="footer-link-item"><a href="ai.html">Connecta AI Copilot</a></li>
+            <li class="footer-link-item"><a href="about.html">About Us</a></li>
+            <li class="footer-link-item"><a href="contact.html">Reach Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources Column -->
+        <div>
+          <h4 class="footer-col-title">Resources</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Freelancer Portal</a></li>
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Client Portal</a></li>
+            <li class="footer-link-item"><a href="contact.html">Help Center</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Column -->
+        <div class="footer-contact-info">
+          <h4 class="footer-col-title">Reach Us</h4>
+          <p><i data-lucide="mail" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> hello@myconnecta.ng</p>
+          <p><i data-lucide="phone" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> +234 (0) 800 CONNECTA</p>
+          <p><i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> Connecta HQ, Kano, Nigeria</p>
+        </div>
+
+      </div>
+
+      <!-- Footer Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div>© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</div>
+        <div class="footer-bottom-links">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="security.html">Security</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -73,7 +73,7 @@ export const getBaseTemplate = (options: EmailTemplateOptions) => {
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin-top: 28px;">
                     <tr>
                         <td align="center" style="color: #94A3B8; font-size: 13px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                            <p style="margin: 0 0 8px 0;">Sent by Connecta Inc. • <a href="https://myconnecta.ng" style="color: #FD6730; text-decoration: none; font-weight: 600;">Check our blog</a> • <a href="https://myconnecta.ng" style="color: #FD6730; text-decoration: none; font-weight: 600;">@connecta_inc</a></p>
+                            <p style="margin: 0 0 8px 0;">© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</p>
                             <p style="margin: 0;">Suite 3-4, Gidan Saude, Beside First Bank, Zoo Road, Kano, Nigeria</p>
                         </td>
                     </tr>

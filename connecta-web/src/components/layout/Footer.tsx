@@ -14,7 +14,7 @@ export const Footer: React.FC = () => {
         color: 'var(--text-muted)',
         marginTop: 'auto'
       }}>
-        © {new Date().getFullYear()} Connecta. Secure Platform.
+        © 2026 Connecta. Developed by Pioneers ICT. All rights reserved.
       </footer>
     );
   }
@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
       color: 'var(--text-muted)',
       marginTop: 'auto'
     }}>
-      © {new Date().getFullYear()} Connecta Nigeria. All rights reserved.
+      © 2026 Connecta. Developed by Pioneers ICT. All rights reserved.
     </footer>
   );
 };

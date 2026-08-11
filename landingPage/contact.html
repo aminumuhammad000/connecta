@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reach Us — Connecta</title>
+  <meta name="description" content="Get in touch with the Connecta team. We'd love to hear from you.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Reach Us Specific Layout */
+    .contact-hero-section {
+      padding: 60px 0 40px;
+      text-align: center;
+    }
+
+    .contact-sub-label {
+      font-size: 1.05rem;
+      color: #888888;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .contact-main-title {
+      font-size: clamp(2.8rem, 5vw, 4.2rem);
+      font-weight: 800;
+      color: var(--text-dark);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .contact-subtitle-desc {
+      font-size: 1.1rem;
+      color: var(--text-gray);
+      max-width: 540px;
+      margin: 0 auto 56px;
+      line-height: 1.6;
+    }
+
+    .contact-grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 56px;
+      align-items: flex-start;
+      margin-bottom: 100px;
+    }
+
+    /* Left Info Cards Stack */
+    .contact-info-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: left;
+    }
+
+    .contact-info-card {
+      background: #FFFFFF;
+      border: 1px solid #EFEFEF;
+      border-radius: 24px;
+      padding: 28px 32px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .contact-info-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(253, 103, 48, 0.3);
+    }
+
+    .info-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(253, 103, 48, 0.08);
+      color: var(--connecta-orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .info-card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
+
+    .info-card-detail {
+      font-size: 0.95rem;
+      color: var(--text-gray);
+      line-height: 1.5;
+    }
+
+    /* Right Contact Form Card */
+    .contact-form-card {
+      background: #FFFDF0;
+      border-radius: 36px;
+      padding: 48px 40px;
+      text-align: left;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.04);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: #FFFFFF;
+      border: 1px solid #E5E5E5;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 0.98rem;
+      font-family: var(--font-main);
+      color: var(--text-dark);
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: var(--connecta-orange);
+    }
+
+    .form-textarea {
+      height: 140px;
+      resize: vertical;
+    }
+
+    .btn-send-message {
+      width: 100%;
+      height: 52px;
+      border-radius: var(--radius-pill);
+      background: var(--connecta-orange-gradient);
+      color: #FFFFFF;
+      border: none;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(253, 103, 48, 0.28);
+      transition: transform 0.2s ease;
+    }
+
+    .btn-send-message:hover {
+      transform: scale(1.01);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Grid Line Pattern -->
+  <div class="grid-bg-overlay"></div>
+
+  <!-- ── 1. HEADER ── -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="index.html" class="brand-logo" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+        <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html#jobs" class="nav-link">Find Jobs</a></li>
+        <li><a href="index.html#ai" class="nav-link">Connecta AI</a></li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="contact.html" class="nav-link" style="color: var(--connecta-orange); font-weight: 700;">Reach Us</a></li>
+      </ul>
+
+      <a href="http://localhost:5173/register/role" class="btn-connecta-pill">
+        Hire Talent!
+      </a>
+    </div>
+  </header>
+
+  <!-- ── 2. REACH US HERO SECTION ── -->
+  <section class="contact-hero-section">
+    <div class="container">
+      <div class="contact-sub-label">Get in Touch</div>
+      <h1 class="contact-main-title">
+        Reach Us Today
+      </h1>
+      <p class="contact-subtitle-desc">
+        Have questions about Connecta AI, Milestone Contracts, or hiring top African tech visionaries? Send us a message and our team will get back to you shortly.
+      </p>
+
+      <!-- ── 3. CONTACT FORM & INFO GRID ── -->
+      <div class="contact-grid-container">
+        
+        <!-- Left Info Cards -->
+        <div class="contact-info-stack">
+        <!-- Contact Card 1: Email -->
+        <div class="contact-info-card">
+          <div class="info-card-icon"><i data-lucide="mail" style="width: 24px; height: 24px;"></i></div>
+          <div class="info-card-title">Email Us</div>
+          <div class="info-card-detail"><a href="mailto:hello@myconnecta.ng" style="color: inherit; text-decoration: none;">hello@myconnecta.ng</a></div>
+        </div>
+
+        <!-- Contact Card 2: Phone / Support -->
+        <div class="contact-info-card">
+          <div class="info-card-icon"><i data-lucide="phone" style="width: 24px; height: 24px;"></i></div>
+          <div class="info-card-title">Call Us</div>
+          <div class="info-card-detail">+234 (0) 800 CONNECTA</div>
+        </div>
+
+        <!-- Contact Card 3: Location -->
+        <div class="contact-info-card">
+          <div class="info-card-icon"><i data-lucide="map-pin" style="width: 24px; height: 24px;"></i></div>
+          <div class="info-card-title">Visit Us</div>
+          <div class="info-card-detail">Connecta HQ,<br>Kano, Nigeria</div>
+        </div>
+
+          <div class="contact-info-card">
+            <div class="info-icon-box">
+              <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+            <div>
+              <div class="info-card-title">Support Hours</div>
+              <div class="info-card-detail">24/7 Priority Desk Support</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Contact Form Card -->
+        <div class="contact-form-card">
+          <form onsubmit="event.preventDefault(); alert('Thank you for contacting Connecta! We will respond within 24 hours.');">
+            
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" class="form-input" placeholder="e.g. Layla Abbas" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" class="form-input" placeholder="name@company.com" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Subject</label>
+              <input type="text" class="form-input" placeholder="Hiring developers, Escrow inquiry, etc." required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Your Message</label>
+              <textarea class="form-textarea" placeholder="Tell us how we can help you..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn-send-message">
+              Send Message
+            </button>
+
+          </form>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 4. MODERN MINIMALIST FOOTER ── -->
+  <footer class="site-footer">
+    <div class="footer-grid-overlay"></div>
+    <div class="container">
+      
+      <div class="footer-top-grid">
+        
+        <!-- Brand Column -->
+        <div class="footer-brand-col">
+          <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <img src="connecta_logo.png" alt="Connecta Logo" style="height: 38px; width: auto;">
+          </a>
+          <p class="footer-brand-desc">
+            Connecta is an AI-powered freelance marketplace connecting talented African tech professionals with clients worldwide. We make finding top talent or the perfect gig simple, fast, and rewarding.
+          </p>
+          <div class="footer-socials-row">
+            <a href="https://x.com/Connectainc" target="_blank" class="social-icon-btn"><i data-lucide="twitter" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.facebook.com/profile.php?id=61583324766005" target="_blank" class="social-icon-btn"><i data-lucide="facebook" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://www.instagram.com/connecta_inc" target="_blank" class="social-icon-btn"><i data-lucide="instagram" style="width: 18px; height: 18px;"></i></a>
+            <a href="https://github.com" target="_blank" class="social-icon-btn"><i data-lucide="github" style="width: 18px; height: 18px;"></i></a>
+          </div>
+        </div>
+
+        <!-- Quick Links Column -->
+        <div>
+          <h4 class="footer-col-title">Platform</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="jobs.html">Find Jobs</a></li>
+            <li class="footer-link-item"><a href="ai.html">Connecta AI Copilot</a></li>
+            <li class="footer-link-item"><a href="about.html">About Us</a></li>
+            <li class="footer-link-item"><a href="contact.html">Reach Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources Column -->
+        <div>
+          <h4 class="footer-col-title">Resources</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Freelancer Portal</a></li>
+            <li class="footer-link-item"><a href="http://localhost:5173/login">Client Portal</a></li>
+            <li class="footer-link-item"><a href="escrow.html">Paystack Escrow Guide</a></li>
+            <li class="footer-link-item"><a href="contact.html">Help Center</a></li>
+          </ul>
+        </div>
+
+        <!-- Contact Column -->
+        <div class="footer-contact-info">
+          <h4 class="footer-col-title">Reach Us</h4>
+          <p><i data-lucide="mail" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> hello@myconnecta.ng</p>
+          <p><i data-lucide="phone" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> +234 (0) 800 CONNECTA</p>
+          <p><i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--connecta-orange);"></i> Connecta HQ, Kano, Nigeria</p>
+        </div>
+
+      </div>
+
+      <!-- Footer Bottom Bar -->
+      <div class="footer-bottom-bar">
+        <div>© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</div>
+        <div class="footer-bottom-links">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="security.html">Security</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
