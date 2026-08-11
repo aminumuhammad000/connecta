@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Camera, Building2, Globe, DollarSign, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
+import { Camera, Building2, Globe, DollarSign, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
