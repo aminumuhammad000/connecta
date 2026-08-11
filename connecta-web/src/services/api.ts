@@ -2,7 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 import { storage } from '../utils/storage';
 import type { ApiResponse, User } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
