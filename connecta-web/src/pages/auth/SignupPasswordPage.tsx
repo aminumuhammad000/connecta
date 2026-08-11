@@ -106,7 +106,7 @@ export const SignupPasswordPage: React.FC = () => {
         if (res.user.userType === 'freelancer') {
           navigate('/register/sector');
         } else {
-          navigate('/client/dashboard');
+          navigate('/register/client-industry');
         }
       } else {
         toastError('Registration Failed', res.message || 'Could not create account');
