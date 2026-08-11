@@ -4,7 +4,6 @@ import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
 import { ShieldCheck, ArrowRight, ScrollText } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import confetti from 'canvas-confetti';
 
