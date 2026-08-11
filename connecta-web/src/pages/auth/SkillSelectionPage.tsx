@@ -1,29 +1,38 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Search, Check, Plus, X, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, Check, Plus, X, ArrowRight, Sparkles, Filter } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-
-const POPULAR_SKILLS = [
-  'React.js', 'React Native', 'Node.js', 'TypeScript', 'Python',
-  'UI/UX Design', 'Figma', 'Graphic Design', 'Tailwind CSS', 'Next.js',
-  'MongoDB', 'PostgreSQL', 'Flutter', 'Android / Kotlin', 'iOS / Swift',
-  'Content Writing', 'Copywriting', 'SEO Marketing', 'Data Analysis', 'Docker'
-];
+import { SECTORS } from './SectorSelectionPage';
 
 export const SkillSelectionPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
+
+  // Get initial sector from search query param or sessionStorage
+  const initialSectorId = searchParams.get('sector') || sessionStorage.getItem('selected_sector') || 'tech';
+  const [activeSectorId, setActiveSectorId] = useState<string>(initialSectorId);
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>(user?.skills || []);
   const [searchQuery, setSearchQuery] = useState('');
   const [customSkill, setCustomSkill] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Active sector data
+  const currentSector = useMemo(() => {
+    return SECTORS.find((s) => s.id === activeSectorId) || SECTORS[0];
+  }, [activeSectorId]);
+
+  // Combined pool of available skills for the active sector
+  const availableSkills = useMemo(() => {
+    return currentSector.popularSkills;
+  }, [currentSector]);
 
   const toggleSkill = (skill: string) => {
     if (selectedSkills.includes(skill)) {
@@ -70,7 +79,7 @@ export const SkillSelectionPage: React.FC = () => {
     }
   };
 
-  const filteredSkills = POPULAR_SKILLS.filter((s) =>
+  const filteredSkills = availableSkills.filter((s) =>
     s.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -80,7 +89,7 @@ export const SkillSelectionPage: React.FC = () => {
 
       <main style={{
         flex: 1,
-        maxWidth: '760px',
+        maxWidth: '820px',
         margin: '0 auto',
         padding: '50px 24px 80px',
         width: '100%',
@@ -94,7 +103,7 @@ export const SkillSelectionPage: React.FC = () => {
           style={{ padding: '40px 32px' }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -113,8 +122,59 @@ export const SkillSelectionPage: React.FC = () => {
               What are your top skills?
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              Select skills to help Connecta match you with relevant client jobs ({selectedSkills.length}/15 selected)
+              Showing top skills for <strong>{currentSector.name}</strong> ({selectedSkills.length}/15 selected)
             </p>
+          </div>
+
+          {/* Sector Category Filter Tabs */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              marginBottom: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <Filter size={13} /> Filter by Sector:
+            </div>
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '8px',
+              scrollbarWidth: 'thin'
+            }}>
+              {SECTORS.map((sector) => {
+                const isActive = activeSectorId === sector.id;
+                return (
+                  <button
+                    key={sector.id}
+                    onClick={() => {
+                      setActiveSectorId(sector.id);
+                      sessionStorage.setItem('selected_sector', sector.id);
+                    }}
+                    style={{
+                      whiteSpace: 'nowrap',
+                      padding: '7px 14px',
+                      borderRadius: 'var(--radius-full)',
+                      background: isActive ? 'var(--primary)' : 'var(--bg-secondary)',
+                      color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                      border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                      fontWeight: isActive ? 700 : 500,
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      transition: 'var(--transition-fast)'
+                    }}
+                  >
+                    {sector.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Search bar & Add Custom Skill */}
@@ -123,7 +183,7 @@ export const SkillSelectionPage: React.FC = () => {
               <Search className="input-icon-left" size={18} />
               <input
                 type="text"
-                placeholder="Search skills..."
+                placeholder={`Search ${currentSector.name} skills...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="input-field"
@@ -157,7 +217,7 @@ export const SkillSelectionPage: React.FC = () => {
               marginBottom: '28px'
             }}>
               <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px' }}>
-                SELECTED SKILLS:
+                SELECTED SKILLS ({selectedSkills.length}):
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {selectedSkills.map((skill) => (

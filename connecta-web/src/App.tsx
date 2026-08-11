@@ -11,6 +11,7 @@ import { OnboardingScreen } from './pages/auth/OnboardingScreen';
 import { RoleSelectionPage } from './pages/auth/RoleSelectionPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { SignupPasswordPage } from './pages/auth/SignupPasswordPage';
+import { SectorSelectionPage } from './pages/auth/SectorSelectionPage';
 import { SkillSelectionPage } from './pages/auth/SkillSelectionPage';
 import { FreelancerProfileSetupPage } from './pages/auth/FreelancerProfileSetupPage';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -49,6 +50,7 @@ export const App: React.FC = () => {
                 <Route path="/register/role" element={<RoleSelectionPage />} />
                 <Route path="/register" element={<SignupPage />} />
                 <Route path="/register/password" element={<SignupPasswordPage />} />
+                <Route path="/register/sector" element={<SectorSelectionPage />} />
                 <Route path="/register/skills" element={<SkillSelectionPage />} />
                 <Route path="/register/profile-setup" element={<FreelancerProfileSetupPage />} />
                 <Route path="/login" element={<LoginPage />} />

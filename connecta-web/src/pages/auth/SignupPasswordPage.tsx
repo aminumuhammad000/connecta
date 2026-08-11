@@ -104,7 +104,7 @@ export const SignupPasswordPage: React.FC = () => {
         sessionStorage.removeItem('signup_step1');
 
         if (res.user.userType === 'freelancer') {
-          navigate('/register/skills');
+          navigate('/register/sector');
         } else {
           navigate('/client/dashboard');
         }
