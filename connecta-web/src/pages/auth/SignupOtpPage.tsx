@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Mail, KeyRound, ArrowRight, ShieldCheck, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
+import { KeyRound, ArrowRight, ShieldCheck, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { PageArtwork } from '../../components/common/PageArtwork';
 import { authAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
