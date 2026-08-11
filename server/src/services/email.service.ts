@@ -102,14 +102,16 @@ export const sendOTPEmail = async (
       title: title,
       subject: subject,
       content: `
-        <p>${greeting}</p>
-        <p>${message}</p>
-        <div style="background: #f8f9fa; border: 2px solid #FD6730; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">${codeLabel}</p>
-          <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #FD6730; margin: 10px 0;">${otp}</div>
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">${validLabel}</p>
+        <p style="font-size: 16px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">${greeting}</p>
+        <p style="color: #475569; font-size: 15px; margin-bottom: 24px;">${message}</p>
+        
+        <div class="otp-box">
+          <p style="margin: 0 0 6px; color: #64748B; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${codeLabel}</p>
+          <div class="otp-code">${otp}</div>
+          <p style="margin: 6px 0 0; color: #94A3B8; font-size: 13px;">⏱️ ${validLabel}</p>
         </div>
-        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px;">
+
+        <div class="notice-banner">
           <strong>${ignoreLabel}</strong> ${ignoreMsg}
         </div>
       `
