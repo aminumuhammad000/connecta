@@ -8,6 +8,9 @@ import { ToastProvider } from './contexts/ToastContext';
 // Pages
 import { LandingPage } from './pages/auth/LandingPage';
 import { OnboardingScreen } from './pages/auth/OnboardingScreen';
+import { RoleSelectionPage } from './pages/auth/RoleSelectionPage';
+import { SignupPage } from './pages/auth/SignupPage';
+import { SignupPasswordPage } from './pages/auth/SignupPasswordPage';
 import { SectorSelectionPage } from './pages/auth/SectorSelectionPage';
 import { SkillSelectionPage } from './pages/auth/SkillSelectionPage';
 import { CountryCurrencyPage } from './pages/auth/CountryCurrencyPage';
