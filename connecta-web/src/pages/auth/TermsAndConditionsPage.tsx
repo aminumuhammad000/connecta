@@ -9,7 +9,6 @@ import { useToast } from '../../contexts/ToastContext';
 import confetti from 'canvas-confetti';
 
 export const TermsAndConditionsPage: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { success, error } = useToast();
 
