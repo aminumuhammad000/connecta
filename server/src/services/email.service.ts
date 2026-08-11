@@ -105,13 +105,13 @@ export const sendOTPEmail = async (
         <p style="font-size: 16px; font-weight: 600; color: #0F172A; margin-bottom: 8px;">${greeting}</p>
         <p style="color: #475569; font-size: 15px; margin-bottom: 24px;">${message}</p>
         
-        <div class="otp-box">
+        <div class="otp-display-box">
           <p style="margin: 0 0 6px; color: #64748B; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${codeLabel}</p>
-          <div class="otp-code">${otp}</div>
+          <div class="otp-number">${otp}</div>
           <p style="margin: 6px 0 0; color: #94A3B8; font-size: 13px;">⏱️ ${validLabel}</p>
         </div>
 
-        <div class="notice-banner">
+        <div class="notice-callout">
           <strong>${ignoreLabel}</strong> ${ignoreMsg}
         </div>
       `
