@@ -20,6 +20,7 @@ import { ClientIndustryPage } from './pages/auth/ClientIndustryPage';
 import { ClientGoalsPage } from './pages/auth/ClientGoalsPage';
 import { ClientProfileSetupPage } from './pages/auth/ClientProfileSetupPage';
 import { ProfileSetupProgressPage } from './pages/auth/ProfileSetupProgressPage';
+import { TermsAndConditionsPage } from './pages/auth/TermsAndConditionsPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ClientDashboardPage } from './pages/dashboard/ClientDashboardPage';
@@ -65,6 +66,7 @@ export const App: React.FC = () => {
                 <Route path="/register/client-goals" element={<ClientGoalsPage />} />
                 <Route path="/register/client-profile-setup" element={<ClientProfileSetupPage />} />
                 <Route path="/register/setup-progress" element={<ProfileSetupProgressPage />} />
+                <Route path="/register/terms" element={<TermsAndConditionsPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 

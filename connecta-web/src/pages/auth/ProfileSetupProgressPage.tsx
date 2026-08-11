@@ -50,11 +50,7 @@ export const ProfileSetupProgressPage: React.FC = () => {
       });
 
       setTimeout(() => {
-        if (user?.userType === 'client') {
-          navigate('/client/dashboard');
-        } else {
-          navigate('/freelancer/dashboard');
-        }
+        navigate('/register/terms');
       }, 800);
     }, duration);
 
