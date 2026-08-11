@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { ShieldCheck, FileText, CheckCircle2, ArrowRight, AlertCircle, ScrollText } from 'lucide-react';
+import { ShieldCheck, ArrowRight, ScrollText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import confetti from 'canvas-confetti';
@@ -11,7 +11,7 @@ import confetti from 'canvas-confetti';
 export const TermsAndConditionsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toastSuccess, toastError } = useToast();
+  const { success, error } = useToast();
 
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -40,11 +40,11 @@ export const TermsAndConditionsPage: React.FC = () => {
 
   const handleAccept = () => {
     if (!hasScrolledToBottom) {
-      toastError('Scroll Required', 'Please scroll down and read the terms before accepting');
+      error('Scroll Required', 'Please scroll down and read the terms before accepting');
       return;
     }
     if (!agreed) {
-      toastError('Agreement Required', 'Please check the box to accept the Terms and Conditions');
+      error('Agreement Required', 'Please check the box to accept the Terms and Conditions');
       return;
     }
 
@@ -54,7 +54,7 @@ export const TermsAndConditionsPage: React.FC = () => {
       origin: { y: 0.6 }
     });
 
-    toastSuccess('Terms Accepted', 'Welcome to Connecta!');
+    success('Terms Accepted', 'Welcome to Connecta!');
 
     if (user?.userType === 'client') {
       navigate('/client/dashboard');
