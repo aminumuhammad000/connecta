@@ -14,188 +14,73 @@ export const getBaseTemplate = (options: EmailTemplateOptions) => {
     const heroBanner = bannerUrl || 'https://myconnecta.ng/email_banner.jpg';
 
     return `
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${subject || title}</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #F8FAFC;
-            color: #1E293B;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-        }
-        .email-outer-wrapper {
-            width: 100%;
-            background-color: #F8FAFC;
-            padding: 40px 16px;
-            box-sizing: border-box;
-        }
-        .top-logo-bar {
-            text-align: center;
-            padding-bottom: 24px;
-        }
-        .top-logo-img {
-            height: 38px;
-            width: auto;
-            vertical-align: middle;
-        }
-        .top-logo-text {
-            font-size: 26px;
-            font-weight: 800;
-            color: #0F172A;
-            vertical-align: middle;
-            margin-left: 8px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .email-card {
-            max-width: 580px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02);
-            border: 1px solid #E2E8F0;
-        }
-        .hero-banner-wrap {
-            width: 100%;
-            overflow: hidden;
-            background: #FD6730;
-        }
-        .hero-banner-img {
-            width: 100%;
-            height: auto;
-            display: block;
-            border: none;
-        }
-        .card-body {
-            padding: 40px 36px;
-            background: #ffffff;
-        }
-        .email-heading {
-            color: #0F172A;
-            font-size: 24px;
-            margin: 0 0 20px;
-            font-weight: 800;
-            letter-spacing: -0.3px;
-        }
-        .body-text {
-            color: #475569;
-            font-size: 15px;
-            line-height: 1.65;
-        }
-        .otp-display-box {
-            background: linear-gradient(135deg, #FFF7F5 0%, #FFF0EC 100%);
-            border: 2px dashed #FD6730;
-            border-radius: 14px;
-            padding: 24px 20px;
-            text-align: center;
-            margin: 28px 0;
-        }
-        .otp-number {
-            font-size: 40px;
-            font-weight: 800;
-            letter-spacing: 12px;
-            color: #FD6730;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 6px 0;
-            text-indent: 12px;
-        }
-        .cta-wrap {
-            margin: 32px 0 12px;
-            text-align: left;
-        }
-        .btn-cta {
-            background: linear-gradient(135deg, #FD6730 0%, #E5521B 100%);
-            color: #ffffff !important;
-            padding: 14px 36px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 15px;
-            display: inline-block;
-            box-shadow: 0 4px 14px rgba(253, 103, 48, 0.35);
-        }
-        .notice-callout {
-            background-color: #FEF3C7;
-            border-left: 4px solid #F59E0B;
-            padding: 14px 16px;
-            margin: 24px 0 0;
-            border-radius: 8px;
-            color: #78350F;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-        .card-footer {
-            padding: 28px 24px;
-            text-align: center;
-            color: #94A3B8;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-        .card-footer a {
-            color: #FD6730;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        @media only screen and (max-width: 480px) {
-            .email-outer-wrapper {
-                padding: 16px 8px;
-            }
-            .card-body {
-                padding: 28px 20px;
-            }
-            .otp-number {
-                font-size: 32px;
-                letter-spacing: 8px;
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="email-outer-wrapper">
-        {/* Top Centered Logo */}
-        <div class="top-logo-bar">
-            <a href="https://myconnecta.ng" style="text-decoration: none;">
-                <img src="https://myconnecta.ng/icon.png" alt="Connecta Logo" class="top-logo-img" />
-                <span class="top-logo-text">Connecta</span>
-            </a>
-        </div>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 40px 16px;">
+        <tr>
+            <td align="center">
+                <!-- Top Centered Logo -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin-bottom: 24px;">
+                    <tr>
+                        <td align="center">
+                            <a href="https://myconnecta.ng" style="text-decoration: none; display: inline-block;">
+                                <img src="https://myconnecta.ng/icon.png" alt="Connecta Logo" width="38" height="38" style="vertical-align: middle; border: 0; outline: none; text-decoration: none;" />
+                                <span style="font-size: 26px; font-weight: 800; color: #0F172A; vertical-align: middle; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Connecta</span>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
 
-        {/* Main Card */}
-        <div class="email-card">
-            {/* Hero Illustration Banner */}
-            <div class="hero-banner-wrap">
-                <img src="${heroBanner}" alt="Connecta Welcome Banner" class="hero-banner-img" />
-            </div>
+                <!-- Main Email Card -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 20px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);">
+                    <!-- Hero Banner -->
+                    <tr>
+                        <td align="center" style="background-color: #FD6730; line-height: 0;">
+                            <a href="https://myconnecta.ng" style="text-decoration: none;">
+                                <img src="${heroBanner}" alt="Connecta Banner" width="580" style="width: 100%; max-width: 580px; height: auto; display: block; border: 0;" />
+                            </a>
+                        </td>
+                    </tr>
 
-            {/* Card Content Area */}
-            <div class="card-body">
-                <h1 class="email-heading">${title}</h1>
-                <div class="body-text">
-                    ${content}
-                </div>
-                
-                ${actionUrl ? `
-                <div class="cta-wrap">
-                    <a href="${actionUrl}" class="btn-cta">${actionText || 'Get Started'}</a>
-                </div>
-                ` : ''}
-            </div>
-        </div>
+                    <!-- Card Body -->
+                    <tr>
+                        <td style="padding: 40px 36px; background-color: #ffffff;">
+                            <h1 style="color: #0F172A; font-size: 24px; margin: 0 0 20px 0; font-weight: 800; letter-spacing: -0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${title}</h1>
+                            <div style="color: #475569; font-size: 15px; line-height: 1.65; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                                ${content}
+                            </div>
+                            
+                            ${actionUrl ? `
+                            <table border="0" cellpadding="0" cellspacing="0" style="margin-top: 32px;">
+                                <tr>
+                                    <td align="left" style="border-radius: 12px; background-color: #FD6730;">
+                                        <a href="${actionUrl}" target="_blank" style="font-size: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; text-decoration: none; border-radius: 12px; padding: 14px 36px; border: 1px solid #FD6730; display: inline-block; font-weight: 700;">${actionText || 'Get Started'}</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            ` : ''}
+                        </td>
+                    </tr>
+                </table>
 
-        {/* Outer Clean Footer */}
-        <div class="card-footer">
-            <p>Sent by Connecta Inc. • <a href="https://myconnecta.ng">Check our blog</a> • <a href="https://myconnecta.ng">@connecta_inc</a></p>
-            <p>Suite 3-4, Gidan Saude, Beside First Bank, Zoo Road, Kano, Nigeria</p>
-        </div>
-    </div>
+                <!-- Footer -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin-top: 28px;">
+                    <tr>
+                        <td align="center" style="color: #94A3B8; font-size: 13px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            <p style="margin: 0 0 8px 0;">Sent by Connecta Inc. • <a href="https://myconnecta.ng" style="color: #FD6730; text-decoration: none; font-weight: 600;">Check our blog</a> • <a href="https://myconnecta.ng" style="color: #FD6730; text-decoration: none; font-weight: 600;">@connecta_inc</a></p>
+                            <p style="margin: 0;">Suite 3-4, Gidan Saude, Beside First Bank, Zoo Road, Kano, Nigeria</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
   `;
