@@ -55,12 +55,7 @@ export const TermsAndConditionsPage: React.FC = () => {
     });
 
     success('Terms Accepted', 'Welcome to Connecta!');
-
-    if (user?.userType === 'client') {
-      navigate('/client/dashboard');
-    } else {
-      navigate('/freelancer/dashboard');
-    }
+    navigate('/register/setup-progress');
   };
 
   return (

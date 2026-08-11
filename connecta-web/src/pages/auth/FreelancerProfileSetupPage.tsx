@@ -111,8 +111,8 @@ export const FreelancerProfileSetupPage: React.FC = () => {
       const res = await authAPI.updateMe(payload);
       if (res.success && res.data) {
         updateUser(res.data);
-        // Redirect to animated loader setup progress page
-        navigate('/register/setup-progress');
+        // Redirect to mandatory Terms and Conditions page before dashboard
+        navigate('/register/terms');
       } else {
         toastError('Failed', res.message || 'Could not save profile details');
       }
