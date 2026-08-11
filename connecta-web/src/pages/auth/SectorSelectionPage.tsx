@@ -117,15 +117,21 @@ export const SectorSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const { error: toastError } = useToast();
   const [selectedSector, setSelectedSector] = useState<string>('');
+  const [customSectorName, setCustomSectorName] = useState<string>('');
 
   const handleContinue = () => {
     if (!selectedSector) {
       toastError('Select a Sector', 'Please select your primary professional sector to continue');
       return;
     }
+    const finalSector = selectedSector === 'other' ? customSectorName.trim() : selectedSector;
+    if (selectedSector === 'other' && !finalSector) {
+      toastError('Specify Sector', 'Please enter your custom sector name');
+      return;
+    }
     // Save chosen sector in sessionStorage for skill filtering
-    sessionStorage.setItem('selected_sector', selectedSector);
-    navigate(`/register/skills?sector=${selectedSector}`);
+    sessionStorage.setItem('selected_sector', finalSector);
+    navigate(`/register/skills?sector=${encodeURIComponent(finalSector)}`);
   };
 
   return (
@@ -176,7 +182,7 @@ export const SectorSelectionPage: React.FC = () => {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
             gap: '16px',
-            marginBottom: '36px'
+            marginBottom: '24px'
           }}>
             {SECTORS.map((sector) => {
               const isSelected = selectedSector === sector.id;
@@ -250,14 +256,94 @@ export const SectorSelectionPage: React.FC = () => {
                 </motion.div>
               );
             })}
+
+            {/* Other Sector Option */}
+            <motion.div
+              whileHover={{ scale: 1.02, translateY: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSelectedSector('other')}
+              style={{
+                padding: '20px',
+                borderRadius: 'var(--radius-lg)',
+                background: selectedSector === 'other' ? 'var(--grad-glow)' : 'var(--bg-secondary)',
+                border: selectedSector === 'other' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'var(--transition-fast)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div>
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: selectedSector === 'other' ? 'var(--primary)' : 'rgba(253, 103, 48, 0.1)',
+                  color: selectedSector === 'other' ? '#ffffff' : 'var(--primary)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  marginBottom: '14px'
+                }}>
+                  <Sparkles size={24} />
+                </div>
+
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>
+                  Other Sector
+                </h3>
+
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                  Enter your custom field manually if not listed above.
+                </p>
+              </div>
+
+              {selectedSector === 'other' && (
+                <div style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  background: 'var(--primary)',
+                  color: '#fff',
+                  display: 'grid',
+                  placeItems: 'center'
+                }}>
+                  <Check size={14} />
+                </div>
+              )}
+            </motion.div>
           </div>
+
+          {/* Custom Sector Input */}
+          {selectedSector === 'other' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              style={{ marginBottom: '28px' }}
+            >
+              <div className="form-group">
+                <label className="form-label">Specify Your Sector *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Legal Services, Real Estate, Solar Engineering..."
+                  value={customSectorName}
+                  onChange={(e) => setCustomSectorName(e.target.value)}
+                  className="input-field no-icon"
+                />
+              </div>
+            </motion.div>
+          )}
 
           {/* Continue Button */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleContinue}
-            disabled={!selectedSector}
+            disabled={!selectedSector || (selectedSector === 'other' && !customSectorName.trim())}
             className="btn-primary"
             style={{ width: '100%', padding: '16px', fontSize: '1rem' }}
           >

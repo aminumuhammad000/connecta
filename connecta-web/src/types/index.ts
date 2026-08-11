@@ -18,6 +18,9 @@ export interface User {
   location?: string;
   hourlyRate?: number;
   yearsOfExperience?: number;
+  country?: string;
+  currency?: string;
+  workType?: 'freelancing' | 'permanent';
   portfolioLinks?: string[];
   createdAt?: string;
 }

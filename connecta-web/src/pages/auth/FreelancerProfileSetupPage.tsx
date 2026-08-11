@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Camera, Briefcase, DollarSign, Clock, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
+import { Camera, Briefcase, Clock, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -13,9 +13,10 @@ export const FreelancerProfileSetupPage: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
 
-  const [title, setTitle] = useState(user?.title || '');
+  // Clear prefilled dummy title so input comes as empty
+  const [title, setTitle] = useState('');
   const [bio, setBio] = useState(user?.bio || '');
-  const [hourlyRate, setHourlyRate] = useState<number | string>(user?.hourlyRate || '');
+  const [workType, setWorkType] = useState<'freelancing' | 'permanent'>('freelancing');
   const [yearsOfExperience, setYearsOfExperience] = useState<number | string>(user?.yearsOfExperience || '');
   const [profileImage, setProfileImage] = useState<string>(user?.profileImage || '');
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -32,34 +33,51 @@ export const FreelancerProfileSetupPage: React.FC = () => {
 
     setUploadingImage(true);
     try {
+      // 1. Try server API upload endpoint
       const res = await authAPI.uploadFile(file);
-      if (res.success && res.data?.url) {
-        setProfileImage(res.data.url);
-        toastSuccess('Photo Uploaded!', 'Your profile picture has been updated');
-      } else {
-        toastError('Upload failed', res.message || 'Could not upload image');
+      if (res && (res.success || res.data?.url)) {
+        const imageUrl = res.data?.url || (res as any).url;
+        if (imageUrl) {
+          setProfileImage(imageUrl);
+          toastSuccess('Photo Uploaded!', 'Your profile picture has been updated');
+          setUploadingImage(false);
+          return;
+        }
       }
+      throw new Error('Server returned invalid file structure');
     } catch {
-      toastError('Upload Error', 'Failed to upload image to server');
-    } finally {
-      setUploadingImage(false);
+      // 2. Client-side Base64 fallback if server upload route is unavailable
+      try {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            setProfileImage(reader.result as string);
+            toastSuccess('Photo Uploaded!', 'Your profile picture has been attached');
+          }
+          setUploadingImage(false);
+        };
+        reader.readAsDataURL(file);
+      } catch {
+        toastError('Upload Error', 'Could not read image file. Please try another image.');
+        setUploadingImage(false);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !bio || !hourlyRate) {
-      toastError('Missing Information', 'Please fill in Title, Bio, and Hourly Rate');
+    if (!title || !bio || !workType) {
+      toastError('Missing Information', 'Please fill in Title, Bio, and select Work Type');
       return;
     }
 
     setSubmitting(true);
     try {
       const payload: any = {
-        title,
-        bio,
-        hourlyRate: Number(hourlyRate),
+        title: title.trim(),
+        bio: bio.trim(),
+        workType,
         yearsOfExperience: Number(yearsOfExperience || 0),
         profileImage
       };
@@ -67,8 +85,8 @@ export const FreelancerProfileSetupPage: React.FC = () => {
       const res = await authAPI.updateMe(payload);
       if (res.success && res.data) {
         updateUser(res.data);
-        toastSuccess('Profile Complete!', 'Welcome to your Freelancer Dashboard');
-        navigate('/freelancer/dashboard');
+        // Redirect to animated loader setup progress page
+        navigate('/register/setup-progress');
       } else {
         toastError('Failed', res.message || 'Could not save profile details');
       }
@@ -118,7 +136,7 @@ export const FreelancerProfileSetupPage: React.FC = () => {
               Build Your Freelancer Bio
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              Clients look at your title, bio, and hourly rate when reviewing proposals
+              Clients look at your title, bio, and work preference when reviewing proposals
             </p>
           </div>
 
@@ -180,7 +198,7 @@ export const FreelancerProfileSetupPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Senior Full-Stack Mobile & Web Engineer"
+                  placeholder="e.g. Software Engineer, UI/UX Designer..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="input-field"
@@ -188,24 +206,57 @@ export const FreelancerProfileSetupPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Hourly Rate & Years Experience */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {/* Work Type & Years Experience */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
+              {/* Work Type Choice */}
               <div className="form-group">
-                <label className="form-label">Hourly Rate (₦) *</label>
-                <div className="input-wrapper">
-                  <DollarSign className="input-icon-left" size={18} />
-                  <input
-                    type="number"
-                    required
-                    min="500"
-                    placeholder="e.g. 10000"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(e.target.value)}
-                    className="input-field"
-                  />
+                <label className="form-label">Work Type Preference *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setWorkType('freelancing')}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: 'var(--radius-md)',
+                      background: workType === 'freelancing' ? 'var(--grad-glow)' : 'var(--bg-secondary)',
+                      border: workType === 'freelancing' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                      color: workType === 'freelancing' ? 'var(--primary)' : 'var(--text-secondary)',
+                      fontWeight: workType === 'freelancing' ? 700 : 500,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {workType === 'freelancing' && <Check size={14} />} Freelancing
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWorkType('permanent')}
+                    style={{
+                      padding: '10px 8px',
+                      borderRadius: 'var(--radius-md)',
+                      background: workType === 'permanent' ? 'var(--grad-glow)' : 'var(--bg-secondary)',
+                      border: workType === 'permanent' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                      color: workType === 'permanent' ? 'var(--primary)' : 'var(--text-secondary)',
+                      fontWeight: workType === 'permanent' ? 700 : 500,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    {workType === 'permanent' && <Check size={14} />} Permanent Job
+                  </button>
                 </div>
               </div>
 
+              {/* Years Experience */}
               <div className="form-group">
                 <label className="form-label">Years Experience</label>
                 <div className="input-wrapper">
@@ -247,7 +298,7 @@ export const FreelancerProfileSetupPage: React.FC = () => {
               {submitting ? (
                 <><Loader2 size={18} className="animate-spin" /> Saving Profile...</>
               ) : (
-                <>Finish & Open Dashboard <CheckCircle2 size={18} /></>
+                <>Next <ArrowRight size={18} /></>
               )}
             </motion.button>
           </form>

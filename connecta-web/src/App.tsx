@@ -8,12 +8,11 @@ import { ToastProvider } from './contexts/ToastContext';
 // Pages
 import { LandingPage } from './pages/auth/LandingPage';
 import { OnboardingScreen } from './pages/auth/OnboardingScreen';
-import { RoleSelectionPage } from './pages/auth/RoleSelectionPage';
-import { SignupPage } from './pages/auth/SignupPage';
-import { SignupPasswordPage } from './pages/auth/SignupPasswordPage';
 import { SectorSelectionPage } from './pages/auth/SectorSelectionPage';
 import { SkillSelectionPage } from './pages/auth/SkillSelectionPage';
+import { CountryCurrencyPage } from './pages/auth/CountryCurrencyPage';
 import { FreelancerProfileSetupPage } from './pages/auth/FreelancerProfileSetupPage';
+import { ProfileSetupProgressPage } from './pages/auth/ProfileSetupProgressPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ClientDashboardPage } from './pages/dashboard/ClientDashboardPage';
@@ -52,7 +51,9 @@ export const App: React.FC = () => {
                 <Route path="/register/password" element={<SignupPasswordPage />} />
                 <Route path="/register/sector" element={<SectorSelectionPage />} />
                 <Route path="/register/skills" element={<SkillSelectionPage />} />
+                <Route path="/register/country-currency" element={<CountryCurrencyPage />} />
                 <Route path="/register/profile-setup" element={<FreelancerProfileSetupPage />} />
+                <Route path="/register/setup-progress" element={<ProfileSetupProgressPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 

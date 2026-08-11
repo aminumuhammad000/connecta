@@ -67,8 +67,8 @@ export const SkillSelectionPage: React.FC = () => {
       const res = await authAPI.updateMe({ skills: selectedSkills });
       if (res.success && res.data) {
         updateUser(res.data);
-        toastSuccess('Skills Saved!', 'Now let\'s set up your profile details');
-        navigate('/register/profile-setup');
+        toastSuccess('Skills Saved!', 'Now let\'s select your country and preferred currency');
+        navigate('/register/country-currency');
       } else {
         toastError('Failed', res.message || 'Could not save skills');
       }
