@@ -613,19 +613,6 @@ export const verifyOTP = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }
 };
-      success: true,
-      message: "OTP verified successfully",
-      resetToken
-    });
-  } catch (err) {
-    console.error('Verify OTP error:', err);
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err
-    });
-  }
-};
 
 // ===================
 // Reset Password
