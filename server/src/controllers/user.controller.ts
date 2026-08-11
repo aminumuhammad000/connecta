@@ -566,7 +566,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const verifyOTP = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
-    console.log(`📩 [Auth] Forgot password OTP verification for: ${email} | OTP Received: ${otp}`);
+    console.log(`📩 [Auth] OTP verification for: ${email} | OTP Received: ${otp}`);
 
     if (!email || !otp) {
       return res.status(400).json({
@@ -575,25 +575,23 @@ export const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    // Find user
+    // Find user (optional for pre-signup verification)
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+
+    // Find OTP record by email or userId
+    const otpQuery: any = { otp };
+    if (user) {
+      otpQuery.$or = [{ userId: user._id }, { email }];
+    } else {
+      otpQuery.email = email;
     }
 
-    // Find OTP
-    const otpRecord = await OTP.findOne({
-      $or: [{ userId: user._id }, { email: user.email }],
-      otp,
-    }).sort({ createdAt: -1 });
+    const otpRecord = await OTP.findOne(otpQuery).sort({ createdAt: -1 });
 
     if (!otpRecord) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP"
+        message: "Invalid OTP code"
       });
     }
 
@@ -602,22 +600,19 @@ export const verifyOTP = async (req: Request, res: Response) => {
       await OTP.deleteOne({ _id: otpRecord._id });
       return res.status(400).json({
         success: false,
-        message: "OTP has expired. Please request a new one."
+        message: "OTP has expired. Please request a new code."
       });
     }
 
-    // Mark OTP as verified
-    otpRecord.verified = true;
-    await otpRecord.save();
-
-    // Generate reset token (valid for 15 minutes)
-    const resetToken = jwt.sign(
-      { userId: user._id, otpId: otpRecord._id },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "15m" }
-    );
-
     res.status(200).json({
+      success: true,
+      message: "OTP verified successfully"
+    });
+  } catch (err: any) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err });
+  }
+};
       success: true,
       message: "OTP verified successfully",
       resetToken
