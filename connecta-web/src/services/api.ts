@@ -49,6 +49,11 @@ export const authAPI = {
     return data;
   },
 
+  initiateSignup: async (email: string, firstName?: string) => {
+    const { data } = await apiClient.post<ApiResponse>('/api/users/initiate-signup', { email, firstName });
+    return data;
+  },
+
   signup: async (userData: {
     firstName: string;
     lastName: string;

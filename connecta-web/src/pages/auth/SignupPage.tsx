@@ -82,7 +82,9 @@ export const SignupPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toastError('Required Fields Missing', 'Please fill in First Name, Last Name, and Email');
@@ -94,12 +96,24 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
-    sessionStorage.setItem('signup_step1', JSON.stringify({
-      ...formData,
-      userType: roleQuery
-    }));
-
-    navigate(`/register/password?role=${roleQuery}`);
+    setSubmitting(true);
+    try {
+      // Trigger backend OTP email generation
+      const res = await authAPI.initiateSignup(formData.email, formData.firstName);
+      if (res.success) {
+        sessionStorage.setItem('signup_step1', JSON.stringify({
+          ...formData,
+          userType: roleQuery
+        }));
+        navigate(`/register/otp?role=${roleQuery}`);
+      } else {
+        toastError('Failed', res.message || 'Could not send verification OTP code');
+      }
+    } catch (err: any) {
+      toastError('Error', err.response?.data?.message || err.message || 'Failed to send OTP code');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -245,10 +259,15 @@ export const SignupPage: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
+              disabled={submitting || emailStatus === 'invalid' || emailChecking}
               className="btn-primary"
               style={{ width: '100%', padding: '14px', marginTop: '6px', fontSize: '0.98rem' }}
             >
-              Continue <ArrowRight size={18} />
+              {submitting ? (
+                <><Loader2 size={18} className="animate-spin" /> Sending Verification Code...</>
+              ) : (
+                <>Send Verification OTP <ArrowRight size={18} /></>
+              )}
             </motion.button>
           </form>
 

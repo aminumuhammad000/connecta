@@ -84,6 +84,7 @@ export const SignupPasswordPage: React.FC = () => {
         phoneNumber: step1Data.phoneNumber || '',
         whatsapp: step1Data.whatsapp || '',
         userType: step1Data.userType || roleQuery || 'freelancer',
+        otp: step1Data.otpCode || ''
       };
 
       console.log('Sending signup payload:', payload);
