@@ -5,8 +5,8 @@ import { Job } from '../models/Job.model.js';
 import Proposal from '../models/Proposal.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Transaction from '../models/Transaction.model.js';
-import Message from '../models/message.model.js';
-import Conversation from '../models/conversation.model.js';
+import Message from '../models/Message.model.js';
+import Conversation from '../models/Conversation.model.js';
 
 dotenv.config();
 

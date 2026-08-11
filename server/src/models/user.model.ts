@@ -9,6 +9,13 @@ export interface IUser extends Document {
   phoneNumber?: string;
   password: string;
   profileImage?: string;
+  title?: string;
+  bio?: string;
+  location?: string;
+  skills?: string[];
+  country?: string;
+  currency?: string;
+  workType?: 'freelancing' | 'permanent';
   isActive?: boolean;
   isVerified?: boolean;
   pushToken?: string;
@@ -36,9 +43,12 @@ const UserSchema: Schema<IUser> = new Schema(
     phoneNumber: { type: String, unique: true, sparse: true },
     password: { type: String, required: true },
     profileImage: { type: String, required: false },
-    title: { type: String, required: false, default: 'Senior Software Engineer' },
+    title: { type: String, required: false, default: '' },
     bio: { type: String, required: false },
     location: { type: String, required: false, default: 'Lagos, Nigeria' },
+    country: { type: String, required: false },
+    currency: { type: String, required: false },
+    workType: { type: String, enum: ['freelancing', 'permanent'], required: false },
     skills: [{ type: String }],
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
