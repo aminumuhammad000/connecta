@@ -134,6 +134,11 @@ export const authAPI = {
     return data;
   },
 
+  getFreelancers: async (params?: { search?: string; skills?: string; limit?: number }) => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>('/api/users/freelancers', { params });
+    return data;
+  },
+
   createOffer: async (offerData: any) => {
     const { data } = await apiClient.post<ApiResponse>('/api/contracts/offer', offerData);
     return data;
