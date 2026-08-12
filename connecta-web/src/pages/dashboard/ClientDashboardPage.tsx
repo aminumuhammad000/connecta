@@ -341,7 +341,7 @@ export const ClientDashboardPage: React.FC = () => {
                   {/* Footer Actions */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
                     <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <UserCheck size={14} /> 3 Proposals Submitted
+                      <UserCheck size={14} /> {job.proposalsCount ?? job.proposalCount ?? (Array.isArray(job.proposals) ? job.proposals.length : 0)} Proposals Submitted
                     </span>
                     <motion.button
                       whileHover={{ scale: 1.02 }}

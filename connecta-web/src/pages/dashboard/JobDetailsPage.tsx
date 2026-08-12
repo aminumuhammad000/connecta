@@ -1,25 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, MapPin, CheckCircle2, DollarSign, Briefcase, Calendar,
-  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck
+  ArrowLeft, MapPin, DollarSign, Briefcase, Calendar,
+  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare, Video
 } from 'lucide-react';
 import { jobAPI, proposalAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { formatJobBudget } from '../../utils/currency';
+import { VerifiedBadge } from '../../components/common/VerifiedBadge';
+import { EmploymentOfferModal } from '../../components/modals/EmploymentOfferModal';
+import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
 
 export const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { showToast } = useToast();
+  const isClient = user?.userType === 'client';
 
   const [job, setJob] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
-  // Proposal modal state
+  // Client Received Proposals State
+  const [proposals, setProposals] = useState<any[]>([]);
+  const [loadingProposals, setLoadingProposals] = useState(false);
+  const [selectedProposalId, setSelectedProposalId] = useState<string>('');
+  const [selectedCandidateName, setSelectedCandidateName] = useState<string>('');
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [activeCallParticipant, setActiveCallParticipant] = useState<{ name: string; role?: string }>({ name: '' });
+
+  // Proposal modal state for Freelancers
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [bidAmount, setBidAmount] = useState<number>(0);
   const [estimatedDays, setEstimatedDays] = useState<number>(14);
@@ -36,19 +51,41 @@ export const JobDetailsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await jobAPI.getJobById(jobId);
+      let loadedJob = null;
       if (res.success && res.data) {
-        setJob(res.data);
-        setBidAmount(res.data.budget || 100000);
-        setEstimatedDays(res.data.duration || 14);
+        loadedJob = res.data;
       } else if (res && (res as any)._id) {
-        setJob(res);
-        setBidAmount((res as any).budget || 100000);
-        setEstimatedDays((res as any).duration || 14);
+        loadedJob = res;
+      }
+
+      if (loadedJob) {
+        setJob(loadedJob);
+        setBidAmount(loadedJob.budget || 1000);
+        setEstimatedDays(loadedJob.duration || 14);
+
+        // Fetch proposals for this job if user is a client or owner
+        fetchJobProposals(jobId);
       }
     } catch (err) {
       console.error('Failed to load job details:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchJobProposals = async (jobId: string) => {
+    setLoadingProposals(true);
+    try {
+      const res = await proposalAPI.getProposalsByJobId(jobId);
+      if (res?.success && Array.isArray(res.data)) {
+        setProposals(res.data);
+      } else if (Array.isArray(res)) {
+        setProposals(res);
+      }
+    } catch (err) {
+      console.error('Error fetching job proposals:', err);
+    } finally {
+      setLoadingProposals(false);
     }
   };
 
@@ -78,6 +115,17 @@ export const JobDetailsPage: React.FC = () => {
     }
   };
 
+  const handleAcceptProposal = async (proposalId: string) => {
+    try {
+      await proposalAPI.acceptProposal(proposalId);
+      showToast('Proposal accepted! Employment contract agreement created.', 'success');
+      fetchJobProposals(id || job._id);
+    } catch (err: any) {
+      console.error('Failed to accept proposal:', err);
+      showToast(err.response?.data?.message || 'Failed to accept proposal.', 'error');
+    }
+  };
+
   return (
     <DashboardLayout>
       {/* Back Button */}
@@ -99,53 +147,35 @@ export const JobDetailsPage: React.FC = () => {
             transition: 'all 0.2s ease',
           }}
         >
-          <ArrowLeft size={16} /> Back to Jobs
+          <ArrowLeft size={16} /> Back to Listings
         </button>
       </div>
 
       {loading ? (
-        <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={28} className="animate-spin" style={{ margin: '0 auto 12px' }} />
-          <span>Loading project details...</span>
+        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <Loader2 size={32} className="animate-spin" style={{ margin: '0 auto 12px' }} />
+          <div>Loading listing details...</div>
         </div>
       ) : !job ? (
-        <div className="glass-card" style={{ padding: '40px', textAlign: 'center', borderRadius: '18px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px' }}>Project not found</h3>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-            The requested job posting may have been closed or removed.
-          </p>
-          <button onClick={() => navigate('/freelancer/dashboard')} className="btn-primary" style={{ padding: '10px 20px' }}>
-            Explore Other Jobs
-          </button>
+        <div className="glass-card" style={{ padding: '40px', textAlign: 'center' }}>
+          <h3>Job Listing Not Found</h3>
+          <p style={{ color: 'var(--text-secondary)' }}>The requested job listing may have been removed or closed.</p>
         </div>
       ) : (
-        <div className="grid-responsive-2" style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: '28px' }}>
-
-          {/* Left Main Details Column */}
+        <div style={{ display: 'grid', gridTemplateColumns: isClient ? '1fr' : '2fr 1fr', gap: '24px' }}>
+          {/* Main Job Details Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               className="glass-card"
-              style={{
-                padding: '32px',
-                borderRadius: '24px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--card-bg)',
-              }}
+              style={{ padding: '32px', borderRadius: '24px', border: '1px solid var(--border-color)' }}
             >
-              {/* Category Pill & Verified Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, padding: '4px 12px', borderRadius: '8px', background: 'rgba(253,103,48,0.09)', color: 'var(--primary)' }}>
-                    {job.category || 'Software Development'}
-                  </span>
-                  {job.paymentVerified && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 700, background: 'rgba(253,103,48,0.08)', padding: '4px 12px', borderRadius: '20px' }}>
-                      <CheckCircle2 size={13} strokeWidth={2.5} /> Verified Payment
-                    </span>
-                  )}
-                </div>
+              {/* Category & Save Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, padding: '4px 12px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', textTransform: 'uppercase' }}>
+                  {job.category || 'Technology'}
+                </span>
 
                 <button
                   onClick={() => setIsSaved(!isSaved)}
@@ -203,7 +233,7 @@ export const JobDetailsPage: React.FC = () => {
                   </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {job.location || 'Remote'}</span>
-                    <span>• Active Client</span>
+                    <span>• Active Verified Client</span>
                   </div>
                 </div>
               </div>
@@ -212,7 +242,7 @@ export const JobDetailsPage: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
                 <div style={{ background: 'var(--bg-secondary)', padding: '16px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <DollarSign size={14} color="var(--primary)" /> Fixed Budget
+                    <DollarSign size={14} color="var(--primary)" /> Budget / Salary
                   </div>
                   <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary)', marginTop: '4px' }}>
                     {formatJobBudget(Number(job.budget || 0), job.currency)}
@@ -221,18 +251,18 @@ export const JobDetailsPage: React.FC = () => {
 
                 <div style={{ background: 'var(--bg-secondary)', padding: '16px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Briefcase size={14} color="var(--primary)" /> Job Type
+                    <Briefcase size={14} color="var(--primary)" /> Contract Model
                   </div>
-                  <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px', textTransform: 'capitalize' }}>
-                    {job.budgetType || 'Fixed Price'}
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px', textTransform: 'capitalize' }}>
+                    {job.jobType === 'full_time_contract' ? 'Full-Time Permanent' : job.jobType === 'collabo_squad' ? 'Collabo Squad' : 'Milestone Gig'}
                   </div>
                 </div>
 
                 <div style={{ background: 'var(--bg-secondary)', padding: '16px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Calendar size={14} color="var(--primary)" /> Delivery Time
+                    <Calendar size={14} color="var(--primary)" /> {job.jobType === 'full_time_contract' ? 'Start Window' : 'Timeframe'}
                   </div>
-                  <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '6px' }}>
                     {job.duration || 14} days
                   </div>
                 </div>
@@ -241,18 +271,32 @@ export const JobDetailsPage: React.FC = () => {
               {/* Full Description */}
               <div style={{ marginBottom: '28px' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>
-                  Project Description
+                  Project Scope & Deliverables
                 </h3>
                 <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   {job.description}
                 </p>
               </div>
 
+              {/* Requirements */}
+              {job.requirements && job.requirements.length > 0 && (
+                <div style={{ marginBottom: '28px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '10px', color: 'var(--text-primary)' }}>
+                    Key Job Requirements
+                  </h3>
+                  <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                    {job.requirements.map((req: string, idx: number) => (
+                      <li key={idx}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Skills */}
               {job.skills && job.skills.length > 0 && (
                 <div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-primary)' }}>
-                    Skills & Required Expertise
+                    Required Sector Skills
                   </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {job.skills.map((skill: string, idx: number) => (
@@ -264,26 +308,204 @@ export const JobDetailsPage: React.FC = () => {
                 </div>
               )}
             </motion.div>
+
+            {/* ================= CLIENT PROPOSAL REVIEW SECTION ================= */}
+            {isClient && (
+              <div className="glass-card" style={{ padding: '32px', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                      Submitted Candidate Proposals ({proposals.length})
+                    </h2>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+                      Review profiles, cover letters, proposed bids, and interview talent for this role.
+                    </p>
+                  </div>
+
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, padding: '6px 14px', borderRadius: '12px', background: 'rgba(16,185,129,0.1)', color: 'var(--success)' }}>
+                    Live Applicants: {proposals.length}
+                  </span>
+                </div>
+
+                {loadingProposals ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                    <div>Loading candidate proposals...</div>
+                  </div>
+                ) : proposals.length === 0 ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '16px', color: 'var(--text-muted)' }}>
+                    <UserCheck size={36} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
+                    <h4 style={{ margin: '0 0 6px', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700 }}>No Proposals Submitted Yet</h4>
+                    <p style={{ margin: 0, fontSize: '0.86rem' }}>
+                      Candidate proposals will appear here automatically as talent applies to your listing.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {proposals.map((p) => {
+                      const candidate = p.freelancerId || {};
+                      const candidateName = `${candidate.firstName || 'Talent'} ${candidate.lastName || 'Professional'}`;
+
+                      return (
+                        <motion.div
+                          key={p._id}
+                          whileHover={{ y: -2 }}
+                          style={{
+                            background: 'var(--bg-secondary)',
+                            borderRadius: '18px',
+                            padding: '24px',
+                            border: '1px solid var(--border-color)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '16px'
+                          }}
+                        >
+                          {/* Candidate Header Profile */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
+                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                              <img
+                                src={candidate.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=FD6730&color=fff`}
+                                alt={candidateName}
+                                style={{ width: '54px', height: '54px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+                              />
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                                    {candidateName}
+                                  </h4>
+                                  <VerifiedBadge tier={candidate.verificationTier || (candidate.isVerified ? 'vetted_pro' : 'community')} />
+                                </div>
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
+                                  {candidate.jobTitle || candidate.userType || 'African Tech Professional'} • {candidate.location || 'Lagos, Nigeria'}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#F59E0B', fontWeight: 700 }}>
+                                    <Star size={12} fill="#F59E0B" /> {candidate.rating || '4.9'}
+                                  </span>
+                                  <span>• 100% Success Score</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Candidate Proposed Bid */}
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>
+                                {formatJobBudget(p.bidAmount || p.proposedRate || 0, job.currency)}
+                              </div>
+                              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                                Timeframe: {p.estimatedDays || 14} Days
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Proposal Cover Letter */}
+                          <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <h5 style={{ margin: '0 0 6px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                              Candidate Cover Letter & Pitch
+                            </h5>
+                            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.55 }}>
+                              {p.coverLetter || p.description}
+                            </p>
+                          </div>
+
+                          {/* Candidate Skill Chips */}
+                          {Array.isArray(candidate.skills) && candidate.skills.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                              {candidate.skills.map((sk: string) => (
+                                <span key={sk} style={{ fontSize: '0.74rem', padding: '4px 10px', borderRadius: '12px', background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                  {sk}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
+                            <button
+                              onClick={() => {
+                                setActiveCallParticipant({ name: candidateName, role: candidate.jobTitle });
+                                setShowCallModal(true);
+                              }}
+                              style={{
+                                padding: '9px 16px',
+                                borderRadius: '10px',
+                                border: '1px solid var(--border-color)',
+                                background: 'var(--bg-tertiary)',
+                                color: 'var(--text-primary)',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <Video size={14} color="var(--primary)" /> Screening Call
+                            </button>
+
+                            <button
+                              onClick={() => navigate(`/messages?user=${candidate._id || p.freelancerId}`)}
+                              style={{
+                                padding: '9px 16px',
+                                borderRadius: '10px',
+                                border: '1px solid var(--border-color)',
+                                background: 'var(--bg-tertiary)',
+                                color: 'var(--text-primary)',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                            >
+                              <MessageSquare size={14} /> Message
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedProposalId(p._id);
+                                setSelectedCandidateName(candidateName);
+                                if (p.status !== 'accepted') {
+                                  handleAcceptProposal(p._id);
+                                }
+                                setShowOfferModal(true);
+                              }}
+                              className="btn-primary"
+                              style={{ padding: '9px 20px', borderRadius: '10px', fontWeight: 700, fontSize: '0.82rem' }}
+                            >
+                              {p.status === 'accepted' ? 'Send Official Offer' : 'Hire Candidate'}
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Right Action Panel */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div className="glass-card" style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Submit Proposal</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '20px' }}>
-                Interested in this project? Submit your proposal directly to the client with your bid and delivery timeline.
-              </p>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setShowApplyModal(true)}
-                className="btn-primary"
-                style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 700, justifyContent: 'center' }}
-              >
-                Apply Now <ArrowUpRight size={18} />
-              </motion.button>
+          {/* Right Action Panel for Freelancers */}
+          {!isClient && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div className="glass-card" style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Submit Proposal</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '20px' }}>
+                  Interested in this project? Submit your proposal directly to the client with your bid and delivery timeline.
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setShowApplyModal(true)}
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 700, justifyContent: 'center' }}
+                >
+                  Apply Now <ArrowUpRight size={18} />
+                </motion.button>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       )}
@@ -318,17 +540,17 @@ export const JobDetailsPage: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                  Submit Project Proposal
+                  Submit Your Proposal
                 </h2>
-                <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                  Job: {job?.title}
-                </span>
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
+                  {job?.title}
+                </p>
               </div>
               <button
                 onClick={() => setShowApplyModal(false)}
-                style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
               >
-                <X size={16} />
+                <X size={20} />
               </button>
             </div>
 
@@ -345,8 +567,9 @@ export const JobDetailsPage: React.FC = () => {
                     required
                   />
                 </div>
+
                 <div>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Estimated Delivery (Days)</label>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Estimated Timeframe (Days)</label>
                   <input
                     type="number"
                     value={estimatedDays}
@@ -359,10 +582,10 @@ export const JobDetailsPage: React.FC = () => {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Cover Letter & Proposal Pitch</label>
+                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Cover Letter & Work Approach</label>
                 <textarea
                   rows={5}
-                  placeholder="Explain why you are the best fit for this project, past relevant experience, and your proposed implementation approach..."
+                  placeholder="Explain why you are the best fit for this project, past relevant experience, and key deliverables..."
                   value={coverLetter}
                   onChange={(e) => setCoverLetter(e.target.value)}
                   className="input-field"
@@ -371,11 +594,11 @@ export const JobDetailsPage: React.FC = () => {
                 />
               </div>
 
-              <div style={{ background: 'rgba(16,185,129,0.08)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--success)', fontWeight: 600 }}>
-                <ShieldCheck size={16} /> 100% Protected Escrow Payment upon Milestone Acceptance
+              <div style={{ background: 'rgba(16,185,129,0.08)', padding: '12px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.82rem', color: 'var(--success)', fontWeight: 600 }}>
+                <ShieldCheck size={16} /> 100% Escrow Protection attached to all milestone releases.
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '10px' }}>
                 <button
                   type="button"
                   onClick={() => setShowApplyModal(false)}
@@ -397,6 +620,28 @@ export const JobDetailsPage: React.FC = () => {
             </form>
           </motion.div>
         </div>
+      )}
+
+      {/* Employment Offer Letter Generator Modal */}
+      {showOfferModal && (
+        <EmploymentOfferModal
+          isOpen={showOfferModal}
+          onClose={() => setShowOfferModal(false)}
+          proposalId={selectedProposalId || ''}
+          freelancerName={selectedCandidateName || 'Candidate'}
+          jobTitle={job?.title || 'Job Listing'}
+          defaultSalary={job?.budget || 2500}
+        />
+      )}
+
+      {/* Screening Video Call Modal */}
+      {showCallModal && (
+        <ScreeningCallModal
+          isOpen={showCallModal}
+          onClose={() => setShowCallModal(false)}
+          participantName={activeCallParticipant.name}
+          participantRole={activeCallParticipant.role}
+        />
       )}
     </DashboardLayout>
   );
