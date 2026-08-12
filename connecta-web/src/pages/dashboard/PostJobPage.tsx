@@ -454,17 +454,27 @@ export const PostJobPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                   <div>
                     <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                      Delivery Timeframe (Days)
+                      {jobType === 'full_time_contract' ? 'Expected Start Within (Days)' : 'Delivery Timeframe (Days)'}
                     </label>
                     <input
                       type="number"
                       required
                       min="1"
+                      placeholder={jobType === 'full_time_contract' ? '7' : '30'}
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       className="input-field"
                       style={{ width: '100%' }}
                     />
+                    {jobType === 'full_time_contract' ? (
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                        Ongoing full-time job. How soon should the hired employee start?
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                        Estimated days to complete and deliver project scope.
+                      </span>
+                    )}
                   </div>
 
                   <div>
