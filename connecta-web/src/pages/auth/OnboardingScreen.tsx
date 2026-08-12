@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,6 +13,8 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { storage } from '../../utils/storage';
 import { Logo } from '../../components/common/Logo';
 import { PageArtwork } from '../../components/common/PageArtwork';
 
@@ -56,12 +58,35 @@ export const OnboardingScreen: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // If logged in, redirect straight to dashboard
+    if (isAuthenticated && user) {
+      if (user.userType === 'client') {
+        navigate('/client/dashboard', { replace: true });
+      } else {
+        navigate('/freelancer/dashboard', { replace: true });
+      }
+      return;
+    }
+
+    // If user has already completed/seen onboarding before, skip directly to role selection / signup
+    if (storage.hasSeenOnboarding()) {
+      navigate('/register/role', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  const handleFinishOnboarding = () => {
+    storage.setHasSeenOnboarding(true);
+    navigate('/register/role');
+  };
 
   const nextSlide = () => {
     if (currentSlide < SLIDES.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      navigate('/register/role');
+      handleFinishOnboarding();
     }
   };
 
@@ -255,7 +280,7 @@ export const OnboardingScreen: React.FC = () => {
         {/* Skip Link */}
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
           <button
-            onClick={() => navigate('/register/role')}
+            onClick={handleFinishOnboarding}
             style={{
               background: 'none',
               border: 'none',

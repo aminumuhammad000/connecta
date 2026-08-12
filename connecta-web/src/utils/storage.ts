@@ -2,6 +2,7 @@ const TOKEN_KEY = 'connecta_token';
 const USER_KEY = 'connecta_user';
 const ROLE_KEY = 'connecta_role';
 const THEME_KEY = 'connecta_theme';
+const ONBOARDING_KEY = 'connecta_onboarding_completed';
 
 export const storage = {
   getToken: (): string | null => {
@@ -46,6 +47,13 @@ export const storage = {
   },
   setTheme: (theme: 'light' | 'dark'): void => {
     localStorage.setItem(THEME_KEY, theme);
+  },
+
+  hasSeenOnboarding: (): boolean => {
+    return localStorage.getItem(ONBOARDING_KEY) === 'true';
+  },
+  setHasSeenOnboarding: (seen: boolean = true): void => {
+    localStorage.setItem(ONBOARDING_KEY, seen ? 'true' : 'false');
   },
 
   clearAll: (): void => {
