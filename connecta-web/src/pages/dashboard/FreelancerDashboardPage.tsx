@@ -8,11 +8,14 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
-import { jobAPI, walletAPI, proposalAPI } from '../../services/api';
+import { jobAPI, proposalAPI, walletAPI } from '../../services/api';
+import { formatJobBudget } from '../../utils/currency';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 export const FreelancerDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { formatDualPrice } = useCurrency();
 
   const [jobs, setJobs] = useState<any[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
@@ -191,7 +194,7 @@ export const FreelancerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            ₦{Number(wallet?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            {formatDualPrice(Number(wallet?.balance ?? 0))}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--success)', marginTop: '2px', display: 'block', fontWeight: 600 }}>Available for withdrawal</span>
         </motion.div>
@@ -370,7 +373,7 @@ export const FreelancerDashboardPage: React.FC = () => {
                         </motion.button>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.01em' }}>
-                            ₦{Number(job.budget || 0).toLocaleString()}
+                            {formatJobBudget(Number(job.budget || 0), job.currency)}
                           </div>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                             {job.budgetType || 'fixed price'}
@@ -607,7 +610,7 @@ export const FreelancerDashboardPage: React.FC = () => {
                   <DollarSign size={13} color="var(--primary)" /> Budget
                 </div>
                 <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)', marginTop: '2px' }}>
-                  ₦{Number(selectedJob.budget || 0).toLocaleString()}
+                  {formatJobBudget(Number(selectedJob.budget || 0), selectedJob.currency)}
                 </div>
               </div>
 

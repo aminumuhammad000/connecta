@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Bookmark, Building2, MapPin, CheckCircle2, ArrowUpRight, Clock, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../../services/api';
+import { formatJobBudget } from '../../utils/currency';
 
 export const SavedGigsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -113,7 +114,7 @@ export const SavedGigsPage: React.FC = () => {
                   </button>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>
-                      ₦{Number(job.budget || 0).toLocaleString()}
+                      {formatJobBudget(Number(job.budget || 0), job.currency)}
                     </div>
                   </div>
                 </div>

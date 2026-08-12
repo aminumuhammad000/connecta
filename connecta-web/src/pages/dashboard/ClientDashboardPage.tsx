@@ -9,10 +9,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
 import { jobAPI, walletAPI, proposalAPI } from '../../services/api';
+import { formatJobBudget } from '../../utils/currency';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 export const ClientDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { formatDualPrice } = useCurrency();
 
   const [myJobs, setMyJobs] = useState<any[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
@@ -209,7 +212,7 @@ export const ClientDashboardPage: React.FC = () => {
             </div>
           </div>
           <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            ₦{Number(wallet?.escrowBalance || wallet?.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            {formatDualPrice(Number(wallet?.escrowBalance ?? wallet?.balance ?? 0))}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
             <CheckCircle2 size={12} /> 100% Protected
@@ -322,7 +325,7 @@ export const ClientDashboardPage: React.FC = () => {
 
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.01em' }}>
-                        ₦{Number(job.budget || 0).toLocaleString()}
+                        {formatJobBudget(Number(job.budget || 0), job.currency)}
                       </div>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                         {job.budgetType || 'fixed price'}

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { proposalAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import { formatJobBudget } from '../../utils/currency';
 
 export const ProposalDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -218,7 +219,7 @@ export const ProposalDetailsPage: React.FC = () => {
                     <DollarSign size={14} color="var(--primary)" /> Proposed Bid Amount
                   </span>
                   <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', marginTop: '6px' }}>
-                    ₦{Number(proposal.bidAmount || proposal.proposedRate || 450000).toLocaleString()}
+                    {formatJobBudget(Number(proposal.bidAmount || proposal.proposedRate || 0), proposal.jobId?.currency)}
                   </div>
                 </div>
 

@@ -57,3 +57,13 @@ export const formatDualCurrency = (amountInUSD: number, userCurrencyCode: string
 
   return `${primaryUSD} (~${secondaryFormatted})`;
 };
+
+/**
+ * Format job budget respecting the job's chosen currency code
+ */
+export const formatJobBudget = (budget: number, jobCurrency?: string): string => {
+  const code = (jobCurrency && jobCurrency.toUpperCase() in SUPPORTED_CURRENCIES)
+    ? jobCurrency.toUpperCase()
+    : 'USD';
+  return formatCurrency(budget, code);
+};

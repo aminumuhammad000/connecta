@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Briefcase, Search, ArrowUpRight, PlusCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI } from '../../services/api';
+import { formatJobBudget } from '../../utils/currency';
 
 export const ClientProjectsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -153,7 +154,7 @@ export const ClientProjectsPage: React.FC = () => {
 
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end', flexShrink: 0 }}>
                 <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>
-                  ₦{Number(p.budget || 0).toLocaleString()}
+                  {formatJobBudget(Number(p.budget || 0), p.currency)}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {p.status === 'completed' && (

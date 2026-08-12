@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FileText, Clock, CheckCircle2, XCircle, Loader2, ArrowUpRight, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { proposalAPI } from '../../services/api';
+import { formatJobBudget } from '../../utils/currency';
 
 export const MyProposalsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -88,7 +89,7 @@ export const MyProposalsPage: React.FC = () => {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--primary)' }}>
-                    ₦{Number(item.bidAmount || 0).toLocaleString()}
+                    {formatJobBudget(Number(item.bidAmount || 0), item.jobId?.currency)}
                   </div>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Your Bid</span>
                 </div>
