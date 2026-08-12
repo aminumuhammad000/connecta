@@ -54,35 +54,36 @@ const io = new Server(server, {
 });
 setIO(io);
 // Middleware
-app.use(cors({
-    origin: [
-        "http://102.68.84.56",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:8081",
-        "https://myconnecta.ng",
-        "https://www.myconnecta.ng",
-        "https://admin.myconnecta.ng",
-        "https://app.myconnecta.ng",
-        "https://api.myconnecta.ng",
-        "http://172.20.10.3:5000",
-        "http://172.20.10.4",
-        "http://172.20.10.4:8081",
-        "http://172.20.10.4:5000",
-        "http://192.168.100.10",
-        "http://192.168.100.10:8081",
-        "http://192.168.100.10:5000",
-        "http://192.168.42.137",
-        "http://192.168.42.137:8081",
-        "http://192.168.42.137:5000",
-        "http://192.168.42.227",
-        "http://192.168.42.227:8081",
-        "http://192.168.42.227:5000"
-    ],
-    credentials: true
-}));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+const allowedOrigins = [
+    "http://102.68.84.56",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:8081",
+    "https://myconnecta.ng",
+    "https://www.myconnecta.ng",
+    "https://admin.myconnecta.ng",
+    "https://app.myconnecta.ng",
+    "https://api.myconnecta.ng",
+];
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl) or if origin is in whitelist
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.myconnecta.ng')) {
+            callback(null, true);
+        }
+        else {
+            callback(null, true); // Allow origin fallback for web requests
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Set-Cookie'],
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 // Connect to Database
 // Database connection moved to end of file to ensure server starts only after DB is ready

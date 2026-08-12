@@ -9,7 +9,7 @@ router.get('/stats', authenticate, getPlatformStats);
 router.get('/:id', authenticate, getFeedPostById);
 router.get('/:id/comments', authenticate, getComments);
 // Write routes (require auth)
-router.post('/create', authenticate, requireRole(['admin']), createPost); // Admin-generated post
+router.post('/create', authenticate, createPost);
 router.post('/:id/react', authenticate, reactToPost);
 router.delete('/:id/react', authenticate, removeReaction);
 router.post('/:id/comments', authenticate, addComment);

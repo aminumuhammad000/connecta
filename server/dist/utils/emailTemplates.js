@@ -1,167 +1,75 @@
 export const getBaseTemplate = (options) => {
-    const { title, content, actionUrl, actionText, subject } = options;
+    const { title, content, actionUrl, actionText, subject, bannerUrl } = options;
     const year = new Date().getFullYear();
+    const heroBanner = bannerUrl || 'https://myconnecta.ng/banner_email.jpg';
     return `
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${subject || title}</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #F7F8FC;
-            color: #333333;
-            line-height: 1.6;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-        .header {
-            background-color: #ffffff;
-            padding: 30px 20px;
-            text-align: center;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .logo-text {
-            font-size: 28px;
-            font-weight: 800;
-            color: #FD6730;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .hero {
-            padding: 40px 30px;
-            text-align: center;
-            background: linear-gradient(135deg, #fff5f2 0%, #ffffff 100%);
-        }
-        .hero h1 {
-            color: #111827;
-            font-size: 24px;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-        .content-area {
-            text-align: left;
-            color: #4B5563;
-            font-size: 16px;
-            margin-bottom: 30px;
-        }
-        .btn-container {
-            margin: 30px 0;
-            text-align: center;
-        }
-        .btn {
-            background-color: #FD6730;
-            color: #ffffff !important;
-            padding: 14px 32px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            display: inline-block;
-        }
-        .app-promo {
-            background-color: #F9FAFB;
-            padding: 30px 20px;
-            text-align: center;
-            border-top: 1px solid #f0f0f0;
-        }
-        .app-promo-title {
-            color: #111827;
-            font-weight: 600;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .app-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-        }
-        .app-btn img {
-            height: 32px;
-            width: auto;
-        }
-        .footer {
-            background-color: #ffffff;
-            padding: 30px 20px;
-            text-align: center;
-            border-top: 1px solid #f0f0f0;
-        }
-        .footer p {
-            font-size: 12px;
-            color: #9CA3AF;
-            margin: 8px 0;
-        }
-        .footer-links {
-            margin-bottom: 16px;
-        }
-        .footer-link {
-            color: #6B7280;
-            text-decoration: none;
-            font-size: 12px;
-            margin: 0 8px;
-        }
-        @media only screen and (max-width: 480px) {
-            .email-container {
-                width: 100% !important;
-                border-radius: 0;
-                margin-top: 0;
-            }
-        }
-    </style>
 </head>
-<body>
-    <div class="email-container">
-        <div class="header">
-            <a href="https://myconnecta.ng" class="logo-text">Connecta</a>
-        </div>
+<body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F8FAFC; padding: 40px 16px;">
+        <tr>
+            <td align="center">
+                <!-- Top Centered Logo -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin-bottom: 24px;">
+                    <tr>
+                        <td align="center">
+                            <a href="https://myconnecta.ng" style="text-decoration: none; display: inline-block;">
+                                <img src="https://myconnecta.ng/logo_email.png" alt="Connecta Logo" width="38" height="38" style="vertical-align: middle; border: 0; outline: none; text-decoration: none;" />
+                                <span style="font-size: 26px; font-weight: 800; color: #0F172A; vertical-align: middle; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Connecta</span>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
 
-        <div class="hero">
-            <h1>${title}</h1>
-            <div class="content-area">
-                ${content}
-            </div>
-            
-            ${actionUrl ? `
-            <div class="btn-container">
-                <a href="${actionUrl}" class="btn">${actionText || 'Click Here'}</a>
-            </div>
-            ` : ''}
-        </div>
+                <!-- Main Email Card -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #ffffff; border-radius: 20px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05);">
+                    <!-- Hero Banner -->
+                    <tr>
+                        <td align="center" style="background-color: #FD6730; line-height: 0;">
+                            <a href="https://myconnecta.ng" style="text-decoration: none;">
+                                <img src="${heroBanner}" alt="Connecta Banner" width="580" style="width: 100%; max-width: 580px; height: auto; display: block; border: 0;" />
+                            </a>
+                        </td>
+                    </tr>
 
-        <div class="app-promo">
-            <p class="app-promo-title">Experience Connecta on Mobile</p>
-            <div class="app-buttons">
-                <a href="#" class="app-btn">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store">
-                </a>
-                <a href="#" class="app-btn">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Play Store">
-                </a>
-            </div>
-        </div>
+                    <!-- Card Body -->
+                    <tr>
+                        <td style="padding: 40px 36px; background-color: #ffffff;">
+                            <h1 style="color: #0F172A; font-size: 24px; margin: 0 0 20px 0; font-weight: 800; letter-spacing: -0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${title}</h1>
+                            <div style="color: #475569; font-size: 15px; line-height: 1.65; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                                ${content}
+                            </div>
+                            
+                            ${actionUrl ? `
+                            <table border="0" cellpadding="0" cellspacing="0" style="margin-top: 32px;">
+                                <tr>
+                                    <td align="left" style="border-radius: 12px; background-color: #FD6730;">
+                                        <a href="${actionUrl}" target="_blank" style="font-size: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #ffffff; text-decoration: none; border-radius: 12px; padding: 14px 36px; border: 1px solid #FD6730; display: inline-block; font-weight: 700;">${actionText || 'Get Started'}</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            ` : ''}
+                        </td>
+                    </tr>
+                </table>
 
-        <div class="footer">
-            <div class="footer-links">
-                <a href="https://myconnecta.ng" class="footer-link">Website</a>
-                <a href="https://myconnecta.ng/privacy" class="footer-link">Privacy Policy</a>
-                <a href="https://myconnecta.ng/support" class="footer-link">Support</a>
-            </div>
-            <p>&copy; ${year} Connecta Inc. All rights reserved.</p>
-            <p>You received this email because you are a member of Connecta.</p>
-        </div>
-    </div>
+                <!-- Footer -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; margin-top: 28px;">
+                    <tr>
+                        <td align="center" style="color: #94A3B8; font-size: 13px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                            <p style="margin: 0 0 8px 0;">© 2026 Connecta. Developed by Pioneers ICT. All rights reserved.</p>
+                            <p style="margin: 0;">Suite 3-4, Gidan Saude, Beside First Bank, Zoo Road, Kano, Nigeria</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
   `;

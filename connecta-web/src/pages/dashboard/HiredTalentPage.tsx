@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Star, MapPin, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
+import { MapPin, MessageSquare, Loader2, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
 import { projectAPI } from '../../services/api';
+import { VerifiedBadge } from '../../components/common/VerifiedBadge';
+import { EmploymentOfferModal } from '../../components/modals/EmploymentOfferModal';
 
 export const HiredTalentPage: React.FC = () => {
   const navigate = useNavigate();
   const [talentList, setTalentList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTalentForOffer, setSelectedTalentForOffer] = useState<any | null>(null);
 
   useEffect(() => {
     fetchHiredTalent();
@@ -96,9 +98,9 @@ export const HiredTalentPage: React.FC = () => {
                   {t.name[0]}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)' }}>{t.name}</span>
-                    <CheckCircle2 size={14} color="var(--primary)" strokeWidth={2.5} />
+                    <VerifiedBadge tier={t.verificationTier || 'vetted_pro'} size="sm" />
                   </div>
                   <span style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 700, display: 'block' }}>{t.title}</span>
                   <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -112,10 +114,25 @@ export const HiredTalentPage: React.FC = () => {
                 <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{t.hiredFor}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F59E0B', fontWeight: 700, fontSize: '0.82rem' }}>
-                  <Star size={14} fill="#F59E0B" /> {t.rating} <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>({t.reviews} reviews)</span>
-                </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-color)', gap: '8px' }}>
+                <button
+                  onClick={() => setSelectedTalentForOffer(t)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.8rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <FileText size={14} color="var(--primary)" /> Send Full-Time Offer
+                </button>
                 <button
                   onClick={() => navigate('/messages')}
                   className="btn-primary"
@@ -127,6 +144,17 @@ export const HiredTalentPage: React.FC = () => {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {/* Full Time Employment Offer Letter Modal */}
+      {selectedTalentForOffer && (
+        <EmploymentOfferModal
+          isOpen={!!selectedTalentForOffer}
+          onClose={() => setSelectedTalentForOffer(null)}
+          proposalId={selectedTalentForOffer.id}
+          freelancerName={selectedTalentForOffer.name}
+          jobTitle={selectedTalentForOffer.title}
+        />
       )}
     </DashboardLayout>
   );

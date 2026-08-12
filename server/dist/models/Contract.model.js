@@ -40,6 +40,18 @@ const ContractSchema = new Schema({
         type: Number,
         required: true,
     },
+    contractType: {
+        type: String,
+        enum: ['milestone_gig', 'collabo_squad', 'full_time_contract'],
+        default: 'milestone_gig'
+    },
+    monthlySalaryAmount: { type: Number },
+    billingCycle: { type: String, enum: ['monthly', 'milestone'], default: 'milestone' },
+    nextBillingDate: { type: Date },
+    probationPeriodDays: { type: Number, default: 30 },
+    noticePeriodDays: { type: Number, default: 30 },
+    offerLetterUrl: { type: String },
+    currency: { type: String, default: 'USD' },
     status: {
         type: String,
         enum: ['pending', 'active', 'delivered', 'completed', 'terminated', 'disputed'],

@@ -86,16 +86,26 @@ export const sendOTPEmail = async (email, otp, userName, type = 'PASSWORD_RESET'
             title: title,
             subject: subject,
             content: `
-        <p>${greeting}</p>
-        <p>${message}</p>
-        <div style="background: #f8f9fa; border: 2px solid #FD6730; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">${codeLabel}</p>
-          <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #FD6730; margin: 10px 0;">${otp}</div>
-          <p style="margin: 0; color: #6b7280; font-size: 14px;">${validLabel}</p>
-        </div>
-        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px;">
-          <strong>${ignoreLabel}</strong> ${ignoreMsg}
-        </div>
+        <p style="font-size: 16px; font-weight: 600; color: #0F172A; margin: 0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${greeting}</p>
+        <p style="color: #475569; font-size: 15px; margin: 0 0 24px 0; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${message}</p>
+        
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFF7F5; border: 2px dashed #FD6730; border-radius: 14px; margin: 28px 0; padding: 24px 20px;">
+          <tr>
+            <td align="center">
+              <p style="margin: 0 0 6px 0; color: #64748B; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">${codeLabel}</p>
+              <div style="font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #FD6730; font-family: 'Courier New', Courier, monospace; margin: 6px 0;">${otp}</div>
+              <p style="margin: 6px 0 0 0; color: #94A3B8; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">⏱️ ${validLabel}</p>
+            </td>
+          </tr>
+        </table>
+
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 8px; margin: 24px 0 0 0; padding: 14px 16px;">
+          <tr>
+            <td style="color: #78350F; font-size: 13px; line-height: 1.5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <strong>${ignoreLabel}</strong> ${ignoreMsg}
+            </td>
+          </tr>
+        </table>
       `
         });
         const mailOptions = {

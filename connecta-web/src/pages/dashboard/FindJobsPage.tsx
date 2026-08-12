@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, Loader2 } from 'lucide-react';
+import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, Loader2, ShieldCheck, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../../services/api';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { VerificationRequestModal } from '../../components/modals/VerificationRequestModal';
 
 export const FindJobsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { formatDualPrice } = useCurrency();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [onlyVetted, setOnlyVetted] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const categories = ['All', 'Software Development', 'Design & Creative', 'Data Science & AI', 'Marketing & Sales', 'DevOps & Cloud'];
 
@@ -45,19 +50,40 @@ export const FindJobsPage: React.FC = () => {
   return (
     <DashboardLayout>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-          Find Jobs & Projects
-        </h1>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
-          Search open tech & creative opportunities posted by verified clients across Africa.
-        </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+            Find Jobs & Permanent Contracts
+          </h1>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Search milestone gigs, squad roles, & full-time contract opportunities across Africa.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowVerifyModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.1) 100%)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
+            color: '#10B981',
+            borderRadius: 'var(--radius-full)',
+            padding: '10px 18px',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer'
+          }}
+        >
+          <ShieldCheck size={18} /> Get Connecta Verified ✓
+        </button>
       </div>
 
       {/* Search Bar & Category Filters */}
       <div className="glass-card" style={{ padding: '20px', borderRadius: '18px', marginBottom: '28px', border: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-          <div className="input-wrapper" style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <div className="input-wrapper" style={{ flex: 1, minWidth: '280px' }}>
             <Search className="input-icon-left" size={18} />
             <input
               type="text"
@@ -68,6 +94,25 @@ export const FindJobsPage: React.FC = () => {
               style={{ width: '100%' }}
             />
           </div>
+
+          <button
+            onClick={() => setOnlyVetted(!onlyVetted)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: 'var(--radius-lg)',
+              border: onlyVetted ? '1px solid #10B981' : '1px solid var(--border-color)',
+              background: onlyVetted ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-secondary)',
+              color: onlyVetted ? '#10B981' : 'var(--text-secondary)',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              cursor: 'pointer'
+            }}
+          >
+            <Filter size={16} /> Show Vetted Roles Only
+          </button>
         </div>
 
         {/* Category Pills */}
@@ -149,11 +194,11 @@ export const FindJobsPage: React.FC = () => {
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>
-                    ₦{Number(job.budget || 0).toLocaleString()}
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)' }}>
+                    {formatDualPrice(Number(job.budget || 0))}
                   </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                    {job.budgetType || 'fixed price'}
+                    {job.jobType === 'full_time_contract' ? 'Monthly Salary Retainer' : (job.budgetType || 'fixed price')}
                   </span>
                 </div>
               </div>
@@ -191,6 +236,12 @@ export const FindJobsPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Candidate Verification Request Modal */}
+      <VerificationRequestModal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+      />
     </DashboardLayout>
   );
 };

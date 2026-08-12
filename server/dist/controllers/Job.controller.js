@@ -148,7 +148,7 @@ export const getJobById = async (req, res) => {
 export const createJob = async (req, res) => {
     try {
         const clientId = req.user?._id;
-        const { title, description, budget, duration, category, skills, jobType, locationType, budgetType, requirements, status, isExternal, company, location } = req.body;
+        const { title, description, budget, duration, category, skills, jobType, locationType, budgetType, requirements, status, isExternal, company, location, monthlySalaryAmount, currency, probationPeriodDays, noticePeriodDays, benefitsSummary } = req.body;
         const newJob = await Job.create({
             title,
             description,
@@ -157,14 +157,19 @@ export const createJob = async (req, res) => {
             category,
             skills,
             clientId,
-            jobType: jobType || 'freelance',
+            jobType: jobType || 'milestone_gig',
             locationType: locationType || 'remote',
             budgetType: budgetType || 'fixed',
             requirements: requirements || [],
             status: status || "active",
             isExternal: isExternal || false,
             company: company || '',
-            location: location || 'Remote'
+            location: location || 'Remote',
+            monthlySalaryAmount: monthlySalaryAmount || (jobType === 'full_time_contract' ? budget : undefined),
+            currency: currency || 'USD',
+            probationPeriodDays: probationPeriodDays || 30,
+            noticePeriodDays: noticePeriodDays || 30,
+            benefitsSummary: benefitsSummary || ''
         });
         // Notify Matched Freelancers
         try {

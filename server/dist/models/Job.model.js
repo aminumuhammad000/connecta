@@ -14,8 +14,17 @@ const JobSchema = new Schema({
     category: { type: String, required: true },
     skills: [{ type: String }],
     budgetType: { type: String, default: 'fixed' },
-    jobType: { type: String, default: 'freelance' },
+    jobType: {
+        type: String,
+        enum: ['milestone_gig', 'collabo_squad', 'full_time_contract', 'freelance', 'full-time', 'part-time', 'contract'],
+        default: 'milestone_gig'
+    },
     locationType: { type: String, default: 'remote' },
+    monthlySalaryAmount: { type: Number },
+    currency: { type: String, default: 'USD' },
+    probationPeriodDays: { type: Number, default: 30 },
+    noticePeriodDays: { type: Number, default: 30 },
+    benefitsSummary: { type: String },
     paymentVerified: { type: Boolean, default: false },
     paymentStatus: { type: String, enum: ['pending', 'escrow', 'released', 'verified'], default: 'pending' },
     requirements: [{ type: String }],

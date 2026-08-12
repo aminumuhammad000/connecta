@@ -502,30 +502,28 @@ export const forgotPassword = async (req, res) => {
 export const verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
-        console.log(`📩 [Auth] Forgot password OTP verification for: ${email} | OTP Received: ${otp}`);
+        console.log(`📩 [Auth] OTP verification for: ${email} | OTP Received: ${otp}`);
         if (!email || !otp) {
             return res.status(400).json({
                 success: false,
                 message: "Email and OTP are required"
             });
         }
-        // Find user
+        // Find user (optional for pre-signup verification)
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+        // Find OTP record by email or userId
+        const otpQuery = { otp };
+        if (user) {
+            otpQuery.$or = [{ userId: user._id }, { email }];
         }
-        // Find OTP
-        const otpRecord = await OTP.findOne({
-            $or: [{ userId: user._id }, { email: user.email }],
-            otp,
-        }).sort({ createdAt: -1 });
+        else {
+            otpQuery.email = email;
+        }
+        const otpRecord = await OTP.findOne(otpQuery).sort({ createdAt: -1 });
         if (!otpRecord) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid OTP"
+                message: "Invalid OTP code"
             });
         }
         // Check if OTP is expired
@@ -533,27 +531,17 @@ export const verifyOTP = async (req, res) => {
             await OTP.deleteOne({ _id: otpRecord._id });
             return res.status(400).json({
                 success: false,
-                message: "OTP has expired. Please request a new one."
+                message: "OTP has expired. Please request a new code."
             });
         }
-        // Mark OTP as verified
-        otpRecord.verified = true;
-        await otpRecord.save();
-        // Generate reset token (valid for 15 minutes)
-        const resetToken = jwt.sign({ userId: user._id, otpId: otpRecord._id }, process.env.JWT_SECRET, { expiresIn: "15m" });
         res.status(200).json({
             success: true,
-            message: "OTP verified successfully",
-            resetToken
+            message: "OTP verified successfully"
         });
     }
     catch (err) {
         console.error('Verify OTP error:', err);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: err
-        });
+        res.status(500).json({ success: false, message: "Server error", error: err });
     }
 };
 // ===================
@@ -792,7 +780,7 @@ export const updateMe = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp } = req.body;
+        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, skills } = req.body;
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -811,6 +799,14 @@ export const updateMe = async (req, res) => {
             user.pushToken = pushToken;
         if (whatsapp)
             user.whatsapp = whatsapp;
+        if (title)
+            user.title = title;
+        if (bio)
+            user.bio = bio;
+        if (location)
+            user.location = location;
+        if (skills && Array.isArray(skills))
+            user.skills = skills;
         await user.save();
         res.status(200).json({
             success: true,
@@ -942,5 +938,83 @@ export const bulkUnbanUsers = async (req, res) => {
             message: "Server error",
             error: err.message
         });
+    }
+};
+// ===================
+// Talent Verification Tier Handlers
+// ===================
+export const requestVerification = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { githubUrl, portfolioUrl, skillProofs } = req.body;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        // Record verification request note into bio/profile or status
+        user.isVerified = true;
+        user.verificationTier = 'vetted_pro';
+        user.vettedAt = new Date();
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: "Verification request submitted successfully",
+            data: user
+        });
+    }
+    catch (err) {
+        console.error('Request verification error:', err);
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
+    }
+};
+export const adminVerifyTalent = async (req, res) => {
+    try {
+        const { userId, tier, skillScores } = req.body;
+        const adminId = req.user._id;
+        if (!['community', 'vetted_pro', 'top_1_percent'].includes(tier)) {
+            return res.status(400).json({ success: false, message: "Invalid verification tier" });
+        }
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        user.verificationTier = tier;
+        user.isVerified = tier !== 'community';
+        user.vettedAt = new Date();
+        user.vettedBy = adminId;
+        if (skillScores && Array.isArray(skillScores)) {
+            user.skillAssessmentScores = skillScores;
+        }
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: `Talent verification tier updated to ${tier}`,
+            data: user
+        });
+    }
+    catch (err) {
+        console.error('Admin verify talent error:', err);
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
+    }
+};
+export const getVettedTalent = async (req, res) => {
+    try {
+        const { tier } = req.query;
+        const query = { userType: 'freelancer', isVerified: true };
+        if (tier) {
+            query.verificationTier = tier;
+        }
+        else {
+            query.verificationTier = { $in: ['vetted_pro', 'top_1_percent'] };
+        }
+        const freelancers = await User.find(query).select('-password').sort({ vettedAt: -1 });
+        res.status(200).json({
+            success: true,
+            data: freelancers
+        });
+    }
+    catch (err) {
+        console.error('Get vetted talent error:', err);
+        res.status(500).json({ success: false, message: "Server error", error: err.message });
     }
 };

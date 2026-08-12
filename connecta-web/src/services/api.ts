@@ -122,6 +122,21 @@ export const authAPI = {
   verifyEmail: async (token: string) => {
     const { data } = await apiClient.post<ApiResponse>('/api/users/verify-email', { token });
     return data;
+  },
+
+  requestVerification: async (payload: { githubUrl?: string; portfolioUrl?: string; skillProofs?: string }) => {
+    const { data } = await apiClient.post<ApiResponse>('/api/users/request-verification', payload);
+    return data;
+  },
+
+  getVettedTalent: async (tier?: string) => {
+    const { data } = await apiClient.get<ApiResponse>('/api/users/vetted-talent', { params: { tier } });
+    return data;
+  },
+
+  createOffer: async (offerData: any) => {
+    const { data } = await apiClient.post<ApiResponse>('/api/contracts/offer', offerData);
+    return data;
   }
 };
 

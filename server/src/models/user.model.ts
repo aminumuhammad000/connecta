@@ -18,6 +18,14 @@ export interface IUser extends Document {
   workType?: 'freelancing' | 'permanent';
   isActive?: boolean;
   isVerified?: boolean;
+  verificationTier?: 'community' | 'vetted_pro' | 'top_1_percent';
+  vettedAt?: Date;
+  vettedBy?: mongoose.Types.ObjectId;
+  skillAssessmentScores?: Array<{
+    skill: string;
+    score: number;
+    verifiedAt: Date;
+  }>;
   pushToken?: string;
   preferredLanguage?: 'en' | 'ha';
   whatsapp?: string;
@@ -52,6 +60,20 @@ const UserSchema: Schema<IUser> = new Schema(
     skills: [{ type: String }],
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
+    verificationTier: {
+      type: String,
+      enum: ['community', 'vetted_pro', 'top_1_percent'],
+      default: 'community'
+    },
+    vettedAt: { type: Date },
+    vettedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    skillAssessmentScores: [
+      {
+        skill: { type: String },
+        score: { type: Number },
+        verifiedAt: { type: Date, default: Date.now }
+      }
+    ],
     pushToken: { type: String, required: false },
     preferredLanguage: { type: String, enum: ['en', 'ha'], default: 'en' },
     whatsapp: { type: String, required: false },

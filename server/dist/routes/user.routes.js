@@ -1,8 +1,12 @@
 import express from "express";
-import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, deleteUser, createAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById } from "../controllers/user.controller.js";
+import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, deleteUser, createAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById, requestVerification, adminVerifyTalent, getVettedTalent } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
 const router = express.Router();
+// Auth & Talent Verification routes
+router.post("/request-verification", authenticate, requestVerification);
+router.post("/admin/verify-talent", authenticate, isAdmin, adminVerifyTalent);
+router.get("/vetted-talent", getVettedTalent);
 // Auth routes
 router.post("/check-email", checkEmailExists);
 router.post("/check-phone", checkPhoneExists);

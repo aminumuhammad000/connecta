@@ -12,6 +12,14 @@ export interface IContract extends Document {
   description: string;
   totalPrice: number;
   deliveryTime: number; // In days
+  contractType?: 'milestone_gig' | 'collabo_squad' | 'full_time_contract';
+  monthlySalaryAmount?: number;
+  billingCycle?: 'monthly' | 'milestone';
+  nextBillingDate?: Date;
+  probationPeriodDays?: number;
+  noticePeriodDays?: number;
+  offerLetterUrl?: string;
+  currency?: string;
   
   // Status
   status: 'pending' | 'active' | 'delivered' | 'completed' | 'terminated' | 'disputed';
@@ -70,6 +78,18 @@ const ContractSchema = new Schema<IContract>(
       type: Number,
       required: true,
     },
+    contractType: {
+      type: String,
+      enum: ['milestone_gig', 'collabo_squad', 'full_time_contract'],
+      default: 'milestone_gig'
+    },
+    monthlySalaryAmount: { type: Number },
+    billingCycle: { type: String, enum: ['monthly', 'milestone'], default: 'milestone' },
+    nextBillingDate: { type: Date },
+    probationPeriodDays: { type: Number, default: 30 },
+    noticePeriodDays: { type: Number, default: 30 },
+    offerLetterUrl: { type: String },
+    currency: { type: String, default: 'USD' },
     status: {
       type: String,
       enum: ['pending', 'active', 'delivered', 'completed', 'terminated', 'disputed'],

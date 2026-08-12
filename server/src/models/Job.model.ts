@@ -11,8 +11,13 @@ export interface IJob extends Document {
   category: string;
   skills: string[];
   budgetType?: string;
-  jobType?: string;
+  jobType?: 'milestone_gig' | 'collabo_squad' | 'full_time_contract' | string;
   locationType?: string;
+  monthlySalaryAmount?: number;
+  currency?: string;
+  probationPeriodDays?: number;
+  noticePeriodDays?: number;
+  benefitsSummary?: string;
   paymentVerified?: boolean;
   paymentStatus?: 'pending' | 'escrow' | 'released' | 'verified';
   requirements?: string[];
@@ -38,8 +43,17 @@ const JobSchema: Schema<IJob> = new Schema(
     category: { type: String, required: true },
     skills: [{ type: String }],
     budgetType: { type: String, default: 'fixed' },
-    jobType: { type: String, default: 'freelance' },
+    jobType: { 
+      type: String, 
+      enum: ['milestone_gig', 'collabo_squad', 'full_time_contract', 'freelance', 'full-time', 'part-time', 'contract'],
+      default: 'milestone_gig' 
+    },
     locationType: { type: String, default: 'remote' },
+    monthlySalaryAmount: { type: Number },
+    currency: { type: String, default: 'USD' },
+    probationPeriodDays: { type: Number, default: 30 },
+    noticePeriodDays: { type: Number, default: 30 },
+    benefitsSummary: { type: String },
     paymentVerified: { type: Boolean, default: false },
     paymentStatus: { type: String, enum: ['pending', 'escrow', 'released', 'verified'], default: 'pending' },
     requirements: [{ type: String }],

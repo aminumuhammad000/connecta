@@ -175,7 +175,12 @@ export const createJob = async (req: Request, res: Response) => {
       status,
       isExternal,
       company,
-      location
+      location,
+      monthlySalaryAmount,
+      currency,
+      probationPeriodDays,
+      noticePeriodDays,
+      benefitsSummary
     } = req.body;
 
     const newJob = await Job.create({
@@ -186,14 +191,19 @@ export const createJob = async (req: Request, res: Response) => {
       category,
       skills,
       clientId,
-      jobType: jobType || 'freelance',
+      jobType: jobType || 'milestone_gig',
       locationType: locationType || 'remote',
       budgetType: budgetType || 'fixed',
       requirements: requirements || [],
       status: status || "active",
       isExternal: isExternal || false,
       company: company || '',
-      location: location || 'Remote'
+      location: location || 'Remote',
+      monthlySalaryAmount: monthlySalaryAmount || (jobType === 'full_time_contract' ? budget : undefined),
+      currency: currency || 'USD',
+      probationPeriodDays: probationPeriodDays || 30,
+      noticePeriodDays: noticePeriodDays || 30,
+      benefitsSummary: benefitsSummary || ''
     });
 
     // Notify Matched Freelancers

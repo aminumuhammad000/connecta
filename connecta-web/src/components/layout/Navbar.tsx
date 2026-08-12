@@ -2,13 +2,16 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Sun, Moon, LogOut, LayoutDashboard } from 'lucide-react';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { SUPPORTED_CURRENCIES, type CurrencyCode } from '../../utils/currency';
+import { Sun, Moon, LogOut, LayoutDashboard, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../common/Logo';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { selectedCurrency, setSelectedCurrency } = useCurrency();
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,7 +51,43 @@ export const Navbar: React.FC = () => {
         </Link>
 
         {/* Right Action Items */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Header Currency Selector Dropdown */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-full)',
+            padding: '4px 10px',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)'
+          }}>
+            <Globe size={15} color="var(--primary)" />
+            <select
+              value={selectedCurrency}
+              onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              title="Select Display Currency"
+            >
+              {Object.values(SUPPORTED_CURRENCIES).map((c) => (
+                <option key={c.code} value={c.code} style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                  {c.flag} {c.code} ({c.symbol})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Theme Switcher */}
           <motion.button
             whileHover={{ scale: 1.05 }}

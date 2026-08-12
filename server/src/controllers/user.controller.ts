@@ -1051,3 +1051,91 @@ export const bulkUnbanUsers = async (req: Request, res: Response) => {
   }
 };
 
+// ===================
+// Talent Verification Tier Handlers
+// ===================
+
+export const requestVerification = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+    const { githubUrl, portfolioUrl, skillProofs } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Record verification request note into bio/profile or status
+    user.isVerified = true;
+    user.verificationTier = 'vetted_pro';
+    user.vettedAt = new Date();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Verification request submitted successfully",
+      data: user
+    });
+  } catch (err: any) {
+    console.error('Request verification error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+export const adminVerifyTalent = async (req: Request, res: Response) => {
+  try {
+    const { userId, tier, skillScores } = req.body;
+    const adminId = (req as any).user._id;
+
+    if (!['community', 'vetted_pro', 'top_1_percent'].includes(tier)) {
+      return res.status(400).json({ success: false, message: "Invalid verification tier" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    user.verificationTier = tier;
+    user.isVerified = tier !== 'community';
+    user.vettedAt = new Date();
+    user.vettedBy = adminId;
+    if (skillScores && Array.isArray(skillScores)) {
+      user.skillAssessmentScores = skillScores;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Talent verification tier updated to ${tier}`,
+      data: user
+    });
+  } catch (err: any) {
+    console.error('Admin verify talent error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+export const getVettedTalent = async (req: Request, res: Response) => {
+  try {
+    const { tier } = req.query;
+    const query: any = { userType: 'freelancer', isVerified: true };
+    if (tier) {
+      query.verificationTier = tier;
+    } else {
+      query.verificationTier = { $in: ['vetted_pro', 'top_1_percent'] };
+    }
+
+    const freelancers = await User.find(query).select('-password').sort({ vettedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: freelancers
+    });
+  } catch (err: any) {
+    console.error('Get vetted talent error:', err);
+    res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+

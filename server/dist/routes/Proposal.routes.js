@@ -17,8 +17,9 @@ router.get('/:id', authenticate, getProposalById);
 router.post('/', authenticate, createProposal);
 // Update proposal status (Reject only)
 router.patch('/:id/status', authenticate, updateProposalStatus);
-// Approve / Reject specialized routes (Mobile support)
+// Approve / Reject specialized routes (Mobile & Web support)
 router.put('/:id/approve', authenticate, approveProposal);
+router.put('/:id/accept', authenticate, approveProposal);
 router.put('/:id/reject', authenticate, rejectProposal);
 // Delete proposal
 router.delete('/:id', authenticate, deleteProposal);

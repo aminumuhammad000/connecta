@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { MessageSquare, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Video } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { messageAPI } from '../../services/api';
+import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
 
 export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ export const MessagesPage: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [textInput, setTextInput] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showCallModal, setShowCallModal] = useState(false);
 
   useEffect(() => {
     fetchConversations();
@@ -136,14 +138,36 @@ export const MessagesPage: React.FC = () => {
           {activeConv ? (
             <>
               {/* Chat Header */}
-              <div style={{ paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
-                  {(activeConv.participantName || 'C')[0]}
+              <div style={{ paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
+                    {(activeConv.participantName || 'C')[0]}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>{activeConv.participantName || 'Client'}</div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Online</span>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>{activeConv.participantName || 'Client'}</div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Online</span>
-                </div>
+
+                <button
+                  onClick={() => setShowCallModal(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'linear-gradient(135deg, rgba(253, 103, 48, 0.12) 0%, rgba(229, 82, 27, 0.08) 100%)',
+                    border: '1px solid rgba(253, 103, 48, 0.3)',
+                    color: 'var(--primary)',
+                    borderRadius: 'var(--radius-full)',
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Start Native 1-on-1 Video Screening Call"
+                >
+                  <Video size={16} /> Start Screening Call
+                </button>
               </div>
 
               {/* Messages History */}
@@ -195,6 +219,15 @@ export const MessagesPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Embedded Native WebRTC Video Call Screening Modal */}
+      {activeConv && (
+        <ScreeningCallModal
+          isOpen={showCallModal}
+          onClose={() => setShowCallModal(false)}
+          participantName={activeConv.participantName || 'Candidate'}
+        />
+      )}
     </DashboardLayout>
   );
 };

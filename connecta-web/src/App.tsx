@@ -21,6 +21,7 @@ import { ClientGoalsPage } from './pages/auth/ClientGoalsPage';
 import { ClientProfileSetupPage } from './pages/auth/ClientProfileSetupPage';
 import { ProfileSetupProgressPage } from './pages/auth/ProfileSetupProgressPage';
 import { TermsAndConditionsPage } from './pages/auth/TermsAndConditionsPage';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ClientDashboardPage } from './pages/dashboard/ClientDashboardPage';
@@ -47,54 +48,56 @@ export const App: React.FC = () => {
       <AuthProvider>
         <RoleProvider>
           <ToastProvider>
-            <BrowserRouter>
-              <Routes>
-                {/* Default Onboarding & Landing */}
-                <Route path="/" element={<OnboardingScreen />} />
-                <Route path="/landing" element={<LandingPage />} />
-                
-                {/* Onboarding & Auth */}
-                <Route path="/register/role" element={<RoleSelectionPage />} />
-                <Route path="/register" element={<SignupPage />} />
-                <Route path="/register/otp" element={<SignupOtpPage />} />
-                <Route path="/register/password" element={<SignupPasswordPage />} />
-                <Route path="/register/sector" element={<SectorSelectionPage />} />
-                <Route path="/register/skills" element={<SkillSelectionPage />} />
-                <Route path="/register/country-currency" element={<CountryCurrencyPage />} />
-                <Route path="/register/profile-setup" element={<FreelancerProfileSetupPage />} />
-                <Route path="/register/client-industry" element={<ClientIndustryPage />} />
-                <Route path="/register/client-goals" element={<ClientGoalsPage />} />
-                <Route path="/register/client-profile-setup" element={<ClientProfileSetupPage />} />
-                <Route path="/register/setup-progress" element={<ProfileSetupProgressPage />} />
-                <Route path="/register/terms" element={<TermsAndConditionsPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <CurrencyProvider>
+              <BrowserRouter>
+                <Routes>
+                  {/* Default Onboarding & Landing */}
+                  <Route path="/" element={<OnboardingScreen />} />
+                  <Route path="/landing" element={<LandingPage />} />
+                  
+                  {/* Onboarding & Auth */}
+                  <Route path="/register/role" element={<RoleSelectionPage />} />
+                  <Route path="/register" element={<SignupPage />} />
+                  <Route path="/register/otp" element={<SignupOtpPage />} />
+                  <Route path="/register/password" element={<SignupPasswordPage />} />
+                  <Route path="/register/sector" element={<SectorSelectionPage />} />
+                  <Route path="/register/skills" element={<SkillSelectionPage />} />
+                  <Route path="/register/country-currency" element={<CountryCurrencyPage />} />
+                  <Route path="/register/profile-setup" element={<FreelancerProfileSetupPage />} />
+                  <Route path="/register/client-industry" element={<ClientIndustryPage />} />
+                  <Route path="/register/client-goals" element={<ClientGoalsPage />} />
+                  <Route path="/register/client-profile-setup" element={<ClientProfileSetupPage />} />
+                  <Route path="/register/setup-progress" element={<ProfileSetupProgressPage />} />
+                  <Route path="/register/terms" element={<TermsAndConditionsPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-                {/* Dashboards & Jobs */}
-                <Route path="/client/dashboard" element={<ClientDashboardPage />} />
-                <Route path="/freelancer/dashboard" element={<FreelancerDashboardPage />} />
-                <Route path="/client/projects" element={<ClientProjectsPage />} />
-                <Route path="/client/talent" element={<HiredTalentPage />} />
-                <Route path="/client/reviews/new" element={<ClientWriteReviewPage />} />
-                <Route path="/jobs" element={<FindJobsPage />} />
-                <Route path="/jobs/new" element={<PostJobPage />} />
-                <Route path="/jobs/:id" element={<JobDetailsPage />} />
+                  {/* Dashboards & Jobs */}
+                  <Route path="/client/dashboard" element={<ClientDashboardPage />} />
+                  <Route path="/freelancer/dashboard" element={<FreelancerDashboardPage />} />
+                  <Route path="/client/projects" element={<ClientProjectsPage />} />
+                  <Route path="/client/talent" element={<HiredTalentPage />} />
+                  <Route path="/client/reviews/new" element={<ClientWriteReviewPage />} />
+                  <Route path="/jobs" element={<FindJobsPage />} />
+                  <Route path="/jobs/new" element={<PostJobPage />} />
+                  <Route path="/jobs/:id" element={<JobDetailsPage />} />
 
-                {/* Navigation Items */}
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="/ai-assistant" element={<AiAssistantPage />} />
-                <Route path="/proposals" element={<MyProposalsPage />} />
-                <Route path="/proposals/:id" element={<ProposalDetailsPage />} />
-                <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/wallet" element={<MyWalletPage />} />
-                <Route path="/saved-gigs" element={<SavedGigsPage />} />
-                <Route path="/settings" element={<MyProfilePage />} />
-                <Route path="/support" element={<HelpSupportPage />} />
+                  {/* Navigation Items */}
+                  <Route path="/feed" element={<FeedPage />} />
+                  <Route path="/ai-assistant" element={<AiAssistantPage />} />
+                  <Route path="/proposals" element={<MyProposalsPage />} />
+                  <Route path="/proposals/:id" element={<ProposalDetailsPage />} />
+                  <Route path="/messages" element={<MessagesPage />} />
+                  <Route path="/wallet" element={<MyWalletPage />} />
+                  <Route path="/saved-gigs" element={<SavedGigsPage />} />
+                  <Route path="/settings" element={<MyProfilePage />} />
+                  <Route path="/support" element={<HelpSupportPage />} />
 
-                {/* Catch-all fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </BrowserRouter>
+                  {/* Catch-all fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </CurrencyProvider>
           </ToastProvider>
         </RoleProvider>
       </AuthProvider>

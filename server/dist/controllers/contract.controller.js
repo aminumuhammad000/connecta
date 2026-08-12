@@ -8,11 +8,14 @@ import { createNotification } from './notification.controller.js';
 export const createOffer = async (req, res) => {
     try {
         const clientId = req.user?._id;
-        const { proposalId, title, description, totalPrice, deliveryTime } = req.body;
+        const { proposalId, title, description, totalPrice, deliveryTime, contractType, monthlySalaryAmount, billingCycle, probationPeriodDays, noticePeriodDays, currency } = req.body;
         const proposal = await Proposal.findById(proposalId);
         if (!proposal) {
             return res.status(404).json({ success: false, message: 'Proposal not found' });
         }
+        const nextBillingDate = contractType === 'full_time_contract'
+            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+            : undefined;
         const contract = await Contract.create({
             jobId: proposal.jobId,
             clientId,
@@ -20,8 +23,15 @@ export const createOffer = async (req, res) => {
             proposalId,
             title,
             description,
-            totalPrice,
-            deliveryTime,
+            totalPrice: totalPrice || monthlySalaryAmount || 0,
+            deliveryTime: deliveryTime || 30,
+            contractType: contractType || 'milestone_gig',
+            monthlySalaryAmount: monthlySalaryAmount || totalPrice,
+            billingCycle: billingCycle || (contractType === 'full_time_contract' ? 'monthly' : 'milestone'),
+            nextBillingDate,
+            probationPeriodDays: probationPeriodDays || 30,
+            noticePeriodDays: noticePeriodDays || 30,
+            currency: currency || 'USD',
             status: 'pending',
             paymentStatus: 'pending'
         });

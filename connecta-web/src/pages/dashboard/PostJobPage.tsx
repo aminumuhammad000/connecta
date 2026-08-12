@@ -11,17 +11,21 @@ export const PostJobPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  // Mode Selection: 'freelance' vs 'fulltime'
-  const [jobType, setJobType] = useState<'freelance' | 'fulltime'>('freelance');
+  // Mode Selection: 'milestone_gig' vs 'collabo_squad' vs 'full_time_contract'
+  const [jobType, setJobType] = useState<'milestone_gig' | 'collabo_squad' | 'full_time_contract'>('milestone_gig');
 
-  // Selected Main Category ID (tech, design, marketing, etc.)
+  // Selected Main Category ID
   const [selectedCatId, setSelectedCatId] = useState<string>('tech');
   const [selectedSubCat, setSelectedSubCat] = useState<string>('Web Development');
 
   const [title, setTitle] = useState('');
-  const [budget, setBudget] = useState('250000');
+  const [budget, setBudget] = useState('2500');
   const [budgetType, setBudgetType] = useState<'fixed' | 'hourly'>('fixed');
-  const [duration, setDuration] = useState('14');
+  const [duration, setDuration] = useState('30');
+  const [currency, setCurrency] = useState('USD');
+  const [probationDays, setProbationDays] = useState('30');
+  const [noticeDays, setNoticeDays] = useState('30');
+  const [benefitsSummary, setBenefitsSummary] = useState('Paid annual leave, remote equipment allowance, health insurance reimbursement.');
   const [locationType, setLocationType] = useState<'remote' | 'onsite' | 'hybrid'>('remote');
   const [location, setLocation] = useState('Lagos, Nigeria');
   const [description, setDescription] = useState('');
@@ -57,11 +61,16 @@ export const PostJobPage: React.FC = () => {
         jobType,
         locationType,
         location,
+        currency,
+        monthlySalaryAmount: jobType === 'full_time_contract' ? Number(budget) : undefined,
+        probationPeriodDays: Number(probationDays),
+        noticePeriodDays: Number(noticeDays),
+        benefitsSummary,
         skills: selectedSkills,
         requirements: requirements.split('\n').map((r) => r.trim()).filter(Boolean),
         paymentVerified: true,
       });
-      showToast(`${jobType === 'freelance' ? 'Freelance Project' : 'Job Listing'} posted successfully!`, 'success');
+      showToast(`${jobType === 'full_time_contract' ? 'Full-Time Contract' : 'Job Listing'} posted successfully!`, 'success');
       navigate('/client/dashboard');
     } catch (err: any) {
       console.error('Error posting job:', err);
@@ -104,65 +113,86 @@ export const PostJobPage: React.FC = () => {
       {/* Main Full-Width Card Container */}
       <div className="glass-card" style={{ width: '100%', padding: '36px', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
 
-        {/* 1. Toggle: Freelance Project vs Full-Time/Direct Job */}
+        {/* 1. Toggle: Milestone Project vs Collabo Squad vs Full-Time Contract */}
         <div style={{ marginBottom: '28px' }}>
           <label style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)', display: 'block', marginBottom: '10px' }}>
-            1. Listing Type Option
+            1. Contract Hiring Model
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
             <button
               type="button"
-              onClick={() => setJobType('freelance')}
+              onClick={() => setJobType('milestone_gig')}
               style={{
-                padding: '16px 20px',
+                padding: '16px 18px',
                 borderRadius: '16px',
-                border: jobType === 'freelance' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                background: jobType === 'freelance' ? 'rgba(253,103,48,0.08)' : 'var(--bg-secondary)',
-                color: jobType === 'freelance' ? 'var(--primary)' : 'var(--text-secondary)',
+                border: jobType === 'milestone_gig' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                background: jobType === 'milestone_gig' ? 'rgba(253,103,48,0.08)' : 'var(--bg-secondary)',
+                color: jobType === 'milestone_gig' ? 'var(--primary)' : 'var(--text-secondary)',
                 fontWeight: 800,
-                fontSize: '0.95rem',
+                fontSize: '0.88rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '10px',
+                gap: '8px',
                 transition: 'all 0.2s ease',
               }}
             >
-              <Briefcase size={20} /> Freelance / Milestone Contract
+              <Briefcase size={18} /> Milestone Gig Project
             </button>
 
             <button
               type="button"
-              onClick={() => setJobType('fulltime')}
+              onClick={() => setJobType('collabo_squad')}
               style={{
-                padding: '16px 20px',
+                padding: '16px 18px',
                 borderRadius: '16px',
-                border: jobType === 'fulltime' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                background: jobType === 'fulltime' ? 'rgba(253,103,48,0.08)' : 'var(--bg-secondary)',
-                color: jobType === 'fulltime' ? 'var(--primary)' : 'var(--text-secondary)',
+                border: jobType === 'collabo_squad' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                background: jobType === 'collabo_squad' ? 'rgba(253,103,48,0.08)' : 'var(--bg-secondary)',
+                color: jobType === 'collabo_squad' ? 'var(--primary)' : 'var(--text-secondary)',
                 fontWeight: 800,
-                fontSize: '0.95rem',
+                fontSize: '0.88rem',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '10px',
+                gap: '8px',
                 transition: 'all 0.2s ease',
               }}
             >
-              <UserCheck size={20} /> Full-Time / Direct Hire Job
+              <PlusCircle size={18} /> Collabo Team Squad
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setJobType('full_time_contract')}
+              style={{
+                padding: '16px 18px',
+                borderRadius: '16px',
+                border: jobType === 'full_time_contract' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                background: jobType === 'full_time_contract' ? 'rgba(253,103,48,0.08)' : 'var(--bg-secondary)',
+                color: jobType === 'full_time_contract' ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: 800,
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <UserCheck size={18} /> Full-Time Permanent Hire
             </button>
           </div>
         </div>
 
-        {/* 2. Category & Subcategory Picker (Synced with Mobile App categories.ts) */}
+        {/* 2. Category & Subcategory Picker */}
         <div style={{ marginBottom: '28px' }}>
           <label style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)', display: 'block', marginBottom: '10px' }}>
             2. Category & Specialization
           </label>
           
-          {/* Main Category Chips */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
             {JOB_CATEGORIES.map((cat) => (
               <button
@@ -179,9 +209,8 @@ export const PostJobPage: React.FC = () => {
                   background: selectedCatId === cat.id ? 'var(--primary)' : 'var(--bg-secondary)',
                   color: selectedCatId === cat.id ? '#fff' : 'var(--text-secondary)',
                   fontWeight: 700,
-                  fontSize: '0.84rem',
+                  fontSize: '0.82rem',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
                 }}
               >
                 {cat.label}
@@ -189,7 +218,6 @@ export const PostJobPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Subcategory Select Dropdown */}
           {activeCategoryObj.subcategories.length > 0 && (
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Subcategory / Domain</label>
@@ -214,7 +242,7 @@ export const PostJobPage: React.FC = () => {
             </label>
             <input
               type="text"
-              placeholder={jobType === 'freelance' ? 'e.g., Senior Full-Stack React & Node.js Developer' : 'e.g., Full-Time Mobile App Product Lead'}
+              placeholder={jobType === 'full_time_contract' ? 'e.g., Senior Full-Stack Remote Lead Engineer' : 'e.g., Mobile Payment Escrow & Chat Feature'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="input-field"
@@ -223,18 +251,38 @@ export const PostJobPage: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: '16px' }}>
             <div>
-              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>Budget Amount (₦)</label>
+              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                {jobType === 'full_time_contract' ? 'Monthly Salary Retainer Amount' : 'Budget Amount'}
+              </label>
               <input
                 type="number"
-                placeholder="250000"
+                placeholder="2500"
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 className="input-field"
                 style={{ width: '100%' }}
                 required
               />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>Currency</label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="input-field"
+                style={{ width: '100%', fontWeight: 700 }}
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="NGN">NGN (₦)</option>
+                <option value="KES">KES (KSh)</option>
+                <option value="GHS">GHS (₵)</option>
+                <option value="ZAR">ZAR (R)</option>
+              </select>
             </div>
 
             <div>
@@ -245,23 +293,81 @@ export const PostJobPage: React.FC = () => {
                 className="input-field"
                 style={{ width: '100%' }}
               >
-                <option value="fixed">Fixed Price</option>
+                <option value="fixed">{jobType === 'full_time_contract' ? 'Monthly Retainer' : 'Fixed Price'}</option>
                 <option value="hourly">Hourly Rate</option>
               </select>
             </div>
+          </div>
 
-            <div>
-              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>Delivery Duration (Days)</label>
-              <input
-                type="number"
-                placeholder="14"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                className="input-field"
-                style={{ width: '100%' }}
-                required
-              />
+          {/* Full Time Agreement Parameters */}
+          {jobType === 'full_time_contract' && (
+            <div style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary)' }}>
+                Full-Time Contract Terms
+              </h4>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                    Probation Period (Days)
+                  </label>
+                  <input
+                    type="number"
+                    value={probationDays}
+                    onChange={(e) => setProbationDays(e.target.value)}
+                    className="input-field"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                    Notice Period (Days)
+                  </label>
+                  <input
+                    type="number"
+                    value={noticeDays}
+                    onChange={(e) => setNoticeDays(e.target.value)}
+                    className="input-field"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                  Benefits & Perks Summary
+                </label>
+                <textarea
+                  value={benefitsSummary}
+                  onChange={(e) => setBenefitsSummary(e.target.value)}
+                  className="input-field"
+                  style={{ width: '100%' }}
+                  rows={2}
+                />
+              </div>
             </div>
+          )}
+
+          <div>
+            <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>Delivery Duration (Days)</label>
+            <input
+              type="number"
+              placeholder="30"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              className="input-field"
+              style={{ width: '100%' }}
+              required
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -292,7 +398,7 @@ export const PostJobPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Skill Tags Picker (Synced with Mobile App CATEGORY_SKILLS) */}
+          {/* Skill Tags */}
           <div>
             <label style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
               Select Required Skills ({selectedSkills.length} selected)
