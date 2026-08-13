@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { notificationAPI } from '../../services/api';
 import {
-  Bell, CheckCheck, Trash2, RefreshCw, Filter, X, ChevronRight
+  Bell, CheckCheck, Trash2, RefreshCw, X, ChevronRight
 } from 'lucide-react';
 
 const NOTIF_ICONS: Record<string, string> = {

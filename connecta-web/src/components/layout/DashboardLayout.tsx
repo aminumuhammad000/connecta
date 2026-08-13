@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { notificationAPI } from '../../services/api';
 import {
   Sun, Moon, LogOut, PlusCircle, Bell, LayoutDashboard, Briefcase, MessageSquare,
-  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, CheckCircle2, Rss, Sparkles, Search, Building2, Menu, X, Trash2
+  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, CheckCircle2, Rss, Sparkles, Search, Building2, Menu, X
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
