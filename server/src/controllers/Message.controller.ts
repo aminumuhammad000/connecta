@@ -34,9 +34,9 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
     }
 
     let conversation = await Conversation.findOne(query)
-      .populate('clientId', 'firstName lastName email')
-      .populate('freelancerId', 'firstName lastName email')
-      .populate('participants', 'firstName lastName email profileImage avatar isPremium')
+      .populate('clientId', 'firstName lastName email profileImage avatar jobTitle userType')
+      .populate('freelancerId', 'firstName lastName email profileImage avatar jobTitle userType')
+      .populate('participants', 'firstName lastName email profileImage avatar jobTitle userType')
       .populate('projectId', 'title');
 
     if (!conversation) {
@@ -55,8 +55,9 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
       });
 
       conversation = await Conversation.create(conversationData);
-      conversation = await conversation.populate('clientId', 'firstName lastName email');
-      conversation = await conversation.populate('freelancerId', 'firstName lastName email');
+      conversation = await conversation.populate('clientId', 'firstName lastName email profileImage avatar jobTitle userType');
+      conversation = await conversation.populate('freelancerId', 'firstName lastName email profileImage avatar jobTitle userType');
+      conversation = await conversation.populate('participants', 'firstName lastName email profileImage avatar jobTitle userType');
       conversation = await conversation.populate('projectId', 'title');
       console.log('Created new conversation:', conversation._id?.toString());
       // Emit conversation update to both users
@@ -100,9 +101,9 @@ export const getUserConversations = async (req: Request, res: Response) => {
         { participants: userId }
       ],
     })
-      .populate('clientId', 'firstName lastName email profileImage avatar isPremium')
-      .populate('freelancerId', 'firstName lastName email profileImage avatar isPremium')
-      .populate('participants', 'firstName lastName email profileImage avatar isPremium')
+      .populate('clientId', 'firstName lastName email profileImage avatar jobTitle userType')
+      .populate('freelancerId', 'firstName lastName email profileImage avatar jobTitle userType')
+      .populate('participants', 'firstName lastName email profileImage avatar jobTitle userType')
       .populate('projectId', 'title')
       .sort({ lastMessageAt: -1 });
 

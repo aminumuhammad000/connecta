@@ -45,14 +45,26 @@ export const FreelancerProfileDetailsPage: React.FC = () => {
   const avatarUrl = candidate?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=FD6730&color=fff`;
 
   const formatRate = (c: any) => {
-    if (!c) return 'Negotiable';
+    if (!c) return 'Negotiable Rate';
     if (c.monthlySalary || c.expectedSalary) {
       return formatJobBudget(Number(c.monthlySalary || c.expectedSalary), c.currency || 'USD') + ' / mo';
     }
     if (c.hourlyRate) {
       return formatJobBudget(Number(c.hourlyRate), c.currency || 'USD') + ' / hr';
     }
-    return formatJobBudget(2500, c.currency || 'USD') + ' / mo';
+    return 'Negotiable Rate';
+  };
+
+  const getJobSuccessScoreText = (c: any) => {
+    if (!c) return 'New Member';
+    if (c.jobSuccessScore && c.jobSuccessScore > 0) {
+      return `${c.jobSuccessScore}% Success Rate`;
+    }
+    const completed = c.completedJobsCount || (Array.isArray(c.completedJobs) ? c.completedJobs.length : 0);
+    if (completed > 0) {
+      return '100% Success Rate';
+    }
+    return 'New Member (0 Jobs)';
   };
 
   return (
@@ -131,8 +143,8 @@ export const FreelancerProfileDetailsPage: React.FC = () => {
                       <MapPin size={14} color="var(--primary)" /> {candidate.location || 'Lagos, Nigeria'}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#F59E0B', fontWeight: 700 }}>
-                      <Star size={14} fill="#F59E0B" /> {candidate.rating || candidate.averageRating ? Number(candidate.rating || candidate.averageRating).toFixed(1) : '5.0'}
-                      <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>({candidate.reviewsCount || (Array.isArray(candidate.reviews) ? candidate.reviews.length : 0)} reviews)</span>
+                      <Star size={14} fill="#F59E0B" /> {candidate.rating || candidate.averageRating ? Number(candidate.rating || candidate.averageRating).toFixed(1) : '0.0'}
+                      <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>({candidate.reviewsCount ?? (Array.isArray(candidate.reviews) ? candidate.reviews.length : 0)} reviews)</span>
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Calendar size={14} /> Member Since {candidate.createdAt ? new Date(candidate.createdAt).getFullYear() : '2026'}
@@ -165,8 +177,8 @@ export const FreelancerProfileDetailsPage: React.FC = () => {
                   <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Award size={14} color="var(--primary)" /> Job Success Score
                   </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--success)', marginTop: '4px' }}>
-                    {candidate.jobSuccessScore || 100}% Success Rate
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--success)', marginTop: '4px' }}>
+                    {getJobSuccessScoreText(candidate)}
                   </div>
                 </div>
               </div>

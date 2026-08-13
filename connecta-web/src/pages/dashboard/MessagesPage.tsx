@@ -102,6 +102,49 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
+  const getOtherParticipantDetails = (conv: any) => {
+    if (!conv) return { name: 'Chat Participant', avatar: null, role: 'Connecta Member' };
+
+    const myId = (user?._id || (user as any)?.id || '').toString();
+
+    if (Array.isArray(conv.participants) && conv.participants.length > 0) {
+      const other = conv.participants.find((p: any) => {
+        const pid = typeof p === 'object' ? (p._id || p.id)?.toString() : p?.toString();
+        return pid && pid !== myId;
+      });
+      if (other && typeof other === 'object') {
+        const name = `${other.firstName || ''} ${other.lastName || ''}`.trim() || other.name || other.email?.split('@')[0] || 'Connecta Member';
+        const role = other.jobTitle || (other.userType === 'client' ? 'Product Client' : 'Freelancer');
+        const avatar = other.profileImage || other.avatar || null;
+        return { name, avatar, role };
+      }
+    }
+
+    if (conv.clientId && typeof conv.clientId === 'object') {
+      const cid = (conv.clientId._id || conv.clientId.id)?.toString();
+      if (cid && cid !== myId) {
+        const name = `${conv.clientId.firstName || ''} ${conv.clientId.lastName || ''}`.trim() || conv.clientId.name || 'Client';
+        return { name, avatar: conv.clientId.profileImage || conv.clientId.avatar || null, role: conv.clientId.jobTitle || 'Product Client' };
+      }
+    }
+
+    if (conv.freelancerId && typeof conv.freelancerId === 'object') {
+      const fid = (conv.freelancerId._id || conv.freelancerId.id)?.toString();
+      if (fid && fid !== myId) {
+        const name = `${conv.freelancerId.firstName || ''} ${conv.freelancerId.lastName || ''}`.trim() || conv.freelancerId.name || 'Freelancer';
+        return { name, avatar: conv.freelancerId.profileImage || conv.freelancerId.avatar || null, role: conv.freelancerId.jobTitle || 'Freelancer' };
+      }
+    }
+
+    return {
+      name: conv.participantName || 'Connecta Member',
+      avatar: conv.participantAvatar || null,
+      role: conv.participantRole || 'Connecta Member'
+    };
+  };
+
+  const activeOther = getOtherParticipantDetails(activeConv);
+
   return (
     <DashboardLayout>
       <div style={{ marginBottom: '20px' }}>
@@ -133,6 +176,7 @@ export const MessagesPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto' }}>
               {conversations.map((c) => {
                 const isSelected = activeConv?._id === c._id;
+                const other = getOtherParticipantDetails(c);
                 return (
                   <div
                     key={c._id}
@@ -148,15 +192,19 @@ export const MessagesPage: React.FC = () => {
                       gap: '10px',
                     }}
                   >
-                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
-                      {(c.participantName || 'C')[0]}
-                    </div>
+                    {other.avatar ? (
+                      <img src={other.avatar} alt={other.name} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
+                        {other.name[0]?.toUpperCase() || 'U'}
+                      </div>
+                    )}
                     <div style={{ flex: 1, overflow: 'hidden' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {c.participantName || 'Client'}
+                        {other.name}
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {c.lastMessage || 'Click to view chat'}
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.lastMessage || other.role}
                       </div>
                     </div>
                   </div>
@@ -173,12 +221,18 @@ export const MessagesPage: React.FC = () => {
               {/* Chat Header */}
               <div style={{ paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem' }}>
-                    {(activeConv.participantName || 'C')[0]}
-                  </div>
+                  {activeOther.avatar ? (
+                    <img src={activeOther.avatar} alt={activeOther.name} style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem' }}>
+                      {activeOther.name[0]?.toUpperCase() || 'U'}
+                    </div>
+                  )}
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>{activeConv.participantName || 'Client'}</div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Online</span>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{activeOther.name}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{activeOther.role}</span> • <span style={{ color: 'var(--success)', fontWeight: 600 }}>Online</span>
+                    </div>
                   </div>
                 </div>
 
@@ -258,7 +312,8 @@ export const MessagesPage: React.FC = () => {
         <ScreeningCallModal
           isOpen={showCallModal}
           onClose={() => setShowCallModal(false)}
-          participantName={activeConv.participantName || 'Candidate'}
+          participantName={activeOther.name}
+          participantRole={activeOther.role}
         />
       )}
     </DashboardLayout>
