@@ -880,26 +880,63 @@ export const updateMe = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, skills } = req.body;
+    const {
+      firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp,
+      title, bio, location, country, currency, preferredLanguage, companyName,
+      website, employment, hourlyRate, yearsOfExperience, workType, skills
+    } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    if (firstName) user.firstName = firstName;
-    if (lastName) user.lastName = lastName;
-    if (email) user.email = email;
-    if (phoneNumber) user.phoneNumber = phoneNumber;
-    if (profileImage) user.profileImage = profileImage;
-    if (pushToken) user.pushToken = pushToken;
-    if (whatsapp) (user as any).whatsapp = whatsapp;
-    if (title) (user as any).title = title;
-    if (bio) (user as any).bio = bio;
-    if (location) (user as any).location = location;
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (email !== undefined) user.email = email;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (profileImage !== undefined) user.profileImage = profileImage;
+    if (pushToken !== undefined) user.pushToken = pushToken;
+    if (whatsapp !== undefined) (user as any).whatsapp = whatsapp;
+    if (title !== undefined) (user as any).title = title;
+    if (bio !== undefined) (user as any).bio = bio;
+    if (location !== undefined) (user as any).location = location;
+    if (country !== undefined) (user as any).country = country;
+    if (currency !== undefined) (user as any).currency = currency;
+    if (preferredLanguage !== undefined) (user as any).preferredLanguage = preferredLanguage;
+    if (companyName !== undefined) (user as any).companyName = companyName;
+    if (website !== undefined) (user as any).website = website;
+    if (employment !== undefined && Array.isArray(employment)) (user as any).employment = employment;
+    if (hourlyRate !== undefined) (user as any).hourlyRate = Number(hourlyRate);
+    if (yearsOfExperience !== undefined) (user as any).yearsOfExperience = Number(yearsOfExperience);
+    if (workType !== undefined) (user as any).workType = workType;
     if (skills && Array.isArray(skills)) (user as any).skills = skills;
 
     await user.save();
+
+    // Sync with Profile document as well
+    try {
+      const Profile = (await import('../models/Profile.model.js')).default;
+      await Profile.findOneAndUpdate(
+        { user: userId },
+        {
+          companyName,
+          website,
+          employment,
+          bio,
+          jobTitle: title,
+          location,
+          country,
+          whatsapp,
+          phoneNumber,
+          skills,
+          avatar: profileImage,
+        },
+        { upsert: true, new: true }
+      );
+    } catch (pErr) {
+      console.warn('Sync profile error:', pErr);
+    }
 
     res.status(200).json({
       success: true,

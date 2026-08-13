@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Rss, ThumbsUp, MessageCircle, Share2, Loader2,
   CheckCircle2, Send, Image, MoreHorizontal, Globe, ShieldCheck,
-  ArrowUpRight
+  ArrowUpRight, TrendingUp, Sparkles, MessageSquare, Heart, Bookmark,
+  Filter, HelpCircle, FileText, UserPlus, Layers
 } from 'lucide-react';
 import { feedAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 
 export const FeedPage: React.FC = () => {
   const { user } = useAuth();
@@ -24,6 +26,7 @@ export const FeedPage: React.FC = () => {
   // Create Post State
   const [newPostText, setNewPostText] = useState('');
   const [publishing, setPublishing] = useState(false);
+  const [feedFilter, setFeedFilter] = useState<'all' | 'announcements' | 'jobs'>('all');
 
   useEffect(() => {
     fetchPlatformFeed();
@@ -56,10 +59,10 @@ export const FeedPage: React.FC = () => {
     try {
       const authorName = `${user?.firstName || 'Connecta'} ${user?.lastName || 'User'}`;
       const res = await feedAPI.createPost({
-        title: '💬 Community Update',
+        title: 'Community Update',
         body: newPostText,
         actorName: authorName,
-        actorRole: user?.userType || 'Member',
+        actorRole: user?.userType === 'client' ? 'Product Client' : 'Verified Freelancer',
         actorAvatar: user?.profileImage,
       });
 
@@ -97,7 +100,7 @@ export const FeedPage: React.FC = () => {
 
   const handleCommentSubmit = async (postId: string) => {
     if (!commentText.trim()) return;
-    const authorName = `${user?.firstName || 'Usman'} ${user?.lastName || ''}`;
+    const authorName = `${user?.firstName || 'Connecta'} ${user?.lastName || 'User'}`;
 
     setPosts((prev) =>
       prev.map((p) => {
@@ -105,7 +108,7 @@ export const FeedPage: React.FC = () => {
           const existingComments = Array.isArray(p.comments) ? p.comments : [];
           return {
             ...p,
-            comments: [...existingComments, { _id: Date.now().toString(), author: authorName, text: commentText }],
+            comments: [...existingComments, { _id: Date.now().toString(), author: authorName, text: commentText, createdAt: new Date().toISOString() }],
           };
         }
         return p;
@@ -121,389 +124,477 @@ export const FeedPage: React.FC = () => {
     }
   };
 
+  const filteredPosts = posts.filter((p) => {
+    if (feedFilter === 'announcements') return p.actorRole === 'admin' || p.type === 'official_announcement';
+    if (feedFilter === 'jobs') return p.type === 'job_posted';
+    return true;
+  });
+
   return (
     <DashboardLayout>
-      {/* Header Bar */}
-      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
-            <Rss size={13} /> Live Marketplace Activity Feed
+      <MinimalistLoader loading={publishing} />
+
+      {/* Top Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
+              <Rss size={13} /> Live Community & Job Feed
+            </div>
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+              Activity Feed & Announcements
+            </h1>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0 }}>
+              Live job alerts, verified talent achievements, platform announcements, and community discussions.
+            </p>
           </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-            Community Feed & Job Updates
-          </h1>
-          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Automated job posting alerts, milestone achievements, official announcements, and community posts.
-          </p>
+
+          {/* Filter Pills */}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={() => setFeedFilter('all')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: feedFilter === 'all' ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                background: feedFilter === 'all' ? 'var(--primary)' : 'var(--bg-secondary)',
+                color: feedFilter === 'all' ? '#fff' : 'var(--text-secondary)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              All Posts
+            </button>
+            <button
+              onClick={() => setFeedFilter('announcements')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: feedFilter === 'announcements' ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                background: feedFilter === 'announcements' ? 'var(--primary)' : 'var(--bg-secondary)',
+                color: feedFilter === 'announcements' ? '#fff' : 'var(--text-secondary)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Official Updates
+            </button>
+            <button
+              onClick={() => setFeedFilter('jobs')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                border: feedFilter === 'jobs' ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                background: feedFilter === 'jobs' ? 'var(--primary)' : 'var(--bg-secondary)',
+                color: feedFilter === 'jobs' ? '#fff' : 'var(--text-secondary)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Job Alerts
+            </button>
+          </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Main Grid: Feed + Right Sidebar */}
+      <div className="grid-responsive-2" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px', alignItems: 'flex-start' }}>
 
-        {/* Facebook-style Create Post Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass-card"
-          style={{
-            padding: '18px 20px',
-            borderRadius: '20px',
-            border: '1px solid var(--border-color)',
-            background: 'var(--card-bg)',
-          }}
-        >
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '14px' }}>
-            {user?.profileImage ? (
-              <img
-                src={user.profileImage}
-                alt={user.firstName}
-                style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+        {/* Feed Posts Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+          {/* Create Post Box */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card"
+            style={{
+              padding: '20px',
+              borderRadius: '20px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '14px' }}>
+              {user?.profileImage ? (
+                <img
+                  src={user.profileImage}
+                  alt={user.firstName}
+                  style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }}
+                />
+              ) : (
+                <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                  {user?.firstName?.[0]?.toUpperCase() || 'U'}
+                </div>
+              )}
+              <textarea
+                placeholder={`Share an update, project milestone, or question, ${user?.firstName || 'User'}...`}
+                value={newPostText}
+                onChange={(e) => setNewPostText(e.target.value)}
+                className="input-field"
+                rows={3}
+                style={{ flex: 1, borderRadius: '16px', padding: '12px 16px', fontSize: '0.88rem', lineHeight: 1.4, resize: 'none' }}
               />
-            ) : (
-              <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                {user?.firstName?.[0]?.toUpperCase() || 'U'}
-              </div>
-            )}
-            <input
-              type="text"
-              placeholder={`Share an update or question, ${user?.firstName || 'Usman'}?`}
-              value={newPostText}
-              onChange={(e) => setNewPostText(e.target.value)}
-              className="input-field"
-              style={{ flex: 1, borderRadius: '24px', padding: '10px 18px', fontSize: '0.88rem' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button
-                type="button"
-                onClick={() => showToast('Photo upload option selected!', 'info')}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600 }}
-              >
-                <Image size={18} color="#10B981" /> Photo/Video
-              </button>
-              <button
-                type="button"
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600 }}
-              >
-                <Globe size={18} color="#3B82F6" /> Public Feed
-              </button>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleCreatePost}
-              disabled={publishing || !newPostText.trim()}
-              className="btn-primary"
-              style={{ padding: '8px 20px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700 }}
-            >
-              {publishing ? <Loader2 size={16} className="animate-spin" /> : <Send size={15} />} Post
-            </motion.button>
-          </div>
-        </motion.div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', gap: '14px' }}>
+                <button
+                  type="button"
+                  onClick={() => showToast('Attach photo or video option selected', 'info')}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600 }}
+                >
+                  <Image size={17} color="#10B981" /> Media Attachment
+                </button>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600 }}
+                >
+                  <Globe size={17} color="#3B82F6" /> Public Community
+                </button>
+              </div>
 
-        {/* Feed Posts */}
-        {loading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <Loader2 size={26} className="animate-spin" style={{ margin: '0 auto 10px' }} />
-            <span>Loading community feed posts...</span>
-          </div>
-        ) : (
-          posts.map((post) => {
-            const isOfficial = post.actorRole === 'admin' || post.type === 'official_announcement';
-            const isUserColoredPost = post.type === 'user_post' && !post.imageUrl;
-            const isActivityCard = post.type === 'job_posted' || post.type === 'proposal_accepted' || post.type === 'new_member';
-
-            return (
-              <motion.div
-                key={post._id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="glass-card"
-                style={{
-                  borderRadius: '20px',
-                  border: isOfficial ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                  background: 'var(--card-bg)',
-                  overflow: 'hidden',
-                  boxShadow: isOfficial ? '0 8px 30px rgba(253,103,48,0.14)' : '0 4px 15px rgba(0,0,0,0.02)',
-                }}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={handleCreatePost}
+                disabled={publishing || !newPostText.trim()}
+                className="btn-primary"
+                style={{ padding: '8px 22px', borderRadius: '12px', fontSize: '0.84rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                {/* Official Connecta Banner */}
-                {isOfficial && (
-                  <div style={{
-                    background: 'var(--grad-primary)',
-                    color: '#fff',
-                    padding: '8px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                  }}>
-                    <ShieldCheck size={16} /> Official Connecta Announcement
-                  </div>
-                )}
+                {publishing ? <Loader2 size={15} className="animate-spin" /> : <Send size={14} />} Post Update
+              </motion.button>
+            </div>
+          </motion.div>
 
-                <div style={{ padding: '20px' }}>
-                  {/* Author Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '50%',
-                        background: isOfficial ? 'var(--grad-primary)' : 'var(--bg-tertiary)',
-                        color: isOfficial ? '#fff' : 'var(--text-primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                        fontSize: '1rem',
-                        border: '2px solid var(--primary)',
-                      }}>
-                        {(post.actorName || 'C')[0]?.toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontWeight: 800, fontSize: '0.94rem', color: isOfficial ? 'var(--primary)' : 'var(--text-primary)' }}>
-                            {post.actorName || 'Connecta User'}
-                          </span>
-                          <CheckCircle2 size={14} color="var(--primary)" strokeWidth={2.5} />
+          {/* Posts List or Skeleton Loader */}
+          {loading ? (
+            <>
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </>
+          ) : filteredPosts.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+              <Rss size={36} color="var(--primary)" style={{ margin: '0 auto 12px', opacity: 0.7 }} />
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+                No activity posts found
+              </h3>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+                Be the first to share an update with the Connecta marketplace community!
+              </p>
+            </div>
+          ) : (
+            filteredPosts.map((post) => {
+              const isOfficial = post.actorRole === 'admin' || post.type === 'official_announcement';
+              const isActivityCard = post.type === 'job_posted' || post.type === 'proposal_accepted' || post.type === 'new_member';
+              const commentsList = Array.isArray(post.comments) ? post.comments : [];
+              const showComments = activeCommentPostId === post._id;
+
+              return (
+                <motion.div
+                  key={post._id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass-card"
+                  style={{
+                    borderRadius: '20px',
+                    border: isOfficial ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: 'var(--card-bg)',
+                    overflow: 'hidden',
+                    boxShadow: isOfficial ? '0 8px 28px rgba(253,103,48,0.12)' : 'var(--shadow-sm)',
+                  }}
+                >
+                  {/* Official Announcement Banner */}
+                  {isOfficial && (
+                    <div style={{
+                      background: 'var(--grad-primary)',
+                      color: '#fff',
+                      padding: '8px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '0.76rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                    }}>
+                      <ShieldCheck size={15} /> Official Connecta Announcement
+                    </div>
+                  )}
+
+                  <div style={{ padding: '20px' }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '50%',
+                          background: isOfficial ? 'var(--grad-primary)' : 'var(--bg-tertiary)',
+                          color: isOfficial ? '#fff' : 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          border: '2px solid var(--primary)',
+                        }}>
+                          {(post.actorName || 'C')[0]?.toUpperCase()}
                         </div>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {post.actorRole || 'Member'} • {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontWeight: 800, fontSize: '0.92rem', color: isOfficial ? 'var(--primary)' : 'var(--text-primary)' }}>
+                              {post.actorName || 'Connecta Member'}
+                            </span>
+                            <CheckCircle2 size={14} color="var(--primary)" strokeWidth={2.5} />
+                          </div>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                            {post.actorRole || 'Member'} • {new Date(post.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <button style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                      <MoreHorizontal size={18} />
+                    {/* Content Section */}
+                    {isActivityCard ? (
+                      <div style={{
+                        background: 'var(--bg-secondary)',
+                        padding: '16px 18px',
+                        borderRadius: '16px',
+                        border: '1px solid var(--border-color)',
+                        marginBottom: '14px',
+                        display: 'flex',
+                        gap: '14px',
+                        alignItems: 'flex-start',
+                      }}>
+                        <div style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '12px',
+                          background: 'rgba(253,103,48,0.12)',
+                          color: 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                          {post.type === 'job_posted' ? <FileText size={20} /> : <UserPlus size={20} />}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                            {post.title}
+                          </h4>
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '0 0 10px' }}>
+                            {post.body}
+                          </p>
+
+                          {post.type === 'job_posted' && (
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => navigate('/jobs')}
+                              className="btn-primary"
+                              style={{ padding: '7px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              View Job Listing <ArrowUpRight size={13} />
+                            </motion.button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ marginBottom: '14px' }}>
+                        {post.title && (
+                          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', lineHeight: 1.35 }}>
+                            {post.title}
+                          </h3>
+                        )}
+                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0, whiteSpace: 'pre-wrap' }}>
+                          {post.body || post.content}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Attached Image Media */}
+                  {post.imageUrl && (
+                    <div style={{ width: '100%', maxHeight: '360px', overflow: 'hidden', background: '#000' }}>
+                      <img
+                        src={post.imageUrl}
+                        alt={post.title || 'Feed post'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Reaction counts */}
+                  <div style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                        <ThumbsUp size={11} />
+                      </div>
+                      <strong style={{ color: 'var(--text-primary)' }}>{post.likes || 0}</strong> Likes
+                    </span>
+                    <span
+                      onClick={() => setActiveCommentPostId(showComments ? null : post._id)}
+                      style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--primary)' }}
+                    >
+                      {commentsList.length} Comments
+                    </span>
+                  </div>
+
+                  {/* Action Bar */}
+                  <div style={{ padding: '6px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                    <button
+                      onClick={() => handleLike(post._id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: post.isLiked ? 'var(--primary)' : 'var(--text-secondary)',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <ThumbsUp size={15} /> Like
+                    </button>
+
+                    <button
+                      onClick={() => setActiveCommentPostId(showComments ? null : post._id)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <MessageCircle size={15} /> Comment
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        showToast('Link copied to clipboard!', 'success');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Share2 size={15} /> Share
                     </button>
                   </div>
 
-                  {/* Facebook-style Orange Color Box for User Text Posts */}
-                  {isUserColoredPost ? (
-                    <div style={{
-                      background: 'var(--grad-primary)',
-                      padding: '28px 24px',
-                      borderRadius: '16px',
-                      color: '#ffffff',
-                      textAlign: 'center',
-                      fontWeight: 800,
-                      fontSize: '1.25rem',
-                      lineHeight: 1.4,
-                      boxShadow: '0 8px 20px rgba(253,103,48,0.2)',
-                      marginBottom: '14px',
-                    }}>
-                      {post.body}
-                    </div>
-                  ) : isActivityCard ? (
-                    /* Automated Activity Cards (Jobs Posted, Milestones, Members) */
-                    <div style={{
-                      background: 'var(--bg-secondary)',
-                      padding: '18px 20px',
-                      borderRadius: '16px',
-                      border: '1px solid var(--border-color)',
-                      marginBottom: '14px',
-                      display: 'flex',
-                      gap: '14px',
-                      alignItems: 'flex-start',
-                    }}>
-                      <div style={{
-                        fontSize: '1.8rem',
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        background: 'rgba(253,103,48,0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        {post.emoji || '💼'}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px' }}>
-                          {post.title}
-                        </h4>
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '0 0 12px' }}>
-                          {post.body}
-                        </p>
-
-                        {post.type === 'job_posted' && (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.97 }}
-                            onClick={() => navigate('/jobs')}
-                            className="btn-primary"
-                            style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700 }}
-                          >
-                            View Job Listing <ArrowUpRight size={14} />
-                          </motion.button>
-                        )}
-                        {post.type === 'new_member' && (
-                          <button
-                            onClick={() => navigate('/settings')}
-                            style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)', cursor: 'pointer' }}
-                          >
-                            View Profile ↗
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* General Title & Text Body */
-                    <div style={{ marginBottom: '14px' }}>
-                      {post.title && (
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px', lineHeight: 1.35 }}>
-                          {post.title}
-                        </h3>
-                      )}
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                        {post.body || post.content}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Attached Image Media Banner */}
-                {post.imageUrl && (
-                  <div style={{ width: '100%', maxHeight: '380px', overflow: 'hidden', background: '#000' }}>
-                    <img
-                      src={post.imageUrl}
-                      alt={post.title || 'Feed post'}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  </div>
-                )}
-
-                {/* Likes & Comments Count Header */}
-                <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-color)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                      <ThumbsUp size={10} />
-                    </div>
-                    {post.likes || 0} Likes
-                  </span>
-                  <span>{(Array.isArray(post.comments) ? post.comments.length : post.comments) || 0} Comments</span>
-                </div>
-
-                {/* Facebook Action Bar */}
-                <div style={{ padding: '6px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', borderBottom: '1px solid var(--border-color)' }}>
-                  <button
-                    onClick={() => handleLike(post._id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      color: post.isLiked ? 'var(--primary)' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <ThumbsUp size={18} fill={post.isLiked ? 'var(--primary)' : 'none'} /> Like
-                  </button>
-
-                  <button
-                    onClick={() => setActiveCommentPostId(activeCommentPostId === post._id ? null : post._id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      color: 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <MessageCircle size={18} /> Comment
-                  </button>
-
-                  <button
-                    onClick={() => showToast('Post shared to community feed!', 'info')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '8px',
-                      borderRadius: '8px',
-                      color: 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Share2 size={18} /> Share
-                  </button>
-                </div>
-
-                {/* Comments Thread Section */}
-                <div style={{ padding: '16px 20px', background: 'var(--bg-secondary)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {Array.isArray(post.comments) && post.comments.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {post.comments.map((c: any, idx: number) => (
-                        <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
-                            {(c.author || 'C')[0]}
+                  {/* Comment Drawer Section */}
+                  {showComments && (
+                    <div style={{ padding: '16px 20px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)' }}>
+                      {commentsList.map((c: any, cIdx: number) => (
+                        <div key={c._id || cIdx} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 }}>
+                            {(c.author || 'U')[0]?.toUpperCase()}
                           </div>
-                          <div style={{ background: 'var(--card-bg)', padding: '10px 14px', borderRadius: '14px', border: '1px solid var(--border-color)', flex: 1 }}>
-                            <span style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)', display: 'block', marginBottom: '2px' }}>
-                              {c.author || 'Community Member'}
-                            </span>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c.text || c.content}</p>
+                          <div style={{ background: 'var(--card-bg)', padding: '8px 14px', borderRadius: '14px', border: '1px solid var(--border-color)', flex: 1 }}>
+                            <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--text-primary)', marginBottom: '2px' }}>{c.author || 'Connecta Member'}</div>
+                            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{c.text || c.content}</div>
                           </div>
                         </div>
                       ))}
+
+                      {/* Comment Input */}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                        <input
+                          type="text"
+                          placeholder="Write a comment..."
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleCommentSubmit(post._id); }}
+                          className="input-field"
+                          style={{ flex: 1, fontSize: '0.82rem', borderRadius: '20px' }}
+                        />
+                        <button
+                          onClick={() => handleCommentSubmit(post._id)}
+                          className="btn-primary"
+                          style={{ padding: '8px 16px', borderRadius: '18px', fontSize: '0.78rem', fontWeight: 700 }}
+                        >
+                          Send
+                        </button>
+                      </div>
                     </div>
                   )}
+                </motion.div>
+              );
+            })
+          )}
+        </div>
 
-                  {/* Add Comment Input */}
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      placeholder="Write a comment..."
-                      value={activeCommentPostId === post._id ? commentText : ''}
-                      onFocus={() => setActiveCommentPostId(post._id)}
-                      onChange={(e) => {
-                        setActiveCommentPostId(post._id);
-                        setCommentText(e.target.value);
-                      }}
-                      className="input-field"
-                      style={{ flex: 1, borderRadius: '20px', padding: '8px 16px', fontSize: '0.84rem' }}
-                    />
-                    <button
-                      onClick={() => handleCommentSubmit(post._id)}
-                      className="btn-primary"
-                      style={{ padding: '8px 16px', borderRadius: '12px', fontSize: '0.82rem', fontWeight: 700 }}
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
+        {/* Desktop Right Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Trending Topics Box */}
+          <div className="glass-card" style={{ padding: '20px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <TrendingUp size={18} color="var(--primary)" />
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '0.94rem', color: 'var(--text-primary)' }}>Trending Marketplace Topics</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                #EscrowPaymentProtection
+                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>142 discussions today</span>
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                #VettedProVerification
+                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>88 talent badges issued</span>
+              </div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                #MobileAppEscrow
+                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 400 }}>34 new job listings</span>
+              </div>
+            </div>
+          </div>
 
-              </motion.div>
-            );
-          })
-        )}
+          {/* Community Guidelines Card */}
+          <div className="glass-card" style={{ padding: '20px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <Sparkles size={18} color="var(--primary)" />
+              <h3 style={{ margin: 0, fontWeight: 800, fontSize: '0.94rem', color: 'var(--text-primary)' }}>Community Guidelines</h3>
+            </div>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
+              Keep discussions professional. Use Connecta Escrow for all work agreements to ensure 100% payment protection.
+            </p>
+          </div>
+        </div>
+
       </div>
     </DashboardLayout>
   );
 };
+
+export default FeedPage;

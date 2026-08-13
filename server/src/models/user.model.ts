@@ -30,6 +30,11 @@ export interface IUser extends Document {
   preferredLanguage?: 'en' | 'ha';
   whatsapp?: string;
   sparks?: number;
+  companyName?: string;
+  website?: string;
+  employment?: any[];
+  hourlyRate?: number;
+  yearsOfExperience?: number;
   privacySettings: {
     allowBroadcast: boolean;
   };
@@ -56,6 +61,11 @@ const UserSchema: Schema<IUser> = new Schema(
     location: { type: String, required: false, default: 'Lagos, Nigeria' },
     country: { type: String, required: false },
     currency: { type: String, required: false },
+    companyName: { type: String, required: false },
+    website: { type: String, required: false },
+    employment: [Schema.Types.Mixed],
+    hourlyRate: { type: Number, required: false },
+    yearsOfExperience: { type: Number, required: false },
     workType: { type: String, enum: ['freelancing', 'permanent'], required: false },
     skills: [{ type: String }],
     isActive: { type: Boolean, default: true },

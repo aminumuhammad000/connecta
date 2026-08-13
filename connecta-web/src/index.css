@@ -487,3 +487,14 @@ input, textarea, select {
     font-size: 0.65rem;
   }
 }
+
+@keyframes skeletonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes topProgress {
+  0% { transform: translateX(-100%); width: 30%; }
+  50% { transform: translateX(30%); width: 70%; }
+  100% { transform: translateX(100%); width: 100%; }
+}

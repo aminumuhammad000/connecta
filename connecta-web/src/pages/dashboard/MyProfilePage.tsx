@@ -95,6 +95,9 @@ export const MyProfilePage: React.FC = () => {
         }
         if ((u as any).companyName) setCompanyName((u as any).companyName);
         if ((u as any).website) setWebsite((u as any).website);
+        if ((u as any).employment && Array.isArray((u as any).employment)) {
+          setEmployment((u as any).employment);
+        }
       }
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -125,6 +128,7 @@ export const MyProfilePage: React.FC = () => {
         profileImage,
         companyName,
         website,
+        employment,
       };
 
       const res = await authAPI.updateMe(payload);
