@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
-import { jobAPI, walletAPI, proposalAPI } from '../../services/api';
+import { jobAPI, walletAPI } from '../../services/api';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
@@ -30,27 +30,25 @@ export const ClientDashboardPage: React.FC = () => {
   const fetchClientDashboardData = async () => {
     setLoadingJobs(true);
     try {
-      const [jobsRes, walletRes, propRes, recRes] = await Promise.all([
+      const [jobsRes, walletRes, recRes] = await Promise.all([
         jobAPI.getClientJobs().catch(() => null),
         walletAPI.getWallet().catch(() => null),
-        proposalAPI.getMyProposals().catch(() => null),
         jobAPI.getRecommendedFreelancers().catch(() => null),
       ]);
 
+      let jobsList: any[] = [];
       if (jobsRes?.success && Array.isArray(jobsRes.data)) {
-        setMyJobs(jobsRes.data);
+        jobsList = jobsRes.data;
       } else if (Array.isArray(jobsRes)) {
-        setMyJobs(jobsRes as any);
+        jobsList = jobsRes as any;
       }
+      setMyJobs(jobsList);
+
+      const totalReceivedProposals = jobsList.reduce((sum, j) => sum + (j.proposalsCount ?? j.proposalCount ?? (Array.isArray(j.proposals) ? j.proposals.length : 0)), 0);
+      setProposalsCount(totalReceivedProposals);
 
       if (walletRes?.success) {
         setWallet(walletRes.data);
-      }
-
-      if (propRes?.success && Array.isArray(propRes.data)) {
-        setProposalsCount(propRes.data.length);
-      } else if (Array.isArray(propRes)) {
-        setProposalsCount(propRes.length);
       }
 
       if (recRes?.success && Array.isArray(recRes.data)) {

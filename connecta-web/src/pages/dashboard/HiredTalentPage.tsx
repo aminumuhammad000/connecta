@@ -237,7 +237,7 @@ export const HiredTalentPage: React.FC = () => {
               <motion.div
                 key={t._id}
                 whileHover={{ y: -4 }}
-                onClick={() => setSelectedCandidateDetail(t)}
+                onClick={() => navigate('/talent/' + t._id)}
                 className="glass-card"
                 style={{
                   padding: '24px',
@@ -286,9 +286,9 @@ export const HiredTalentPage: React.FC = () => {
                   {/* Rating & Dynamic Real Rate Metrics */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)', padding: '10px 14px', borderRadius: '12px', marginBottom: '14px', border: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', fontWeight: 700, color: '#F59E0B' }}>
-                      <Star size={14} fill="#F59E0B" /> {t.rating || t.averageRating || '4.9'}
+                      <Star size={14} fill="#F59E0B" /> {t.rating || t.averageRating ? Number(t.rating || t.averageRating).toFixed(1) : '5.0'}
                       <span style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.74rem' }}>
-                        ({t.reviewsCount || 15} reviews)
+                        ({t.reviewsCount ?? (Array.isArray(t.reviews) ? t.reviews.length : 0)} reviews)
                       </span>
                     </div>
 

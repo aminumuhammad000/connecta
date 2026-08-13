@@ -139,6 +139,11 @@ export const authAPI = {
     return data;
   },
 
+  getUserById: async (id: string) => {
+    const { data } = await apiClient.get<ApiResponse<any>>(`/api/users/${id}`);
+    return data;
+  },
+
   createOffer: async (offerData: any) => {
     const { data } = await apiClient.post<ApiResponse>('/api/contracts/offer', offerData);
     return data;

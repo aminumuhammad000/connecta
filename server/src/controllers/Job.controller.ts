@@ -8,8 +8,16 @@ import { createFeedPost } from '../services/feed.service.js';
 export const getClientJobs = async (req: Request, res: Response) => {
   try {
     const clientId = (req as any).user?._id;
-    const jobs = await Job.find({ clientId }).sort({ createdAt: -1 });
-    res.status(200).json({ success: true, data: jobs });
+    const jobs = await Job.find({ clientId }).sort({ createdAt: -1 }).lean();
+
+    const jobsWithCounts = await Promise.all(
+      jobs.map(async (j: any) => {
+        const count = await Proposal.countDocuments({ jobId: j._id });
+        return { ...j, proposalsCount: count, proposalCount: count };
+      })
+    );
+
+    res.status(200).json({ success: true, data: jobsWithCounts });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }
@@ -40,7 +48,14 @@ export const getAllJobs = async (req: Request, res: Response) => {
       .limit(Number(limit))
       .populate("clientId", "firstName lastName email profileImage");
 
-    res.status(200).json({ success: true, data: jobs });
+    const jobsWithCounts = await Promise.all(
+      jobs.map(async (j: any) => {
+        const count = await Proposal.countDocuments({ jobId: j._id });
+        return { ...j.toObject(), proposalsCount: count, proposalCount: count };
+      })
+    );
+
+    res.status(200).json({ success: true, data: jobsWithCounts });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }

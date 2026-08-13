@@ -359,7 +359,11 @@ export const JobDetailsPage: React.FC = () => {
                         >
                           {/* Candidate Header Profile */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
-                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                            <div
+                              onClick={() => navigate(`/talent/${candidate._id || p.freelancerId}`)}
+                              style={{ display: 'flex', gap: '14px', alignItems: 'center', cursor: 'pointer' }}
+                              title="Click to view full freelancer profile details"
+                            >
                               <img
                                 src={candidate.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=FD6730&color=fff`}
                                 alt={candidateName}
@@ -367,7 +371,7 @@ export const JobDetailsPage: React.FC = () => {
                               />
                               <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                                  <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, textDecoration: 'underline decoration-dotted' }}>
                                     {candidateName}
                                   </h4>
                                   <VerifiedBadge tier={candidate.verificationTier || (candidate.isVerified ? 'vetted_pro' : 'community')} />
@@ -377,9 +381,9 @@ export const JobDetailsPage: React.FC = () => {
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                                   <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#F59E0B', fontWeight: 700 }}>
-                                    <Star size={12} fill="#F59E0B" /> {candidate.rating || '4.9'}
+                                    <Star size={12} fill="#F59E0B" /> {candidate.rating || candidate.averageRating ? Number(candidate.rating || candidate.averageRating).toFixed(1) : '5.0'}
                                   </span>
-                                  <span>• 100% Success Score</span>
+                                  <span>• {candidate.jobSuccessScore || 100}% Success Score</span>
                                 </div>
                               </div>
                             </div>

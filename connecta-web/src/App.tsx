@@ -41,6 +41,7 @@ import { HiredTalentPage } from './pages/dashboard/HiredTalentPage';
 import { PostJobPage } from './pages/dashboard/PostJobPage';
 import { ProposalDetailsPage } from './pages/dashboard/ProposalDetailsPage';
 import { ClientWriteReviewPage } from './pages/dashboard/ClientWriteReviewPage';
+import { FreelancerProfileDetailsPage } from './pages/dashboard/FreelancerProfileDetailsPage';
 
 export const App: React.FC = () => {
   return (
@@ -77,6 +78,8 @@ export const App: React.FC = () => {
                   <Route path="/freelancer/dashboard" element={<FreelancerDashboardPage />} />
                   <Route path="/client/projects" element={<ClientProjectsPage />} />
                   <Route path="/client/talent" element={<HiredTalentPage />} />
+                  <Route path="/talent/:id" element={<FreelancerProfileDetailsPage />} />
+                  <Route path="/freelancer/:id" element={<FreelancerProfileDetailsPage />} />
                   <Route path="/client/reviews/new" element={<ClientWriteReviewPage />} />
                   <Route path="/jobs" element={<FindJobsPage />} />
                   <Route path="/jobs/new" element={<PostJobPage />} />
