@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Rss, ThumbsUp, MessageCircle, Share2, Loader2,
-  CheckCircle2, Send, Image, MoreHorizontal, Globe, ShieldCheck,
-  ArrowUpRight, TrendingUp, Sparkles, MessageSquare, FileText, UserPlus
+  CheckCircle2, Send, Image, Globe, ShieldCheck,
+  ArrowUpRight, TrendingUp, Sparkles, FileText, UserPlus
 } from 'lucide-react';
 import { feedAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
