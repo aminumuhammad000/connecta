@@ -9,6 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
 import { jobAPI, proposalAPI, walletAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
@@ -74,6 +75,7 @@ export const FreelancerDashboardPage: React.FC = () => {
 
   return (
     <DashboardLayout>
+      <MinimalistLoader loading={loadingJobs} />
       {/* ── 1. Hero Welcome Banner ── */}
       <motion.div
         className="dashboard-hero-card"

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FileText, Clock, CheckCircle2, XCircle, Loader2, ArrowUpRight, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { proposalAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 
 export const MyProposalsPage: React.FC = () => {
@@ -53,10 +54,11 @@ export const MyProposalsPage: React.FC = () => {
         </p>
       </div>
 
+      <MinimalistLoader loading={loading} />
       {loading ? (
-        <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={26} className="animate-spin" style={{ margin: '0 auto 12px' }} />
-          <span>Fetching your proposals...</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       ) : proposals.length === 0 ? (
         <div className="glass-card" style={{ padding: '48px', textAlign: 'center', borderRadius: '20px', border: '1px solid var(--border-color)' }}>

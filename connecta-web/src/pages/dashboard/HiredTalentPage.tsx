@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, projectAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 import { EmploymentOfferModal } from '../../components/modals/EmploymentOfferModal';
 import { formatJobBudget } from '../../utils/currency';
@@ -213,11 +214,14 @@ export const HiredTalentPage: React.FC = () => {
       </div>
 
       {/* Main Grid View */}
+      <MinimalistLoader loading={loading} />
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={28} className="animate-spin" style={{ margin: '0 auto 10px' }} />
-          <div>Loading African talent profiles from database...</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
+      ) : filteredTalent.length === 0 ? (
       ) : filteredTalent.length === 0 ? (
         <div className="glass-card" style={{ padding: '50px 20px', textAlign: 'center', borderRadius: '20px', color: 'var(--text-muted)' }}>
           <UserCheck size={40} style={{ margin: '0 auto 12px', opacity: 0.5 }} />

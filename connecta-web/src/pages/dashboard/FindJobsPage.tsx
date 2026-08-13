@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, Loader2, ShieldCheck, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { VerificationRequestModal } from '../../components/modals/VerificationRequestModal';
 
@@ -140,10 +141,12 @@ export const FindJobsPage: React.FC = () => {
       </div>
 
       {/* Jobs List */}
+      <MinimalistLoader loading={loading} />
       {loading ? (
-        <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={26} className="animate-spin" style={{ margin: '0 auto 12px' }} />
-          <span>Searching available jobs...</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       ) : filteredJobs.length === 0 ? (
         <div className="glass-card" style={{ padding: '40px', textAlign: 'center', borderRadius: '18px' }}>

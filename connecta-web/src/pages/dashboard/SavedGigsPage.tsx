@@ -3,7 +3,8 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import { Bookmark, Building2, MapPin, CheckCircle2, ArrowUpRight, Clock, Trash2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { jobAPI } from '../../services/api';
+import { jobAPI, savedJobAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 
 export const SavedGigsPage: React.FC = () => {
@@ -46,10 +47,11 @@ export const SavedGigsPage: React.FC = () => {
         </p>
       </div>
 
+      <MinimalistLoader loading={loading} />
       {loading ? (
-        <div style={{ padding: '80px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={26} className="animate-spin" style={{ margin: '0 auto 12px' }} />
-          <span>Loading saved gigs...</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       ) : savedJobs.length === 0 ? (
         <div className="glass-card" style={{ padding: '48px', textAlign: 'center', borderRadius: '20px', border: '1px solid var(--border-color)' }}>

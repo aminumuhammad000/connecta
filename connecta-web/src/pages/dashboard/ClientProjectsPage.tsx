@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Briefcase, Search, ArrowUpRight, PlusCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 
 export const ClientProjectsPage: React.FC = () => {
@@ -101,10 +102,11 @@ export const ClientProjectsPage: React.FC = () => {
       </div>
 
       {/* Projects List */}
+      <MinimalistLoader loading={loading} />
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <Loader2 size={26} className="animate-spin" style={{ margin: '0 auto 10px' }} />
-          <span>Loading client project postings...</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="glass-card" style={{ padding: '40px', textAlign: 'center', borderRadius: '20px' }}>

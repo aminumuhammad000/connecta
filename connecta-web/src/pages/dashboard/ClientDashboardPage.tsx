@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
-import { jobAPI, walletAPI } from '../../services/api';
+import { dashboardAPI, jobAPI, proposalAPI } from '../../services/api';
+import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
@@ -79,6 +80,7 @@ export const ClientDashboardPage: React.FC = () => {
 
   return (
     <DashboardLayout>
+      <MinimalistLoader loading={loadingJobs} />
       {/* ── 1. Compact Hero Welcome Banner ── */}
       <motion.div
         className="dashboard-hero-card"

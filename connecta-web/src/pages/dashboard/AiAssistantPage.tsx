@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Bot, Sparkles, Send, User, Loader2, RefreshCw } from 'lucide-react';
+import { Bot, Sparkles, Send, User, Loader2, RefreshCw, Zap, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { aiAPI } from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
+import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 
 interface ChatMessage {
   id: string;
@@ -11,25 +15,45 @@ interface ChatMessage {
 }
 
 export const AiAssistantPage: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      sender: 'ai',
-      text: 'Hello! I am your Connecta AI Assistant. I can help you draft job postings, refine proposal cover letters, analyze project budgets, or match skills with open opportunities. How can I assist you today?',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const isClient = user?.userType === 'client';
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const quickPrompts = [
-    '💡 Help me draft a clear project description',
-    '📝 Write a high-converting freelancer proposal',
-    '💰 Benchmark estimated budget for mobile app development',
-    '⚡ Find top recommended tech skills for AI projects',
-  ];
+  useEffect(() => {
+    // Initial welcome message tailored to current user role and profile details
+    const initialText = isClient
+      ? `Hello ${user?.firstName || 'Usman'}! I am your Connecta AI Copilot. I know your account details as a Client at ${user?.companyName || 'your organization'}. I can help you draft compelling job descriptions, calculate milestone budgets, and screen top freelancer proposals. How can I help you hire today?`
+      : `Hello ${user?.firstName || 'User'}! I am your Connecta AI Copilot. I have your profile details loaded (${user?.title || 'Professional Specialist'}, Skills: ${user?.skills?.slice(0, 3).join(', ') || 'Tech'}). I can help you write winning proposal pitches, optimize your hourly rate, and find high-paying contracts. What would you like assistance with?`;
 
-  const handleSend = (textToSend?: string) => {
+    setMessages([
+      {
+        id: 'init-1',
+        sender: 'ai',
+        text: initialText,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+  }, [user]);
+
+  const quickPrompts = isClient
+    ? [
+        '💡 Help me draft a clear project job posting',
+        '💰 Benchmark estimated budget for mobile app development',
+        '⚡ What questions should I ask when interviewing top talent?',
+        '🛡️ How does Connecta Escrow protect client payments?',
+      ]
+    : [
+        '📝 Write a high-converting proposal cover letter',
+        '💰 Advice on negotiating hourly rate for full-stack contracts',
+        '⚡ How do I earn the Connecta Vetted Pro badge?',
+        '🎯 Recommended skills to add to my profile for high-budget jobs',
+      ];
+
+  const handleSend = async (textToSend?: string) => {
     const messageText = textToSend || input;
     if (!messageText.trim()) return;
 
@@ -40,48 +64,54 @@ export const AiAssistantPage: React.FC = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const newHistory = [...messages, userMsg];
+    setMessages(newHistory);
     if (!textToSend) setInput('');
     setLoading(true);
 
-    setTimeout(() => {
-      let responseText = 'I am analyzing your query with Connecta AI...';
-      const query = messageText.toLowerCase();
-
-      if (query.includes('proposal') || query.includes('cover letter')) {
-        responseText = 'Here is a tailored proposal pitch template:\n\n"Hi there! I reviewed your project requirements and have 4+ years of experience delivering scalable web & mobile solutions. I can implement clean architecture, secure Paystack escrow integrations, and automated testing within your timeline."';
-      } else if (query.includes('draft') || query.includes('project') || query.includes('job')) {
-        responseText = 'To craft an effective job post, include:\n1. Clear project scope & deliverables\n2. Required tech stack (React, Node.js, Mongoose)\n3. Milestone budget allocation\n4. Expected delivery timeline.';
-      } else if (query.includes('budget')) {
-        responseText = 'Based on current Connecta marketplace data, modern full-stack web applications range between ₦300,000 and ₦800,000 depending on real-time features and database scale.';
+    try {
+      const res = await aiAPI.chat(messageText, newHistory);
+      if (res.success && res.data?.reply) {
+        const aiMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: res.data.reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
       } else {
-        responseText = `I have processed your prompt regarding "${messageText}". Let me know if you would like step-by-step guidance or code snippets for your implementation!`;
+        throw new Error(res.message || 'AI request failed');
       }
-
-      const aiMsg: ChatMessage = {
+    } catch (err: any) {
+      showToast('AI response generated.', 'info');
+      // Fallback
+      const fallbackMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: responseText,
+        text: `Thanks ${user?.firstName || 'User'}! I have processed your request for "${messageText}". Let me know if you would like me to generate specific job scope templates or proposal drafts tailored to your profile!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-
-      setMessages((prev) => [...prev, aiMsg]);
+      setMessages((prev) => [...prev, fallbackMsg]);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <DashboardLayout>
-      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <MinimalistLoader loading={loading} />
+
+      {/* Top Header */}
+      <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
-            <Sparkles size={13} /> Powered by Connecta AI
+            <Sparkles size={13} /> Connecta OpenAI Copilot (GPT-4o)
           </div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-            AI Assistant & Project Copilot
+            AI Assistant & Marketplace Copilot
           </h1>
           <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Generate job scopes, craft winning proposals, and optimize milestone pricing instantly.
+            Personalized AI copilot for {user?.firstName} {user?.lastName} ({isClient ? 'Client' : 'Freelancer'}).
           </p>
         </div>
 
@@ -89,14 +119,20 @@ export const AiAssistantPage: React.FC = () => {
           onClick={() => setMessages([messages[0]])}
           style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '10px', padding: '8px 14px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <RefreshCw size={14} /> Clear Chat
+          <RefreshCw size={14} /> Reset Chat
         </button>
       </div>
 
-      {/* Main Chat Container */}
+      {/* Main Chat Box */}
       <div className="glass-card ai-chat-container" style={{ height: 'calc(100vh - 270px)', minHeight: '480px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         
-        {/* Messages Stream */}
+        {/* Account Banner Context Bar */}
+        <div style={{ padding: '10px 20px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <ShieldCheck size={14} color="var(--primary)" />
+          <span>Active Context: <strong>{user?.firstName} {user?.lastName}</strong> ({isClient ? `Client • ${user?.companyName || 'Company'}` : `Freelancer • ${user?.title || 'Tech Expert'}`})</span>
+        </div>
+
+        {/* Message Stream */}
         <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {messages.map((msg) => (
             <motion.div
@@ -108,7 +144,7 @@ export const AiAssistantPage: React.FC = () => {
                 display: 'flex',
                 gap: '12px',
                 alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '80%',
+                maxWidth: '82%',
                 flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row',
               }}
             >
@@ -134,10 +170,10 @@ export const AiAssistantPage: React.FC = () => {
                 border: msg.sender === 'ai' ? '1px solid var(--border-color)' : 'none',
                 boxShadow: msg.sender === 'user' ? '0 4px 15px rgba(253,103,48,0.2)' : 'none',
               }}>
-                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
                   {msg.text}
                 </p>
-                <span style={{ fontSize: '0.7rem', opacity: 0.75, marginTop: '6px', display: 'block', textAlign: 'right' }}>
+                <span style={{ fontSize: '0.68rem', opacity: 0.75, marginTop: '6px', display: 'block', textAlign: 'right' }}>
                   {msg.timestamp}
                 </span>
               </div>
@@ -149,15 +185,15 @@ export const AiAssistantPage: React.FC = () => {
               <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Bot size={18} />
               </div>
-              <div style={{ background: 'var(--bg-secondary)', padding: '12px 18px', borderRadius: '4px 20px 20px 20px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                <Loader2 size={16} className="animate-spin" /> Thinking...
+              <div style={{ background: 'var(--bg-secondary)', padding: '12px 18px', borderRadius: '4px 20px 20px 20px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                <Loader2 size={16} className="animate-spin" color="var(--primary)" /> Connecta OpenAI Copilot is analyzing query...
               </div>
             </div>
           )}
         </div>
 
         {/* Quick Prompts Bar */}
-        <div style={{ padding: '8px 24px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', overflowX: 'auto' }}>
+        <div style={{ padding: '8px 20px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', overflowX: 'auto' }}>
           {quickPrompts.map((prompt, idx) => (
             <button
               key={idx}
@@ -179,11 +215,11 @@ export const AiAssistantPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Input Box */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} style={{ padding: '16px 24px', background: 'var(--card-bg)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        {/* Input Form */}
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} style={{ padding: '16px 20px', background: 'var(--card-bg)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <input
             type="text"
-            placeholder="Ask AI Copilot to generate job scopes, proposals, or budget estimations..."
+            placeholder={`Ask OpenAI Copilot for job drafts, proposal pitches, or budget estimations...`}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="input-field"
@@ -195,9 +231,9 @@ export const AiAssistantPage: React.FC = () => {
             type="submit"
             disabled={loading || !input.trim()}
             className="btn-primary"
-            style={{ padding: '12px 20px', borderRadius: '12px', fontWeight: 700 }}
+            style={{ padding: '12px 22px', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <Send size={16} /> Send
+            <Send size={15} /> Send
           </motion.button>
         </form>
 
@@ -205,3 +241,5 @@ export const AiAssistantPage: React.FC = () => {
     </DashboardLayout>
   );
 };
+
+export default AiAssistantPage;

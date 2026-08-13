@@ -110,7 +110,8 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/feed", feedRoutes);
-app.use("/api/verifications", verificationRoutes);
+import aiRoutes from "./routes/ai.routes.js";
+app.use("/api/ai", aiRoutes);
 
 import contactRoutes from "./routes/contact.routes.js";
 app.use("/api/contact", contactRoutes);

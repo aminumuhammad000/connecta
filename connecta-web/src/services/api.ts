@@ -350,6 +350,16 @@ export const notificationAPI = {
   clearRead: async () => {
     const { data } = await apiClient.delete<ApiResponse<any>>('/api/notifications/clear-read');
     return data;
-  },
+  }
 };
 
+// AI Assistant API service
+export const aiAPI = {
+  chat: async (message: string, messagesHistory: any[]) => {
+    const { data } = await apiClient.post<ApiResponse<{ reply: string; userContext?: any }>>('/api/ai/chat', {
+      message,
+      messages: messagesHistory
+    });
+    return data;
+  }
+};
