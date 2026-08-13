@@ -234,10 +234,6 @@ export const proposalAPI = {
   rejectProposal: async (id: string) => {
     const { data } = await apiClient.put<ApiResponse<any>>(`/api/proposals/${id}/reject`, {});
     return data;
-  },
-  getProposalById: async (id: string) => {
-    const { data } = await apiClient.get<ApiResponse<any>>(`/api/proposals/${id}`);
-    return data;
   }
 };
 

@@ -116,8 +116,8 @@ export const HelpSupportPage: React.FC = () => {
             <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>How can we help?</label>
             <textarea placeholder="Provide details about your query..." value={ticketMessage} onChange={(e) => setTicketMessage(e.target.value)} className="input-field" rows={4} style={{ width: '100%', lineHeight: 1.5 }} />
           </div>
-          <button type="submit" className="btn-primary" style={{ padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, justifyContent: 'center' }}>
-            Submit Ticket <Send size={16} />
+          <button type="submit" disabled={submitting} className="btn-primary" style={{ padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, justifyContent: 'center' }}>
+            {submitting ? 'Submitting...' : 'Submit Ticket'} <Send size={16} />
           </button>
         </form>
       </div>
