@@ -42,8 +42,6 @@ const DEFAULT_ICON = { icon: <Bell size={18} />, color: '#8b5cf6', bg: 'rgba(139
 
 const getNotifMeta = (type: string) => NOTIF_ICON_MAP[type] || DEFAULT_ICON;
 
-const getNotifMeta = (type: string) => NOTIF_ICON_MAP[type] || DEFAULT_ICON;
-
 // ── Helpers ────────────────────────────────────────────────────────────────
 const formatTimeAgo = (dateStr: string) => {
   const diff = Date.now() - new Date(dateStr).getTime();

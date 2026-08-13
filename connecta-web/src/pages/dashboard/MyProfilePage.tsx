@@ -3,8 +3,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, Save, Loader2, Camera, Plus, Trash2, KeyRound, User as UserIcon,
-  Briefcase, Globe, Phone, MapPin, DollarSign, Lock, Eye, EyeOff, CheckCircle2,
-  AlertCircle, Sparkles, Building2, Tag, X, Award, Languages, Shield
+  Lock, Eye, EyeOff, AlertCircle, Sparkles, X, Shield
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
