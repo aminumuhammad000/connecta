@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
-import { dashboardAPI, jobAPI, proposalAPI, walletAPI } from '../../services/api';
-import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
+import { jobAPI, walletAPI } from '../../services/api';
+import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Sparkles, Send, User, Loader2, RotateCcw, ShieldCheck, Zap, ArrowUpRight, MessageSquare } from 'lucide-react';
+import { Bot, Send, User, Loader2, RotateCcw, ShieldCheck, Zap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { aiAPI } from '../../services/api';
 import { MinimalistLoader } from '../../components/common/SkeletonLoader';

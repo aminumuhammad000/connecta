@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Briefcase, Search, ArrowUpRight, PlusCircle, Loader2 } from 'lucide-react';
+import { Briefcase, Search, ArrowUpRight, PlusCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';

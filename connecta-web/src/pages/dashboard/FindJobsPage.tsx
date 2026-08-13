@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, Loader2, ShieldCheck, Filter } from 'lucide-react';
+import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, ShieldCheck, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';

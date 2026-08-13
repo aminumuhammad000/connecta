@@ -21,7 +21,8 @@ export interface User {
   country?: string;
   currency?: string;
   workType?: 'freelancing' | 'permanent';
-  portfolioLinks?: string[];
+  companyName?: string;
+  website?: string;
   createdAt?: string;
 }
 
