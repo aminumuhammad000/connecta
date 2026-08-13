@@ -4,6 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { RoleProvider } from './contexts/RoleContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Pages
 import { LandingPage } from './pages/auth/LandingPage';
@@ -52,6 +53,7 @@ export const App: React.FC = () => {
           <ToastProvider>
             <CurrencyProvider>
               <BrowserRouter>
+                  <NotificationProvider>
                 <Routes>
                   {/* Default Onboarding & Landing */}
                   <Route path="/" element={<OnboardingScreen />} />
@@ -101,6 +103,7 @@ export const App: React.FC = () => {
                   {/* Catch-all fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+                  </NotificationProvider>
               </BrowserRouter>
             </CurrencyProvider>
           </ToastProvider>

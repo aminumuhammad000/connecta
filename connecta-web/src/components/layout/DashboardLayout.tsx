@@ -2,13 +2,45 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { notificationAPI } from '../../services/api';
+import { useNotifications } from '../../contexts/NotificationContext';
 import {
-  Sun, Moon, LogOut, PlusCircle, Bell, LayoutDashboard, Briefcase, MessageSquare,
-  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, CheckCircle2, Rss, Sparkles, Search, Building2, Menu, X
+  Sun, Moon, LogOut, Bell, LayoutDashboard, Briefcase, MessageSquare,
+  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, Rss, Sparkles, Menu, X,
+  FileText as FileTextIcon, CheckCircle2, XCircle, DollarSign, ArrowDownToLine,
+  Star, Rocket, CheckCircle, Flag, FileCheck, Target, Users, AlarmClock,
+  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, Award, PlusCircle
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
+
+// Lucide icon map for notification types (no emojis)
+const DROPDOWN_ICON_MAP: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+  proposal_received:    { icon: <FileTextIcon size={15} />,    color: '#fd6730', bg: 'rgba(253,103,48,0.12)' },
+  proposal_new:         { icon: <FileTextIcon size={15} />,    color: '#fd6730', bg: 'rgba(253,103,48,0.12)' },
+  proposal_accepted:    { icon: <CheckCircle2 size={15} />,    color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  proposal_rejected:    { icon: <XCircle size={15} />,         color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  payment_received:     { icon: <DollarSign size={15} />,      color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  payment_released:     { icon: <ArrowDownToLine size={15} />, color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  message_received:     { icon: <MessageSquare size={15} />,   color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  review_received:      { icon: <Star size={15} />,            color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  job_posted:           { icon: <Briefcase size={15} />,       color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  project_started:      { icon: <Rocket size={15} />,          color: '#fd6730', bg: 'rgba(253,103,48,0.12)' },
+  project_completed:    { icon: <CheckCircle size={15} />,     color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  milestone_completed:  { icon: <Flag size={15} />,            color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  contract_signed:      { icon: <FileCheck size={15} />,       color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  gig_matched:          { icon: <Target size={15} />,          color: '#fd6730', bg: 'rgba(253,103,48,0.12)' },
+  collabo_invite:       { icon: <Handshake size={15} />,       color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  collabo_started:      { icon: <Users size={15} />,           color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  job_invite:           { icon: <MailOpen size={15} />,        color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  deadline_approaching: { icon: <AlarmClock size={15} />,      color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  system:               { icon: <Bell size={15} />,            color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  info:                 { icon: <Info size={15} />,            color: '#3B82F6', bg: 'rgba(59,130,246,0.12)' },
+  success:              { icon: <CheckCircle2 size={15} />,    color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  warning:              { icon: <AlertTriangle size={15} />,   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+  error:                { icon: <AlertCircle size={15} />,     color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+};
+const DEFAULT_DROPDOWN_ICON = { icon: <Bell size={15} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' };
+const getDropdownMeta = (type: string) => DROPDOWN_ICON_MAP[type] || DEFAULT_DROPDOWN_ICON;
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,40 +51,23 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+  // Notification state comes from global NotificationContext
+  const {
+    notifications: allNotifications,
+    unreadCount,
+    markAsRead: ctxMarkAsRead,
+    markAllAsRead: ctxMarkAllRead,
+    deleteNotification: ctxDeleteNotif,
+    fetchNotifications: ctxFetch,
+    loading: notifLoading,
+  } = useNotifications();
+
+  // Only show last 10 in dropdown
+  const notifications = allNotifications.slice(0, 10);
+
   const [showNotifMenu, setShowNotifMenu] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
-  const [notifications, setNotifications] = React.useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = React.useState(0);
-  const [notifLoading, setNotifLoading] = React.useState(false);
   const notifRef = React.useRef<HTMLDivElement>(null);
-
-  // Fetch notifications when bell is opened or on mount
-  const fetchNotifications = React.useCallback(async () => {
-    try {
-      setNotifLoading(true);
-      const res = await notificationAPI.getNotifications(1, 10);
-      if (res.success && Array.isArray(res.data)) {
-        setNotifications(res.data);
-        setUnreadCount((res as any).unreadCount ?? res.data.filter((n: any) => !n.isRead).length);
-      }
-    } catch (e) {
-      // silent fail
-    } finally {
-      setNotifLoading(false);
-    }
-  }, []);
-
-  // Poll unread count every 30 seconds
-  React.useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(async () => {
-      try {
-        const res = await notificationAPI.getUnreadCount();
-        if (res.success) setUnreadCount((res.data as any)?.unreadCount ?? 0);
-      } catch {}
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
 
   // Close dropdown on outside click
   React.useEffect(() => {
@@ -65,52 +80,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleMarkAllRead = async () => {
-    try {
-      await notificationAPI.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-    } catch {}
-  };
-
-  const handleMarkOneRead = async (id: string) => {
-    try {
-      await notificationAPI.markAsRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {}
-  };
-
+  const handleMarkAllRead = () => ctxMarkAllRead();
+  const handleMarkOneRead = (id: string) => ctxMarkAsRead(id);
   const handleDeleteNotif = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await notificationAPI.deleteNotification(id);
-      const wasUnread = notifications.find(n => n._id === id && !n.isRead);
-      setNotifications(prev => prev.filter(n => n._id !== id));
-      if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch {}
-  };
-
-  const getNotifIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      proposal_received: '📋', proposal_accepted: '🎉', proposal_rejected: '❌',
-      payment_received: '💰', payment_released: '💸', message_received: '💬',
-      review_received: '⭐', job_posted: '💼', project_started: '🚀',
-      project_completed: '✅', milestone_completed: '🏁', contract_signed: '📝',
-      gig_matched: '🎯', collabo_invite: '🤝', deadline_approaching: '⏰',
-      system: '🔔', info: 'ℹ️', success: '✅', warning: '⚠️', error: '🚨',
-    };
-    return icons[type] || '🔔';
-  };
-
-  const getNotifBorderColor = (type: string) => {
-    const colors: Record<string, string> = {
-      proposal_accepted: 'var(--primary)', payment_received: '#22c55e',
-      payment_released: '#22c55e', message_received: '#3B82F6',
-      review_received: '#f59e0b', gig_matched: 'var(--primary)',
-      project_completed: '#22c55e', error: '#ef4444', warning: '#f59e0b',
-    };
-    return colors[type] || 'var(--border-color)';
+    ctxDeleteNotif(id);
   };
 
   const formatTimeAgo = (dateStr: string) => {
@@ -371,43 +345,60 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '4px' }}>No notifications yet</div>
                       </div>
                     ) : (
-                      notifications.map((notif) => (
-                        <div
-                          key={notif._id}
-                          onClick={() => handleMarkOneRead(notif._id)}
-                          style={{
-                            padding: '11px 16px',
-                            borderLeft: `3px solid ${notif.isRead ? 'transparent' : getNotifBorderColor(notif.type)}`,
-                            background: notif.isRead ? 'transparent' : 'rgba(var(--primary-rgb, 253,103,48),0.04)',
-                            cursor: 'pointer',
-                            borderBottom: '1px solid var(--border-color)',
-                            display: 'flex',
-                            gap: '10px',
-                            alignItems: 'flex-start',
-                            transition: 'background 0.15s',
-                          }}
-                        >
-                          <span style={{ fontSize: '1.15rem', flexShrink: 0, marginTop: '1px' }}>{getNotifIcon(notif.type)}</span>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontWeight: notif.isRead ? 500 : 700, fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '2px', lineHeight: 1.3 }}>
-                              {notif.title}
-                            </div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.73rem', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {notif.message}
-                            </div>
-                            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px', display: 'block' }}>
-                              {formatTimeAgo(notif.createdAt)}
-                            </span>
-                          </div>
-                          <button
-                            onClick={(e) => handleDeleteNotif(notif._id, e)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', flexShrink: 0, opacity: 0.5 }}
-                            title="Dismiss"
+                      notifications.map((notif) => {
+                        const meta = getDropdownMeta(notif.type);
+                        return (
+                          <div
+                            key={notif._id}
+                            onClick={() => {
+                              handleMarkOneRead(notif._id);
+                              setShowNotifMenu(false);
+                              if (notif.link) navigate(notif.link);
+                              else navigate('/notifications');
+                            }}
+                            style={{
+                              padding: '10px 14px',
+                              borderLeft: `3px solid ${notif.isRead ? 'transparent' : meta.color}`,
+                              background: notif.isRead ? 'transparent' : 'var(--bg-primary)',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid var(--border-color)',
+                              display: 'flex',
+                              gap: '10px',
+                              alignItems: 'flex-start',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = notif.isRead ? 'transparent' : 'var(--bg-primary)')}
                           >
-                            <X size={13} />
-                          </button>
-                        </div>
-                      ))
+                            {/* Lucide icon badge */}
+                            <div style={{
+                              width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
+                              background: meta.bg, color: meta.color,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              {meta.icon}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontWeight: notif.isRead ? 500 : 700, fontSize: '0.79rem', color: 'var(--text-primary)', marginBottom: '2px', lineHeight: 1.3 }}>
+                                {notif.title}
+                              </div>
+                              <div style={{ color: 'var(--text-secondary)', fontSize: '0.71rem', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {notif.message}
+                              </div>
+                              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', marginTop: '3px', display: 'block' }}>
+                                {formatTimeAgo(notif.createdAt)}
+                              </span>
+                            </div>
+                            <button
+                              onClick={(e) => handleDeleteNotif(notif._id, e)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', flexShrink: 0, opacity: 0.4 }}
+                              title="Dismiss"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
 
