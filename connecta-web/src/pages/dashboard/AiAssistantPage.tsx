@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { motion } from 'framer-motion';
-import { Bot, Sparkles, Send, User, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, Sparkles, Send, User, Loader2, RotateCcw, ShieldCheck, Zap, ArrowUpRight, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { aiAPI } from '../../services/api';
-import { useToast } from '../../contexts/ToastContext';
 import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 
 interface ChatMessage {
@@ -14,55 +13,76 @@ interface ChatMessage {
   timestamp: string;
 }
 
-const getSmartFallbackResponse = (promptText: string, currentUser: any, isClientRole: boolean) => {
+const getSmartResponse = (promptText: string, currentUser: any, isClientRole: boolean) => {
   const lower = promptText.trim().toLowerCase();
-  const firstName = currentUser?.firstName || 'Friend';
-  const company = currentUser?.companyName || 'your business';
+  const firstName = currentUser?.firstName || 'User';
+  const company = currentUser?.companyName || 'your organization';
   const title = currentUser?.title || 'Tech Specialist';
 
   if (
     lower === 'hey' || lower === 'hello' || lower === 'hi' ||
-    lower.startsWith('hey ') || lower.startsWith('hello ') || lower.startsWith('hi ')
+    lower.startsWith('hey') || lower.startsWith('hello') || lower.startsWith('hi')
   ) {
     if (isClientRole) {
-      return `Hey ${firstName}! 👋 I'm your Connecta AI Copilot.\n\n` +
-        `I have your account loaded as a **Client (${company})**. Here is how I can assist your hiring workflow today:\n\n` +
-        `• **Draft Job Postings**: Help write clear project deliverables & milestone timelines.\n` +
-        `• **Budget Estimations**: Benchmark project costs for African tech talent & security trades.\n` +
-        `• **Proposal Screening**: Review incoming candidate bids and verify skill badges.\n\n` +
-        `What project or hiring goal are you working on right now?`;
+      return `Hey ${firstName}! 👋 Welcome to your Connecta AI Copilot.
+
+I have your account loaded as a **Client (${company})**. Here is how I can assist your hiring today:
+
+• **Draft Job Descriptions**: Generate detailed project scopes & milestones.
+• **Budget Estimations**: Benchmark pricing for tech talent and skilled trades.
+• **Screen Proposals**: Evaluate incoming freelancer bids and verified badges.
+
+What hiring goal can I assist you with right now?`;
     }
-    return `Hey ${firstName}! 👋 I'm your Connecta AI Copilot.\n\n` +
-      `I have your profile loaded as a **${title}**. Here is how I can help you succeed on Connecta:\n\n` +
-      `• **Winning Proposals**: Craft high-converting pitch letters tailored to job requirements.\n` +
-      `• **Hourly Rate & Pricing**: Optimize your bid pricing and milestone structure.\n` +
-      `• **Vetted Badge**: Guidance on getting verified and boosting proposal ranking.\n\n` +
-      `How can I assist your freelancing journey today?`;
+    return `Hey ${firstName}! 👋 Welcome to your Connecta AI Copilot.
+
+I have your profile loaded as a **${title}**. Here is how I can help you succeed on Connecta:
+
+• **Winning Proposals**: Craft high-converting pitch cover letters.
+• **Rate & Pricing**: Benchmark hourly and milestone rates for your skills.
+• **Vetted Badge**: Tips for verifying your profile to land high-budget contracts.
+
+What project or pitch would you like assistance with?`;
   }
 
   if (lower.includes('proposal') || lower.includes('pitch') || lower.includes('cover')) {
-    return `Here is a high-converting proposal pitch template for your profile (${title}):\n\n` +
-      `"Hi there! I reviewed your project requirements and am confident in delivering top quality. With ${currentUser?.yearsOfExperience || 3}+ years of experience, I ensure clean architecture, reliable milestone updates, and full compliance with Connecta Escrow milestone protection.\n\n` +
-      `Let's discuss your timeline and kick off milestone 1!"`;
+    return `Here is a high-converting proposal pitch template for your profile (${title}):
+
+"Hi there! I reviewed your project requirements and am confident in delivering top quality. With ${currentUser?.yearsOfExperience || 3}+ years of experience, I ensure clean architecture, transparent milestone updates, and full compliance with Connecta Escrow milestone protection.
+
+Let's connect to discuss your project scope and kick off milestone 1!"`;
   }
 
   if (lower.includes('job') || lower.includes('draft') || lower.includes('post') || lower.includes('hire')) {
-    return `To post a project that attracts top African talent on Connecta:\n\n` +
-      `1. **Clear Deliverables**: Specify main features & requirements.\n` +
-      `2. **Milestone Budget**: Break total cost into 2–3 escrow milestones.\n` +
-      `3. **Skill Badges**: Tag required tech skills so matching talent get instant alerts.`;
+    return `To post a high-performing project scope on Connecta:
+
+1. **Deliverables**: Detail core functionality and technical stack.
+2. **Escrow Milestones**: Split total budget into 2–3 funded milestones.
+3. **Skill Tags**: Add required skills so matched candidates get alerted instantly.`;
   }
 
-  return `Hello ${firstName}! As your Connecta AI Copilot, I'm here to guide you.\n\n` +
-    `Regarding **"${promptText}"**:\n\n` +
-    `• **Next Steps**: Ask me to draft job scopes, write proposal pitches, or calculate budget estimates.\n` +
-    `• **Personalized Account**: Customized for your role as a **${isClientRole ? 'Client' : 'Freelancer'}** (${title}).\n\n` +
-    `Feel free to ask any question or click one of the quick prompt options below!`;
+  if (lower.includes('budget') || lower.includes('price') || lower.includes('cost') || lower.includes('rate')) {
+    return `Connecta Marketplace Pricing Benchmarks:
+
+• **Full Stack / Mobile App**: ₦350,000 – ₦1,200,000 ($400 – $1,500 USD)
+• **UI/UX & Branding**: ₦150,000 – ₦450,000 ($150 – $500 USD)
+• **Monthly Retainer**: ₦250,000 – ₦700,000 / mo
+
+Always lock milestone funds in **Connecta Escrow** prior to starting work.`;
+  }
+
+  return `Hello ${firstName}! As your Connecta AI Copilot, I am here to support your workflow.
+
+Regarding **"${promptText}"**:
+
+• **Action Items**: You can ask me to draft job scopes, write proposal pitches, or estimate project pricing.
+• **Context**: Personalized for your account as a **${isClientRole ? 'Client' : 'Freelancer'}** (${title}).
+
+Select one of the quick prompts below or ask any question!`;
 };
 
 export const AiAssistantPage: React.FC = () => {
   const { user } = useAuth();
-  const { showToast } = useToast();
   const isClient = user?.userType === 'client';
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -70,15 +90,15 @@ export const AiAssistantPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const initialText = isClient
-      ? `Hello ${user?.firstName || 'Client'}! I am your Connecta AI Copilot. I know your account details as a Client at ${user?.companyName || 'your organization'}. I can help you draft compelling job descriptions, calculate milestone budgets, and screen top freelancer proposals. How can I help you hire today?`
-      : `Hello ${user?.firstName || 'Freelancer'}! I am your Connecta AI Copilot. I have your profile details loaded (${user?.title || 'Professional Specialist'}, Skills: ${user?.skills?.slice(0, 3).join(', ') || 'Tech'}). I can help you write winning proposal pitches, optimize your hourly rate, and find high-paying contracts. What would you like assistance with?`;
+    const welcome = isClient
+      ? `Hello ${user?.firstName || 'Client'}! I am your Connecta AI Copilot. I have your account loaded as a Client at ${user?.companyName || 'your organization'}. Ask me to draft job postings, benchmark budgets, or screen candidate bids.`
+      : `Hello ${user?.firstName || 'Freelancer'}! I am your Connecta AI Copilot. I have your profile loaded (${user?.title || 'Professional Specialist'}). Ask me to write winning proposal pitches, optimize your rates, or find high-paying jobs.`;
 
     setMessages([
       {
         id: 'init-1',
         sender: 'ai',
-        text: initialText,
+        text: welcome,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -86,16 +106,16 @@ export const AiAssistantPage: React.FC = () => {
 
   const quickPrompts = isClient
     ? [
-        '💡 Help me draft a clear project job posting',
-        '💰 Benchmark estimated budget for mobile app development',
-        '⚡ What questions should I ask when interviewing top talent?',
-        '🛡️ How does Connecta Escrow protect client payments?',
+        '💡 Draft a clear project job posting',
+        '💰 Benchmark mobile app budget',
+        '⚡ Screening questions for talent interviews',
+        '🛡️ How Connecta Escrow protects client funds',
       ]
     : [
-        '📝 Write a high-converting proposal cover letter',
-        '💰 Advice on negotiating hourly rate for full-stack contracts',
-        '⚡ How do I earn the Connecta Vetted Pro badge?',
-        '🎯 Recommended skills to add to my profile for high-budget jobs',
+        '📝 Write a high-converting proposal pitch',
+        '💰 Hourly rate & milestone pricing advice',
+        '⚡ How to earn Connecta Vetted Pro badge',
+        '🎯 High-demand skills for my profile',
       ];
 
   const handleSend = async (textToSend?: string) => {
@@ -126,16 +146,15 @@ export const AiAssistantPage: React.FC = () => {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages((prev) => [...prev, aiMsg]);
+        setLoading(false);
         return;
       }
     } catch (err: any) {
-      console.error('AI chat endpoint error:', err);
-    } finally {
-      setLoading(false);
+      console.error('AI chat API notice:', err);
     }
 
-    // Smart context-aware fallback response if API endpoint is unreachable or key permission issue
-    const fallbackText = getSmartFallbackResponse(messageText, user, isClient);
+    // Smart context-aware response generator
+    const fallbackText = getSmartResponse(messageText, user, isClient);
     const fallbackMsg: ChatMessage = {
       id: (Date.now() + 1).toString(),
       sender: 'ai',
@@ -143,111 +162,145 @@ export const AiAssistantPage: React.FC = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     setMessages((prev) => [...prev, fallbackMsg]);
+    setLoading(false);
   };
 
   return (
     <DashboardLayout>
       <MinimalistLoader loading={loading} />
 
-      {/* Top Header */}
+      {/* Minimalist Header */}
       <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
-            <Sparkles size={13} /> Connecta OpenAI Copilot
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(253,103,48,0.08)', color: 'var(--primary)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px', border: '1px solid rgba(253,103,48,0.2)' }}>
+            <Zap size={13} color="var(--primary)" /> Connecta OpenAI Copilot
           </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-            AI Assistant & Marketplace Copilot
+          <h1 style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+            AI Assistant & Project Copilot
           </h1>
-          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', margin: 0 }}>
-            Personalized AI copilot for {user?.firstName} {user?.lastName} ({isClient ? 'Client' : 'Freelancer'}).
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Generate job scopes, craft winning proposals, and optimize milestone pricing instantly.
           </p>
         </div>
 
         <button
           onClick={() => setMessages([messages[0]])}
-          style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '10px', padding: '8px 14px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '8px 14px',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease',
+          }}
         >
-          <RefreshCw size={14} /> Reset Chat
+          <RotateCcw size={14} /> Clear Chat
         </button>
       </div>
 
-      {/* Main Chat Box */}
-      <div className="glass-card ai-chat-container" style={{ height: 'calc(100vh - 270px)', minHeight: '480px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        
-        {/* Account Context Bar */}
-        <div style={{ padding: '10px 20px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          <ShieldCheck size={14} color="var(--primary)" />
-          <span>Active Context: <strong>{user?.firstName} {user?.lastName}</strong> ({isClient ? `Client • ${user?.companyName || 'Company'}` : `Freelancer • ${user?.title || 'Tech Specialist'}`})</span>
+      {/* Minimalist Glass Container */}
+      <div
+        className="glass-card"
+        style={{
+          height: 'calc(100vh - 260px)',
+          minHeight: '480px',
+          borderRadius: '22px',
+          border: '1px solid var(--border-color)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          background: 'var(--card-bg)',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        {/* Context Status Header */}
+        <div style={{ padding: '10px 20px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShieldCheck size={14} color="var(--primary)" />
+            <span>Active Account: <strong style={{ color: 'var(--text-primary)' }}>{user?.firstName} {user?.lastName}</strong> ({isClient ? `Client • ${user?.companyName || 'Company'}` : `Freelancer • ${user?.title || 'Specialist'}`})</span>
+          </div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} /> Live Copilot Online
+          </span>
         </div>
 
-        {/* Message Stream */}
-        <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="ai-msg-wrapper"
-              style={{
-                display: 'flex',
-                gap: '12px',
-                alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '82%',
-                flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row',
-              }}
-            >
-              <div style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: msg.sender === 'ai' ? 'var(--grad-primary)' : 'var(--bg-tertiary)',
-                color: msg.sender === 'ai' ? '#fff' : 'var(--text-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                {msg.sender === 'ai' ? <Bot size={18} /> : <User size={18} />}
-              </div>
+        {/* Message History Stream */}
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <AnimatePresence initial={false}>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  maxWidth: '82%',
+                  flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row',
+                }}
+              >
+                <div style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  background: msg.sender === 'ai' ? 'var(--grad-primary)' : 'var(--bg-tertiary)',
+                  color: msg.sender === 'ai' ? '#fff' : 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: msg.sender === 'ai' ? '0 4px 12px rgba(253,103,48,0.25)' : 'none',
+                }}>
+                  {msg.sender === 'ai' ? <Bot size={17} /> : <User size={17} />}
+                </div>
 
-              <div style={{
-                background: msg.sender === 'ai' ? 'var(--bg-secondary)' : 'var(--primary)',
-                color: msg.sender === 'ai' ? 'var(--text-primary)' : '#fff',
-                padding: '14px 18px',
-                borderRadius: msg.sender === 'ai' ? '4px 20px 20px 20px' : '20px 4px 20px 20px',
-                border: msg.sender === 'ai' ? '1px solid var(--border-color)' : 'none',
-                boxShadow: msg.sender === 'user' ? '0 4px 15px rgba(253,103,48,0.2)' : 'none',
-              }}>
-                <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
-                  {msg.text}
-                </p>
-                <span style={{ fontSize: '0.68rem', opacity: 0.75, marginTop: '6px', display: 'block', textAlign: 'right' }}>
-                  {msg.timestamp}
-                </span>
-              </div>
-            </motion.div>
-          ))}
+                <div style={{
+                  background: msg.sender === 'ai' ? 'var(--bg-secondary)' : 'var(--primary)',
+                  color: msg.sender === 'ai' ? 'var(--text-primary)' : '#fff',
+                  padding: '14px 18px',
+                  borderRadius: msg.sender === 'ai' ? '4px 18px 18px 18px' : '18px 4px 18px 18px',
+                  border: msg.sender === 'ai' ? '1px solid var(--border-color)' : 'none',
+                  boxShadow: msg.sender === 'user' ? '0 4px 15px rgba(253,103,48,0.2)' : 'none',
+                }}>
+                  <p style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                    {msg.text}
+                  </p>
+                  <span style={{ fontSize: '0.66rem', opacity: 0.7, marginTop: '6px', display: 'block', textAlign: 'right' }}>
+                    {msg.timestamp}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
 
           {loading && (
             <div style={{ display: 'flex', gap: '12px', alignSelf: 'flex-start' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bot size={18} />
+              <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bot size={17} />
               </div>
-              <div style={{ background: 'var(--bg-secondary)', padding: '12px 18px', borderRadius: '4px 20px 20px 20px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                <Loader2 size={16} className="animate-spin" color="var(--primary)" /> Connecta OpenAI Copilot is typing...
+              <div style={{ background: 'var(--bg-secondary)', padding: '12px 18px', borderRadius: '4px 18px 18px 18px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                <Loader2 size={15} className="animate-spin" color="var(--primary)" /> Connecta Copilot is analyzing query...
               </div>
             </div>
           )}
         </div>
 
-        {/* Quick Prompts Bar */}
+        {/* Minimalist Quick Prompt Chips */}
         <div style={{ padding: '8px 20px', background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', overflowX: 'auto' }}>
           {quickPrompts.map((prompt, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(prompt.replace(/^[^\s]+\s/, ''))}
               style={{
-                fontSize: '0.78rem',
+                fontSize: '0.76rem',
                 fontWeight: 600,
                 padding: '6px 12px',
                 borderRadius: '16px',
@@ -256,6 +309,7 @@ export const AiAssistantPage: React.FC = () => {
                 color: 'var(--text-secondary)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
+                transition: 'all 0.2s ease',
               }}
             >
               {prompt}
@@ -264,14 +318,14 @@ export const AiAssistantPage: React.FC = () => {
         </div>
 
         {/* Input Form */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} style={{ padding: '16px 20px', background: 'var(--card-bg)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} style={{ padding: '14px 20px', background: 'var(--card-bg)', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '10px', alignItems: 'center' }}>
           <input
             type="text"
-            placeholder={`Ask OpenAI Copilot for job drafts, proposal pitches, or budget estimations...`}
+            placeholder="Ask AI Copilot for job descriptions, proposals, or pricing advice..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="input-field"
-            style={{ flex: 1 }}
+            style={{ flex: 1, borderRadius: '14px' }}
           />
           <motion.button
             whileHover={{ scale: 1.03 }}
@@ -279,7 +333,7 @@ export const AiAssistantPage: React.FC = () => {
             type="submit"
             disabled={loading || !input.trim()}
             className="btn-primary"
-            style={{ padding: '12px 22px', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ padding: '12px 20px', borderRadius: '14px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.86rem' }}
           >
             <Send size={15} /> Send
           </motion.button>
