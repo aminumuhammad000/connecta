@@ -307,3 +307,44 @@ export const reviewAPI = {
   }
 };
 
+// Notification API service
+export const notificationAPI = {
+  /** Fetch paginated notifications for the current user */
+  getNotifications: async (page = 1, limit = 20, unreadOnly = false) => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>(
+      `/api/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`
+    );
+    return data;
+  },
+
+  /** Get unread notification count */
+  getUnreadCount: async () => {
+    const { data } = await apiClient.get<ApiResponse<{ unreadCount: number }>>('/api/notifications/unread-count');
+    return data;
+  },
+
+  /** Mark a single notification as read */
+  markAsRead: async (notificationId: string) => {
+    const { data } = await apiClient.patch<ApiResponse<any>>(`/api/notifications/${notificationId}/read`);
+    return data;
+  },
+
+  /** Mark all notifications as read */
+  markAllAsRead: async () => {
+    const { data } = await apiClient.patch<ApiResponse<any>>('/api/notifications/mark-all-read');
+    return data;
+  },
+
+  /** Delete a single notification */
+  deleteNotification: async (notificationId: string) => {
+    const { data } = await apiClient.delete<ApiResponse<any>>(`/api/notifications/${notificationId}`);
+    return data;
+  },
+
+  /** Clear all read notifications */
+  clearRead: async () => {
+    const { data } = await apiClient.delete<ApiResponse<any>>('/api/notifications/clear-read');
+    return data;
+  },
+};
+

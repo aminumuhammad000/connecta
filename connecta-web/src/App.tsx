@@ -42,6 +42,7 @@ import { PostJobPage } from './pages/dashboard/PostJobPage';
 import { ProposalDetailsPage } from './pages/dashboard/ProposalDetailsPage';
 import { ClientWriteReviewPage } from './pages/dashboard/ClientWriteReviewPage';
 import { FreelancerProfileDetailsPage } from './pages/dashboard/FreelancerProfileDetailsPage';
+import { NotificationsPage } from './pages/dashboard/NotificationsPage';
 
 export const App: React.FC = () => {
   return (
@@ -95,6 +96,7 @@ export const App: React.FC = () => {
                   <Route path="/saved-gigs" element={<SavedGigsPage />} />
                   <Route path="/settings" element={<MyProfilePage />} />
                   <Route path="/support" element={<HelpSupportPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
 
                   {/* Catch-all fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />

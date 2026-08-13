@@ -2,9 +2,10 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { notificationAPI } from '../../services/api';
 import {
   Sun, Moon, LogOut, PlusCircle, Bell, LayoutDashboard, Briefcase, MessageSquare,
-  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, CheckCircle2, Rss, Sparkles, Search, Building2, Menu, X
+  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, CheckCircle2, Rss, Sparkles, Search, Building2, Menu, X, Trash2
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
@@ -20,6 +21,108 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const location = useLocation();
   const [showNotifMenu, setShowNotifMenu] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [notifLoading, setNotifLoading] = React.useState(false);
+  const notifRef = React.useRef<HTMLDivElement>(null);
+
+  // Fetch notifications when bell is opened or on mount
+  const fetchNotifications = React.useCallback(async () => {
+    try {
+      setNotifLoading(true);
+      const res = await notificationAPI.getNotifications(1, 10);
+      if (res.success && Array.isArray(res.data)) {
+        setNotifications(res.data);
+        setUnreadCount((res as any).unreadCount ?? res.data.filter((n: any) => !n.isRead).length);
+      }
+    } catch (e) {
+      // silent fail
+    } finally {
+      setNotifLoading(false);
+    }
+  }, []);
+
+  // Poll unread count every 30 seconds
+  React.useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(async () => {
+      try {
+        const res = await notificationAPI.getUnreadCount();
+        if (res.success) setUnreadCount((res.data as any)?.unreadCount ?? 0);
+      } catch {}
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  // Close dropdown on outside click
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch {}
+  };
+
+  const handleMarkOneRead = async (id: string) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch {}
+  };
+
+  const handleDeleteNotif = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await notificationAPI.deleteNotification(id);
+      const wasUnread = notifications.find(n => n._id === id && !n.isRead);
+      setNotifications(prev => prev.filter(n => n._id !== id));
+      if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch {}
+  };
+
+  const getNotifIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      proposal_received: '📋', proposal_accepted: '🎉', proposal_rejected: '❌',
+      payment_received: '💰', payment_released: '💸', message_received: '💬',
+      review_received: '⭐', job_posted: '💼', project_started: '🚀',
+      project_completed: '✅', milestone_completed: '🏁', contract_signed: '📝',
+      gig_matched: '🎯', collabo_invite: '🤝', deadline_approaching: '⏰',
+      system: '🔔', info: 'ℹ️', success: '✅', warning: '⚠️', error: '🚨',
+    };
+    return icons[type] || '🔔';
+  };
+
+  const getNotifBorderColor = (type: string) => {
+    const colors: Record<string, string> = {
+      proposal_accepted: 'var(--primary)', payment_received: '#22c55e',
+      payment_released: '#22c55e', message_received: '#3B82F6',
+      review_received: '#f59e0b', gig_matched: 'var(--primary)',
+      project_completed: '#22c55e', error: '#ef4444', warning: '#f59e0b',
+    };
+    return colors[type] || 'var(--border-color)';
+  };
+
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${days}d ago`;
+  };
 
   const handleLogout = () => {
     logout();
@@ -176,9 +279,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             </button>
 
             {/* Notifications Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} ref={notifRef}>
               <button
-                onClick={() => setShowNotifMenu(!showNotifMenu)}
+                onClick={() => { setShowNotifMenu(!showNotifMenu); if (!showNotifMenu) fetchNotifications(); }}
                 className="header-action-btn"
                 style={{
                   background: 'var(--bg-tertiary)',
@@ -195,18 +298,30 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 }}
               >
                 <Bell size={18} />
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '3px',
-                    right: '3px',
-                    width: '9px',
-                    height: '9px',
-                    borderRadius: '50%',
-                    background: 'var(--primary)',
-                    border: '2px solid var(--bg-primary)',
-                  }}
-                />
+                {unreadCount > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: '2px',
+                      minWidth: '16px',
+                      height: '16px',
+                      borderRadius: '8px',
+                      background: '#ef4444',
+                      border: '2px solid var(--bg-primary)',
+                      fontSize: '0.6rem',
+                      fontWeight: 800,
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      lineHeight: 1,
+                      padding: '0 3px',
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
               </button>
 
               {/* Notification Dropdown Menu */}
@@ -217,31 +332,94 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                     position: 'absolute',
                     top: '46px',
                     right: '0',
-                    width: '340px',
+                    width: '360px',
                     borderRadius: '16px',
-                    padding: '16px',
+                    padding: '0',
                     border: '1px solid var(--border-color)',
-                    boxShadow: '0 12px 35px rgba(0,0,0,0.15)',
+                    boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
                     zIndex: 200,
+                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Notifications</div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}>Mark all read</span>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Bell size={15} color="var(--primary)" />
+                      <span style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>Notifications</span>
+                      {unreadCount > 0 && (
+                        <span style={{ background: '#ef4444', color: '#fff', fontSize: '0.65rem', fontWeight: 700, borderRadius: '10px', padding: '1px 6px' }}>{unreadCount}</span>
+                      )}
+                    </div>
+                    <span
+                      onClick={handleMarkAllRead}
+                      style={{ fontSize: '0.72rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', opacity: unreadCount === 0 ? 0.4 : 1 }}
+                    >
+                      Mark all read
+                    </span>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
-                    <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-secondary)', fontSize: '0.82rem', borderLeft: '3px solid var(--primary)' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>🎉 Proposal Accepted & Funded</div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Client accepted your proposal for Mobile Payment Escrow.</div>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>10 mins ago</span>
-                    </div>
+                  {/* Notification Items */}
+                  <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                    {notifLoading ? (
+                      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                        Loading...
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🔔</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>You're all caught up!</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '4px' }}>No notifications yet</div>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif._id}
+                          onClick={() => handleMarkOneRead(notif._id)}
+                          style={{
+                            padding: '11px 16px',
+                            borderLeft: `3px solid ${notif.isRead ? 'transparent' : getNotifBorderColor(notif.type)}`,
+                            background: notif.isRead ? 'transparent' : 'rgba(var(--primary-rgb, 253,103,48),0.04)',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--border-color)',
+                            display: 'flex',
+                            gap: '10px',
+                            alignItems: 'flex-start',
+                            transition: 'background 0.15s',
+                          }}
+                        >
+                          <span style={{ fontSize: '1.15rem', flexShrink: 0, marginTop: '1px' }}>{getNotifIcon(notif.type)}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: notif.isRead ? 500 : 700, fontSize: '0.8rem', color: 'var(--text-primary)', marginBottom: '2px', lineHeight: 1.3 }}>
+                              {notif.title}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.73rem', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {notif.message}
+                            </div>
+                            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '3px', display: 'block' }}>
+                              {formatTimeAgo(notif.createdAt)}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteNotif(notif._id, e)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--text-muted)', flexShrink: 0, opacity: 0.5 }}
+                            title="Dismiss"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
 
-                    <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-secondary)', fontSize: '0.82rem', borderLeft: '3px solid #3B82F6' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>💬 New Message Received</div>
-                      <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>Client sent a new message regarding milestone deliverables.</div>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>1 hour ago</span>
-                    </div>
+                  {/* Footer */}
+                  <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-secondary)', textAlign: 'center' }}>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setShowNotifMenu(false)}
+                      style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                    >
+                      View all notifications →
+                    </Link>
                   </div>
                 </div>
               )}
