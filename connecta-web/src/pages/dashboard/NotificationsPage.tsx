@@ -11,7 +11,7 @@ import {
   AlertCircle, Handshake, MailOpen, Award, Clock, ArrowLeft
 } from 'lucide-react';
 
-// ── Icon map (Lucide icons per notification type) ──────────────────────────
+// ── Icon map (Lucide vector icon + Color badge per notification type) ─────
 const NOTIF_ICON_MAP: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
   proposal_received:   { icon: <FileText size={18} />,      color: '#fd6730', bg: 'rgba(253,103,48,0.12)' },
   proposal_new:        { icon: <FileText size={18} />,      color: '#fd6730', bg: 'rgba(253,103,48,0.12)' },
@@ -39,6 +39,8 @@ const NOTIF_ICON_MAP: Record<string, { icon: React.ReactNode; color: string; bg:
 };
 
 const DEFAULT_ICON = { icon: <Bell size={18} />, color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' };
+
+const getNotifMeta = (type: string) => NOTIF_ICON_MAP[type] || DEFAULT_ICON;
 
 const getNotifMeta = (type: string) => NOTIF_ICON_MAP[type] || DEFAULT_ICON;
 
@@ -454,7 +456,7 @@ export const NotificationsPage: React.FC = () => {
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
                   onMouseLeave={e => (e.currentTarget.style.background = notif.isRead ? 'var(--bg-secondary)' : 'var(--bg-primary)')}
                 >
-                  {/* Icon */}
+                  {/* Vector Icon Badge */}
                   <div style={{
                     width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
                     background: meta.bg, color: meta.color,

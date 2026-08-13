@@ -98,8 +98,13 @@ export const authAPI = {
     return data;
   },
 
-  updateMe: async (profileData: Partial<User>) => {
+  updateMe: async (profileData: Partial<User> & Record<string, any>) => {
     const { data } = await apiClient.put<ApiResponse<User>>('/api/users/me', profileData);
+    return data;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const { data } = await apiClient.post<ApiResponse>('/api/users/change-password', { currentPassword, newPassword });
     return data;
   },
 
