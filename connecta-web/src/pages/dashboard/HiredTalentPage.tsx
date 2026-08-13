@@ -222,7 +222,6 @@ export const HiredTalentPage: React.FC = () => {
           <CardSkeleton />
         </div>
       ) : filteredTalent.length === 0 ? (
-      ) : filteredTalent.length === 0 ? (
         <div className="glass-card" style={{ padding: '50px 20px', textAlign: 'center', borderRadius: '20px', color: 'var(--text-muted)' }}>
           <UserCheck size={40} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
           <h3 style={{ color: 'var(--text-primary)', margin: '0 0 6px', fontSize: '1.1rem', fontWeight: 800 }}>No Talent Found</h3>
