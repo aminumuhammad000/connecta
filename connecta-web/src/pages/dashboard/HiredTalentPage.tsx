@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import {
-  MapPin, MessageSquare, Loader2, Search, Star, UserCheck, Briefcase,
-  X, ShieldCheck, DollarSign, ArrowUpRight
+  UserCheck, Search, Filter, Briefcase, MapPin, DollarSign, Star, ShieldCheck, MessageSquare, ArrowUpRight, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, projectAPI } from '../../services/api';

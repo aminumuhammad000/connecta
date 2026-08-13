@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Bookmark, Building2, MapPin, CheckCircle2, ArrowUpRight, Clock, Trash2, Loader2 } from 'lucide-react';
+import { Bookmark, Building2, MapPin, CheckCircle2, ArrowUpRight, Clock, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { jobAPI, savedJobAPI } from '../../services/api';
+import { jobAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 
