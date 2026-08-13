@@ -27,10 +27,12 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
 
     // Find conversation by provided fields or participants
     let query: any = {};
-    if (clientId && freelancerId && projectId) {
-      query = { clientId, freelancerId, projectId };
+    if (clientId && freelancerId) {
+      query = { clientId, freelancerId };
+      if (projectId) query.projectId = projectId;
     } else {
-      query = { participants: { $all: actualParticipants, $size: actualParticipants.length }, projectId: projectId || null };
+      query = { participants: { $all: actualParticipants, $size: actualParticipants.length } };
+      if (projectId) query.projectId = projectId;
     }
 
     let conversation = await Conversation.findOne(query)
@@ -40,14 +42,25 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
       .populate('projectId', 'title');
 
     if (!conversation) {
+      // Find user types to populate clientId & freelancerId if not explicitly passed
+      let cId = clientId;
+      let fId = freelancerId;
+      if (!cId || !fId) {
+        const users = await User.find({ _id: { $in: actualParticipants } }).select('_id userType');
+        users.forEach((u) => {
+          if (u.userType === 'client' && !cId) cId = u._id;
+          if ((u.userType === 'freelancer' || u.userType === 'talent') && !fId) fId = u._id;
+        });
+      }
+
       // Create new conversation
       const conversationData: any = {
         participants: actualParticipants,
         unreadCount: {},
       };
       
-      if (clientId) conversationData.clientId = clientId;
-      if (freelancerId) conversationData.freelancerId = freelancerId;
+      if (cId) conversationData.clientId = cId;
+      if (fId) conversationData.freelancerId = fId;
       if (projectId) conversationData.projectId = projectId;
       
       actualParticipants.forEach((p: string) => {

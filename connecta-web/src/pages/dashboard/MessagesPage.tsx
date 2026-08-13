@@ -22,6 +22,29 @@ export const MessagesPage: React.FC = () => {
     fetchConversations();
   }, [targetUserId, user?._id]);
 
+  const isTargetUserInConv = (c: any, targetId: string) => {
+    if (!c || !targetId) return false;
+    const tid = targetId.toString();
+
+    const extractId = (val: any): string | null => {
+      if (!val) return null;
+      if (typeof val === 'string') return val;
+      if (typeof val === 'object') {
+        const id = val._id || val.id;
+        return id ? id.toString() : null;
+      }
+      return null;
+    };
+
+    if (Array.isArray(c.participants) && c.participants.some((p: any) => extractId(p) === tid)) {
+      return true;
+    }
+    if (extractId(c.freelancerId) === tid) return true;
+    if (extractId(c.clientId) === tid) return true;
+
+    return false;
+  };
+
   const fetchConversations = async () => {
     setLoading(true);
 
@@ -30,12 +53,7 @@ export const MessagesPage: React.FC = () => {
       let list = res.success && Array.isArray(res.data) ? res.data : [];
 
       if (targetUserId && user?._id) {
-        let found = list.find((c: any) => {
-          const parts = c.participants || [];
-          return parts.some((p: any) => (p._id || p.id || p).toString() === targetUserId.toString()) ||
-                 c.freelancerId?._id?.toString() === targetUserId.toString() ||
-                 c.clientId?._id?.toString() === targetUserId.toString();
-        });
+        let found = list.find((c: any) => isTargetUserInConv(c, targetUserId));
 
         if (!found) {
           try {
@@ -44,7 +62,10 @@ export const MessagesPage: React.FC = () => {
             });
             if (createRes.success && createRes.data) {
               found = createRes.data;
-              list = [found, ...list];
+              const exists = list.some((item: any) => item._id === found._id);
+              if (!exists) {
+                list = [found, ...list];
+              }
             }
           } catch (e) {
             console.error('Error creating conversation:', e);
