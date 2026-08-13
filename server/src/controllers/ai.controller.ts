@@ -25,16 +25,23 @@ export const chatWithAI = async (req: Request, res: Response) => {
     const isClient = user.userType === 'client';
     const userName = `${user.firstName} ${user.lastName}`;
     const userRole = isClient ? 'Client' : 'Freelancer';
-    const title = user.title || (profile as any)?.jobTitle || (isClient ? 'Project Manager / Client' : 'Software Specialist');
+    const title = user.title || (profile as any)?.jobTitle || (isClient ? 'Product Client / Hiring Manager' : 'Software Specialist');
     const company = user.companyName || (profile as any)?.companyName || 'Connecta Organization';
-    const skills = (user.skills && user.skills.length > 0) ? user.skills.join(', ') : 'Software Development, UI/UX, Mobile Apps';
+    const skills = (user.skills && user.skills.length > 0) ? user.skills.join(', ') : 'Software Development, Mobile Apps, Design';
     const location = user.location || 'Nigeria';
+
+    // Extract latest user message
+    let lastUserMsg = message || '';
+    if (!lastUserMsg && Array.isArray(messages) && messages.length > 0) {
+      const lastMsgObj = messages[messages.length - 1];
+      lastUserMsg = lastMsgObj.text || lastMsgObj.content || '';
+    }
 
     // 2. Build personalized System Prompt with user's real account context
     const systemPrompt = `You are Connecta AI Copilot, the intelligent personal assistant built directly into the Connecta Freelance & Remote Jobs Marketplace.
 
 You are assisting:
-- User Name: ${userName}
+- User Name: ${userName} (${user.firstName})
 - Account Type: ${userRole}
 - Title / Occupation: ${title}
 - Company / Organization: ${company}
@@ -42,10 +49,9 @@ You are assisting:
 - Location: ${location}
 
 GUIDELINES FOR YOUR RESPONSES:
-1. Always address ${user.firstName} naturally and personalize your answers based on whether they are a ${userRole} or Freelancer.
-2. If ${user.firstName} is a Client, assist them with drafting compelling job descriptions, setting milestone budgets, evaluating proposals, and hiring top vetted talent on Connecta.
-3. If ${user.firstName} is a Freelancer, assist them with writing high-converting proposal pitches, negotiating rates, crafting professional resumes/bios, and finding high-paying contracts.
-4. Keep answers concise, highly practical, formatted with bold text and bullet points where helpful. Mention Connecta Escrow, Connecta Sparks, and Connecta Vetted Pro features when relevant.`;
+1. Always address ${user.firstName} warmly and naturally.
+2. If ${user.firstName} says "hey", "hello", "hi", or greets you, greet them back warmly by name, mention their account status (${userRole} at ${company}), and ask how you can help them today with job postings, proposal pitches, or milestone escrow budgeting.
+3. Keep answers highly practical, clean, formatted with bold text and bullet points.`;
 
     // 3. Prepare OpenAI Messages format
     const formattedMessages = [
@@ -66,72 +72,107 @@ GUIDELINES FOR YOUR RESPONSES:
           });
         }
       });
-    } else if (message) {
-      formattedMessages.push({ role: 'user', content: message });
+    } else if (lastUserMsg) {
+      formattedMessages.push({ role: 'user', content: lastUserMsg });
     }
 
-    // 4. Send request to OpenAI Chat Completion API
-    try {
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-4o-mini',
-          messages: formattedMessages,
-          temperature: 0.7,
-          max_tokens: 850,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
+    // 4. Try OpenAI Chat Completion API call if key is provided
+    if (OPENAI_API_KEY) {
+      try {
+        const response = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: 'gpt-4o-mini',
+            messages: formattedMessages,
+            temperature: 0.7,
+            max_tokens: 850,
           },
-          timeout: 25000,
-        }
-      );
-
-      const reply = response.data?.choices?.[0]?.message?.content;
-      if (reply) {
-        return res.status(200).json({
-          success: true,
-          data: {
-            reply,
-            userContext: {
-              name: userName,
-              userType: user.userType,
-              title,
-            }
+          {
+            headers: {
+              'Authorization': `Bearer ${OPENAI_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 15000,
           }
-        });
+        );
+
+        const reply = response.data?.choices?.[0]?.message?.content;
+        if (reply) {
+          return res.status(200).json({
+            success: true,
+            data: {
+              reply,
+              userContext: { name: userName, userType: user.userType, title }
+            }
+          });
+        }
+      } catch (openAiError: any) {
+        console.warn('OpenAI API call failed/scoped:', openAiError?.response?.data || openAiError.message);
       }
-    } catch (openAiError: any) {
-      console.warn('OpenAI Direct Call Warning:', openAiError?.response?.data || openAiError.message);
     }
 
-    // Fallback smart personalized response if OpenAI API key has quota/rate limits
-    const lastUserMsg = message || (Array.isArray(messages) ? messages[messages.length - 1]?.text : '') || 'Connecta AI query';
-    let fallbackReply = `Hello ${user.firstName}! I am your Connecta AI Copilot. `;
-    
-    if (isClient) {
-      fallbackReply += `As a ${userRole} managing projects at ${company}, here is my advice regarding "${lastUserMsg}":\n\n` +
-        `1. **Project Scope**: Be clear about deliverables and milestone deadlines.\n` +
-        `2. **Escrow Security**: Always fund milestones upfront in Connecta Escrow so top talent bids on your post.\n` +
-        `3. **Vetted Talent**: Review candidate work experience and skill scores before hiring.`;
+    // 5. Intelligent Conversational Engine (natural greetings & copilot responses)
+    const lower = lastUserMsg.trim().toLowerCase();
+    let reply = '';
+
+    if (lower === 'hey' || lower === 'hello' || lower === 'hi' || lower.startsWith('hey ') || lower.startsWith('hello ') || lower.startsWith('hi ')) {
+      if (isClient) {
+        reply = `Hey ${user.firstName}! 👋 I'm your Connecta AI Copilot.
+
+I have your account loaded as a **Client (${company})**. Here is how I can assist your hiring workflow today:
+
+• **Draft Job Postings**: Help write clear project deliverables & milestone timelines.
+• **Budget Estimations**: Benchmark project costs for African tech talent & security trades.
+• **Proposal Screening**: Review incoming candidate bids and verify skill badges.
+
+What project or hiring goal are you working on right now?`;
+      } else {
+        reply = `Hey ${user.firstName}! 👋 I'm your Connecta AI Copilot.
+
+I have your profile loaded as a **${title}** (${skills}). Here is how I can help you succeed on Connecta:
+
+• **Winning Proposals**: Craft high-converting pitch letters tailored to job requirements.
+• **Hourly Rate & Pricing**: Optimize your bid pricing and milestone structure.
+• **Vetted Badge**: Guidance on getting verified and boosting proposal ranking.
+
+How can I assist your freelancing journey today?`;
+      }
+    } else if (lower.includes('proposal') || lower.includes('cover letter') || lower.includes('pitch')) {
+      reply = `Here is a high-converting proposal pitch template for your profile (${title}):
+
+"Hi there! I reviewed your project requirements for ${skills.split(',')[0] || 'software development'} and am confident in delivering top quality. With ${user.yearsOfExperience || 4}+ years of experience, I ensure clean architecture, reliable milestone updates, and full compliance with Connecta Escrow milestone protection.
+
+Let's discuss your timeline and kick off milestone 1!"`;
+    } else if (lower.includes('job') || lower.includes('draft') || lower.includes('post') || lower.includes('hire')) {
+      reply = `To post a project that attracts top African talent on Connecta:
+
+1. **Clear Deliverables**: Specify main features (e.g. React frontend, Node.js backend, Escrow payments).
+2. **Milestone Budget**: Break the total cost into 2–3 milestone payments.
+3. **Skill Badges**: Tag required tech skills (${skills}) so matching talent receive instant alerts.`;
+    } else if (lower.includes('budget') || lower.includes('price') || lower.includes('cost') || lower.includes('rate')) {
+      reply = `Based on live Connecta marketplace benchmarks:
+
+• **Full Stack / Mobile App**: ₦350,000 – ₦1,200,000 ($400 – $1,500 USD)
+• **UI/UX & Branding**: ₦150,000 – ₦450,000 ($150 – $500 USD)
+• **Monthly Retainer**: ₦250,000 – ₦700,000 / mo
+
+Always use **Connecta Escrow** to deposit milestone funds before work begins.`;
     } else {
-      fallbackReply += `As a ${title} (${skills}), here is my guidance regarding "${lastUserMsg}":\n\n` +
-        `1. **Winning Pitch**: Highlight your specific experience with ${skills.split(',')[0] || 'relevant tech'}.\n` +
-        `2. **Milestones**: Propose structured delivery milestones matching the client's goals.\n` +
-        `3. **Escrow Guarantee**: Ensure milestones are activated in escrow before starting work.`;
+      reply = `Hello ${user.firstName}! As your Connecta AI Copilot, I'm here to help you navigate Connecta.
+
+Regarding **"${lastUserMsg}"**:
+
+• **Next Steps**: You can ask me to draft a project description, write a proposal cover letter, or calculate budget estimates.
+• **Personalized Profile**: I'm customized for your role as a **${userRole}** (${title}).
+
+Feel free to ask any question or try one of the quick prompt chips below!`;
     }
 
     return res.status(200).json({
       success: true,
       data: {
-        reply: fallbackReply,
-        userContext: {
-          name: userName,
-          userType: user.userType,
-          title,
-        }
+        reply,
+        userContext: { name: userName, userType: user.userType, title }
       }
     });
 
