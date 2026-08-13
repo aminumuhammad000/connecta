@@ -38,8 +38,7 @@ export const ClientWriteReviewPage: React.FC = () => {
       navigate('/client/projects');
     } catch (err: any) {
       console.error('Failed to submit review:', err);
-      showToast(err.response?.data?.message || 'Review published.', 'success');
-      navigate('/client/projects');
+      showToast(err.response?.data?.message || 'Failed to submit review. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }

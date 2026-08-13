@@ -26,31 +26,19 @@ export const ProposalDetailsPage: React.FC = () => {
   }, [id]);
 
   const fetchProposal = async (proposalId?: string) => {
+    const targetId = proposalId || id;
+    if (!targetId) return;
     setLoading(true);
     try {
-      const res = await proposalAPI.getMyProposals();
-      const list = Array.isArray(res) ? res : res?.data || [];
-      const found = list.find((p: any) => p._id === (proposalId || id));
-      if (found) {
-        setProposal(found);
+      const res = await proposalAPI.getProposalById(targetId);
+      if (res?.success && res.data) {
+        setProposal(res.data);
       } else {
-        // Fallback sample proposal details for client review
-        setProposal({
-          _id: id || 'prop-101',
-          jobTitle: 'Senior Full-Stack React & Node.js Developer',
-          freelancerName: 'Usman Umar',
-          freelancerTitle: 'Senior Full-Stack & Mobile Engineer',
-          freelancerLocation: 'Abuja, Nigeria',
-          freelancerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-          rating: 4.9,
-          reviews: 28,
-          bidAmount: 450000,
-          estimatedDays: 14,
-          coverLetter: 'Hi! I have built several payment escrow integrations with Paystack, React, Node.js, and Mongoose. I can complete your project with clean architecture and automated tests.',
-          skills: ['React', 'Node.js', 'TypeScript', 'Paystack', 'Mongoose'],
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        });
+        // Try fallback search from list if single endpoint response structure varies
+        const myRes = await proposalAPI.getMyProposals();
+        const list = Array.isArray(myRes) ? myRes : myRes?.data || [];
+        const found = list.find((p: any) => p._id === targetId);
+        if (found) setProposal(found);
       }
     } catch (err) {
       console.error('Failed to load proposal details:', err);

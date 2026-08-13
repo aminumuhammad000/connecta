@@ -234,6 +234,34 @@ export const proposalAPI = {
   rejectProposal: async (id: string) => {
     const { data } = await apiClient.put<ApiResponse<any>>(`/api/proposals/${id}/reject`, {});
     return data;
+  },
+  getProposalById: async (id: string) => {
+    const { data } = await apiClient.get<ApiResponse<any>>(`/api/proposals/${id}`);
+    return data;
+  }
+};
+
+// Saved Jobs API service
+export const savedJobAPI = {
+  getSavedJobs: async () => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>('/api/jobs/saved/all');
+    return data;
+  },
+  saveJob: async (jobId: string) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(`/api/jobs/${jobId}/save`, {});
+    return data;
+  },
+  removeSavedJob: async (jobId: string) => {
+    const { data } = await apiClient.delete<ApiResponse<any>>(`/api/jobs/${jobId}/save`);
+    return data;
+  }
+};
+
+// Contact & Support Ticket API service
+export const contactAPI = {
+  submitContact: async (ticketData: { name?: string; email?: string; subject: string; message: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/contact', ticketData);
+    return data;
   }
 };
 

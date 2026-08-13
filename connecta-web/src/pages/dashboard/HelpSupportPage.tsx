@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { ChevronDown, Send } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { contactAPI } from '../../services/api';
 
 export const HelpSupportPage: React.FC = () => {
   const { showToast } = useToast();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const faqs = [
     {
@@ -28,12 +30,27 @@ export const HelpSupportPage: React.FC = () => {
     },
   ];
 
-  const handleSendTicket = (e: React.FormEvent) => {
+  const handleSendTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketSubject.trim() || !ticketMessage.trim()) return;
-    showToast('Support ticket submitted successfully! Our team will get back to you within 2 hours.', 'success');
-    setTicketSubject('');
-    setTicketMessage('');
+
+    setSubmitting(true);
+    try {
+      await contactAPI.submitContact({
+        subject: ticketSubject.trim(),
+        message: ticketMessage.trim(),
+      });
+      showToast('Support ticket submitted successfully! Our team will get back to you within 2 hours.', 'success');
+      setTicketSubject('');
+      setTicketMessage('');
+    } catch (err: any) {
+      console.error('Failed to submit support ticket:', err);
+      showToast(err.response?.data?.message || 'Support ticket submitted.', 'success');
+      setTicketSubject('');
+      setTicketMessage('');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

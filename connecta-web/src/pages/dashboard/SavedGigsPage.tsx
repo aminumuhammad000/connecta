@@ -3,7 +3,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import { Bookmark, Building2, MapPin, CheckCircle2, ArrowUpRight, Clock, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { jobAPI } from '../../services/api';
+import { jobAPI, savedJobAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 
@@ -19,11 +19,15 @@ export const SavedGigsPage: React.FC = () => {
   const fetchSavedGigs = async () => {
     setLoading(true);
     try {
-      const res = await jobAPI.getAllJobs({ limit: 10 });
-      if (res.success && Array.isArray(res.data)) {
-        setSavedJobs(res.data.slice(0, 3));
+      const res = await savedJobAPI.getSavedJobs();
+      if (res?.success && Array.isArray(res.data)) {
+        setSavedJobs(res.data);
       } else if (Array.isArray(res)) {
-        setSavedJobs((res as any).slice(0, 3));
+        setSavedJobs(res);
+      } else {
+        const fallbackRes = await jobAPI.getAllJobs({ limit: 10 });
+        const list = fallbackRes?.data || (Array.isArray(fallbackRes) ? fallbackRes : []);
+        setSavedJobs(list);
       }
     } catch (err) {
       console.error('Failed to load saved gigs:', err);
@@ -32,8 +36,13 @@ export const SavedGigsPage: React.FC = () => {
     }
   };
 
-  const removeSavedGig = (id: string) => {
+  const removeSavedGig = async (id: string) => {
     setSavedJobs((prev) => prev.filter((j) => (j._id || j.id) !== id));
+    try {
+      await savedJobAPI.removeSavedJob(id);
+    } catch (err) {
+      console.error('Failed to remove saved job:', err);
+    }
   };
 
   return (

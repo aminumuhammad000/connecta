@@ -109,7 +109,24 @@ export const getMyProposals = async (req: Request, res: Response) => {
   }
 };
 
-// Get all proposals (Client sees received, Freelancer sees sent)
+// Get proposal by ID
+export const getProposalById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const proposal = await Proposal.findById(id)
+      .populate('freelancerId', 'firstName lastName email profileImage title location rating reviewsCount skills yearsOfExperience')
+      .populate('clientId', 'firstName lastName email profileImage companyName')
+      .populate('jobId', 'title budget status description duration currency category');
+
+    if (!proposal) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    res.status(200).json({ success: true, data: proposal });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 export const getAllProposals = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id;

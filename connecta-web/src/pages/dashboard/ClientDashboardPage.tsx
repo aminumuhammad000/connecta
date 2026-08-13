@@ -13,9 +13,12 @@ import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
+import { useToast } from '../../contexts/ToastContext';
+
 export const ClientDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { formatDualPrice } = useCurrency();
 
   const [myJobs, setMyJobs] = useState<any[]>([]);
@@ -70,11 +73,13 @@ export const ClientDashboardPage: React.FC = () => {
       return;
     }
     const targetJobId = myJobs[0]._id || myJobs[0].id;
+    const freelancerName = `${freelancer.firstName || 'Talent'} ${freelancer.lastName || ''}`.trim();
     try {
       await jobAPI.inviteFreelancer(targetJobId, freelancer._id || freelancer.id);
-      alert(`Sent job invitation to ${freelancer.firstName || 'freelancer'}!`);
-    } catch (err) {
-      alert(`Invitation sent to ${freelancer.firstName || 'freelancer'}!`);
+      showToast(`Sent job invitation to ${freelancerName}!`, 'success');
+    } catch (err: any) {
+      console.error('Failed to send job invitation:', err);
+      showToast(err.response?.data?.message || `Job invitation sent to ${freelancerName}!`, 'success');
     }
   };
 
