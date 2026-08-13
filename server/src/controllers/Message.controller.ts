@@ -201,7 +201,8 @@ export const getConversationById = async (req: Request, res: Response) => {
 // Send a message
 export const sendMessage = async (req: Request, res: Response) => {
   try {
-    let { conversationId, senderId, receiverId, text, attachments } = req.body;
+    let { conversationId, senderId, receiverId, text, content, attachments } = req.body;
+    text = text || content;
     const authenticatedUserId = (req as any).user?._id || (req as any).user?.id;
 
     // Use authenticated user as sender if not provided

@@ -271,7 +271,7 @@ export const messageAPI = {
     return data;
   },
   sendMessage: async (conversationId: string, text: string) => {
-    const { data } = await apiClient.post<ApiResponse<any>>('/api/messages/message/send', { conversationId, content: text });
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/messages/message/send', { conversationId, text, content: text });
     return data;
   }
 };

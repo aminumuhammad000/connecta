@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { MessageSquare, Send, Loader2, Video } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,6 +8,7 @@ import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
 
 export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConv, setActiveConv] = useState<any | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -14,14 +16,14 @@ export const MessagesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCallModal, setShowCallModal] = useState(false);
 
+  const targetUserId = searchParams.get('user') || searchParams.get('recipientId');
+
   useEffect(() => {
     fetchConversations();
-  }, []);
+  }, [targetUserId, user?._id]);
 
   const fetchConversations = async () => {
     setLoading(true);
-    const params = new URLSearchParams(window.location.search);
-    const targetUserId = params.get('user') || params.get('recipientId');
 
     try {
       const res = await messageAPI.getConversations();
@@ -84,19 +86,28 @@ export const MessagesPage: React.FC = () => {
     e.preventDefault();
     if (!textInput.trim() || !activeConv) return;
 
-    const newMsg = {
-      _id: Date.now().toString(),
-      sender: user,
-      text: textInput,
-      createdAt: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
     const sendText = textInput;
     setTextInput('');
 
+    const optimisticMsg = {
+      _id: Date.now().toString(),
+      senderId: user?._id || (user as any)?.id,
+      sender: user,
+      text: sendText,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
-      await messageAPI.sendMessage(activeConv._id, sendText);
+      const res = await messageAPI.sendMessage(activeConv._id, sendText);
+      if (res?.success) {
+        // Refresh message thread from DB
+        const msgRes = await messageAPI.getMessages(activeConv._id);
+        if (msgRes.success && Array.isArray(msgRes.data)) {
+          setMessages(msgRes.data);
+        }
+      }
     } catch (err) {
       console.error('Error sending message:', err);
     }
@@ -260,9 +271,11 @@ export const MessagesPage: React.FC = () => {
               {/* Messages History */}
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '8px' }}>
                 {messages.map((m) => {
-                  const senderId = typeof m.sender === 'object' ? (m.sender?._id || (m.sender as any)?.id) : m.sender;
+                  const senderObj = m.sender || m.senderId;
+                  const senderId = typeof senderObj === 'object' ? (senderObj?._id || (senderObj as any)?.id) : senderObj;
                   const currentUserId = user?._id || (user as any)?.id;
                   const isMe = senderId && currentUserId ? senderId.toString() === currentUserId.toString() : false;
+                  const msgContent = m.text || m.content || '';
                   return (
                     <div
                       key={m._id}
@@ -277,7 +290,7 @@ export const MessagesPage: React.FC = () => {
                         lineHeight: 1.45,
                       }}
                     >
-                      {m.text}
+                      {msgContent}
                     </div>
                   );
                 })}
