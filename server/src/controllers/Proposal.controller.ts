@@ -111,6 +111,7 @@ export const getMyProposals = async (req: Request, res: Response) => {
 
 // Get all proposals (Client sees received, Freelancer sees sent)
 export const getAllProposals = async (req: Request, res: Response) => {
+  try {
     const userId = (req as any).user?._id;
     const userType = (req as any).user?.userType;
 
