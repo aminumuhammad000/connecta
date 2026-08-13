@@ -5,10 +5,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
   Sun, Moon, LogOut, Bell, LayoutDashboard, Briefcase, MessageSquare,
-  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, Rss, Sparkles, Menu, X, Search,
+  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, Rss, Sparkles, Menu, X, Search, Building2,
   FileText as FileTextIcon, CheckCircle2, XCircle, DollarSign, ArrowDownToLine,
   Star, Rocket, CheckCircle, Flag, FileCheck, Target, Users, AlarmClock,
-  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, Award, PlusCircle
+  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, PlusCircle
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
@@ -58,7 +58,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     markAsRead: ctxMarkAsRead,
     markAllAsRead: ctxMarkAllRead,
     deleteNotification: ctxDeleteNotif,
-    fetchNotifications: ctxFetch,
     loading: notifLoading,
   } = useNotifications();
 
@@ -255,7 +254,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             {/* Notifications Dropdown */}
             <div style={{ position: 'relative' }} ref={notifRef}>
               <button
-                onClick={() => { setShowNotifMenu(!showNotifMenu); if (!showNotifMenu) fetchNotifications(); }}
+                onClick={() => { setShowNotifMenu(!showNotifMenu); }}
                 className="header-action-btn"
                 style={{
                   background: 'var(--bg-tertiary)',
