@@ -6,8 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Rss, ThumbsUp, MessageCircle, Share2, Loader2,
   CheckCircle2, Send, Image, MoreHorizontal, Globe, ShieldCheck,
-  ArrowUpRight, TrendingUp, Sparkles, MessageSquare, Heart, Bookmark,
-  Filter, HelpCircle, FileText, UserPlus, Layers
+  ArrowUpRight, TrendingUp, Sparkles, MessageSquare, FileText, UserPlus
 } from 'lucide-react';
 import { feedAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
