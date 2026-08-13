@@ -257,6 +257,10 @@ export const messageAPI = {
     const { data } = await apiClient.get<ApiResponse<any[]>>('/api/messages/conversations');
     return data;
   },
+  getOrCreateConversation: async (payload: { participants?: string[]; clientId?: string; freelancerId?: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/messages/conversations', payload);
+    return data;
+  },
   getMessages: async (conversationId: string) => {
     const { data } = await apiClient.get<ApiResponse<any[]>>(`/api/messages/conversations/${conversationId}/messages`);
     return data;

@@ -5,14 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, DollarSign, Briefcase, Calendar,
-  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare, Video
+  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare
 } from 'lucide-react';
 import { jobAPI, proposalAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { formatJobBudget } from '../../utils/currency';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 import { EmploymentOfferModal } from '../../components/modals/EmploymentOfferModal';
-import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
 
 export const JobDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,8 +30,6 @@ export const JobDetailsPage: React.FC = () => {
   const [selectedProposalId, setSelectedProposalId] = useState<string>('');
   const [selectedCandidateName, setSelectedCandidateName] = useState<string>('');
   const [showOfferModal, setShowOfferModal] = useState(false);
-  const [showCallModal, setShowCallModal] = useState(false);
-  const [activeCallParticipant, setActiveCallParticipant] = useState<{ name: string; role?: string }>({ name: '' });
 
   // Proposal modal state for Freelancers
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -421,27 +418,6 @@ export const JobDetailsPage: React.FC = () => {
 
                           {/* Action Buttons */}
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
-                            <button
-                              onClick={() => {
-                                setActiveCallParticipant({ name: candidateName, role: candidate.jobTitle });
-                                setShowCallModal(true);
-                              }}
-                              style={{
-                                padding: '9px 16px',
-                                borderRadius: '10px',
-                                border: '1px solid var(--border-color)',
-                                background: 'var(--bg-tertiary)',
-                                color: 'var(--text-primary)',
-                                fontWeight: 700,
-                                fontSize: '0.82rem',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                              }}
-                            >
-                              <Video size={14} color="var(--primary)" /> Screening Call
-                            </button>
 
                             <button
                               onClick={() => navigate(`/messages?user=${candidate._id || p.freelancerId}`)}
@@ -631,16 +607,6 @@ export const JobDetailsPage: React.FC = () => {
           freelancerName={selectedCandidateName || 'Candidate'}
           jobTitle={job?.title || 'Job Listing'}
           defaultSalary={job?.budget || 2500}
-        />
-      )}
-
-      {/* Screening Video Call Modal */}
-      {showCallModal && (
-        <ScreeningCallModal
-          isOpen={showCallModal}
-          onClose={() => setShowCallModal(false)}
-          participantName={activeCallParticipant.name}
-          participantRole={activeCallParticipant.role}
         />
       )}
     </DashboardLayout>

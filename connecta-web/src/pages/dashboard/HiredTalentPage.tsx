@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import {
-  MapPin, MessageSquare, Loader2, Search, Star, UserCheck, Video, Briefcase,
+  MapPin, MessageSquare, Loader2, Search, Star, UserCheck, Briefcase,
   X, ShieldCheck, DollarSign, ArrowUpRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI, projectAPI } from '../../services/api';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
 import { EmploymentOfferModal } from '../../components/modals/EmploymentOfferModal';
-import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
 import { formatJobBudget } from '../../utils/currency';
 
 export const HiredTalentPage: React.FC = () => {
@@ -26,8 +25,6 @@ export const HiredTalentPage: React.FC = () => {
   // Modals state
   const [selectedCandidateDetail, setSelectedCandidateDetail] = useState<any | null>(null);
   const [selectedTalentForOffer, setSelectedTalentForOffer] = useState<any | null>(null);
-  const [showCallModal, setShowCallModal] = useState(false);
-  const [callParticipant, setCallParticipant] = useState<{ name: string; role?: string }>({ name: '' });
 
   useEffect(() => {
     fetchTalentData();
@@ -327,29 +324,8 @@ export const HiredTalentPage: React.FC = () => {
                 {/* Footer Action Buttons */}
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-color)', justifyContent: 'space-between' }}
+                  style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-color)', justifyContent: 'flex-end' }}
                 >
-                  <button
-                    onClick={() => {
-                      setCallParticipant({ name: fullName, role: t.jobTitle });
-                      setShowCallModal(true);
-                    }}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '10px',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      background: 'var(--bg-tertiary)',
-                      border: '1px solid var(--border-color)',
-                      color: 'var(--text-primary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <Video size={13} color="var(--primary)" /> Call
-                  </button>
 
                   <button
                     onClick={() => navigate(`/messages?user=${t._id}`)}
@@ -500,28 +476,6 @@ export const HiredTalentPage: React.FC = () => {
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '14px', borderTop: '1px solid var(--border-color)' }}>
-              <button
-                onClick={() => {
-                  setSelectedCandidateDetail(null);
-                  setCallParticipant({ name: `${selectedCandidateDetail.firstName} ${selectedCandidateDetail.lastName}`, role: selectedCandidateDetail.jobTitle });
-                  setShowCallModal(true);
-                }}
-                style={{
-                  padding: '11px 18px',
-                  borderRadius: '12px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  background: 'var(--bg-tertiary)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-              >
-                <Video size={15} color="var(--primary)" /> Screening Call
-              </button>
 
               <button
                 onClick={() => {
@@ -570,16 +524,6 @@ export const HiredTalentPage: React.FC = () => {
           freelancerName={`${selectedTalentForOffer.firstName || ''} ${selectedTalentForOffer.lastName || ''}`}
           jobTitle={selectedTalentForOffer.jobTitle || 'African Professional'}
           defaultSalary={selectedTalentForOffer.monthlySalary || (selectedTalentForOffer.hourlyRate ? selectedTalentForOffer.hourlyRate * 160 : 2500)}
-        />
-      )}
-
-      {/* Screening Video Call Modal */}
-      {showCallModal && (
-        <ScreeningCallModal
-          isOpen={showCallModal}
-          onClose={() => setShowCallModal(false)}
-          participantName={callParticipant.name}
-          participantRole={callParticipant.role}
         />
       )}
     </DashboardLayout>

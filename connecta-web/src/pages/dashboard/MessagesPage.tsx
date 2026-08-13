@@ -20,13 +20,46 @@ export const MessagesPage: React.FC = () => {
 
   const fetchConversations = async () => {
     setLoading(true);
+    const params = new URLSearchParams(window.location.search);
+    const targetUserId = params.get('user') || params.get('recipientId');
+
     try {
       const res = await messageAPI.getConversations();
-      if (res.success && Array.isArray(res.data)) {
-        setConversations(res.data);
-        if (res.data.length > 0) {
-          selectConversation(res.data[0]);
+      let list = res.success && Array.isArray(res.data) ? res.data : [];
+
+      if (targetUserId && user?._id) {
+        let found = list.find((c: any) => {
+          const parts = c.participants || [];
+          return parts.some((p: any) => (p._id || p.id || p).toString() === targetUserId.toString()) ||
+                 c.freelancerId?._id?.toString() === targetUserId.toString() ||
+                 c.clientId?._id?.toString() === targetUserId.toString();
+        });
+
+        if (!found) {
+          try {
+            const createRes = await messageAPI.getOrCreateConversation({
+              participants: [user._id, targetUserId]
+            });
+            if (createRes.success && createRes.data) {
+              found = createRes.data;
+              list = [found, ...list];
+            }
+          } catch (e) {
+            console.error('Error creating conversation:', e);
+          }
         }
+
+        setConversations(list);
+        if (found) {
+          selectConversation(found);
+          setLoading(false);
+          return;
+        }
+      }
+
+      setConversations(list);
+      if (list.length > 0) {
+        selectConversation(list[0]);
       }
     } catch (err) {
       console.error('Failed to load conversations:', err);
