@@ -49,7 +49,7 @@ export const getOrCreateConversation = async (req: Request, res: Response) => {
         const users = await User.find({ _id: { $in: actualParticipants } }).select('_id userType');
         users.forEach((u) => {
           if (u.userType === 'client' && !cId) cId = u._id;
-          if ((u.userType === 'freelancer' || u.userType === 'talent') && !fId) fId = u._id;
+          if ((u.userType as string) === 'freelancer' || (u.userType as string) === 'talent') fId = u._id;
         });
       }
 

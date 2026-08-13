@@ -2,6 +2,7 @@ import Message from '../models/Message.model.js';
 import Conversation from '../models/Conversation.model.js';
 // Import io from app (singleton pattern)
 import { getIO } from '../core/utils/socketIO.js';
+import User from '../models/user.model.js';
 import notificationService from '../services/notification.service.js';
 // import CollaboWorkspace from '../models/CollaboWorkspace.model.js';
 // Get or create conversation between two users
@@ -19,35 +20,52 @@ export const getOrCreateConversation = async (req, res) => {
         }
         // Find conversation by provided fields or participants
         let query = {};
-        if (clientId && freelancerId && projectId) {
-            query = { clientId, freelancerId, projectId };
+        if (clientId && freelancerId) {
+            query = { clientId, freelancerId };
+            if (projectId)
+                query.projectId = projectId;
         }
         else {
-            query = { participants: { $all: actualParticipants, $size: actualParticipants.length }, projectId: projectId || null };
+            query = { participants: { $all: actualParticipants, $size: actualParticipants.length } };
+            if (projectId)
+                query.projectId = projectId;
         }
         let conversation = await Conversation.findOne(query)
-            .populate('clientId', 'firstName lastName email')
-            .populate('freelancerId', 'firstName lastName email')
-            .populate('participants', 'firstName lastName email profileImage avatar isPremium')
+            .populate('clientId', 'firstName lastName email profileImage avatar jobTitle userType')
+            .populate('freelancerId', 'firstName lastName email profileImage avatar jobTitle userType')
+            .populate('participants', 'firstName lastName email profileImage avatar jobTitle userType')
             .populate('projectId', 'title');
         if (!conversation) {
+            // Find user types to populate clientId & freelancerId if not explicitly passed
+            let cId = clientId;
+            let fId = freelancerId;
+            if (!cId || !fId) {
+                const users = await User.find({ _id: { $in: actualParticipants } }).select('_id userType');
+                users.forEach((u) => {
+                    if (u.userType === 'client' && !cId)
+                        cId = u._id;
+                    if (u.userType === 'freelancer' || u.userType === 'talent')
+                        fId = u._id;
+                });
+            }
             // Create new conversation
             const conversationData = {
                 participants: actualParticipants,
                 unreadCount: {},
             };
-            if (clientId)
-                conversationData.clientId = clientId;
-            if (freelancerId)
-                conversationData.freelancerId = freelancerId;
+            if (cId)
+                conversationData.clientId = cId;
+            if (fId)
+                conversationData.freelancerId = fId;
             if (projectId)
                 conversationData.projectId = projectId;
             actualParticipants.forEach((p) => {
                 conversationData.unreadCount[p] = 0;
             });
             conversation = await Conversation.create(conversationData);
-            conversation = await conversation.populate('clientId', 'firstName lastName email');
-            conversation = await conversation.populate('freelancerId', 'firstName lastName email');
+            conversation = await conversation.populate('clientId', 'firstName lastName email profileImage avatar jobTitle userType');
+            conversation = await conversation.populate('freelancerId', 'firstName lastName email profileImage avatar jobTitle userType');
+            conversation = await conversation.populate('participants', 'firstName lastName email profileImage avatar jobTitle userType');
             conversation = await conversation.populate('projectId', 'title');
             console.log('Created new conversation:', conversation._id?.toString());
             // Emit conversation update to both users
@@ -88,9 +106,9 @@ export const getUserConversations = async (req, res) => {
                 { participants: userId }
             ],
         })
-            .populate('clientId', 'firstName lastName email profileImage avatar isPremium')
-            .populate('freelancerId', 'firstName lastName email profileImage avatar isPremium')
-            .populate('participants', 'firstName lastName email profileImage avatar isPremium')
+            .populate('clientId', 'firstName lastName email profileImage avatar jobTitle userType')
+            .populate('freelancerId', 'firstName lastName email profileImage avatar jobTitle userType')
+            .populate('participants', 'firstName lastName email profileImage avatar jobTitle userType')
             .populate('projectId', 'title')
             .sort({ lastMessageAt: -1 });
         // For each conversation, get the last message if not populated
@@ -177,7 +195,8 @@ export const getConversationById = async (req, res) => {
 // Send a message
 export const sendMessage = async (req, res) => {
     try {
-        let { conversationId, senderId, receiverId, text, attachments } = req.body;
+        let { conversationId, senderId, receiverId, text, content, attachments } = req.body;
+        text = text || content;
         const authenticatedUserId = req.user?._id || req.user?.id;
         // Use authenticated user as sender if not provided
         if (!senderId && authenticatedUserId) {

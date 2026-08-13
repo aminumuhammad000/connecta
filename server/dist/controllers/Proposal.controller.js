@@ -67,8 +67,8 @@ export const getProposalsByJobId = async (req, res) => {
     try {
         const { jobId } = req.params;
         const proposals = await Proposal.find({ jobId })
-            .populate('freelancerId', 'firstName lastName email profileImage')
-            .populate('clientId', 'firstName lastName email profileImage')
+            .populate('freelancerId', 'firstName lastName email profileImage bio location rating jobSuccessScore isVerified verificationTier skills hourlyRate jobTitle userType')
+            .populate('clientId', 'firstName lastName email profileImage location paymentVerified')
             .sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: proposals });
     }
