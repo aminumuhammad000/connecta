@@ -137,7 +137,11 @@ const DetailPanel: React.FC<{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginBottom: '16px',
           }}>
-            {React.cloneElement(meta.icon as React.ReactElement, { size: 24 })}
+            {/* Render larger icon by re-mapping type to a 24px icon */}
+            {React.createElement(
+              (meta.icon as React.ReactElement).type,
+              { size: 24, strokeWidth: 2 }
+            )}
           </div>
           <h2 style={{
             fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)',
@@ -201,7 +205,7 @@ const DetailPanel: React.FC<{
                 background: meta.bg, color: meta.color,
                 fontSize: '0.75rem', fontWeight: 600,
               }}>
-                {React.cloneElement(meta.icon as React.ReactElement, { size: 12 })}
+                {React.createElement((meta.icon as React.ReactElement).type, { size: 12, strokeWidth: 2 })}
                 {notif.type?.replace(/_/g, ' ')}
               </div>
             </div>

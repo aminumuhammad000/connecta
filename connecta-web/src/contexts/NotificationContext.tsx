@@ -79,7 +79,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     showBrowserNotification(notif.title, notif.message, notif.link);
   }, []);
 
-  const fetchNotifications = useCallback(async (page = 1, refresh = false) => {
+  const fetchNotifications = useCallback(async (page = 1, _refresh = false) => {
     try {
       if (page === 1) setLoading(true);
       const res = await notificationAPI.getNotifications(page, 30);

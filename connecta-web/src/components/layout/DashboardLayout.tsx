@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
   Sun, Moon, LogOut, Bell, LayoutDashboard, Briefcase, MessageSquare,
-  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, Rss, Sparkles, Menu, X,
+  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, Rss, Sparkles, Menu, X, Search,
   FileText as FileTextIcon, CheckCircle2, XCircle, DollarSign, ArrowDownToLine,
   Star, Rocket, CheckCircle, Flag, FileCheck, Target, Users, AlarmClock,
   Info, AlertTriangle, AlertCircle, Handshake, MailOpen, Award, PlusCircle
