@@ -223,7 +223,7 @@ export const proposalAPI = {
     const { data } = await apiClient.get<ApiResponse<any[]>>(`/api/proposals/job/${jobId}`);
     return data;
   },
-  submitProposal: async (proposalData: { jobId: string; coverLetter: string; bidAmount: number; estimatedDays: number }) => {
+  submitProposal: async (proposalData: { jobId: string; coverLetter?: string; description?: string; bidAmount?: number; price?: number; estimatedDays?: number; deliveryTime?: number }) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/proposals', proposalData);
     return data;
   },

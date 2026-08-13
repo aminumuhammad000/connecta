@@ -13,7 +13,11 @@ import { createFeedPost } from '../services/feed.service.js';
 export const createProposal = async (req: Request, res: Response) => {
   try {
     const freelancerId = (req as any).user?._id;
-    const { jobId, description, price, deliveryTime } = req.body;
+    const { jobId, description, price, deliveryTime, coverLetter, bidAmount, estimatedDays } = req.body;
+
+    const finalPrice = Number(price ?? bidAmount ?? 0);
+    const finalDeliveryTime = Number(deliveryTime ?? estimatedDays ?? 14);
+    const finalDescription = description || coverLetter || '';
 
     const job = await Job.findById(jobId);
     if (!job) {
@@ -24,9 +28,9 @@ export const createProposal = async (req: Request, res: Response) => {
       jobId,
       clientId: job.clientId,
       freelancerId,
-      description,
-      price,
-      deliveryTime,
+      description: finalDescription,
+      price: finalPrice,
+      deliveryTime: finalDeliveryTime,
       status: 'pending'
     });
 

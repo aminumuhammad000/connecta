@@ -98,8 +98,11 @@ export const JobDetailsPage: React.FC = () => {
       await proposalAPI.submitProposal({
         jobId: job._id || id,
         coverLetter,
+        description: coverLetter,
         bidAmount: Number(bidAmount),
+        price: Number(bidAmount),
         estimatedDays: Number(estimatedDays),
+        deliveryTime: Number(estimatedDays),
       });
       showToast('Proposal submitted successfully!', 'success');
       setShowApplyModal(false);
