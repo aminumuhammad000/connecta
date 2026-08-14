@@ -8,6 +8,8 @@ import mongoose from "mongoose";
 import connectDB from "./config/db.config.js";
 import agentRoute from "./routes/agentRoute.js";
 import { initCronJobs } from "./services/cron.service.js";
+import User from "./models/user.model.js";
+import bcrypt from "bcryptjs";
 // routes 
 import userRoutes from "./routes/user.routes.js";
 import profileRoutes from "./routes/Profile.routes.js";
@@ -21,7 +23,6 @@ import paymentRoutes from "./routes/payment.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import feedRoutes from "./routes/feed.routes.js";
-import verificationRoutes from "./routes/verification.routes.js";
 import projectRoutes from "./routes/Project.routes.js";
 import redisClient from "./config/redis.js";
 dotenv.config();
@@ -102,7 +103,8 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/feed", feedRoutes);
-app.use("/api/verifications", verificationRoutes);
+import aiRoutes from "./routes/ai.routes.js";
+app.use("/api/ai", aiRoutes);
 import contactRoutes from "./routes/contact.routes.js";
 app.use("/api/contact", contactRoutes);
 import broadcastRoutes from "./routes/broadcast.routes.js";
@@ -117,6 +119,8 @@ import subscriptionRoutes from "./routes/Subscription.routes.js";
 app.use("/api/subscriptions", subscriptionRoutes);
 import analyticsRoutes from "./routes/Analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
+import statsRoutes from "./routes/stats.routes.js";
+app.use("/api/stats", statsRoutes);
 import auditLogRoutes from "./routes/AuditLog.routes.js";
 app.use("/api/audit-logs", auditLogRoutes);
 app.get("/health", (req, res) => {
@@ -284,8 +288,28 @@ io.on("connection", (socket) => {
         console.error("❌ Redis connection failed:", err);
     }
 })();
-connectDB().then(() => {
+connectDB().then(async () => {
     console.log("🚀 Database connected and ready.");
+    // Auto-seed super admin if missing
+    try {
+        const adminExists = await User.findOne({ userType: 'admin' });
+        if (!adminExists) {
+            const hashedPassword = await bcrypt.hash('AdminPassword123!', 10);
+            await User.create({
+                firstName: 'Admin',
+                lastName: 'Super',
+                email: 'admin@myconnecta.ng',
+                password: hashedPassword,
+                userType: 'admin',
+                isVerified: true,
+                isActive: true,
+            });
+            console.log('👑 [AutoSeed] Admin account initialized: admin@myconnecta.ng');
+        }
+    }
+    catch (err) {
+        console.warn('⚠️ [AutoSeed] Admin check warning:', err);
+    }
     server.listen(Number(PORT), "0.0.0.0", () => {
         console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
         console.log(`🔌 Socket.io ready for real-time messaging`);

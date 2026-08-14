@@ -292,6 +292,10 @@ export const walletAPI = {
   requestWithdrawal: async (withdrawalData: { amount: number; bankDetails: { bankName: string; accountNumber: string; accountName: string } }) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/payments/withdrawal/request', withdrawalData);
     return data;
+  },
+  saveWithdrawalSettings: async (settings: { accountName: string; accountNumber: string; bankName: string; bankCode: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/payments/wallet/settings', settings);
+    return data;
   }
 };
 

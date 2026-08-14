@@ -18,6 +18,29 @@ const UserSchema = new Schema({
     location: { type: String, required: false, default: 'Lagos, Nigeria' },
     country: { type: String, required: false },
     currency: { type: String, required: false },
+    companyName: { type: String, required: false },
+    website: { type: String, required: false },
+    companyOverview: { type: String, required: false },
+    employment: [Schema.Types.Mixed],
+    workExperience: [
+        {
+            role: { type: String },
+            company: { type: String },
+            period: { type: String },
+            description: { type: String }
+        }
+    ],
+    portfolio: [
+        {
+            title: { type: String },
+            category: { type: String },
+            image: { type: String },
+            link: { type: String },
+            description: { type: String }
+        }
+    ],
+    hourlyRate: { type: Number, required: false },
+    yearsOfExperience: { type: Number, required: false },
     workType: { type: String, enum: ['freelancing', 'permanent'], required: false },
     skills: [{ type: String }],
     isActive: { type: Boolean, default: true },

@@ -545,6 +545,76 @@ export const verifyOTP = async (req, res) => {
     }
 };
 // ===================
+// Request OTP for Currency Change
+// ===================
+export const requestCurrencyOTP = async (req, res) => {
+    try {
+        const userId = req.user?.id || req.user?._id;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        await OTP.deleteMany({ email: user.email });
+        await OTP.create({ userId: user._id, email: user.email, otp, expiresAt });
+        try {
+            await sendOTPEmail(user.email, otp, user.firstName, 'PASSWORD_RESET', user.preferredLanguage || 'en');
+        }
+        catch (e) {
+            console.warn('Email dispatch failed, continuing with OTP generation:', e);
+        }
+        res.status(200).json({ success: true, message: "Security verification code sent to your email" });
+    }
+    catch (err) {
+        console.error('Request currency OTP error:', err);
+        res.status(500).json({ success: false, message: err.message || "Server error" });
+    }
+};
+// ===================
+// Change Default Currency With OTP
+// ===================
+export const changeCurrencyWithOTP = async (req, res) => {
+    try {
+        const userId = req.user?.id || req.user?._id;
+        const { newCurrency, country, otp } = req.body;
+        if (!newCurrency || !otp) {
+            return res.status(400).json({ success: false, message: "New currency and OTP code are required" });
+        }
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        // Verify OTP record
+        const otpRecord = await OTP.findOne({
+            $or: [{ userId: user._id }, { email: user.email }],
+            otp
+        }).sort({ createdAt: -1 });
+        if (!otpRecord) {
+            return res.status(400).json({ success: false, message: "Invalid or expired security code" });
+        }
+        if (new Date() > otpRecord.expiresAt) {
+            return res.status(400).json({ success: false, message: "Security code has expired" });
+        }
+        // Delete OTP record after successful use
+        await OTP.deleteOne({ _id: otpRecord._id });
+        // Update user's default currency and country
+        user.currency = newCurrency;
+        if (country)
+            user.country = country;
+        await user.save();
+        res.status(200).json({
+            success: true,
+            message: `Default currency updated successfully to ${newCurrency}!`,
+            data: user
+        });
+    }
+    catch (err) {
+        console.error('Change currency error:', err);
+        res.status(500).json({ success: false, message: err.message || "Server error" });
+    }
+};
+// ===================
 // Reset Password
 // ===================
 export const resetPassword = async (req, res) => {
@@ -780,34 +850,78 @@ export const updateMe = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, skills } = req.body;
+        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, country, currency, preferredLanguage, companyName, website, companyOverview, employment, workExperience, portfolio, hourlyRate, yearsOfExperience, workType, skills } = req.body;
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
-        if (firstName)
+        if (firstName !== undefined)
             user.firstName = firstName;
-        if (lastName)
+        if (lastName !== undefined)
             user.lastName = lastName;
-        if (email)
+        if (email !== undefined)
             user.email = email;
-        if (phoneNumber)
+        if (phoneNumber !== undefined)
             user.phoneNumber = phoneNumber;
-        if (profileImage)
+        if (profileImage !== undefined)
             user.profileImage = profileImage;
-        if (pushToken)
+        if (pushToken !== undefined)
             user.pushToken = pushToken;
-        if (whatsapp)
+        if (whatsapp !== undefined)
             user.whatsapp = whatsapp;
-        if (title)
+        if (title !== undefined)
             user.title = title;
-        if (bio)
+        if (bio !== undefined)
             user.bio = bio;
-        if (location)
+        if (location !== undefined)
             user.location = location;
+        if (country !== undefined)
+            user.country = country;
+        if (currency !== undefined)
+            user.currency = currency;
+        if (preferredLanguage !== undefined)
+            user.preferredLanguage = preferredLanguage;
+        if (companyName !== undefined)
+            user.companyName = companyName;
+        if (website !== undefined)
+            user.website = website;
+        if (companyOverview !== undefined)
+            user.companyOverview = companyOverview;
+        if (employment !== undefined && Array.isArray(employment))
+            user.employment = employment;
+        if (workExperience !== undefined && Array.isArray(workExperience))
+            user.workExperience = workExperience;
+        if (portfolio !== undefined && Array.isArray(portfolio))
+            user.portfolio = portfolio;
+        if (hourlyRate !== undefined)
+            user.hourlyRate = Number(hourlyRate);
+        if (yearsOfExperience !== undefined)
+            user.yearsOfExperience = Number(yearsOfExperience);
+        if (workType !== undefined)
+            user.workType = workType;
         if (skills && Array.isArray(skills))
             user.skills = skills;
         await user.save();
+        // Sync with Profile document as well
+        try {
+            const Profile = (await import('../models/Profile.model.js')).default;
+            await Profile.findOneAndUpdate({ user: userId }, {
+                companyName,
+                website,
+                employment,
+                bio,
+                jobTitle: title,
+                location,
+                country,
+                whatsapp,
+                phoneNumber,
+                skills,
+                avatar: profileImage,
+            }, { upsert: true, new: true });
+        }
+        catch (pErr) {
+            console.warn('Sync profile error:', pErr);
+        }
         res.status(200).json({
             success: true,
             data: user

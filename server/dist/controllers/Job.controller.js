@@ -20,12 +20,23 @@ export const getClientJobs = async (req, res) => {
 // Get All Jobs (with filtering for matching)
 export const getAllJobs = async (req, res) => {
     try {
-        const { category, skills, status = "active" } = req.query;
-        const filter = { status };
-        if (category)
-            filter.category = category;
+        const { category, skills, search, status = "active", limit = 20, page = 1, skip } = req.query;
+        const filter = {};
+        if (status && status !== 'all')
+            filter.status = status;
+        if (category && category !== 'All') {
+            filter.category = new RegExp(category, 'i');
+        }
         if (skills)
             filter.skills = { $in: skills.split(",") };
+        if (search) {
+            filter.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } },
+                { skills: { $in: [new RegExp(search, 'i')] } }
+            ];
+        }
         // EXCLUDE APPLIED JOBS: If user is logged in, hide jobs they already applied to
         const userId = req.user?._id;
         if (userId) {
@@ -34,17 +45,18 @@ export const getAllJobs = async (req, res) => {
                 filter._id = { $nin: appliedJobIds };
             }
         }
-        const { limit = 20, skip = 0 } = req.query;
+        const calculatedSkip = skip ? Number(skip) : (Number(page) - 1) * Number(limit);
+        const totalJobs = await Job.countDocuments(filter);
         const jobs = await Job.find(filter)
             .sort({ createdAt: -1 })
-            .skip(Number(skip))
+            .skip(calculatedSkip)
             .limit(Number(limit))
-            .populate("clientId", "firstName lastName email profileImage");
+            .populate("clientId", "firstName lastName email profileImage companyName");
         const jobsWithCounts = await Promise.all(jobs.map(async (j) => {
             const count = await Proposal.countDocuments({ jobId: j._id });
             return { ...j.toObject(), proposalsCount: count, proposalCount: count };
         }));
-        res.status(200).json({ success: true, data: jobsWithCounts });
+        res.status(200).json({ success: true, data: jobsWithCounts, total: totalJobs, page: Number(page), limit: Number(limit) });
     }
     catch (err) {
         res.status(500).json({ success: false, message: "Server error", error: err });

@@ -119,9 +119,15 @@ export const flutterwaveService = {
           { code: '470010', name: 'Capitec Bank' },
           { code: '250655', name: 'First National Bank (FNB)' },
           { code: '051001', name: 'Standard Bank South Africa' }
+        ],
+        US: [
+          { code: 'US_ACH', name: 'US Direct ACH Bank Wire Transfer' },
+          { code: 'US_WIRE', name: 'US Wire Transfer / International SWIFT' },
+          { code: 'PAYPAL', name: 'PayPal USD Payout' },
+          { code: 'STRIPE_DIRECT', name: 'Direct USD Bank Account' }
         ]
       };
-      return { status: 'success', data: fallbackBanks[code] || fallbackBanks.NG };
+      return { status: 'success', data: fallbackBanks[code] || fallbackBanks.US || fallbackBanks.NG };
     }
   },
 

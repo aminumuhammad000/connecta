@@ -11,7 +11,10 @@ import { createFeedPost } from '../services/feed.service.js';
 export const createProposal = async (req, res) => {
     try {
         const freelancerId = req.user?._id;
-        const { jobId, description, price, deliveryTime } = req.body;
+        const { jobId, description, price, deliveryTime, coverLetter, bidAmount, estimatedDays } = req.body;
+        const finalPrice = Number(price ?? bidAmount ?? 0);
+        const finalDeliveryTime = Number(deliveryTime ?? estimatedDays ?? 14);
+        const finalDescription = description || coverLetter || '';
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found' });
@@ -20,9 +23,9 @@ export const createProposal = async (req, res) => {
             jobId,
             clientId: job.clientId,
             freelancerId,
-            description,
-            price,
-            deliveryTime,
+            description: finalDescription,
+            price: finalPrice,
+            deliveryTime: finalDeliveryTime,
             status: 'pending'
         });
         // Notification for Client (New Proposal)
