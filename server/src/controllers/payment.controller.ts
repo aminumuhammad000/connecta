@@ -1888,3 +1888,63 @@ export const requestFlutterwaveWithdrawal = async (req: Request, res: Response) 
     res.status(500).json({ success: false, message: err.message || 'Error processing withdrawal' });
   }
 };
+
+/**
+ * Handle Flutterwave Webhook Callback (Auto-credit wallet upon successful deposit)
+ */
+export const handleFlutterwaveWebhook = async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['verif-hash'] as string;
+    const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+
+    if (!signature || !flutterwaveService.verifyWebhookHash(signature)) {
+      console.warn('Flutterwave webhook signature mismatch or missing signature');
+      return res.status(401).json({ success: false, message: 'Invalid webhook signature' });
+    }
+
+    const { event, data } = req.body;
+
+    if (event === 'charge.completed' && data && data.status === 'successful') {
+      const txRef = data.tx_ref;
+      const amount = Number(data.amount || 0);
+      const currency = (data.currency || 'USD').toUpperCase();
+
+      // Find pending Payment record by txRef
+      const payment = await Payment.findOne({ transactionId: txRef });
+
+      if (payment && payment.status !== 'completed') {
+        payment.status = 'completed';
+        payment.amount = amount;
+        payment.currency = currency;
+        await payment.save();
+
+        // Credit Payer Wallet
+        let wallet = await Wallet.findOne({ userId: payment.payerId });
+        if (!wallet) {
+          wallet = new Wallet({ userId: payment.payerId, balance: 0, escrowBalance: 0, currency });
+        }
+
+        wallet.balance = (wallet.balance || 0) + amount;
+        await wallet.save();
+
+        // Create Transaction record
+        await Transaction.create({
+          userId: payment.payerId,
+          type: 'deposit',
+          amount,
+          currency,
+          description: `Flutterwave wallet deposit of ${currency} ${amount}`,
+          status: 'completed',
+          paymentId: payment._id
+        });
+
+        console.log(`✅ Wallet credited via Flutterwave webhook: ${currency} ${amount} for user ${payment.payerId}`);
+      }
+    }
+
+    res.status(200).json({ status: 'success' });
+  } catch (err: any) {
+    console.error('handleFlutterwaveWebhook error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
