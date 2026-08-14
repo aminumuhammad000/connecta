@@ -265,7 +265,7 @@ export const recommendJobsForUser = async (req: Request, res: Response) => {
       .limit(20);
 
     const userSkills = (user.skills && user.skills.length > 0) ? user.skills : ['React', 'Node.js', 'UI/UX', 'Design', 'Mobile'];
-    const userTitle = (user.title || user.jobTitle || '').toLowerCase();
+    const userTitle = (user.title || (user as any).jobTitle || '').toLowerCase();
 
     const recommendedJobs = activeJobs.map((job: any) => {
       const requiredSkills = job.skills || [];
@@ -323,7 +323,7 @@ export const aiQuickApply = async (req: Request, res: Response) => {
 
     const userSkills = (user.skills && user.skills.length > 0) ? user.skills.join(', ') : 'Fullstack Engineering, Design, Mobile Development';
     const userName = `${user.firstName} ${user.lastName}`;
-    const userRole = user.title || user.jobTitle || 'Senior Specialist';
+    const userRole = user.title || (user as any).jobTitle || 'Senior Specialist';
 
     const suggestedCoverLetter = `Hello! I came across your posting for "${job.title}" and would love to help you bring this project to life.
 
