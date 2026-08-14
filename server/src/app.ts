@@ -340,8 +340,28 @@ io.on("connection", (socket) => {
   }
 })();
 
-connectDB().then(() => {
+connectDB().then(async () => {
   console.log("🚀 Database connected and ready.");
+
+  // Auto-seed super admin if missing
+  try {
+    const adminExists = await User.findOne({ userType: 'admin' });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('AdminPassword123!', 10);
+      await User.create({
+        firstName: 'Admin',
+        lastName: 'Super',
+        email: 'admin@myconnecta.ng',
+        password: hashedPassword,
+        userType: 'admin',
+        isVerified: true,
+        isActive: true,
+      });
+      console.log('👑 [AutoSeed] Admin account initialized: admin@myconnecta.ng');
+    }
+  } catch (err) {
+    console.warn('⚠️ [AutoSeed] Admin check warning:', err);
+  }
 
   server.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
