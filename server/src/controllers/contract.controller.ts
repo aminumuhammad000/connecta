@@ -166,29 +166,34 @@ export const approveWork = async (req: Request, res: Response) => {
     await contract.save();
 
     // Release funds from escrow to available balance
-    const freelancerWallet = await Wallet.findOne({ userId: contract.freelancerId });
-    if (freelancerWallet) {
-      // Look for the corresponding payment record
-      // We look for held escrow payments linked to this contract or its job
-      const payment = await Payment.findOne({
-        projectId: contract._id,
-        payeeId: contract.freelancerId,
-        escrowStatus: 'held'
+    let freelancerWallet = await Wallet.findOne({ userId: contract.freelancerId });
+    if (!freelancerWallet) {
+      freelancerWallet = await Wallet.create({
+        userId: contract.freelancerId,
+        balance: 0,
+        escrowBalance: 0,
+        totalEarnings: 0
       });
-
-      if (payment) {
-        payment.escrowStatus = 'released';
-        payment.releasedAt = new Date();
-        await payment.save();
-
-        // Update Wallet: Deduct from escrow
-        freelancerWallet.escrowBalance = Math.max(0, freelancerWallet.escrowBalance - payment.netAmount);
-        freelancerWallet.totalEarnings += payment.netAmount;
-        await freelancerWallet.save();
-      } else {
-        console.warn(`No pending escrow payment found for contract ${contract._id}`);
-      }
     }
+
+    const releaseAmount = Number(contract.totalAmount || contract.budget || 0);
+
+    const payment = await Payment.findOne({
+      $or: [{ projectId: contract._id }, { jobId: contract.jobId }],
+      payeeId: contract.freelancerId,
+      escrowStatus: 'held'
+    });
+
+    if (payment) {
+      payment.escrowStatus = 'released';
+      payment.releasedAt = new Date();
+      await payment.save();
+    }
+
+    freelancerWallet.escrowBalance = Math.max(0, freelancerWallet.escrowBalance - releaseAmount);
+    freelancerWallet.balance += releaseAmount;
+    freelancerWallet.totalEarnings += releaseAmount;
+    await freelancerWallet.save();
 
     // Notify freelancer
     await createNotification({
