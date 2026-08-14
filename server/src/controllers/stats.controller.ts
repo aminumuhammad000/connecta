@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/user.model.js';
 import Job from '../models/Job.model.js';
 import Contract from '../models/Contract.model.js';
-import Payment from '../models/payment.model.js';
+import Payment from '../models/Payment.model.js';
 
 export const getPublicStats = async (_req: Request, res: Response) => {
   try {
