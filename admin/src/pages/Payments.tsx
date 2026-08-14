@@ -195,6 +195,46 @@ export default function Payments() {
             </div>
           </section>
 
+          {/* Multi-Currency Overview Breakdown */}
+          <section className="mb-8">
+            <h2 className="text-text-light-primary dark:text-dark-primary text-lg font-bold mb-4">Multi-Currency Transaction Overview</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {[
+                { code: 'USD', name: 'US Dollar', symbol: '$' },
+                { code: 'NGN', name: 'Nigerian Naira', symbol: '₦' },
+                { code: 'KES', name: 'Kenyan Shilling', symbol: 'KSh' },
+                { code: 'GHS', name: 'Ghanaian Cedi', symbol: '₵' },
+                { code: 'UGX', name: 'Ugandan Shilling', symbol: 'USh' },
+              ].map((curr) => {
+                const currPayments = payments.filter((p: any) => (p.currency || 'USD').toUpperCase() === curr.code);
+                const totalVal = currPayments.filter((p: any) => p.status === 'completed').reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+                const commEarned = totalVal * 0.10;
+                const count = currPayments.length;
+
+                return (
+                  <div key={curr.code} className="rounded-xl p-4 border border-border-light dark:border-border-dark bg-card-light dark:bg-card-dark flex flex-col gap-2 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-sm text-primary">{curr.code}</span>
+                      <span className="text-xs text-text-light-secondary dark:text-dark-secondary font-semibold">{curr.name}</span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Total value</p>
+                      <p className="text-sm font-bold text-text-light-primary dark:text-dark-primary">{curr.code} {totalVal.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary">Total commissions earned</p>
+                      <p className="text-sm font-semibold text-green-600 dark:text-green-400">{curr.code} {commEarned.toFixed(2)}</p>
+                    </div>
+                    <div className="pt-2 border-t border-border-light dark:border-border-dark flex justify-between text-xs">
+                      <span className="text-text-light-secondary dark:text-dark-secondary">Total transaction</span>
+                      <span className="font-bold text-text-light-primary dark:text-dark-primary">{count}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark">
             <nav className="pb-3 overflow-x-auto scrollbar-hide">
               <div className="flex min-w-max border-b border-border-light dark:border-border-dark px-4 md:px-6 gap-4 md:gap-8">

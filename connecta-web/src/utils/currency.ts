@@ -1,4 +1,4 @@
-export type CurrencyCode = 'USD' | 'GBP' | 'EUR' | 'NGN' | 'KES' | 'GHS' | 'ZAR';
+export type CurrencyCode = 'USD' | 'GBP' | 'EUR' | 'NGN' | 'KES' | 'GHS' | 'UGX' | 'ZAR';
 
 export interface CurrencyConfig {
   code: CurrencyCode;
@@ -15,6 +15,7 @@ export const SUPPORTED_CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
   NGN: { code: 'NGN', symbol: '₦', name: 'Nigerian Naira', flag: '🇳🇬', rateToUSD: 1500.0 },
   KES: { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling', flag: '🇰🇪', rateToUSD: 130.0 },
   GHS: { code: 'GHS', symbol: '₵', name: 'Ghanaian Cedi', flag: '🇬🇭', rateToUSD: 15.5 },
+  UGX: { code: 'UGX', symbol: 'USh', name: 'Ugandan Shilling', flag: '🇺🇬', rateToUSD: 3700.0 },
   ZAR: { code: 'ZAR', symbol: 'R', name: 'South African Rand', flag: '🇿🇦', rateToUSD: 18.5 },
 };
 
