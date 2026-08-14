@@ -405,5 +405,15 @@ export const aiAPI = {
   matchTalent: async (jobId: string) => {
     const { data } = await apiClient.post<ApiResponse<any[]>>('/api/ai/match-talent', { jobId });
     return data;
+  },
+
+  getRecommendedJobs: async () => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>('/api/ai/recommended-jobs');
+    return data;
+  },
+
+  quickApply: async (jobId: string) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/quick-apply', { jobId });
+    return data;
   }
 };

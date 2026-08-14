@@ -42,5 +42,34 @@ export async function runAiStatsTests(baseUrl: string) {
     failed++;
   }
 
+  // Test 4.3: AI Brain Smart Job Recommendations
+  try {
+    const fEmail = `ai.rec.${Date.now()}@example.com`;
+    const fRes = await axios.post(`${baseUrl}/api/users/signup`, {
+      firstName: 'AIRec',
+      lastName: 'User',
+      email: fEmail,
+      password: 'TestPassword123!',
+      userType: 'freelancer',
+      skills: ['React', 'Node.js']
+    });
+    const token = fRes.data.token;
+
+    const recRes = await axios.get(`${baseUrl}/api/ai/recommended-jobs`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (recRes.data && recRes.data.success && Array.isArray(recRes.data.data)) {
+      console.log(`  ✅ [PASS] 4.3 AI Brain Smart Job Recommendations (${recRes.data.data.length} jobs matched)`);
+      passed++;
+    } else {
+      console.error(`  ❌ [FAIL] 4.3 AI Recommended Jobs invalid response`);
+      failed++;
+    }
+  } catch (err: any) {
+    console.error(`  ❌ [FAIL] 4.3 AI Recommended Jobs:`, err.response?.data?.message || err.message);
+    failed++;
+  }
+
   return { passed, failed };
 }
