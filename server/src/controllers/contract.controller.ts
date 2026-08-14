@@ -176,7 +176,7 @@ export const approveWork = async (req: Request, res: Response) => {
       });
     }
 
-    const releaseAmount = Number(contract.totalAmount || contract.budget || 0);
+    const releaseAmount = Number(contract.totalPrice || (contract as any).totalAmount || (contract as any).budget || 0);
 
     const payment = await Payment.findOne({
       $or: [{ projectId: contract._id }, { jobId: contract.jobId }],
