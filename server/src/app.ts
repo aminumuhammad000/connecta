@@ -8,6 +8,8 @@ import mongoose from "mongoose";
 import connectDB from "./config/db.config.js";
 import agentRoute from "./routes/agentRoute.js"
 import { initCronJobs } from "./services/cron.service.js";
+import User from "./models/user.model.js";
+import bcrypt from "bcryptjs";
 
 // routes 
 import userRoutes from "./routes/user.routes.js";
