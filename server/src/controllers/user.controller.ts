@@ -615,6 +615,86 @@ export const verifyOTP = async (req: Request, res: Response) => {
 };
 
 // ===================
+// Request OTP for Currency Change
+// ===================
+export const requestCurrencyOTP = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await OTP.deleteMany({ email: user.email });
+    await OTP.create({ userId: user._id, email: user.email, otp, expiresAt });
+
+    try {
+      await sendOTPEmail(user.email, otp, user.firstName, 'PASSWORD_RESET', user.preferredLanguage as 'en' | 'ha' || 'en');
+    } catch (e) {
+      console.warn('Email dispatch failed, continuing with OTP generation:', e);
+    }
+
+    res.status(200).json({ success: true, message: "Security verification code sent to your email" });
+  } catch (err: any) {
+    console.error('Request currency OTP error:', err);
+    res.status(500).json({ success: false, message: err.message || "Server error" });
+  }
+};
+
+// ===================
+// Change Default Currency With OTP
+// ===================
+export const changeCurrencyWithOTP = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const { newCurrency, country, otp } = req.body;
+
+    if (!newCurrency || !otp) {
+      return res.status(400).json({ success: false, message: "New currency and OTP code are required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Verify OTP record
+    const otpRecord = await OTP.findOne({
+      $or: [{ userId: user._id }, { email: user.email }],
+      otp
+    }).sort({ createdAt: -1 });
+
+    if (!otpRecord) {
+      return res.status(400).json({ success: false, message: "Invalid or expired security code" });
+    }
+
+    if (new Date() > otpRecord.expiresAt) {
+      return res.status(400).json({ success: false, message: "Security code has expired" });
+    }
+
+    // Delete OTP record after successful use
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    // Update user's default currency and country
+    user.currency = newCurrency;
+    if (country) user.country = country;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Default currency updated successfully to ${newCurrency}!`,
+      data: user
+    });
+  } catch (err: any) {
+    console.error('Change currency error:', err);
+    res.status(500).json({ success: false, message: err.message || "Server error" });
+  }
+};
+
+// ===================
 // Reset Password
 // ===================
 export const resetPassword = async (req: Request, res: Response) => {
@@ -883,7 +963,7 @@ export const updateMe = async (req: Request, res: Response) => {
     const {
       firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp,
       title, bio, location, country, currency, preferredLanguage, companyName,
-      website, employment, hourlyRate, yearsOfExperience, workType, skills
+      website, companyOverview, employment, workExperience, portfolio, hourlyRate, yearsOfExperience, workType, skills
     } = req.body;
 
     const user = await User.findById(userId);
@@ -906,7 +986,10 @@ export const updateMe = async (req: Request, res: Response) => {
     if (preferredLanguage !== undefined) (user as any).preferredLanguage = preferredLanguage;
     if (companyName !== undefined) (user as any).companyName = companyName;
     if (website !== undefined) (user as any).website = website;
+    if (companyOverview !== undefined) (user as any).companyOverview = companyOverview;
     if (employment !== undefined && Array.isArray(employment)) (user as any).employment = employment;
+    if (workExperience !== undefined && Array.isArray(workExperience)) (user as any).workExperience = workExperience;
+    if (portfolio !== undefined && Array.isArray(portfolio)) (user as any).portfolio = portfolio;
     if (hourlyRate !== undefined) (user as any).hourlyRate = Number(hourlyRate);
     if (yearsOfExperience !== undefined) (user as any).yearsOfExperience = Number(yearsOfExperience);
     if (workType !== undefined) (user as any).workType = workType;

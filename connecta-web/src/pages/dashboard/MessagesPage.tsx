@@ -5,6 +5,9 @@ import { MessageSquare, Send, Loader2, Video } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { messageAPI } from '../../services/api';
 import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
+import { io, Socket } from 'socket.io-client';
+
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng';
 
 export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +20,36 @@ export const MessagesPage: React.FC = () => {
   const [showCallModal, setShowCallModal] = useState(false);
 
   const targetUserId = searchParams.get('user') || searchParams.get('recipientId');
+
+  // Socket.io Real-Time Connection
+  useEffect(() => {
+    const myId = user?._id || (user as any)?.id;
+    if (!myId) return;
+
+    const socket: Socket = io(SOCKET_URL, {
+      transports: ['websocket', 'polling'],
+      query: { userId: myId }
+    });
+
+    socket.on('connect', () => {
+      if (activeConv?._id) {
+        socket.emit('join_conversation', activeConv._id);
+      }
+    });
+
+    socket.on('new_message', (msg: any) => {
+      if (activeConv?._id && (msg.conversationId === activeConv._id || msg.conversation === activeConv._id)) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id === msg._id);
+          return exists ? prev : [...prev, msg];
+        });
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user?._id, activeConv?._id]);
 
   useEffect(() => {
     fetchConversations();

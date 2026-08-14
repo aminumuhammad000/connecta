@@ -17,21 +17,35 @@ export const FindJobsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [onlyVetted, setOnlyVetted] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalJobsCount, setTotalJobsCount] = useState(0);
 
   const categories = ['All', 'Software Development', 'Design & Creative', 'Data Science & AI', 'Marketing & Sales', 'DevOps & Cloud'];
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [page, selectedCategory]);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (searchVal = searchQuery) => {
     setLoading(true);
     try {
-      const res = await jobAPI.getAllJobs({ limit: 30 });
-      if (res.success && Array.isArray(res.data)) {
+      const res = await jobAPI.getAllJobs({
+        page,
+        limit: 15,
+        category: selectedCategory === 'All' ? undefined : selectedCategory,
+        search: searchVal.trim() || undefined,
+      });
+
+      if (res?.success && Array.isArray(res.data)) {
         setJobs(res.data);
+        const total = (res as any).total || res.data.length;
+        setTotalJobsCount(total);
+        setTotalPages(Math.max(1, Math.ceil(total / 15)));
       } else if (Array.isArray(res)) {
         setJobs(res as any);
+        setTotalJobsCount((res as any).length);
+        setTotalPages(1);
       }
     } catch (err) {
       console.error('Failed to load jobs:', err);
@@ -40,12 +54,15 @@ export const FindJobsPage: React.FC = () => {
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchJobs(searchQuery);
+  };
+
   const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          job.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          job.category?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || job.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    if (!onlyVetted) return true;
+    return job.clientId?.isVerified || job.isVetted;
   });
 
   return (
@@ -84,7 +101,7 @@ export const FindJobsPage: React.FC = () => {
       {/* Search Bar & Category Filters */}
       <div className="glass-card" style={{ padding: '20px', borderRadius: '18px', marginBottom: '28px', border: '1px solid var(--border-color)' }}>
         <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <div className="input-wrapper" style={{ flex: 1, minWidth: '280px' }}>
+          <form onSubmit={handleSearchSubmit} className="input-wrapper" style={{ flex: 1, minWidth: '280px' }}>
             <Search className="input-icon-left" size={18} />
             <input
               type="text"
@@ -94,7 +111,7 @@ export const FindJobsPage: React.FC = () => {
               className="input-field"
               style={{ width: '100%' }}
             />
-          </div>
+          </form>
 
           <button
             onClick={() => setOnlyVetted(!onlyVetted)}
@@ -237,6 +254,31 @@ export const FindJobsPage: React.FC = () => {
               </div>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px', marginTop: '32px' }}>
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem', opacity: page <= 1 ? 0.5 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            Page {page} of {totalPages} ({totalJobsCount} Jobs)
+          </span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem', opacity: page >= totalPages ? 0.5 : 1, cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
+          >
+            Next
+          </button>
         </div>
       )}
 

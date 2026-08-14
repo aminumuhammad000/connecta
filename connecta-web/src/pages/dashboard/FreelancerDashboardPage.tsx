@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
-import { jobAPI, proposalAPI, walletAPI } from '../../services/api';
+import { jobAPI, proposalAPI, walletAPI, savedJobAPI } from '../../services/api';
 import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
@@ -28,6 +28,7 @@ export const FreelancerDashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    fetchSavedJobsList();
   }, [activeTab]);
 
   const fetchDashboardData = async () => {
@@ -61,16 +62,38 @@ export const FreelancerDashboardPage: React.FC = () => {
     }
   };
 
-  const toggleSaveJob = (id: string) => {
+  const fetchSavedJobsList = async () => {
+    try {
+      const res = await savedJobAPI.getSavedJobs();
+      const list = res?.data || (Array.isArray(res) ? res : []);
+      const savedIds = new Set<string>(list.map((item: any) => item._id || item.id || item.jobId?._id));
+      setSavedJobs(savedIds);
+    } catch (err) {
+      console.error('Failed to load saved jobs:', err);
+    }
+  };
+
+  const toggleSaveJob = async (id: string) => {
+    const isCurrentlySaved = savedJobs.has(id);
     setSavedJobs((prev) => {
       const updated = new Set(prev);
-      if (updated.has(id)) {
+      if (isCurrentlySaved) {
         updated.delete(id);
       } else {
         updated.add(id);
       }
       return updated;
     });
+
+    try {
+      if (isCurrentlySaved) {
+        await savedJobAPI.removeSavedJob(id);
+      } else {
+        await savedJobAPI.saveJob(id);
+      }
+    } catch (err) {
+      console.error('Failed to update saved job persistence:', err);
+    }
   };
 
   return (

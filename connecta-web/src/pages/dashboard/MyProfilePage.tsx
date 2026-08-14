@@ -65,6 +65,64 @@ export const MyProfilePage: React.FC = () => {
   const [githubUrl, setGithubUrl] = useState('');
   const [portfolioUrl, setPortfolioUrl] = useState('');
 
+  // OTP Currency Verification State
+  const [showCurrencyOtpModal, setShowCurrencyOtpModal] = useState(false);
+  const [pendingCurrency, setPendingCurrency] = useState('');
+  const [currencyOtpInput, setCurrencyOtpInput] = useState('');
+  const [requestingCurrencyOtp, setRequestingCurrencyOtp] = useState(false);
+  const [verifyingCurrencyOtp, setVerifyingCurrencyOtp] = useState(false);
+  const [currencyOtpError, setCurrencyOtpError] = useState('');
+
+  const initiateCurrencyChange = async (targetCurrency: string) => {
+    if (targetCurrency === currency) return;
+    setPendingCurrency(targetCurrency);
+    setCurrencyOtpInput('');
+    setCurrencyOtpError('');
+    setShowCurrencyOtpModal(true);
+    setRequestingCurrencyOtp(true);
+    try {
+      const res = await authAPI.requestCurrencyOtp();
+      if (res?.success) {
+        showToast(res.message || 'Security code sent to your email!', 'info');
+      }
+    } catch (err: any) {
+      setCurrencyOtpError(err?.response?.data?.message || 'Failed to send security code.');
+    } finally {
+      setRequestingCurrencyOtp(false);
+    }
+  };
+
+  const handleVerifyCurrencyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currencyOtpInput.trim()) {
+      setCurrencyOtpError('Please enter the 6-digit security code.');
+      return;
+    }
+    setVerifyingCurrencyOtp(true);
+    setCurrencyOtpError('');
+    try {
+      const res = await authAPI.changeCurrencyWithOtp({
+        newCurrency: pendingCurrency,
+        country,
+        otp: currencyOtpInput.trim(),
+      });
+      if (res?.success && res?.data) {
+        setCurrency(pendingCurrency);
+        updateUser(res.data);
+        showToast(`Default currency changed to ${pendingCurrency} successfully!`, 'success');
+        setShowCurrencyOtpModal(false);
+      }
+    } catch (err: any) {
+      setCurrencyOtpError(err?.response?.data?.message || 'Invalid or expired security code.');
+    } finally {
+      setVerifyingCurrencyOtp(false);
+    }
+  };
+
+  const [companyOverview, setCompanyOverview] = useState((user as any)?.companyOverview || '');
+  const [workExperience, setWorkExperience] = useState<any[]>((user as any)?.workExperience || []);
+  const [portfolio, setPortfolio] = useState<any[]>((user as any)?.portfolio || []);
+
   useEffect(() => {
     loadFullProfile();
   }, []);
@@ -95,8 +153,15 @@ export const MyProfilePage: React.FC = () => {
         }
         if ((u as any).companyName) setCompanyName((u as any).companyName);
         if ((u as any).website) setWebsite((u as any).website);
+        if ((u as any).companyOverview) setCompanyOverview((u as any).companyOverview);
         if ((u as any).employment && Array.isArray((u as any).employment)) {
           setEmployment((u as any).employment);
+        }
+        if ((u as any).workExperience && Array.isArray((u as any).workExperience)) {
+          setWorkExperience((u as any).workExperience);
+        }
+        if ((u as any).portfolio && Array.isArray((u as any).portfolio)) {
+          setPortfolio((u as any).portfolio);
         }
       }
     } catch (err) {
@@ -128,7 +193,10 @@ export const MyProfilePage: React.FC = () => {
         profileImage,
         companyName,
         website,
+        companyOverview,
         employment,
+        workExperience,
+        portfolio,
       };
 
       const res = await authAPI.updateMe(payload);
@@ -469,12 +537,17 @@ export const MyProfilePage: React.FC = () => {
                       <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} className="input-field" style={{ width: '100%' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Currency</label>
-                      <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="input-field" style={{ width: '100%' }}>
+                      <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                        Default Currency 🔒
+                      </label>
+                      <select value={currency} onChange={(e) => initiateCurrencyChange(e.target.value)} className="input-field" style={{ width: '100%' }}>
                         <option value="USD">USD ($)</option>
                         <option value="NGN">NGN (₦)</option>
                         <option value="EUR">EUR (€)</option>
                         <option value="GBP">GBP (£)</option>
+                        <option value="KES">KES (KSh)</option>
+                        <option value="GHS">GHS (GH₵)</option>
+                        <option value="ZAR">ZAR (R)</option>
                       </select>
                     </div>
                     <div>
@@ -726,6 +799,67 @@ export const MyProfilePage: React.FC = () => {
             )}
           </AnimatePresence>
         )}
+      {/* Currency Security OTP Modal */}
+      {showCurrencyOtpModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 999,
+          background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+        }}>
+          <div className="glass-card" style={{
+            maxWidth: '440px', width: '100%', padding: '28px', borderRadius: '20px',
+            background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px' }}>
+              🔒 Confirm Currency Update
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 16px', lineHeight: 1.5 }}>
+              To update your default currency to <strong>{pendingCurrency}</strong>, please enter the 6-digit security code sent to <strong>{user?.email}</strong>.
+            </p>
+
+            {currencyOtpError && (
+              <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#ef4444', fontSize: '0.83rem', marginBottom: '14px' }}>
+                {currencyOtpError}
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyCurrencyOtp}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>6-Digit Security Code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="e.g. 123456"
+                  value={currencyOtpInput}
+                  onChange={(e) => setCurrencyOtpInput(e.target.value)}
+                  className="input-field"
+                  style={{ width: '100%', letterSpacing: '4px', fontSize: '1.1rem', fontWeight: 700, textAlign: 'center' }}
+                  disabled={requestingCurrencyOtp || verifyingCurrencyOtp}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCurrencyOtpModal(false)}
+                  className="btn-secondary"
+                  style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={requestingCurrencyOtp || verifyingCurrencyOtp}
+                  className="btn-primary"
+                  style={{ padding: '10px 22px', fontSize: '0.85rem', fontWeight: 700 }}
+                >
+                  {verifyingCurrencyOtp ? 'Verifying...' : 'Verify & Change Currency'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </div>
     </DashboardLayout>
   );

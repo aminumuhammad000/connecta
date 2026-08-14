@@ -6,7 +6,7 @@ import {
     getMe, verifyEmail, resendVerificationOTP,
     updatePushToken, changePassword, checkEmailExists, checkPhoneExists,
     updateMe, deleteUser, createAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById,
-    requestVerification, adminVerifyTalent, getVettedTalent
+    requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP
 } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
@@ -39,6 +39,8 @@ router.post("/verify-email", authenticate, verifyEmail);
 router.post("/resend-verification", resendVerificationOTP);
 router.post("/push-token", authenticate, updatePushToken);
 router.post("/change-password", authenticate, changePassword);
+router.post("/currency/request-otp", authenticate, requestCurrencyOTP);
+router.post("/currency/change-with-otp", authenticate, changeCurrencyWithOTP);
 // router.post("/switch-type", authenticate, switchUserType); // Missing in controller
 // router.post("/preferred-language", authenticate, updatePreferredLanguage); // Missing in controller
 // router.post("/claim-reward", authenticate, claimDailyReward); // Missing in controller

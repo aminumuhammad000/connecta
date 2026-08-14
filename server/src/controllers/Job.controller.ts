@@ -26,11 +26,22 @@ export const getClientJobs = async (req: Request, res: Response) => {
 // Get All Jobs (with filtering for matching)
 export const getAllJobs = async (req: Request, res: Response) => {
   try {
-    const { category, skills, status = "active" } = req.query;
-    const filter: any = { status };
+    const { category, skills, search, status = "active", limit = 20, page = 1, skip } = req.query;
+    const filter: any = {};
+    if (status && status !== 'all') filter.status = status;
 
-    if (category) filter.category = category;
+    if (category && category !== 'All') {
+      filter.category = new RegExp(category as string, 'i');
+    }
     if (skills) filter.skills = { $in: (skills as string).split(",") };
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search as string, $options: 'i' } },
+        { description: { $regex: search as string, $options: 'i' } },
+        { category: { $regex: search as string, $options: 'i' } },
+        { skills: { $in: [new RegExp(search as string, 'i')] } }
+      ];
+    }
 
     // EXCLUDE APPLIED JOBS: If user is logged in, hide jobs they already applied to
     const userId = (req as any).user?._id;
@@ -41,12 +52,13 @@ export const getAllJobs = async (req: Request, res: Response) => {
       }
     }
 
-    const { limit = 20, skip = 0 } = req.query;
+    const calculatedSkip = skip ? Number(skip) : (Number(page) - 1) * Number(limit);
+    const totalJobs = await Job.countDocuments(filter);
     const jobs = await Job.find(filter)
       .sort({ createdAt: -1 })
-      .skip(Number(skip))
+      .skip(calculatedSkip)
       .limit(Number(limit))
-      .populate("clientId", "firstName lastName email profileImage");
+      .populate("clientId", "firstName lastName email profileImage companyName");
 
     const jobsWithCounts = await Promise.all(
       jobs.map(async (j: any) => {
@@ -55,7 +67,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
       })
     );
 
-    res.status(200).json({ success: true, data: jobsWithCounts });
+    res.status(200).json({ success: true, data: jobsWithCounts, total: totalJobs, page: Number(page), limit: Number(limit) });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error", error: err });
   }

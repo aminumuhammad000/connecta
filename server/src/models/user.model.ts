@@ -32,7 +32,21 @@ export interface IUser extends Document {
   sparks?: number;
   companyName?: string;
   website?: string;
+  companyOverview?: string;
   employment?: any[];
+  workExperience?: Array<{
+    role: string;
+    company: string;
+    period: string;
+    description: string;
+  }>;
+  portfolio?: Array<{
+    title: string;
+    category?: string;
+    image?: string;
+    link?: string;
+    description?: string;
+  }>;
   hourlyRate?: number;
   yearsOfExperience?: number;
   privacySettings: {
@@ -63,7 +77,25 @@ const UserSchema: Schema<IUser> = new Schema(
     currency: { type: String, required: false },
     companyName: { type: String, required: false },
     website: { type: String, required: false },
+    companyOverview: { type: String, required: false },
     employment: [Schema.Types.Mixed],
+    workExperience: [
+      {
+        role: { type: String },
+        company: { type: String },
+        period: { type: String },
+        description: { type: String }
+      }
+    ],
+    portfolio: [
+      {
+        title: { type: String },
+        category: { type: String },
+        image: { type: String },
+        link: { type: String },
+        description: { type: String }
+      }
+    ],
     hourlyRate: { type: Number, required: false },
     yearsOfExperience: { type: Number, required: false },
     workType: { type: String, enum: ['freelancing', 'permanent'], required: false },

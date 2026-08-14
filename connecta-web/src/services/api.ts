@@ -139,6 +139,16 @@ export const authAPI = {
     return data;
   },
 
+  requestCurrencyOtp: async () => {
+    const { data } = await apiClient.post<ApiResponse>('/api/users/currency/request-otp');
+    return data;
+  },
+
+  changeCurrencyWithOtp: async (payload: { newCurrency: string; country?: string; otp: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/users/currency/change-with-otp', payload);
+    return data;
+  },
+
   getFreelancers: async (params?: { search?: string; skills?: string; limit?: number }) => {
     const { data } = await apiClient.get<ApiResponse<any[]>>('/api/users/freelancers', { params });
     return data;
