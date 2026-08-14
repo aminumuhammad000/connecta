@@ -75,8 +75,8 @@ export const flutterwaveService = {
    * Get Bank & Mobile Money Provider List by Country (NG, KE, GH, UG, ZA)
    */
   getBankList: async (countryCode: string = 'NG') => {
+    const code = (countryCode || 'NG').toUpperCase();
     try {
-      const code = countryCode.toUpperCase();
       const response = await axios.get(`${FLW_BASE_URL}/banks/${code}`, {
         headers: {
           Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`
