@@ -1737,3 +1737,154 @@ export const requestVTStackPayout = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Initialize Multi-Currency Flutterwave Wallet Deposit
+ */
+export const initializeFlutterwaveDeposit = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const { amount, currency } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const depositCurrency = (currency || user.currency || 'USD').toUpperCase();
+    const depositAmount = Number(amount || 50);
+
+    if (depositAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid deposit amount' });
+    }
+
+    const txRef = `FLW_DEP_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+    // Create pending Payment record
+    const payment = await Payment.create({
+      payerId: userId,
+      payeeId: userId,
+      amount: depositAmount,
+      currency: depositCurrency,
+      paymentType: 'wallet_deposit',
+      status: 'pending',
+      escrowStatus: 'none',
+      transactionId: txRef,
+      description: `Wallet deposit of ${depositCurrency} ${depositAmount}`
+    });
+
+    const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+    const flwRes = await flutterwaveService.initializePayment({
+      txRef,
+      amount: depositAmount,
+      currency: depositCurrency,
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`,
+      phone: user.phoneNumber,
+      redirectUrl: 'https://app.myconnecta.ng/wallet',
+      title: 'Connecta Wallet Funding',
+      description: `Fund wallet in ${depositCurrency}`
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Flutterwave deposit initialized',
+      data: {
+        paymentId: payment._id,
+        link: flwRes.data?.link,
+        txRef
+      }
+    });
+  } catch (err: any) {
+    console.error('initializeFlutterwaveDeposit error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Error initializing Flutterwave deposit' });
+  }
+};
+
+/**
+ * Get Bank / Mobile Money Provider List by Country (NG, KE, GH, UG, ZA)
+ */
+export const getFlutterwaveBanks = async (req: Request, res: Response) => {
+  try {
+    const { country } = req.params;
+    const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+    const result = await flutterwaveService.getBankList(country || 'NG');
+    res.status(200).json({
+      success: true,
+      data: result.data || []
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message || 'Error fetching bank list' });
+  }
+};
+
+/**
+ * Request Multi-Currency Flutterwave Payout Withdrawal
+ */
+export const requestFlutterwaveWithdrawal = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id || (req as any).user?._id;
+    const { amount, currency, bankCode, accountNumber, accountName } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const wallet = await Wallet.findOne({ userId });
+    const payoutCurrency = (currency || user.currency || 'USD').toUpperCase();
+    const payoutAmount = Number(amount || 0);
+
+    if (!wallet || (wallet.balance || 0) < payoutAmount) {
+      return res.status(400).json({ success: false, message: 'Insufficient wallet balance for withdrawal' });
+    }
+
+    // Deduct balance
+    wallet.balance -= payoutAmount;
+    await wallet.save();
+
+    const reference = `FLW_WD_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+    const withdrawal = await Withdrawal.create({
+      userId,
+      amount: payoutAmount,
+      currency: payoutCurrency,
+      status: 'processing',
+      gatewayReference: reference,
+      bankDetails: {
+        accountName,
+        accountNumber,
+        bankCode
+      }
+    });
+
+    try {
+      const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+      await flutterwaveService.initiateTransfer({
+        accountBank: bankCode,
+        accountNumber,
+        amount: payoutAmount,
+        currency: payoutCurrency,
+        reference,
+        narration: `Connecta Wallet Payout for ${user.firstName}`
+      });
+      withdrawal.status = 'completed';
+      await withdrawal.save();
+    } catch (transferErr: any) {
+      console.warn('Flutterwave transfer pending/failed, logged for async callback:', transferErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Withdrawal of ${payoutCurrency} ${payoutAmount} initiated successfully`,
+      data: withdrawal
+    });
+  } catch (err: any) {
+    console.error('requestFlutterwaveWithdrawal error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Error processing withdrawal' });
+  }
+};

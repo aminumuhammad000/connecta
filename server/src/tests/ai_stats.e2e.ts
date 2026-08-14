@@ -71,5 +71,34 @@ export async function runAiStatsTests(baseUrl: string) {
     failed++;
   }
 
+  // Test 4.4: Flutterwave Multi-Currency Bank Lists (NG, KE, GH, UG, ZA)
+  try {
+    const fEmail = `flw.test.${Date.now()}@example.com`;
+    const fRes = await axios.post(`${baseUrl}/api/users/signup`, {
+      firstName: 'FLWTest',
+      lastName: 'User',
+      email: fEmail,
+      password: 'TestPassword123!',
+      userType: 'freelancer',
+      currency: 'KES'
+    });
+    const token = fRes.data.token;
+
+    const banksRes = await axios.get(`${baseUrl}/api/payments/flutterwave/banks/KE`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (banksRes.data && banksRes.data.success && Array.isArray(banksRes.data.data)) {
+      console.log(`  ✅ [PASS] 4.4 Flutterwave Multi-Currency Country Banks (${banksRes.data.data.length} banks loaded for Kenya KES)`);
+      passed++;
+    } else {
+      console.error(`  ❌ [FAIL] 4.4 Flutterwave Bank List query failed`);
+      failed++;
+    }
+  } catch (err: any) {
+    console.error(`  ❌ [FAIL] 4.4 Flutterwave Bank List:`, err.response?.data?.message || err.message);
+    failed++;
+  }
+
   return { passed, failed };
 }

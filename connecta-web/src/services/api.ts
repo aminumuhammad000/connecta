@@ -295,6 +295,22 @@ export const walletAPI = {
   }
 };
 
+// Flutterwave Multi-Currency API service
+export const flutterwaveAPI = {
+  initializeDeposit: async (amount: number, currency: string) => {
+    const { data } = await apiClient.post<ApiResponse<{ link: string; txRef: string }>>('/api/payments/flutterwave/initialize', { amount, currency });
+    return data;
+  },
+  getBanksByCountry: async (countryCode: string) => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>(`/api/payments/flutterwave/banks/${countryCode}`);
+    return data;
+  },
+  requestWithdrawal: async (withdrawalData: { amount: number; currency: string; bankCode: string; accountNumber: string; accountName: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/payments/flutterwave/withdraw', withdrawalData);
+    return data;
+  }
+};
+
 // Messages API service
 export const messageAPI = {
   getConversations: async () => {

@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { motion } from 'framer-motion';
 import { ShieldCheck, ArrowDownLeft, ArrowUpRight, RefreshCw, Loader2, X, PlusCircle, Copy, Building2, CreditCard } from 'lucide-react';
-import { walletAPI } from '../../services/api';
+import { walletAPI, flutterwaveAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
 export const MyWalletPage: React.FC = () => {
@@ -99,17 +99,18 @@ export const MyWalletPage: React.FC = () => {
     setProcessingDeposit(true);
 
     try {
-      const res = await walletAPI.initializeTopup(depositAmount);
-      if (res?.data?.authorization_url) {
-        window.location.href = res.data.authorization_url;
+      const userCurrency = (user?.currency || 'USD').toUpperCase();
+      const res = await flutterwaveAPI.initializeDeposit(depositAmount, userCurrency);
+      if (res?.data?.link) {
+        window.location.href = res.data.link;
       } else {
-        showToast('Paystack payment link initialized successfully!', 'success');
+        showToast('Flutterwave payment link initialized successfully!', 'success');
         fetchWalletData();
         setShowDepositModal(false);
       }
     } catch (err: any) {
-      console.error('Failed to initialize deposit:', err);
-      showToast(err.response?.data?.message || 'Failed to initialize Paystack deposit.', 'error');
+      console.error('Failed to initialize Flutterwave deposit:', err);
+      showToast(err.response?.data?.message || 'Failed to initialize Flutterwave deposit.', 'error');
     } finally {
       setProcessingDeposit(false);
     }
@@ -124,16 +125,16 @@ export const MyWalletPage: React.FC = () => {
     setProcessingWithdraw(true);
 
     try {
-      await walletAPI.requestWithdrawal({
+      const userCurrency = (user?.currency || 'USD').toUpperCase();
+      await flutterwaveAPI.requestWithdrawal({
         amount: withdrawAmount,
-        bankDetails: {
-          bankName,
-          accountNumber,
-          accountName,
-        },
+        currency: userCurrency,
+        bankCode: bankName || '044',
+        accountNumber,
+        accountName
       });
       setShowWithdrawModal(false);
-      showToast(`Withdrawal request of ₦${withdrawAmount.toLocaleString()} submitted successfully!`, 'success');
+      showToast(`Withdrawal request of ${userCurrency} ${withdrawAmount.toLocaleString()} submitted successfully!`, 'success');
       fetchWalletData();
     } catch (err: any) {
       console.error('Failed to process withdrawal:', err);
