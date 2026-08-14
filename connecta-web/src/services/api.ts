@@ -395,5 +395,15 @@ export const aiAPI = {
       messages: messagesHistory
     });
     return data;
+  },
+
+  summarizeProposal: async (proposalData: { coverLetter?: string; description?: string; bidAmount?: number; estimatedDays?: number }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/summarize-proposal', proposalData);
+    return data;
+  },
+
+  matchTalent: async (jobId: string) => {
+    const { data } = await apiClient.post<ApiResponse<any[]>>('/api/ai/match-talent', { jobId });
+    return data;
   }
 };

@@ -90,6 +90,22 @@
     });
   }
 
+  /* Fetch Live Platform Statistics */
+  fetch('https://api.myconnecta.ng/api/stats/public')
+    .then(function(res){ return res.json(); })
+    .then(function(res){
+      if(res && res.success && res.data){
+        var d = res.data;
+        var jobsEl = document.querySelector('[data-stat="activeJobs"]');
+        var freelancersEl = document.querySelector('[data-stat="totalFreelancers"]');
+        var escrowEl = document.querySelector('[data-stat="totalEscrow"]');
+        if(jobsEl) jobsEl.textContent = (d.activeJobs || 140) + '+';
+        if(freelancersEl) freelancersEl.textContent = (d.totalFreelancers || 890).toLocaleString() + '+';
+        if(escrowEl) escrowEl.textContent = '$' + (d.totalEscrowVolume || 450000).toLocaleString();
+      }
+    })
+    .catch(function(err){ console.warn('Stats fetch warning:', err); });
+
   /* current year in footer */
   document.querySelectorAll('[data-year]').forEach(function(el){
     el.textContent = new Date().getFullYear();

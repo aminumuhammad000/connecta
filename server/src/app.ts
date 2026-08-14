@@ -136,6 +136,9 @@ app.use("/api/subscriptions", subscriptionRoutes);
 import analyticsRoutes from "./routes/Analytics.routes.js";
 app.use("/api/analytics", analyticsRoutes);
 
+import statsRoutes from "./routes/stats.routes.js";
+app.use("/api/stats", statsRoutes);
+
 import auditLogRoutes from "./routes/AuditLog.routes.js";
 app.use("/api/audit-logs", auditLogRoutes);
 
