@@ -11,7 +11,7 @@ export interface IPayment extends Document {
   netAmount: number; // Amount after platform fee
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'cancelled';
   paymentMethod: 'paystack' | 'stripe' | 'paypal' | 'bank_transfer' | 'flutterwave' | 'vtstack' | 'wallet';
-  paymentType: 'project_payment' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup' | 'milestone';
+  paymentType: 'project_payment' | 'full_payment' | 'hourly' | 'bonus' | 'job_verification' | 'topup' | 'wallet_deposit' | 'milestone';
 
   milestoneId?: mongoose.Types.ObjectId;
 
@@ -92,7 +92,7 @@ const PaymentSchema: Schema = new Schema(
     },
     paymentType: {
       type: String,
-      enum: ['project_payment', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup', 'milestone'],
+      enum: ['project_payment', 'full_payment', 'hourly', 'bonus', 'job_verification', 'topup', 'wallet_deposit', 'milestone'],
       default: 'project_payment',
     },
     milestoneId: {
@@ -150,8 +150,11 @@ PaymentSchema.index({ payeeId: 1, status: 1 });
 
 PaymentSchema.index({ createdAt: -1 });
 
-// Generate invoice number before saving
+// Generate invoice number before saving and ensure netAmount defaults to amount
 PaymentSchema.pre('save', async function (next) {
+  if (this.netAmount === undefined || this.netAmount === null) {
+    this.netAmount = this.amount - (this.platformFee || 0);
+  }
   if (!this.invoiceNumber && this.isNew) {
     const count = await mongoose.model('Payment').countDocuments();
     this.invoiceNumber = `INV-${Date.now()}-${count + 1}`;

@@ -462,6 +462,10 @@ export const MyWalletPage: React.FC = () => {
   const handleWithdrawalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (withdrawAmount <= 0) { showToast('Enter a valid withdrawal amount.', 'error'); return; }
+    if (currentBalance <= 0 || withdrawAmount > currentBalance) {
+      showToast(`Insufficient balance. Your available balance is ${currencySymbol}${currentBalance.toLocaleString()}.`, 'error');
+      return;
+    }
     const savedBank = wallet?.bankDetails;
     if (!savedBank?.accountNumber) {
       showToast('No saved payout method. Please update your payout settings first.', 'error');
@@ -821,9 +825,14 @@ export const MyWalletPage: React.FC = () => {
                 <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Withdrawal Amount ({currencySymbol} {userCurrency})
                 </label>
-                <input type="number" required min="1" max={currentBalance} value={withdrawAmount}
+                <input type="number" required min="1" max={currentBalance > 0 ? currentBalance : undefined} value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(Number(e.target.value))}
                   className="input-field" style={{ width: '100%', fontSize: '1.1rem', fontWeight: 800 }} />
+                {currentBalance <= 0 && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
+                    ⚠️ Your available balance is currently {currencySymbol}0. You cannot withdraw until you have funds in your wallet.
+                  </span>
+                )}
               </div>
               <button type="submit" disabled={processingWithdraw} className="btn-primary"
                 style={{ width: '100%', padding: '14px', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>

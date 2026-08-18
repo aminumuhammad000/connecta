@@ -1769,11 +1769,14 @@ export const initializeFlutterwaveDeposit = async (req: Request, res: Response) 
       payerId: userId,
       payeeId: userId,
       amount: depositAmount,
+      netAmount: depositAmount,
       currency: depositCurrency,
       paymentType: 'wallet_deposit',
+      paymentMethod: 'flutterwave',
       status: 'pending',
       escrowStatus: 'none',
       transactionId: txRef,
+      gatewayReference: txRef,
       description: `Wallet deposit of ${depositCurrency} ${depositAmount}`
     });
 
