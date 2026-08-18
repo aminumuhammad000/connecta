@@ -151,9 +151,9 @@ PaymentSchema.index({ payeeId: 1, status: 1 });
 PaymentSchema.index({ createdAt: -1 });
 
 // Generate invoice number before saving and ensure netAmount defaults to amount
-PaymentSchema.pre('save', async function (next) {
+PaymentSchema.pre('save', async function (this: IPayment, next) {
   if (this.netAmount === undefined || this.netAmount === null) {
-    this.netAmount = this.amount - (this.platformFee || 0);
+    this.netAmount = Number(this.amount || 0) - Number(this.platformFee || 0);
   }
   if (!this.invoiceNumber && this.isNew) {
     const count = await mongoose.model('Payment').countDocuments();
