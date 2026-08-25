@@ -61,6 +61,7 @@ export default function Sidebar({
   onClose?: () => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
+  const [workforceTreeOpen, setWorkforceTreeOpen] = useState(true)
   const [pendingJobsCount, setPendingJobsCount] = useState(0)
   const isMobile = variant === 'mobile'
   const navigate = useNavigate()
@@ -181,6 +182,34 @@ export default function Sidebar({
         <NavItem to="/applications" icon="assignment" label="Gig Applications" collapsed={isCollapsed} />
         <NavItem to="/contracts" icon="description" label="Contracts" collapsed={isCollapsed} />
         <NavItem to="/payments" icon="payments" label="Payments" collapsed={isCollapsed} />
+        <NavItem to="/currencies" icon="attach_money" label="Currencies" collapsed={isCollapsed} />
+        
+        {/* Workforce Tree Section */}
+        <div className="space-y-1 pt-1">
+          <button
+            onClick={() => setWorkforceTreeOpen(!workforceTreeOpen)}
+            className={`w-full flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-text-light-secondary dark:text-dark-secondary hover:text-primary transition-all ${
+              isCollapsed ? 'justify-center px-2' : ''
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Icon name="badge" size={18} className="text-primary" />
+              {!isCollapsed && <span>Workforce Tree</span>}
+            </div>
+            {!isCollapsed && <Icon name={workforceTreeOpen ? 'expand_less' : 'expand_more'} size={18} />}
+          </button>
+
+          {workforceTreeOpen && !isCollapsed && (
+            <div className="pl-4 space-y-1 border-l-2 border-primary/20 ml-3">
+              <NavItem to="/workforce-admin" icon="dashboard" label="Overview" collapsed={isCollapsed} />
+              <NavItem to="/workforce-admin/workforces" icon="business" label="Company Workforces" collapsed={isCollapsed} />
+              <NavItem to="/workforce-admin/workers" icon="group" label="Platform Workers" collapsed={isCollapsed} />
+              <NavItem to="/workforce-admin/attendance" icon="schedule" label="Shift Attendance" collapsed={isCollapsed} />
+              <NavItem to="/workforce-admin/payments" icon="payments" label="Payroll Audit" collapsed={isCollapsed} />
+              <NavItem to="/workforce-admin/settings" icon="settings" label="Platform Settings" collapsed={isCollapsed} />
+            </div>
+          )}
+        </div>
         <NavItem to="/subscriptions" icon="verified" label="Subscriptions" collapsed={isCollapsed} />
         <NavItem to="/proposals" icon="mail" label="Proposals" collapsed={isCollapsed} />
         <NavItem to="/reviews" icon="star" label="Reviews" collapsed={isCollapsed} />

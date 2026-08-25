@@ -49,7 +49,7 @@ router.post("/", authenticate, createJob);
 router.put("/:id", authenticate, updateJob);
 
 // Delete job
-router.delete("/:id", authenticate, isAdmin, deleteJob);
+router.delete("/:id", authenticate, deleteJob);
 
 // Update job status (Admin only)
 router.patch("/:id/status", authenticate, isAdmin, updateJobStatus);

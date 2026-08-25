@@ -7,6 +7,7 @@ import { sendOTPEmail, sendWelcomeEmail } from "../services/email.service.js";
 import notificationService from "../services/notification.service.js";
 import mongoose from "mongoose";
 import { createFeedPost } from '../services/feed.service.js';
+import WorkforceMember from '../models/WorkforceMember.model.js';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // ===================
 // Check if Email Exists
@@ -235,6 +236,30 @@ export const signup = async (req, res) => {
         }
         // Send Welcome Email
         sendWelcomeEmail(newUser.email, newUser.firstName, newUser.preferredLanguage || 'en').catch(console.error);
+        // If workforceId / companyId was provided during signup, automatically link worker to workforce company
+        const targetWorkforceId = req.body.workforceId || req.body.companyId;
+        if (targetWorkforceId && mongoose.Types.ObjectId.isValid(targetWorkforceId)) {
+            try {
+                await WorkforceMember.findOneAndUpdate({ companyId: targetWorkforceId, email: newUser.email }, {
+                    companyId: targetWorkforceId,
+                    workerId: newUser._id,
+                    fullName: `${newUser.firstName} ${newUser.lastName || ''}`.trim(),
+                    email: newUser.email,
+                    phone: newUser.phoneNumber || '',
+                    role: req.body.jobTitle || 'Specialist Worker',
+                    status: 'active',
+                    inviteStatus: 'accepted',
+                    companyRole: 'worker',
+                    paymentAmount: 0,
+                    paymentType: 'monthly',
+                    currency: 'NGN',
+                }, { upsert: true, new: true });
+                console.log(`🔗 Automatically linked worker ${newUser.email} to workforce company ${targetWorkforceId}`);
+            }
+            catch (wfLinkErr) {
+                console.warn('[UserSignup] Workforce auto-link warning:', wfLinkErr);
+            }
+        }
         // Publish to Feed
         if (newUser.privacySettings?.allowBroadcast !== false) {
             try {
@@ -275,7 +300,15 @@ export const signin = async (req, res) => {
             console.log('Missing email or password');
             return res.status(400).json({ message: "Email and password are required" });
         }
-        const user = await User.findOne({ email });
+        const cleanInput = String(email || req.body.phone || req.body.identifier || '').trim();
+        const cleanEmail = cleanInput.toLowerCase();
+        const user = await User.findOne({
+            $or: [
+                { email: cleanEmail },
+                { phoneNumber: cleanInput },
+                { phone: cleanInput }
+            ]
+        });
         console.log('User found:', user ? user._id : 'null');
         if (!user)
             return res.status(404).json({ message: "User not found" });
@@ -283,8 +316,8 @@ export const signin = async (req, res) => {
         if (!user.password) {
             return res.status(400).json({ message: "This account uses Google Sign-In. Please sign in with Google." });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
-        console.log('Password match:', isMatch);
+        const isMatch = await bcrypt.compare(String(password).trim(), user.password);
+        console.log('Password match result:', isMatch);
         if (!isMatch)
             return res.status(401).json({ message: "Invalid credentials" });
         if (!process.env.JWT_SECRET) {

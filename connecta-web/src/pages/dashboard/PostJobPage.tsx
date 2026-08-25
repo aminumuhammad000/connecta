@@ -16,12 +16,11 @@ import { jobAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { JOB_CATEGORIES, CATEGORY_SKILLS } from '../../utils/categories';
-import { SUPPORTED_CURRENCIES } from '../../utils/currency';
 
 export const PostJobPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { formatDualPrice } = useCurrency();
+  const { formatDualPrice, currencies } = useCurrency();
 
   // Wizard Step State (1 to 4)
   const [step, setStep] = useState<number>(1);
@@ -554,7 +553,7 @@ export const PostJobPage: React.FC = () => {
                       className="input-field"
                       style={{ width: '100%', fontWeight: 700 }}
                     >
-                      {Object.values(SUPPORTED_CURRENCIES).map((c) => (
+                      {currencies.map((c) => (
                         <option key={c.code} value={c.code}>
                           {c.flag} {c.code} ({c.symbol})
                         </option>

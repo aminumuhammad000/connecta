@@ -8,6 +8,7 @@ import Wallet from '../models/Wallet.model.js';
 import Transaction from '../models/Transaction.model.js';
 import { createNotification } from './notification.controller.js';
 import { createFeedPost } from '../services/feed.service.js';
+import WorkforceMember from '../models/WorkforceMember.model.js';
 
 // Submit a proposal
 export const createProposal = async (req: Request, res: Response) => {
@@ -435,6 +436,32 @@ export const updateProposalStatus = async (req: Request, res: Response) => {
     }
 
     const proposal = await Proposal.findByIdAndUpdate(id, { status }, { new: true });
+
+    if (proposal && (status === 'accepted' || status === 'hired')) {
+      const freelancer = await User.findById(proposal.freelancerId);
+      const job = await Job.findById(proposal.jobId);
+      if (freelancer && job) {
+        await WorkforceMember.findOneAndUpdate(
+          { companyId: job.clientId, workerId: freelancer._id },
+          {
+            companyId: job.clientId,
+            workerId: freelancer._id,
+            fullName: `${freelancer.firstName} ${freelancer.lastName || ''}`.trim(),
+            email: freelancer.email,
+            phone: freelancer.phoneNumber || '',
+            role: job.title,
+            status: 'active',
+            inviteStatus: 'accepted',
+            companyRole: 'worker',
+            paymentAmount: proposal.price || job.budget || 150000,
+            paymentType: 'monthly',
+            currency: job.currency || 'NGN',
+          },
+          { upsert: true, new: true }
+        );
+      }
+    }
+
     res.status(200).json({ success: true, data: proposal });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

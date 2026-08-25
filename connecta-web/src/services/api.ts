@@ -437,3 +437,28 @@ export const aiAPI = {
     return data;
   }
 };
+
+// Currency API service
+export const currencyAPI = {
+  getCurrencies: async (activeOnly: boolean = true) => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>(`/api/currencies?activeOnly=${activeOnly}`);
+    return data;
+  },
+  createCurrency: async (currencyData: any) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/currencies', currencyData);
+    return data;
+  },
+  updateCurrency: async (id: string, currencyData: any) => {
+    const { data } = await apiClient.put<ApiResponse<any>>(`/api/currencies/${id}`, currencyData);
+    return data;
+  },
+  toggleCurrencyStatus: async (id: string) => {
+    const { data } = await apiClient.patch<ApiResponse<any>>(`/api/currencies/${id}/toggle`);
+    return data;
+  },
+  deleteCurrency: async (id: string) => {
+    const { data } = await apiClient.delete<ApiResponse<any>>(`/api/currencies/${id}`);
+    return data;
+  },
+};
+

@@ -7,12 +7,14 @@ import { Camera, Building2, Globe, DollarSign, ArrowRight, Sparkles, Loader2 } f
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { AFRICAN_COUNTRIES, CURRENCIES } from './CountryCurrencyPage';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { AFRICAN_COUNTRIES } from './CountryCurrencyPage';
 
 export const ClientProfileSetupPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
+  const { currencies } = useCurrency();
 
   const [companyName, setCompanyName] = useState(user?.title || '');
   const [companyBio, setCompanyBio] = useState(user?.bio || '');
@@ -246,7 +248,7 @@ export const ClientProfileSetupPage: React.FC = () => {
                   onChange={(e) => setSelectedCurrency(e.target.value)}
                   className="input-field no-icon"
                 >
-                  {CURRENCIES.map((curr) => (
+                  {currencies.map((curr) => (
                     <option key={curr.code} value={curr.code}>{curr.symbol} - {curr.name} ({curr.code})</option>
                   ))}
                 </select>

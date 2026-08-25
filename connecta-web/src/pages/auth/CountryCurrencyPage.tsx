@@ -31,10 +31,13 @@ export const CURRENCIES = [
   { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
 ];
 
+import { useCurrency } from '../../contexts/CurrencyContext';
+
 export const CountryCurrencyPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
+  const { currencies } = useCurrency();
 
   const [selectedCountry, setSelectedCountry] = useState<string>(user?.country || 'Nigeria');
   const [selectedCurrency, setSelectedCurrency] = useState<string>(user?.currency || 'NGN');
@@ -168,10 +171,10 @@ export const CountryCurrencyPage: React.FC = () => {
           {/* Currency Selection Section */}
           <div style={{ marginBottom: '36px' }}>
             <label className="form-label" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <DollarSign size={18} color="var(--primary)" /> Preferred Currency (5 Supported Currencies) *
+              <DollarSign size={18} color="var(--primary)" /> Preferred Currency ({currencies.length} Supported Currencies) *
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-              {CURRENCIES.map((curr) => {
+              {currencies.map((curr) => {
                 const isSelected = selectedCurrency === curr.code;
                 return (
                   <motion.div

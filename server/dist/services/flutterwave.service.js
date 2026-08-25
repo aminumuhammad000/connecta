@@ -1,7 +1,7 @@
 import axios from 'axios';
-const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || '';
-const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY || '';
-const FLUTTERWAVE_SECRET_HASH = process.env.FLUTTERWAVE_SECRET_HASH || 'connecta_flw_secret_hash_2026';
+const getSecretKey = () => process.env.FLUTTERWAVE_SECRET_KEY || '';
+const getPublicKey = () => process.env.FLUTTERWAVE_PUBLIC_KEY || '';
+const getSecretHash = () => process.env.FLUTTERWAVE_SECRET_HASH || 'connecta_flw_secret_hash_2026';
 const FLW_BASE_URL = 'https://api.flutterwave.com/v3';
 export const flutterwaveService = {
     /**
@@ -26,7 +26,7 @@ export const flutterwaveService = {
                 }
             }, {
                 headers: {
-                    Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+                    Authorization: `Bearer ${getSecretKey()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -44,7 +44,7 @@ export const flutterwaveService = {
         try {
             const response = await axios.get(`${FLW_BASE_URL}/transactions/${transactionId}/verify`, {
                 headers: {
-                    Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`
+                    Authorization: `Bearer ${getSecretKey()}`
                 }
             });
             return response.data;
@@ -62,7 +62,7 @@ export const flutterwaveService = {
         try {
             const response = await axios.get(`${FLW_BASE_URL}/banks/${code}`, {
                 headers: {
-                    Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`
+                    Authorization: `Bearer ${getSecretKey()}`
                 }
             });
             return response.data;
@@ -103,9 +103,15 @@ export const flutterwaveService = {
                     { code: '470010', name: 'Capitec Bank' },
                     { code: '250655', name: 'First National Bank (FNB)' },
                     { code: '051001', name: 'Standard Bank South Africa' }
+                ],
+                US: [
+                    { code: 'US_ACH', name: 'US Direct ACH Bank Wire Transfer' },
+                    { code: 'US_WIRE', name: 'US Wire Transfer / International SWIFT' },
+                    { code: 'PAYPAL', name: 'PayPal USD Payout' },
+                    { code: 'STRIPE_DIRECT', name: 'Direct USD Bank Account' }
                 ]
             };
-            return { status: 'success', data: fallbackBanks[code] || fallbackBanks.NG };
+            return { status: 'success', data: fallbackBanks[code] || fallbackBanks.US || fallbackBanks.NG };
         }
     },
     /**
@@ -123,7 +129,7 @@ export const flutterwaveService = {
                 callback_url: 'https://api.myconnecta.ng/api/payments/flutterwave/webhook'
             }, {
                 headers: {
-                    Authorization: `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+                    Authorization: `Bearer ${getSecretKey()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -138,7 +144,7 @@ export const flutterwaveService = {
      * Verify Webhook Signature
      */
     verifyWebhookHash: (signature) => {
-        return signature === FLUTTERWAVE_SECRET_HASH;
+        return signature === getSecretHash();
     }
 };
 export default flutterwaveService;

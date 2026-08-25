@@ -24,6 +24,7 @@ export interface IJob extends Document {
   isExternal?: boolean;
   company?: string;
   location?: string;
+  openings?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,8 +59,9 @@ const JobSchema: Schema<IJob> = new Schema(
     paymentStatus: { type: String, enum: ['pending', 'escrow', 'released', 'verified'], default: 'pending' },
     requirements: [{ type: String }],
     isExternal: { type: Boolean, default: false },
-    company: { type: String },
-    location: { type: String, default: 'Remote' },
+    company: { type: String, default: "" },
+    location: { type: String, default: "Remote" },
+    openings: { type: Number, default: 1 },
   },
   { timestamps: true }
 );

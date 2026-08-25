@@ -1565,11 +1565,14 @@ export const initializeFlutterwaveDeposit = async (req, res) => {
             payerId: userId,
             payeeId: userId,
             amount: depositAmount,
+            netAmount: depositAmount,
             currency: depositCurrency,
             paymentType: 'wallet_deposit',
+            paymentMethod: 'flutterwave',
             status: 'pending',
             escrowStatus: 'none',
             transactionId: txRef,
+            gatewayReference: txRef,
             description: `Wallet deposit of ${depositCurrency} ${depositAmount}`
         });
         const flutterwaveService = (await import('../services/flutterwave.service.js')).default;

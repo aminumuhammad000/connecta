@@ -88,11 +88,17 @@ async function seedAllDatabaseData() {
         await Proposal.deleteMany({});
         await Transaction.deleteMany({});
         console.log('Seeding sample Clients...');
+        const bcrypt = (await import('bcryptjs')).default;
+        const defaultHash = await bcrypt.hash('Password123!', 10);
         const createdClients = [];
         for (const clientData of SAMPLE_CLIENTS) {
             let client = await User.findOne({ email: clientData.email });
             if (!client) {
-                client = await User.create(clientData);
+                client = await User.create({ ...clientData, password: defaultHash });
+            }
+            else {
+                client.password = defaultHash;
+                await client.save();
             }
             createdClients.push(client);
         }

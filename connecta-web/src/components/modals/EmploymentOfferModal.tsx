@@ -4,6 +4,7 @@ import { FileText, X, DollarSign, ShieldCheck, Loader2, Send } from 'lucide-reac
 import { useToast } from '../../contexts/ToastContext';
 import { authAPI } from '../../services/api';
 import { formatCurrency } from '../../utils/currency';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 interface EmploymentOfferModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export const EmploymentOfferModal: React.FC<EmploymentOfferModalProps> = ({
   onSuccess
 }) => {
   const { success, error } = useToast();
+  const { currencies } = useCurrency();
   const [monthlySalary, setMonthlySalary] = useState(defaultSalary);
   const [probationDays, setProbationDays] = useState(30);
   const [noticeDays, setNoticeDays] = useState(30);
@@ -157,13 +159,9 @@ export const EmploymentOfferModal: React.FC<EmploymentOfferModalProps> = ({
                   className="input-field"
                   style={{ fontWeight: 700 }}
                 >
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                  <option value="NGN">NGN (₦)</option>
-                  <option value="KES">KES (KSh)</option>
-                  <option value="GHS">GHS (₵)</option>
-                  <option value="ZAR">ZAR (R)</option>
+                  {currencies.map((c) => (
+                    <option key={c.code} value={c.code}>{c.code} ({c.symbol}) - {c.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

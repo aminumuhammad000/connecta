@@ -19,6 +19,14 @@ import EmailBroadcast from './pages/EmailBroadcast'
 import Verifications from './pages/Verifications'
 import SupportMessages from './pages/SupportMessages'
 import Admins from './pages/Admins'
+import Currencies from './pages/Currencies'
+import WorkforceAdmin from './pages/WorkforceAdmin'
+import WorkforceAdminWorkforces from './pages/WorkforceAdminWorkforces'
+import WorkforceAdminWorkers from './pages/WorkforceAdminWorkers'
+import WorkforceAdminCompanies from './pages/WorkforceAdminCompanies'
+import WorkforceAdminAttendance from './pages/WorkforceAdminAttendance'
+import WorkforceAdminPayments from './pages/WorkforceAdminPayments'
+import WorkforceAdminSettings from './pages/WorkforceAdminSettings'
 import FeedAnnouncements from './pages/FeedAnnouncements'
 import ActivityLogs from './pages/ActivityLogs'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -43,6 +51,14 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/payments" element={<Payments />} />
+          <Route path="/currencies" element={<Currencies />} />
+          <Route path="/workforce-admin" element={<WorkforceAdmin />} />
+          <Route path="/workforce-admin/workforces" element={<WorkforceAdminWorkforces />} />
+          <Route path="/workforce-admin/workers" element={<WorkforceAdminWorkers />} />
+          <Route path="/workforce-admin/companies" element={<WorkforceAdminCompanies />} />
+          <Route path="/workforce-admin/attendance" element={<WorkforceAdminAttendance />} />
+          <Route path="/workforce-admin/payments" element={<WorkforceAdminPayments />} />
+          <Route path="/workforce-admin/settings" element={<WorkforceAdminSettings />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />

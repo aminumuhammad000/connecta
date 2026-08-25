@@ -142,6 +142,13 @@ app.use("/api/stats", statsRoutes);
 import auditLogRoutes from "./routes/AuditLog.routes.js";
 app.use("/api/audit-logs", auditLogRoutes);
 
+import currencyRoutes from "./routes/currency.routes.js";
+app.use("/api/currencies", currencyRoutes);
+
+import workforceRoutes from "./routes/workforce.routes.js";
+app.use("/api/workforce", workforceRoutes);
+
+
 
 app.get("/health", (req, res) => {
   const dbState = mongoose.connection.readyState;
@@ -347,6 +354,14 @@ io.on("connection", (socket) => {
 
 connectDB().then(async () => {
   console.log("🚀 Database connected and ready.");
+
+  // Seed default currencies
+  try {
+    const { seedInitialCurrencies } = await import('./controllers/Currency.controller.js');
+    await seedInitialCurrencies();
+  } catch (err) {
+    console.warn('⚠️ [AutoSeed] Currency seed warning:', err);
+  }
 
   // Auto-seed super admin if missing
   try {

@@ -41,9 +41,7 @@ export const storage = {
   getTheme: (): 'light' | 'dark' => {
     const theme = localStorage.getItem(THEME_KEY);
     if (theme === 'dark' || theme === 'light') return theme;
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
+    return 'light';
   },
   setTheme: (theme: 'light' | 'dark'): void => {
     localStorage.setItem(THEME_KEY, theme);

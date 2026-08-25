@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
-import { SUPPORTED_CURRENCIES, type CurrencyCode } from '../../utils/currency';
+import { type CurrencyCode } from '../../utils/currency';
 import { Sun, Moon, LogOut, LayoutDashboard, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../common/Logo';
@@ -11,7 +11,7 @@ import { Logo } from '../common/Logo';
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const { selectedCurrency, setSelectedCurrency } = useCurrency();
+  const { selectedCurrency, setSelectedCurrency, currencies } = useCurrency();
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,7 +80,7 @@ export const Navbar: React.FC = () => {
               }}
               title="Select Display Currency"
             >
-              {Object.values(SUPPORTED_CURRENCIES).map((c) => (
+              {currencies.map((c) => (
                 <option key={c.code} value={c.code} style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
                   {c.flag} {c.code} ({c.symbol})
                 </option>

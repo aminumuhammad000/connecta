@@ -8,10 +8,12 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 export const MyProfilePage: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
+  const { currencies } = useCurrency();
   const isClient = user?.userType === 'client';
 
   const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
@@ -541,13 +543,9 @@ export const MyProfilePage: React.FC = () => {
                         Default Currency 🔒
                       </label>
                       <select value={currency} onChange={(e) => initiateCurrencyChange(e.target.value)} className="input-field" style={{ width: '100%' }}>
-                        <option value="USD">USD ($)</option>
-                        <option value="NGN">NGN (₦)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="KES">KES (KSh)</option>
-                        <option value="GHS">GHS (GH₵)</option>
-                        <option value="ZAR">ZAR (R)</option>
+                        {currencies.map((c) => (
+                          <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                        ))}
                       </select>
                     </div>
                     <div>

@@ -226,6 +226,7 @@ export const createJob = async (req: Request, res: Response) => {
       isExternal: isExternal || false,
       company: company || '',
       location: location || 'Remote',
+      openings: Number(req.body.openings || 1),
       monthlySalaryAmount: monthlySalaryAmount || (jobType === 'full_time_contract' ? budget : undefined),
       currency: currency || 'USD',
       probationPeriodDays: probationPeriodDays || 30,

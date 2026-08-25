@@ -11,7 +11,7 @@ export interface ApiResponse<T = any> {
 
 // API Base Configuration
 // Use 'https://api.myconnecta.ng' for production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
 console.log('[API] Base URL:', API_BASE_URL);
 
 const api = axios.create({
@@ -603,4 +603,65 @@ export const feedAPI = {
   }
 }
 
+// ============================================
+// CURRENCIES
+// ============================================
+export const currenciesAPI = {
+  getAll: async (activeOnly: boolean = false) => {
+    const { data } = await api.get('/api/currencies', { params: { activeOnly } })
+    return data
+  },
+  create: async (currencyData: { code: string; name: string; symbol: string; flag?: string; rateToUSD?: number; isActive?: boolean }) => {
+    const { data } = await api.post('/api/currencies', currencyData)
+    return data
+  },
+  update: async (id: string, currencyData: { name?: string; symbol?: string; flag?: string; rateToUSD?: number; isActive?: boolean }) => {
+    const { data } = await api.put(`/api/currencies/${id}`, currencyData)
+    return data
+  },
+  toggleStatus: async (id: string) => {
+    const { data } = await api.patch(`/api/currencies/${id}/toggle`)
+    return data
+  },
+  delete: async (id: string) => {
+    const { data } = await api.delete(`/api/currencies/${id}`)
+    return data
+  },
+}
+
+// ============================================
+// WORKFORCE MANAGEMENT (ADMIN)
+// ============================================
+export const workforceAdminAPI = {
+  getStats: async () => {
+    const { data } = await api.get('/api/workforce/dashboard')
+    return data
+  },
+  getWorkforces: async () => {
+    const { data } = await api.get('/api/users', { params: { userType: 'client' } })
+    return data
+  },
+  getWorkers: async (params?: { companyId?: string; status?: string; search?: string }) => {
+    const { data } = await api.get('/api/workforce/workers', { params })
+    return data
+  },
+  getAttendance: async (date?: string) => {
+    const { data } = await api.get('/api/workforce/attendance', { params: { date } })
+    return data
+  },
+  getPayments: async () => {
+    const { data } = await api.get('/api/workforce/payments')
+    return data
+  },
+  createWorkforce: async (companyData: { companyName: string; email: string; firstName: string; lastName: string; location?: string }) => {
+    const { data } = await api.post('/api/users/signup', { ...companyData, userType: 'client', password: 'Password123!' })
+    return data
+  },
+  deleteWorkforce: async (companyId: string) => {
+    const { data } = await api.delete(`/api/users/${companyId}`)
+    return data
+  },
+}
+
 export default api
+

@@ -49,6 +49,7 @@ export interface IUser extends Document {
   }>;
   hourlyRate?: number;
   yearsOfExperience?: number;
+  payrollWalletBalance?: number;
   privacySettings: {
     allowBroadcast: boolean;
   };
@@ -120,6 +121,7 @@ const UserSchema: Schema<IUser> = new Schema(
     preferredLanguage: { type: String, enum: ['en', 'ha'], default: 'en' },
     whatsapp: { type: String, required: false },
     sparks: { type: Number, default: 0 },
+    payrollWalletBalance: { type: Number, default: 2500000 },
     privacySettings: {
       allowBroadcast: { type: Boolean, default: true },
     },
