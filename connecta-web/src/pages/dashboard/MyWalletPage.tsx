@@ -54,7 +54,35 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
   const [selectedBankName, setSelectedBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState(userName);
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedName, setVerifiedName] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Auto-verify account number when 10 digits are entered
+  useEffect(() => {
+    const verifyAcc = async () => {
+      const cleanAcc = accountNumber.trim();
+      if (cleanAcc.length >= 10 && selectedBankCode) {
+        setVerifying(true);
+        setVerifiedName('');
+        try {
+          const res = await flutterwaveAPI.resolveAccount(cleanAcc, selectedBankCode);
+          if (res?.success && res.data?.accountName) {
+            setVerifiedName(res.data.accountName);
+            setAccountName(res.data.accountName);
+            showToast(`Account verified: ${res.data.accountName}`, 'success');
+          }
+        } catch {
+          // Keep current name or fallback silently
+        } finally {
+          setVerifying(false);
+        }
+      }
+    };
+    verifyAcc();
+  }, [accountNumber, selectedBankCode]);
+
+  /* submit handler unchanged below */
 
   const loadBanks = async (cCode: string) => {
     setLoadingBanks(true);
@@ -212,29 +240,48 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
                 <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                   Account / Mobile Money Number
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 0812345678"
-                  value={accountNumber}
-                  onChange={(e) => setAccountNumber(e.target.value)}
-                  className="input-field"
-                  style={{ width: '100%', fontWeight: 700, letterSpacing: '0.06em' }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 0123456789"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    className="input-field"
+                    style={{ width: '100%', fontWeight: 700, letterSpacing: '0.06em' }}
+                  />
+                  {verifying && (
+                    <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--primary)' }}>
+                      <Loader2 size={14} className="animate-spin" /> Verifying...
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Account Name */}
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                  Account Holder Name
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Account Holder Name
+                  </label>
+                  {verifiedName && (
+                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={14} /> Verified via Flutterwave
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   required
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   className="input-field"
-                  style={{ width: '100%', fontWeight: 700 }}
+                  style={{
+                    width: '100%',
+                    fontWeight: 700,
+                    borderColor: verifiedName ? '#10b981' : undefined,
+                    background: verifiedName ? 'rgba(16, 185, 129, 0.04)' : undefined
+                  }}
                 />
               </div>
 

@@ -309,6 +309,10 @@ export const flutterwaveAPI = {
     const { data } = await apiClient.get<ApiResponse<any[]>>(`/api/payments/flutterwave/banks/${countryCode}`);
     return data;
   },
+  resolveAccount: async (accountNumber: string, bankCode: string) => {
+    const { data } = await apiClient.post<ApiResponse<{ accountName: string; accountNumber: string }>>('/api/payments/flutterwave/resolve-account', { accountNumber, bankCode });
+    return data;
+  },
   requestWithdrawal: async (withdrawalData: { amount: number; currency: string; bankCode: string; accountNumber: string; accountName: string }) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/payments/flutterwave/withdraw', withdrawalData);
     return data;

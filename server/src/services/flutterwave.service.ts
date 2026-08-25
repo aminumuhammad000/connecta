@@ -132,6 +132,31 @@ export const flutterwaveService = {
   },
 
   /**
+   * Verify / Resolve Account Details via Flutterwave API
+   */
+  verifyAccount: async (accountNumber: string, accountBank: string) => {
+    try {
+      const response = await axios.post(
+        `${FLW_BASE_URL}/accounts/resolve`,
+        {
+          account_number: accountNumber,
+          account_bank: accountBank,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getSecretKey()}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return response.data;
+    } catch (err: any) {
+      console.error('Flutterwave Verify Account Error:', err.response?.data || err.message);
+      throw new Error(err.response?.data?.message || 'Could not verify account details with Flutterwave');
+    }
+  },
+
+  /**
    * Initiate Flutterwave Transfer (Direct Bank / Mobile Money Payout)
    */
   initiateTransfer: async (params: {

@@ -70,12 +70,14 @@ router.post('/payout/vtstack', authenticate, requestVTStackPayout);
 import {
   initializeFlutterwaveDeposit,
   getFlutterwaveBanks,
+  resolveFlutterwaveAccount,
   requestFlutterwaveWithdrawal,
   handleFlutterwaveWebhook
 } from '../controllers/payment.controller.js';
 
 router.post('/flutterwave/initialize', authenticate, initializeFlutterwaveDeposit);
 router.get('/flutterwave/banks/:country', authenticate, getFlutterwaveBanks);
+router.post('/flutterwave/resolve-account', authenticate, resolveFlutterwaveAccount);
 router.post('/flutterwave/withdraw', authenticate, requestFlutterwaveWithdrawal);
 router.post('/flutterwave/webhook', handleFlutterwaveWebhook);
 

@@ -1826,6 +1826,32 @@ export const getFlutterwaveBanks = async (req: Request, res: Response) => {
 };
 
 /**
+ * Verify / Resolve Account Number via Flutterwave
+ */
+export const resolveFlutterwaveAccount = async (req: Request, res: Response) => {
+  try {
+    const { accountNumber, bankCode } = req.body;
+    if (!accountNumber || !bankCode) {
+      return res.status(400).json({ success: false, message: 'Account number and bank code are required' });
+    }
+
+    const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+    const result = await flutterwaveService.verifyAccount(accountNumber, bankCode);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        accountName: result.data?.account_name || result.data?.account_holder_name,
+        accountNumber: result.data?.account_number,
+      }
+    });
+  } catch (err: any) {
+    console.error('resolveFlutterwaveAccount error:', err);
+    return res.status(400).json({ success: false, message: err.message || 'Failed to verify account with Flutterwave' });
+  }
+};
+
+/**
  * Request Multi-Currency Flutterwave Payout Withdrawal
  */
 export const requestFlutterwaveWithdrawal = async (req: Request, res: Response) => {
