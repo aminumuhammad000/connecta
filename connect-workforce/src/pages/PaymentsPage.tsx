@@ -6,6 +6,7 @@ import { FundWalletModal } from '../components/modals/FundWalletModal';
 import { EmptyState } from '../components/common/EmptyState';
 import { EmployerHeader } from '../components/employer/EmployerHeader';
 import { EmployerSidebar } from '../components/employer/EmployerSidebar';
+import { EmployerMobileNavbar } from '../components/employer/EmployerMobileNavbar';
 import { useToast } from '../contexts/ToastContext';
 import { Link } from 'react-router-dom';
 import {
@@ -152,7 +153,7 @@ export const PaymentsPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#f3f4f8] text-gray-800 font-sans p-4 md:p-6">
+    <div className="min-h-screen bg-[#f3f4f8] text-gray-800 font-sans p-4 md:p-6 pb-24 lg:pb-6">
       {/* TOP BRAND NAVBAR */}
       <EmployerHeader />
 
@@ -439,6 +440,7 @@ export const PaymentsPage: React.FC = () => {
           fetchPayrollData();
         }}
       />
+      <EmployerMobileNavbar />
     </div>
   );
 };

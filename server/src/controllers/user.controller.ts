@@ -1116,6 +1116,106 @@ export const createAdmin = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @desc Admin creation of new Employer account with custom password & email credentials notification
+ * @route POST /api/users/admin/create-employer
+ */
+export const createEmployerByAdmin = async (req: Request, res: Response) => {
+  try {
+    const { firstName, lastName, email, password, companyName, phoneNumber, location } = req.body;
+
+    if (!email || !password || !firstName || !companyName) {
+      return res.status(400).json({
+        success: false,
+        message: "First name, email, password, and company name are required"
+      });
+    }
+
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "An employer or user with this email already exists" });
+    }
+
+    const employer = await User.create({
+      firstName,
+      lastName: lastName || '',
+      email: email.toLowerCase().trim(),
+      password,
+      companyName,
+      phoneNumber: phoneNumber || '',
+      location: location || '',
+      userType: 'client',
+      isVerified: true,
+    });
+
+    // Sync profile
+    try {
+      const Profile = (await import('../models/Profile.model.js')).default;
+      await Profile.create({
+        user: employer._id,
+        companyName,
+        location,
+        phoneNumber,
+      });
+    } catch (pErr) {
+      console.warn('Profile creation warning:', pErr);
+    }
+
+    // Send email notification with login details and portal URL
+    try {
+      const { sendMail } = await import('../services/email.service.js');
+      const loginUrl = process.env.WORKFORCE_URL || 'http://localhost:5175/employer/login';
+      await sendMail({
+        to: employer.email,
+        subject: `🏢 Welcome to Connecta Workforce - Your Employer Account Details`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; background-color: #f9fafb; color: #111827;">
+            <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e5e7eb;">
+              <h2 style="color: #ea580c; margin-top: 0;">Welcome to Connecta Workforce, ${firstName}!</h2>
+              <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+                Your Employer Organization Account for <strong>${companyName}</strong> has been created by the System Administrator.
+              </p>
+              
+              <div style="background-color: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #ffedd5; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #9a3412;">🔐 Your Login Credentials:</h4>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl}" style="color: #ea580c;">${loginUrl}</a></p>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${employer.email}</p>
+                <p style="margin: 4px 0; font-size: 14px;"><strong>Temporary Password:</strong> ${password}</p>
+              </div>
+
+              <p style="font-size: 13px; color: #6b7280;">
+                Click the button below to log in and manage your company workforce, post job openings, and disburse monthly payrolls.
+              </p>
+
+              <div style="text-align: center; margin-top: 25px;">
+                <a href="${loginUrl}" style="background-color: #ea580c; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 12px; display: inline-block; font-size: 14px;">Log In to Employer Dashboard</a>
+              </div>
+            </div>
+          </div>
+        `
+      });
+    } catch (mailErr) {
+      console.warn('Failed to send employer welcome email:', mailErr);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `Employer account for "${companyName}" created successfully! Login details sent to ${employer.email}`,
+      data: {
+        _id: employer._id,
+        firstName: employer.firstName,
+        lastName: employer.lastName,
+        email: employer.email,
+        companyName: employer.companyName,
+        passwordAssigned: password,
+      }
+    });
+  } catch (err: any) {
+    console.error('Create employer error:', err);
+    return res.status(500).json({ success: false, message: err.message || "Failed to create employer account" });
+  }
+};
+
 // ===================
 // Bulk Operations
 // ===================

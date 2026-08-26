@@ -5,7 +5,7 @@ import {
     verifyOTP, resetPassword, banUser, unbanUser, 
     getMe, verifyEmail, resendVerificationOTP,
     updatePushToken, changePassword, checkEmailExists, checkPhoneExists,
-    updateMe, deleteUser, createAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById,
+    updateMe, deleteUser, createAdmin, createEmployerByAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById,
     requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP
 } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
@@ -61,6 +61,7 @@ router.put("/:id", authenticate, isAdmin, updateUserById);
 router.put("/:id/ban", authenticate, isAdmin, banUser);
 router.put("/:id/unban", authenticate, isAdmin, unbanUser);
 router.post("/admin", createAdmin); // Temporarily without auth for initial setup
+router.post("/admin/create-employer", authenticate, isAdmin, createEmployerByAdmin);
 router.delete("/:id", authenticate, isAdmin, deleteUser);
 
 // Bulk operations (admin only)

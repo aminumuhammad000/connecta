@@ -4,6 +4,7 @@ import { workforceAPI } from '../api/workforce';
 import { useToast } from '../contexts/ToastContext';
 import { EmployerHeader } from '../components/employer/EmployerHeader';
 import { EmployerSidebar } from '../components/employer/EmployerSidebar';
+import { EmployerMobileNavbar } from '../components/employer/EmployerMobileNavbar';
 import {
   User,
   Building2,
@@ -94,7 +95,7 @@ export const SettingsPage: React.FC = () => {
   const fullName = `${firstName} ${lastName}`.trim();
 
   return (
-    <div className="min-h-screen bg-[#f3f4f8] text-gray-800 font-sans p-4 md:p-6">
+    <div className="min-h-screen bg-[#f3f4f8] text-gray-800 font-sans p-4 md:p-6 pb-24 lg:pb-6">
       {/* TOP BRAND NAVBAR */}
       <EmployerHeader />
 
@@ -350,6 +351,7 @@ export const SettingsPage: React.FC = () => {
           )}
         </main>
       </div>
+      <EmployerMobileNavbar />
     </div>
   );
 };
