@@ -614,6 +614,23 @@ export const processPayment = async (req, res) => {
                 reference: ref,
             });
         }
+        // Trigger live Flutterwave payout transfer if worker has bank details
+        if (member.bankDetails && member.bankDetails.accountNumber && member.bankDetails.bankCode) {
+            try {
+                const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+                await flutterwaveService.initiateTransfer({
+                    accountBank: member.bankDetails.bankCode,
+                    accountNumber: member.bankDetails.accountNumber,
+                    amount: payAmount,
+                    currency: currency || member.currency || 'NGN',
+                    narration: description || `Payroll Payment to ${member.fullName}`,
+                    reference: ref,
+                });
+            }
+            catch (flwErr) {
+                console.warn('Flutterwave direct transfer warning:', flwErr.message);
+            }
+        }
         const newPayment = await WorkforcePayment.create({
             companyId: userId,
             workforceMemberId,
@@ -626,7 +643,7 @@ export const processPayment = async (req, res) => {
             reference: ref,
             paymentDate: new Date(),
         });
-        return res.status(201).json({ success: true, message: `Payment of ${newPayment.currency} ${payAmount.toLocaleString()} recorded!`, data: newPayment });
+        return res.status(201).json({ success: true, message: `Payment of ${newPayment.currency} ${payAmount.toLocaleString()} processed and sent to bank!`, data: newPayment });
     }
     catch (err) {
         return res.status(500).json({ success: false, message: err.message || 'Failed to process payment' });

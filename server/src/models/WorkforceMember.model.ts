@@ -23,6 +23,12 @@ export interface IWorkforceMember extends Document {
   inviteToken?: string;
   companyRole: 'owner' | 'manager' | 'finance' | 'worker';
   payoutStatus?: 'active' | 'frozen' | 'paused';
+  bankDetails?: {
+    accountName?: string;
+    accountNumber?: string;
+    bankName?: string;
+    bankCode?: string;
+  };
   idNumber?: string;
   profileImage?: string;
   createdAt: Date;
@@ -58,6 +64,12 @@ const WorkforceMemberSchema = new Schema<IWorkforceMember>(
     inviteToken: { type: String },
     companyRole: { type: String, enum: ['owner', 'manager', 'finance', 'worker'], default: 'worker' },
     payoutStatus: { type: String, enum: ['active', 'frozen', 'paused'], default: 'active' },
+    bankDetails: {
+      accountName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      bankName: { type: String, default: '' },
+      bankCode: { type: String, default: '' },
+    },
     idNumber: { type: String },
     profileImage: { type: String },
   },
