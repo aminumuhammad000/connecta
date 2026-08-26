@@ -89,11 +89,28 @@ export const WorkerJobsPage: React.FC = () => {
     ? user.email
     : ((user as any)?.phoneNumber || (user as any)?.phone || (user?.email ? user.email.split('@')[0] : ''));
 
-  const filteredJobs = jobs.filter((j) =>
-    (j.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (j.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (j.location || '').toLowerCase().includes(searchQuery.toLowerCase())
+  const [selectedCompany, setSelectedCompany] = useState('all');
+
+  // Extract unique companies from fetched jobs list
+  const companyOptions = Array.from(
+    new Set(
+      jobs
+        .map((j) => j.companyName || j.clientId?.companyName || j.clientId?.title)
+        .filter(Boolean)
+    )
   );
+
+  const filteredJobs = jobs.filter((j) => {
+    const cName = j.companyName || j.clientId?.companyName || j.clientId?.title || '';
+    const matchesCompany = selectedCompany === 'all' || cName === selectedCompany;
+    const matchesSearch =
+      (j.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (j.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (j.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      cName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesCompany && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-[#f3f4f8] text-gray-800 font-sans p-4 md:p-6 pb-24 lg:pb-6">
@@ -184,16 +201,37 @@ export const WorkerJobsPage: React.FC = () => {
                 <p className="text-xs text-gray-400 font-medium">Browse active employer openings and submit applications.</p>
               </div>
 
-              {/* SEARCH INPUT */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Search jobs by title or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-3 py-1.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:outline-none focus:border-primary"
-                />
+              {/* SEARCH & WORKFORCE COMPANY FILTER */}
+              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                {/* Company Filter Dropdown */}
+                {companyOptions.length > 0 && (
+                  <div className="relative">
+                    <select
+                      value={selectedCompany}
+                      onChange={(e) => setSelectedCompany(e.target.value)}
+                      className="px-3.5 py-1.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-bold text-gray-800 focus:outline-none focus:border-primary cursor-pointer"
+                    >
+                      <option value="all">All Workforce Employers ({jobs.length})</option>
+                      {companyOptions.map((cName: any) => (
+                        <option key={cName} value={cName}>
+                          🏢 {cName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Search Input */}
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Search title, role or city..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-3 py-1.5 rounded-2xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:outline-none focus:border-primary"
+                  />
+                </div>
               </div>
             </div>
 
