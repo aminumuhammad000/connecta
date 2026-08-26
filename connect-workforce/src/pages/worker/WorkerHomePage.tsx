@@ -91,7 +91,7 @@ export const WorkerHomePage: React.FC = () => {
         <main className="lg:col-span-9 space-y-6">
           
           {/* SUMMARY STAT CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             
             {/* Card 1: My Salary */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-2">
@@ -126,30 +126,6 @@ export const WorkerHomePage: React.FC = () => {
                 <span className={`text-xs font-bold flex items-center gap-0.5 px-3 py-1 rounded-full ${isHired ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
                   {isHired ? 'Active Roster' : 'Open'}
                 </span>
-              </div>
-            </div>
-
-            {/* Card 3: 1-Tap Daily Check-In */}
-            <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-2 flex flex-col justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                  <Clock3 className="w-4.5 h-4.5" />
-                </div>
-                <span className="font-extrabold text-sm text-gray-700">Daily Attendance</span>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  onClick={handleCheckInToggle}
-                  className={`w-full py-2.5 rounded-2xl font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 ${
-                    checkedIn
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-primary hover:bg-primary-hover text-white'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{checkedIn ? 'Checked In Today (Tap to Out)' : '1-Tap Check-In Today'}</span>
-                </button>
               </div>
             </div>
           </div>
