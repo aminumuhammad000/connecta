@@ -69,6 +69,8 @@ export const WorkerSignupPage: React.FC = () => {
         email,
         phoneNumber,
         password,
+        title: category.trim(),
+        category: category.trim(),
         workforceId,
       });
 

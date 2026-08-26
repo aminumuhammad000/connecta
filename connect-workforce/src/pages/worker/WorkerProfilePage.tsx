@@ -140,8 +140,12 @@ export const WorkerProfilePage: React.FC = () => {
                       <span className="font-extrabold text-gray-900 text-sm">{userContact}</span>
                     </div>
                     <div>
+                      <span className="text-gray-400 font-bold block mb-1">Specialty / Job Trade</span>
+                      <span className="font-extrabold text-primary text-sm">{user?.title || (user as any)?.category || member?.role || 'General Specialty'}</span>
+                    </div>
+                    <div>
                       <span className="text-gray-400 font-bold block mb-1">Assigned Role</span>
-                      <span className="font-extrabold text-gray-900 text-sm">{member?.role || 'Site Operator'}</span>
+                      <span className="font-extrabold text-gray-900 text-sm">{member?.role || user?.title || 'Site Operator'}</span>
                     </div>
                     <div>
                       <span className="text-gray-400 font-bold block mb-1">Current Employer</span>

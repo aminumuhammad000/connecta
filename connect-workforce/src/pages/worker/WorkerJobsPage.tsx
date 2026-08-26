@@ -105,16 +105,38 @@ export const WorkerJobsPage: React.FC = () => {
     )
   );
 
+  // Worker's specialty / job trade keyword for AI smart matching
+  const workerSpecialty = (user?.title || (user as any)?.category || '').toLowerCase().trim();
+
   const filteredJobs = jobs.filter((j) => {
     const cName = j.companyName || j.clientId?.companyName || j.clientId?.title || '';
     const matchesCompany = selectedCompany === 'all' || cName === selectedCompany;
-    const matchesSearch =
-      (j.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (j.category || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (j.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesCompany && matchesSearch;
+    // AI Keyword Matching: match title, category, description, or location against search query OR worker's specialty keyword
+    const jobText = `${j.title || ''} ${j.category || ''} ${j.description || ''} ${j.location || ''} ${cName}`.toLowerCase();
+    
+    const matchesSearch = searchQuery
+      ? jobText.includes(searchQuery.toLowerCase())
+      : true;
+
+    // AI Smart Matching: Prioritize / Match worker's specialty keyword if user hasn't typed a specific search query
+    const matchesSpecialty = workerSpecialty
+      ? workerSpecialty.split(/\s+/).some((kw: string) => kw.length > 2 && jobText.includes(kw))
+      : true;
+
+    return matchesCompany && matchesSearch && (searchQuery ? true : matchesSpecialty || true);
+  }).sort((a, b) => {
+    // AI Score Sorting: Boost jobs that match the worker's specialty keyword to the top of the list
+    if (!workerSpecialty) return 0;
+    const aText = `${a.title || ''} ${a.category || ''} ${a.description || ''}`.toLowerCase();
+    const bText = `${b.title || ''} ${b.category || ''} ${b.description || ''}`.toLowerCase();
+
+    const aMatch = workerSpecialty.split(/\s+/).some((kw: string) => kw.length > 2 && aText.includes(kw));
+    const bMatch = workerSpecialty.split(/\s+/).some((kw: string) => kw.length > 2 && bText.includes(kw));
+
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0;
   });
 
   return (
@@ -277,9 +299,16 @@ export const WorkerJobsPage: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <span className="text-[10px] font-extrabold text-primary bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider block mb-1">
-                              {j.category || 'Workforce Role'}
-                            </span>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[10px] font-extrabold text-primary bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wider block">
+                                {j.category || 'Workforce Role'}
+                              </span>
+                              {workerSpecialty && `${j.title || ''} ${j.category || ''} ${j.description || ''}`.toLowerCase().includes(workerSpecialty) && (
+                                <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-0.5">
+                                  ✨ AI Match
+                                </span>
+                              )}
+                            </div>
                             <h3 className="font-extrabold text-base text-gray-900 leading-snug group-hover:text-primary transition-colors">{j.title}</h3>
                           </div>
                           <span className="text-sm font-black text-emerald-600 shrink-0">
