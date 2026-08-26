@@ -17,9 +17,10 @@ export const EmployerSidebar: React.FC = () => {
   const firstName = user?.firstName || 'Employer';
 
   return (
-    <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between space-y-8 pr-2">
-      <div className="space-y-8">
-        <div className="flex items-center gap-3">
+    <aside className="hidden lg:block lg:col-span-3">
+      <div className="sticky top-24 flex flex-col justify-between h-[calc(100vh-7rem)] pr-2">
+        <div className="space-y-8">
+          <div className="flex items-center gap-3">
           <div className="relative">
             <div className="w-12 h-12 rounded-full bg-orange-100 border-2 border-white shadow-sm flex items-center justify-center text-primary font-extrabold text-lg overflow-hidden">
               {user?.profileImage ? (
@@ -102,6 +103,7 @@ export const EmployerSidebar: React.FC = () => {
           <span>Employer Profile</span>
         </Link>
       </div>
-    </aside>
+    </div>
+  </aside>
   );
 };
