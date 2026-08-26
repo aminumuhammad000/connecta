@@ -100,17 +100,7 @@ export const WorkerSidebar: React.FC<WorkerSidebarProps> = ({ isHired }) => {
               <span>Bank & Cashout</span>
             </Link>
 
-            <Link
-              to="/messages"
-              className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl font-bold text-xs transition-all ${
-                location.pathname.includes('/messages')
-                  ? 'bg-white text-gray-900 font-black shadow-2xs border border-gray-200/80'
-                  : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
-              }`}
-            >
-              <Inbox className={`w-4.5 h-4.5 ${location.pathname.includes('/messages') ? 'text-blue-600' : ''}`} />
-              <span>Employer Messages</span>
-            </Link>
+
 
             <Link
               to="/workforce/me/profile"

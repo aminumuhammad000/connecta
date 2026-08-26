@@ -101,8 +101,6 @@ export default function App() {
             <Route path="/dashboard" element={<Navigate to="/employer/dashboard" replace />} />
             <Route path="/workforce" element={<Navigate to="/employer/workforce" replace />} />
             <Route path="/jobs" element={<Navigate to="/employer/jobs" replace />} />
-            <Route path="/payments" element={<Navigate to="/employer/payments" replace />} />
-            <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
             {/* Worker Experience Routes */}
