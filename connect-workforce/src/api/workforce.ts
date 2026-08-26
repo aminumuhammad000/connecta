@@ -12,7 +12,7 @@ export const authAPI = {
     return data;
   },
   signupWorker: async (workerData: { firstName: string; lastName: string; email: string; password: string; phoneNumber?: string; jobTitle?: string; workforceId?: string }) => {
-    const { data } = await apiClient.post<ApiResponse>('/api/users/signup', {
+    const { data } = await apiClient.post<{ success: boolean; token?: string; user?: any; message?: string }>('/api/users/signup', {
       ...workerData,
       userType: 'freelancer',
     });

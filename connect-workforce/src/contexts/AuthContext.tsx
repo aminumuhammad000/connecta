@@ -66,12 +66,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signupWorker = async (workerData: any) => {
-    const res = await authAPI.signupWorker(workerData);
-    if (res.success) {
-      // Auto signin
-      return await login(workerData.email, workerData.password);
+    try {
+      const res = await authAPI.signupWorker(workerData);
+      if (res.token && res.user) {
+        localStorage.setItem('connecta_token', res.token);
+        localStorage.setItem('workforce_token', res.token);
+        setUser(res.user);
+        return true;
+      }
+      if (res.success) {
+        return await login(workerData.email, workerData.password);
+      }
+      return false;
+    } catch (err) {
+      console.error('Worker signup error:', err);
+      throw err;
     }
-    return false;
   };
 
   const logout = () => {
