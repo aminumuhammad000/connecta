@@ -168,8 +168,13 @@ export const workforceAPI = {
     return data;
   },
   updateProposalStatus: async (proposalId: string, status: 'accepted' | 'declined') => {
-    const { data } = await apiClient.patch<ApiResponse>(`/api/proposals/${proposalId}/status`, { status });
-    return data;
+    if (status === 'accepted') {
+      const { data } = await apiClient.put<ApiResponse>(`/api/proposals/${proposalId}/approve`);
+      return data;
+    } else {
+      const { data } = await apiClient.put<ApiResponse>(`/api/proposals/${proposalId}/reject`);
+      return data;
+    }
   },
 };
 

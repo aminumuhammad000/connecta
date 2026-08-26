@@ -28,6 +28,18 @@ export const JobApplicantsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    proposalId: string;
+    status: 'accepted' | 'declined';
+    workerName: string;
+  }>({
+    isOpen: false,
+    proposalId: '',
+    status: 'accepted',
+    workerName: '',
+  });
+
   useEffect(() => {
     if (jobId) {
       fetchJobDetailsAndApplicants();
@@ -57,19 +69,32 @@ export const JobApplicantsPage: React.FC = () => {
     }
   };
 
-  const handleUpdateStatus = async (proposalId: string, status: 'accepted' | 'declined', workerName: string) => {
+  const openConfirmModal = (proposalId: string, status: 'accepted' | 'declined', workerName: string) => {
+    setConfirmModal({
+      isOpen: true,
+      proposalId,
+      status,
+      workerName,
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    const { proposalId, status, workerName } = confirmModal;
+    if (!proposalId) return;
+
     setActionLoadingId(proposalId);
     try {
       await workforceAPI.updateProposalStatus(proposalId, status);
       showToast(
         status === 'accepted'
-          ? `Hired ${workerName}. Worker added to your roster.`
-          : `Proposal from ${workerName} declined.`,
+          ? `Hired ${workerName}! Added to active workforce company.`
+          : `Application from ${workerName} declined.`,
         status === 'accepted' ? 'success' : 'info'
       );
       setApplicants((prev) =>
         prev.map((p) => (p._id === proposalId ? { ...p, status } : p))
       );
+      setConfirmModal({ isOpen: false, proposalId: '', status: 'accepted', workerName: '' });
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update applicant status', 'error');
     } finally {
@@ -220,7 +245,7 @@ export const JobApplicantsPage: React.FC = () => {
                                 {!isAccepted && !isDeclined ? (
                                   <>
                                     <button
-                                      onClick={() => handleUpdateStatus(p._id, 'accepted', workerName)}
+                                      onClick={() => openConfirmModal(p._id, 'accepted', workerName)}
                                       disabled={actionLoadingId === p._id}
                                       className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all inline-flex items-center gap-1 disabled:opacity-50"
                                     >
@@ -235,7 +260,7 @@ export const JobApplicantsPage: React.FC = () => {
                                     </button>
 
                                     <button
-                                      onClick={() => handleUpdateStatus(p._id, 'declined', workerName)}
+                                      onClick={() => openConfirmModal(p._id, 'declined', workerName)}
                                       disabled={actionLoadingId === p._id}
                                       className="px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs border border-gray-200 transition-all inline-flex items-center gap-1 disabled:opacity-50"
                                     >
@@ -259,6 +284,74 @@ export const JobApplicantsPage: React.FC = () => {
           )}
         </main>
       </div>
+
+      {/* CONFIRMATION MODAL POPUP */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-gray-100 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
+                confirmModal.status === 'accepted' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+              }`}>
+                {confirmModal.status === 'accepted' ? (
+                  <CheckCircle2 className="w-6 h-6" />
+                ) : (
+                  <XCircle className="w-6 h-6" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-gray-900 leading-tight">
+                  {confirmModal.status === 'accepted' ? 'Confirm Hire Worker' : 'Confirm Reject Application'}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">Action required for applicant.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+              {confirmModal.status === 'accepted' ? (
+                <>Are you sure you want to <strong>hire {confirmModal.workerName}</strong> for this role? They will be added to your active workforce company roster immediately.</>
+              ) : (
+                <>Are you sure you want to <strong>decline {confirmModal.workerName}</strong> for this position?</>
+              )}
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setConfirmModal({ isOpen: false, proposalId: '', status: 'accepted', workerName: '' })}
+                className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-all"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmAction}
+                disabled={!!actionLoadingId}
+                className={`px-4 py-2.5 rounded-xl text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 ${
+                  confirmModal.status === 'accepted'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-rose-600 hover:bg-rose-700'
+                }`}
+              >
+                {actionLoadingId ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : confirmModal.status === 'accepted' ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirm Hire</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>Confirm Reject</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
