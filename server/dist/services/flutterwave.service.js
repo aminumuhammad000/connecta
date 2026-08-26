@@ -200,15 +200,8 @@ export const flutterwaveService = {
             return response.data;
         }
         catch (err) {
-            console.warn('Flutterwave Live Verify warning:', err.response?.data?.message || err.message);
-            // Generate formatted validation response
-            return {
-                status: 'success',
-                data: {
-                    account_number: accountNumber,
-                    account_name: 'Verified Account Holder'
-                }
-            };
+            console.error('Flutterwave Live Verify Error:', err.response?.data || err.message);
+            throw new Error(err.response?.data?.message || 'Could not resolve account details with Flutterwave');
         }
     },
     /**
