@@ -107,7 +107,6 @@ export default function App() {
             <Route path="/workforce/me" element={<ProtectedRoute raw><WorkerHomePage /></ProtectedRoute>} />
             <Route path="/workforce/me/jobs" element={<ProtectedRoute raw><WorkerJobsPage /></ProtectedRoute>} />
             <Route path="/workforce/me/jobs/:jobId" element={<ProtectedRoute raw><WorkerJobDetailsPage /></ProtectedRoute>} />
-            <Route path="/workforce/me/attendance" element={<ProtectedRoute raw><WorkerAttendancePage /></ProtectedRoute>} />
             <Route path="/workforce/me/payments" element={<ProtectedRoute raw><WorkerPaymentsPage /></ProtectedRoute>} />
             <Route path="/workforce/me/contracts" element={<ProtectedRoute raw><WorkerContractsPage /></ProtectedRoute>} />
             <Route path="/workforce/me/wallet" element={<ProtectedRoute raw><WorkerWalletPage /></ProtectedRoute>} />
