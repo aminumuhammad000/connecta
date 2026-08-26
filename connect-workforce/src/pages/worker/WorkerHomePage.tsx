@@ -111,7 +111,7 @@ export const WorkerHomePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Work Roster Status */}
+            {/* Card 2: Employment Status */}
             <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-gray-500">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${isHired ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
@@ -124,7 +124,7 @@ export const WorkerHomePage: React.FC = () => {
                   {isHired ? 'Active Member' : 'Seeking Jobs'}
                 </span>
                 <span className={`text-xs font-bold flex items-center gap-0.5 px-3 py-1 rounded-full ${isHired ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>
-                  {isHired ? 'Active Roster' : 'Open'}
+                  {isHired ? 'Hired' : 'Open'}
                 </span>
               </div>
             </div>
@@ -136,8 +136,8 @@ export const WorkerHomePage: React.FC = () => {
           <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
-                <h3 className="font-extrabold text-lg text-gray-900">My Employer & Work Roster</h3>
-                <p className="text-xs text-gray-500 font-medium mt-0.5">Your active workforce company assignment.</p>
+                <h3 className="font-extrabold text-lg text-gray-900">My Employer & Active Company</h3>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">Your current workforce company assignment.</p>
               </div>
               
               <Link to="/workforce/me/jobs" className="text-xs font-bold text-primary hover:underline">
@@ -152,7 +152,7 @@ export const WorkerHomePage: React.FC = () => {
                 </div>
                 <div className="space-y-1 max-w-md mx-auto">
                   <h4 className="font-extrabold text-gray-900 text-base">No Employer Assigned Yet</h4>
-                  <p className="text-xs text-gray-500">You are currently not on an active workforce company roster. Apply to available jobs to get hired!</p>
+                  <p className="text-xs text-gray-500">You are currently not assigned to an active workforce company. Apply to available jobs to get hired!</p>
                 </div>
                 <Link
                   to="/workforce/me/jobs"
@@ -181,7 +181,7 @@ export const WorkerHomePage: React.FC = () => {
                         </div>
                         <div>
                           <div className="font-black text-gray-900 text-sm">{employerName}</div>
-                          <div className="text-[10px] text-gray-400 font-normal">Active Company Roster</div>
+                          <div className="text-[10px] text-gray-400 font-normal">Active Company</div>
                         </div>
                       </td>
 
