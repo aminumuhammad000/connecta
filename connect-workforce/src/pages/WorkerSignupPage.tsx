@@ -243,9 +243,9 @@ export const WorkerSignupPage: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <h3 className="font-extrabold text-lg text-white tracking-tight">Smart Shift & Payroll Management</h3>
+            <h3 className="font-extrabold text-lg text-white tracking-tight">Connect with Verified Employers</h3>
             <p className="text-xs text-gray-400 font-medium max-w-xs mx-auto leading-relaxed">
-              Check into daily site shifts, track contracts, and get paid on time seamlessly.
+              Find jobs, manage work contracts, track daily shifts, and get paid directly with peace of mind.
             </p>
           </div>
         </div>
