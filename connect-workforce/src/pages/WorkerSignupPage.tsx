@@ -227,56 +227,26 @@ export const WorkerSignupPage: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Minimalist WORKER Testimonial Panel */}
-      <div className="hidden lg:flex flex-1 bg-[#09090b] text-white p-12 lg:p-16 flex-col justify-between relative overflow-hidden border-l border-gray-800/60">
-        {/* Minimal Subtle Glow */}
-        <div className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      {/* RIGHT SIDE: Minimalist WORKER 2D Illustration Panel */}
+      <div className="hidden lg:flex flex-1 bg-[#09090b] text-white p-8 lg:p-12 flex-col justify-center items-center relative overflow-hidden border-l border-gray-800/60">
+        {/* Minimal Subtle Background Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
-        {/* Worker Testimonial Quote */}
-        <div className="relative z-10 max-w-lg pt-10 space-y-6">
-          <p className="text-xl lg:text-2xl font-medium leading-relaxed text-gray-200 tracking-tight">
-            “Connecta makes it easy for me to check into my daily site shifts, track my work contracts, and receive my payroll earnings on time without stress.”
-          </p>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-primary to-orange-500 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
-              KA
-            </div>
-            <div>
-              <div className="font-extrabold text-sm text-white">Kemi Adebayo</div>
-              <div className="text-xs text-gray-400 font-medium">Certified Site Specialist</div>
-            </div>
+        {/* 2D Vector Illustration Container */}
+        <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center space-y-6">
+          <div className="relative rounded-3xl overflow-hidden border border-gray-800/80 shadow-2xl bg-[#121215] group">
+            <img
+              src="/worker_illustration.jpg"
+              alt="Connecta Worker Shift Check-in Illustration"
+              className="w-full h-auto object-cover max-h-[520px] transform group-hover:scale-105 transition-transform duration-500"
+            />
           </div>
-        </div>
 
-        {/* Minimalist Worker Space Card */}
-        <div className="relative z-10 pt-6">
-          <div className="bg-[#121215] border border-gray-800/80 rounded-2xl p-5 shadow-xl space-y-4 max-w-md">
-            <div className="flex items-center justify-between border-b border-gray-800/60 pb-3.5">
-              <div className="flex items-center gap-2.5">
-                <img src="/connecta_logo.png" alt="Connecta Logo" className="h-7 w-auto object-contain" />
-                <div>
-                  <div className="text-[11px] text-gray-400 font-medium">👋 Morning, Kemi</div>
-                  <div className="font-bold text-xs text-white">My Worker Space</div>
-                </div>
-              </div>
-
-              <div className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
-                Shift Checked In
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#18181b] p-3.5 rounded-xl border border-gray-800/80">
-                <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">This Month's Earnings</span>
-                <div className="text-xl font-black text-primary mt-0.5">₦185,000</div>
-              </div>
-
-              <div className="bg-[#18181b] p-3.5 rounded-xl border border-gray-800/80">
-                <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">Today's Shift</span>
-                <div className="text-xs font-bold text-gray-200 mt-1 truncate">Airport Road Site</div>
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <h3 className="font-extrabold text-lg text-white tracking-tight">Smart Shift & Payroll Management</h3>
+            <p className="text-xs text-gray-400 font-medium max-w-xs mx-auto leading-relaxed">
+              Check into daily site shifts, track contracts, and get paid on time seamlessly.
+            </p>
           </div>
         </div>
       </div>
