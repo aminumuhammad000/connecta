@@ -1165,35 +1165,33 @@ export const createEmployerByAdmin = async (req: Request, res: Response) => {
     try {
       const { sendEmail } = await import('../services/email.service.js');
       const loginUrl = process.env.WORKFORCE_URL || 'http://localhost:5175/employer/login';
-      await sendEmail({
-        to: employer.email,
-        subject: `🏢 Welcome to Connecta Workforce - Your Employer Account Details`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; background-color: #f9fafb; color: #111827;">
-            <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e5e7eb;">
-              <h2 style="color: #ea580c; margin-top: 0;">Welcome to Connecta Workforce, ${firstName}!</h2>
-              <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
-                Your Employer Organization Account for <strong>${companyName}</strong> has been created by the System Administrator.
-              </p>
-              
-              <div style="background-color: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #ffedd5; margin: 20px 0;">
-                <h4 style="margin: 0 0 10px 0; color: #9a3412;">🔐 Your Login Credentials:</h4>
-                <p style="margin: 4px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl}" style="color: #ea580c;">${loginUrl}</a></p>
-                <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${employer.email}</p>
-                <p style="margin: 4px 0; font-size: 14px;"><strong>Temporary Password:</strong> ${password}</p>
-              </div>
+      const subject = `🏢 Welcome to Connecta Workforce - Your Employer Account Details`;
+      const html = `
+        <div style="font-family: sans-serif; padding: 20px; background-color: #f9fafb; color: #111827;">
+          <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e5e7eb;">
+            <h2 style="color: #ea580c; margin-top: 0;">Welcome to Connecta Workforce, ${firstName}!</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+              Your Employer Organization Account for <strong>${companyName}</strong> has been created by the System Administrator.
+            </p>
+            
+            <div style="background-color: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #ffedd5; margin: 20px 0;">
+              <h4 style="margin: 0 0 10px 0; color: #9a3412;">🔐 Your Login Credentials:</h4>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl}" style="color: #ea580c;">${loginUrl}</a></p>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${employer.email}</p>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Temporary Password:</strong> ${password}</p>
+            </div>
 
-              <p style="font-size: 13px; color: #6b7280;">
-                Click the button below to log in and manage your company workforce, post job openings, and disburse monthly payrolls.
-              </p>
+            <p style="font-size: 13px; color: #6b7280;">
+              Click the button below to log in and manage your company workforce, post job openings, and disburse monthly payrolls.
+            </p>
 
-              <div style="text-align: center; margin-top: 25px;">
-                <a href="${loginUrl}" style="background-color: #ea580c; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 12px; display: inline-block; font-size: 14px;">Log In to Employer Dashboard</a>
-              </div>
+            <div style="text-align: center; margin-top: 25px;">
+              <a href="${loginUrl}" style="background-color: #ea580c; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 12px; display: inline-block; font-size: 14px;">Log In to Employer Dashboard</a>
             </div>
           </div>
-        `
-      });
+        </div>
+      `;
+      await sendEmail(employer.email, subject, html);
     } catch (mailErr) {
       console.warn('Failed to send employer welcome email:', mailErr);
     }
