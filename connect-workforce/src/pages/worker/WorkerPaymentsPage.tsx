@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { workforceAPI } from '../../api/workforce';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { SubmitTimesheetModal } from '../../components/modals/SubmitTimesheetModal';
+import { PayslipModal } from '../../components/modals/PayslipModal';
 import {
   LayoutDashboard,
   Briefcase,
@@ -14,7 +15,8 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Download,
-  ClockPlus
+  ClockPlus,
+  Eye
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
@@ -26,6 +28,7 @@ export const WorkerPaymentsPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showTimesheetModal, setShowTimesheetModal] = useState(false);
+  const [selectedPayslipPayment, setSelectedPayslipPayment] = useState<any>(null);
 
   useEffect(() => {
     fetchPayments();
@@ -263,13 +266,23 @@ Connecta Workforce Payout Engine.
                           <StatusBadge status={p.status || 'completed'} />
                         </td>
                         <td className="py-3.5 px-3 text-right">
-                          <button
-                            onClick={() => handleDownloadPayslip(p)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] transition-all"
-                          >
-                            <Download className="w-3.5 h-3.5 text-gray-500" />
-                            <span>Download PDF</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setSelectedPayslipPayment(p)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-primary font-extrabold text-[11px] transition-all border border-orange-200"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>View Payslip</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleDownloadPayslip(p)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] transition-all"
+                              title="Download TXT Proof"
+                            >
+                              <Download className="w-3.5 h-3.5 text-gray-500" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -283,6 +296,15 @@ Connecta Workforce Payout Engine.
             isOpen={showTimesheetModal}
             onClose={() => setShowTimesheetModal(false)}
             onSuccess={fetchPayments}
+          />
+
+          <PayslipModal
+            isOpen={!!selectedPayslipPayment}
+            onClose={() => setSelectedPayslipPayment(null)}
+            payment={selectedPayslipPayment}
+            workerName={fullName}
+            employerName={employerName}
+            workerRole={member?.role}
           />
         </main>
       </div>
