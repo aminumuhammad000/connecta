@@ -1163,9 +1163,9 @@ export const createEmployerByAdmin = async (req: Request, res: Response) => {
 
     // Send email notification with login details and portal URL
     try {
-      const { sendMail } = await import('../services/email.service.js');
+      const { sendEmail } = await import('../services/email.service.js');
       const loginUrl = process.env.WORKFORCE_URL || 'http://localhost:5175/employer/login';
-      await sendMail({
+      await sendEmail({
         to: employer.email,
         subject: `🏢 Welcome to Connecta Workforce - Your Employer Account Details`,
         html: `

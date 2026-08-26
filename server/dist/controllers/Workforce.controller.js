@@ -665,22 +665,26 @@ export const getWorkforceJobs = async (req, res) => {
             ...workforceSettings.map((id) => id.toString()),
             ...contractCompanies.map((id) => id.toString()),
         ]));
-        // Query active jobs posted by workforce employers or contract/workforce roles
+        // Query active jobs posted specifically by workforce employers or classified under contract / workforce
         const query = {
             status: 'active',
             $or: [
-                { clientId: { $exists: true } },
                 { clientId: { $in: workforceEmployerIds } },
-                { jobType: { $in: ['full_time_contract', 'contract', 'freelance'] } },
+                { jobType: { $in: ['full_time_contract', 'contract'] } },
             ],
         };
         const jobs = await Job.find(query)
             .populate('clientId', 'companyName firstName lastName title profileImage location')
             .sort({ createdAt: -1 })
             .lean();
-        const formattedJobs = jobs.map((j) => ({
-            ...j,
-            companyName: j.clientId?.companyName || j.clientId?.title || `${j.clientId?.firstName || ''} ${j.clientId?.lastName || ''}`.trim() || 'Workforce Employer',
+        const formattedJobs = await Promise.all(jobs.map(async (j) => {
+            const count = await Proposal.countDocuments({ jobId: j._id });
+            return {
+                ...j,
+                companyName: j.clientId?.companyName || j.clientId?.title || `${j.clientId?.firstName || ''} ${j.clientId?.lastName || ''}`.trim() || 'Workforce Employer',
+                proposalsCount: count,
+                proposalCount: count,
+            };
         }));
         return res.status(200).json({ success: true, data: formattedJobs });
     }
