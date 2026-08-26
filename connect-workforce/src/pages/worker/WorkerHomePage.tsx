@@ -127,6 +127,14 @@ export const WorkerHomePage: React.FC = () => {
               </Link>
 
               <Link
+                to="/messages"
+                className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-gray-500 hover:text-gray-900 hover:bg-white/60 font-semibold text-sm transition-all"
+              >
+                <Inbox className="w-5 h-5 text-blue-600" />
+                <span>Employer Messages</span>
+              </Link>
+
+              <Link
                 to="/workforce/me/profile"
                 className="flex items-center gap-3.5 px-4 py-3 rounded-2xl text-gray-500 hover:text-gray-900 hover:bg-white/60 font-semibold text-sm transition-all"
               >

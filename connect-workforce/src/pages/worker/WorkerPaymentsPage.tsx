@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { workforceAPI } from '../../api/workforce';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { SubmitTimesheetModal } from '../../components/modals/SubmitTimesheetModal';
 import {
   LayoutDashboard,
   Briefcase,
@@ -11,7 +12,9 @@ import {
   User,
   Inbox,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  Download,
+  ClockPlus
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
@@ -22,6 +25,7 @@ export const WorkerPaymentsPage: React.FC = () => {
   const location = useLocation();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showTimesheetModal, setShowTimesheetModal] = useState(false);
 
   useEffect(() => {
     fetchPayments();
@@ -41,6 +45,36 @@ export const WorkerPaymentsPage: React.FC = () => {
     }
   };
 
+  const handleDownloadPayslip = (p: any) => {
+    const payslipContent = `
+===================================================
+              CONNECTA WORKFORCE PAYSLIP           
+===================================================
+Disbursement Date: ${new Date(p.paymentDate || p.createdAt).toLocaleDateString()}
+Worker Name:       ${fullName}
+Employer Company:  ${employerName || 'Workforce Employer'}
+Role / Title:      ${member?.role || 'Staff Member'}
+Reference Code:    ${p.reference || `WF-${p._id}`}
+---------------------------------------------------
+PAYMENT BREAKDOWN:
+Base Salary Amount: ₦ ${(p.amount || 0).toLocaleString()}
+Status:             ${(p.status || 'completed').toUpperCase()}
+Disbursement Mode:  Direct Bank Payout via Flutterwave
+---------------------------------------------------
+This is a computer-generated proof of payment.
+Connecta Workforce Payout Engine.
+===================================================
+    `.trim();
+
+    const blob = new Blob([payslipContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Payslip-${p.reference || p._id}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const member = data?.member;
   const employer = data?.employer;
   const payments = data?.paymentsHistory || [];
@@ -48,6 +82,10 @@ export const WorkerPaymentsPage: React.FC = () => {
 
   const firstName = user?.firstName || 'Worker';
   const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Worker';
+  const employerName = employer
+    ? (employer.companyName || employer.title || `${employer.firstName || ''} ${employer.lastName || ''}`.trim())
+    : '';
+
   const userContact = (user?.email && !user.email.includes('@worker.myconnecta'))
     ? user.email
     : ((user as any)?.phoneNumber || (user as any)?.phone || (user?.email ? user.email.split('@')[0] : ''));
@@ -157,19 +195,29 @@ export const WorkerPaymentsPage: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
               <div>
                 <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Salary Payout History</h1>
                 <p className="text-xs text-gray-400 font-medium">Recorded salary disbursements and transaction references.</p>
               </div>
 
-              <Link
-                to="/workforce/me/profile"
-                className="text-xs font-extrabold text-emerald-600 hover:underline flex items-center gap-1"
-              >
-                <span>Edit Bank Cashout Details</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowTimesheetModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-orange-50 hover:bg-orange-100 text-primary font-extrabold text-xs border border-orange-200 transition-all shadow-2xs"
+                >
+                  <ClockPlus className="w-4 h-4" />
+                  <span>Submit Timesheet / OT</span>
+                </button>
+
+                <Link
+                  to="/workforce/me/wallet"
+                  className="text-xs font-extrabold text-emerald-600 hover:underline flex items-center gap-1"
+                >
+                  <span>Bank Details</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
 
             {loading ? (
@@ -193,6 +241,7 @@ export const WorkerPaymentsPage: React.FC = () => {
                       <th className="pb-3 px-3">Reference Code</th>
                       <th className="pb-3 px-3">Amount (₦)</th>
                       <th className="pb-3 px-3">Status</th>
+                      <th className="pb-3 px-3 text-right">Payslip</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -213,6 +262,15 @@ export const WorkerPaymentsPage: React.FC = () => {
                         <td className="py-3.5 px-3">
                           <StatusBadge status={p.status || 'completed'} />
                         </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <button
+                            onClick={() => handleDownloadPayslip(p)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] transition-all"
+                          >
+                            <Download className="w-3.5 h-3.5 text-gray-500" />
+                            <span>Download PDF</span>
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -220,6 +278,12 @@ export const WorkerPaymentsPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          <SubmitTimesheetModal
+            isOpen={showTimesheetModal}
+            onClose={() => setShowTimesheetModal(false)}
+            onSuccess={fetchPayments}
+          />
         </main>
       </div>
     </div>
