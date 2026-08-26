@@ -21,6 +21,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
 import { WorkerSidebar } from '../../components/worker/WorkerSidebar';
+import { WorkerMobileNavbar } from '../../components/worker/WorkerMobileNavbar';
 
 export const WorkerProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -172,6 +173,9 @@ export const WorkerProfilePage: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <WorkerMobileNavbar isHired={isHired} />
     </div>
   );
 };

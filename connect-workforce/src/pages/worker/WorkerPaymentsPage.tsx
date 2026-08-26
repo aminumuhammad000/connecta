@@ -21,6 +21,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
 import { WorkerSidebar } from '../../components/worker/WorkerSidebar';
+import { WorkerMobileNavbar } from '../../components/worker/WorkerMobileNavbar';
 
 export const WorkerPaymentsPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -239,6 +240,9 @@ Connecta Workforce Payout Engine.
           />
         </main>
       </div>
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <WorkerMobileNavbar isHired={isHired} />
     </div>
   );
 };

@@ -25,6 +25,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
 import { WorkerSidebar } from '../../components/worker/WorkerSidebar';
+import { WorkerMobileNavbar } from '../../components/worker/WorkerMobileNavbar';
 
 export const WorkerJobsPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -269,6 +270,9 @@ export const WorkerJobsPage: React.FC = () => {
           onSuccess={fetchWorkerJobsData}
         />
       )}
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <WorkerMobileNavbar isHired={isHired} />
     </div>
   );
 };
