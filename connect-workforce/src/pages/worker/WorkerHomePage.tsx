@@ -13,7 +13,9 @@ import {
   UserCheck,
   User,
   Inbox,
-  Clock3
+  Clock3,
+  Megaphone,
+  CalendarDays
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
@@ -218,6 +220,61 @@ export const WorkerHomePage: React.FC = () => {
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{checkedIn ? 'Checked In Today (Tap to Out)' : '1-Tap Check-In Today'}</span>
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ANNOUNCEMENT NOTICE BOARD & WEEKLY SHIFT ROSTER */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Notice Board */}
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-100 space-y-3">
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 text-primary flex items-center justify-center font-bold">
+                  <Megaphone className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-gray-900 leading-tight">Company Notice Board</h4>
+                  <p className="text-[10px] text-gray-400 font-medium">Workplace announcements & updates</p>
+                </div>
+              </div>
+
+              <div className="bg-orange-50/50 rounded-2xl p-3.5 border border-orange-100 space-y-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-extrabold text-gray-900">📌 General Staff Announcement</span>
+                  <span className="text-[10px] font-bold text-primary">Today</span>
+                </div>
+                <p className="text-xs text-gray-600 font-medium leading-relaxed">
+                  Welcome to Connecta Workforce! Please ensure your bank account details are verified for direct salary payouts.
+                </p>
+              </div>
+            </div>
+
+            {/* Weekly Shift Schedule Roster */}
+            <div className="bg-white rounded-3xl p-5 shadow-xs border border-gray-100 space-y-3">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <CalendarDays className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-gray-900 leading-tight">My Shift Schedule</h4>
+                    <p className="text-[10px] text-gray-400 font-medium">Mon – Fri Work Roster</p>
+                  </div>
+                </div>
+
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-bold text-[10px]">
+                  08:00 AM – 05:00 PM
+                </span>
+              </div>
+
+              <div className="grid grid-cols-5 gap-1.5 text-center text-[11px]">
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, idx) => (
+                  <div key={day} className={`p-2 rounded-xl border ${idx <= 2 ? 'bg-emerald-50/60 border-emerald-200 text-emerald-700 font-bold' : 'bg-gray-50 border-gray-100 text-gray-500 font-medium'}`}>
+                    <span className="block text-[9px] uppercase font-bold text-gray-400">{day}</span>
+                    <span className="text-xs font-black">{idx <= 2 ? 'Active' : 'Scheduled'}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
