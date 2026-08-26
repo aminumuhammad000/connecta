@@ -68,6 +68,9 @@ export const JobApplicantsPage: React.FC = () => {
     sending: false,
   });
 
+  // Track candidates invited for interviews
+  const [interviewInvitedIds, setInterviewInvitedIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (jobId) {
       fetchJobDetailsAndApplicants();
@@ -181,6 +184,8 @@ export const JobApplicantsPage: React.FC = () => {
         `🎉 Interview invitations sent successfully to ${selectedApplicantIds.length} candidate(s) for ${interviewModal.date} at ${interviewModal.time}!`,
         'success'
       );
+      // Mark selected candidate IDs as invited
+      setInterviewInvitedIds((prev) => Array.from(new Set([...prev, ...selectedApplicantIds])));
       setSelectedApplicantIds([]);
       setInterviewModal((prev) => ({ ...prev, isOpen: false, sending: false }));
     }, 800);
@@ -324,6 +329,7 @@ export const JobApplicantsPage: React.FC = () => {
                           <th className="py-3 px-3">Applicant</th>
                           <th className="py-3 px-3">Rate</th>
                           <th className="py-3 px-3">Pitch</th>
+                          <th className="py-3 px-3">Interview Status</th>
                           <th className="py-3 px-3">Status</th>
                           <th className="py-3 px-3 text-right">Actions</th>
                         </tr>
@@ -335,6 +341,7 @@ export const JobApplicantsPage: React.FC = () => {
                           const isAccepted = p.status === 'accepted' || p.status === 'hired';
                           const isDeclined = p.status === 'declined' || p.status === 'rejected';
                           const isSelected = selectedApplicantIds.includes(p._id);
+                          const isInterviewRequested = interviewInvitedIds.includes(p._id) || p.interviewStatus === 'invited';
 
                           return (
                             <tr
@@ -376,6 +383,17 @@ export const JobApplicantsPage: React.FC = () => {
 
                               <td className="py-3.5 px-3 text-gray-500 max-w-xs truncate font-medium">
                                 {p.description || 'Applied via Connecta 1-Tap Apply'}
+                              </td>
+
+                              {/* INTERVIEW INVITATION COLUMN */}
+                              <td className="py-3.5 px-3">
+                                {isInterviewRequested ? (
+                                  <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-primary font-extrabold text-[11px] inline-flex items-center gap-1 border border-orange-200">
+                                    <Calendar className="w-3 h-3 text-primary" /> Requested for Interview
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] text-gray-400 font-medium">Not Requested</span>
+                                )}
                               </td>
 
                               <td className="py-3.5 px-3">
