@@ -13,7 +13,7 @@ interface WorkerMobileNavbarProps {
 
 export const WorkerMobileNavbar: React.FC<WorkerMobileNavbarProps> = ({ isHired }) => {
   const location = useLocation();
-  const workLabel = isHired ? 'My Work' : 'Apply Job';
+  const workLabel = isHired ? 'My Jobs' : 'Apply Job';
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 py-2.5 flex items-center justify-around shadow-2xl">

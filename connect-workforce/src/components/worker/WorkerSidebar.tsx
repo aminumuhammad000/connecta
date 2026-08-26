@@ -25,7 +25,7 @@ export const WorkerSidebar: React.FC<WorkerSidebarProps> = ({ isHired }) => {
     ? user.email
     : ((user as any)?.phoneNumber || (user as any)?.phone || (user?.email ? user.email.split('@')[0] : ''));
 
-  const workLabel = isHired ? 'My Work' : 'Apply Job';
+  const workLabel = isHired ? 'My Jobs' : 'Apply Job';
 
   return (
     <aside className="hidden lg:block lg:col-span-3">
