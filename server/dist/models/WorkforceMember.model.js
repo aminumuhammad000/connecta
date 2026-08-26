@@ -27,6 +27,12 @@ const WorkforceMemberSchema = new Schema({
     inviteToken: { type: String },
     companyRole: { type: String, enum: ['owner', 'manager', 'finance', 'worker'], default: 'worker' },
     payoutStatus: { type: String, enum: ['active', 'frozen', 'paused'], default: 'active' },
+    bankDetails: {
+        accountName: { type: String, default: '' },
+        accountNumber: { type: String, default: '' },
+        bankName: { type: String, default: '' },
+        bankCode: { type: String, default: '' },
+    },
     idNumber: { type: String },
     profileImage: { type: String },
 }, { timestamps: true });
