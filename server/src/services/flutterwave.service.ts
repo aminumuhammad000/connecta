@@ -1,9 +1,47 @@
 import axios from 'axios';
 
 const getSecretKey = () => process.env.FLUTTERWAVE_SECRET_KEY || '';
+const getClientId = () => process.env.FLUTTERWAVE_CLIENT_ID || '';
 const getPublicKey = () => process.env.FLUTTERWAVE_PUBLIC_KEY || '';
 const getSecretHash = () => process.env.FLUTTERWAVE_SECRET_HASH || 'connecta_flw_secret_hash_2026';
 const FLW_BASE_URL = 'https://api.flutterwave.com/v3';
+const FLW_OAUTH_URL = 'https://idp.flutterwave.com/realms/flutterwave/protocol/openid-connect/token';
+
+let cachedV4Token = '';
+let tokenExpiry = 0;
+
+/**
+ * Get active Bearer Token for Flutterwave (supports v4 OAuth and v3 Secret Keys)
+ */
+const getAuthToken = async (): Promise<string> => {
+  const clientId = getClientId();
+  const secretKey = getSecretKey();
+
+  if (clientId && secretKey) {
+    if (cachedV4Token && Date.now() < tokenExpiry) {
+      return cachedV4Token;
+    }
+    try {
+      const params = new URLSearchParams();
+      params.append('client_id', clientId);
+      params.append('client_secret', secretKey);
+      params.append('grant_type', 'client_credentials');
+
+      const response = await axios.post(FLW_OAUTH_URL, params, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+
+      if (response.data?.access_token) {
+        cachedV4Token = response.data.access_token;
+        tokenExpiry = Date.now() + (response.data.expires_in || 300) * 1000 - 30000;
+        return cachedV4Token;
+      }
+    } catch (err: any) {
+      console.warn('Flutterwave OAuth Token error, falling back to raw secret key:', err.message);
+    }
+  }
+  return secretKey;
+};
 
 export const flutterwaveService = {
   /**
@@ -21,6 +59,7 @@ export const flutterwaveService = {
     description?: string;
   }) => {
     try {
+      const token = await getAuthToken();
       const response = await axios.post(
         `${FLW_BASE_URL}/payments`,
         {
@@ -41,7 +80,7 @@ export const flutterwaveService = {
         },
         {
           headers: {
-            Authorization: `Bearer ${getSecretKey()}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
@@ -59,9 +98,10 @@ export const flutterwaveService = {
    */
   verifyTransaction: async (transactionId: string) => {
     try {
+      const token = await getAuthToken();
       const response = await axios.get(`${FLW_BASE_URL}/transactions/${transactionId}/verify`, {
         headers: {
-          Authorization: `Bearer ${getSecretKey()}`
+          Authorization: `Bearer ${token}`
         }
       });
       return response.data;
@@ -77,9 +117,10 @@ export const flutterwaveService = {
   getBankList: async (countryCode: string = 'NG') => {
     const code = (countryCode || 'NG').toUpperCase();
     try {
+      const token = await getAuthToken();
       const response = await axios.get(`${FLW_BASE_URL}/banks/${code}`, {
         headers: {
-          Authorization: `Bearer ${getSecretKey()}`
+          Authorization: `Bearer ${token}`
         }
       });
       return response.data;
@@ -164,6 +205,7 @@ export const flutterwaveService = {
    */
   verifyAccount: async (accountNumber: string, accountBank: string) => {
     try {
+      const token = await getAuthToken();
       const response = await axios.post(
         `${FLW_BASE_URL}/accounts/resolve`,
         {
@@ -172,7 +214,7 @@ export const flutterwaveService = {
         },
         {
           headers: {
-            Authorization: `Bearer ${getSecretKey()}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }
@@ -196,6 +238,7 @@ export const flutterwaveService = {
     reference: string;
   }) => {
     try {
+      const token = await getAuthToken();
       const response = await axios.post(
         `${FLW_BASE_URL}/transfers`,
         {
@@ -209,7 +252,7 @@ export const flutterwaveService = {
         },
         {
           headers: {
-            Authorization: `Bearer ${getSecretKey()}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }
