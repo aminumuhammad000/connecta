@@ -15,7 +15,11 @@ import {
   Clock3,
   MapPin,
   Building2,
-  Briefcase
+  Briefcase,
+  Calendar,
+  Clock,
+  Send,
+  UserCheck
 } from 'lucide-react';
 
 export const JobApplicantsPage: React.FC = () => {
@@ -28,6 +32,13 @@ export const JobApplicantsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
+  // Tab filter: 'pending' (Applicants to Review) vs 'hired' (Hired People List)
+  const [activeTab, setActiveTab] = useState<'pending' | 'hired'>('pending');
+
+  // Checkbox Selection state
+  const [selectedApplicantIds, setSelectedApplicantIds] = useState<string[]>([]);
+
+  // Confirmation Modal state for Single Hire / Decline
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     proposalId: string;
@@ -38,6 +49,23 @@ export const JobApplicantsPage: React.FC = () => {
     proposalId: '',
     status: 'accepted',
     workerName: '',
+  });
+
+  // Interview Invite Modal state
+  const [interviewModal, setInterviewModal] = useState<{
+    isOpen: boolean;
+    date: string;
+    time: string;
+    location: string;
+    notes: string;
+    sending: boolean;
+  }>({
+    isOpen: false,
+    date: new Date().toISOString().split('T')[0],
+    time: '10:00',
+    location: 'Company Office / Site Base',
+    notes: '',
+    sending: false,
   });
 
   useEffect(() => {
@@ -57,6 +85,9 @@ export const JobApplicantsPage: React.FC = () => {
       if (jobsRes.status === 'fulfilled' && jobsRes.value?.data) {
         const foundJob = jobsRes.value.data.find((j: any) => String(j._id) === String(jobId));
         setJob(foundJob || null);
+        if (foundJob?.location) {
+          setInterviewModal((prev) => ({ ...prev, location: foundJob.location }));
+        }
       }
 
       if (applicantsRes.status === 'fulfilled' && applicantsRes.value?.data) {
@@ -66,6 +97,34 @@ export const JobApplicantsPage: React.FC = () => {
       console.error('Failed to fetch job applicants:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Filter applicants into pending review vs hired list
+  const hiredApplicants = applicants.filter(
+    (p) => p.status === 'accepted' || p.status === 'hired'
+  );
+  const pendingApplicants = applicants.filter(
+    (p) => p.status !== 'accepted' && p.status !== 'hired'
+  );
+
+  const displayedApplicants = activeTab === 'pending' ? pendingApplicants : hiredApplicants;
+
+  // Toggle selection for individual applicant
+  const toggleSelectApplicant = (id: string) => {
+    setSelectedApplicantIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  // Select all / Deselect all for current tab
+  const toggleSelectAll = () => {
+    const availableIds = displayedApplicants.map((p) => p._id);
+    const allSelected = availableIds.length > 0 && availableIds.every((id) => selectedApplicantIds.includes(id));
+    if (allSelected) {
+      setSelectedApplicantIds((prev) => prev.filter((id) => !availableIds.includes(id)));
+    } else {
+      setSelectedApplicantIds((prev) => Array.from(new Set([...prev, ...availableIds])));
     }
   };
 
@@ -87,19 +146,44 @@ export const JobApplicantsPage: React.FC = () => {
       await workforceAPI.updateProposalStatus(proposalId, status);
       showToast(
         status === 'accepted'
-          ? `Hired ${workerName}! Added to active workforce company.`
+          ? `Hired ${workerName}! Worker added to active workforce company.`
           : `Application from ${workerName} declined.`,
         status === 'accepted' ? 'success' : 'info'
       );
       setApplicants((prev) =>
         prev.map((p) => (p._id === proposalId ? { ...p, status } : p))
       );
+      // Remove from selection if selected
+      setSelectedApplicantIds((prev) => prev.filter((id) => id !== proposalId));
       setConfirmModal({ isOpen: false, proposalId: '', status: 'accepted', workerName: '' });
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update applicant status', 'error');
     } finally {
       setActionLoadingId(null);
     }
+  };
+
+  // Send Interview Invitation to selected candidates
+  const handleSendInterviewInvites = () => {
+    if (selectedApplicantIds.length === 0) {
+      showToast('Please select at least one applicant to invite for an interview', 'error');
+      return;
+    }
+    setInterviewModal((prev) => ({ ...prev, isOpen: true }));
+  };
+
+  const submitInterviewInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInterviewModal((prev) => ({ ...prev, sending: true }));
+
+    setTimeout(() => {
+      showToast(
+        `🎉 Interview invitations sent successfully to ${selectedApplicantIds.length} candidate(s) for ${interviewModal.date} at ${interviewModal.time}!`,
+        'success'
+      );
+      setSelectedApplicantIds([]);
+      setInterviewModal((prev) => ({ ...prev, isOpen: false, sending: false }));
+    }, 800);
   };
 
   return (
@@ -162,29 +246,81 @@ export const JobApplicantsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-gray-400 font-medium">
-                  <span>Applicants: <strong className="text-gray-900">{applicants.length} Workers</strong></span>
+                  <span>Total Applications: <strong className="text-gray-900">{applicants.length} Workers</strong></span>
                   <span>Posted {new Date(job.createdAt || Date.now()).toLocaleDateString()}</span>
                 </div>
               </div>
 
-              {/* MINIMALIST APPLICANTS TABLE */}
-              <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <h3 className="font-extrabold text-base text-gray-900">Applicants</h3>
-                  <p className="text-xs text-gray-500 font-medium">Review worker applications and hire candidates onto your roster.</p>
+              {/* APPLICANTS MANAGEMENT CARD WITH FILTER TABS */}
+              <div className="bg-white rounded-3xl p-6 shadow-xs border border-gray-100 space-y-5">
+                {/* TAB SWITCHER & BULK INTERVIEW ACTION HEADER */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-2xl">
+                    <button
+                      onClick={() => { setActiveTab('pending'); setSelectedApplicantIds([]); }}
+                      className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                        activeTab === 'pending'
+                          ? 'bg-white text-gray-900 shadow-2xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      Pending Review ({pendingApplicants.length})
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('hired'); setSelectedApplicantIds([]); }}
+                      className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                        activeTab === 'hired'
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      Hired List ({hiredApplicants.length})
+                    </button>
+                  </div>
+
+                  {/* BULK INTERVIEW INVITATION BUTTON */}
+                  {activeTab === 'pending' && pendingApplicants.length > 0 && (
+                    <button
+                      onClick={handleSendInterviewInvites}
+                      disabled={selectedApplicantIds.length === 0}
+                      className="px-4 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-extrabold text-xs shadow-md shadow-primary/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Request Interview ({selectedApplicantIds.length})</span>
+                    </button>
+                  )}
                 </div>
 
-                {applicants.length === 0 ? (
+                {displayedApplicants.length === 0 ? (
                   <EmptyState
-                    icon={Users}
-                    title="No applicants yet"
-                    description="Workers applying to this position on their portal will show up here."
+                    icon={activeTab === 'hired' ? UserCheck : Users}
+                    title={activeTab === 'hired' ? 'No hired candidates yet' : 'No pending applicants'}
+                    description={
+                      activeTab === 'hired'
+                        ? 'Candidates you accept for this job will be separated here into your Hired People List.'
+                        : 'All submitted applications for this opening have been reviewed.'
+                    }
                   />
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs font-medium">
                       <thead>
                         <tr className="border-b border-gray-100 text-gray-400 uppercase text-[10px] tracking-wider font-bold">
+                          {activeTab === 'pending' && (
+                            <th className="py-3 px-3 w-10">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  displayedApplicants.length > 0 &&
+                                  displayedApplicants.every((p) => selectedApplicantIds.includes(p._id))
+                                }
+                                onChange={toggleSelectAll}
+                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                title="Select All Candidates"
+                              />
+                            </th>
+                          )}
                           <th className="py-3 px-3">Applicant</th>
                           <th className="py-3 px-3">Rate</th>
                           <th className="py-3 px-3">Pitch</th>
@@ -193,14 +329,31 @@ export const JobApplicantsPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50 text-gray-700">
-                        {applicants.map((p) => {
+                        {displayedApplicants.map((p) => {
                           const worker = p.freelancerId || p.worker;
                           const workerName = worker ? `${worker.firstName || ''} ${worker.lastName || ''}`.trim() : 'Worker Applicant';
                           const isAccepted = p.status === 'accepted' || p.status === 'hired';
                           const isDeclined = p.status === 'declined' || p.status === 'rejected';
+                          const isSelected = selectedApplicantIds.includes(p._id);
 
                           return (
-                            <tr key={p._id} className="hover:bg-gray-50/50 transition-colors">
+                            <tr
+                              key={p._id}
+                              className={`hover:bg-gray-50/50 transition-colors ${
+                                isSelected ? 'bg-orange-50/40' : ''
+                              }`}
+                            >
+                              {activeTab === 'pending' && (
+                                <td className="py-3.5 px-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleSelectApplicant(p._id)}
+                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                  />
+                                </td>
+                              )}
+
                               <td className="py-3.5 px-3 font-bold text-gray-900">
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-full bg-orange-100 text-primary font-bold flex items-center justify-center text-xs overflow-hidden shrink-0">
@@ -236,7 +389,7 @@ export const JobApplicantsPage: React.FC = () => {
                                   </span>
                                 ) : (
                                   <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-bold text-[11px] inline-flex items-center gap-1 border border-amber-200">
-                                    <Clock3 className="w-3 h-3" /> Under Review
+                                    <Clock3 className="w-3 h-3" /> Pending Review
                                   </span>
                                 )}
                               </td>
@@ -269,7 +422,9 @@ export const JobApplicantsPage: React.FC = () => {
                                     </button>
                                   </>
                                 ) : (
-                                  <span className="text-[11px] text-gray-400 font-medium">No actions pending</span>
+                                  <span className="text-[11px] text-emerald-600 font-extrabold flex items-center justify-end gap-1">
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> On Roster
+                                  </span>
                                 )}
                               </td>
                             </tr>
@@ -285,7 +440,7 @@ export const JobApplicantsPage: React.FC = () => {
         </main>
       </div>
 
-      {/* CONFIRMATION MODAL POPUP */}
+      {/* CONFIRMATION MODAL POPUP FOR HIRE / DECLINE */}
       {confirmModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-gray-100 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
@@ -349,6 +504,103 @@ export const JobApplicantsPage: React.FC = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* INTERVIEW INVITATION MODAL POPUP */}
+      {interviewModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-gray-100 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-orange-100 text-primary flex items-center justify-center shrink-0">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-gray-900 leading-tight">Schedule Interview</h3>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">Inviting <strong>{selectedApplicantIds.length} selected candidate(s)</strong> for an interview.</p>
+              </div>
+            </div>
+
+            <form onSubmit={submitInterviewInvitation} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-primary" /> Interview Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={interviewModal.date}
+                    onChange={(e) => setInterviewModal((prev) => ({ ...prev, date: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:outline-none focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-800 mb-1 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-primary" /> Interview Time
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={interviewModal.time}
+                    onChange={(e) => setInterviewModal((prev) => ({ ...prev, time: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1 flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-primary" /> Interview Location / Venue
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. 14 Airport Road, Ikeja or Google Meet Link"
+                  value={interviewModal.location}
+                  onChange={(e) => setInterviewModal((prev) => ({ ...prev, location: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-800 mb-1">Additional Instructions (Optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Bring hardcopy ID card and safety helmet."
+                  value={interviewModal.notes}
+                  onChange={(e) => setInterviewModal((prev) => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-medium text-gray-900 focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setInterviewModal((prev) => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-all"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={interviewModal.sending}
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs transition-all shadow-md shadow-primary/20 flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {interviewModal.sending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send Interview Invites</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
