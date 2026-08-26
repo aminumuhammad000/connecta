@@ -232,15 +232,18 @@ export const JobsPage: React.FC = () => {
                           </td>
 
                           <td className="py-3.5 px-3 text-right space-x-1.5">
-                            {/* APPLICANTS LINK */}
+                            {/* APPLICANTS LINK WITH BADGE */}
                             <Link
                               to={`/employer/jobs/${j._id}/applicants`}
-                              className="px-3 py-1 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs border border-gray-200 transition-all inline-flex items-center gap-1"
+                              className="px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-primary font-bold text-xs border border-gray-200 hover:border-orange-200 transition-all inline-flex items-center gap-1.5 relative group"
                               title="View Applicants"
                             >
                               <Users className="w-3.5 h-3.5 text-primary" />
                               <span>Applicants</span>
-                              <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="px-1.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-black min-w-4 text-center shadow-2xs">
+                                {j.proposalsCount ?? j.proposalCount ?? 0}
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-primary" />
                             </Link>
 
                             {/* EDIT BUTTON */}

@@ -756,10 +756,17 @@ export const getWorkforceJobs = async (req: Request, res: Response) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const formattedJobs = jobs.map((j: any) => ({
-      ...j,
-      companyName: j.clientId?.companyName || j.clientId?.title || `${j.clientId?.firstName || ''} ${j.clientId?.lastName || ''}`.trim() || 'Workforce Employer',
-    }));
+    const formattedJobs = await Promise.all(
+      jobs.map(async (j: any) => {
+        const count = await Proposal.countDocuments({ jobId: j._id });
+        return {
+          ...j,
+          companyName: j.clientId?.companyName || j.clientId?.title || `${j.clientId?.firstName || ''} ${j.clientId?.lastName || ''}`.trim() || 'Workforce Employer',
+          proposalsCount: count,
+          proposalCount: count,
+        };
+      })
+    );
 
     return res.status(200).json({ success: true, data: formattedJobs });
   } catch (err: any) {
