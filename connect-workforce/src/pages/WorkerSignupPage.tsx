@@ -228,23 +228,23 @@ export const WorkerSignupPage: React.FC = () => {
       </div>
 
       {/* RIGHT SIDE: Minimalist WORKER 2D Illustration Panel */}
-      <div className="hidden lg:flex flex-1 bg-[#09090b] text-white p-6 lg:p-8 flex-col justify-center items-center relative overflow-hidden border-l border-gray-800/60">
+      <div className="hidden lg:flex flex-1 bg-[#09090b] text-white p-4 lg:p-6 flex-col justify-center items-center relative overflow-hidden border-l border-gray-800/60">
         {/* Minimal Subtle Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
         {/* 2D Vector Illustration Container */}
-        <div className="relative z-10 w-full max-w-lg flex flex-col items-center text-center space-y-6">
-          <div className="w-full">
+        <div className="relative z-10 w-full max-w-xl flex flex-col items-center text-center space-y-4">
+          <div className="w-full flex justify-center">
             <img
               src="/worker_illustration.jpg"
               alt="Connecta Workforce Illustration"
-              className="w-full h-auto object-contain max-h-[620px]"
+              className="w-full h-auto object-contain max-h-[720px]"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <h3 className="font-extrabold text-xl text-white tracking-tight">Connect with Verified Employers</h3>
-            <p className="text-xs text-gray-400 font-medium max-w-sm mx-auto leading-relaxed">
+            <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
               Find jobs, manage work contracts, track daily shifts, and get paid directly with peace of mind.
             </p>
           </div>
