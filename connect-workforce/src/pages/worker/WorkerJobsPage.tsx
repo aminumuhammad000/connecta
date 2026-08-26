@@ -260,7 +260,7 @@ export const WorkerJobsPage: React.FC = () => {
                   return (
                     <div
                       key={j._id}
-                      onClick={() => setSelectedJobToView(j)}
+                      onClick={() => navigate(`/workforce/me/jobs/${j._id}`)}
                       className="p-5 rounded-2xl bg-gray-50/60 border border-gray-100 hover:border-orange-200 hover:shadow-xs transition-all flex flex-col justify-between space-y-4 cursor-pointer group"
                     >
                       <div className="space-y-2">
@@ -290,7 +290,7 @@ export const WorkerJobsPage: React.FC = () => {
                       <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          onClick={() => setSelectedJobToView(j)}
+                          onClick={() => navigate(`/workforce/me/jobs/${j._id}`)}
                           className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-extrabold text-xs transition-all flex items-center gap-1"
                         >
                           <Eye className="w-3.5 h-3.5 text-gray-500" />
@@ -328,17 +328,6 @@ export const WorkerJobsPage: React.FC = () => {
           </div>
         </main>
       </div>
-
-      {/* VIEW JOB DETAILS MODAL */}
-      {selectedJobToView && (
-        <ViewJobModal
-          isOpen={!!selectedJobToView}
-          onClose={() => setSelectedJobToView(null)}
-          job={selectedJobToView}
-          proposalStatus={proposalsMap[String(selectedJobToView._id)]}
-          onApplySuccess={fetchWorkerJobsData}
-        />
-      )}
 
       {/* APPLICATION MODAL */}
       {selectedJobToApply && (

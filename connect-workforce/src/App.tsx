@@ -20,6 +20,7 @@ import { MessagesPage } from './pages/MessagesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { WorkerHomePage } from './pages/worker/WorkerHomePage';
 import { WorkerJobsPage } from './pages/worker/WorkerJobsPage';
+import { WorkerJobDetailsPage } from './pages/worker/WorkerJobDetailsPage';
 import { WorkerAttendancePage } from './pages/worker/WorkerAttendancePage';
 import { WorkerPaymentsPage } from './pages/worker/WorkerPaymentsPage';
 import { WorkerContractsPage } from './pages/worker/WorkerContractsPage';
@@ -107,6 +108,7 @@ export default function App() {
             {/* Worker Experience Routes */}
             <Route path="/workforce/me" element={<ProtectedRoute raw><WorkerHomePage /></ProtectedRoute>} />
             <Route path="/workforce/me/jobs" element={<ProtectedRoute raw><WorkerJobsPage /></ProtectedRoute>} />
+            <Route path="/workforce/me/jobs/:jobId" element={<ProtectedRoute raw><WorkerJobDetailsPage /></ProtectedRoute>} />
             <Route path="/workforce/me/attendance" element={<ProtectedRoute raw><WorkerAttendancePage /></ProtectedRoute>} />
             <Route path="/workforce/me/payments" element={<ProtectedRoute raw><WorkerPaymentsPage /></ProtectedRoute>} />
             <Route path="/workforce/me/contracts" element={<ProtectedRoute raw><WorkerContractsPage /></ProtectedRoute>} />
