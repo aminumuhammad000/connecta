@@ -19,6 +19,7 @@ export const WorkerSignupPage: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [identifier, setIdentifier] = useState('');
+  const [category, setCategory] = useState('General Workforce');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(true);
@@ -163,6 +164,28 @@ export const WorkerSignupPage: React.FC = () => {
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               />
+            </div>
+
+            {/* Job Category / Trade Selection */}
+            <div>
+              <label className="block text-xs font-bold text-gray-800 mb-1.5 flex items-center justify-between">
+                <span>Primary Job Trade / Specialty</span>
+                <span className="text-[11px] font-medium text-gray-400">Optional</span>
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all cursor-pointer"
+              >
+                <option value="General Workforce">General Workforce</option>
+                <option value="Site & Construction Operations">Site & Construction Operations</option>
+                <option value="Logistics & Transportation">Logistics & Transportation</option>
+                <option value="Factory & Manufacturing">Factory & Manufacturing</option>
+                <option value="Facility Management & Cleaning">Facility Management & Cleaning</option>
+                <option value="Retail & Sales Operations">Retail & Sales Operations</option>
+                <option value="Security & Guard Operations">Security & Guard Operations</option>
+                <option value="Office & Administrative Support">Office & Administrative Support</option>
+              </select>
             </div>
 
             {/* Password Field with Show/Hide Toggle */}
