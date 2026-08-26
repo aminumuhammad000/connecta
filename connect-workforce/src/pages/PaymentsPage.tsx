@@ -337,7 +337,20 @@ export const PaymentsPage: React.FC = () => {
                               )}
                             </td>
 
-                            <td className="py-3.5 px-3 text-right">
+                            <td className="py-3.5 px-3 text-right space-x-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedWorker(w);
+                                  setPaymentModalOpen(true);
+                                }}
+                                disabled={isFrozen}
+                                className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all inline-flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+                                title="Disburse Individual Payout"
+                              >
+                                <CreditCard className="w-3.5 h-3.5" />
+                                <span>Pay Worker</span>
+                              </button>
+
                               <Link
                                 to={`/employer/payments/worker/${w._id}`}
                                 className="px-3 py-1 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs border border-gray-200 transition-all inline-flex items-center gap-1"
