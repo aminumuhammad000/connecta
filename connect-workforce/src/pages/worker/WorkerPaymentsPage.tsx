@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { WorkerHeader } from '../../components/worker/WorkerHeader';
+import { WorkerSidebar } from '../../components/worker/WorkerSidebar';
 
 export const WorkerPaymentsPage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -105,78 +106,8 @@ Connecta Workforce Payout Engine.
 
       {/* MAIN CONTENT GRID */}
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT SIDEBAR (Desktop Only) */}
-        <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between space-y-8 pr-2">
-          <div className="space-y-8">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-orange-100 border-2 border-white shadow-sm flex items-center justify-center text-primary font-extrabold text-lg overflow-hidden">
-                  {user?.profileImage ? (
-                    <img src={user.profileImage} alt={fullName} className="w-full h-full object-cover" />
-                  ) : (
-                    (firstName || 'W')[0]
-                  )}
-                </div>
-                <span className={`w-3.5 h-3.5 rounded-full border-2 border-white absolute bottom-0 right-0 ${isHired ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-              </div>
-
-              <div>
-                <h2 className="font-extrabold text-gray-900 text-base leading-tight">Hello, {firstName}</h2>
-                <p className="text-xs text-gray-500 font-medium truncate max-w-[170px]">{userContact}</p>
-              </div>
-            </div>
-
-            <nav className="space-y-2">
-              <Link
-                to="/workforce/me"
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all ${
-                  location.pathname === '/workforce/me' ? 'bg-white text-gray-900 font-extrabold shadow-xs border border-gray-100' : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <LayoutDashboard className={`w-5 h-5 ${location.pathname === '/workforce/me' ? 'text-primary' : ''}`} />
-                <span>Dashboard</span>
-              </Link>
-
-              <Link
-                to="/workforce/me/jobs"
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all ${
-                  location.pathname.includes('/jobs') ? 'bg-white text-gray-900 font-extrabold shadow-xs border border-gray-100' : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <Briefcase className={`w-5 h-5 ${location.pathname.includes('/jobs') ? 'text-primary' : ''}`} />
-                <span>{workLabel}</span>
-              </Link>
-
-              <Link
-                to="/workforce/me/payments"
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all ${
-                  location.pathname.includes('/payments') ? 'bg-white text-gray-900 font-extrabold shadow-xs border border-gray-100' : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <CreditCard className={`w-5 h-5 ${location.pathname.includes('/payments') ? 'text-emerald-600' : ''}`} />
-                <span>My Salary</span>
-              </Link>
-
-              <Link
-                to="/workforce/me/profile"
-                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl font-semibold text-sm transition-all ${
-                  location.pathname.includes('/profile') ? 'bg-white text-gray-900 font-extrabold shadow-xs border border-gray-100' : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <User className={`w-5 h-5 ${location.pathname.includes('/profile') ? 'text-primary' : ''}`} />
-                <span>My Profile</span>
-              </Link>
-            </nav>
-          </div>
-
-          <button
-            onClick={() => logout()}
-            className="w-full flex items-center gap-3.5 px-4 py-2.5 text-gray-500 hover:text-rose-600 font-semibold text-sm transition-all text-left border-t border-gray-200/60 pt-6"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Log out</span>
-          </button>
-        </aside>
+        {/* STICKY SIDEBAR */}
+        <WorkerSidebar isHired={isHired} />
 
         {/* MAIN CENTER PANEL */}
         <main className="lg:col-span-9 space-y-6">
