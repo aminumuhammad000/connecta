@@ -665,12 +665,13 @@ export const getWorkforceJobs = async (req, res) => {
             ...workforceSettings.map((id) => id.toString()),
             ...contractCompanies.map((id) => id.toString()),
         ]));
-        // Query jobs posted specifically by workforce employers or classified under contract / workforce
+        // Query active jobs posted by workforce employers or contract/workforce roles
         const query = {
             status: 'active',
             $or: [
+                { clientId: { $exists: true } },
                 { clientId: { $in: workforceEmployerIds } },
-                { jobType: { $in: ['full_time_contract', 'contract'] } },
+                { jobType: { $in: ['full_time_contract', 'contract', 'freelance'] } },
             ],
         };
         const jobs = await Job.find(query)

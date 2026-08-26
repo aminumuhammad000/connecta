@@ -742,13 +742,12 @@ export const getWorkforceJobs = async (req: Request, res: Response) => {
       ])
     );
 
-    // Query active jobs posted by workforce employers or contract/workforce roles
+    // Query active jobs posted specifically by workforce employers or classified under contract / workforce
     const query: any = {
       status: 'active',
       $or: [
-        { clientId: { $exists: true } },
         { clientId: { $in: workforceEmployerIds } },
-        { jobType: { $in: ['full_time_contract', 'contract', 'freelance'] } },
+        { jobType: { $in: ['full_time_contract', 'contract'] } },
       ],
     };
 

@@ -217,7 +217,7 @@ export const WorkerJobsPage: React.FC = () => {
                       <option value="all">All Workforce Employers ({jobs.length})</option>
                       {companyOptions.map((cName: any) => (
                         <option key={cName} value={cName}>
-                          🏢 {cName}
+                          {cName}
                         </option>
                       ))}
                     </select>
