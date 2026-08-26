@@ -227,63 +227,54 @@ export const WorkerSignupPage: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Tailored WORKER Artwork & Testimonial Panel */}
-      <div className="hidden lg:flex flex-1 bg-[#0a0a0c] text-white p-12 lg:p-16 flex-col justify-between relative overflow-hidden border-l border-gray-800/80">
-        {/* Glowing Radial Gradients (Connecta Orange Glow) */}
-        <div className="absolute top-1/4 -right-20 w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-10 left-10 w-80 h-80 rounded-full bg-orange-600/10 blur-3xl pointer-events-none" />
-
-        {/* Subtle Geometric Grid Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-40 pointer-events-none" />
+      {/* RIGHT SIDE: Minimalist WORKER Testimonial Panel */}
+      <div className="hidden lg:flex flex-1 bg-[#09090b] text-white p-12 lg:p-16 flex-col justify-between relative overflow-hidden border-l border-gray-800/60">
+        {/* Minimal Subtle Glow */}
+        <div className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
 
         {/* Worker Testimonial Quote */}
-        <div className="relative z-10 max-w-lg pt-8 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-extrabold text-xs">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Verified Worker Experience
-          </div>
-
-          <p className="text-xl lg:text-2xl font-medium leading-relaxed text-gray-100 tracking-tight">
+        <div className="relative z-10 max-w-lg pt-10 space-y-6">
+          <p className="text-xl lg:text-2xl font-medium leading-relaxed text-gray-200 tracking-tight">
             “Connecta makes it easy for me to check into my daily site shifts, track my work contracts, and receive my payroll earnings on time without stress.”
           </p>
 
-          <div className="flex items-center gap-4 pt-2">
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary/60 bg-gradient-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-black text-sm shadow-md shadow-primary/20">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-primary to-orange-500 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
               KA
             </div>
             <div>
-              <div className="font-extrabold text-base text-white">Kemi Adebayo</div>
-              <div className="text-xs font-semibold text-gray-400">Certified Site Specialist</div>
+              <div className="font-extrabold text-sm text-white">Kemi Adebayo</div>
+              <div className="text-xs text-gray-400 font-medium">Certified Site Specialist</div>
             </div>
           </div>
         </div>
 
-        {/* Tailored Worker Glassmorphism UI Mockup Card */}
-        <div className="relative z-10 pt-6 pl-6">
-          <div className="bg-[#121216]/90 backdrop-blur-xl border border-gray-800/80 rounded-3xl p-6 shadow-2xl space-y-5 text-gray-300 transform -rotate-1 hover:rotate-0 transition-all duration-300">
-            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
-              <div className="flex items-center gap-3">
-                <img src="/connecta_logo.png" alt="Connecta Logo" className="h-8 w-auto object-contain" />
+        {/* Minimalist Worker Space Card */}
+        <div className="relative z-10 pt-6">
+          <div className="bg-[#121215] border border-gray-800/80 rounded-2xl p-5 shadow-xl space-y-4 max-w-md">
+            <div className="flex items-center justify-between border-b border-gray-800/60 pb-3.5">
+              <div className="flex items-center gap-2.5">
+                <img src="/connecta_logo.png" alt="Connecta Logo" className="h-7 w-auto object-contain" />
                 <div>
                   <div className="text-[11px] text-gray-400 font-medium">👋 Morning, Kemi</div>
-                  <div className="font-black text-sm text-white">My Worker Space</div>
+                  <div className="font-bold text-xs text-white">My Worker Space</div>
                 </div>
               </div>
 
-              <div className="px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span>Shift Checked In</span>
+              <div className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
+                Shift Checked In
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#18181e] p-4 rounded-2xl border border-gray-800 space-y-1">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#18181b] p-3.5 rounded-xl border border-gray-800/80">
                 <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">This Month's Earnings</span>
-                <div className="text-2xl font-black text-primary">₦185,000</div>
+                <div className="text-xl font-black text-primary mt-0.5">₦185,000</div>
               </div>
 
-              <div className="bg-[#18181e] p-4 rounded-2xl border border-gray-800 space-y-1">
+              <div className="bg-[#18181b] p-3.5 rounded-xl border border-gray-800/80">
                 <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">Today's Shift</span>
-                <div className="text-sm font-bold text-emerald-400">Airport Road Site</div>
+                <div className="text-xs font-bold text-gray-200 mt-1 truncate">Airport Road Site</div>
               </div>
             </div>
           </div>
