@@ -403,14 +403,7 @@ export const MyWalletPage: React.FC = () => {
         setWallet({ balance: 0, escrowBalance: 0, availableBalance: 0 });
       }
 
-      if (vtRes?.success && vtRes.data && vtRes.data.accountNumber) {
-        setVirtualAccount(vtRes.data);
-      } else if (!isFreelancer) {
-        // Auto-generate virtual account if not present
-        walletAPI.getVirtualAccount().then((newAccRes) => {
-          if (newAccRes?.success && newAccRes.data) setVirtualAccount(newAccRes.data);
-        }).catch(() => null);
-      }
+      if (vtRes?.success && vtRes.data) setVirtualAccount(vtRes.data);
 
       if (txRes?.success && Array.isArray(txRes.data)) {
         setTransactions(txRes.data);
@@ -449,7 +442,6 @@ export const MyWalletPage: React.FC = () => {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleGenerateVirtualAccount = async () => {
-    if (generatingVirtualAcc) return;
     setGeneratingVirtualAcc(true);
     try {
       const res = await walletAPI.getVirtualAccount();
@@ -735,18 +727,18 @@ export const MyWalletPage: React.FC = () => {
                 </button>
               </>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  <Loader2 size={18} className="animate-spin" style={{ color: 'var(--primary)' }} />
-                  <span>Generating dedicated virtual bank account...</span>
-                </div>
+              <div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                  Generate a dedicated virtual bank account to fund via wire transfer.
+                </p>
                 <button
                   onClick={handleGenerateVirtualAccount}
                   disabled={generatingVirtualAcc}
-                  className="btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '0.75rem', borderRadius: '6px' }}
+                  className="btn-primary"
+                  style={{ padding: '8px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 >
-                  Retry
+                  {generatingVirtualAcc ? <Loader2 size={14} className="animate-spin" /> : <Building2 size={14} />}
+                  Generate Virtual Account
                 </button>
               </div>
             )}
