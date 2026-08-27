@@ -75,7 +75,14 @@ const ClientWalletScreen = () => {
                 const sorted = [...mappedTxns].sort((a: any, b: any) => b.rawDate.getTime() - a.rawDate.getTime());
                 setTransactions(sorted);
             }
-            if (vtAcc) setVirtualAccount(vtAcc);
+            if (vtAcc && vtAcc.accountNumber) {
+                setVirtualAccount(vtAcc);
+            } else {
+                // Automatically generate virtual account if not yet created
+                paymentService.getVTStackVirtualAccount().then((newAcc) => {
+                    if (newAcc && newAcc.accountNumber) setVirtualAccount(newAcc);
+                }).catch(() => null);
+            }
         } catch (error) {
             console.error('Error loading client wallet:', error);
         } finally {
@@ -472,17 +479,11 @@ const ClientWalletScreen = () => {
                                             <Text style={{ color: c.text, fontSize: 14, fontWeight: '700', marginTop: 4 }}>{virtualAccount.accountName}</Text>
                                         </View>
                                     </View>
-                                ) : (
+                                 ) : (
                                     <View style={{ padding: 40, alignItems: 'center', backgroundColor: c.background, borderRadius: 20, borderStyle: 'dashed', borderWidth: 2, borderColor: c.border }}>
-                                        <MaterialIcons name="account-balance" size={48} color={c.subtext} />
-                                        <Text style={{ color: c.text, fontSize: 16, fontWeight: '700', marginTop: 16, textAlign: 'center' }}>No Virtual Account Yet</Text>
-                                        <Text style={{ color: c.subtext, fontSize: 13, marginTop: 8, textAlign: 'center', marginBottom: 24 }}>Generate a permanent virtual account to easily fund your wallet via bank transfer.</Text>
-                                        <TouchableOpacity 
-                                            onPress={handleGenerateAccount}
-                                            style={{ backgroundColor: c.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
-                                        >
-                                            <Text style={{ color: '#FFF', fontWeight: '800' }}>Generate Account</Text>
-                                        </TouchableOpacity>
+                                        <ActivityIndicator size="large" color={c.primary} />
+                                        <Text style={{ color: c.text, fontSize: 15, fontWeight: '700', marginTop: 16, textAlign: 'center' }}>Generating Virtual Account...</Text>
+                                        <Text style={{ color: c.subtext, fontSize: 12, marginTop: 4, textAlign: 'center' }}>Setting up your dedicated bank transfer account.</Text>
                                     </View>
                                 )}
 
