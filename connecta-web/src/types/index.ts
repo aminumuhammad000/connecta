@@ -23,6 +23,13 @@ export interface User {
   workType?: 'freelancing' | 'permanent';
   companyName?: string;
   website?: string;
+  termsAccepted?: boolean;
+  resume?: string;
+  cv?: string;
+  education?: Array<{ school: string; degree: string; fieldOfStudy?: string; year?: string }>;
+  workExperience?: Array<{ role: string; company: string; period: string; description: string }>;
+  languages?: string[];
+  portfolio?: Array<{ title: string; category?: string; image?: string; link?: string; description?: string }>;
   createdAt?: string;
 }
 

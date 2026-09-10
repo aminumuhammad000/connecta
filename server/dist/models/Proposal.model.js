@@ -33,6 +33,11 @@ const ProposalSchema = new Schema({
         enum: ['pending', 'accepted', 'declined', 'rejected', 'withdrawn'],
         default: 'pending',
     },
+    aiInterviewStatus: {
+        type: String,
+        enum: ['not_required', 'pending', 'in_progress', 'completed'],
+        default: 'not_required',
+    },
 }, {
     timestamps: true,
 });

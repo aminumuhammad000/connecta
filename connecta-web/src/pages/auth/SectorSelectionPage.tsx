@@ -140,98 +140,104 @@ export const SectorSelectionPage: React.FC = () => {
 
       <main style={{
         flex: 1,
-        maxWidth: '860px',
+        maxWidth: '820px',
         margin: '0 auto',
-        padding: '50px 24px 80px',
+        padding: '30px 20px',
         width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         zIndex: 10
       }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card"
-          style={{ padding: '40px 32px' }}
+          style={{ padding: '32px 28px', width: '100%' }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--grad-glow)',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              background: 'rgba(253, 103, 48, 0.08)',
               color: 'var(--primary)',
+              fontSize: '0.75rem',
               fontWeight: 700,
-              fontSize: '0.8rem',
-              marginBottom: '12px'
+              letterSpacing: '0.5px',
+              marginBottom: '8px'
             }}>
-              <Sparkles size={14} /> Profile Setup: Sector
+              Step 1 of 4: Sector
             </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
-              What is your primary sector?
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+              Select Your Primary Sector
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              Choose your main industry so we can tailor the best skills and job opportunities for you
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
+              Choose your main industry to tailor relevant jobs and skills for you
             </p>
           </div>
 
-          {/* Sector Cards Grid */}
+          {/* Sector Cards Grid - Minimal Compact View */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: '16px',
-            marginBottom: '24px'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+            gap: '12px',
+            marginBottom: '20px'
           }}>
             {SECTORS.map((sector) => {
               const isSelected = selectedSector === sector.id;
               return (
                 <motion.div
                   key={sector.id}
-                  whileHover={{ scale: 1.02, translateY: -2 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.015 }}
+                  whileTap={{ scale: 0.985 }}
                   onClick={() => setSelectedSector(sector.id)}
                   style={{
-                    padding: '20px',
-                    borderRadius: 'var(--radius-lg)',
-                    background: isSelected ? 'var(--grad-glow)' : 'var(--bg-secondary)',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    background: isSelected ? 'rgba(253, 103, 48, 0.06)' : 'var(--bg-secondary)',
                     border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'var(--transition-fast)',
                     display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
+                    alignItems: 'center',
+                    gap: '12px'
                   }}
                 >
-                  <div>
-                    <div style={{
-                      width: '44px',
-                      height: '44px',
-                      borderRadius: '12px',
-                      background: isSelected ? 'var(--primary)' : 'rgba(253, 103, 48, 0.1)',
-                      color: isSelected ? '#ffffff' : 'var(--primary)',
-                      display: 'grid',
-                      placeItems: 'center',
-                      marginBottom: '14px'
-                    }}>
-                      {sector.icon}
-                    </div>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: isSelected ? 'var(--primary)' : 'rgba(253, 103, 48, 0.1)',
+                    color: isSelected ? '#ffffff' : 'var(--primary)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flexShrink: 0
+                  }}>
+                    {sector.icon}
+                  </div>
 
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <h3 style={{
-                      fontSize: '1.05rem',
+                      fontSize: '0.92rem',
                       fontWeight: 700,
-                      marginBottom: '6px',
-                      color: 'var(--text-primary)'
+                      color: 'var(--text-primary)',
+                      marginBottom: '2px'
                     }}>
                       {sector.name}
                     </h3>
-
                     <p style={{
-                      fontSize: '0.85rem',
+                      fontSize: '0.74rem',
                       color: 'var(--text-secondary)',
-                      lineHeight: 1.45
+                      lineHeight: 1.3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       {sector.description}
                     </p>
@@ -239,18 +245,16 @@ export const SectorSelectionPage: React.FC = () => {
 
                   {isSelected && (
                     <div style={{
-                      position: 'absolute',
-                      top: '16px',
-                      right: '16px',
-                      width: '22px',
-                      height: '22px',
+                      width: '18px',
+                      height: '18px',
                       borderRadius: '50%',
                       background: 'var(--primary)',
                       color: '#fff',
                       display: 'grid',
-                      placeItems: 'center'
+                      placeItems: 'center',
+                      flexShrink: 0
                     }}>
-                      <Check size={14} />
+                      <Check size={12} />
                     </div>
                   )}
                 </motion.div>
@@ -259,59 +263,56 @@ export const SectorSelectionPage: React.FC = () => {
 
             {/* Other Sector Option */}
             <motion.div
-              whileHover={{ scale: 1.02, translateY: -2 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.015 }}
+              whileTap={{ scale: 0.985 }}
               onClick={() => setSelectedSector('other')}
               style={{
-                padding: '20px',
-                borderRadius: 'var(--radius-lg)',
-                background: selectedSector === 'other' ? 'var(--grad-glow)' : 'var(--bg-secondary)',
+                padding: '14px 16px',
+                borderRadius: '14px',
+                background: selectedSector === 'other' ? 'rgba(253, 103, 48, 0.06)' : 'var(--bg-secondary)',
                 border: selectedSector === 'other' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
                 cursor: 'pointer',
                 position: 'relative',
                 transition: 'var(--transition-fast)',
                 display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
+                alignItems: 'center',
+                gap: '12px'
               }}
             >
-              <div>
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: selectedSector === 'other' ? 'var(--primary)' : 'rgba(253, 103, 48, 0.1)',
-                  color: selectedSector === 'other' ? '#ffffff' : 'var(--primary)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  marginBottom: '14px'
-                }}>
-                  <Sparkles size={24} />
-                </div>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                background: selectedSector === 'other' ? 'var(--primary)' : 'rgba(253, 103, 48, 0.1)',
+                color: selectedSector === 'other' ? '#ffffff' : 'var(--primary)',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0
+              }}>
+                <Sparkles size={18} />
+              </div>
 
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>
-                  Other Sector
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  Other Field
                 </h3>
-
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                  Enter your custom field manually if not listed above.
+                <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+                  Enter custom sector manually
                 </p>
               </div>
 
               {selectedSector === 'other' && (
                 <div style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  width: '22px',
-                  height: '22px',
+                  width: '18px',
+                  height: '18px',
                   borderRadius: '50%',
                   background: 'var(--primary)',
                   color: '#fff',
                   display: 'grid',
-                  placeItems: 'center'
+                  placeItems: 'center',
+                  flexShrink: 0
                 }}>
-                  <Check size={14} />
+                  <Check size={12} />
                 </div>
               )}
             </motion.div>
@@ -322,14 +323,14 @@ export const SectorSelectionPage: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              style={{ marginBottom: '28px' }}
+              style={{ marginBottom: '20px' }}
             >
               <div className="form-group">
-                <label className="form-label">Specify Your Sector *</label>
+                <label className="form-label" style={{ fontSize: '0.82rem' }}>Specify Your Sector *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Legal Services, Real Estate, Solar Engineering..."
+                  placeholder="e.g. Legal Services, Real Estate..."
                   value={customSectorName}
                   onChange={(e) => setCustomSectorName(e.target.value)}
                   className="input-field no-icon"
@@ -345,7 +346,7 @@ export const SectorSelectionPage: React.FC = () => {
             onClick={handleContinue}
             disabled={!selectedSector || (selectedSector === 'other' && !customSectorName.trim())}
             className="btn-primary"
-            style={{ width: '100%', padding: '16px', fontSize: '1rem' }}
+            style={{ width: '100%', padding: '14px', fontSize: '0.98rem' }}
           >
             Continue to Skills <ArrowRight size={18} />
           </motion.button>

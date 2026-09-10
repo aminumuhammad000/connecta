@@ -7,12 +7,17 @@ import { ShieldCheck, ArrowRight, ScrollText } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import confetti from 'canvas-confetti';
 
+import { useAuth } from '../../contexts/AuthContext';
+import { authAPI } from '../../services/api';
+
 export const TermsAndConditionsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
   const { success, error } = useToast();
 
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [accepting, setAccepting] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Monitor scroll position of terms container
@@ -36,7 +41,7 @@ export const TermsAndConditionsPage: React.FC = () => {
     }
   }, []);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!hasScrolledToBottom) {
       error('Scroll Required', 'Please scroll down and read the terms before accepting');
       return;
@@ -44,6 +49,18 @@ export const TermsAndConditionsPage: React.FC = () => {
     if (!agreed) {
       error('Agreement Required', 'Please check the box to accept the Terms and Conditions');
       return;
+    }
+
+    setAccepting(true);
+    try {
+      const res = await authAPI.updateMe({ termsAccepted: true });
+      if (res.success && res.data) {
+        updateUser(res.data);
+      }
+    } catch (e) {
+      console.warn('Could not save terms acceptance flag:', e);
+    } finally {
+      setAccepting(false);
     }
 
     confetti({
@@ -62,60 +79,64 @@ export const TermsAndConditionsPage: React.FC = () => {
 
       <main style={{
         flex: 1,
-        maxWidth: '800px',
+        maxWidth: '680px',
         margin: '0 auto',
-        padding: '40px 24px 80px',
+        padding: '30px 20px',
         width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         zIndex: 10
       }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card"
-          style={{ padding: '40px 32px' }}
+          style={{ padding: '32px 28px', width: '100%' }}
         >
-          {/* Top Badge & Header */}
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '6px 16px',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--grad-glow)',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              background: 'rgba(253, 103, 48, 0.08)',
               color: 'var(--primary)',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              fontSize: '0.85rem',
-              marginBottom: '12px'
+              letterSpacing: '0.4px',
+              marginBottom: '10px'
             }}>
-              <ShieldCheck size={16} /> Final Step: Legal & Platform Terms
+              Legal & Platform Terms
             </div>
 
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-primary)' }}>
-              Connecta Terms & Conditions
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+              Terms & Conditions
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '580px', margin: '0 auto' }}>
-              Please scroll down and read our terms of service to complete your registration and activate your workspace.
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+              Read and accept terms to activate your workspace
             </p>
           </div>
 
-          {/* Scroll Progress Indicator Callout */}
+          {/* Scroll Callout Indicator */}
           {!hasScrolledToBottom && (
             <div style={{
-              background: 'rgba(253, 103, 48, 0.08)',
-              border: '1px solid rgba(253, 103, 48, 0.25)',
-              borderRadius: 'var(--radius-md)',
-              padding: '12px 16px',
+              background: 'rgba(253, 103, 48, 0.06)',
+              border: '1px solid rgba(253, 103, 48, 0.2)',
+              borderRadius: '10px',
+              padding: '8px 12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              marginBottom: '20px',
+              gap: '8px',
+              marginBottom: '16px',
               color: 'var(--primary)'
             }}>
-              <ScrollText size={20} style={{ flexShrink: 0 }} />
-              <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>
-                Scroll to the bottom of the document below to unlock acceptance
+              <ScrollText size={16} style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+                Please scroll to the end of the terms document below
               </span>
             </div>
           )}
@@ -125,55 +146,54 @@ export const TermsAndConditionsPage: React.FC = () => {
             ref={scrollContainerRef}
             onScroll={handleScroll}
             style={{
-              maxHeight: '380px',
+              maxHeight: '300px',
               overflowY: 'auto',
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px',
-              fontSize: '0.9rem',
-              lineHeight: 1.7,
+              borderRadius: '12px',
+              padding: '18px 20px',
+              fontSize: '0.82rem',
+              lineHeight: 1.6,
               color: 'var(--text-secondary)',
-              marginBottom: '28px',
-              boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)'
+              marginBottom: '20px'
             }}
           >
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>
               1. Acceptance of Terms
             </h3>
-            <p style={{ marginBottom: '16px' }}>
+            <p style={{ marginBottom: '14px' }}>
               By creating an account on Connecta, accessing our services, or interacting with freelancers or clients on the platform, you agree to be bound by these Terms and Conditions. If you do not agree to all terms, you may not access or use Connecta.
             </p>
 
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>
               2. User Accounts & Verification
             </h3>
-            <p style={{ marginBottom: '16px' }}>
+            <p style={{ marginBottom: '14px' }}>
               Users must provide accurate, complete registration information. You are responsible for safeguarding your credentials. Connecta reserves the right to verify user identities, sectors, and currencies to maintain platform trust.
             </p>
 
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>
               3. Payments, Escrow & Work Protection
             </h3>
-            <p style={{ marginBottom: '16px' }}>
+            <p style={{ marginBottom: '14px' }}>
               All client payments are held securely in escrow until milestone deliverables are reviewed and approved. Connecta supports multiple African and global currencies (USD, NGN, GHS, KES, ZAR). Direct off-platform payments are strictly prohibited and may result in account termination.
             </p>
 
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>
               4. Code of Conduct & Fair Play
             </h3>
-            <p style={{ marginBottom: '16px' }}>
+            <p style={{ marginBottom: '14px' }}>
               Freelancers and clients agree to maintain respectful, professional communication. Spam, abusive language, copyright infringement, and unauthorized data scraping are grounds for immediate suspension.
             </p>
 
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>
               5. Intellectual Property Rights
             </h3>
-            <p style={{ marginBottom: '16px' }}>
+            <p style={{ marginBottom: '14px' }}>
               Upon full escrow milestone payout, all intellectual property rights for custom deliverables transfer from the freelancer to the client, unless explicitly stated otherwise in project contracts.
             </p>
 
-            <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>
+            <h3 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700, marginBottom: '6px' }}>
               6. Limitation of Liability
             </h3>
             <p style={{ marginBottom: '0' }}>
@@ -184,13 +204,13 @@ export const TermsAndConditionsPage: React.FC = () => {
           {/* Checkbox Agreement Area */}
           <div style={{
             display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px',
-            background: agreed ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-secondary)',
-            border: agreed ? '1px solid #10B981' : '1px solid var(--border-color)',
-            padding: '16px 20px',
-            borderRadius: 'var(--radius-lg)',
-            marginBottom: '28px',
+            alignItems: 'center',
+            gap: '10px',
+            background: agreed ? 'rgba(16, 185, 129, 0.06)' : 'var(--bg-secondary)',
+            border: agreed ? '1.5px solid #10B981' : '1px solid var(--border-color)',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            marginBottom: '20px',
             transition: 'all 0.2s ease',
             opacity: hasScrolledToBottom ? 1 : 0.6
           }}>
@@ -201,24 +221,23 @@ export const TermsAndConditionsPage: React.FC = () => {
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
               style={{
-                width: '20px',
-                height: '20px',
+                width: '18px',
+                height: '18px',
                 accentColor: 'var(--primary)',
-                cursor: hasScrolledToBottom ? 'pointer' : 'not-allowed',
-                marginTop: '2px'
+                cursor: hasScrolledToBottom ? 'pointer' : 'not-allowed'
               }}
             />
             <label
               htmlFor="terms-checkbox"
               style={{
-                fontSize: '0.92rem',
+                fontSize: '0.82rem',
                 color: 'var(--text-primary)',
                 fontWeight: 600,
                 cursor: hasScrolledToBottom ? 'pointer' : 'not-allowed',
                 userSelect: 'none'
               }}
             >
-              I have read, understood, and agree to Connecta's Terms & Conditions and Privacy Policy.
+              I read and agree to Connecta's Terms & Conditions and Privacy Policy.
             </label>
           </div>
 
@@ -226,23 +245,17 @@ export const TermsAndConditionsPage: React.FC = () => {
           <button
             type="button"
             onClick={handleAccept}
-            disabled={!hasScrolledToBottom || !agreed}
+            disabled={!hasScrolledToBottom || !agreed || accepting}
             className="btn-primary"
             style={{
               width: '100%',
-              padding: '16px',
-              borderRadius: 'var(--radius-lg)',
-              fontSize: '1.05rem',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              opacity: (!hasScrolledToBottom || !agreed) ? 0.5 : 1,
-              cursor: (!hasScrolledToBottom || !agreed) ? 'not-allowed' : 'pointer'
+              padding: '14px',
+              fontSize: '0.98rem',
+              opacity: (!hasScrolledToBottom || !agreed || accepting) ? 0.5 : 1,
+              cursor: (!hasScrolledToBottom || !agreed || accepting) ? 'not-allowed' : 'pointer'
             }}
           >
-            Accept & Continue to Dashboard <ArrowRight size={20} />
+            {accepting ? 'Activating...' : 'Accept & Activate Account'} <ArrowRight size={18} />
           </button>
         </motion.div>
       </main>

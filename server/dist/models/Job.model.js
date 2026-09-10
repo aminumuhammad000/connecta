@@ -28,6 +28,7 @@ const JobSchema = new Schema({
     paymentVerified: { type: Boolean, default: false },
     paymentStatus: { type: String, enum: ['pending', 'escrow', 'released', 'verified'], default: 'pending' },
     requirements: [{ type: String }],
+    requireAiInterview: { type: Boolean, default: false },
     isExternal: { type: Boolean, default: false },
     company: { type: String, default: "" },
     location: { type: String, default: "Remote" },

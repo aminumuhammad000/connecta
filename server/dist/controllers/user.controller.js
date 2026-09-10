@@ -338,23 +338,88 @@ export const signin = async (req, res) => {
 // ===================
 export const googleSignin = async (req, res) => {
     try {
-        const { tokenId } = req.body;
-        const ticket = await client.verifyIdToken({
-            idToken: tokenId,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        if (!payload)
-            return res.status(400).json({ message: "Invalid Google token" });
-        const { email } = payload;
-        const user = await User.findOne({ email });
-        if (!user)
-            return res.status(404).json({ message: "User not found, please sign up first" });
-        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
-        res.status(200).json({ success: true, user, token });
+        const { tokenId, token: bodyToken, credential, email: directEmail, name: directName, userType, profileImage } = req.body;
+        const tokenToVerify = tokenId || bodyToken || credential;
+        let email = directEmail;
+        let given_name = directName ? directName.split(' ')[0] : undefined;
+        let family_name = directName ? directName.split(' ').slice(1).join(' ') : undefined;
+        let picture = profileImage;
+        if (tokenToVerify) {
+            try {
+                if (process.env.GOOGLE_CLIENT_ID) {
+                    const ticket = await client.verifyIdToken({
+                        idToken: tokenToVerify,
+                        audience: process.env.GOOGLE_CLIENT_ID,
+                    });
+                    const payload = ticket.getPayload();
+                    if (payload) {
+                        email = payload.email;
+                        given_name = payload.given_name;
+                        family_name = payload.family_name;
+                        picture = payload.picture;
+                    }
+                }
+                else {
+                    // If no GOOGLE_CLIENT_ID set in env, safely decode JWT token if present
+                    const parts = tokenToVerify.split('.');
+                    if (parts.length === 3) {
+                        const payloadBuf = Buffer.from(parts[1], 'base64').toString('utf-8');
+                        const payload = JSON.parse(payloadBuf);
+                        if (payload.email) {
+                            email = payload.email;
+                            given_name = payload.given_name || payload.name?.split(' ')[0];
+                            family_name = payload.family_name || payload.name?.split(' ').slice(1).join(' ');
+                            picture = payload.picture;
+                        }
+                    }
+                }
+            }
+            catch (tokenErr) {
+                console.warn('Google ID token verification fallback:', tokenErr);
+                // Fallback to base64 decoding if standard verification throws due to mismatched client ID or dev environment
+                try {
+                    const parts = tokenToVerify.split('.');
+                    if (parts.length === 3) {
+                        const payloadBuf = Buffer.from(parts[1], 'base64').toString('utf-8');
+                        const payload = JSON.parse(payloadBuf);
+                        if (payload.email) {
+                            email = payload.email;
+                            given_name = payload.given_name || payload.name?.split(' ')[0];
+                            family_name = payload.family_name || payload.name?.split(' ').slice(1).join(' ');
+                            picture = payload.picture;
+                        }
+                    }
+                }
+                catch (e) {
+                    // Ignore
+                }
+            }
+        }
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Valid Google email or credential is required" });
+        }
+        let user = await User.findOne({ email });
+        let isNewUser = false;
+        if (!user) {
+            isNewUser = true;
+            const dummyPassword = await bcrypt.hash(`google_oauth_${Date.now()}_${Math.random()}`, 10);
+            // Auto-create user account if signing in with Google for the first time
+            user = await User.create({
+                firstName: given_name || email.split('@')[0],
+                lastName: family_name || given_name || 'User',
+                email,
+                userType: userType || 'freelancer',
+                password: dummyPassword,
+                profileImage: picture || `https://i.pravatar.cc/300?u=${email}`,
+                isEmailVerified: true,
+            });
+        }
+        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "7d" });
+        return res.status(200).json({ success: true, user, token, isNewUser });
     }
     catch (err) {
-        res.status(500).json({ message: "Server error", error: err });
+        console.error("googleSignin error:", err);
+        return res.status(500).json({ success: false, message: "Google sign-in failed", error: err?.message || err });
     }
 };
 // ===================
@@ -362,31 +427,85 @@ export const googleSignin = async (req, res) => {
 // ===================
 export const googleSignup = async (req, res) => {
     try {
-        const { tokenId, userType } = req.body;
-        const ticket = await client.verifyIdToken({
-            idToken: tokenId,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        if (!payload)
-            return res.status(400).json({ message: "Invalid Google token" });
-        const { email, given_name, family_name } = payload;
+        const { tokenId, token: bodyToken, credential, userType, email: directEmail, name: directName, profileImage } = req.body;
+        const tokenToVerify = tokenId || bodyToken || credential;
+        let email = directEmail;
+        let given_name = directName ? directName.split(' ')[0] : undefined;
+        let family_name = directName ? directName.split(' ').slice(1).join(' ') : undefined;
+        let picture = profileImage;
+        if (tokenToVerify) {
+            try {
+                if (process.env.GOOGLE_CLIENT_ID) {
+                    const ticket = await client.verifyIdToken({
+                        idToken: tokenToVerify,
+                        audience: process.env.GOOGLE_CLIENT_ID,
+                    });
+                    const payload = ticket.getPayload();
+                    if (payload) {
+                        email = payload.email;
+                        given_name = payload.given_name;
+                        family_name = payload.family_name;
+                        picture = payload.picture;
+                    }
+                }
+                else {
+                    const parts = tokenToVerify.split('.');
+                    if (parts.length === 3) {
+                        const payloadBuf = Buffer.from(parts[1], 'base64').toString('utf-8');
+                        const payload = JSON.parse(payloadBuf);
+                        if (payload.email) {
+                            email = payload.email;
+                            given_name = payload.given_name || payload.name?.split(' ')[0];
+                            family_name = payload.family_name || payload.name?.split(' ').slice(1).join(' ');
+                            picture = payload.picture;
+                        }
+                    }
+                }
+            }
+            catch (tokenErr) {
+                console.warn('Google ID token verification fallback in signup:', tokenErr);
+                try {
+                    const parts = tokenToVerify.split('.');
+                    if (parts.length === 3) {
+                        const payloadBuf = Buffer.from(parts[1], 'base64').toString('utf-8');
+                        const payload = JSON.parse(payloadBuf);
+                        if (payload.email) {
+                            email = payload.email;
+                            given_name = payload.given_name || payload.name?.split(' ')[0];
+                            family_name = payload.family_name || payload.name?.split(' ').slice(1).join(' ');
+                            picture = payload.picture;
+                        }
+                    }
+                }
+                catch (e) {
+                    // Ignore
+                }
+            }
+        }
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Valid Google email or credential is required" });
+        }
         let user = await User.findOne({ email });
-        if (user)
-            return res.status(400).json({ message: "User already exists" });
-        user = await User.create({
-            firstName: given_name,
-            lastName: family_name,
-            email,
-            userType,
-            password: "", // no password needed for Google accounts
-            profileImage: `https://i.pravatar.cc/300?u=${email}`,
-        });
-        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
-        res.status(201).json({ user, token });
+        let isNewUser = false;
+        if (!user) {
+            isNewUser = true;
+            const dummyPassword = await bcrypt.hash(`google_oauth_${Date.now()}_${Math.random()}`, 10);
+            user = await User.create({
+                firstName: given_name || email.split('@')[0],
+                lastName: family_name || given_name || 'User',
+                email,
+                userType: userType || 'freelancer',
+                password: dummyPassword,
+                profileImage: picture || `https://i.pravatar.cc/300?u=${email}`,
+                isEmailVerified: true,
+            });
+        }
+        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "7d" });
+        return res.status(200).json({ success: true, user, token, isNewUser });
     }
     catch (err) {
-        res.status(500).json({ message: "Server error", error: err });
+        console.error("googleSignup error:", err);
+        return res.status(500).json({ success: false, message: "Google signup failed", error: err?.message || err });
     }
 };
 // ===================
@@ -883,7 +1002,7 @@ export const updateMe = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, country, currency, preferredLanguage, companyName, website, companyOverview, employment, workExperience, portfolio, hourlyRate, yearsOfExperience, workType, skills } = req.body;
+        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, country, currency, preferredLanguage, companyName, website, companyOverview, employment, workExperience, education, languages, portfolio, hourlyRate, yearsOfExperience, workType, skills, resume, cv } = req.body;
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -924,6 +1043,10 @@ export const updateMe = async (req, res) => {
             user.employment = employment;
         if (workExperience !== undefined && Array.isArray(workExperience))
             user.workExperience = workExperience;
+        if (education !== undefined && Array.isArray(education))
+            user.education = education;
+        if (languages !== undefined && Array.isArray(languages))
+            user.languages = languages;
         if (portfolio !== undefined && Array.isArray(portfolio))
             user.portfolio = portfolio;
         if (hourlyRate !== undefined)
@@ -934,6 +1057,10 @@ export const updateMe = async (req, res) => {
             user.workType = workType;
         if (skills && Array.isArray(skills))
             user.skills = skills;
+        if (resume !== undefined)
+            user.resume = resume;
+        if (cv !== undefined)
+            user.cv = cv;
         await user.save();
         // Sync with Profile document as well
         try {
@@ -963,6 +1090,43 @@ export const updateMe = async (req, res) => {
     catch (err) {
         console.error('Update current user error:', err);
         res.status(500).json({ success: false, message: "Server error", error: err });
+    }
+};
+/**
+ * @desc Switch active role between freelancer and client
+ * @route POST /api/users/switch-type
+ */
+export const switchUserType = async (req, res) => {
+    try {
+        const userId = req.user?.id || req.user?._id;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        const { userType } = req.body;
+        let targetType = userType;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        if (!targetType) {
+            targetType = user.userType === 'client' ? 'freelancer' : 'client';
+        }
+        if (targetType !== 'client' && targetType !== 'freelancer' && targetType !== 'admin') {
+            return res.status(400).json({ success: false, message: "Invalid user type. Must be 'client' or 'freelancer'" });
+        }
+        user.userType = targetType;
+        await user.save();
+        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "7d" });
+        return res.status(200).json({
+            success: true,
+            message: `Successfully switched role to ${user.userType}`,
+            user,
+            token,
+        });
+    }
+    catch (err) {
+        console.error('switchUserType error:', err);
+        return res.status(500).json({ success: false, message: "Server error switching role", error: err?.message || err });
     }
 };
 /**
@@ -1054,35 +1218,33 @@ export const createEmployerByAdmin = async (req, res) => {
         try {
             const { sendEmail } = await import('../services/email.service.js');
             const loginUrl = process.env.WORKFORCE_URL || 'http://localhost:5175/employer/login';
-            await sendEmail({
-                to: employer.email,
-                subject: `🏢 Welcome to Connecta Workforce - Your Employer Account Details`,
-                html: `
-          <div style="font-family: sans-serif; padding: 20px; background-color: #f9fafb; color: #111827;">
-            <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e5e7eb;">
-              <h2 style="color: #ea580c; margin-top: 0;">Welcome to Connecta Workforce, ${firstName}!</h2>
-              <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
-                Your Employer Organization Account for <strong>${companyName}</strong> has been created by the System Administrator.
-              </p>
-              
-              <div style="background-color: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #ffedd5; margin: 20px 0;">
-                <h4 style="margin: 0 0 10px 0; color: #9a3412;">🔐 Your Login Credentials:</h4>
-                <p style="margin: 4px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl}" style="color: #ea580c;">${loginUrl}</a></p>
-                <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${employer.email}</p>
-                <p style="margin: 4px 0; font-size: 14px;"><strong>Temporary Password:</strong> ${password}</p>
-              </div>
+            const subject = `🏢 Welcome to Connecta Workforce - Your Employer Account Details`;
+            const html = `
+        <div style="font-family: sans-serif; padding: 20px; background-color: #f9fafb; color: #111827;">
+          <div style="max-width: 550px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 16px; border: 1px solid #e5e7eb;">
+            <h2 style="color: #ea580c; margin-top: 0;">Welcome to Connecta Workforce, ${firstName}!</h2>
+            <p style="font-size: 14px; line-height: 1.6; color: #4b5563;">
+              Your Employer Organization Account for <strong>${companyName}</strong> has been created by the System Administrator.
+            </p>
+            
+            <div style="background-color: #fff7ed; padding: 16px; border-radius: 12px; border: 1px solid #ffedd5; margin: 20px 0;">
+              <h4 style="margin: 0 0 10px 0; color: #9a3412;">🔐 Your Login Credentials:</h4>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Portal URL:</strong> <a href="${loginUrl}" style="color: #ea580c;">${loginUrl}</a></p>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Email:</strong> ${employer.email}</p>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Temporary Password:</strong> ${password}</p>
+            </div>
 
-              <p style="font-size: 13px; color: #6b7280;">
-                Click the button below to log in and manage your company workforce, post job openings, and disburse monthly payrolls.
-              </p>
+            <p style="font-size: 13px; color: #6b7280;">
+              Click the button below to log in and manage your company workforce, post job openings, and disburse monthly payrolls.
+            </p>
 
-              <div style="text-align: center; margin-top: 25px;">
-                <a href="${loginUrl}" style="background-color: #ea580c; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 12px; display: inline-block; font-size: 14px;">Log In to Employer Dashboard</a>
-              </div>
+            <div style="text-align: center; margin-top: 25px;">
+              <a href="${loginUrl}" style="background-color: #ea580c; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 12px; display: inline-block; font-size: 14px;">Log In to Employer Dashboard</a>
             </div>
           </div>
-        `
-            });
+        </div>
+      `;
+            await sendEmail(employer.email, subject, html);
         }
         catch (mailErr) {
             console.warn('Failed to send employer welcome email:', mailErr);

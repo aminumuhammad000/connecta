@@ -32,6 +32,7 @@ export interface IUser extends Document {
   sparks?: number;
   companyName?: string;
   website?: string;
+  termsAccepted?: boolean;
   companyOverview?: string;
   employment?: any[];
   workExperience?: Array<{
@@ -40,6 +41,14 @@ export interface IUser extends Document {
     period: string;
     description: string;
   }>;
+  education?: Array<{
+    school: string;
+    degree: string;
+    fieldOfStudy?: string;
+    year?: string;
+  }>;
+  resume?: string;
+  cv?: string;
   portfolio?: Array<{
     title: string;
     category?: string;
@@ -47,6 +56,7 @@ export interface IUser extends Document {
     link?: string;
     description?: string;
   }>;
+  languages?: string[];
   hourlyRate?: number;
   yearsOfExperience?: number;
   payrollWalletBalance?: number;
@@ -88,6 +98,16 @@ const UserSchema: Schema<IUser> = new Schema(
         description: { type: String }
       }
     ],
+    education: [
+      {
+        school: { type: String },
+        degree: { type: String },
+        fieldOfStudy: { type: String },
+        year: { type: String }
+      }
+    ],
+    resume: { type: String, required: false },
+    cv: { type: String, required: false },
     portfolio: [
       {
         title: { type: String },
@@ -101,6 +121,8 @@ const UserSchema: Schema<IUser> = new Schema(
     yearsOfExperience: { type: Number, required: false },
     workType: { type: String, enum: ['freelancing', 'permanent'], required: false },
     skills: [{ type: String }],
+    languages: [{ type: String }],
+    termsAccepted: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     verificationTier: {

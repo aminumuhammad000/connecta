@@ -135,27 +135,41 @@ export const SignupPasswordPage: React.FC = () => {
         zIndex: 10
       }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card"
-          style={{ padding: '40px 32px' }}
+          style={{ padding: '36px 28px', width: '100%', borderRadius: 'var(--radius-lg)' }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '6px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              background: 'rgba(253, 103, 48, 0.08)',
+              color: 'var(--primary)',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.5px',
+              marginBottom: '8px'
+            }}>
+              Security Setup
+            </div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
               Set Password
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Create a password for your account
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
+              Create a secure password for your account
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
             {/* Password */}
-            <div className="form-group">
-              <label className="form-label">Password *</label>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '0.82rem' }}>Password *</label>
               <div className="input-wrapper">
-                <Lock className="input-icon-left" size={18} />
+                <Lock className="input-icon-left" size={17} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -169,18 +183,18 @@ export const SignupPasswordPage: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="input-icon-right"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
 
-              {/* Password Strength Animated Bar */}
+              {/* Password Strength Bar */}
               {password.length > 0 && (
-                <div style={{ marginTop: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '4px' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Strength:</span>
+                <div style={{ marginTop: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '4px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Strength</span>
                     <span style={{ fontWeight: 700, color: strength.color }}>{strength.text}</span>
                   </div>
-                  <div style={{ height: '5px', background: 'var(--border-color)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ height: '4px', background: 'var(--border-color)', borderRadius: '2px', overflow: 'hidden' }}>
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: strength.width, backgroundColor: strength.color }}
@@ -193,10 +207,10 @@ export const SignupPasswordPage: React.FC = () => {
             </div>
 
             {/* Confirm Password */}
-            <div className="form-group">
-              <label className="form-label">Confirm Password *</label>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" style={{ fontSize: '0.82rem' }}>Confirm Password *</label>
               <div className="input-wrapper">
-                <Lock className="input-icon-left" size={18} />
+                <Lock className="input-icon-left" size={17} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -207,32 +221,60 @@ export const SignupPasswordPage: React.FC = () => {
                 />
               </div>
               {confirmPassword.length > 0 && (
-                <div className={isMatch ? 'success-text' : 'error-text'}>
-                  {isMatch ? <><Check size={14} /> Passwords match</> : <><X size={14} /> Passwords do not match</>}
+                <div className={isMatch ? 'success-text' : 'error-text'} style={{ marginTop: '4px', fontSize: '0.78rem' }}>
+                  {isMatch ? <><Check size={13} /> Passwords match</> : <><X size={13} /> Passwords do not match</>}
                 </div>
               )}
             </div>
 
-            {/* Checklist */}
+            {/* Minimalist Inline Requirements Pills */}
             <div style={{
-              background: 'var(--bg-secondary)',
-              padding: '14px 16px',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '24px',
-              fontSize: '0.82rem',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
+              flexWrap: 'wrap',
+              gap: '6px',
+              marginBottom: '22px'
             }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>Password must contain:</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: hasMinLength ? 'var(--success)' : 'var(--text-muted)' }}>
-                {hasMinLength ? <Check size={14} /> : <X size={14} />} At least 8 characters
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '14px',
+                fontSize: '0.74rem',
+                fontWeight: 600,
+                background: hasMinLength ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-secondary)',
+                color: hasMinLength ? 'var(--success)' : 'var(--text-muted)',
+                border: `1px solid ${hasMinLength ? 'rgba(34, 197, 94, 0.2)' : 'var(--border-color)'}`
+              }}>
+                {hasMinLength ? <Check size={12} /> : <X size={12} />} 8+ characters
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: hasUpper && hasLower ? 'var(--success)' : 'var(--text-muted)' }}>
-                {hasUpper && hasLower ? <Check size={14} /> : <X size={14} />} Upper & lower case letters
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '14px',
+                fontSize: '0.74rem',
+                fontWeight: 600,
+                background: (hasUpper && hasLower) ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-secondary)',
+                color: (hasUpper && hasLower) ? 'var(--success)' : 'var(--text-muted)',
+                border: `1px solid ${(hasUpper && hasLower) ? 'rgba(34, 197, 94, 0.2)' : 'var(--border-color)'}`
+              }}>
+                {(hasUpper && hasLower) ? <Check size={12} /> : <X size={12} />} Aa letters
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: hasNumber ? 'var(--success)' : 'var(--text-muted)' }}>
-                {hasNumber ? <Check size={14} /> : <X size={14} />} At least one number
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 10px',
+                borderRadius: '14px',
+                fontSize: '0.74rem',
+                fontWeight: 600,
+                background: hasNumber ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-secondary)',
+                color: hasNumber ? 'var(--success)' : 'var(--text-muted)',
+                border: `1px solid ${hasNumber ? 'rgba(34, 197, 94, 0.2)' : 'var(--border-color)'}`
+              }}>
+                {hasNumber ? <Check size={12} /> : <X size={12} />} 123 numbers
               </div>
             </div>
 
@@ -242,7 +284,7 @@ export const SignupPasswordPage: React.FC = () => {
               type="submit"
               disabled={submitting || !hasMinLength || !isMatch}
               className="btn-primary"
-              style={{ width: '100%', padding: '15px' }}
+              style={{ width: '100%', padding: '14px', fontSize: '0.98rem' }}
             >
               {submitting ? (
                 <><Loader2 size={18} className="animate-spin" /> Creating Account...</>

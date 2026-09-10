@@ -9,7 +9,8 @@ import {
   Loader2,
   Briefcase,
   UserCheck,
-  Check
+  Check,
+  Bot
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../../services/api';
@@ -38,6 +39,7 @@ export const PostJobPage: React.FC = () => {
   const [budgetType, setBudgetType] = useState<'fixed' | 'hourly'>('fixed');
   const [duration, setDuration] = useState('30');
   const [currency, setCurrency] = useState('USD');
+  const [requireAiInterview, setRequireAiInterview] = useState(false);
   const [probationDays, setProbationDays] = useState('30');
   const [noticeDays, setNoticeDays] = useState('30');
   const [benefitsSummary, setBenefitsSummary] = useState('Paid annual leave, remote equipment allowance, health insurance reimbursement.');
@@ -109,6 +111,7 @@ export const PostJobPage: React.FC = () => {
         benefitsSummary: benefitsSummary.trim(),
         skills: selectedSkills,
         requirements: requirements.split('\n').map((r) => r.trim()).filter(Boolean),
+        requireAiInterview,
         paymentVerified: true,
       });
 
@@ -684,6 +687,50 @@ export const PostJobPage: React.FC = () => {
                   />
                 </div>
 
+                {/* AI Interview Toggle Option */}
+                <div style={{
+                  background: 'var(--bg-secondary)',
+                  padding: '20px 22px',
+                  borderRadius: '16px',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Bot size={20} color="var(--primary)" /> Require AI Interview from applicants
+                      </div>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
+                        Applicants will complete an AI-powered interview based on their profile, CV, and the role they're applying for.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setRequireAiInterview(!requireAiInterview)}
+                      style={{
+                        padding: '8px 20px',
+                        borderRadius: '20px',
+                        border: requireAiInterview ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                        background: requireAiInterview ? 'var(--primary)' : 'var(--bg-tertiary)',
+                        color: requireAiInterview ? '#ffffff' : 'var(--text-secondary)',
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                        boxShadow: requireAiInterview ? '0 3px 12px rgba(253,103,48,0.35)' : 'none'
+                      }}
+                    >
+                      {requireAiInterview ? '● ON' : '○ OFF'}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Summary Card */}
                 <div style={{
                   background: 'var(--bg-secondary)',
@@ -714,9 +761,9 @@ export const PostJobPage: React.FC = () => {
                   </div>
 
                   <div style={{ display: 'flex', gap: '14px', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    <span>📍 {location} ({locationType})</span>
-                    <span>⏱️ Delivery: {duration} days</span>
-                    <span>🏷️ Skills: {selectedSkills.slice(0, 3).join(', ')}</span>
+                    <span>Location: {location} ({locationType})</span>
+                    <span>Delivery: {duration} days</span>
+                    <span>Skills: {selectedSkills.slice(0, 3).join(', ')}</span>
                   </div>
                 </div>
 

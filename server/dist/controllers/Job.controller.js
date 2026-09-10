@@ -168,7 +168,7 @@ export const getJobById = async (req, res) => {
 export const createJob = async (req, res) => {
     try {
         const clientId = req.user?._id;
-        const { title, description, budget, duration, category, skills, jobType, locationType, budgetType, requirements, status, isExternal, company, location, monthlySalaryAmount, currency, probationPeriodDays, noticePeriodDays, benefitsSummary } = req.body;
+        const { title, description, budget, duration, category, skills, jobType, locationType, budgetType, requirements, requireAiInterview, status, isExternal, company, location, monthlySalaryAmount, currency, probationPeriodDays, noticePeriodDays, benefitsSummary } = req.body;
         const newJob = await Job.create({
             title,
             description,
@@ -181,6 +181,7 @@ export const createJob = async (req, res) => {
             locationType: locationType || 'remote',
             budgetType: budgetType || 'fixed',
             requirements: requirements || [],
+            requireAiInterview: requireAiInterview === true || requireAiInterview === 'true',
             status: status || "active",
             isExternal: isExternal || false,
             company: company || '',

@@ -9,6 +9,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password?: string) => Promise<User>;
+  googleLogin: (payload: any, userType?: string) => Promise<{ user: User; isNewUser: boolean }>;
+  googleSignup: (payload: any, userType?: string) => Promise<{ user: User; isNewUser: boolean }>;
+  switchRole: (targetRole?: 'client' | 'freelancer') => Promise<User>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   setUserAndToken: (user: User, token: string) => void;
@@ -68,6 +71,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     throw new Error(res.message || 'Login failed');
   };
 
+  const googleLogin = async (payload: any, userType?: string): Promise<{ user: User; isNewUser: boolean }> => {
+    const res = await authAPI.googleSignin(payload, userType);
+    if (res.success && res.token && res.user) {
+      setUserAndToken(res.user, res.token);
+      return { user: res.user, isNewUser: !!(res as any).isNewUser };
+    }
+    throw new Error(res.message || 'Google Sign-In failed');
+  };
+
+  const googleSignup = async (payload: any, userType?: string): Promise<{ user: User; isNewUser: boolean }> => {
+    const res = await authAPI.googleSignup(payload, userType);
+    if (res.success && res.token && res.user) {
+      setUserAndToken(res.user, res.token);
+      return { user: res.user, isNewUser: !!(res as any).isNewUser };
+    }
+    throw new Error(res.message || 'Google Sign-Up failed');
+  };
+
+  const switchRole = async (targetRole?: 'client' | 'freelancer'): Promise<User> => {
+    const res = await authAPI.switchRole(targetRole);
+    if (res.success && res.user) {
+      setUserAndToken(res.user, res.token || storage.getToken() || '');
+      return res.user;
+    }
+    throw new Error(res.message || 'Failed to switch role');
+  };
+
   const logout = () => {
     storage.clearAll();
     setUser(null);
@@ -92,6 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!token && !!user,
         isLoading,
         login,
+        googleLogin,
+        googleSignup,
+        switchRole,
         logout,
         updateUser,
         setUserAndToken,

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import FeedPost from '../models/Feed.model.js';
 import FeedComment from '../models/FeedComment.model.js';
 import { getFeedStats } from '../services/feed.service.js';
+import notificationService from '../services/notification.service.js';
 import { getIO } from '../core/utils/socketIO.js';
 import mongoose from 'mongoose';
 
@@ -35,15 +36,65 @@ export const getFeed = async (req: Request, res: Response) => {
       FeedPost.countDocuments(filter),
     ]);
 
-    // Attach current user's reaction to each post
+    // Fetch comments for returned posts to persist comments & sub-replies on page refresh
+    const postIds = posts.map(p => p._id);
+    const allComments = await FeedComment.find({ feedPostId: { $in: postIds } })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    const commentsMap: Record<string, any[]> = {};
+    for (const c of allComments) {
+      const pid = c.feedPostId.toString();
+      if (!commentsMap[pid]) commentsMap[pid] = [];
+      commentsMap[pid].push(c);
+    }
+
+    // Process top-level comments and nested replies per post
+    const structuredCommentsMap: Record<string, any[]> = {};
+    for (const pid of Object.keys(commentsMap)) {
+      const rawList = commentsMap[pid];
+      const topLevel: any[] = [];
+      const repliesByParent: Record<string, any[]> = {};
+
+      for (const item of rawList) {
+        if (item.parentCommentId) {
+          const parentId = item.parentCommentId.toString();
+          if (!repliesByParent[parentId]) repliesByParent[parentId] = [];
+          repliesByParent[parentId].push({
+            id: item._id.toString(),
+            author: item.authorName || 'Connecta User',
+            avatar: item.authorAvatar,
+            text: item.text || '',
+            createdAt: item.createdAt || new Date().toISOString(),
+          });
+        } else {
+          topLevel.push(item);
+        }
+      }
+
+      structuredCommentsMap[pid] = topLevel.map(item => ({
+        id: item._id.toString(),
+        author: item.authorName || 'Connecta User',
+        avatar: item.authorAvatar,
+        text: item.text || '',
+        createdAt: item.createdAt || new Date().toISOString(),
+        likes: (item.likes || []).length,
+        isLiked: false,
+        replies: repliesByParent[item._id.toString()] || [],
+      }));
+    }
+
+    // Attach current user's reaction and total reactions/likes to each post
     const userId = (req as any).user?.id;
+    const validReactions = ['celebrate', 'insightful', 'clap', 'fire', 'love', 'like'];
+
     const enrichedPosts = posts.map(post => {
       let myReaction: string | null = null;
       if (userId) {
         const uid = new mongoose.Types.ObjectId(userId);
         const reactions = post.reactions as any;
         if (reactions) {
-          for (const key of ['celebrate', 'insightful', 'clap', 'fire', 'love']) {
+          for (const key of validReactions) {
             if (reactions[key]?.some((id: any) => id.toString() === uid.toString())) {
               myReaction = key;
               break;
@@ -53,13 +104,21 @@ export const getFeed = async (req: Request, res: Response) => {
       }
       const reactions = post.reactions as any;
       const totalReactions = reactions
-        ? ['celebrate', 'insightful', 'clap', 'fire', 'love'].reduce(
+        ? validReactions.reduce(
             (sum, k) => sum + (reactions[k]?.length || 0),
             0
           )
         : 0;
 
-      return { ...post, myReaction, totalReactions };
+      const pid = post._id.toString();
+
+      return {
+        ...post,
+        myReaction,
+        totalReactions,
+        likes: totalReactions,
+        comments: structuredCommentsMap[pid] || [],
+      };
     });
 
     res.status(200).json({
@@ -88,9 +147,9 @@ export const reactToPost = async (req: Request, res: Response) => {
   try {
     const userId   = (req as any).user?.id;
     const postId   = req.params.id;
-    const { reaction } = req.body; // 'celebrate' | 'insightful' | 'clap' | 'fire' | 'love'
+    const { reaction = 'like' } = req.body; // 'celebrate' | 'insightful' | 'clap' | 'fire' | 'love' | 'like'
 
-    const validReactions = ['celebrate', 'insightful', 'clap', 'fire', 'love'];
+    const validReactions = ['celebrate', 'insightful', 'clap', 'fire', 'love', 'like'];
     if (!validReactions.includes(reaction)) {
       return res.status(400).json({ success: false, message: 'Invalid reaction type' });
     }
@@ -98,15 +157,25 @@ export const reactToPost = async (req: Request, res: Response) => {
     const post = await FeedPost.findById(postId);
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
+    if (!post.reactions) {
+      post.reactions = { celebrate: [], insightful: [], clap: [], fire: [], love: [], like: [] } as any;
+    }
+
     const uid = new mongoose.Types.ObjectId(userId);
 
     // Remove user from ALL reaction arrays first (toggle / change reaction)
     for (const key of validReactions) {
+      if (!Array.isArray((post.reactions as any)[key])) {
+        (post.reactions as any)[key] = [];
+      }
       (post.reactions as any)[key] = ((post.reactions as any)[key] as mongoose.Types.ObjectId[])
         .filter(id => id.toString() !== uid.toString());
     }
 
     // Add to the chosen reaction
+    if (!Array.isArray((post.reactions as any)[reaction])) {
+      (post.reactions as any)[reaction] = [];
+    }
     (post.reactions as any)[reaction].push(uid);
     await post.save();
 
@@ -116,10 +185,23 @@ export const reactToPost = async (req: Request, res: Response) => {
 
     // Broadcast live reaction update
     try {
-      getIO().emit('feed:reaction', { postId, reactions: post.reactions, totalReactions });
+      getIO().emit('feed:reaction', { postId, reactions: post.reactions, totalReactions, likes: totalReactions });
     } catch {}
 
-    res.status(200).json({ success: true, data: { reactions: post.reactions, totalReactions } });
+    // Send in-app notification to post author
+    if (post.actor && post.actor.toString() !== userId) {
+      notificationService.createNotification({
+        userId: post.actor.toString(),
+        type: 'info',
+        title: 'New Reaction on your post',
+        message: `Someone reacted to your post on Connecta Feed!`,
+        link: '/feed',
+        actorId: userId,
+        shouldSendEmail: false,
+      }).catch(() => {});
+    }
+
+    res.status(200).json({ success: true, data: { reactions: post.reactions, totalReactions, likes: totalReactions } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Error reacting to post', error: error.message });
   }
@@ -130,13 +212,16 @@ export const removeReaction = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
     const postId = req.params.id;
-    const validReactions = ['celebrate', 'insightful', 'clap', 'fire', 'love'];
+    const validReactions = ['celebrate', 'insightful', 'clap', 'fire', 'love', 'like'];
 
     const post = await FeedPost.findById(postId);
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
     const uid = new mongoose.Types.ObjectId(userId);
     for (const key of validReactions) {
+      if (!Array.isArray((post.reactions as any)[key])) {
+        (post.reactions as any)[key] = [];
+      }
       (post.reactions as any)[key] = ((post.reactions as any)[key] as mongoose.Types.ObjectId[])
         .filter(id => id.toString() !== uid.toString());
     }
@@ -146,10 +231,10 @@ export const removeReaction = async (req: Request, res: Response) => {
     const totalReactions = validReactions.reduce((sum, k) => sum + ((reactions[k]?.length) || 0), 0);
 
     try {
-      getIO().emit('feed:reaction', { postId, reactions: post.reactions, totalReactions });
+      getIO().emit('feed:reaction', { postId, reactions: post.reactions, totalReactions, likes: totalReactions });
     } catch {}
 
-    res.status(200).json({ success: true, data: { reactions: post.reactions, totalReactions } });
+    res.status(200).json({ success: true, data: { reactions: post.reactions, totalReactions, likes: totalReactions } });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Error removing reaction', error: error.message });
   }
@@ -172,9 +257,10 @@ export const addComment = async (req: Request, res: Response) => {
   try {
     const userId   = (req as any).user?.id;
     const postId   = req.params.id;
-    const { text, authorName, authorAvatar } = req.body;
+    const { text, content, authorName, authorAvatar, parentCommentId } = req.body;
+    const commentText = (text || content || '').trim();
 
-    if (!text?.trim()) {
+    if (!commentText) {
       return res.status(400).json({ success: false, message: 'Comment text is required' });
     }
 
@@ -182,11 +268,12 @@ export const addComment = async (req: Request, res: Response) => {
     if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
 
     const comment = await FeedComment.create({
-      feedPostId:   postId,
-      authorId:     userId,
-      authorName:   authorName || 'User',
-      authorAvatar: authorAvatar,
-      text:         text.trim(),
+      feedPostId:      postId,
+      parentCommentId: parentCommentId && mongoose.Types.ObjectId.isValid(parentCommentId) ? new mongoose.Types.ObjectId(parentCommentId) : undefined,
+      authorId:        userId,
+      authorName:      authorName || 'User',
+      authorAvatar:    authorAvatar,
+      text:            commentText,
     });
 
     // Increment comment count on post (denormalized)
@@ -196,6 +283,20 @@ export const addComment = async (req: Request, res: Response) => {
     try {
       getIO().emit('feed:comment', { postId, comment });
     } catch {}
+
+    // Send notification to post author if not commenting on own post
+    if (post.actor && post.actor.toString() !== userId) {
+      notificationService.createNotification({
+        userId: post.actor.toString(),
+        type: 'info',
+        title: 'New Comment on your post',
+        message: `${authorName || 'Someone'} commented on your post: "${commentText.slice(0, 50)}..."`,
+        link: '/feed',
+        actorId: userId,
+        actorName: authorName,
+        shouldSendEmail: false,
+      }).catch(() => {});
+    }
 
     res.status(201).json({ success: true, data: comment });
   } catch (error: any) {
@@ -264,20 +365,22 @@ export const createPost = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
     const isValidObjectId = typeof userId === 'string' && /^[0-9a-fA-F]{24}$/.test(userId);
-    const { type = 'user_post', title, body, emoji, actorName, actorAvatar, actorRole, targetAudience } = req.body;
+    const { type = 'user_post', title, body, imageUrl, emoji, actorName, actorAvatar, actorRole, targetAudience } = req.body;
 
-    if (!title || !body) {
-      return res.status(400).json({ success: false, message: 'title and body are required' });
+    const contentBody = (body || title || (imageUrl ? 'Photo Update' : '')).trim();
+    if (!contentBody && !imageUrl) {
+      return res.status(400).json({ success: false, message: 'Post content or image is required' });
     }
 
     const post = await FeedPost.create({
       type,
       actor: isValidObjectId ? userId : undefined,
-      actorName: actorName || 'Connecta Admin',
+      actorName: actorName || 'Connecta Member',
       actorAvatar: actorAvatar || '',
-      actorRole: actorRole || 'admin',
-      title: title.slice(0, 200),
-      body: body.slice(0, 2000),
+      actorRole: actorRole || 'user',
+      title: (title || contentBody).slice(0, 200),
+      body: contentBody.slice(0, 2000),
+      imageUrl: imageUrl || undefined,
       emoji: emoji || '📝',
       targetAudience: targetAudience || 'all',
       visibility: 'public',

@@ -18,8 +18,25 @@ import {
 } from 'lucide-react';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
 
+import { isProfileComplete, getProfileSetupRoute } from '../../utils/userProfile';
+
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      if (isProfileComplete(user)) {
+        if (user.userType === 'client') {
+          navigate('/client/dashboard', { replace: true });
+        } else {
+          navigate('/freelancer/dashboard', { replace: true });
+        }
+      } else {
+        navigate(getProfileSetupRoute(user), { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflowX: 'hidden' }}>

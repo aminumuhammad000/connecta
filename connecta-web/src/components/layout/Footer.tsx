@@ -2,32 +2,18 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
-  const location = useLocation();
-  const isAuthPage = ['/', '/login', '/register', '/register/role', '/register/password', '/register/skills', '/register/profile-setup', '/forgot-password'].includes(location.pathname);
-
-  if (isAuthPage) {
-    return (
-      <footer style={{
-        padding: '16px 24px',
-        textAlign: 'center',
-        fontSize: '0.8rem',
-        color: 'var(--text-muted)',
-        marginTop: 'auto'
-      }}>
-        © 2026 Connecta. Developed by Pioneers ICT. All rights reserved.
-      </footer>
-    );
-  }
-
   return (
     <footer style={{
-      background: 'var(--bg-secondary)',
-      borderTop: '1px solid var(--border-color)',
-      padding: '24px',
+      background: 'transparent',
+      borderTop: 'none',
+      boxShadow: 'none',
+      padding: '20px 24px',
       textAlign: 'center',
-      fontSize: '0.85rem',
+      fontSize: '0.8rem',
       color: 'var(--text-muted)',
-      marginTop: 'auto'
+      marginTop: 'auto',
+      position: 'relative',
+      zIndex: 10
     }}>
       © 2026 Connecta. Developed by Pioneers ICT. All rights reserved.
     </footer>

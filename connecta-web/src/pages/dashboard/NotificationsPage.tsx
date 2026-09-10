@@ -320,40 +320,30 @@ export const NotificationsPage: React.FC = () => {
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 0 60px' }}>
 
         {/* ── Page Header ── */}
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{
-                width: '42px', height: '42px', borderRadius: '12px',
-                background: 'rgba(253,103,48,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Bell size={20} color="var(--primary)" />
-              </div>
-              <div>
-                <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Notifications
-                </h1>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                  {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
-                </p>
-              </div>
-            </div>
+        <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px', letterSpacing: '-0.02em' }}>
+              Notifications
+            </h1>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+              {unreadCount > 0 ? `${unreadCount} unread activity alerts` : 'All caught up'}
+            </p>
+          </div>
 
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button onClick={handleRefresh} disabled={refreshing} style={btnStyle('secondary')}>
-                <RefreshCw size={13} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-                Refresh
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={handleRefresh} disabled={refreshing} style={btnStyle('secondary')}>
+              <RefreshCw size={13} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+              Refresh
+            </button>
+            {unreadCount > 0 && (
+              <button onClick={markAllAsRead} style={btnStyle('primary')}>
+                <CheckCheck size={13} /> Mark all read
               </button>
-              {unreadCount > 0 && (
-                <button onClick={markAllAsRead} style={btnStyle('primary')}>
-                  <CheckCheck size={13} /> Mark all read
-                </button>
-              )}
-              <button onClick={clearRead} style={btnStyle('secondary')}>
-                <Trash2 size={13} /> Clear read
-              </button>
-            </div>
+            )}
+            <button onClick={clearRead} style={btnStyle('secondary')}>
+              <Trash2 size={13} /> Clear read
+            </button>
           </div>
         </div>
 

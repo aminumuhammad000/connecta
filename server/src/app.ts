@@ -115,6 +115,9 @@ app.use("/api/feed", feedRoutes);
 import aiRoutes from "./routes/ai.routes.js";
 app.use("/api/ai", aiRoutes);
 
+import aiInterviewRoutes from "./routes/aiInterview.routes.js";
+app.use("/api/ai/interview", aiInterviewRoutes);
+
 import contactRoutes from "./routes/contact.routes.js";
 app.use("/api/contact", contactRoutes);
 

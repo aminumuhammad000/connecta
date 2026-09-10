@@ -1,18 +1,42 @@
 const TOKEN_KEY = 'connecta_token';
+const TOKEN_TIME_KEY = 'connecta_token_time';
 const USER_KEY = 'connecta_user';
 const ROLE_KEY = 'connecta_role';
 const THEME_KEY = 'connecta_theme';
 const ONBOARDING_KEY = 'connecta_onboarding_completed';
 
+// 7 days in milliseconds
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+
 export const storage = {
   getToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
+    const tokenTime = localStorage.getItem(TOKEN_TIME_KEY);
+
+    if (!token) return null;
+
+    // Check if token has expired (> 7 days)
+    if (tokenTime) {
+      const elapsed = Date.now() - parseInt(tokenTime, 10);
+      if (elapsed > SESSION_DURATION_MS) {
+        // Expired after 1 week
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(TOKEN_TIME_KEY);
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(ROLE_KEY);
+        return null;
+      }
+    }
+
+    return token;
   },
   setToken: (token: string): void => {
     localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_TIME_KEY, Date.now().toString());
   },
   removeToken: (): void => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_TIME_KEY);
   },
 
   getUser: (): any | null => {
@@ -56,6 +80,7 @@ export const storage = {
 
   clearAll: (): void => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_TIME_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(ROLE_KEY);
   }

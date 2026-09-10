@@ -54,6 +54,8 @@ const SLIDES: OnboardingSlide[] = [
   }
 ];
 
+import { isProfileComplete, getProfileSetupRoute } from '../../utils/userProfile';
+
 export const OnboardingScreen: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
@@ -61,12 +63,16 @@ export const OnboardingScreen: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    // If logged in, redirect straight to dashboard
+    // If logged in, verify profile setup before navigating
     if (isAuthenticated && user) {
-      if (user.userType === 'client') {
-        navigate('/client/dashboard', { replace: true });
+      if (isProfileComplete(user)) {
+        if (user.userType === 'client') {
+          navigate('/client/dashboard', { replace: true });
+        } else {
+          navigate('/freelancer/dashboard', { replace: true });
+        }
       } else {
-        navigate('/freelancer/dashboard', { replace: true });
+        navigate(getProfileSetupRoute(user), { replace: true });
       }
       return;
     }

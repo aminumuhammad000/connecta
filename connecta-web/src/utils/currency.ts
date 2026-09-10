@@ -35,9 +35,9 @@ export const formatCurrency = (amount: number, currencyCode: string = 'USD'): st
       maximumFractionDigits: 2,
     }).format(amount);
 
-    return `${config.symbol}${formatted} ${config.code}`;
+    return `${config.symbol}${formatted}`;
   } catch {
-    return `${config.symbol}${amount} ${config.code}`;
+    return `${config.symbol}${amount}`;
   }
 };
 

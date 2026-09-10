@@ -168,7 +168,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     });
 
     return () => {
-      socket.disconnect();
+      if (socket.connected) {
+        socket.disconnect();
+      }
       socketRef.current = null;
     };
   }, [addNotification]);

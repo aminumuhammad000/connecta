@@ -86,143 +86,62 @@ export const ClientDashboardPage: React.FC = () => {
   return (
     <DashboardLayout>
       <MinimalistLoader loading={loadingJobs} />
-      {/* ── 1. Compact Hero Welcome Banner ── */}
-      <motion.div
-        className="dashboard-hero-card"
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        style={{
-          background: 'var(--grad-primary)',
-          borderRadius: '18px',
-          padding: '20px 28px',
-          color: '#ffffff',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 8px 25px rgba(253,103,48,0.18)',
-        }}
-      >
-        {/* Background Vector Art Overlay */}
-        <div style={{
-          position: 'absolute',
-          right: '-20px',
-          top: '-20px',
-          bottom: '-20px',
-          width: '300px',
-          opacity: 0.25,
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}>
-          <DashboardHeaderArt />
-        </div>
 
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '5px',
-            background: 'rgba(255,255,255,0.18)',
-            backdropFilter: 'blur(10px)',
-            padding: '3px 10px',
-            borderRadius: '16px',
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            marginBottom: '6px',
-            textTransform: 'uppercase',
-          }}>
-            <Sparkles size={12} /> Client Hiring Portal
-          </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 4px', color: '#fff', letterSpacing: '-0.02em' }}>
+      {/* ── Top Header Bar ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px', letterSpacing: '-0.02em' }}>
             Welcome back, {user?.firstName || 'Client'}
           </h1>
-          <p style={{ opacity: 0.92, fontSize: '0.85rem', maxWidth: '480px', lineHeight: 1.4, margin: 0 }}>
-            Post project scopes, review incoming proposals, hire verified talent, and manage escrow milestones.
+          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Post projects, review proposal bids, and manage hired talent.
           </p>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: '10px' }}>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate('/jobs/new')}
-            style={{
-              background: '#ffffff',
-              color: 'var(--primary)',
-              border: 'none',
-              padding: '10px 18px',
-              borderRadius: '10px',
-              fontWeight: 700,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-          >
-            <PlusCircle size={16} /> Post a Project
-          </motion.button>
+        <button
+          onClick={() => navigate('/jobs/new')}
+          className="btn-primary"
+          style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          <PlusCircle size={14} /> Post a New Job
+        </button>
+      </div>
+
+      {/* ── Metric Stat Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Posted Jobs</span>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Briefcase size={14} />
+            </div>
+          </div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{myJobs.length}</div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>{myJobs.length} active listings</span>
         </div>
-      </motion.div>
 
-      {/* ── 2. Compact Metric Stats Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-        <motion.div
-          whileHover={{ y: -2, boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}
-          transition={{ duration: 0.2 }}
-          className="glass-card"
-          style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}
-        >
+        <div style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Posted Jobs</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Briefcase size={16} />
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Proposals Received</span>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={14} />
             </div>
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{myJobs.length}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>{myJobs.length} active listings</span>
-        </motion.div>
+          <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{proposalsCount}</div>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>Submitted proposals</span>
+        </div>
 
-        <motion.div
-          whileHover={{ y: -2, boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}
-          transition={{ duration: 0.2 }}
-          className="glass-card"
-          style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}
-        >
+        <div style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Proposals Received</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Users size={16} />
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Escrow Balance</span>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Wallet size={14} />
             </div>
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{proposalsCount}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>Submitted proposals</span>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ y: -2, boxShadow: '0 6px 20px rgba(0,0,0,0.05)' }}
-          transition={{ duration: 0.2 }}
-          className="glass-card"
-          style={{ padding: '14px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Escrow Balance</span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Wallet size={16} />
-            </div>
-          </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             {formatDualPrice(Number(wallet?.escrowBalance ?? wallet?.balance ?? 0))}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '2px' }}>
-            <CheckCircle2 size={12} /> 100% Protected
-          </span>
-        </motion.div>
+        </div>
       </div>
 
       {/* ── 3. Main Content Grid ── */}

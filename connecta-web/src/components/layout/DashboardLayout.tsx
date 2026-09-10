@@ -1,17 +1,21 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useRole } from '../../contexts/RoleContext';
+import { useToast } from '../../contexts/ToastContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import {
   Sun, Moon, LogOut, Bell, LayoutDashboard, Briefcase, MessageSquare,
-  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, User, Rss, Sparkles, Menu, X, Search, Building2,
+  Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, ChevronDown, User, Rss, Sparkles, Menu, X, Search, Building2,
   FileText as FileTextIcon, CheckCircle2, XCircle, DollarSign, ArrowDownToLine,
   Star, Rocket, CheckCircle, Flag, FileCheck, Target, Users, AlarmClock,
-  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, PlusCircle
+  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, PlusCircle, RefreshCw
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
+import { RoleSwitchLoader } from '../common/RoleSwitchLoader';
 
 // Lucide icon map for notification types (no emojis)
 const DROPDOWN_ICON_MAP: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
@@ -47,10 +51,58 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, switchRole } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { setRole } = useRole();
+  const { success: toastSuccess, error: toastError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const [switchingRole, setSwitchingRole] = React.useState(false);
+  const [showSwitchLoader, setShowSwitchLoader] = React.useState(false);
+  const [targetRoleState, setTargetRoleState] = React.useState<'client' | 'freelancer'>('client');
+
+  const handleRoleSwitch = async () => {
+    if (switchingRole || showSwitchLoader) return;
+    const targetRole = user?.userType === 'client' ? 'freelancer' : 'client';
+    setTargetRoleState(targetRole);
+    setShowSwitchLoader(true);
+    setSwitchingRole(true);
+
+    try {
+      await switchRole(targetRole);
+      setRole(targetRole);
+
+      // Smooth progress bar animation duration
+      setTimeout(() => {
+        setShowSwitchLoader(false);
+        setSwitchingRole(false);
+        toastSuccess('Role Switched', `Switched to ${targetRole === 'client' ? 'Client' : 'Freelancer'} Mode`);
+
+        // Check if target role profile is incomplete (first time switching)
+        if (targetRole === 'client') {
+          const hasClientSetup = !!(user?.companyName || user?.title || user?.bio);
+          if (!hasClientSetup) {
+            navigate('/register/client-setup');
+          } else {
+            navigate('/client/dashboard');
+          }
+        } else {
+          const hasFreelancerSetup = !!(user?.skills?.length || (user?.title && user?.bio));
+          if (!hasFreelancerSetup) {
+            navigate('/register/freelancer-setup');
+          } else {
+            navigate('/freelancer/dashboard');
+          }
+        }
+      }, 1200);
+    } catch (err: any) {
+      setShowSwitchLoader(false);
+      setSwitchingRole(false);
+      toastError('Role Switch Failed', err.message || 'Could not switch user role');
+    }
+  };
+
   // Notification state comes from global NotificationContext
   const {
     notifications: allNotifications,
@@ -65,14 +117,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const notifications = allNotifications.slice(0, 10);
 
   const [showNotifMenu, setShowNotifMenu] = React.useState(false);
+  const [showProfileMenu, setShowProfileMenu] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
   const notifRef = React.useRef<HTMLDivElement>(null);
+  const profileRef = React.useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotifMenu(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setShowProfileMenu(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -105,27 +162,26 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const isFreelancer = user?.userType === 'freelancer';
   const isClient = user?.userType === 'client';
 
-  const sidebarNavItems = [
+  const sidebarNavItems = isFreelancer ? [
     {
       label: 'Dashboard',
       icon: <LayoutDashboard size={18} />,
-      path: isFreelancer ? '/freelancer/dashboard' : '/client/dashboard',
+      path: '/freelancer/dashboard',
     },
     {
-      label: 'Activity Feeds',
-      icon: <Rss size={18} color="var(--primary)" />,
+      label: 'Feed',
+      icon: <Rss size={18} />,
       path: '/feed',
-      isNew: true,
     },
     {
-      label: isFreelancer ? 'Find Jobs' : 'My Jobs & Projects',
+      label: 'Jobs',
       icon: <Briefcase size={18} />,
-      path: isFreelancer ? '/jobs' : '/client/projects',
+      path: '/jobs',
     },
     {
-      label: isFreelancer ? 'My Proposals' : 'Hired Talent',
-      icon: isFreelancer ? <FileText size={18} /> : <UserCheck size={18} />,
-      path: isFreelancer ? '/proposals' : '/client/talent',
+      label: 'Proposals',
+      icon: <FileText size={18} />,
+      path: '/proposals',
     },
     {
       label: 'Messages',
@@ -133,26 +189,50 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       path: '/messages',
     },
     {
-      label: 'My Wallet',
+      label: 'Wallet',
       icon: <Wallet size={18} />,
       path: '/wallet',
     },
-    ...(isFreelancer ? [
-      {
-        label: 'Saved Gigs',
-        icon: <Bookmark size={18} />,
-        path: '/saved-gigs',
-      }
-    ] : []),
     {
-      label: 'My Profile',
+      label: 'Profile',
       icon: <User size={18} />,
-      path: '/settings',
+      path: '/profile',
+    },
+  ] : [
+    {
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={18} />,
+      path: '/client/dashboard',
     },
     {
-      label: 'Help & Support',
-      icon: <HelpCircle size={18} />,
-      path: '/support',
+      label: 'Feed',
+      icon: <Rss size={18} />,
+      path: '/feed',
+    },
+    {
+      label: 'Projects',
+      icon: <Briefcase size={18} />,
+      path: '/client/projects',
+    },
+    {
+      label: 'Hired Talent',
+      icon: <UserCheck size={18} />,
+      path: '/client/talent',
+    },
+    {
+      label: 'Messages',
+      icon: <MessageSquare size={18} />,
+      path: '/messages',
+    },
+    {
+      label: 'Wallet',
+      icon: <Wallet size={18} />,
+      path: '/wallet',
+    },
+    {
+      label: 'Profile',
+      icon: <User size={18} />,
+      path: '/profile',
     },
   ];
 
@@ -187,38 +267,39 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             <button
               onClick={() => setMobileSidebarOpen(true)}
               className="mobile-hamburger-btn"
+              title="Toggle Menu"
+              aria-label="Toggle Menu"
               style={{
-                background: 'var(--bg-tertiary)',
-                border: 'none',
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                display: 'flex',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--text-primary)',
                 cursor: 'pointer',
               }}
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
             <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              <Logo height={32} />
+              <Logo height={30} />
             </Link>
           </div>
 
-          {/* Right Header Actions */}
-          <div className="header-actions-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Top Nav AI Copilot Button (Icon only matching Header Action icons) */}
+          {/* Right Header Actions - Minimalist */}
+          <div className="header-actions-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Top Nav AI Copilot Button */}
             <button
               onClick={() => navigate('/ai-assistant')}
               title="AI Copilot"
               className="header-action-btn"
               style={{
-                background: 'rgba(253,103,48,0.12)',
-                border: '1px solid rgba(253,103,48,0.25)',
-                width: '36px',
-                height: '36px',
+                background: 'rgba(253,103,48,0.06)',
+                border: '1px solid rgba(253,103,48,0.15)',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -228,27 +309,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 transition: 'all 0.2s ease',
               }}
             >
-              <Sparkles size={18} color="var(--primary)" />
-            </button>
-
-            {/* Dark mode toggle */}
-            <button
-              onClick={toggleTheme}
-              className="header-action-btn"
-              style={{
-                background: 'var(--bg-tertiary)',
-                border: 'none',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-              }}
-            >
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              <Sparkles size={16} />
             </button>
 
             {/* Notifications Dropdown */}
@@ -256,30 +317,32 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               <button
                 onClick={() => { setShowNotifMenu(!showNotifMenu); }}
                 className="header-action-btn"
+                title="Notifications"
                 style={{
-                  background: 'var(--bg-tertiary)',
-                  border: 'none',
-                  width: '36px',
-                  height: '36px',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-color)',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--text-primary)',
+                  color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   position: 'relative',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                <Bell size={18} />
+                <Bell size={16} />
                 {unreadCount > 0 && (
                   <span
                     style={{
                       position: 'absolute',
                       top: '2px',
                       right: '2px',
-                      minWidth: '16px',
-                      height: '16px',
-                      borderRadius: '8px',
+                      minWidth: '14px',
+                      height: '14px',
+                      borderRadius: '7px',
                       background: '#ef4444',
                       border: '2px solid var(--bg-primary)',
                       fontSize: '0.6rem',
@@ -415,50 +478,195 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               )}
             </div>
 
-            {/* User Profile Image & Logout */}
-            <div className="header-user-profile" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '8px', borderLeft: '1px solid var(--border-color)' }}>
-              {user?.profileImage ? (
-                <img
-                  src={user.profileImage}
-                  alt={user.firstName}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '1.5px solid var(--primary)',
-                  }}
-                />
-              ) : (
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  background: 'var(--grad-primary)',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: '0.9rem',
-                }}>
-                  {user?.firstName?.[0]?.toUpperCase() || 'U'}
-                </div>
-              )}
+            {/* Professional User Profile Dropdown */}
+            <div style={{ position: 'relative' }} ref={profileRef}>
               <button
-                onClick={handleLogout}
-                title="Sign Out"
+                type="button"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                title="My Account Menu"
+                aria-label="My Account Menu"
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--text-muted)',
+                  padding: '0 0 0 8px',
+                  borderLeft: '1px solid var(--border-color)',
                   cursor: 'pointer',
-                  padding: '6px',
-                  marginLeft: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
                 }}
               >
-                <LogOut size={18} />
+                {user?.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt={user.firstName}
+                    style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '1.5px solid var(--primary)',
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    background: 'var(--grad-primary)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                  }}>
+                    {user?.firstName?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <ChevronDown size={13} color="var(--text-secondary)" />
               </button>
+
+              <AnimatePresence>
+                {showProfileMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                    transition={{ duration: 0.15 }}
+                    style={{
+                      position: 'absolute',
+                      top: '46px',
+                      right: '0',
+                      width: '260px',
+                      borderRadius: '16px',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border-color)',
+                      boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
+                      zIndex: 300,
+                      overflow: 'hidden',
+                      padding: '8px'
+                    }}
+                  >
+                    {/* User Info Header (Ultra Minimalist) */}
+                    <div style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      background: 'var(--bg-secondary)',
+                      marginBottom: '6px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', minWidth: 0 }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${user?.firstName || ''} ${user?.lastName || ''}`}>
+                          {user?.firstName} {user?.lastName}
+                        </span>
+                        <CheckCircle2 size={14} color="#10B981" strokeWidth={2.5} title="Verified Account" style={{ flexShrink: 0 }} />
+                      </div>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {isFreelancer ? 'Freelancer' : 'Client'}
+                      </div>
+                    </div>
+
+                    {/* Dropdown Menu Items - Ultra Minimalist */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <button
+                        onClick={() => { setShowProfileMenu(false); navigate('/profile'); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          width: '100%',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.81rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <User size={15} color="var(--primary)" /> Profile
+                      </button>
+
+                      {/* Switch Role Mode in Dropdown */}
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          handleRoleSwitch();
+                        }}
+                        disabled={switchingRole}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          width: '100%',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.81rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <RefreshCw size={15} color="var(--primary)" className={switchingRole ? 'animate-spin' : ''} />
+                        <span>{isFreelancer ? 'Client Mode' : 'Freelancer Mode'}</span>
+                      </button>
+
+                      {/* Theme Toggle in Dropdown */}
+                      <button
+                        onClick={() => { toggleTheme(); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          width: '100%',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.81rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          {isDark ? <Sun size={15} color="#F59E0B" /> : <Moon size={15} color="var(--primary)" />}
+                          <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div style={{ margin: '6px 0', borderTop: '1px solid var(--border-color)' }} />
+
+                    {/* Logout Button */}
+                    <button
+                      onClick={() => { setShowProfileMenu(false); handleLogout(); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '10px',
+                        background: 'rgba(239, 68, 68, 0.06)',
+                        border: 'none',
+                        color: '#EF4444',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <LogOut size={15} color="#EF4444" /> Sign Out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -532,7 +740,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Building2 size={11} color="var(--primary)" />
                   <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {(user as any)?.jobTitle || (isFreelancer ? 'Senior Software Engineer' : 'Product Client')}
+                    {user?.title || (user as any)?.jobTitle || (isFreelancer ? 'Freelancer' : 'Client Account')}
                   </span>
                 </div>
               </div>
@@ -543,7 +751,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               fontSize: '0.74rem',
               color: 'var(--text-secondary)',
               lineHeight: 1.35,
-              marginBottom: '8px',
+              marginBottom: '4px',
               overflow: 'hidden',
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -551,7 +759,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               textOverflow: 'ellipsis',
               maxHeight: '2.6em',
             }}>
-              {user?.bio || (isFreelancer ? 'Building scalable web & mobile apps with modern frameworks across Africa.' : 'Hiring top-tier tech talent and managing tech projects.')}
+              {user?.bio || 'No profile bio set yet.'}
             </p>
           </div>
 
@@ -722,6 +930,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           </div>
         </div>
       )}
+
+      {/* Minimalist Role Switch Progress Loader Screen */}
+      <RoleSwitchLoader
+        isVisible={showSwitchLoader}
+        fromRole={isFreelancer ? 'freelancer' : 'client'}
+        toRole={targetRoleState}
+      />
     </div>
   );
 };

@@ -14,6 +14,7 @@ class VTStackService {
   constructor() {
     this.api = axios.create({
       baseURL: VTSTACK_API_BASE_URL,
+      timeout: 7000,
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': VTSTACK_SECRET_KEY,

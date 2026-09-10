@@ -28,7 +28,7 @@ export const FindJobsPage: React.FC = () => {
   const [submittingProposal, setSubmittingProposal] = useState(false);
   const [applySuccessMessage, setApplySuccessMessage] = useState('');
 
-  const categories = ['All', '⚡ AI Recommended', 'Software Development', 'Design & Creative', 'Data Science & AI', 'Marketing & Sales', 'DevOps & Cloud'];
+  const categories = ['All', 'AI Recommended', 'Software Development', 'Design & Creative', 'Data Science & AI', 'Marketing & Sales', 'DevOps & Cloud'];
 
   useEffect(() => {
     fetchJobs();
@@ -37,7 +37,7 @@ export const FindJobsPage: React.FC = () => {
   const fetchJobs = async (searchVal = searchQuery) => {
     setLoading(true);
     try {
-      if (selectedCategory === '⚡ AI Recommended') {
+      if (selectedCategory === 'AI Recommended') {
         const res = await aiAPI.getRecommendedJobs();
         if (res?.success && Array.isArray(res.data)) {
           const recJobs = res.data.map((item: any) => ({
@@ -295,7 +295,7 @@ export const FindJobsPage: React.FC = () => {
                       boxShadow: '0 4px 12px rgba(253,103,48,0.25)'
                     }}
                   >
-                    <Sparkles size={14} /> ⚡ AI Apply
+                    <Sparkles size={14} /> AI Apply
                   </button>
 
                   <button
@@ -325,7 +325,7 @@ export const FindJobsPage: React.FC = () => {
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>⚡ Connecta AI Quick Apply</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>Connecta AI Quick Apply</h3>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Auto-tailored for {aiApplyModalJob.title}</span>
                 </div>
               </div>

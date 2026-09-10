@@ -24,6 +24,7 @@ export interface IFeedReactions {
   clap: mongoose.Types.ObjectId[];
   fire: mongoose.Types.ObjectId[];
   love: mongoose.Types.ObjectId[];
+  like: mongoose.Types.ObjectId[];
 }
 
 export interface IFeedPost extends Document {
@@ -76,6 +77,7 @@ const FeedReactionsSchema = new Schema<IFeedReactions>(
     clap:       { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
     fire:       { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
     love:       { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
+    like:       { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
   },
   { _id: false }
 );

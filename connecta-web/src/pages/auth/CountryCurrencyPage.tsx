@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Globe, DollarSign, ArrowRight, Sparkles, Check } from 'lucide-react';
+import { Globe, DollarSign, ArrowRight, ArrowLeft, Sparkles, Check } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -62,8 +62,14 @@ export const CountryCurrencyPage: React.FC = () => {
       });
       if (res.success && res.data) {
         updateUser(res.data);
-        toastSuccess('Preferences Saved!', 'Next, build your freelancer profile bio');
-        navigate('/register/profile-setup');
+        const isClient = res.data.role === 'client';
+        if (isClient) {
+          toastSuccess('Preferences Saved!', 'Next, setup your company profile');
+          navigate('/register/client-profile-setup');
+        } else {
+          toastSuccess('Preferences Saved!', 'Next, build your freelancer profile');
+          navigate('/register/profile-setup');
+        }
       } else {
         toastError('Failed', res.message || 'Could not save preferences');
       }
@@ -80,61 +86,91 @@ export const CountryCurrencyPage: React.FC = () => {
 
       <main style={{
         flex: 1,
-        maxWidth: '720px',
+        maxWidth: '680px',
         margin: '0 auto',
-        padding: '50px 24px 80px',
+        padding: '30px 20px',
         width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         zIndex: 10
       }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card"
-          style={{ padding: '40px 32px' }}
+          style={{ padding: '32px 28px', width: '100%' }}
         >
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--grad-glow)',
-              color: 'var(--primary)',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              marginBottom: '12px'
-            }}>
-              <Sparkles size={14} /> Profile Setup: Location & Currency
+          {/* Header & Back Action */}
+          <div style={{ marginBottom: '24px', position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/register/skills')}
+              title="Go back"
+              aria-label="Go back"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: 'rgba(253, 103, 48, 0.08)',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                display: 'grid',
+                placeItems: 'center',
+                transition: 'transform 0.2s ease, background 0.2s ease'
+              }}
+            >
+              <ArrowLeft size={18} />
+            </button>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '4px 12px',
+                borderRadius: '20px',
+                background: 'rgba(253, 103, 48, 0.08)',
+                color: 'var(--primary)',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                letterSpacing: '0.4px',
+                marginBottom: '10px'
+              }}>
+                Step 3 of 4 · Location & Billing
+              </div>
+              <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+                Country & Currency
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                Choose your country and default wallet currency
+              </p>
             </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
-              Select Country & Preferred Currency
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              Choose your country of residence and default billing currency for local wallet payouts
-            </p>
           </div>
 
           {/* Country Selection Section */}
-          <div style={{ marginBottom: '32px' }}>
-            <label className="form-label" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Globe size={18} color="var(--primary)" /> Select Country *
+          <div style={{ marginBottom: '20px' }}>
+            <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Globe size={15} color="var(--primary)" /> Select Country *
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))', gap: '10px' }}>
               {AFRICAN_COUNTRIES.map((c) => {
                 const isSelected = selectedCountry === c.name;
                 return (
                   <motion.div
                     key={c.code}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleCountrySelect(c)}
                     style={{
-                      padding: '16px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      background: isSelected ? 'var(--grad-glow)' : 'var(--bg-secondary)',
+                      padding: '10px 8px',
+                      borderRadius: '12px',
+                      background: isSelected ? 'rgba(253, 103, 48, 0.06)' : 'var(--bg-secondary)',
                       border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
                       cursor: 'pointer',
                       textAlign: 'center',
@@ -142,24 +178,36 @@ export const CountryCurrencyPage: React.FC = () => {
                       transition: 'var(--transition-fast)'
                     }}
                   >
-                    <div style={{ fontSize: '2rem', marginBottom: '6px' }}>{c.flag}</div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: isSelected ? 700 : 500, color: 'var(--text-primary)' }}>
+                    <div style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
+                      background: isSelected ? 'rgba(253, 103, 48, 0.12)' : 'var(--border-color)',
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      marginBottom: '6px',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {c.code}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: isSelected ? 700 : 500, color: 'var(--text-primary)' }}>
                       {c.name}
                     </div>
                     {isSelected && (
                       <div style={{
                         position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        width: '18px',
-                        height: '18px',
+                        top: '6px',
+                        right: '6px',
+                        width: '15px',
+                        height: '15px',
                         borderRadius: '50%',
                         background: 'var(--primary)',
                         color: '#fff',
                         display: 'grid',
                         placeItems: 'center'
                       }}>
-                        <Check size={12} />
+                        <Check size={10} />
                       </div>
                     )}
                   </motion.div>
@@ -168,56 +216,25 @@ export const CountryCurrencyPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Currency Selection Section */}
-          <div style={{ marginBottom: '36px' }}>
-            <label className="form-label" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <DollarSign size={18} color="var(--primary)" /> Preferred Currency ({currencies.length} Supported Currencies) *
+          {/* Currency Selection Section (Minimalist Dropdown Select) */}
+          <div style={{ marginBottom: '24px' }}>
+            <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <DollarSign size={15} color="var(--primary)" /> Preferred Currency *
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px' }}>
-              {currencies.map((curr) => {
-                const isSelected = selectedCurrency === curr.code;
-                return (
-                  <motion.div
-                    key={curr.code}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setSelectedCurrency(curr.code)}
-                    style={{
-                      padding: '16px 10px',
-                      borderRadius: 'var(--radius-md)',
-                      background: isSelected ? 'var(--grad-glow)' : 'var(--bg-secondary)',
-                      border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      position: 'relative',
-                      transition: 'var(--transition-fast)'
-                    }}
-                  >
-                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '4px' }}>
-                      {curr.symbol} ({curr.code})
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      {curr.name}
-                    </div>
-                    {isSelected && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        width: '18px',
-                        height: '18px',
-                        borderRadius: '50%',
-                        background: 'var(--primary)',
-                        color: '#fff',
-                        display: 'grid',
-                        placeItems: 'center'
-                      }}>
-                        <Check size={12} />
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
+            <div className="input-wrapper">
+              <DollarSign className="input-icon-left" size={17} />
+              <select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="input-field"
+                style={{ cursor: 'pointer', appearance: 'auto', fontWeight: 600 }}
+              >
+                {currencies.map((curr) => (
+                  <option key={curr.code} value={curr.code} style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                    {curr.name} ({curr.symbol} {curr.code})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -228,7 +245,7 @@ export const CountryCurrencyPage: React.FC = () => {
             onClick={handleSave}
             disabled={submitting}
             className="btn-primary"
-            style={{ width: '100%', padding: '16px', fontSize: '1rem' }}
+            style={{ width: '100%', padding: '14px', fontSize: '0.98rem' }}
           >
             Save Location & Currency <ArrowRight size={18} />
           </motion.button>

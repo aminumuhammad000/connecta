@@ -3,18 +3,55 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { useRole } from '../../contexts/RoleContext';
+import { useToast } from '../../contexts/ToastContext';
 import { type CurrencyCode } from '../../utils/currency';
-import { Sun, Moon, LogOut, LayoutDashboard, Globe } from 'lucide-react';
+import { Sun, Moon, LogOut, LayoutDashboard, Globe, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../common/Logo';
+import { RoleSwitchLoader } from '../common/RoleSwitchLoader';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, switchRole } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { setRole } = useRole();
+  const { success: toastSuccess, error: toastError } = useToast();
   const { selectedCurrency, setSelectedCurrency, currencies } = useCurrency();
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
+  const [switchingRole, setSwitchingRole] = React.useState(false);
+  const [showSwitchLoader, setShowSwitchLoader] = React.useState(false);
+  const [targetRoleState, setTargetRoleState] = React.useState<'client' | 'freelancer'>('client');
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleRoleSwitch = async () => {
+    if (switchingRole || showSwitchLoader || !user) return;
+    const targetRole = user.userType === 'client' ? 'freelancer' : 'client';
+    setTargetRoleState(targetRole);
+    setShowSwitchLoader(true);
+    setSwitchingRole(true);
+    setProfileDropdownOpen(false);
+
+    try {
+      await switchRole(targetRole);
+      setRole(targetRole);
+      
+      setTimeout(() => {
+        setShowSwitchLoader(false);
+        setSwitchingRole(false);
+        toastSuccess('Role Switched', `Switched to ${targetRole === 'client' ? 'Client' : 'Freelancer'} Mode`);
+        if (targetRole === 'client') {
+          navigate('/client/dashboard');
+        } else {
+          navigate('/freelancer/dashboard');
+        }
+      }, 1200);
+    } catch (err: any) {
+      setShowSwitchLoader(false);
+      setSwitchingRole(false);
+      toastError('Role Switch Failed', err.message || 'Could not switch user role');
+    }
+  };
 
   const isAuthPage = ['/', '/login', '/register', '/register/role', '/register/password', '/register/skills', '/register/profile-setup', '/forgot-password'].includes(location.pathname);
 
@@ -52,41 +89,7 @@ export const Navbar: React.FC = () => {
 
         {/* Right Action Items */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Header Currency Selector Dropdown */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-full)',
-            padding: '4px 10px',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            color: 'var(--text-primary)'
-          }}>
-            <Globe size={15} color="var(--primary)" />
-            <select
-              value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-              title="Select Display Currency"
-            >
-              {currencies.map((c) => (
-                <option key={c.code} value={c.code} style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-                  {c.flag} {c.code} ({c.symbol})
-                </option>
-              ))}
-            </select>
-          </div>
+
 
           {/* Theme Switcher */}
           <motion.button
@@ -239,6 +242,13 @@ export const Navbar: React.FC = () => {
           ) : null}
         </div>
       </div>
+
+      {/* Role Switch Animated Loader Screen */}
+      <RoleSwitchLoader
+        isVisible={showSwitchLoader}
+        fromRole={user?.userType === 'client' ? 'client' : 'freelancer'}
+        toRole={targetRoleState}
+      />
     </nav>
   );
 };

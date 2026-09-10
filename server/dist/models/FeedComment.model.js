@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 const FeedCommentSchema = new Schema({
     feedPostId: { type: Schema.Types.ObjectId, ref: 'FeedPost', required: true, index: true },
+    parentCommentId: { type: Schema.Types.ObjectId, ref: 'FeedComment', index: true },
     authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     authorName: { type: String, required: true },
     authorAvatar: { type: String },

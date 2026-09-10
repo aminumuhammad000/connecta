@@ -5,6 +5,7 @@ const FeedReactionsSchema = new Schema({
     clap: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
     fire: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
     love: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
+    like: { type: [Schema.Types.ObjectId], ref: 'User', default: [] },
 }, { _id: false });
 const FeedPostSchema = new Schema({
     type: {

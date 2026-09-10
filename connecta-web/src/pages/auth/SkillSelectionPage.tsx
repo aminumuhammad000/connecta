@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Search, Check, Plus, X, ArrowRight, Sparkles, Filter } from 'lucide-react';
+import { Search, Check, Plus, X, ArrowRight, ArrowLeft, Sparkles, Filter } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -91,39 +91,69 @@ export const SkillSelectionPage: React.FC = () => {
         flex: 1,
         maxWidth: '820px',
         margin: '0 auto',
-        padding: '50px 24px 80px',
+        padding: '30px 20px',
         width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         zIndex: 10
       }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card"
-          style={{ padding: '40px 32px' }}
+          style={{ padding: '32px 28px', width: '100%' }}
         >
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--grad-glow)',
-              color: 'var(--primary)',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              marginBottom: '12px'
-            }}>
-              <Sparkles size={14} /> Profile Setup: Skills
+          {/* Header & Back Action */}
+          <div style={{ marginBottom: '24px', position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/register/sector')}
+              title="Go back"
+              aria-label="Go back"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: 'rgba(253, 103, 48, 0.08)',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                display: 'grid',
+                placeItems: 'center',
+                transition: 'transform 0.2s ease, background 0.2s ease'
+              }}
+            >
+              <ArrowLeft size={18} />
+            </button>
+
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                background: 'rgba(253, 103, 48, 0.08)',
+                color: 'var(--primary)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.5px',
+                marginBottom: '8px'
+              }}>
+                Step 2 of 4: Skills
+              </div>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+                Select Your Top Skills
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
+                Showing skills for <strong style={{ color: 'var(--text-primary)' }}>{currentSector.name}</strong> ({selectedSkills.length}/15 selected)
+              </p>
             </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
-              What are your top skills?
-            </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              Showing top skills for <strong>{currentSector.name}</strong> ({selectedSkills.length}/15 selected)
-            </p>
           </div>
 
           {/* Sector Category Filter Tabs */}

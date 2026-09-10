@@ -435,14 +435,26 @@ input, textarea, select {
     gap: 6px !important;
   }
 
+  .header-role-switch-btn span {
+    display: none !important;
+  }
+
+  .header-role-switch-btn {
+    padding: 6px !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    justify-content: center !important;
+  }
+
   .header-action-btn {
-    width: 30px !important;
-    height: 30px !important;
+    width: 32px !important;
+    height: 32px !important;
   }
 
   .header-action-btn svg {
-    width: 15px !important;
-    height: 15px !important;
+    width: 16px !important;
+    height: 16px !important;
   }
 
   .header-user-profile img,
@@ -486,6 +498,176 @@ input, textarea, select {
   .mobile-nav-link span {
     font-size: 0.65rem;
   }
+
+  .mobile-jobs-tabs-bar {
+    display: none;
+  }
+
+  .mobile-proposals-tabs-bar {
+    display: none;
+  }
+
+  /* Messages Mobile Responsive Views */
+  .messages-workspace-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .messages-page-wrapper {
+    height: calc(100dvh - 120px) !important;
+    margin-bottom: 0 !important;
+  }
+
+  .mobile-hide-header-in-chat {
+    display: none !important;
+  }
+
+  .chat-thread-input-bar {
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Job Details & Freelancer Dashboard Mobile Grid Responsiveness */
+  .job-details-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .job-overview-financial-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .freelancer-dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .feed-page-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fixed Mobile Bottom Filter Navigation Bar for Feeds */
+  .mobile-feed-filter-bar {
+    position: fixed !important;
+    bottom: 16px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 999 !important;
+    background: var(--card-glass) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.18) !important;
+    padding: 5px !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    width: calc(100% - 32px) !important;
+    max-width: 360px !important;
+  }
+
+  .mobile-feed-filter-bar button {
+    flex: 1 !important;
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    border-radius: 14px !important;
+    text-align: center !important;
+  }
+
+  .mobile-feed-filter-bar button.active-filter-tab {
+    background: var(--primary) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 3px 10px rgba(253, 103, 48, 0.4) !important;
+    font-weight: 800 !important;
+  }
+
+  /* Fixed Mobile Bottom Tab Navigation for Work / Jobs Page */
+  .desktop-jobs-tabs {
+    display: none !important;
+  }
+
+  .mobile-jobs-tabs-bar {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 999 !important;
+    background: var(--card-glass, rgba(25, 25, 30, 0.85)) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+    padding: 5px !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    width: calc(100% - 32px) !important;
+    max-width: 360px !important;
+  }
+
+  .mobile-jobs-tabs-bar button {
+    flex: 1 !important;
+    padding: 9px 12px !important;
+    font-size: 0.82rem !important;
+    border-radius: 14px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  .mobile-jobs-tabs-bar button.active-filter-tab {
+    background: var(--primary) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 3px 10px rgba(253, 103, 48, 0.4) !important;
+    font-weight: 800 !important;
+  }
+
+  /* Fixed Mobile Bottom Tab Navigation for Proposals Page */
+  .desktop-proposals-tabs {
+    display: none !important;
+  }
+
+  .mobile-proposals-tabs-bar {
+    position: fixed !important;
+    bottom: 20px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 999 !important;
+    background: var(--card-glass, rgba(25, 25, 30, 0.85)) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+    padding: 4px !important;
+    border-radius: 20px !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    width: calc(100% - 20px) !important;
+    max-width: 420px !important;
+  }
+
+  .mobile-proposals-tabs-bar button {
+    flex: 1 !important;
+    padding: 8px 4px !important;
+    font-size: 0.74rem !important;
+    border-radius: 14px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  .mobile-proposals-tabs-bar button.active-filter-tab {
+    background: var(--primary) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 3px 10px rgba(253, 103, 48, 0.4) !important;
+    font-weight: 800 !important;
+  }
+
+  .conversations-panel.hide-mobile,
+  .chat-thread-panel.hide-mobile {
+    display: none !important;
+  }
+
+  .mobile-back-btn {
+    display: flex !important;
+  }
 }
 
 @keyframes skeletonShimmer {
@@ -498,3 +680,17 @@ input, textarea, select {
   50% { transform: translateX(30%); width: 70%; }
   100% { transform: translateX(100%); width: 100%; }
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  background: transparent;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

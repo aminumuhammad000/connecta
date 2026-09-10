@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, deleteUser, createAdmin, createEmployerByAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById, requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP } from "../controllers/user.controller.js";
+import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, switchUserType, deleteUser, createAdmin, createEmployerByAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById, requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
 const router = express.Router();
@@ -22,13 +22,13 @@ router.post("/reset-password", resetPassword);
 // Current user routes (protected)
 router.get("/me", authenticate, getMe);
 router.put("/me", authenticate, updateMe);
+router.post("/switch-type", authenticate, switchUserType);
 router.post("/verify-email", authenticate, verifyEmail);
 router.post("/resend-verification", resendVerificationOTP);
 router.post("/push-token", authenticate, updatePushToken);
 router.post("/change-password", authenticate, changePassword);
 router.post("/currency/request-otp", authenticate, requestCurrencyOTP);
 router.post("/currency/change-with-otp", authenticate, changeCurrencyWithOTP);
-// router.post("/switch-type", authenticate, switchUserType); // Missing in controller
 // router.post("/preferred-language", authenticate, updatePreferredLanguage); // Missing in controller
 // router.post("/claim-reward", authenticate, claimDailyReward); // Missing in controller
 // router.get("/spark-history", authenticate, getSparkHistory); // Missing in controller

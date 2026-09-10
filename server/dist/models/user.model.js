@@ -30,6 +30,16 @@ const UserSchema = new Schema({
             description: { type: String }
         }
     ],
+    education: [
+        {
+            school: { type: String },
+            degree: { type: String },
+            fieldOfStudy: { type: String },
+            year: { type: String }
+        }
+    ],
+    resume: { type: String, required: false },
+    cv: { type: String, required: false },
     portfolio: [
         {
             title: { type: String },
@@ -43,6 +53,8 @@ const UserSchema = new Schema({
     yearsOfExperience: { type: Number, required: false },
     workType: { type: String, enum: ['freelancing', 'permanent'], required: false },
     skills: [{ type: String }],
+    languages: [{ type: String }],
+    termsAccepted: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     verificationTier: {

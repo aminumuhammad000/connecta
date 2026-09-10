@@ -5,6 +5,7 @@ import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
 import { ArrowRight, UserCheck, Briefcase, CheckCircle2 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
+import { GoogleAuthButton } from '../../components/common/GoogleAuthButton';
 
 /* ─── Inline SVG: Client / Hiring illustration ─── */
 const ClientArt = () => (
@@ -84,10 +85,23 @@ const FreelancerArt = () => (
   </svg>
 );
 
+import { useAuth } from '../../contexts/AuthContext';
+
 export const RoleSelectionPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const { setRole } = useRole();
   const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer' | null>(null);
+
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.userType === 'client') {
+        navigate('/client/dashboard', { replace: true });
+      } else {
+        navigate('/freelancer/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleContinue = () => {
     if (!selectedRole) return;
@@ -274,6 +288,13 @@ export const RoleSelectionPage: React.FC = () => {
           >
             Continue <ArrowRight size={18} />
           </motion.button>
+
+          {/* Google Quick Sign-Up */}
+          {selectedRole && (
+            <div style={{ marginTop: '16px' }}>
+              <GoogleAuthButton mode="signup" userType={selectedRole} buttonText={`Sign up as ${selectedRole === 'client' ? 'Client' : 'Freelancer'} with Google`} />
+            </div>
+          )}
         </motion.div>
       </main>
 

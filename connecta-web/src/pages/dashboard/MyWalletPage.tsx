@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { motion } from 'framer-motion';
 import {
-  ShieldCheck, ArrowDownLeft, ArrowUpRight, RefreshCw, Loader2,
+  ShieldCheck, ArrowDownLeft, ArrowUpRight, ArrowRight, RefreshCw, Loader2,
   X, PlusCircle, Copy, Building2, CreditCard, Edit3, CheckCircle2,
 } from 'lucide-react';
 import { walletAPI, flutterwaveAPI } from '../../services/api';
@@ -53,7 +53,7 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
   const [selectedBankCode, setSelectedBankCode] = useState('');
   const [selectedBankName, setSelectedBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [accountName, setAccountName] = useState(userName);
+  const [accountName, setAccountName] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifiedName, setVerifiedName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -71,9 +71,12 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
             setVerifiedName(res.data.accountName);
             setAccountName(res.data.accountName);
             showToast(`Account verified: ${res.data.accountName}`, 'success');
+          } else {
+            showToast(res?.message || 'Could not verify account for selected bank.', 'error');
           }
-        } catch {
-          // Keep current name or fallback silently
+        } catch (err: any) {
+          const msg = err?.response?.data?.message || 'Could not resolve account details.';
+          showToast(msg, 'error');
         } finally {
           setVerifying(false);
         }
@@ -142,180 +145,139 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
 
   return (
     <DashboardLayout>
-      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          style={{ width: '100%', maxWidth: '520px' }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          style={{ width: '100%', maxWidth: '420px' }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{
-              width: '72px', height: '72px', borderRadius: '20px',
-              background: 'var(--grad-primary)', margin: '0 auto 20px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 12px 30px rgba(253,103,48,0.25)',
-            }}>
-              <Building2 size={34} color="#fff" />
-            </div>
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-              Set Up Your Payout Method
+          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+              Set Up Payout Method
             </h1>
-            <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto', lineHeight: 1.6 }}>
-              Before accessing your wallet, you need to add a default bank or mobile money account where your earnings will be sent. Your account currency is{' '}
-              <strong style={{ color: 'var(--primary)' }}>{currencyConfig.flag} {userCurrency} ({currencySymbol})</strong>.
-            </p>
           </div>
 
-          {/* Setup Card */}
-          <div className="glass-card" style={{ borderRadius: '24px', padding: '32px', border: '1px solid var(--border-color)' }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          {/* Form matching Signup Input UI */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
 
-              {/* Country */}
-              <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                  Your Country
-                </label>
+            {/* Bank or Provider */}
+            <div className="form-group">
+              <label className="form-label" style={{ fontSize: '0.82rem' }}>
+                Bank or Provider *
+              </label>
+              {loadingBanks ? (
+                <div style={{
+                  padding: '10px 14px', borderRadius: '10px',
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+                  color: 'var(--text-muted)', fontSize: '0.84rem',
+                  display: 'flex', alignItems: 'center', gap: '8px', height: '44px'
+                }}>
+                  <Loader2 size={16} className="animate-spin" color="var(--primary)" />
+                  <span>Loading banks…</span>
+                </div>
+              ) : banksList.length > 0 ? (
                 <select
-                  value={selectedCountry}
-                  onChange={(e) => handleCountryChange(e.target.value)}
+                  value={selectedBankCode}
+                  onChange={(e) => {
+                    setSelectedBankCode(e.target.value);
+                    const found = banksList.find((b) => String(b.code || b.id) === e.target.value);
+                    if (found) setSelectedBankName(found.name);
+                  }}
                   className="input-field"
-                  style={{ width: '100%', fontWeight: 700 }}
+                  style={{ width: '100%', height: '44px', fontWeight: 600, cursor: 'pointer' }}
                 >
-                  {COUNTRY_OPTIONS.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name} — {c.currency}
+                  {banksList.map((b) => (
+                    <option key={b.code || b.id} value={b.code || b.id}>
+                      {b.name}
                     </option>
                   ))}
                 </select>
-              </div>
-
-              {/* Bank / Provider */}
-              <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                  Bank or Mobile Money Provider
-                </label>
-                {loadingBanks ? (
-                  <div style={{
-                    padding: '14px 16px', borderRadius: '12px',
-                    background: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
-                    color: 'var(--text-muted)', fontSize: '0.85rem',
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                  }}>
-                    <Loader2 size={16} className="animate-spin" /> Loading available banks…
-                  </div>
-                ) : banksList.length > 0 ? (
-                  <select
-                    value={selectedBankCode}
-                    onChange={(e) => {
-                      setSelectedBankCode(e.target.value);
-                      const found = banksList.find((b) => String(b.code || b.id) === e.target.value);
-                      if (found) setSelectedBankName(found.name);
-                    }}
-                    className="input-field"
-                    style={{ width: '100%', fontWeight: 700 }}
-                  >
-                    {banksList.map((b) => (
-                      <option key={b.code || b.id} value={b.code || b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter Bank or Provider Name"
-                    value={selectedBankName}
-                    onChange={(e) => { setSelectedBankName(e.target.value); setSelectedBankCode('044'); }}
-                    className="input-field"
-                    style={{ width: '100%', fontWeight: 700 }}
-                  />
-                )}
-              </div>
-
-              {/* Account Number */}
-              <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                  Account / Mobile Money Number
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 0123456789"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    className="input-field"
-                    style={{ width: '100%', fontWeight: 700, letterSpacing: '0.06em' }}
-                  />
-                  {verifying && (
-                    <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--primary)' }}>
-                      <Loader2 size={14} className="animate-spin" /> Verifying...
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Account Name */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Account Holder Name
-                  </label>
-                  {verifiedName && (
-                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <CheckCircle2 size={14} /> Verified via Flutterwave
-                    </span>
-                  )}
-                </div>
+              ) : (
                 <input
                   type="text"
                   required
-                  value={accountName}
-                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Enter Bank or Provider Name"
+                  value={selectedBankName}
+                  onChange={(e) => { setSelectedBankName(e.target.value); setSelectedBankCode('044'); }}
                   className="input-field"
-                  style={{
-                    width: '100%',
-                    fontWeight: 700,
-                    borderColor: verifiedName ? '#10b981' : undefined,
-                    background: verifiedName ? 'rgba(16, 185, 129, 0.04)' : undefined
-                  }}
+                  style={{ width: '100%', height: '44px' }}
                 />
+              )}
+            </div>
+
+            {/* Account Number */}
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', margin: 0 }}>
+                  Account Number *
+                </label>
+                {verifying && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                    <Loader2 size={13} className="animate-spin" /> Verifying
+                  </span>
+                )}
               </div>
+              <input
+                type="text"
+                required
+                maxLength={10}
+                placeholder="Enter 10-digit account number"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                className="input-field"
+                style={{ width: '100%', height: '44px', letterSpacing: '0.04em' }}
+              />
+            </div>
 
-              {/* Info notice */}
-              <div style={{
-                padding: '12px 16px', borderRadius: '12px',
-                background: 'rgba(253,103,48,0.06)', border: '1px solid rgba(253,103,48,0.2)',
-                fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6,
-              }}>
-                🔒 Your payout details are stored securely. You can update them anytime from your wallet settings.
-                This account will be used for all future earnings withdrawals in <strong>{userCurrency}</strong>.
+            {/* Account Holder Name */}
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', margin: 0 }}>
+                  Account Holder Name *
+                </label>
+                {verifiedName && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <CheckCircle2 size={13} /> Verified
+                  </motion.span>
+                )}
               </div>
+              <input
+                type="text"
+                required
+                placeholder="Enter Account Holder Name"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+                className={`input-field ${verifiedName ? 'input-success' : ''}`}
+                style={{ width: '100%', height: '44px' }}
+              />
+            </div>
 
-              <motion.button
-                type="submit"
-                disabled={saving}
-                whileHover={{ scale: saving ? 1 : 1.02 }}
-                whileTap={{ scale: saving ? 1 : 0.98 }}
-                className="btn-primary"
-                style={{
-                  width: '100%', padding: '16px', borderRadius: '14px',
-                  fontWeight: 800, fontSize: '1rem',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                }}
-              >
-                {saving ? <Loader2 size={20} className="animate-spin" /> : <ShieldCheck size={20} />}
-                {saving ? 'Saving Payout Method…' : 'Save & Access My Wallet'}
-              </motion.button>
-            </form>
-          </div>
-
-          <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            You must complete this step to send and receive payments on Connecta.
-          </p>
+            {/* Action Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              disabled={saving}
+              className="btn-primary"
+              style={{
+                width: '100%', padding: '14px', borderRadius: '12px',
+                fontWeight: 700, fontSize: '0.96rem', marginTop: '6px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}
+            >
+              {saving ? (
+                <><Loader2 size={18} className="animate-spin" /> Saving Method…</>
+              ) : (
+                <>Save & Access Wallet <ArrowRight size={18} /></>
+              )}
+            </motion.button>
+          </form>
         </motion.div>
       </div>
     </DashboardLayout>
@@ -384,10 +346,9 @@ export const MyWalletPage: React.FC = () => {
   const fetchWalletData = async () => {
     setLoading(true);
     try {
-      const [wRes, txRes, vtRes] = await Promise.all([
+      const [wRes, txRes] = await Promise.all([
         walletAPI.getWallet().catch(() => null),
         walletAPI.getTransactions().catch(() => null),
-        walletAPI.getVirtualAccount().catch(() => null),
       ]);
 
       if (wRes?.success && wRes.data) {
@@ -403,8 +364,6 @@ export const MyWalletPage: React.FC = () => {
         setWallet({ balance: 0, escrowBalance: 0, availableBalance: 0 });
       }
 
-      if (vtRes?.success && vtRes.data) setVirtualAccount(vtRes.data);
-
       if (txRes?.success && Array.isArray(txRes.data)) {
         setTransactions(txRes.data);
       } else if (Array.isArray(txRes)) {
@@ -418,6 +377,13 @@ export const MyWalletPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+
+    // Non-blocking background fetch for virtual account details
+    walletAPI.getVirtualAccount()
+      .then((vtRes) => {
+        if (vtRes?.success && vtRes.data) setVirtualAccount(vtRes.data);
+      })
+      .catch(() => null);
   };
 
   const loadSettingsBanks = async (cCode: string) => {
@@ -583,202 +549,156 @@ export const MyWalletPage: React.FC = () => {
 
   return (
     <DashboardLayout>
-      {/* Page Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-          {isFreelancer ? 'Freelancer Earnings & Wallet' : 'Client Escrow & Funding Wallet'}
-        </h1>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
-          {isFreelancer
-            ? `Track project earnings and withdraw in ${userCurrency} (${currencySymbol}).`
-            : `Fund your wallet in ${userCurrency}, manage escrow deposits, and review transactions.`}
-        </p>
-      </div>
-
-
-
-      {/* Wallet Hero Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-
-        {/* Balance Card */}
-        <motion.div
-          whileHover={{ y: -2 }}
-          style={{ background: 'var(--grad-primary)', padding: '24px', borderRadius: '20px', color: '#fff', boxShadow: '0 12px 30px rgba(253,103,48,0.2)' }}
-        >
-          <div style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.9, textTransform: 'uppercase', marginBottom: '8px' }}>
-            {isFreelancer ? `Available Balance (${userCurrency})` : `Client Wallet (${userCurrency})`}
+      <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '100px' }}>
+        {/* Minimalist Top Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px', letterSpacing: '-0.02em' }}>
+              {isFreelancer ? 'Wallet & Payouts' : 'Client Funding & Escrow'}
+            </h1>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+              Manage balances, escrow milestones, and bank payouts in {userCurrency}.
+            </p>
           </div>
-          <div style={{ fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '16px' }}>
-            {formatDualPrice(currentBalance)}
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
             {isFreelancer ? (
-              <motion.button
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              <button
                 onClick={() => setShowWithdrawModal(true)}
-                style={{ background: '#fff', color: 'var(--primary)', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
+                className="btn-primary"
+                style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <ArrowUpRight size={16} /> Withdraw ({currencySymbol})
-              </motion.button>
+                <ArrowUpRight size={14} /> Withdraw ({currencySymbol})
+              </button>
             ) : (
-              <motion.button
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              <button
                 onClick={() => setShowDepositModal(true)}
-                style={{ background: '#fff', color: 'var(--primary)', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}
+                className="btn-primary"
+                style={{ padding: '8px 16px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <PlusCircle size={16} /> Fund Wallet ({currencySymbol})
-              </motion.button>
+                <PlusCircle size={14} /> Fund Wallet ({currencySymbol})
+              </button>
             )}
           </div>
-        </motion.div>
+        </div>
 
-        {/* Escrow Card */}
-        <motion.div
-          whileHover={{ y: -2 }}
-          className="glass-card"
-          style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}
-        >
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '8px' }}>
-            {isFreelancer ? 'Pending Escrow Earnings' : 'Active Escrow Milestones'}
+        {/* Wallet Stat Cards Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+          {/* Balance */}
+          <div style={{ padding: '16px 20px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '4px' }}>
+              {isFreelancer ? 'Available Balance' : 'Client Wallet'}
+            </div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              {formatDualPrice(currentBalance)}
+            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--success)', marginTop: '4px', display: 'block', fontWeight: 600 }}>
+              Ready for instant withdrawal
+            </span>
           </div>
-          <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginBottom: '8px' }}>
-            {formatDualPrice(currentEscrow)}
+
+          {/* Escrow Card */}
+          <div style={{ padding: '16px 20px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '4px' }}>
+              {isFreelancer ? 'Pending Escrow' : 'Active Escrow Milestones'}
+            </div>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              {formatDualPrice(currentEscrow)}
+            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ShieldCheck size={12} color="var(--primary)" /> Connecta Protected
+            </span>
           </div>
-          <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ShieldCheck size={14} /> 100% Connecta Escrow Protected
-          </span>
-        </motion.div>
 
-        {/* Payout Method Card (Freelancers only) */}
-        {isFreelancer && savedBankDetails?.accountNumber && (
-          <motion.div
-            whileHover={{ y: -2 }}
-            className="glass-card"
-            style={{ padding: '24px', borderRadius: '20px', border: '1px solid rgba(16,185,129,0.3)', position: 'relative', overflow: 'hidden' }}
-          >
-            {/* subtle green glow strip */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Default Payout Method
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(16,185,129,0.12)', color: 'var(--success)', padding: '3px 9px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 800 }}>
-                <CheckCircle2 size={11} /> Verified
-              </div>
-            </div>
-
-            {/* Bank name large */}
-            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Building2 size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-              {savedBankDetails.bankName}
-            </div>
-
-            {/* Account number */}
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.1em', marginBottom: '4px' }}>
-              {savedBankDetails.accountNumber}
-            </div>
-
-            {/* Account name */}
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '18px' }}>
-              {savedBankDetails.accountName}
-            </div>
-
-            <button
-              onClick={() => setShowPayoutSettingsModal(true)}
-              style={{
-                background: 'var(--bg-tertiary)', color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)', padding: '8px 14px',
-                borderRadius: '10px', fontWeight: 700, fontSize: '0.8rem',
-                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px',
-              }}
-            >
-              <Edit3 size={13} /> Edit Payout Method
-            </button>
-          </motion.div>
-        )}
-
-        {/* Virtual Account Card (clients only) */}
-        {!isFreelancer && (
-          <motion.div
-            whileHover={{ y: -2 }}
-            className="glass-card"
-            style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}
-          >
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '8px' }}>
-              Virtual Bank Transfer
-            </div>
-            {virtualAccount ? (
-              <>
-                <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--primary)', marginBottom: '4px' }}>
-                  {virtualAccount.bankName || 'Wema Bank'} &bull; {virtualAccount.accountNumber}
-                </div>
-                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>
-                  Beneficiary: {virtualAccount.accountName || 'Connecta Escrow'}
-                </span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${virtualAccount.bankName} - ${virtualAccount.accountNumber}`);
-                    showToast('Account details copied!', 'info');
-                  }}
-                  style={{ background: 'var(--bg-tertiary)', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <Copy size={12} /> Copy Details
-                </button>
-              </>
-            ) : (
+          {/* Payout Method Card (Freelancers only) */}
+          {isFreelancer && savedBankDetails?.accountNumber && (
+            <div style={{ padding: '16px 20px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                  Generate a dedicated virtual bank account to fund via wire transfer.
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Payout Method</span>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--success)', background: 'rgba(16,185,129,0.1)', padding: '1px 6px', borderRadius: '6px' }}>Verified</span>
+                </div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {savedBankDetails.bankName} • {savedBankDetails.accountNumber.slice(-4)}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPayoutSettingsModal(true)}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textAlign: 'left', padding: 0, marginTop: '6px' }}
+              >
+                Edit Payout Details →
+              </button>
+            </div>
+          )}
+
+          {/* Virtual Account Card (clients only) */}
+          {!isFreelancer && (
+            <div style={{ padding: '16px 20px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '4px' }}>
+                Virtual Bank Transfer
+              </div>
+              {virtualAccount ? (
+                <>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--primary)' }}>
+                    {virtualAccount.bankName || 'Wema Bank'} • {virtualAccount.accountNumber}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${virtualAccount.bankName} - ${virtualAccount.accountNumber}`);
+                      showToast('Account details copied!', 'info');
+                    }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: '4px' }}
+                  >
+                    Copy Details
+                  </button>
+                </>
+              ) : (
                 <button
                   onClick={handleGenerateVirtualAccount}
                   disabled={generatingVirtualAcc}
                   className="btn-primary"
-                  style={{ padding: '8px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  style={{ padding: '6px 12px', fontSize: '0.76rem', borderRadius: '8px', fontWeight: 700, marginTop: '6px' }}
                 >
-                  {generatingVirtualAcc ? <Loader2 size={14} className="animate-spin" /> : <Building2 size={14} />}
-                  Generate Virtual Account
+                  Generate Account
                 </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </div>
-
-      {/* Transaction History */}
-      <div className="glass-card" style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-            {isFreelancer ? 'Payout & Earnings History' : 'Deposit & Funding History'}
-          </h3>
-          <button
-            onClick={fetchWalletData}
-            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600 }}
-          >
-            <RefreshCw size={14} /> Refresh
-          </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {transactions.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-            No transaction records found yet.
+        {/* Transaction History Ledger */}
+        <div style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              Transaction History
+            </h3>
+            <button
+              onClick={fetchWalletData}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', fontWeight: 700 }}
+            >
+              <RefreshCw size={13} /> Refresh
+            </button>
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {transactions.map((tx) => (
-              <div
-                key={tx._id || tx.id || Math.random()}
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderRadius: '14px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: tx.type === 'deposit' ? 'rgba(16,185,129,0.1)' : 'rgba(253,103,48,0.1)', color: tx.type === 'deposit' ? 'var(--success)' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {tx.type === 'deposit' ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{tx.description || tx.type || 'Wallet Activity'}</div>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'Recent'}</span>
-                  </div>
+
+          {transactions.length === 0 ? (
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              No transactions recorded yet.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {transactions.map((tx) => (
+                <div
+                  key={tx._id || tx.id || Math.random()}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: tx.type === 'deposit' ? 'rgba(16,185,129,0.1)' : 'rgba(253,103,48,0.1)', color: tx.type === 'deposit' ? 'var(--success)' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {tx.type === 'deposit' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-primary)' }}>{tx.description || tx.type || 'Wallet Activity'}</div>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'Recent'}</span>
+                    </div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: '1rem', color: tx.type === 'deposit' ? 'var(--success)' : 'var(--text-primary)' }}>
                   {tx.type === 'deposit' ? '+' : '-'}{formatDualPrice(Number(tx.amount || 0))}
@@ -796,7 +716,7 @@ export const MyWalletPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--card-bg)', borderRadius: '24px', padding: '32px', maxWidth: '460px', width: '100%', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.2)', position: 'relative' }}
+            style={{ background: 'var(--card-bg)', borderRadius: '24px', padding: '24px 20px', maxWidth: '460px', width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.2)', position: 'relative' }}
           >
             <button onClick={() => setShowDepositModal(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <X size={20} />
@@ -832,58 +752,58 @@ export const MyWalletPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Withdrawal Modal ───────────────────────────────────────────────────── */}
+      {/* Withdrawal Modal */}
       {showWithdrawModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
           onClick={() => setShowWithdrawModal(false)}>
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--card-bg)', borderRadius: '24px', padding: '32px', maxWidth: '460px', width: '100%', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.2)', position: 'relative' }}
+            style={{ background: 'var(--card-bg)', borderRadius: '18px', padding: '24px 20px', maxWidth: '420px', width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-color)', boxShadow: '0 16px 40px rgba(0,0,0,0.18)', position: 'relative' }}
           >
-            <button onClick={() => setShowWithdrawModal(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-              <X size={20} />
+            <button onClick={() => setShowWithdrawModal(false)} style={{ position: 'absolute', top: '18px', right: '18px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
+              <X size={16} />
             </button>
-            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
-              Withdraw Earnings ({currencySymbol} {userCurrency})
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+              Withdraw ({userCurrency})
             </h3>
-            <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '14px' }}>
               Funds will be sent to your saved payout account.
             </p>
 
             {/* Saved Payout Destination */}
-            <div style={{ padding: '12px 16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase' }}>Payout Destination</span>
+            <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Destination</span>
                 <button type="button"
                   onClick={() => { setShowWithdrawModal(false); setShowPayoutSettingsModal(true); }}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.76rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Edit3 size={12} /> Edit
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px', padding: 0 }}>
+                  <Edit3 size={11} /> Edit
                 </button>
               </div>
-              <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>🏦 {savedBankDetails?.bankName}</div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                {savedBankDetails?.accountNumber} &mdash; {savedBankDetails?.accountName}
+              <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>{savedBankDetails?.bankName}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                {savedBankDetails?.accountNumber} • {savedBankDetails?.accountName}
               </div>
             </div>
 
-            <form onSubmit={handleWithdrawalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleWithdrawalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
-                  Withdrawal Amount ({currencySymbol} {userCurrency})
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                  Amount ({currencySymbol})
                 </label>
                 <input type="number" required min="1" max={currentBalance > 0 ? currentBalance : undefined} value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(Number(e.target.value))}
-                  className="input-field" style={{ width: '100%', fontSize: '1.1rem', fontWeight: 800 }} />
+                  className="input-field" style={{ width: '100%', fontSize: '1rem', fontWeight: 800, height: '40px', padding: '0 12px', borderRadius: '10px' }} />
                 {currentBalance <= 0 && (
-                  <span style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
-                    ⚠️ Your available balance is currently {currencySymbol}0. You cannot withdraw until you have funds in your wallet.
+                  <span style={{ fontSize: '0.74rem', color: 'var(--primary)', fontWeight: 600, display: 'block', marginTop: '4px' }}>
+                    Available balance is {currencySymbol}0.
                   </span>
                 )}
               </div>
               <button type="submit" disabled={processingWithdraw} className="btn-primary"
-                style={{ width: '100%', padding: '14px', borderRadius: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                {processingWithdraw ? <Loader2 size={18} className="animate-spin" /> : <ArrowUpRight size={18} />}
+                style={{ width: '100%', height: '42px', borderRadius: '10px', fontSize: '0.84rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                {processingWithdraw ? <Loader2 size={16} className="animate-spin" /> : <ArrowUpRight size={16} />}
                 Confirm Withdrawal ({currencySymbol}{withdrawAmount.toLocaleString()})
               </button>
             </form>
@@ -898,7 +818,7 @@ export const MyWalletPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 15 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--card-bg)', borderRadius: '24px', padding: '32px', maxWidth: '480px', width: '100%', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.2)', position: 'relative' }}
+            style={{ background: 'var(--card-bg)', borderRadius: '24px', padding: '24px 20px', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-color)', boxShadow: '0 20px 50px rgba(0,0,0,0.2)', position: 'relative' }}
           >
             <button onClick={() => setShowPayoutSettingsModal(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
               <X size={20} />
@@ -960,6 +880,7 @@ export const MyWalletPage: React.FC = () => {
           </motion.div>
         </div>
       )}
+      </div>
     </DashboardLayout>
   );
 };

@@ -27,8 +27,10 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ClientDashboardPage } from './pages/dashboard/ClientDashboardPage';
 import { FreelancerDashboardPage } from './pages/dashboard/FreelancerDashboardPage';
+import { FreelancerContractsPage } from './pages/dashboard/FreelancerContractsPage';
 import { JobDetailsPage } from './pages/dashboard/JobDetailsPage';
 import { FindJobsPage } from './pages/dashboard/FindJobsPage';
+import { WorkPage } from './pages/dashboard/WorkPage';
 import { MyProposalsPage } from './pages/dashboard/MyProposalsPage';
 import { MessagesPage } from './pages/dashboard/MessagesPage';
 import { MyWalletPage } from './pages/dashboard/MyWalletPage';
@@ -41,9 +43,11 @@ import { ClientProjectsPage } from './pages/dashboard/ClientProjectsPage';
 import { HiredTalentPage } from './pages/dashboard/HiredTalentPage';
 import { PostJobPage } from './pages/dashboard/PostJobPage';
 import { ProposalDetailsPage } from './pages/dashboard/ProposalDetailsPage';
+import { UploadCvPage } from './pages/dashboard/UploadCvPage';
 import { ClientWriteReviewPage } from './pages/dashboard/ClientWriteReviewPage';
 import { FreelancerProfileDetailsPage } from './pages/dashboard/FreelancerProfileDetailsPage';
 import { NotificationsPage } from './pages/dashboard/NotificationsPage';
+import { AiInterviewPage } from './pages/dashboard/AiInterviewPage';
 
 export const App: React.FC = () => {
   return (
@@ -84,7 +88,9 @@ export const App: React.FC = () => {
                   <Route path="/talent/:id" element={<FreelancerProfileDetailsPage />} />
                   <Route path="/freelancer/:id" element={<FreelancerProfileDetailsPage />} />
                   <Route path="/client/reviews/new" element={<ClientWriteReviewPage />} />
-                  <Route path="/jobs" element={<FindJobsPage />} />
+                  <Route path="/jobs" element={<WorkPage />} />
+                  <Route path="/my-jobs" element={<WorkPage />} />
+                  <Route path="/freelancer/contracts" element={<WorkPage />} />
                   <Route path="/jobs/new" element={<PostJobPage />} />
                   <Route path="/jobs/:id" element={<JobDetailsPage />} />
 
@@ -93,10 +99,14 @@ export const App: React.FC = () => {
                   <Route path="/ai-assistant" element={<AiAssistantPage />} />
                   <Route path="/proposals" element={<MyProposalsPage />} />
                   <Route path="/proposals/:id" element={<ProposalDetailsPage />} />
+                  <Route path="/interview/:proposalId" element={<AiInterviewPage />} />
                   <Route path="/messages" element={<MessagesPage />} />
                   <Route path="/wallet" element={<MyWalletPage />} />
                   <Route path="/saved-gigs" element={<SavedGigsPage />} />
                   <Route path="/settings" element={<MyProfilePage />} />
+                  <Route path="/profile" element={<MyProfilePage />} />
+                  <Route path="/dashboard/upload-cv" element={<UploadCvPage />} />
+                  <Route path="/upload-cv" element={<UploadCvPage />} />
                   <Route path="/support" element={<HelpSupportPage />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
 

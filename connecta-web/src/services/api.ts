@@ -73,8 +73,19 @@ export const authAPI = {
     return data;
   },
 
-  googleSignin: async (googleToken: string, userType?: string) => {
-    const { data } = await apiClient.post<ApiResponse>('/api/users/google/signin', { token: googleToken, userType });
+  googleSignin: async (payload: any, userType?: string) => {
+    const body = typeof payload === 'string'
+      ? { tokenId: payload, userType }
+      : { ...payload, userType: payload.userType || userType };
+    const { data } = await apiClient.post<ApiResponse>('/api/users/google/signin', body);
+    return data;
+  },
+
+  googleSignup: async (payload: any, userType?: string) => {
+    const body = typeof payload === 'string'
+      ? { tokenId: payload, userType }
+      : { ...payload, userType: payload.userType || userType };
+    const { data } = await apiClient.post<ApiResponse>('/api/users/google/signup', body);
     return data;
   },
 
@@ -100,6 +111,11 @@ export const authAPI = {
 
   updateMe: async (profileData: Partial<User> & Record<string, any>) => {
     const { data } = await apiClient.put<ApiResponse<User>>('/api/users/me', profileData);
+    return data;
+  },
+
+  switchRole: async (targetRole?: 'client' | 'freelancer') => {
+    const { data } = await apiClient.post<ApiResponse<{ user: User; token: string }>>('/api/users/switch-type', { userType: targetRole });
     return data;
   },
 
@@ -162,7 +178,41 @@ export const authAPI = {
   createOffer: async (offerData: any) => {
     const { data } = await apiClient.post<ApiResponse>('/api/contracts/offer', offerData);
     return data;
+  },
+
+  getUserContracts: async () => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>('/api/contracts');
+    return data;
+  },
+
+  getContractById: async (id: string) => {
+    const { data } = await apiClient.get<ApiResponse<any>>(`/api/contracts/${id}`);
+    return data;
+  },
+
+  submitWork: async (id: string, payload: { summary: string; files?: string[] }) => {
+    const { data } = await apiClient.post<ApiResponse>(`/api/contracts/submit/${id}`, payload);
+    return data;
+  },
+
+  approveWork: async (id: string) => {
+    const { data } = await apiClient.post<ApiResponse>(`/api/contracts/approve/${id}`);
+    return data;
+  },
+
+  acceptOffer: async (id: string) => {
+    const { data } = await apiClient.post<ApiResponse>(`/api/contracts/accept/${id}`);
+    return data;
   }
+};
+
+export const contractAPI = {
+  createOffer: authAPI.createOffer,
+  getUserContracts: authAPI.getUserContracts,
+  getContractById: authAPI.getContractById,
+  submitWork: authAPI.submitWork,
+  approveWork: authAPI.approveWork,
+  acceptOffer: authAPI.acceptOffer,
 };
 
 // Jobs API service
@@ -344,16 +394,36 @@ export const feedAPI = {
     const { data } = await apiClient.get<ApiResponse<any[]>>(`/api/feed?limit=${limit}&page=${page}`);
     return data;
   },
-  createPost: async (postData: { title: string; body: string; actorName?: string; actorRole?: string; actorAvatar?: string }) => {
+  createPost: async (postData: { title?: string; body?: string; imageUrl?: string; actorName?: string; actorRole?: string; actorAvatar?: string }) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/feed/create', postData);
     return data;
   },
-  reactToPost: async (postId: string, reactionType = 'like') => {
-    const { data } = await apiClient.post<ApiResponse<any>>(`/api/feed/${postId}/react`, { type: reactionType });
+  editPost: async (postId: string, postData: { title?: string; body?: string }) => {
+    const { data } = await apiClient.put<ApiResponse<any>>(`/api/feed/${postId}`, postData);
     return data;
   },
-  addComment: async (postId: string, text: string) => {
-    const { data } = await apiClient.post<ApiResponse<any>>(`/api/feed/${postId}/comments`, { content: text });
+  deletePost: async (postId: string) => {
+    const { data } = await apiClient.delete<ApiResponse<any>>(`/api/feed/${postId}`);
+    return data;
+  },
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+  reactToPost: async (postId: string, reactionType = 'like') => {
+    const { data } = await apiClient.post<ApiResponse<any>>(`/api/feed/${postId}/react`, { reaction: reactionType, type: reactionType });
+    return data;
+  },
+  addComment: async (postId: string, text: string, parentCommentId?: string) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(`/api/feed/${postId}/comments`, { text, content: text, parentCommentId });
+    return data;
+  },
+  votePoll: async (postId: string, optionIndex: number) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(`/api/feed/${postId}/poll/vote`, { optionIndex });
     return data;
   }
 };
@@ -439,6 +509,17 @@ export const aiAPI = {
   quickApply: async (jobId: string) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/quick-apply', { jobId });
     return data;
+  },
+
+  parseCv: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/parse-cv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data;
   }
 };
 
@@ -464,5 +545,28 @@ export const currencyAPI = {
     const { data } = await apiClient.delete<ApiResponse<any>>(`/api/currencies/${id}`);
     return data;
   },
+};
+
+// AI Interview API service
+export const aiInterviewAPI = {
+  start: async (proposalId: string) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/interview/start', { proposalId });
+    return data;
+  },
+
+  submitAnswer: async (interviewId: string, payload: { questionId: string; question?: string; answerText: string; audioUrl?: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(`/api/ai/interview/${interviewId}/answer`, payload);
+    return data;
+  },
+
+  complete: async (interviewId: string) => {
+    const { data } = await apiClient.post<ApiResponse<any>>(`/api/ai/interview/${interviewId}/complete`);
+    return data;
+  },
+
+  getByProposalId: async (proposalId: string) => {
+    const { data } = await apiClient.get<ApiResponse<any>>(`/api/ai/interview/proposal/${proposalId}`);
+    return data;
+  }
 };
 

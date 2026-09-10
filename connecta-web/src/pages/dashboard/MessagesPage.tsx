@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { MessageSquare, Send, Loader2, Video } from 'lucide-react';
+import { MessageSquare, Send, Loader2, ArrowLeft, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { messageAPI } from '../../services/api';
-import { ScreeningCallModal } from '../../components/modals/ScreeningCallModal';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng';
@@ -17,7 +16,9 @@ export const MessagesPage: React.FC = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [textInput, setTextInput] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showCallModal, setShowCallModal] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const targetUserId = searchParams.get('user') || searchParams.get('recipientId');
 
@@ -50,6 +51,10 @@ export const MessagesPage: React.FC = () => {
       socket.disconnect();
     };
   }, [user?._id, activeConv?._id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
     fetchConversations();
@@ -114,7 +119,7 @@ export const MessagesPage: React.FC = () => {
       }
 
       setConversations(list);
-      if (list.length > 0) {
+      if (list.length > 0 && window.innerWidth > 768) {
         selectConversation(list[0]);
       }
     } catch (err) {
@@ -126,6 +131,7 @@ export const MessagesPage: React.FC = () => {
 
   const selectConversation = async (conv: any) => {
     setActiveConv(conv);
+    setShowMobileChat(true);
     try {
       const res = await messageAPI.getMessages(conv._id);
       if (res.success && Array.isArray(res.data)) {
@@ -210,179 +216,228 @@ export const MessagesPage: React.FC = () => {
 
   const activeOther = getOtherParticipantDetails(activeConv);
 
+  const filteredConversations = conversations.filter((c) => {
+    const other = getOtherParticipantDetails(c);
+    const query = searchQuery.toLowerCase();
+    return (
+      other.name.toLowerCase().includes(query) ||
+      (c.lastMessage || '').toLowerCase().includes(query)
+    );
+  });
+
   return (
     <DashboardLayout>
-      <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
-          Messages & Client Chat
-        </h1>
-        <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
-          Real-time messaging with clients, proposal discussions, and contract updates.
-        </p>
-      </div>
-
-      <div className="messages-layout-container" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '20px', height: 'calc(100vh - 220px)', minHeight: '500px' }}>
-        {/* Conversations List Panel */}
-        <div className="glass-card" style={{ borderRadius: '20px', padding: '16px', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)' }}>
-          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '12px', paddingLeft: '4px' }}>
-            Conversations ({conversations.length})
+      <div className="messages-page-wrapper" style={{ maxWidth: '1100px', margin: '0 auto', height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column' }}>
+        {/* Header */}
+        <div className={`messages-header-top ${showMobileChat ? 'mobile-hide-header-in-chat' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 2px', letterSpacing: '-0.02em' }}>
+              Messages
+            </h1>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+              Direct communications with clients & collaborators.
+            </p>
           </div>
-
-          {loading ? (
-            <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Loader2 size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
-              <span style={{ fontSize: '0.82rem' }}>Loading chat list...</span>
-            </div>
-          ) : conversations.length === 0 ? (
-            <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              No active conversations yet.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto' }}>
-              {conversations.map((c) => {
-                const isSelected = activeConv?._id === c._id;
-                const other = getOtherParticipantDetails(c);
-                return (
-                  <div
-                    key={c._id}
-                    onClick={() => selectConversation(c)}
-                    style={{
-                      padding: '12px',
-                      borderRadius: '12px',
-                      cursor: 'pointer',
-                      background: isSelected ? 'rgba(253,103,48,0.1)' : 'transparent',
-                      border: isSelected ? '1px solid var(--primary)' : '1px solid transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                    }}
-                  >
-                    {other.avatar ? (
-                      <img src={other.avatar} alt={other.name} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.9rem', flexShrink: 0 }}>
-                        {other.name[0]?.toUpperCase() || 'U'}
-                      </div>
-                    )}
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {other.name}
-                      </div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {c.lastMessage || other.role}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
-        {/* Chat Thread Panel */}
-        <div className="glass-card" style={{ borderRadius: '20px', padding: '20px', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)' }}>
-          {activeConv ? (
-            <>
-              {/* Chat Header */}
-              <div style={{ paddingBottom: '14px', marginBottom: '14px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {activeOther.avatar ? (
-                    <img src={activeOther.avatar} alt={activeOther.name} style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--grad-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem' }}>
-                      {activeOther.name[0]?.toUpperCase() || 'U'}
-                    </div>
-                  )}
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{activeOther.name}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>{activeOther.role}</span> • <span style={{ color: 'var(--success)', fontWeight: 600 }}>Online</span>
-                    </div>
-                  </div>
+        {/* Workspace Grid */}
+        <div className="messages-workspace-grid" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '16px', flex: 1, minHeight: 0 }}>
+          {/* Left Panel: Conversations List */}
+          <div
+            className={`conversations-panel ${showMobileChat ? 'hide-mobile' : ''}`}
+            style={{
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Conversations ({conversations.length})</span>
+            </div>
+
+            {/* Quick Search Bar */}
+            {conversations.length > 0 && (
+              <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-color)' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search messages..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="input-field"
+                    style={{ paddingLeft: '34px', width: '100%', borderRadius: '10px', fontSize: '0.8rem', height: '36px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
+                  />
                 </div>
-
-                <button
-                  onClick={() => setShowCallModal(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'linear-gradient(135deg, rgba(253, 103, 48, 0.12) 0%, rgba(229, 82, 27, 0.08) 100%)',
-                    border: '1px solid rgba(253, 103, 48, 0.3)',
-                    color: 'var(--primary)',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '8px 16px',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                  title="Start Native 1-on-1 Video Screening Call"
-                >
-                  <Video size={16} /> Start Screening Call
-                </button>
               </div>
+            )}
 
-              {/* Messages History */}
-              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '8px' }}>
-                {messages.map((m) => {
-                  const senderObj = m.sender || m.senderId;
-                  const senderId = typeof senderObj === 'object' ? (senderObj?._id || (senderObj as any)?.id) : senderObj;
-                  const currentUserId = user?._id || (user as any)?.id;
-                  const isMe = senderId && currentUserId ? senderId.toString() === currentUserId.toString() : false;
-                  const msgContent = m.text || m.content || '';
+            {loading ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <Loader2 size={18} className="animate-spin" style={{ margin: '0 auto 8px', color: 'var(--primary)' }} />
+                <span style={{ fontSize: '0.8rem' }}>Loading chats...</span>
+              </div>
+            ) : conversations.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                No active messages.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '8px', overflowY: 'auto' }}>
+                {filteredConversations.map((c) => {
+                  const isSelected = activeConv?._id === c._id;
+                  const other = getOtherParticipantDetails(c);
                   return (
                     <div
-                      key={m._id}
+                      key={c._id}
+                      onClick={() => selectConversation(c)}
                       style={{
-                        alignSelf: isMe ? 'flex-end' : 'flex-start',
-                        maxWidth: '70%',
-                        padding: '10px 16px',
-                        borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                        background: isMe ? 'var(--primary)' : 'var(--bg-tertiary)',
-                        color: isMe ? '#fff' : 'var(--text-primary)',
-                        fontSize: '0.88rem',
-                        lineHeight: 1.45,
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        background: isSelected ? 'rgba(253,103,48,0.08)' : 'transparent',
+                        border: isSelected ? '1px solid rgba(253,103,48,0.25)' : '1px solid transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      {msgContent}
+                      {other.avatar ? (
+                        <img src={other.avatar} alt={other.name} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem', flexShrink: 0 }}>
+                          {other.name[0]?.toUpperCase() || 'U'}
+                        </div>
+                      )}
+                      <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: isSelected ? 700 : 600, fontSize: '0.86rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {other.name}
+                        </div>
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
+                          {c.lastMessage || other.role}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
               </div>
+            )}
+          </div>
 
-              {/* Message Input Box */}
-              <form onSubmit={handleSendMessage} style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  className="input-field"
-                  style={{ flex: 1, padding: '12px 16px', borderRadius: '12px' }}
-                />
-                <button type="submit" className="btn-primary" style={{ padding: '12px 20px', borderRadius: '12px' }}>
-                  <Send size={16} />
-                </button>
-              </form>
-            </>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)' }}>
-              <MessageSquare size={36} style={{ marginBottom: '12px', opacity: 0.5 }} />
-              <span>Select a conversation from the left to start messaging</span>
-            </div>
-          )}
+          {/* Right Panel: Chat Thread */}
+          <div
+            className={`chat-thread-panel ${!showMobileChat ? 'hide-mobile' : ''}`}
+            style={{
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {activeConv ? (
+              <>
+                {/* Minimal Header */}
+                <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--card-bg)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      onClick={() => setShowMobileChat(false)}
+                      className="mobile-back-btn"
+                      style={{
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
+                        padding: '6px 10px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        marginRight: '4px',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600
+                      }}
+                      title="Back to conversations"
+                    >
+                      <ArrowLeft size={16} /> Chats
+                    </button>
+                    {activeOther.avatar ? (
+                      <img src={activeOther.avatar} alt={activeOther.name} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.88rem' }}>
+                        {activeOther.name[0]?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', lineHeight: 1.2 }}>{activeOther.name}</div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {activeOther.role} • <span style={{ color: 'var(--success)', fontWeight: 600 }}>Online</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thread Messages */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {messages.map((m) => {
+                    const senderObj = m.sender || m.senderId;
+                    const senderId = typeof senderObj === 'object' ? (senderObj?._id || (senderObj as any)?.id) : senderObj;
+                    const currentUserId = user?._id || (user as any)?.id;
+                    const isMe = senderId && currentUserId ? senderId.toString() === currentUserId.toString() : false;
+                    const msgContent = m.text || m.content || '';
+                    return (
+                      <div
+                        key={m._id}
+                        style={{
+                          alignSelf: isMe ? 'flex-end' : 'flex-start',
+                          maxWidth: '82%',
+                          padding: '10px 14px',
+                          borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                          background: isMe ? 'var(--primary)' : 'var(--bg-secondary)',
+                          color: isMe ? '#fff' : 'var(--text-primary)',
+                          border: isMe ? 'none' : '1px solid var(--border-color)',
+                          fontSize: '0.85rem',
+                          lineHeight: 1.45,
+                          boxShadow: isMe ? '0 2px 8px rgba(253,103,48,0.2)' : 'none'
+                        }}
+                      >
+                        {msgContent}
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Minimalist Input Bar */}
+                <form onSubmit={handleSendMessage} className="chat-thread-input-bar" style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '8px', background: 'var(--card-bg)' }}>
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    className="input-field"
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', fontSize: '0.85rem', height: '42px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
+                  />
+                  <button type="submit" className="btn-primary" style={{ height: '42px', padding: '0 18px', borderRadius: '12px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700 }}>
+                    <Send size={15} /> Send
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)', padding: '20px', textAlign: 'center' }}>
+                <MessageSquare size={36} style={{ marginBottom: '12px', opacity: 0.4, color: 'var(--primary)' }} />
+                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>Select a conversation</span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px' }}>Choose a chat from the left list to start messaging.</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Embedded Native WebRTC Video Call Screening Modal */}
-      {activeConv && (
-        <ScreeningCallModal
-          isOpen={showCallModal}
-          onClose={() => setShowCallModal(false)}
-          participantName={activeOther.name}
-          participantRole={activeOther.role}
-        />
-      )}
     </DashboardLayout>
   );
 };
+
+export default MessagesPage;

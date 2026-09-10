@@ -1,7 +1,9 @@
 import { Router } from 'express';
-import { chatWithAI, summarizeProposal, matchTalentForJob, recommendJobsForUser, aiQuickApply } from '../controllers/ai.controller.js';
+import multer from 'multer';
+import { chatWithAI, summarizeProposal, matchTalentForJob, recommendJobsForUser, aiQuickApply, parseCvWithAI } from '../controllers/ai.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const router = Router();
 
 router.post('/chat', authenticate, chatWithAI);
@@ -9,5 +11,6 @@ router.post('/summarize-proposal', authenticate, summarizeProposal);
 router.post('/match-talent', authenticate, matchTalentForJob);
 router.get('/recommended-jobs', authenticate, recommendJobsForUser);
 router.post('/quick-apply', authenticate, aiQuickApply);
+router.post('/parse-cv', authenticate, upload.single('file'), parseCvWithAI);
 
 export default router;

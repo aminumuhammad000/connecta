@@ -32,7 +32,8 @@ export const createProposal = async (req: Request, res: Response) => {
       description: finalDescription,
       price: finalPrice,
       deliveryTime: finalDeliveryTime,
-      status: 'pending'
+      status: 'pending',
+      aiInterviewStatus: job.requireAiInterview ? 'pending' : 'not_required'
     });
 
     // Notification for Client (New Proposal)
@@ -99,7 +100,7 @@ export const getMyProposals = async (req: Request, res: Response) => {
     const proposals = await Proposal.find({ freelancerId })
       .populate({
         path: 'jobId',
-        select: 'title budget status clientId',
+        select: 'title budget status clientId requireAiInterview',
         populate: {
           path: 'clientId',
           select: 'firstName lastName email profileImage'
@@ -176,7 +177,7 @@ export const getProposalById = async (req: Request, res: Response) => {
       .populate('clientId', 'firstName lastName email profileImage location paymentVerified isPremium')
       .populate({
         path: 'jobId',
-        select: 'title budget description clientId',
+        select: 'title budget description clientId requireAiInterview',
         populate: {
           path: 'clientId',
           select: 'firstName lastName email profileImage location paymentVerified isPremium'

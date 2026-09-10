@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Camera, Briefcase, Clock, ArrowRight, Sparkles, Loader2, Check } from 'lucide-react';
+import { Camera, Briefcase, Clock, ArrowRight, ArrowLeft, Sparkles, Loader2, Check } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -129,61 +129,88 @@ export const FreelancerProfileSetupPage: React.FC = () => {
 
       <main style={{
         flex: 1,
-        maxWidth: '640px',
+        maxWidth: '620px',
         margin: '0 auto',
-        padding: '50px 24px 80px',
+        padding: '30px 20px',
         width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         zIndex: 10
       }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="glass-card"
-          style={{ padding: '40px 32px' }}
+          style={{ padding: '32px 28px', width: '100%' }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '24px', position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/register/country-currency')}
+              title="Go back"
+              aria-label="Go back"
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: 'rgba(253, 103, 48, 0.08)',
+                border: 'none',
+                color: 'var(--primary)',
+                cursor: 'pointer',
+                display: 'grid',
+                placeItems: 'center',
+                transition: 'transform 0.2s ease, background 0.2s ease'
+              }}
+            >
+              <ArrowLeft size={18} />
+            </button>
+
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--grad-glow)',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              background: 'rgba(253, 103, 48, 0.08)',
               color: 'var(--primary)',
+              fontSize: '0.72rem',
               fontWeight: 700,
-              fontSize: '0.8rem',
-              marginBottom: '12px'
+              letterSpacing: '0.4px',
+              marginBottom: '10px'
             }}>
-              <Sparkles size={14} /> Profile Setup: Details
+              Step 4 of 4 · Profile Details
             </div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>
-              Build Your Freelancer Bio
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+              Build Your Bio
             </h1>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-              Clients look at your title, bio, and work preference when reviewing proposals
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+              Add your title, bio, and experience to complete your profile
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
             {/* Profile Picture Upload Circle */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px' }}>
-              <div style={{ position: 'relative', width: '100px', height: '100px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ position: 'relative', width: '84px', height: '84px' }}>
                 <div style={{
-                  width: '100px',
-                  maxWidth: '100%',
-                  height: '100px',
+                  width: '84px',
+                  height: '84px',
                   borderRadius: '50%',
                   background: 'var(--grad-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#fff',
-                  fontSize: '2rem',
+                  fontSize: '1.6rem',
                   fontWeight: 700,
                   overflow: 'hidden',
-                  boxShadow: 'var(--shadow-glow)'
+                  boxShadow: 'var(--shadow-sm)'
                 }}>
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -196,120 +223,98 @@ export const FreelancerProfileSetupPage: React.FC = () => {
                   position: 'absolute',
                   bottom: 0,
                   right: 0,
-                  background: 'var(--card-bg)',
-                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-secondary)',
+                  border: '1.5px solid var(--border-color)',
                   borderRadius: '50%',
-                  width: '34px',
-                  height: '34px',
+                  width: '30px',
+                  height: '30px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
                   boxShadow: 'var(--shadow-sm)'
                 }}>
-                  {uploadingImage ? <Loader2 size={16} className="animate-spin" color="var(--primary)" /> : <Camera size={16} color="var(--primary)" />}
+                  {uploadingImage ? <Loader2 size={14} className="animate-spin" color="var(--primary)" /> : <Camera size={14} color="var(--primary)" />}
                   <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
                 </label>
               </div>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-                Click camera to upload profile photo (Max 5MB)
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                Upload profile photo (Max 5MB)
               </span>
             </div>
 
             {/* Professional Title */}
-            <div className="form-group">
-              <label className="form-label">Professional Title *</label>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Professional Title *</label>
               <div className="input-wrapper">
-                <Briefcase className="input-icon-left" size={18} />
+                <Briefcase className="input-icon-left" size={16} />
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Software Engineer, UI/UX Designer..."
+                  placeholder="e.g. Full Stack Developer, UI Designer..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="input-field"
+                  style={{ fontSize: '0.88rem' }}
                 />
               </div>
             </div>
 
-            {/* Work Type & Years Experience */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
-              {/* Work Type Choice */}
-              <div className="form-group">
-                <label className="form-label">Work Type Preference *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setWorkType('freelancing')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: 'var(--radius-md)',
-                      background: workType === 'freelancing' ? 'var(--grad-glow)' : 'var(--bg-secondary)',
-                      border: workType === 'freelancing' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                      color: workType === 'freelancing' ? 'var(--primary)' : 'var(--text-secondary)',
-                      fontWeight: workType === 'freelancing' ? 700 : 500,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px'
-                    }}
+            {/* Work Type & Years Experience Dropdowns */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              {/* Work Type Choice Dropdown */}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Work Preference *</label>
+                <div className="input-wrapper">
+                  <Briefcase className="input-icon-left" size={16} />
+                  <select
+                    value={workType}
+                    onChange={(e) => setWorkType(e.target.value as 'freelancing' | 'permanent')}
+                    className="input-field"
+                    style={{ cursor: 'pointer', appearance: 'auto', fontSize: '0.88rem', fontWeight: 600 }}
                   >
-                    {workType === 'freelancing' && <Check size={14} />} Freelancing
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setWorkType('permanent')}
-                    style={{
-                      padding: '10px 8px',
-                      borderRadius: 'var(--radius-md)',
-                      background: workType === 'permanent' ? 'var(--grad-glow)' : 'var(--bg-secondary)',
-                      border: workType === 'permanent' ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                      color: workType === 'permanent' ? 'var(--primary)' : 'var(--text-secondary)',
-                      fontWeight: workType === 'permanent' ? 700 : 500,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    {workType === 'permanent' && <Check size={14} />} Permanent Job
-                  </button>
+                    <option value="freelancing" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Freelance Work</option>
+                    <option value="permanent" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Permanent Job</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Years Experience */}
-              <div className="form-group">
-                <label className="form-label">Years Experience</label>
+              {/* Years Experience Dropdown */}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Years Experience *</label>
                 <div className="input-wrapper">
-                  <Clock className="input-icon-left" size={18} />
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="e.g. 4"
+                  <Clock className="input-icon-left" size={16} />
+                  <select
                     value={yearsOfExperience}
                     onChange={(e) => setYearsOfExperience(e.target.value)}
                     className="input-field"
-                  />
+                    style={{ cursor: 'pointer', appearance: 'auto', fontSize: '0.88rem', fontWeight: 600 }}
+                  >
+                    <option value="" disabled style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Select experience</option>
+                    <option value="0" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Less than 1 year</option>
+                    <option value="1" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>1 year</option>
+                    <option value="2" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>2 years</option>
+                    <option value="3" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>3 years</option>
+                    <option value="4" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>4 years</option>
+                    <option value="5" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>5+ years</option>
+                    <option value="7" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>7+ years</option>
+                    <option value="10" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>10+ years (Senior)</option>
+                  </select>
                 </div>
               </div>
             </div>
 
             {/* Professional Bio */}
-            <div className="form-group">
-              <label className="form-label">Professional Bio / About Me *</label>
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>Professional Bio *</label>
               <textarea
                 required
-                rows={4}
-                placeholder="Describe your background, key strengths, experience with startups or enterprise projects..."
+                rows={3}
+                placeholder="Briefly describe your core skills, experience, and projects..."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 className="input-field no-icon"
-                style={{ resize: 'vertical' }}
+                style={{ resize: 'vertical', fontSize: '0.86rem', padding: '10px 12px' }}
               />
             </div>
 
@@ -319,12 +324,12 @@ export const FreelancerProfileSetupPage: React.FC = () => {
               type="submit"
               disabled={submitting}
               className="btn-primary"
-              style={{ width: '100%', padding: '16px', marginTop: '12px' }}
+              style={{ width: '100%', padding: '14px', fontSize: '0.98rem' }}
             >
               {submitting ? (
-                <><Loader2 size={18} className="animate-spin" /> Saving Profile...</>
+                <><Loader2 size={16} className="animate-spin" /> Saving Profile...</>
               ) : (
-                <>Next <ArrowRight size={18} /></>
+                <>Complete Setup <ArrowRight size={18} /></>
               )}
             </motion.button>
           </form>

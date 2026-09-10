@@ -9,6 +9,7 @@ export interface IProposal extends Document {
   jobId: mongoose.Types.ObjectId;
   clientId: mongoose.Types.ObjectId;
   status: 'pending' | 'accepted' | 'declined' | 'rejected' | 'withdrawn';
+  aiInterviewStatus?: 'not_required' | 'pending' | 'in_progress' | 'completed';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +47,11 @@ const ProposalSchema: Schema = new Schema(
       type: String,
       enum: ['pending', 'accepted', 'declined', 'rejected', 'withdrawn'],
       default: 'pending',
+    },
+    aiInterviewStatus: {
+      type: String,
+      enum: ['not_required', 'pending', 'in_progress', 'completed'],
+      default: 'not_required',
     },
   },
   {

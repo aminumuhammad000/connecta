@@ -21,6 +21,7 @@ export interface IJob extends Document {
   paymentVerified?: boolean;
   paymentStatus?: 'pending' | 'escrow' | 'released' | 'verified';
   requirements?: string[];
+  requireAiInterview?: boolean;
   isExternal?: boolean;
   company?: string;
   location?: string;
@@ -58,6 +59,7 @@ const JobSchema: Schema<IJob> = new Schema(
     paymentVerified: { type: Boolean, default: false },
     paymentStatus: { type: String, enum: ['pending', 'escrow', 'released', 'verified'], default: 'pending' },
     requirements: [{ type: String }],
+    requireAiInterview: { type: Boolean, default: false },
     isExternal: { type: Boolean, default: false },
     company: { type: String, default: "" },
     location: { type: String, default: "Remote" },

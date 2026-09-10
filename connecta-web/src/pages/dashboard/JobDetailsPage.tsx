@@ -5,9 +5,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, DollarSign, Briefcase, Calendar,
-  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare
+  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare, Sparkles, Bot
 } from 'lucide-react';
-import { jobAPI, proposalAPI } from '../../services/api';
+import { jobAPI, proposalAPI, contractAPI, aiAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { formatJobBudget } from '../../utils/currency';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
@@ -24,6 +24,10 @@ export const JobDetailsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Freelancer Contract & Proposal status for this job
+  const [userContract, setUserContract] = useState<any | null>(null);
+  const [userProposal, setUserProposal] = useState<any | null>(null);
+
   // Client Received Proposals State
   const [proposals, setProposals] = useState<any[]>([]);
   const [loadingProposals, setLoadingProposals] = useState(false);
@@ -37,6 +41,25 @@ export const JobDetailsPage: React.FC = () => {
   const [estimatedDays, setEstimatedDays] = useState<number>(14);
   const [coverLetter, setCoverLetter] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleAiQuickPitch = async () => {
+    if (!job) return;
+    setAiLoading(true);
+    setShowApplyModal(true);
+    try {
+      const res = await aiAPI.generateProposal(job._id || id);
+      if (res?.success && res?.data?.coverLetter) {
+        setCoverLetter(res.data.coverLetter);
+      } else {
+        setCoverLetter(`I am experienced in engineering high-quality solutions for "${job.title}". I can deliver clean code and meet your milestone timeline.`);
+      }
+    } catch (err) {
+      setCoverLetter(`I am experienced in engineering high-quality solutions for "${job.title}". I can deliver clean code and meet your milestone timeline.`);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -61,12 +84,45 @@ export const JobDetailsPage: React.FC = () => {
         setEstimatedDays(loadedJob.duration || 14);
 
         // Fetch proposals for this job if user is a client or owner
-        fetchJobProposals(jobId);
+        if (isClient) {
+          fetchJobProposals(jobId);
+        } else {
+          checkUserStatusForJob(jobId, loadedJob);
+        }
       }
     } catch (err) {
       console.error('Failed to load job details:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkUserStatusForJob = async (jobId: string, currentJob: any) => {
+    try {
+      const [contractsRes, proposalsRes] = await Promise.all([
+        contractAPI.getUserContracts().catch(() => null),
+        proposalAPI.getMyProposals().catch(() => null)
+      ]);
+
+      const contracts = Array.isArray(contractsRes) ? contractsRes : contractsRes?.data || [];
+      const proposals = Array.isArray(proposalsRes) ? proposalsRes : proposalsRes?.data || [];
+
+      const foundContract = contracts.find((c: any) =>
+        c._id === jobId ||
+        c.jobId === jobId ||
+        c.jobId?._id === jobId ||
+        (currentJob?.title && c.title === currentJob.title)
+      );
+
+      const foundProposal = proposals.find((p: any) =>
+        p.jobId === jobId ||
+        p.jobId?._id === jobId
+      );
+
+      if (foundContract) setUserContract(foundContract);
+      if (foundProposal) setUserProposal(foundProposal);
+    } catch (err) {
+      console.error('Error checking user contract/proposal status:', err);
     }
   };
 
@@ -162,7 +218,7 @@ export const JobDetailsPage: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)' }}>The requested job listing may have been removed or closed.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: isClient ? '1fr' : '2fr 1fr', gap: '24px' }}>
+        <div className="job-details-main-grid" style={{ display: 'grid', gridTemplateColumns: isClient ? '1fr' : '2fr 1fr', gap: '24px' }}>
           {/* Main Job Details Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <motion.div
@@ -172,10 +228,17 @@ export const JobDetailsPage: React.FC = () => {
               style={{ padding: '32px', borderRadius: '24px', border: '1px solid var(--border-color)' }}
             >
               {/* Category & Save Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 800, padding: '4px 12px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', textTransform: 'uppercase' }}>
-                  {job.category || 'Technology'}
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, padding: '4px 12px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)', textTransform: 'uppercase' }}>
+                    {job.category || 'Technology'}
+                  </span>
+                  {job.requireAiInterview && (
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '4px 12px', borderRadius: '8px', background: 'rgba(16,185,129,0.12)', color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Bot size={13} /> AI Interview Required
+                    </span>
+                  )}
+                </div>
 
                 <button
                   onClick={() => setIsSaved(!isSaved)}
@@ -239,7 +302,7 @@ export const JobDetailsPage: React.FC = () => {
               </div>
 
               {/* Financial & Delivery Overview Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
+              <div className="job-overview-financial-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '28px' }}>
                 <div style={{ background: 'var(--bg-secondary)', padding: '16px 18px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <DollarSign size={14} color="var(--primary)" /> Budget / Salary
@@ -473,19 +536,124 @@ export const JobDetailsPage: React.FC = () => {
           {!isClient && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className="glass-card" style={{ padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Submit Proposal</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '20px' }}>
-                  Interested in this project? Submit your proposal directly to the client with your bid and delivery timeline.
-                </p>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setShowApplyModal(true)}
-                  className="btn-primary"
-                  style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 700, justifyContent: 'center' }}
-                >
-                  Apply Now <ArrowUpRight size={18} />
-                </motion.button>
+                {userContract ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '4px 10px',
+                        borderRadius: '8px',
+                        background: userContract.status === 'completed' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)',
+                        color: userContract.status === 'completed' ? 'var(--success)' : '#3B82F6',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <ShieldCheck size={14} />
+                        {userContract.status === 'completed' ? 'Contract Completed' : userContract.status === 'delivered' ? 'Deliverable Submitted' : 'Active Contract'}
+                      </span>
+                    </div>
+
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                      You Are Hired for This Job
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+                      {userContract.status === 'completed'
+                        ? 'This job contract has been completed and escrow funds released.'
+                        : 'You have an active contract agreement with the client for this project.'}
+                    </p>
+
+                    <button
+                      onClick={() => navigate('/my-jobs')}
+                      className="btn-primary"
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <Briefcase size={16} /> Manage Contract & Deliverables
+                    </button>
+                  </>
+                ) : userProposal ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
+                        Proposal Submitted
+                      </span>
+                    </div>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                      Proposal Submitted
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+                      You have already submitted a proposal for this job. Proposed rate: <strong>{formatJobBudget(userProposal.bidAmount || userProposal.proposedRate || 0, job.currency)}</strong>.
+                    </p>
+                    <button
+                      onClick={() => navigate('/proposals')}
+                      className="btn-secondary"
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <Send size={16} /> View My Proposals
+                    </button>
+                  </>
+                ) : job.status === 'closed' || job.status === 'completed' ? (
+                  <>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-primary)' }}>
+                      Listing Closed
+                    </h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+                      This project has been filled or closed by the client and is no longer accepting proposals.
+                    </p>
+                    <button
+                      disabled
+                      className="btn-secondary"
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, opacity: 0.6, cursor: 'not-allowed' }}
+                    >
+                      No Longer Accepting Proposals
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>Submit Proposal</h3>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '20px' }}>
+                      Interested in this project? Submit your proposal directly to the client with your bid and delivery timeline.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => setShowApplyModal(true)}
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 700, justifyContent: 'center' }}
+                      >
+                        Apply Now <ArrowUpRight size={18} />
+                      </motion.button>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        disabled={aiLoading}
+                        onClick={handleAiQuickPitch}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          borderRadius: '12px',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          justifyContent: 'center',
+                          border: '1px solid rgba(253,103,48,0.3)',
+                          background: 'rgba(253,103,48,0.08)',
+                          color: 'var(--primary)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                        {aiLoading ? 'Generating AI Pitch...' : 'AI Quick Pitch'}
+                      </motion.button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

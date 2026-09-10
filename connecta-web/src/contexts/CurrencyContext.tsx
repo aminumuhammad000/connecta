@@ -71,20 +71,11 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return formatCurrency(amountInUSD, 'USD');
     }
     const converted = amountInUSD * targetConfig.rateToUSD;
-    return `${targetConfig.symbol}${new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 2 }).format(converted)} ${targetConfig.code}`;
+    return `${targetConfig.symbol}${new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 2 }).format(converted)}`;
   };
 
   const formatDualPrice = (amountInUSD: number) => {
-    const primaryUSD = formatCurrency(amountInUSD, 'USD');
-    if (selectedCurrency === 'USD') return primaryUSD;
-
-    const targetConfig = currenciesMap[selectedCurrency] || SUPPORTED_CURRENCIES[selectedCurrency as CurrencyCode];
-    if (!targetConfig) return primaryUSD;
-
-    const convertedAmount = amountInUSD * targetConfig.rateToUSD;
-    const secondaryFormatted = `${targetConfig.symbol}${new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 2 }).format(convertedAmount)} ${targetConfig.code}`;
-
-    return `${primaryUSD} (~${secondaryFormatted})`;
+    return formatPrice(amountInUSD);
   };
 
   return (

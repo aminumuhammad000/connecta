@@ -1837,17 +1837,28 @@ export const resolveFlutterwaveAccount = async (req: Request, res: Response) => 
 
     const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
     const result = await flutterwaveService.verifyAccount(accountNumber, bankCode);
-    
-    return res.status(200).json({
-      success: true,
-      data: {
-        accountName: result.data?.account_name || result.data?.account_holder_name,
-        accountNumber: result.data?.account_number,
-      }
+    const accountName = result.data?.account_name || result.data?.account_holder_name;
+
+    if (accountName) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          accountName,
+          accountNumber: result.data?.account_number || accountNumber,
+        }
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: result.message || 'Could not verify account details with selected bank'
     });
   } catch (err: any) {
-    console.error('resolveFlutterwaveAccount error:', err);
-    return res.status(400).json({ success: false, message: err.message || 'Failed to verify account with Flutterwave' });
+    console.error('resolveFlutterwaveAccount error:', err?.message || err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Failed to verify account details'
+    });
   }
 };
 
