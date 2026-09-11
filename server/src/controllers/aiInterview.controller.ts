@@ -243,25 +243,60 @@ export const completeAiInterview = async (req: Request, res: Response) => {
     const answersCount = interview.answers.length;
     const totalQuestions = interview.questions.length || 10;
 
-    // Calculate structured evaluation
-    const score = Math.min(95, Math.max(70, Math.round(75 + (answersCount / totalQuestions) * 18 + Math.random() * 5)));
-    const technicalFit = Math.min(98, Math.max(75, Math.round(score + (Math.random() * 4 - 2))));
-    const communicationScore = Math.min(96, Math.max(78, Math.round(score + 2)));
-
-    const result = {
-      score,
-      technicalFit,
-      communicationScore,
-      summary: `Candidate completed all ${answersCount} interview questions for ${(interview.jobId as any)?.title || 'the role'}. Demonstrates strong domain expertise, clear communication, and practical problem-solving capability.`,
+    let result = {
+      score: 85,
+      technicalFit: 88,
+      communicationScore: 86,
+      summary: `Candidate completed ${answersCount} interview questions for ${(interview.jobId as any)?.title || 'the role'}. Demonstrates strong technical skills and clear communication.`,
       strengths: [
         'Clear and articulate communication of technical concepts',
         'Strong alignment with role requirements and required skill set',
-        'Structured problem-solving approach and active collaboration skills'
+        'Structured problem-solving approach'
       ],
       areasToImprove: [
         'Could provide deeper quantitative metrics on past project impacts'
       ]
     };
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey && interview.answers.length > 0) {
+      try {
+        const transcriptText = interview.answers.map((a: any, i: number) => `Q${i+1} (${a.question}): "${a.answerText}"`).join('\n\n');
+        const evalPrompt = `You are a expert technical hiring evaluator analyzing an AI interview transcript for job title: "${(interview.jobId as any)?.title || 'Role'}".
+
+Interview Transcript:
+${transcriptText}
+
+Evaluate candidate performance and output ONLY valid JSON format:
+{
+  "score": number (0-100),
+  "technicalFit": number (0-100),
+  "communicationScore": number (0-100),
+  "summary": string (3-4 sentence comprehensive evaluation summary),
+  "strengths": string[] (3 key strengths),
+  "areasToImprove": string[] (1-2 constructive growth areas)
+}`;
+
+        const evalRes = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'system', content: evalPrompt }],
+            temperature: 0.5
+          },
+          { headers: { Authorization: `Bearer ${apiKey}` } }
+        );
+
+        const evalContent = evalRes.data?.choices?.[0]?.message?.content || '';
+        const cleanJson = evalContent.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+        if (parsed && typeof parsed.score === 'number') {
+          result = parsed;
+        }
+      } catch (evalErr) {
+        console.warn('OpenAI evaluation fallback triggered:', evalErr);
+      }
+    }
 
     interview.status = 'completed';
     interview.result = result;

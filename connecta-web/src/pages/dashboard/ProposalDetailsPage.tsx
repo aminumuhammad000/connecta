@@ -307,7 +307,7 @@ export const ProposalDetailsPage: React.FC = () => {
                 )
               ) : (
                 interviewData?.result ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', textAlign: 'center' }}>
                       <div style={{ background: 'var(--bg-secondary)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Score</div>
@@ -325,6 +325,27 @@ export const ProposalDetailsPage: React.FC = () => {
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
                       {interviewData.result.summary}
                     </p>
+
+                    {/* Hiring Client Full Interview Transcript Drawer */}
+                    {interviewData.answers?.length > 0 && (
+                      <details style={{ marginTop: '6px', cursor: 'pointer' }}>
+                        <summary style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', outline: 'none' }}>
+                          View Spoken Q&A Transcript ({interviewData.answers.length} Responses)
+                        </summary>
+                        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto' }}>
+                          {interviewData.answers.map((ans: any, idx: number) => (
+                            <div key={idx} style={{ background: 'var(--bg-secondary)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '0.78rem' }}>
+                              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                                Q{idx + 1}: {ans.question}
+                              </div>
+                              <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                "{ans.answerText}"
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                   </div>
                 ) : (
                   <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0 }}>
