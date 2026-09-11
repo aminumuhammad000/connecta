@@ -361,16 +361,14 @@ export const AiInterviewPage: React.FC = () => {
           candidateAnswerRef.current = trimmed;
           setCandidateAnswer(trimmed);
 
-          // Reset silence timer every time user speaks
+          // Reset silence timer every time user speaks (5 seconds pause threshold)
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
           
-          // Snappy auto-submit after 1.8s of silence OR 1.2s when final sentence detected
-          const timeoutDuration = hasFinalResult ? 1200 : 1800;
           silenceTimerRef.current = setTimeout(() => {
             if (candidateAnswerRef.current.trim()) {
               handleNextQuestion(candidateAnswerRef.current.trim());
             }
-          }, timeoutDuration);
+          }, 5000);
         }
       };
 
@@ -1228,35 +1226,12 @@ export const AiInterviewPage: React.FC = () => {
                     <Mic size={14} color={aiState === 'listening' ? '#10B981' : 'var(--text-muted)'} />
                     {aiState === 'listening' ? (
                       <span style={{ color: '#10B981', fontWeight: 600 }}>
-                        Auto-submits 3s after pause...
+                        Auto-submits 5s after you stop speaking...
                       </span>
                     ) : (
                       'Evaluating response...'
                     )}
                   </div>
-
-                  {/* Minimal Manual Submit Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleNextQuestion()}
-                    disabled={!candidateAnswer.trim() || submittingAnswer}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: '10px',
-                      background: candidateAnswer.trim() ? 'var(--primary, #FD6730)' : 'rgba(255,255,255,0.05)',
-                      color: candidateAnswer.trim() ? '#FFFFFF' : 'var(--text-muted)',
-                      border: 'none',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      cursor: candidateAnswer.trim() ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    {submittingAnswer ? 'Submitting...' : 'Submit Response'} <ArrowRight size={14} />
-                  </button>
                 </div>
               </div>
             </div>
