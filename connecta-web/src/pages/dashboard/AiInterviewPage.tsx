@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic, MicOff, Volume2, Video, VideoOff, Play, CheckCircle2,
   ArrowRight, ArrowLeft, Loader2, Bot, ShieldCheck,
-  Send, Check
+  Send, Check, Clock
 } from 'lucide-react';
 import { aiInterviewAPI, proposalAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
