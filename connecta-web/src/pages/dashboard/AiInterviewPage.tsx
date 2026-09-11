@@ -947,91 +947,84 @@ export const AiInterviewPage: React.FC = () => {
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             style={{
               padding: '20px 0',
-              borderRadius: '0px',
-              border: 'none',
-              background: 'transparent',
-              boxShadow: 'none'
+              maxWidth: '680px',
+              margin: '0 auto',
+              width: '100%'
             }}
           >
-            <div style={{ textAlign: 'center', maxWidth: '440px', margin: '0 auto' }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background: 'rgba(253,103,48,0.1)',
-                color: 'var(--primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px'
-              }}>
-                <Bot size={26} />
-              </div>
-
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-                You're Ready for Your AI Interview
+            <div style={{ textAlign: 'center', width: '100%' }}>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+                Before starting the interview
               </h2>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.45 }}>
-                Review session details before launching the interview.
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginBottom: '28px', lineHeight: 1.6 }}>
+                Please note that this interview will take <strong>~10 minutes</strong> with contextual AI questions. You will answer by speaking naturally into your microphone. Ensure you're in a quiet spot with a stable internet connection.
               </p>
 
+              {/* Topics & Skills Box (Micro1 style) */}
               <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
+                borderRadius: '16px',
+                padding: '20px 24px',
                 marginBottom: '24px',
                 textAlign: 'left'
               }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Session Overview
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  You will be interviewed on these topics ({jobInfo?.title || 'Selected Role'})
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)'
-                  }}>
-                    10 Contextual Questions
-                  </div>
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)'
-                  }}>
-                    ~10 Minutes Duration
-                  </div>
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)'
-                  }}>
-                    Voice & Text Supported
-                  </div>
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)'
-                  }}>
-                    Client Encrypted Results
-                  </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {(jobInfo?.skillsRequired?.length ? jobInfo.skillsRequired : [
+                    'Role & Experience Overview',
+                    'Technical & Design Problem Solving',
+                    'Workflow & Collaboration Mindset',
+                    'Custom Questions defined for this job'
+                  ]).map((topic: string, i: number) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        background: 'rgba(253,103,48,0.08)',
+                        border: '1px solid rgba(253,103,48,0.2)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary, #FD6730)' }} />
+                      {topic}
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {/* Guidelines Rules Card */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border-color, rgba(255,255,255,0.08))',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                marginBottom: '28px',
+                textAlign: 'left',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                fontSize: '0.82rem',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.55
+              }}>
+                <div><strong>1. Response Recording:</strong> Your spoken responses will be automatically recorded and evaluated for the hiring client.</div>
+                <div><strong>2. Quiet & Focused Environment:</strong> Please remain on this tab during the interview for optimal speech recognition.</div>
+                <div><strong>3. Automatic Submission:</strong> A 5-second pause in your speech indicates to Connecta AI that you've completed your response.</div>
+              </div>
+
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                Please don't refresh the page during the interview.
+              </p>
 
               <button
                 onClick={prepareInterviewSession}
@@ -1039,18 +1032,20 @@ export const AiInterviewPage: React.FC = () => {
                 className="btn-primary"
                 style={{
                   width: '100%',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
+                  maxWidth: '320px',
+                  padding: '14px 28px',
+                  borderRadius: '14px',
+                  fontWeight: 800,
+                  fontSize: '0.92rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '6px'
+                  gap: '8px',
+                  margin: '0 auto'
                 }}
               >
-                {loadingInterview ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
-                {loadingInterview ? 'Initializing Session...' : 'Start AI Interview'}
+                {loadingInterview ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} />}
+                {loadingInterview ? 'Initializing Session...' : 'Sounds good, start interview'}
               </button>
             </div>
           </motion.div>
@@ -1061,178 +1056,179 @@ export const AiInterviewPage: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             style={{
-              padding: '20px 0',
-              borderRadius: '0px',
-              border: 'none',
-              background: 'transparent',
-              boxShadow: 'none',
+              padding: '10px 0',
               display: 'flex',
               flexDirection: 'column',
-              gap: '20px'
+              gap: '20px',
+              position: 'relative'
             }}
           >
-            {/* Prominent Centered AI Avatar Character Header */}
+            {/* Top Bar: Minimal Question Topic Pills (Micro1 style) */}
             <div style={{
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              textAlign: 'center',
-              padding: '16px 0 8px',
-              gap: '12px'
+              gap: '8px',
+              flexWrap: 'wrap',
+              margin: '0 auto 10px',
+              maxWidth: '700px'
             }}>
-              {/* Dynamic Animated AI Humanoid Character Avatar - Large Centered */}
+              {interviewSession.questions?.map((q: any, idx: number) => {
+                const isActive = idx === currentQuestionIdx;
+                const isPast = idx < currentQuestionIdx;
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '12px',
+                      background: isActive
+                        ? 'rgba(253,103,48,0.18)'
+                        : isPast
+                        ? 'rgba(16,185,129,0.12)'
+                        : 'rgba(255,255,255,0.03)',
+                      border: isActive
+                        ? '1px solid var(--primary, #FD6730)'
+                        : isPast
+                        ? '1px solid rgba(16,185,129,0.3)'
+                        : '1px solid var(--border-color, rgba(255,255,255,0.08))',
+                      color: isActive
+                        ? 'var(--primary, #FD6730)'
+                        : isPast
+                        ? '#10B981'
+                        : 'var(--text-muted)',
+                      fontSize: '0.74rem',
+                      fontWeight: isActive ? 800 : 600,
+                      transition: 'all 0.3s ease',
+                      maxWidth: '130px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {q.category || `Question ${idx + 1}`}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Main Stage: Centered Micro1 Orb + Right Transcript Box */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 340px',
+              gap: '30px',
+              alignItems: 'center',
+              minHeight: '380px'
+            }}>
+              {/* Left Column: Prominent Centered AI Orb */}
               <div style={{
-                width: '100px',
-                height: '100px',
-                borderRadius: '50%',
-                background: aiState === 'speaking'
-                  ? 'linear-gradient(135deg, #FD6730, #FF8C00)'
-                  : aiState === 'processing'
-                  ? 'linear-gradient(135deg, #8B5CF6, #EC4899)'
-                  : 'linear-gradient(135deg, #10B981, #059669)',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0,
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: aiState === 'listening' ? 'rotate(-5deg) scale(1)' : aiState === 'speaking' ? 'scale(1.08)' : 'scale(1)',
-                boxShadow: aiState === 'speaking'
-                  ? '0 0 40px rgba(253,103,48,0.6)'
-                  : aiState === 'processing'
-                  ? '0 0 40px rgba(139,92,246,0.6)'
-                  : '0 0 25px rgba(16,185,129,0.35)',
-                position: 'relative',
-                margin: '0 auto'
+                textAlign: 'center'
               }}>
-                {/* Humanoid Head Face SVG - Scaled larger */}
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  {/* Head contour */}
-                  <path d="M12 2a7 7 0 0 0-7 7c0 4.5 3 7.5 7 11 4-3.5 7-6.5 7-11a7 7 0 0 0-7-7z" />
-                  
-                  {/* Eyes - Animated expressions */}
-                  {aiState === 'processing' ? (
-                    <>
-                      <line x1="8.5" y1="9" x2="10.5" y2="9" strokeWidth="2" />
-                      <line x1="13.5" y1="9" x2="15.5" y2="9" strokeWidth="2" />
-                    </>
-                  ) : (
-                    <>
-                      <circle cx="9.5" cy="8.5" r="1.2" fill="#FFFFFF" />
-                      <circle cx="14.5" cy="8.5" r="1.2" fill="#FFFFFF" />
-                    </>
-                  )}
-
-                  {/* Mouth Expression - Animated wave when speaking, curve when listening, line when thinking */}
-                  {aiState === 'speaking' ? (
-                    <path d="M9 13c1 1.8 4 1.8 6 0" strokeWidth="2.4" />
-                  ) : aiState === 'processing' ? (
-                    <line x1="9.5" y1="13" x2="14.5" y2="13" strokeWidth="2" />
-                  ) : (
-                    <path d="M9.5 12.5c1.5 1.2 3.5 1.2 5 0" strokeWidth="2" />
-                  )}
-                </svg>
-
-                {/* Dynamic Speech Wave Ping Indicator when Speaking */}
-                {aiState === 'speaking' && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '8px',
-                    width: '10px',
-                    height: '10px',
+                <div style={{
+                  width: '140px',
+                  height: '140px',
+                  borderRadius: '50%',
+                  background: aiState === 'speaking'
+                    ? 'radial-gradient(circle, #FD6730 0%, #FF8C00 60%, rgba(253,103,48,0.2) 100%)'
+                    : aiState === 'processing'
+                    ? 'radial-gradient(circle, #8B5CF6 0%, #EC4899 60%, rgba(139,92,246,0.2) 100%)'
+                    : 'radial-gradient(circle, #10B981 0%, #059669 60%, rgba(16,185,129,0.2) 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: aiState === 'listening' ? 'scale(1)' : aiState === 'speaking' ? 'scale(1.08)' : 'scale(0.96)',
+                  boxShadow: aiState === 'speaking'
+                    ? '0 0 60px rgba(253,103,48,0.55)'
+                    : aiState === 'processing'
+                    ? '0 0 60px rgba(139,92,246,0.55)'
+                    : '0 0 35px rgba(16,185,129,0.3)',
+                  position: 'relative'
+                }}>
+                  {/* Inner Glowing Core Avatar (Micro1 'm.' style for Connecta) */}
+                  <div style={{
+                    width: '74px',
+                    height: '74px',
                     borderRadius: '50%',
                     background: '#FFFFFF',
-                    animation: 'ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite'
-                  }} />
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                {jobInfo?.title && (
-                  <span style={{
-                    fontSize: '0.84rem',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    padding: '4px 14px',
-                    borderRadius: '20px',
-                    letterSpacing: '-0.01em'
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#090A0F',
+                    fontWeight: 900,
+                    fontSize: '1.4rem',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
                   }}>
-                    {jobInfo.title}
-                  </span>
-                )}
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '4px 12px',
-                    borderRadius: '12px',
-                    background: aiState === 'speaking' ? 'rgba(253,103,48,0.15)' : aiState === 'processing' ? 'rgba(139,92,246,0.15)' : 'rgba(16,185,129,0.15)',
-                    color: aiState === 'speaking' ? 'var(--primary, #FD6730)' : aiState === 'processing' ? '#8B5CF6' : '#10B981'
-                  }}>
-                    {aiState === 'speaking' ? 'Speaking...' : aiState === 'processing' ? 'Thinking & Evaluating...' : 'Leaning & Listening'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Minimal Progress Track Line */}
-            <div style={{ width: '100%', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '1px', overflow: 'hidden' }}>
-              <div
-                style={{
-                  width: `${((currentQuestionIdx + 1) / (interviewSession.questions?.length || 10)) * 100}%`,
-                  height: '100%',
-                  background: 'var(--primary, #FD6730)',
-                  transition: 'width 0.4s ease'
-                }}
-              />
-            </div>
-
-            {/* Main Stage Spoken Response Box & Auto-submit / Manual Submit */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginTop: '12px' }}>
-
-              {/* Minimalist Response Box */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    Spoken / Transcribed Response:
-                  </span>
-                </div>
-
-                <textarea
-                  rows={4}
-                  placeholder="Speak into your microphone... Spoken answers auto-transcribe here."
-                  value={candidateAnswer}
-                  onChange={(e) => {
-                    setCandidateAnswer(e.target.value);
-                    candidateAnswerRef.current = e.target.value;
-                  }}
-                  className="input-field"
-                  style={{
-                    width: '100%',
-                    fontSize: '0.86rem',
-                    lineHeight: 1.5,
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)'
-                  }}
-                />
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '4px' }}>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Mic size={14} color={aiState === 'listening' ? '#10B981' : 'var(--text-muted)'} />
-                    {aiState === 'listening' ? (
-                      <span style={{ color: '#10B981', fontWeight: 600 }}>
-                        Auto-submits 5s after you stop speaking...
-                      </span>
-                    ) : (
-                      'Evaluating response...'
-                    )}
+                    c.
                   </div>
                 </div>
+
+                <span style={{
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  marginTop: '16px',
+                  padding: '4px 14px',
+                  borderRadius: '12px',
+                  background: aiState === 'speaking' ? 'rgba(253,103,48,0.15)' : aiState === 'processing' ? 'rgba(139,92,246,0.15)' : 'rgba(16,185,129,0.15)',
+                  color: aiState === 'speaking' ? 'var(--primary, #FD6730)' : aiState === 'processing' ? '#8B5CF6' : '#10B981'
+                }}>
+                  {aiState === 'speaking' ? 'Connecta AI Speaking...' : aiState === 'processing' ? 'Thinking & Evaluating...' : 'Listening to Candidate...'}
+                </span>
+              </div>
+
+              {/* Right Column: Micro1 Floating AI Prompt + Candidate Speech Card */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
+                borderRadius: '20px',
+                padding: '20px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <div style={{ fontSize: '0.86rem', color: 'var(--text-primary)', lineHeight: 1.5, fontWeight: 500 }}>
+                  {interviewSession.questions[currentQuestionIdx]?.question}
+                </div>
+
+                <div style={{
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  background: candidateAnswer ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <span style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: candidateAnswer ? '#10B981' : 'var(--primary, #FD6730)',
+                    animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite'
+                  }} />
+                  <span style={{ fontSize: '0.78rem', color: candidateAnswer ? '#10B981' : 'var(--text-muted)', fontWeight: 600 }}>
+                    {candidateAnswer ? 'Recording spoken response...' : 'Listening for response...'}
+                  </span>
+                </div>
+
+                {candidateAnswer && (
+                  <div style={{
+                    fontSize: '0.82rem',
+                    color: 'var(--text-secondary)',
+                    fontStyle: 'italic',
+                    lineHeight: 1.45,
+                    maxHeight: '100px',
+                    overflowY: 'auto'
+                  }}>
+                    "{candidateAnswer}"
+                  </div>
+                )}
               </div>
             </div>
 
