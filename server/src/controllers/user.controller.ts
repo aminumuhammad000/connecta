@@ -259,7 +259,7 @@ export const signup = async (req: Request, res: Response) => {
       ...otherDetails
     });
 
-    const token = jwt.sign({ id: newUser._id, userType: newUser.userType }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
+    const token = jwt.sign({ id: newUser._id, userType: newUser.userType }, process.env.JWT_SECRET as string, { expiresIn: "30d" });
 
     // Clean up OTP
     if (otpRecord && (otpRecord as any)._id) {
@@ -368,7 +368,7 @@ export const signin = async (req: Request, res: Response) => {
       return res.status(500).json({ message: "Server configuration error" });
     }
 
-    const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET as string, { expiresIn: "30d" });
     console.log('Token generated successfully');
 
     res.status(200).json({ success: true, user, token });
@@ -464,7 +464,7 @@ export const googleSignin = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user._id, userType: user.userType },
       (process.env.JWT_SECRET || 'fallback_secret') as string,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     return res.status(200).json({ success: true, user, token, isNewUser });
@@ -557,7 +557,7 @@ export const googleSignup = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user._id, userType: user.userType },
       (process.env.JWT_SECRET || 'fallback_secret') as string,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     return res.status(200).json({ success: true, user, token, isNewUser });
@@ -1235,7 +1235,7 @@ export const switchUserType = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user._id, userType: user.userType },
       (process.env.JWT_SECRET || 'fallback_secret') as string,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     return res.status(200).json({

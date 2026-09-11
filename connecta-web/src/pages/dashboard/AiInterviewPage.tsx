@@ -1150,7 +1150,22 @@ export const AiInterviewPage: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                {jobInfo?.title && (
+                  <span style={{
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    padding: '4px 14px',
+                    borderRadius: '20px',
+                    letterSpacing: '-0.01em'
+                  }}>
+                    {jobInfo.title}
+                  </span>
+                )}
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{
                     fontSize: '0.72rem',

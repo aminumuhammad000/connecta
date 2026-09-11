@@ -5,8 +5,8 @@ const ROLE_KEY = 'connecta_role';
 const THEME_KEY = 'connecta_theme';
 const ONBOARDING_KEY = 'connecta_onboarding_completed';
 
-// 7 days in milliseconds
-const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+// 30 days in milliseconds (1 month session durability)
+const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const storage = {
   getToken: (): string | null => {
@@ -15,11 +15,11 @@ export const storage = {
 
     if (!token) return null;
 
-    // Check if token has expired (> 7 days)
+    // Check if token has expired (> 30 days)
     if (tokenTime) {
       const elapsed = Date.now() - parseInt(tokenTime, 10);
       if (elapsed > SESSION_DURATION_MS) {
-        // Expired after 1 week
+        // Expired after 30 days
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(TOKEN_TIME_KEY);
         localStorage.removeItem(USER_KEY);
@@ -28,6 +28,8 @@ export const storage = {
       }
     }
 
+    // Continuously extend active user session timestamp on usage
+    localStorage.setItem(TOKEN_TIME_KEY, Date.now().toString());
     return token;
   },
   setToken: (token: string): void => {
