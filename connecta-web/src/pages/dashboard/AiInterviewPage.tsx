@@ -75,14 +75,37 @@ export const AiInterviewPage: React.FC = () => {
       .catch(() => null);
   }, [proposalId]);
 
-  // Cleanup media streams on unmount
+  // Auto-request microphone & camera permissions on load to avoid redundant clicks if already granted
   useEffect(() => {
-    return () => {
-      stopMediaStream();
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
+    let activeStream: MediaStream | null = null;
+    async function checkPermissions() {
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        activeStream = mediaStream;
+        setStream(mediaStream);
+        setMicPermission(true);
+        setMicVerified(true);
+        setSpeakerVerified(true);
+        setCameraPermission(true);
+        // Directly skip to Step 4 Guidelines setup
+        setStep(4);
+      } catch (err) {
+        // Fallback to audio-only if camera unavailable or denied
+        try {
+          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          activeStream = audioStream;
+          setStream(audioStream);
+          setMicPermission(true);
+          setMicVerified(true);
+          setSpeakerVerified(true);
+          setStep(4);
+        } catch {
+          // Keep step 1 manual check if permissions not granted yet
+        }
       }
-    };
+    }
+
+    checkPermissions();
   }, []);
 
   const stopMediaStream = () => {
