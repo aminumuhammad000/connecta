@@ -717,11 +717,11 @@ section{position:relative}
           <span style="background:linear-gradient(135deg,#F6A81C,#E08A00)">K</span>
           <span style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span>
           <span style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span>
-          <span style="background:var(--ink);font-size:.7rem" data-stat="heroBadge">+2.5k</span>
+          <span style="background:var(--ink);font-size:.7rem" data-stat="heroBadge">2,548</span>
         </div>
         <div class="proof-txt">
           <div class="stars">★★★★★</div>
-          <div><b data-stat="heroPros">2,500+ professionals</b> across <span data-stat="heroCountries">2+ countries</span></div>
+          <div><b data-stat="heroPros">2,548 professionals</b> across <span data-stat="heroCountries">2 countries</span></div>
         </div>
       </div>
     </div>
@@ -762,10 +762,10 @@ section{position:relative}
         </svg>
 
         <!-- floating talent cards -->
-        <div class="node-card node-a"><span class="ring" style="background:var(--grad-jade)">A</span><div>Amara O.<small>UI/UX · Lagos</small></div></div>
-        <div class="node-card node-b"><span class="ring" style="background:var(--grad-sun);color:var(--ink)">K</span><div>Kwame B.<small>Backend · Accra</small></div></div>
-        <div class="node-card node-c"><span class="ring" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span><div>Naledi M.<small>Brand · Nairobi</small></div></div>
-        <div class="node-card node-d"><span class="ring" style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span><div>Tunde A.<small>Motion · Kigali</small></div></div>
+        <div class="node-card node-a" data-real-node="0"><span class="ring" style="background:var(--grad-jade)">U</span><div><b class="real-name">Usman U.</b><small class="real-meta">Software Engineer · Lagos</small></div></div>
+        <div class="node-card node-b" data-real-node="1"><span class="ring" style="background:var(--grad-sun);color:var(--ink)">S</span><div><b class="real-name">Salamah O.</b><small class="real-meta">Social Marketer · Lagos</small></div></div>
+        <div class="node-card node-c" data-real-node="2"><span class="ring" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">J</span><div><b class="real-name">Jonah B.</b><small class="real-meta">Ai Translator · Lagos</small></div></div>
+        <div class="node-card node-d" data-real-node="3"><span class="ring" style="background:linear-gradient(135deg,#D9613C,#b64a2a)">O</span><div><b class="real-name">Okoh V.</b><small class="real-meta">Product Designer · Lagos</small></div></div>
 
         <!-- match core -->
         <div class="match-core">
@@ -988,10 +988,10 @@ section{position:relative}
         </div>
         <div class="ai-body">
           <div class="ai-prompt">"I'm opening a restaurant in Nairobi — I need a brand identity, a launch-night event, and social media to fill tables."<span class="cursor"></span></div>
-          <div class="ai-thinking"><span class="pulse"></span> Analyzing <span data-stat="aiThinking">2,500+</span> profiles · weighing skills, rating &amp; availability</div>
-          <div class="match-row"><span class="ava" style="background:var(--grad-jade)">K</span><div class="info"><b>Kabelo M.</b><small>Brand &amp; Identity · Nairobi</small></div><div class="score"><b>98</b><small>fit</small></div></div>
-          <div class="match-row"><span class="ava" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span><div class="info"><b>Naledi M.</b><small>Events &amp; Hospitality · Nairobi</small></div><div class="score"><b>95</b><small>fit</small></div></div>
-          <div class="match-row"><span class="ava" style="background:var(--grad-sun);color:var(--ink)">A</span><div class="info"><b>Amara O.</b><small>Social &amp; Content · Lagos</small></div><div class="score"><b>93</b><small>fit</small></div></div>
+          <div class="ai-thinking"><span class="pulse"></span> Analyzing <span data-stat="aiThinking">2,548</span> profiles · weighing skills, rating &amp; availability</div>
+          <div class="match-row" data-real-match="0"><span class="ava" style="background:var(--grad-jade)">U</span><div class="info"><b class="real-match-name">Usman Umar</b><small class="real-match-meta">Software Engineer · Lagos</small></div><div class="score"><b>99</b><small>fit</small></div></div>
+          <div class="match-row" data-real-match="1"><span class="ava" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">S</span><div class="info"><b class="real-match-name">Salamah Othman</b><small class="real-match-meta">Social Media Marketer · Lagos</small></div><div class="score"><b>98</b><small>fit</small></div></div>
+          <div class="match-row" data-real-match="2"><span class="ava" style="background:var(--grad-sun);color:var(--ink)">J</span><div class="info"><b class="real-match-name">Jonah Blessing</b><small class="real-match-meta">Ai Translator · Lagos</small></div><div class="score"><b>96</b><small>fit</small></div></div>
         </div>
       </div>
     </div>
@@ -1357,17 +1357,17 @@ section{position:relative}
       var countries = d.totalCountries || 0;
       var matchRate = d.matchRatePercentage || d.verifiedTalentPercentage || 0;
 
-      // 1. Hero proof text & badge
+      // 1. Exact Hero proof text & badge from DB
       var heroPros = document.querySelector('[data-stat="heroPros"]');
       var heroCountries = document.querySelector('[data-stat="heroCountries"]');
       var heroBadge = document.querySelector('[data-stat="heroBadge"]');
-      if(heroPros && pros > 0) heroPros.textContent = fmt(pros) + '+ professionals';
-      if(heroCountries && countries > 0) heroCountries.textContent = countries + (countries === 1 ? ' country' : '+ countries');
-      if(heroBadge && pros > 0) heroBadge.textContent = '+' + (pros >= 1000 ? (pros/1000).toFixed(1).replace(/\.0$/, '') + 'k' : pros);
+      if(heroPros && pros > 0) heroPros.textContent = fmt(pros) + ' professionals';
+      if(heroCountries && countries > 0) heroCountries.textContent = countries + (countries === 1 ? ' country' : ' countries');
+      if(heroBadge && pros > 0) heroBadge.textContent = fmt(pros);
 
-      // 2. AI Thinking snippet
+      // 2. Exact AI Thinking count from DB
       var aiThinking = document.querySelector('[data-stat="aiThinking"]');
-      if(aiThinking && pros > 0) aiThinking.textContent = fmt(pros) + '+';
+      if(aiThinking && pros > 0) aiThinking.textContent = fmt(pros);
 
       // 3. Match Core
       var matchEl = document.querySelector('[data-stat="matchRate"]');
@@ -1376,17 +1376,60 @@ section{position:relative}
         if(matchEl.dataset.done) matchEl.textContent = matchRate + '%';
       }
 
-      // 4. Stats section cells
+      // 4. Exact Stats section cells from DB
       var prosCell = document.querySelector('[data-stat="professionals"]');
       if(prosCell && pros > 0){
         prosCell.dataset.count = pros;
-        if(prosCell.dataset.done) prosCell.textContent = fmt(pros) + '+';
+        if(prosCell.dataset.done) prosCell.textContent = fmt(pros);
       }
 
       var countriesCell = document.querySelector('[data-stat="countries"]');
       if(countriesCell && countries > 0){
         countriesCell.dataset.count = countries;
-        if(countriesCell.dataset.done) countriesCell.textContent = countries + '+';
+        if(countriesCell.dataset.done) countriesCell.textContent = String(countries);
+      }
+
+      // 5. Populate actual real freelancers from the database
+      if(d.featuredFreelancers && d.featuredFreelancers.length){
+        d.featuredFreelancers.forEach(function(f, idx){
+          // Hero floating cards
+          var node = document.querySelector('[data-real-node="' + idx + '"]');
+          if(node){
+            var nameEl = node.querySelector('.real-name') || node.querySelector('div b');
+            var metaEl = node.querySelector('.real-meta') || node.querySelector('div small');
+            var ringEl = node.querySelector('.ring');
+            var shortName = f.firstName + (f.lastName ? ' ' + f.lastName.charAt(0) + '.' : '');
+            var loc = (f.location || 'Lagos').split(',')[0].trim();
+            var skill = f.title || (f.skills && f.skills[0]) || 'Professional';
+            if(nameEl) nameEl.textContent = shortName;
+            if(metaEl) metaEl.textContent = skill + ' · ' + loc;
+            if(ringEl && f.profileImage){
+              ringEl.style.backgroundImage = 'url(' + f.profileImage + ')';
+              ringEl.style.backgroundSize = 'cover';
+              ringEl.style.backgroundPosition = 'center';
+              ringEl.textContent = '';
+            }
+          }
+
+          // AI match rows
+          var matchRow = document.querySelector('[data-real-match="' + idx + '"]');
+          if(matchRow){
+            var mName = matchRow.querySelector('.real-match-name') || matchRow.querySelector('b');
+            var mMeta = matchRow.querySelector('.real-match-meta') || matchRow.querySelector('small');
+            var mAva = matchRow.querySelector('.ava');
+            var fullName = f.firstName + (f.lastName ? ' ' + f.lastName : '');
+            var mLoc = (f.location || 'Lagos').split(',')[0].trim();
+            var mSkill = f.title || (f.skills && f.skills.slice(0, 2).join(' & ')) || 'Professional';
+            if(mName) mName.textContent = fullName;
+            if(mMeta) mMeta.textContent = mSkill + ' · ' + mLoc;
+            if(mAva && f.profileImage){
+              mAva.style.backgroundImage = 'url(' + f.profileImage + ')';
+              mAva.style.backgroundSize = 'cover';
+              mAva.style.backgroundPosition = 'center';
+              mAva.textContent = '';
+            }
+          }
+        });
       }
     }
 

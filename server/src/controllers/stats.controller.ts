@@ -61,6 +61,31 @@ export const getPublicStats = async (_req: Request, res: Response) => {
       totalEscrowVolume = 0;
     }
 
+    // Actual real freelancers from the database for hero and ecosystem cards
+    let featuredFreelancers: any[] = [];
+    try {
+      featuredFreelancers = await User.find(
+        {
+          userType: 'freelancer',
+          isActive: { $ne: false },
+          firstName: { $exists: true, $nin: ['', null] }
+        },
+        {
+          firstName: 1,
+          lastName: 1,
+          title: 1,
+          location: 1,
+          profileImage: 1,
+          skills: 1
+        }
+      )
+      .sort({ profileImage: -1, createdAt: -1 })
+      .limit(8)
+      .lean();
+    } catch {
+      featuredFreelancers = [];
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -78,7 +103,8 @@ export const getPublicStats = async (_req: Request, res: Response) => {
         verifiedTalentPercentage,
         matchRatePercentage: verifiedTalentPercentage,
         escrowProtectionPercentage: 100,
-        avgAiMatchTimeSeconds: 1.2
+        avgAiMatchTimeSeconds: 1.2,
+        featuredFreelancers
       }
     });
   } catch (err: any) {
