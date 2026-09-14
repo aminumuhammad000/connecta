@@ -717,11 +717,11 @@ section{position:relative}
           <span style="background:linear-gradient(135deg,#F6A81C,#E08A00)">K</span>
           <span style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span>
           <span style="background:linear-gradient(135deg,#D9613C,#b64a2a)">T</span>
-          <span style="background:var(--ink);font-size:.7rem" data-stat="heroBadge">+9k</span>
+          <span style="background:var(--ink);font-size:.7rem" data-stat="heroBadge">+2.5k</span>
         </div>
         <div class="proof-txt">
           <div class="stars">★★★★★</div>
-          <div><b data-stat="heroPros">9,200+ professionals</b> across <span data-stat="heroCountries">30+ countries</span></div>
+          <div><b data-stat="heroPros">2,500+ professionals</b> across <span data-stat="heroCountries">2+ countries</span></div>
         </div>
       </div>
     </div>
@@ -988,7 +988,7 @@ section{position:relative}
         </div>
         <div class="ai-body">
           <div class="ai-prompt">"I'm opening a restaurant in Nairobi — I need a brand identity, a launch-night event, and social media to fill tables."<span class="cursor"></span></div>
-          <div class="ai-thinking"><span class="pulse"></span> Analyzing <span data-stat="aiThinking">9,200</span> profiles · weighing skills, rating &amp; availability</div>
+          <div class="ai-thinking"><span class="pulse"></span> Analyzing <span data-stat="aiThinking">2,500+</span> profiles · weighing skills, rating &amp; availability</div>
           <div class="match-row"><span class="ava" style="background:var(--grad-jade)">K</span><div class="info"><b>Kabelo M.</b><small>Brand &amp; Identity · Nairobi</small></div><div class="score"><b>98</b><small>fit</small></div></div>
           <div class="match-row"><span class="ava" style="background:linear-gradient(135deg,#2B2A6B,#4544a8)">N</span><div class="info"><b>Naledi M.</b><small>Events &amp; Hospitality · Nairobi</small></div><div class="score"><b>95</b><small>fit</small></div></div>
           <div class="match-row"><span class="ava" style="background:var(--grad-sun);color:var(--ink)">A</span><div class="info"><b>Amara O.</b><small>Social &amp; Content · Lagos</small></div><div class="score"><b>93</b><small>fit</small></div></div>
@@ -1125,8 +1125,8 @@ section{position:relative}
 <section class="section stats">
   <div class="wrap">
     <div class="stats-grid">
-      <div class="stat-cell reveal"><div class="n" data-count="9200" data-suffix="+" data-stat="professionals">9,200+</div><div class="l">Professionals onboard</div></div>
-      <div class="stat-cell reveal" data-delay="1"><div class="n" data-count="30" data-suffix="+" data-stat="countries">30+</div><div class="l">Countries across Africa</div></div>
+      <div class="stat-cell reveal"><div class="n" data-count="2548" data-suffix="+" data-stat="professionals">2,548+</div><div class="l">Professionals onboard</div></div>
+      <div class="stat-cell reveal" data-delay="1"><div class="n" data-count="2" data-suffix="+" data-stat="countries">2+</div><div class="l">Countries represented</div></div>
       <div class="stat-cell reveal" data-delay="2"><div class="n" data-count="100" data-suffix="%" data-stat="escrow">100%</div><div class="l">Milestones escrow-protected</div></div>
       <div class="stat-cell reveal" data-delay="3"><div class="n" data-count="1" data-prefix="&lt;" data-suffix="s" data-stat="matchTime">&lt;1s</div><div class="l">Avg. AI match time</div></div>
     </div>
@@ -1348,51 +1348,43 @@ section{position:relative}
   }
   function fmt(n){ return n >= 1000 ? n.toLocaleString('en-US') : String(n); }
 
-  /* Fetch Live Platform Statistics with Approved Production Fallbacks */
+  /* Fetch Live Platform Statistics Directly from Database API (No Mock Data) */
   (function initLiveStats(){
     var STATS_API = 'https://api.myconnecta.ng/api/stats/public';
-    var FALLBACK_STATS = {
-      totalProfessionals: 9200,
-      totalCountries: 30,
-      verifiedTalentPercentage: 98,
-      matchRatePercentage: 97,
-      escrowProtectionPercentage: 100,
-      avgAiMatchTimeSeconds: 1.2
-    };
 
     function applyStats(d){
-      var pros = Math.max(d.totalProfessionals || d.totalFreelancers || d.totalUsers || 0, FALLBACK_STATS.totalProfessionals);
-      var countries = Math.max(d.totalCountries || 0, FALLBACK_STATS.totalCountries);
-      var matchRate = d.matchRatePercentage || d.verifiedTalentPercentage || FALLBACK_STATS.matchRatePercentage;
+      var pros = d.totalProfessionals || d.totalFreelancers || d.totalUsers || 0;
+      var countries = d.totalCountries || 0;
+      var matchRate = d.matchRatePercentage || d.verifiedTalentPercentage || 0;
 
       // 1. Hero proof text & badge
       var heroPros = document.querySelector('[data-stat="heroPros"]');
       var heroCountries = document.querySelector('[data-stat="heroCountries"]');
       var heroBadge = document.querySelector('[data-stat="heroBadge"]');
-      if(heroPros) heroPros.textContent = fmt(pros) + '+ professionals';
-      if(heroCountries) heroCountries.textContent = countries + '+ countries';
-      if(heroBadge) heroBadge.textContent = '+' + (pros >= 1000 ? Math.floor(pros/1000) + 'k' : pros);
+      if(heroPros && pros > 0) heroPros.textContent = fmt(pros) + '+ professionals';
+      if(heroCountries && countries > 0) heroCountries.textContent = countries + (countries === 1 ? ' country' : '+ countries');
+      if(heroBadge && pros > 0) heroBadge.textContent = '+' + (pros >= 1000 ? (pros/1000).toFixed(1).replace(/\.0$/, '') + 'k' : pros);
 
       // 2. AI Thinking snippet
       var aiThinking = document.querySelector('[data-stat="aiThinking"]');
-      if(aiThinking) aiThinking.textContent = fmt(pros);
+      if(aiThinking && pros > 0) aiThinking.textContent = fmt(pros) + '+';
 
       // 3. Match Core
       var matchEl = document.querySelector('[data-stat="matchRate"]');
-      if(matchEl){
+      if(matchEl && matchRate > 0){
         matchEl.dataset.count = matchRate;
         if(matchEl.dataset.done) matchEl.textContent = matchRate + '%';
       }
 
       // 4. Stats section cells
       var prosCell = document.querySelector('[data-stat="professionals"]');
-      if(prosCell){
+      if(prosCell && pros > 0){
         prosCell.dataset.count = pros;
         if(prosCell.dataset.done) prosCell.textContent = fmt(pros) + '+';
       }
 
       var countriesCell = document.querySelector('[data-stat="countries"]');
-      if(countriesCell){
+      if(countriesCell && countries > 0){
         countriesCell.dataset.count = countries;
         if(countriesCell.dataset.done) countriesCell.textContent = countries + '+';
       }
@@ -1410,7 +1402,7 @@ section{position:relative}
           }
         })
         .catch(function(err){
-          console.debug('[Connecta] Using approved baseline stats:', err.message);
+          console.debug('[Connecta] Stats API status:', err.message);
         });
     } catch(e){}
   })();

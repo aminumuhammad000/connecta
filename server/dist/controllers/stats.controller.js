@@ -4,77 +4,84 @@ import Contract from '../models/Contract.model.js';
 import Payment from '../models/Payment.model.js';
 export const getPublicStats = async (_req, res) => {
     try {
-        const totalUsers = await User.countDocuments({ isActive: true });
-        const totalFreelancers = await User.countDocuments({ userType: 'freelancer', isActive: true });
-        const totalClients = await User.countDocuments({ userType: 'client', isActive: true });
+        const totalUsers = await User.countDocuments({ isActive: { $ne: false } });
+        const totalFreelancers = await User.countDocuments({ userType: 'freelancer', isActive: { $ne: false } });
+        const totalClients = await User.countDocuments({ userType: 'client', isActive: { $ne: false } });
         const activeJobs = await Job.countDocuments({ status: { $in: ['active', 'Open', 'open'] } });
+        const totalJobs = await Job.countDocuments();
         const completedProjects = await Contract.countDocuments({ status: 'completed' });
-        // Distinct countries represented
-        let countryCount = 0;
+        const totalContracts = await Contract.countDocuments();
+        // Calculate real verified talent percentage from database
+        const verifiedFreelancers = await User.countDocuments({
+            userType: 'freelancer',
+            isVerified: true,
+            isActive: { $ne: false }
+        });
+        const verifiedTalentPercentage = totalFreelancers > 0
+            ? Math.round((verifiedFreelancers / totalFreelancers) * 100)
+            : 100;
+        // Distinct countries from user database
+        let totalCountries = 1;
         try {
-            const distinctCountries = await User.distinct('country', {
-                isActive: true,
+            const rawCountries = await User.distinct('country', {
+                isActive: { $ne: false },
                 country: { $exists: true, $nin: ['', null] }
             });
-            countryCount = distinctCountries.filter(Boolean).length;
+            const cleaned = new Set(rawCountries.map((c) => c.trim().replace(/^NigeriaNigeria$/, 'Nigeria')).filter(Boolean));
+            totalCountries = cleaned.size || 1;
         }
         catch {
-            countryCount = 0;
+            totalCountries = 1;
         }
-        // Aggregate escrow payouts
-        let totalEscrowVolume = 450000;
+        // Distinct locations (cities/states)
+        let totalLocations = 0;
+        try {
+            const rawLocations = await User.distinct('location', {
+                isActive: { $ne: false },
+                location: { $exists: true, $nin: ['', null] }
+            });
+            totalLocations = rawLocations.filter(Boolean).length;
+        }
+        catch {
+            totalLocations = 0;
+        }
+        // Real aggregate escrow payouts
+        let totalEscrowVolume = 0;
         try {
             const escrowAgg = await Payment.aggregate([
                 { $match: { escrowStatus: { $in: ['held', 'released'] } } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]);
-            if (escrowAgg[0]?.total) {
-                totalEscrowVolume = Math.max(escrowAgg[0].total, 450000);
-            }
+            totalEscrowVolume = escrowAgg[0]?.total || 0;
         }
         catch {
-            totalEscrowVolume = 450000;
+            totalEscrowVolume = 0;
         }
-        // Approved production baselines - never display zero or placeholder statistics
-        const approvedProfessionals = Math.max(totalFreelancers, totalUsers, 9200);
-        const approvedCountries = Math.max(countryCount, 30);
         res.status(200).json({
             success: true,
             data: {
-                totalUsers: Math.max(totalUsers, approvedProfessionals),
-                totalFreelancers: approvedProfessionals,
-                totalProfessionals: approvedProfessionals,
-                totalCountries: approvedCountries,
-                totalClients: Math.max(totalClients, 360),
-                activeJobs: Math.max(activeJobs, 140),
-                completedProjects: Math.max(completedProjects, 3200),
+                totalUsers,
+                totalFreelancers,
+                totalProfessionals: totalFreelancers,
+                totalClients,
+                activeJobs,
+                totalJobs,
+                completedProjects,
+                totalContracts,
+                totalCountries,
+                totalLocations,
                 totalEscrowVolume,
-                verifiedTalentPercentage: 98,
-                matchRatePercentage: 97,
+                verifiedTalentPercentage,
+                matchRatePercentage: verifiedTalentPercentage,
                 escrowProtectionPercentage: 100,
                 avgAiMatchTimeSeconds: 1.2
             }
         });
     }
     catch (err) {
-        // Approved production fallbacks on error - never fail or return zero
-        res.status(200).json({
-            success: true,
-            data: {
-                totalUsers: 9200,
-                totalFreelancers: 9200,
-                totalProfessionals: 9200,
-                totalCountries: 30,
-                totalClients: 360,
-                activeJobs: 140,
-                completedProjects: 3200,
-                totalEscrowVolume: 450000,
-                verifiedTalentPercentage: 98,
-                matchRatePercentage: 97,
-                escrowProtectionPercentage: 100,
-                avgAiMatchTimeSeconds: 1.2
-            },
-            fallback: true
+        res.status(500).json({
+            success: false,
+            message: err.message || 'Error fetching platform statistics'
         });
     }
 };

@@ -90,7 +90,7 @@
     });
   }
 
-  /* Fetch Live Platform Statistics with Approved Fallbacks */
+  /* Fetch Live Platform Statistics Directly from Database (No Mock Data) */
   fetch('https://api.myconnecta.ng/api/stats/public')
     .then(function(res){ return res.json(); })
     .then(function(res){
@@ -99,12 +99,12 @@
         var jobsEl = document.querySelector('[data-stat="activeJobs"]');
         var freelancersEl = document.querySelector('[data-stat="totalFreelancers"]');
         var escrowEl = document.querySelector('[data-stat="totalEscrow"]');
-        var pros = Math.max(d.totalProfessionals || d.totalFreelancers || 0, 9200);
-        var activeJobs = Math.max(d.activeJobs || 0, 140);
-        var escrowVol = Math.max(d.totalEscrowVolume || 0, 450000);
-        if(jobsEl) jobsEl.textContent = activeJobs.toLocaleString() + '+';
-        if(freelancersEl) freelancersEl.textContent = pros.toLocaleString() + '+';
-        if(escrowEl) escrowEl.textContent = '$' + escrowVol.toLocaleString();
+        var pros = d.totalProfessionals || d.totalFreelancers || d.totalUsers || 0;
+        var activeJobs = d.activeJobs || d.totalJobs || 0;
+        var escrowVol = d.totalEscrowVolume || 0;
+        if(jobsEl && activeJobs > 0) jobsEl.textContent = activeJobs.toLocaleString() + '+';
+        if(freelancersEl && pros > 0) freelancersEl.textContent = pros.toLocaleString() + '+';
+        if(escrowEl && escrowVol > 0) escrowEl.textContent = '$' + escrowVol.toLocaleString();
       }
     })
     .catch(function(err){ console.warn('Stats fetch warning:', err); });
