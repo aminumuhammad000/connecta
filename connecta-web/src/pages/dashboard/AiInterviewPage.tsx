@@ -2,14 +2,15 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
-  Mic, MicOff, Volume2, Video, VideoOff, Play, CheckCircle2,
-  ArrowRight, ArrowLeft, Loader2, Bot, ShieldCheck,
-  Send, Check, Clock
+  Mic, Volume2, Video, VideoOff, Play, CheckCircle2,
+  ArrowRight, Loader2, ShieldCheck,
+  Check, Clock
 } from 'lucide-react';
 import { aiInterviewAPI, proposalAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import { ConnectaCharacter } from '../../components/ai/ConnectaCharacter';
 
 // Web Speech API interface definitions for TypeScript
 declare global {
@@ -47,6 +48,7 @@ export const AiInterviewPage: React.FC = () => {
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [interviewResult, setInterviewResult] = useState<any | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(600); // 10 minutes (600s)
 
   // AI Interviewer State Machine: 'speaking' | 'listening' | 'processing' | 'idle'
   const [aiState, setAiState] = useState<'speaking' | 'listening' | 'processing' | 'idle'>('idle');
@@ -77,15 +79,12 @@ export const AiInterviewPage: React.FC = () => {
 
   // Auto-request microphone & camera permissions on load to avoid redundant clicks if already granted
   useEffect(() => {
-    let activeStream: MediaStream | null = null;
     async function checkPermissions() {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        activeStream = mediaStream;
         setStream(mediaStream);
         setMicPermission(true);
         setMicVerified(true);
-        setSpeakerVerified(true);
         setCameraPermission(true);
         // Directly skip to Step 4 Guidelines setup
         setStep(4);
@@ -93,11 +92,9 @@ export const AiInterviewPage: React.FC = () => {
         // Fallback to audio-only if camera unavailable or denied
         try {
           const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          activeStream = audioStream;
           setStream(audioStream);
           setMicPermission(true);
           setMicVerified(true);
-          setSpeakerVerified(true);
           setStep(4);
         } catch {
           // Keep step 1 manual check if permissions not granted yet
@@ -107,6 +104,46 @@ export const AiInterviewPage: React.FC = () => {
 
     checkPermissions();
   }, []);
+
+  // Speak introduction guidelines voice reading whenever user is on Step 4
+  useEffect(() => {
+    if (step === 4) {
+      const roleTitle = jobInfo?.title || 'this position';
+      const skillsStr = (jobInfo?.skillsRequired || []).slice(0, 3).join(', ') || 'your technical domain';
+      const introText = `Welcome to Connecta AI. You are about to start your live interview for the ${roleTitle} position. This interview will take about 10 minutes, focusing on ${skillsStr}. Please answer naturally by speaking into your mic. Your responses are recorded for the hiring team's review.`;
+      speakIntroGuidelines(introText);
+    }
+    return () => {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+    };
+  }, [step, jobInfo]);
+
+  const speakIntroGuidelines = async (text: string) => {
+    try {
+      const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${backendUrl}/api/ai/interview/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voiceId: 'JBFqnCBsd6RMkjVDRZzb' })
+      });
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        await audio.play();
+        return;
+      }
+    } catch {
+      // Fallback to Web Speech API
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   const stopMediaStream = () => {
     if (stream) {
@@ -266,9 +303,27 @@ export const AiInterviewPage: React.FC = () => {
     }
   }, [step]);
 
-  // ---------------------------------------------------------------------------
-  // STEP 4: Fetch Interview & Prepare Session
-  // ---------------------------------------------------------------------------
+  // Active 10-minute session countdown timer during Step 5
+  useEffect(() => {
+    if (step !== 5) return;
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          finishInterview();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
   const prepareInterviewSession = async () => {
     if (!proposalId) return;
     setLoadingInterview(true);
@@ -354,6 +409,7 @@ export const AiInterviewPage: React.FC = () => {
 
   const candidateAnswerRef = useRef<string>('');
   const silenceTimerRef = useRef<any>(null);
+  const lastSpokenTimeRef = useRef<number>(0);
 
   const startVoiceRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -369,29 +425,43 @@ export const AiInterviewPage: React.FC = () => {
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
+      lastSpokenTimeRef.current = Date.now();
+
+      // Clear any existing silence watchdog loop
+      if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
+
+      // Global silence watchdog checking every 400ms
+      silenceTimerRef.current = setInterval(() => {
+        const text = candidateAnswerRef.current.trim();
+        const silentFor = Date.now() - lastSpokenTimeRef.current;
+
+        if (text && silentFor >= 4500) {
+          clearInterval(silenceTimerRef.current);
+          silenceTimerRef.current = null;
+          handleNextQuestion(text);
+        }
+      }, 400);
+
       recognition.onresult = (event: any) => {
         let fullTranscript = '';
-        let hasFinalResult = false;
 
         for (let i = 0; i < event.results.length; i++) {
           fullTranscript += event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            hasFinalResult = true;
-          }
         }
         const trimmed = fullTranscript.trim();
         if (trimmed) {
           candidateAnswerRef.current = trimmed;
           setCandidateAnswer(trimmed);
+          lastSpokenTimeRef.current = Date.now();
 
-          // Reset silence timer every time user speaks (5 seconds pause threshold)
+          // Reset silence timer on every new spoken word (3 seconds pause threshold for instant auto-submit)
           if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-          
+
           silenceTimerRef.current = setTimeout(() => {
             if (candidateAnswerRef.current.trim()) {
               handleNextQuestion(candidateAnswerRef.current.trim());
             }
-          }, 5000);
+          }, 3000);
         }
       };
 
@@ -402,15 +472,15 @@ export const AiInterviewPage: React.FC = () => {
       };
 
       recognition.onend = () => {
-        // If user finished a spoken sentence and recognition ended, auto-submit if text exists
-        if (candidateAnswerRef.current.trim() && !submittingAnswer) {
-          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-          silenceTimerRef.current = setTimeout(() => {
-            if (candidateAnswerRef.current.trim()) {
-              handleNextQuestion(candidateAnswerRef.current.trim());
-            }
-          }, 600);
-        } else if (step === 5 && !submittingAnswer) {
+        const text = candidateAnswerRef.current.trim();
+        if (text && Date.now() - lastSpokenTimeRef.current >= 4000) {
+          if (silenceTimerRef.current) clearInterval(silenceTimerRef.current);
+          silenceTimerRef.current = null;
+          handleNextQuestion(text);
+          return;
+        }
+
+        if (step === 5 && !submittingAnswer) {
           try {
             recognition.start();
           } catch {}
@@ -426,6 +496,7 @@ export const AiInterviewPage: React.FC = () => {
 
   const stopVoiceRecognition = () => {
     if (silenceTimerRef.current) {
+      clearInterval(silenceTimerRef.current);
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
@@ -456,7 +527,7 @@ export const AiInterviewPage: React.FC = () => {
     const currentQ = interviewSession.questions[currentQuestionIdx];
 
     try {
-      await aiInterviewAPI.submitAnswer(interviewSession._id, {
+      const res = await aiInterviewAPI.submitAnswer(interviewSession._id, {
         questionId: currentQ.id,
         question: currentQ.question,
         answerText: textToSubmit
@@ -466,12 +537,17 @@ export const AiInterviewPage: React.FC = () => {
       candidateAnswerRef.current = '';
       setCandidateAnswer('');
 
+      const feedbackSpeech = res?.feedback ? `${res.feedback} ` : '';
+
       if (nextIdx < interviewSession.questions.length) {
         setCurrentQuestionIdx(nextIdx);
         setSubmittingAnswer(false);
         const nextQ = interviewSession.questions[nextIdx];
-        speakQuestion(nextQ.question);
+        speakQuestion(`${feedbackSpeech}${nextQ.question}`);
       } else {
+        if (feedbackSpeech) {
+          speakQuestion(feedbackSpeech);
+        }
         finishInterview();
       }
     } catch (err: any) {
@@ -541,8 +617,8 @@ export const AiInterviewPage: React.FC = () => {
         justifyContent: 'center',
         minHeight: 'calc(100vh - 160px)'
       }}>
-        {/* Minimalist Tree-Line Stepper */}
-        {step <= 4 && (
+        {/* Minimalist Tree-Line Stepper (Device Check Only) */}
+        {step <= 3 && (
           <div style={{
             maxWidth: '540px',
             margin: '0 auto 48px',
@@ -565,7 +641,7 @@ export const AiInterviewPage: React.FC = () => {
               position: 'absolute',
               top: '14px',
               left: '20px',
-              width: step === 1 ? '0%' : step === 2 ? '33%' : step === 3 ? '66%' : '100%',
+              width: step === 1 ? '0%' : step === 2 ? '50%' : '100%',
               height: '2px',
               background: 'var(--primary, #FD6730)',
               transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -581,8 +657,7 @@ export const AiInterviewPage: React.FC = () => {
               {[
                 { id: 1, label: 'Microphone' },
                 { id: 2, label: 'Audio Check' },
-                { id: 3, label: 'Camera Check' },
-                { id: 4, label: 'Guidelines' }
+                { id: 3, label: 'Camera Check' }
               ].map((s) => {
                 const isActive = step === s.id;
                 const isDone = step > s.id;
@@ -970,88 +1045,128 @@ export const AiInterviewPage: React.FC = () => {
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             style={{
               padding: '20px 0',
-              maxWidth: '620px',
+              maxWidth: '960px',
               margin: '0 auto',
               width: '100%'
             }}
           >
-            <div style={{ textAlign: 'center', width: '100%' }}>
+            {/* Split 2-Column Grid: Left AI Avatar, Right Guidelines Prompt Card */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '280px 1fr',
+              gap: '64px',
+              alignItems: 'center'
+            }}>
+              {/* Left Column: Code-Animated Vector Connecta AI Character (Duolingo Style) */}
               <div style={{
-                fontSize: '1.6rem',
-                fontWeight: 900,
-                color: 'var(--primary, #FD6730)',
-                letterSpacing: '-0.03em',
-                marginBottom: '24px'
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
-                connecta.
-              </div>
-
-              <p style={{ fontSize: '0.92rem', color: 'var(--text-primary)', marginBottom: '28px', lineHeight: 1.6, fontWeight: 500 }}>
-                Please note that this interview will take <strong>~10 minutes</strong> with each question having a limited time for a response. You will answer by speaking, or typing. Ensure you're in a quiet spot with a stable internet connection. This interview will be recorded and available in your application profile.
-              </p>
-
-              {/* Topics & Skills Box (Micro1 style borderless) */}
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '16px',
-                padding: '22px 26px',
-                marginBottom: '24px',
-                textAlign: 'left'
-              }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '14px' }}>
-                  You will be interviewed on these topics
+                <div style={{ marginBottom: '16px' }}>
+                  <ConnectaCharacter state="speaking" size={200} />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {(jobInfo?.skillsRequired?.length ? jobInfo.skillsRequired : [
-                    'Role & Experience Overview',
-                    'Technical & Design Problem Solving',
-                    'Workflow & Collaboration Mindset',
-                    'Custom questions defined for the job'
-                  ]).map((topic: string, i: number) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: '10px 16px',
-                        borderRadius: '10px',
-                        background: 'rgba(253,103,48,0.08)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.84rem',
-                        fontWeight: 600
-                      }}
-                    >
-                      {topic}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                Please don't refresh the page during the interview.
-              </p>
-
-              <button
-                onClick={prepareInterviewSession}
-                disabled={loadingInterview}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  maxWidth: '280px',
-                  padding: '14px',
-                  borderRadius: '14px',
-                  fontWeight: 800,
-                  fontSize: '0.92rem',
+                <div style={{
+                  padding: '6px 16px',
+                  borderRadius: '20px',
+                  background: 'rgba(253,103,48,0.12)',
+                  color: 'var(--primary, #FD6730)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  margin: '0 auto'
-                }}
-              >
-                {loadingInterview ? <Loader2 size={18} className="animate-spin" /> : null}
-                {loadingInterview ? 'Initializing Session...' : 'Continue'}
-              </button>
+                  gap: '6px',
+                  border: '1px solid rgba(253,103,48,0.2)'
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary, #FD6730)', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+                  Speaking
+                </div>
+              </div>
+
+              {/* Right Column: Clean Micro1-Style Guidelines Prompt Card */}
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: '20px',
+                padding: '28px 32px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  Before starting your {jobInfo?.title ? jobInfo.title : 'Role'} interview,
+                </div>
+
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  Please note that this interview for <strong>{jobInfo?.title || 'the position'}</strong> will take <strong>~10 minutes</strong> with each question having a limited response window. You will answer by speaking directly into your microphone. Ensure you're in a quiet spot with a stable internet connection. This interview is recorded for client evaluation.
+                </p>
+
+                {/* Topics & Skills Box (Dynamic real role fetching) */}
+                <div style={{
+                  background: 'rgba(253,103,48,0.04)',
+                  border: '1px solid rgba(253,103,48,0.15)',
+                  borderRadius: '14px',
+                  padding: '18px 20px'
+                }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--primary, #FD6730)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Topics evaluated for {jobInfo?.title || 'this role'}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {((jobInfo?.skillsRequired?.length
+                      ? jobInfo.skillsRequired.map((s: string) => `${s} Mastery & Hands-on Application`)
+                      : [
+                        'Role & Core Technical Experience',
+                        'Architecture & Problem Solving',
+                        'Milestone Delivery & Workflow',
+                        'Custom job questions'
+                      ]
+                    ) as string[]).map((topic: string, i: number) => (
+                      <div
+                        key={i}
+                        style={{
+                          fontSize: '0.84rem',
+                          color: 'var(--text-primary)',
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary, #FD6730)' }} />
+                        {topic}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                  Please don't refresh the page during the interview.
+                </div>
+
+                <button
+                  onClick={prepareInterviewSession}
+                  disabled={loadingInterview}
+                  className="btn-primary"
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '14px',
+                    fontWeight: 800,
+                    fontSize: '0.92rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginTop: '4px'
+                  }}
+                >
+                  {loadingInterview ? <Loader2 size={18} className="animate-spin" /> : null}
+                  {loadingInterview ? 'Initializing Session...' : 'Sounds good, start interview'}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -1068,57 +1183,74 @@ export const AiInterviewPage: React.FC = () => {
               position: 'relative'
             }}
           >
-            {/* Top Bar Header (Micro1 style logo & timer) */}
+            {/* Ultra-Minimalist Top Bar Header (Category Progress Pills & Timer) */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               width: '100%',
-              marginBottom: '10px'
+              marginBottom: '20px',
+              padding: '4px 0'
             }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--primary, #FD6730)', letterSpacing: '-0.03em' }}>
-                connecta.
-              </div>
-
               {/* Minimal Progress Category Track Pills */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                 {interviewSession.questions?.map((q: any, idx: number) => {
                   const isActive = idx === currentQuestionIdx;
                   const isPast = idx < currentQuestionIdx;
+                  const categoryName = (q.category || 'general').toLowerCase();
+
                   return (
                     <div
                       key={idx}
                       style={{
-                        padding: '4px 12px',
-                        borderRadius: '10px',
-                        background: isActive ? 'rgba(253,103,48,0.2)' : isPast ? 'rgba(16,185,129,0.12)' : 'rgba(255,255,255,0.04)',
-                        color: isActive ? 'var(--primary, #FD6730)' : isPast ? '#10B981' : 'var(--text-muted)',
-                        fontSize: '0.74rem',
-                        fontWeight: isActive ? 800 : 600,
-                        maxWidth: '120px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        background: isActive
+                          ? 'rgba(253,103,48,0.15)'
+                          : isPast
+                          ? 'rgba(255,255,255,0.06)'
+                          : 'transparent',
+                        color: isActive
+                          ? 'var(--primary, #FD6730)'
+                          : isPast
+                          ? 'var(--text-secondary, #9CA3AF)'
+                          : 'rgba(255,255,255,0.25)',
+                        fontSize: '0.72rem',
+                        fontWeight: isActive ? 700 : 500,
+                        letterSpacing: '0.02em',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        border: isActive
+                          ? '1px solid rgba(253,103,48,0.3)'
+                          : '1px solid transparent'
                       }}
                     >
-                      {q.category || `Question ${idx + 1}`}
+                      {isActive && (
+                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--primary, #FD6730)' }} />
+                      )}
+                      {categoryName}
                     </div>
                   );
                 })}
               </div>
 
+              {/* Ultra-Sleek Timer Badge */}
               <div style={{
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                padding: '6px 14px',
-                borderRadius: '20px',
-                background: 'rgba(255,255,255,0.04)',
-                color: 'var(--text-secondary)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                padding: '4px 10px',
+                borderRadius: '16px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                color: timeRemaining < 120 ? '#EF4444' : 'rgba(255,255,255,0.6)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '5px',
+                letterSpacing: '0.05em'
               }}>
-                <Clock size={14} /> 09:30
+                <Clock size={12} style={{ opacity: 0.6 }} /> {formatTimer(timeRemaining)}
               </div>
             </div>
 
@@ -1130,48 +1262,14 @@ export const AiInterviewPage: React.FC = () => {
               alignItems: 'center',
               minHeight: '380px'
             }}>
-              {/* Left Column: Micro1 Centered Glowing Orb */}
+              {/* Left Column: Code-Animated Vector Connecta AI Character (Duolingo Style) */}
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <div style={{
-                  width: '150px',
-                  height: '150px',
-                  borderRadius: '50%',
-                  background: aiState === 'speaking'
-                    ? 'radial-gradient(circle, rgba(253,103,48,0.9) 0%, rgba(255,140,0,0.4) 60%, rgba(253,103,48,0.1) 100%)'
-                    : aiState === 'processing'
-                    ? 'radial-gradient(circle, rgba(139,92,246,0.9) 0%, rgba(236,72,153,0.4) 60%, rgba(139,92,246,0.1) 100%)'
-                    : 'radial-gradient(circle, rgba(16,185,129,0.9) 0%, rgba(5,150,105,0.4) 60%, rgba(16,185,129,0.1) 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.4s ease',
-                  boxShadow: aiState === 'speaking'
-                    ? '0 0 60px rgba(253,103,48,0.5)'
-                    : aiState === 'processing'
-                    ? '0 0 60px rgba(139,92,246,0.5)'
-                    : '0 0 40px rgba(16,185,129,0.3)',
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    width: '78px',
-                    height: '78px',
-                    borderRadius: '50%',
-                    background: '#FFFFFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#090A0F',
-                    fontWeight: 900,
-                    fontSize: '1.5rem'
-                  }}>
-                    c.
-                  </div>
-                </div>
+                <ConnectaCharacter state={aiState} size={220} />
               </div>
 
               {/* Right Column: Micro1 Question Prompt Card */}
@@ -1210,34 +1308,65 @@ export const AiInterviewPage: React.FC = () => {
                 </div>
 
                 {candidateAnswer && (
-                  <div style={{
-                    fontSize: '0.82rem',
-                    color: 'var(--text-secondary)',
-                    fontStyle: 'italic',
-                    lineHeight: 1.45,
-                    maxHeight: '120px',
-                    overflowY: 'auto'
-                  }}>
-                    "{candidateAnswer}"
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                    <div style={{
+                      fontSize: '0.82rem',
+                      color: 'var(--text-secondary)',
+                      fontStyle: 'italic',
+                      lineHeight: 1.45,
+                      maxHeight: '120px',
+                      overflowY: 'auto',
+                      padding: '10px 12px',
+                      borderRadius: '10px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)'
+                    }}>
+                      "{candidateAnswer}"
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleNextQuestion(candidateAnswer)}
+                      disabled={submittingAnswer}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        background: 'var(--primary, #FD6730)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {submittingAnswer ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {submittingAnswer ? 'Submitting...' : 'Done Speaking (Submit Answer)'}
+                    </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Floating Live Camera Feed (Bottom Left Micro1 position) */}
+            {/* Floating Live Camera Feed (Enlarged Micro1 Bottom-Left Position) */}
             {stream && (
               <div style={{
                 position: 'fixed',
-                bottom: '28px',
-                left: '28px',
-                width: '210px',
-                height: '135px',
-                borderRadius: '18px',
+                bottom: '32px',
+                left: '32px',
+                width: '320px',
+                height: '210px',
+                borderRadius: '24px',
                 overflow: 'hidden',
                 background: '#090A0F',
-                border: '2px solid rgba(255,255,255,0.15)',
-                boxShadow: '0 14px 36px rgba(0,0,0,0.5)',
-                zIndex: 99
+                border: '2px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.65)',
+                zIndex: 99,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
               }}>
                 <video
                   ref={(el) => {
@@ -1248,6 +1377,24 @@ export const AiInterviewPage: React.FC = () => {
                   muted
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(8px)',
+                  color: '#10B981',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', animation: 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' }} />
+                  Candidate Feed
+                </div>
               </div>
             )}
           </motion.div>

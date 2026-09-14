@@ -229,7 +229,7 @@ export const signup = async (req, res) => {
             profileImage: otherDetails.avatar || otherDetails.profileImage || `https://i.pravatar.cc/300?u=${email}`,
             ...otherDetails
         });
-        const token = jwt.sign({ id: newUser._id, userType: newUser.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: newUser._id, userType: newUser.userType }, process.env.JWT_SECRET, { expiresIn: "30d" });
         // Clean up OTP
         if (otpRecord && otpRecord._id) {
             await OTP.deleteOne({ _id: otpRecord._id });
@@ -324,7 +324,7 @@ export const signin = async (req, res) => {
             console.error("JWT_SECRET is missing in environment variables");
             return res.status(500).json({ message: "Server configuration error" });
         }
-        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, process.env.JWT_SECRET, { expiresIn: "30d" });
         console.log('Token generated successfully');
         res.status(200).json({ success: true, user, token });
     }
@@ -414,7 +414,7 @@ export const googleSignin = async (req, res) => {
                 isEmailVerified: true,
             });
         }
-        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "30d" });
         return res.status(200).json({ success: true, user, token, isNewUser });
     }
     catch (err) {
@@ -500,7 +500,7 @@ export const googleSignup = async (req, res) => {
                 isEmailVerified: true,
             });
         }
-        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "30d" });
         return res.status(200).json({ success: true, user, token, isNewUser });
     }
     catch (err) {
@@ -1116,7 +1116,7 @@ export const switchUserType = async (req, res) => {
         }
         user.userType = targetType;
         await user.save();
-        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id, userType: user.userType }, (process.env.JWT_SECRET || 'fallback_secret'), { expiresIn: "30d" });
         return res.status(200).json({
             success: true,
             message: `Successfully switched role to ${user.userType}`,

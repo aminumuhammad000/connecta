@@ -2,18 +2,19 @@ import AiInterview from '../models/AiInterview.model.js';
 import Proposal from '../models/Proposal.model.js';
 import Profile from '../models/Profile.model.js';
 import axios from 'axios';
-// Helper to generate contextual questions using OpenAI or intelligent rule engine fallback
+// Helper to generate contextual questions and introduction using OpenAI or intelligent rule engine fallback
 async function generateContextualQuestions(job, freelancer, profile, proposal) {
     const jobTitle = job.title || 'Freelance Position';
     const jobDesc = job.description || '';
-    const jobSkills = (job.skills || []).join(', ');
-    const freelancerName = `${freelancer?.firstName || ''} ${freelancer?.lastName || ''}`.trim() || 'Freelancer';
+    const jobSkills = (job.skills || job.skillsRequired || []).join(', ');
+    const freelancerName = `${freelancer?.firstName || ''} ${freelancer?.lastName || ''}`.trim() || 'Candidate';
     const freelancerSkills = (freelancer?.skills || profile?.skills || []).join(', ');
     const coverLetter = proposal?.description || '';
+    let generatedIntro = `Welcome ${freelancerName}! You are being interviewed for the ${jobTitle} position. This spoken session takes ~10 minutes to evaluate your core skills in ${jobSkills || 'your domain'}. Please respond naturally by speaking into your mic. Your responses are recorded for the hiring client's review.`;
     const apiKey = process.env.OPENAI_API_KEY;
     if (apiKey) {
         try {
-            const prompt = `You are a senior tech hiring interviewer conducting an AI interview for the position: "${jobTitle}".
+            const prompt = `You are "Connecta AI", the official AI technical interviewer for the Connecta Freelance Platform, conducting a live spoken voice interview for the position: "${jobTitle}".
 Job Details: ${jobDesc}
 Required Skills: ${jobSkills}
 
@@ -21,19 +22,15 @@ Candidate: ${freelancerName}
 Candidate Skills: ${freelancerSkills}
 Candidate Pitch/Cover Letter: ${coverLetter}
 
-Generate exactly 10 structured, highly relevant interview questions for this specific candidate and role.
-Format as JSON array with objects containing:
-"id": "q1", "q2", ..., "q10"
-"question": string (the exact spoken question)
-"category": "introduction" | "experience" | "technical" | "behavioral"
+Generate JSON containing:
+1. "introText": string - A concise 2-sentence formal introduction greeting ${freelancerName} for the ${jobTitle} role, explaining that this interview will take ~10 minutes, will focus on ${jobSkills}, and is saved for client review.
+2. "questions": JSON array with exactly 10 structured, highly relevant interview questions:
+   - q1: Formal spoken introduction: "Hello ${freelancerName}, I am Connecta AI, your interviewer for the ${jobTitle} role..."
+   - q2-q4: Candidate background, CV/skills alignment, past project experience relating to ${jobSkills}.
+   - q5-q8: Role-specific technical/deep execution questions based on job description & required skills.
+   - q9-q10: Real-world practical scenario, client communication, and problem-solving.
 
-Question Structure:
-- q1: Warm introduction & self-introduction request.
-- q2-q4: Candidate background, CV/skills alignment, past project experience.
-- q5-q8: Role-specific technical/deep execution questions based on job description & required skills.
-- q9-q10: Real-world practical scenario & client communication/problem-solving.
-
-Output ONLY valid JSON array with 10 questions.`;
+Output ONLY valid JSON object with keys "introText" and "questions".`;
             const response = await axios.post('https://api.openai.com/v1/chat/completions', {
                 model: 'gpt-4o-mini',
                 messages: [{ role: 'system', content: prompt }],
@@ -42,8 +39,14 @@ Output ONLY valid JSON array with 10 questions.`;
             const content = response.data?.choices?.[0]?.message?.content || '';
             const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
             const parsed = JSON.parse(cleanJson);
+            if (parsed?.introText && Array.isArray(parsed?.questions) && parsed.questions.length >= 8) {
+                return {
+                    introText: parsed.introText,
+                    questions: parsed.questions.slice(0, 10)
+                };
+            }
             if (Array.isArray(parsed) && parsed.length >= 8) {
-                return parsed.slice(0, 10);
+                return { introText: generatedIntro, questions: parsed.slice(0, 10) };
             }
         }
         catch (err) {
@@ -84,42 +87,45 @@ Output ONLY valid JSON array with 10 questions.`;
             `What is your experience implementing background job processing, caching layers (Redis), and real-time WebSockets?`
         ];
     }
-    return [
-        {
-            id: 'q1',
-            question: `Hello ${freelancer?.firstName || ''}, welcome to your Connecta AI interview for the ${jobTitle} position. To start off, please introduce yourself and briefly tell us about your technical background.`,
-            category: 'introduction'
-        },
-        {
-            id: 'q2',
-            question: `Looking at your profile, you highlight expertise in ${freelancerSkills || 'software engineering'}. Which recent project best demonstrates your core strengths?`,
-            category: 'experience'
-        },
-        {
-            id: 'q3',
-            question: `In your proposal for "${jobTitle}", you outlined your strategy. What specific experience makes you an ideal fit for this project?`,
-            category: 'experience'
-        },
-        {
-            id: 'q4',
-            question: `How do you stay updated with industry best practices and rapidly adapt when taking on new technical requirements?`,
-            category: 'experience'
-        },
-        { id: 'q5', question: domainQuestions[0], category: 'technical' },
-        { id: 'q6', question: domainQuestions[1], category: 'technical' },
-        { id: 'q7', question: domainQuestions[2], category: 'technical' },
-        { id: 'q8', question: domainQuestions[3], category: 'technical' },
-        {
-            id: 'q9',
-            question: `If a client requests a sudden change in project scope or timeline during active milestone execution, how do you handle communication and trade-offs?`,
-            category: 'behavioral'
-        },
-        {
-            id: 'q10',
-            question: `Finally, what questions or key commitments do you bring to this client if selected for the ${jobTitle} role?`,
-            category: 'behavioral'
-        }
-    ];
+    return {
+        introText: generatedIntro,
+        questions: [
+            {
+                id: 'q1',
+                question: `Hello ${freelancer?.firstName || ''}, welcome to your Connecta AI interview for the ${jobTitle} position. To start off, please introduce yourself and briefly tell us about your technical background.`,
+                category: 'introduction'
+            },
+            {
+                id: 'q2',
+                question: `Looking at your profile, you highlight expertise in ${freelancerSkills || 'software engineering'}. Which recent project best demonstrates your core strengths?`,
+                category: 'experience'
+            },
+            {
+                id: 'q3',
+                question: `In your proposal for "${jobTitle}", you outlined your strategy. What specific experience makes you an ideal fit for this project?`,
+                category: 'experience'
+            },
+            {
+                id: 'q4',
+                question: `How do you stay updated with industry best practices and rapidly adapt when taking on new technical requirements?`,
+                category: 'experience'
+            },
+            { id: 'q5', question: domainQuestions[0], category: 'technical' },
+            { id: 'q6', question: domainQuestions[1], category: 'technical' },
+            { id: 'q7', question: domainQuestions[2], category: 'technical' },
+            { id: 'q8', question: domainQuestions[3], category: 'technical' },
+            {
+                id: 'q9',
+                question: `If a client requests a sudden change in project scope or timeline during active milestone execution, how do you handle communication and trade-offs?`,
+                category: 'behavioral'
+            },
+            {
+                id: 'q10',
+                question: `Finally, what questions or key commitments do you bring to this client if selected for the ${jobTitle} role?`,
+                category: 'behavioral'
+            }
+        ]
+    };
 }
 // 1. Start or Retrieve AI Interview for Proposal
 export const startAiInterview = async (req, res) => {
@@ -144,14 +150,15 @@ export const startAiInterview = async (req, res) => {
         let interview = await AiInterview.findOne({ proposalId });
         if (!interview) {
             const profile = await Profile.findOne({ user: freelancer._id });
-            const questions = await generateContextualQuestions(job, freelancer, profile, proposal);
+            const contextualData = await generateContextualQuestions(job, freelancer, profile, proposal);
+            const questionsList = Array.isArray(contextualData) ? contextualData : contextualData.questions;
             interview = await AiInterview.create({
                 proposalId,
                 jobId: job._id,
                 freelancerId: freelancer._id,
                 clientId: client._id,
                 status: 'in_progress',
-                questions,
+                questions: questionsList,
                 answers: []
             });
             // Update proposal status
@@ -170,7 +177,7 @@ export const startAiInterview = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error starting interview', error: err.message });
     }
 };
-// 2. Submit Answer for a Question
+// 2. Submit Answer for a Question & Generate Conversational AI Feedback
 export const submitAnswer = async (req, res) => {
     try {
         const { id } = req.params;
@@ -178,7 +185,7 @@ export const submitAnswer = async (req, res) => {
         if (!questionId || !answerText) {
             return res.status(400).json({ success: false, message: 'Question ID and answer text are required' });
         }
-        const interview = await AiInterview.findById(id);
+        const interview = await AiInterview.findById(id).populate('jobId');
         if (!interview) {
             return res.status(404).json({ success: false, message: 'Interview session not found' });
         }
@@ -200,7 +207,32 @@ export const submitAnswer = async (req, res) => {
             });
         }
         await interview.save();
-        res.status(200).json({ success: true, data: interview });
+        // Generate Conversational AI Feedback Acknowledgment using OpenAI
+        let feedback = "Got it, thank you for sharing that!";
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (apiKey && answerText.trim().length > 3) {
+            try {
+                const feedbackPrompt = `You are "Connecta AI", a warm, professional, encouraging AI technical interviewer.
+Question asked: "${question}"
+Candidate's Spoken Answer: "${answerText}"
+
+Provide a brief, natural 1-sentence spoken feedback acknowledgment (e.g. "Great point on how you managed the state architecture, let's move on." or "That makes total sense regarding your design workflow."). Keep it under 18 words and conversational.`;
+                const feedbackRes = await axios.post('https://api.openai.com/v1/chat/completions', {
+                    model: 'gpt-4o-mini',
+                    messages: [{ role: 'system', content: feedbackPrompt }],
+                    temperature: 0.7,
+                    max_tokens: 50
+                }, { headers: { Authorization: `Bearer ${apiKey}` } });
+                const replyContent = feedbackRes.data?.choices?.[0]?.message?.content || '';
+                if (replyContent.trim()) {
+                    feedback = replyContent.trim().replace(/^["']|["']$/g, '');
+                }
+            }
+            catch (fbErr) {
+                console.warn('OpenAI answer feedback fallback:', fbErr);
+            }
+        }
+        res.status(200).json({ success: true, data: interview, feedback });
     }
     catch (err) {
         console.error('Error submitting answer:', err);
@@ -217,24 +249,54 @@ export const completeAiInterview = async (req, res) => {
         }
         const answersCount = interview.answers.length;
         const totalQuestions = interview.questions.length || 10;
-        // Calculate structured evaluation
-        const score = Math.min(95, Math.max(70, Math.round(75 + (answersCount / totalQuestions) * 18 + Math.random() * 5)));
-        const technicalFit = Math.min(98, Math.max(75, Math.round(score + (Math.random() * 4 - 2))));
-        const communicationScore = Math.min(96, Math.max(78, Math.round(score + 2)));
-        const result = {
-            score,
-            technicalFit,
-            communicationScore,
-            summary: `Candidate completed all ${answersCount} interview questions for ${interview.jobId?.title || 'the role'}. Demonstrates strong domain expertise, clear communication, and practical problem-solving capability.`,
+        let result = {
+            score: 85,
+            technicalFit: 88,
+            communicationScore: 86,
+            summary: `Candidate completed ${answersCount} interview questions for ${interview.jobId?.title || 'the role'}. Demonstrates strong technical skills and clear communication.`,
             strengths: [
                 'Clear and articulate communication of technical concepts',
                 'Strong alignment with role requirements and required skill set',
-                'Structured problem-solving approach and active collaboration skills'
+                'Structured problem-solving approach'
             ],
             areasToImprove: [
                 'Could provide deeper quantitative metrics on past project impacts'
             ]
         };
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (apiKey && interview.answers.length > 0) {
+            try {
+                const transcriptText = interview.answers.map((a, i) => `Q${i + 1} (${a.question}): "${a.answerText}"`).join('\n\n');
+                const evalPrompt = `You are a expert technical hiring evaluator analyzing an AI interview transcript for job title: "${interview.jobId?.title || 'Role'}".
+
+Interview Transcript:
+${transcriptText}
+
+Evaluate candidate performance and output ONLY valid JSON format:
+{
+  "score": number (0-100),
+  "technicalFit": number (0-100),
+  "communicationScore": number (0-100),
+  "summary": string (3-4 sentence comprehensive evaluation summary),
+  "strengths": string[] (3 key strengths),
+  "areasToImprove": string[] (1-2 constructive growth areas)
+}`;
+                const evalRes = await axios.post('https://api.openai.com/v1/chat/completions', {
+                    model: 'gpt-4o-mini',
+                    messages: [{ role: 'system', content: evalPrompt }],
+                    temperature: 0.5
+                }, { headers: { Authorization: `Bearer ${apiKey}` } });
+                const evalContent = evalRes.data?.choices?.[0]?.message?.content || '';
+                const cleanJson = evalContent.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(cleanJson);
+                if (parsed && typeof parsed.score === 'number') {
+                    result = parsed;
+                }
+            }
+            catch (evalErr) {
+                console.warn('OpenAI evaluation fallback triggered:', evalErr);
+            }
+        }
         interview.status = 'completed';
         interview.result = result;
         await interview.save();
