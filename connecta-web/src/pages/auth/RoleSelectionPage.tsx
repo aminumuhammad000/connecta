@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
 import { ArrowRight, UserCheck, Briefcase, CheckCircle2 } from 'lucide-react';
 import { useRole } from '../../contexts/RoleContext';
 import { GoogleAuthButton } from '../../components/common/GoogleAuthButton';
+
+import { useAuth } from '../../contexts/AuthContext';
 
 /* ─── Inline SVG: Client / Hiring illustration ─── */
 const ClientArt = () => (
@@ -85,13 +87,20 @@ const FreelancerArt = () => (
   </svg>
 );
 
-import { useAuth } from '../../contexts/AuthContext';
-
 export const RoleSelectionPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const roleParam = (searchParams.get('role') as 'client' | 'freelancer') || null;
   const { user, isAuthenticated } = useAuth();
   const { setRole } = useRole();
-  const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer' | null>(roleParam);
+
+  useEffect(() => {
+    if (roleParam) {
+      setSelectedRole(roleParam);
+      setRole(roleParam);
+    }
+  }, [roleParam, setRole]);
 
   React.useEffect(() => {
     if (isAuthenticated && user) {

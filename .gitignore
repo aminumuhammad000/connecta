@@ -29,3 +29,5 @@ Thumbs.db
 .env
 .env.example
 mm.md
+__pycache__/
+*.pyc

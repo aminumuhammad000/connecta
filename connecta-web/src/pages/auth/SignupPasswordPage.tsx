@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, Check, X, ShieldCheck, Loader2 } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRole } from '../../contexts/RoleContext';
 import { useToast } from '../../contexts/ToastContext';
 import confetti from 'canvas-confetti';
 
@@ -14,7 +15,14 @@ export const SignupPasswordPage: React.FC = () => {
   const roleQuery = searchParams.get('role') || 'freelancer';
   const navigate = useNavigate();
   const { setUserAndToken } = useAuth();
+  const { setRole } = useRole();
   const { error: toastError, success: toastSuccess } = useToast();
+
+  useEffect(() => {
+    if (roleQuery) {
+      setRole(roleQuery as any);
+    }
+  }, [roleQuery, setRole]);
 
   const [step1Data, setStep1Data] = useState<any>(null);
   const [password, setPassword] = useState('');
@@ -142,19 +150,37 @@ export const SignupPasswordPage: React.FC = () => {
         >
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            {/* Role indicator pill */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 10px',
+              gap: '6px',
+              padding: '4px 12px',
               borderRadius: '20px',
-              background: 'rgba(253, 103, 48, 0.08)',
-              color: 'var(--primary)',
-              fontSize: '0.75rem',
+              background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
+              color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
+              fontSize: '0.78rem',
               fontWeight: 700,
-              letterSpacing: '0.5px',
-              marginBottom: '8px'
+              marginBottom: '10px'
             }}>
-              Security Setup
+              <span>{roleQuery === 'client' ? '💼 Client Account · Hiring Talent' : '⚡ Freelancer Account · Working & Earning'}</span>
+            </div>
+
+            <div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                background: 'rgba(253, 103, 48, 0.08)',
+                color: 'var(--primary)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.5px',
+                marginBottom: '8px'
+              }}>
+                Security Setup
+              </div>
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
               Set Password

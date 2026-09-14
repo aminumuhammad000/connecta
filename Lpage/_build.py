@@ -65,8 +65,8 @@ def nav(active):
       </ul>
     </nav>
     <div class="nav-cta">
-      <a class="signin" href="https://app.myconnecta.ng">Sign in</a>
-      <a class="btn btn-primary" href="https://app.myconnecta.ng">Join Connecta</a>
+      <a class="signin" href="https://app.myconnecta.ng/login">Sign in</a>
+      <a class="btn btn-primary" href="https://app.myconnecta.ng/register/role">Join Connecta</a>
       <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -82,7 +82,7 @@ def nav(active):
     <a href="ai.html">AI Matching</a>
     <a href="collabo.html">Collabo</a>
     <a href="download.html">Get the app</a>
-    <a class="btn btn-primary" href="https://app.myconnecta.ng">Join Connecta</a>
+    <a class="btn btn-primary" href="https://app.myconnecta.ng/register/role">Join Connecta</a>
   </div>
 </div>"""
 

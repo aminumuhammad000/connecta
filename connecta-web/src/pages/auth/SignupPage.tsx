@@ -10,13 +10,21 @@ import { authAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
 import { useAuth } from '../../contexts/AuthContext';
+import { useRole } from '../../contexts/RoleContext';
 
 export const SignupPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roleQuery = (searchParams.get('role') as 'client' | 'freelancer') || 'freelancer';
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { setRole } = useRole();
   const { error: toastError } = useToast();
+
+  React.useEffect(() => {
+    if (roleQuery) {
+      setRole(roleQuery);
+    }
+  }, [roleQuery, setRole]);
 
   React.useEffect(() => {
     if (isAuthenticated && user) {
@@ -221,19 +229,40 @@ export const SignupPage: React.FC = () => {
         >
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            {/* Role indicator pill */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '3px 10px',
+              gap: '6px',
+              padding: '4px 12px',
               borderRadius: '20px',
-              background: 'rgba(253, 103, 48, 0.08)',
-              color: 'var(--primary)',
-              fontSize: '0.75rem',
+              background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
+              color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
+              fontSize: '0.78rem',
               fontWeight: 700,
-              letterSpacing: '0.5px',
-              marginBottom: '8px'
+              marginBottom: '10px'
             }}>
-              Step {signupStep} of 2
+              <span>{roleQuery === 'client' ? '💼 Client Account · Hiring Talent' : '⚡ Freelancer Account · Working & Earning'}</span>
+              <Link to="/register/role" style={{ marginLeft: '6px', fontSize: '0.72rem', color: 'inherit', opacity: 0.7, textDecoration: 'underline' }}>
+                Change
+              </Link>
+            </div>
+
+            <div>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                borderRadius: '20px',
+                background: 'rgba(253, 103, 48, 0.08)',
+                color: 'var(--primary)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.5px',
+                marginBottom: '8px'
+              }}>
+                Step {signupStep} of 2
+              </div>
             </div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
               {signupStep === 1 ? 'Verify Email' : 'Account Details'}

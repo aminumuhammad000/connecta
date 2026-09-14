@@ -555,7 +555,7 @@ def run(build, page_hero, cta, li_tick):
 </section>
 """ + cta("Ready to find your next hire?",
           "Post a brief for free and get matched with talent across every sector in seconds.",
-          "Get the app", "download.html", "How it works", "how.html") )
+          "Hire talent", "https://app.myconnecta.ng/register?role=client", "How it works", "how.html") )
 
     # =====================================================================
     # 12. FIND WORK
@@ -612,7 +612,7 @@ def run(build, page_hero, cta, li_tick):
 </section>
 """ + cta("Ready to find your next project?",
           "Create a free profile and let clients across every sector find you.",
-          "Get the app", "download.html", "How it works", "how.html") )
+          "Start freelancing", "https://app.myconnecta.ng/register?role=freelancer", "How it works", "how.html") )
 
     # =====================================================================
     # 13. HOW IT WORKS
@@ -635,7 +635,7 @@ def run(build, page_hero, cta, li_tick):
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Shortlist and fund milestones via escrow</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Approve work — funds release to the freelancer</li>
         </ul>
-        <a class="btn btn-primary" href="hire.html" style="margin-top:1.3rem">Hire talent</a>
+        <a class="btn btn-primary" href="https://app.myconnecta.ng/register?role=client" style="margin-top:1.3rem">Hire talent</a>
       </article>
       <article class="mini-card dark reveal" data-delay="1">
         <span class="tag">For freelancers</span>
@@ -647,7 +647,7 @@ def run(build, page_hero, cta, li_tick):
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Start once escrow is funded — payment is secured</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4L19 6"/></svg>Get paid on approval, cash out locally</li>
         </ul>
-        <a class="btn btn-light" href="find.html" style="margin-top:1.3rem">Find work</a>
+        <a class="btn btn-light" href="https://app.myconnecta.ng/register?role=freelancer" style="margin-top:1.3rem">Find work</a>
       </article>
     </div>
   </div>
