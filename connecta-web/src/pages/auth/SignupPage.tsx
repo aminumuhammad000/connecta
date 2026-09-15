@@ -16,7 +16,7 @@ export const SignupPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roleQuery = (searchParams.get('role') as 'client' | 'freelancer') || 'freelancer';
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { setRole } = useRole();
   const { error: toastError } = useToast();
 
@@ -27,6 +27,7 @@ export const SignupPage: React.FC = () => {
   }, [roleQuery, setRole]);
 
   React.useEffect(() => {
+    if (isLoading) return;
     if (isAuthenticated && user) {
       if (user.userType === 'client') {
         navigate('/client/dashboard', { replace: true });
@@ -34,7 +35,7 @@ export const SignupPage: React.FC = () => {
         navigate('/freelancer/dashboard', { replace: true });
       }
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   const [formData, setFormData] = useState(() => {
     const saved = sessionStorage.getItem('signup_step1');

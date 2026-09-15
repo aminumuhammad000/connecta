@@ -26,7 +26,8 @@ export const authenticate = (
       return next();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    const secret = (process.env.JWT_SECRET || 'connecta_jwt_secret_key') as string;
+    const decoded = jwt.verify(token, secret) as {
       id?: string;
       _id?: string;
       userType?: string;
@@ -69,7 +70,8 @@ export const optionalAuthenticate = (
       return next();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    const secret = (process.env.JWT_SECRET || 'connecta_jwt_secret_key') as string;
+    const decoded = jwt.verify(token, secret) as any;
     const userId = decoded._id || decoded.id;
     
     if (userId) {

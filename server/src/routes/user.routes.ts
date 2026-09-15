@@ -3,7 +3,7 @@ import {
     signup, initiateSignup, signin, googleSignup, googleSignin,
     getUsers, getFreelancers, getUserById, forgotPassword,
     verifyOTP, resetPassword, banUser, unbanUser, 
-    getMe, verifyEmail, resendVerificationOTP,
+    getMe, refreshToken, verifyEmail, resendVerificationOTP,
     updatePushToken, changePassword, checkEmailExists, checkPhoneExists,
     updateMe, switchUserType, deleteUser, createAdmin, createEmployerByAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById,
     requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP
@@ -26,6 +26,7 @@ router.post("/signup", signup);
 router.post("/signin", signin);
 router.post("/google/signup", googleSignup);
 router.post("/google/signin", googleSignin);
+router.post("/refresh-token", refreshToken);
 
 // Password recovery routes
 router.post("/forgot-password", forgotPassword);

@@ -60,9 +60,12 @@ export const OnboardingScreen: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
+    // Wait until initial auth hydration and verification finishes
+    if (isLoading) return;
+
     // If logged in, verify profile setup before navigating
     if (isAuthenticated && user) {
       if (isProfileComplete(user)) {
@@ -81,7 +84,7 @@ export const OnboardingScreen: React.FC = () => {
     if (storage.hasSeenOnboarding()) {
       navigate('/register/role', { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   const handleFinishOnboarding = () => {
     storage.setHasSeenOnboarding(true);

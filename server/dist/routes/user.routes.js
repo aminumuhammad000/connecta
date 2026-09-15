@@ -1,5 +1,5 @@
 import express from "express";
-import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, switchUserType, deleteUser, createAdmin, createEmployerByAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById, requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP } from "../controllers/user.controller.js";
+import { signup, initiateSignup, signin, googleSignup, googleSignin, getUsers, getFreelancers, getUserById, forgotPassword, verifyOTP, resetPassword, banUser, unbanUser, getMe, refreshToken, verifyEmail, resendVerificationOTP, updatePushToken, changePassword, checkEmailExists, checkPhoneExists, updateMe, switchUserType, deleteUser, createAdmin, createEmployerByAdmin, bulkDeleteUsers, bulkBanUsers, bulkUnbanUsers, updateUserById, requestVerification, adminVerifyTalent, getVettedTalent, requestCurrencyOTP, changeCurrencyWithOTP } from "../controllers/user.controller.js";
 import { authenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
 const router = express.Router();
@@ -15,6 +15,7 @@ router.post("/signup", signup);
 router.post("/signin", signin);
 router.post("/google/signup", googleSignup);
 router.post("/google/signin", googleSignin);
+router.post("/refresh-token", refreshToken);
 // Password recovery routes
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOTP);

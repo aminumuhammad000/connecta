@@ -91,7 +91,7 @@ export const RoleSelectionPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleParam = (searchParams.get('role') as 'client' | 'freelancer') || null;
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { setRole } = useRole();
   const [selectedRole, setSelectedRole] = useState<'client' | 'freelancer' | null>(roleParam);
 
@@ -103,6 +103,7 @@ export const RoleSelectionPage: React.FC = () => {
   }, [roleParam, setRole]);
 
   React.useEffect(() => {
+    if (isLoading) return;
     if (isAuthenticated && user) {
       if (user.userType === 'client') {
         navigate('/client/dashboard', { replace: true });
@@ -110,7 +111,7 @@ export const RoleSelectionPage: React.FC = () => {
         navigate('/freelancer/dashboard', { replace: true });
       }
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isLoading, isAuthenticated, user, navigate]);
 
   const handleContinue = () => {
     if (!selectedRole) return;

@@ -17,7 +17,8 @@ export const authenticate = (req, res, next) => {
             };
             return next();
         }
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const secret = (process.env.JWT_SECRET || 'connecta_jwt_secret_key');
+        const decoded = jwt.verify(token, secret);
         // Normalize to both id and _id for downstream code
         const userId = decoded._id || decoded.id;
         if (!userId) {
@@ -45,7 +46,8 @@ export const optionalAuthenticate = (req, res, next) => {
         if (!token) {
             return next();
         }
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const secret = (process.env.JWT_SECRET || 'connecta_jwt_secret_key');
+        const decoded = jwt.verify(token, secret);
         const userId = decoded._id || decoded.id;
         if (userId) {
             req.user = { id: userId, _id: userId, ...decoded };

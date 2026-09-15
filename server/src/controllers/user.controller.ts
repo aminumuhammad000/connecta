@@ -1008,7 +1008,7 @@ export const unbanUser = async (req: Request, res: Response) => {
 // ===================
 export const getMe = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = (req as any).user?.id || (req as any).user?._id;
 
     if (!userId) {
       return res.status(401).json({
@@ -1025,9 +1025,18 @@ export const getMe = async (req: Request, res: Response) => {
       });
     }
 
+    // Refresh token with sliding 30-day expiration so active returning users stay logged in securely
+    const secret = (process.env.JWT_SECRET || 'connecta_jwt_secret_key') as string;
+    const token = jwt.sign(
+      { id: user._id, userType: user.userType },
+      secret,
+      { expiresIn: "30d" }
+    );
+
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
+      token
     });
   } catch (err) {
     console.error('Get current user error:', err);
@@ -1035,6 +1044,96 @@ export const getMe = async (req: Request, res: Response) => {
       success: false,
       message: "Server error",
       error: err
+    });
+  }
+};
+
+// ===================
+// Refresh Token (Sliding Session Renewal)
+// ===================
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.body?.token || req.query?.token);
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'No token provided for session refresh'
+      });
+    }
+
+    const secret = (process.env.JWT_SECRET || 'connecta_jwt_secret_key') as string;
+    let decoded: any;
+
+    try {
+      // First try standard active verification
+      decoded = jwt.verify(token, secret);
+    } catch (err: any) {
+      if (err.name === 'TokenExpiredError') {
+        // Token expired - allow renewal within 14-day grace window
+        const expiredDecoded = jwt.verify(token, secret, { ignoreExpiration: true }) as any;
+        const nowSec = Math.floor(Date.now() / 1000);
+        const gracePeriodSec = 14 * 24 * 60 * 60; // 14 days renewal grace period
+        
+        if (expiredDecoded?.exp && (nowSec - expiredDecoded.exp) <= gracePeriodSec) {
+          decoded = expiredDecoded;
+        } else {
+          return res.status(401).json({
+            success: false,
+            message: 'Session has expired. Please sign in again.'
+          });
+        }
+      } else {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid session token'
+        });
+      }
+    }
+
+    const userId = decoded?._id || decoded?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid session payload'
+      });
+    }
+
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User account not found'
+      });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is deactivated'
+      });
+    }
+
+    // Issue fresh 30-day token
+    const newToken = jwt.sign(
+      { id: user._id, userType: user.userType },
+      secret,
+      { expiresIn: '30d' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token: newToken,
+      user,
+      expiresIn: 30 * 24 * 60 * 60
+    });
+  } catch (err: any) {
+    console.error('Refresh token error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to refresh session',
+      error: err?.message || err
     });
   }
 };

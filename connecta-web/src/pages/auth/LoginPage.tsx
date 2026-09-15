@@ -14,7 +14,7 @@ export const LoginPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const isExpired = searchParams.get('expired') === '1';
   const navigate = useNavigate();
-  const { login, user, isAuthenticated } = useAuth();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const { success: toastSuccess, error: toastError, info: toastInfo } = useToast();
 
   const [email, setEmail] = useState('');
@@ -23,6 +23,8 @@ export const LoginPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   React.useEffect(() => {
+    if (isLoading) return;
+
     if (isAuthenticated && user) {
       if (isProfileComplete(user)) {
         if (user.userType === 'client') {
@@ -39,7 +41,7 @@ export const LoginPage: React.FC = () => {
     if (isExpired) {
       toastInfo('Session Expired', 'Please sign in again to continue');
     }
-  }, [isAuthenticated, user, isExpired, navigate, toastInfo]);
+  }, [isLoading, isAuthenticated, user, isExpired, navigate, toastInfo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -12,6 +12,7 @@ interface AuthContextType {
   googleLogin: (payload: any, userType?: string) => Promise<{ user: User; isNewUser: boolean }>;
   googleSignup: (payload: any, userType?: string) => Promise<{ user: User; isNewUser: boolean }>;
   switchRole: (targetRole?: 'client' | 'freelancer') => Promise<User>;
+  refreshSession: () => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   setUserAndToken: (user: User, token: string) => void;
@@ -24,32 +25,113 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(() => storage.getToken());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Core session refresh function
+  const refreshSession = async (): Promise<boolean> => {
+    const currentToken = storage.getToken();
+    if (!currentToken) return false;
+
+    try {
+      const res = await authAPI.refreshToken(currentToken);
+      if (res.success && res.token && res.user) {
+        setUser(res.user);
+        setToken(res.token);
+        storage.setUser(res.user);
+        storage.setToken(res.token);
+        return true;
+      }
+    } catch (err: any) {
+      // If server explicitly returned 401, token is invalid beyond renewal
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        storage.clearAll();
+        setUser(null);
+        setToken(null);
+        return false;
+      }
+    }
+    return false;
+  };
+
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
       const storedToken = storage.getToken();
       if (storedToken) {
         try {
           const res = await authAPI.getMe();
+          if (!isMounted) return;
+
           if (res.success && res.data) {
             setUser(res.data);
             storage.setUser(res.data);
+
+            // If server returned a fresh sliding session token, persist it
+            const freshToken = (res as any).token || (res.data as any).token;
+            if (freshToken) {
+              setToken(freshToken);
+              storage.setToken(freshToken);
+            }
           } else {
-            // Invalid token
+            // Invalid response payload from server
             storage.clearAll();
             setUser(null);
             setToken(null);
           }
-        } catch (err) {
-          console.error('Failed to verify token on app launch:', err);
-          storage.clearAll();
-          setUser(null);
-          setToken(null);
+        } catch (err: any) {
+          if (!isMounted) return;
+          console.warn('Auth verification attempt:', err?.response?.status || err?.message);
+
+          if (err?.response?.status === 401 || err?.response?.status === 403) {
+            // Try token refresh once to rescue session within renewal grace period
+            try {
+              const refreshOk = await refreshSession();
+              if (!refreshOk) {
+                storage.clearAll();
+                setUser(null);
+                setToken(null);
+              }
+            } catch {
+              storage.clearAll();
+              setUser(null);
+              setToken(null);
+            }
+          } else {
+            // Offline, timeout, or 5xx server error:
+            // CRITICAL: Retain stored session so returning users are NOT kicked out!
+            console.warn('Network issue during auth verification; retaining cached session.');
+            const cachedUser = storage.getUser();
+            if (cachedUser) {
+              setUser(cachedUser);
+            }
+          }
         }
       }
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     };
 
     initAuth();
+
+    // Proactive background renewal when tab gains focus or every 12 hours
+    const handleFocus = () => {
+      if (storage.isTokenExpiringSoon()) {
+        refreshSession().catch(() => {});
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+
+    const renewalInterval = setInterval(() => {
+      if (storage.isTokenExpiringSoon()) {
+        refreshSession().catch(() => {});
+      }
+    }, 12 * 60 * 60 * 1000); // 12 hours
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(renewalInterval);
+    };
   }, []);
 
   const setUserAndToken = (newUser: User, newToken: string) => {
@@ -125,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         googleLogin,
         googleSignup,
         switchRole,
+        refreshSession,
         logout,
         updateUser,
         setUserAndToken,
