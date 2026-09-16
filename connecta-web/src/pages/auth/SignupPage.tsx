@@ -98,17 +98,83 @@ export const SignupPage: React.FC = () => {
     setEmailChecking(true);
     try {
       const res = await authAPI.checkEmail(formData.email);
-      if (res.success) {
+      if (res.exists || res.available === false) {
+        setEmailStatus('invalid');
+        setEmailErrorMsg(res.message || 'Email is already registered. Please sign in instead.');
+      } else {
         setEmailStatus('valid');
         setEmailErrorMsg('');
-      } else {
-        setEmailStatus('invalid');
-        setEmailErrorMsg(res.message || 'Email is already registered');
       }
     } catch {
       setEmailStatus('idle');
     } finally {
       setEmailChecking(false);
+    }
+  };
+
+  // Phone availability state
+  const [phoneChecking, setPhoneChecking] = useState(false);
+  const [phoneStatus, setPhoneStatus] = useState<'idle' | 'valid' | 'invalid'>('idle');
+  const [phoneErrorMsg, setPhoneErrorMsg] = useState('');
+
+  const validatePhone = async (phoneNumberToValidate: string): Promise<boolean> => {
+    const trimmed = (phoneNumberToValidate || '').trim();
+    if (!trimmed) {
+      setPhoneStatus('idle');
+      setPhoneErrorMsg('');
+      return true;
+    }
+
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    if (digitsOnly.length < 8) {
+      setPhoneStatus('invalid');
+      setPhoneErrorMsg('Please enter a valid phone number (at least 8 digits)');
+      return false;
+    }
+
+    setPhoneChecking(true);
+    try {
+      const res = await authAPI.checkPhone(trimmed);
+      if (res.exists || res.available === false) {
+        setPhoneStatus('invalid');
+        setPhoneErrorMsg(res.message || 'This phone number is already registered. Please log in or use a different number.');
+        return false;
+      } else {
+        setPhoneStatus('valid');
+        setPhoneErrorMsg('');
+        return true;
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.message;
+      if (err.response?.status === 400 && msg) {
+        setPhoneStatus('invalid');
+        setPhoneErrorMsg(msg);
+        return false;
+      }
+      setPhoneStatus('idle');
+      return true;
+    } finally {
+      setPhoneChecking(false);
+    }
+  };
+
+  // Debounced instant phone validation as user types in Step 2
+  React.useEffect(() => {
+    if (signupStep !== 2) return;
+    if (!formData.phoneNumber) {
+      setPhoneStatus('idle');
+      setPhoneErrorMsg('');
+      return;
+    }
+    const timer = setTimeout(() => {
+      validatePhone(formData.phoneNumber);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [formData.phoneNumber, signupStep]);
+
+  const handlePhoneBlur = () => {
+    if (formData.phoneNumber && phoneStatus !== 'valid') {
+      validatePhone(formData.phoneNumber);
     }
   };
 
@@ -193,6 +259,25 @@ export const SignupPage: React.FC = () => {
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toastError('Required Fields Missing', 'Please fill in First Name, Last Name, and Email');
       return;
+    }
+
+    if (phoneChecking) {
+      toastError('Verifying Phone', 'Please wait while we check phone number availability...');
+      return;
+    }
+
+    if (phoneStatus === 'invalid') {
+      toastError('Phone Number Taken', phoneErrorMsg || 'This phone number is already registered. Please use another number.');
+      return;
+    }
+
+    // Double check phone availability before moving to password step
+    if (formData.phoneNumber && phoneStatus === 'idle') {
+      const isAvailable = await validatePhone(formData.phoneNumber);
+      if (!isAvailable) {
+        toastError('Phone Number Taken', phoneErrorMsg || 'This phone number is already registered. Please use another number.');
+        return;
+      }
     }
 
     sessionStorage.setItem('signup_step1', JSON.stringify({
@@ -444,19 +529,52 @@ export const SignupPage: React.FC = () => {
 
 
 
-              {/* Phone Number */}
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.82rem' }}>Phone Number</label>
+              {/* Phone Number with Instant Validation */}
+              <div className="form-group" style={{ marginBottom: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: 0 }}>
+                    <span>Phone Number</span>
+                  </label>
+                  {phoneChecking && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Loader2 size={12} className="animate-spin" /> Verifying...
+                    </span>
+                  )}
+                </div>
                 <div className="input-wrapper">
                   <Phone className="input-icon-left" size={17} />
                   <input
                     type="tel"
                     placeholder="+234 801 234 5678"
                     value={formData.phoneNumber}
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                    className="input-field"
+                    onChange={(e) => {
+                      setFormData({ ...formData, phoneNumber: e.target.value });
+                      setPhoneStatus('idle');
+                    }}
+                    onBlur={handlePhoneBlur}
+                    className={`input-field ${phoneStatus === 'valid' ? 'input-success' : phoneStatus === 'invalid' ? 'input-error' : ''}`}
                   />
+                  {phoneStatus === 'valid' && (
+                    <div className="input-icon-right" title="Phone Number Available">
+                      <CheckCircle2 size={17} color="var(--success)" />
+                    </div>
+                  )}
+                  {phoneStatus === 'invalid' && (
+                    <div className="input-icon-right" title="Phone Number Unavailable">
+                      <AlertCircle size={17} color="var(--error)" />
+                    </div>
+                  )}
                 </div>
+                {phoneStatus === 'invalid' && (
+                  <div className="error-text" style={{ marginTop: '6px', color: 'var(--error)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <AlertCircle size={13} /> {phoneErrorMsg}
+                  </div>
+                )}
+                {phoneStatus === 'valid' && (
+                  <div style={{ marginTop: '6px', color: 'var(--success)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <CheckCircle2 size={13} /> Phone number is available
+                  </div>
+                )}
               </div>
 
               {/* WhatsApp Number with Minimalist "Same as Phone" Icon Button */}
@@ -500,13 +618,25 @@ export const SignupPage: React.FC = () => {
               </div>
 
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={!(phoneChecking || phoneStatus === 'invalid') ? { scale: 1.02 } : undefined}
+                whileTap={!(phoneChecking || phoneStatus === 'invalid') ? { scale: 0.98 } : undefined}
                 type="submit"
+                disabled={phoneChecking || phoneStatus === 'invalid'}
                 className="btn-primary"
-                style={{ width: '100%', padding: '14px', marginTop: '6px', fontSize: '0.98rem' }}
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  marginTop: '6px',
+                  fontSize: '0.98rem',
+                  opacity: (phoneChecking || phoneStatus === 'invalid') ? 0.6 : 1,
+                  cursor: (phoneChecking || phoneStatus === 'invalid') ? 'not-allowed' : 'pointer'
+                }}
               >
-                Set Account Password <ArrowRight size={18} />
+                {phoneChecking ? (
+                  <><Loader2 size={18} className="animate-spin" /> Verifying Phone...</>
+                ) : (
+                  <>Set Account Password <ArrowRight size={18} /></>
+                )}
               </motion.button>
             </form>
           )}

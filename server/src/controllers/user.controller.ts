@@ -13,20 +13,94 @@ import WorkforceMember from '../models/WorkforceMember.model.js';
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID as string);
 
 // ===================
-// Check if Email Exists
+// Phone Normalization & Matching Variants Helpers
 // ===================
+export const normalizePhone = (rawPhone?: string): string | undefined => {
+  if (!rawPhone || typeof rawPhone !== 'string') return undefined;
+  const trimmed = rawPhone.trim();
+  if (!trimmed) return undefined;
+
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (!digitsOnly) return undefined;
+
+  // Nigerian numbers
+  // 08012345678 (11 digits starting with 0) -> +2348012345678
+  if (digitsOnly.startsWith('0') && digitsOnly.length === 11) {
+    return `+234${digitsOnly.slice(1)}`;
+  }
+  // 2348012345678 (13 digits starting with 234) -> +2348012345678
+  if (digitsOnly.startsWith('234') && digitsOnly.length === 13) {
+    return `+${digitsOnly}`;
+  }
+  // 8012345678 (10 digits local Nigerian without leading zero) -> +2348012345678
+  if (digitsOnly.length === 10 && (digitsOnly.startsWith('7') || digitsOnly.startsWith('8') || digitsOnly.startsWith('9'))) {
+    return `+234${digitsOnly}`;
+  }
+
+  // Already prefixed with '+'
+  if (trimmed.startsWith('+')) {
+    return `+${digitsOnly}`;
+  }
+
+  return `+${digitsOnly}`;
+};
+
+export const getPhoneVariants = (rawPhone?: string): string[] => {
+  if (!rawPhone || typeof rawPhone !== 'string') return [];
+  const trimmed = rawPhone.trim();
+  if (!trimmed) return [];
+
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (!digitsOnly) return [];
+
+  const variants = new Set<string>();
+  variants.add(trimmed);
+  variants.add(digitsOnly);
+
+  // Nigerian variants
+  let core10 = '';
+  if (digitsOnly.startsWith('234') && digitsOnly.length === 13) {
+    core10 = digitsOnly.slice(3);
+  } else if (digitsOnly.startsWith('0') && digitsOnly.length === 11) {
+    core10 = digitsOnly.slice(1);
+  } else if (digitsOnly.length === 10) {
+    core10 = digitsOnly;
+  }
+
+  if (core10) {
+    variants.add(`+234${core10}`);
+    variants.add(`234${core10}`);
+    variants.add(`0${core10}`);
+    variants.add(core10);
+    variants.add(`+234 ${core10.slice(0, 3)} ${core10.slice(3, 6)} ${core10.slice(6)}`);
+    variants.add(`0${core10.slice(0, 3)} ${core10.slice(3, 6)} ${core10.slice(6)}`);
+    variants.add(`0${core10.slice(0, 3)}-${core10.slice(3, 6)}-${core10.slice(6)}`);
+  } else {
+    variants.add(`+${digitsOnly}`);
+  }
+
+  return Array.from(variants);
+};
+
 // ===================
 // Check if Email Exists
 // ===================
 export const checkEmailExists = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const rawEmail = (req.body?.email || req.query?.email || '') as string;
+    const email = String(rawEmail).trim().toLowerCase();
     if (!email) {
       return res.status(400).json({ success: false, message: "Email is required" });
     }
 
     const user = await User.findOne({ email });
-    res.status(200).json({ success: true, exists: !!user });
+    const exists = !!user;
+    res.status(200).json({
+      success: true,
+      exists,
+      available: !exists,
+      message: exists ? "Email is already registered" : "Email is available"
+    });
   } catch (err) {
     console.error('Check email error:', err);
     res.status(500).json({ success: false, message: "Server error", error: err });
@@ -38,14 +112,56 @@ export const checkEmailExists = async (req: Request, res: Response) => {
 // ===================
 export const checkPhoneExists = async (req: Request, res: Response) => {
   try {
-    const { phoneNumber } = req.body;
-    if (!phoneNumber) {
+    const rawPhone = (req.body?.phoneNumber || req.body?.phone || req.query?.phoneNumber || req.query?.phone || '') as string;
+    const trimmed = String(rawPhone).trim();
+    if (!trimmed) {
       return res.status(400).json({ success: false, message: "Phone number is required" });
     }
 
-    const user = await User.findOne({ phoneNumber });
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    if (digitsOnly.length < 8) {
+      return res.status(400).json({
+        success: false,
+        exists: false,
+        available: false,
+        message: "Please enter a valid phone number (at least 8 digits)"
+      });
+    }
 
-    res.status(200).json({ success: true, exists: !!user });
+    const variants = getPhoneVariants(trimmed);
+    const normalized = normalizePhone(trimmed);
+
+    let core10 = '';
+    if (digitsOnly.startsWith('234') && digitsOnly.length === 13) {
+      core10 = digitsOnly.slice(3);
+    } else if (digitsOnly.startsWith('0') && digitsOnly.length === 11) {
+      core10 = digitsOnly.slice(1);
+    } else if (digitsOnly.length === 10) {
+      core10 = digitsOnly;
+    }
+
+    const user = await User.findOne({
+      $or: [
+        { phoneNumber: { $in: variants } },
+        { phone: { $in: variants } },
+        ...(core10 ? [
+          { phoneNumber: new RegExp(core10 + '$') },
+          { phone: new RegExp(core10 + '$') }
+        ] : [])
+      ]
+    });
+
+    const exists = !!user;
+
+    res.status(200).json({
+      success: true,
+      exists,
+      available: !exists,
+      message: exists 
+        ? "This phone number is already registered. Please log in or use a different number."
+        : "Phone number is available",
+      normalizedPhone: normalized
+    });
   } catch (err) {
     console.error('Check phone error:', err);
     res.status(500).json({ success: false, message: "Server error", error: err });
@@ -227,26 +343,59 @@ export const signup = async (req: Request, res: Response) => {
       }
     }
 
-    // Check if user already exists by email or phone
-    const existingUser = await User.findOne({ 
-      $or: [
-        { email: email.toLowerCase() },
-        ...(otherDetails.phoneNumber ? [{ phoneNumber: otherDetails.phoneNumber }] : [])
-      ] 
-    });
-    
-    if (existingUser) {
-      if (existingUser.email === email.toLowerCase()) {
-        return res.status(400).json({ message: "Email is already registered" });
+    // Check email uniqueness
+    const existingEmailUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingEmailUser) {
+      return res.status(400).json({ success: false, message: "Email is already registered" });
+    }
+
+    // Validate and check phone uniqueness if provided
+    const rawPhone = String(otherDetails.phoneNumber || otherDetails.phone || '').trim();
+    let normalizedPhoneNumber: string | undefined = undefined;
+
+    if (rawPhone) {
+      const phoneDigits = rawPhone.replace(/\D/g, '');
+      if (phoneDigits.length < 8) {
+        return res.status(400).json({ success: false, message: "Invalid phone number format (at least 8 digits required)" });
       }
-      if (otherDetails.phoneNumber && existingUser.phoneNumber === otherDetails.phoneNumber) {
-        return res.status(400).json({ message: "Phone number is already registered to another account" });
+
+      normalizedPhoneNumber = normalizePhone(rawPhone);
+      const phoneVariants = getPhoneVariants(rawPhone);
+
+      let core10 = '';
+      if (phoneDigits.startsWith('234') && phoneDigits.length === 13) {
+        core10 = phoneDigits.slice(3);
+      } else if (phoneDigits.startsWith('0') && phoneDigits.length === 11) {
+        core10 = phoneDigits.slice(1);
+      } else if (phoneDigits.length === 10) {
+        core10 = phoneDigits;
       }
-      return res.status(400).json({ message: "User already exists" });
+
+      const existingPhoneUser = await User.findOne({
+        $or: [
+          { phoneNumber: { $in: phoneVariants } },
+          { phone: { $in: phoneVariants } },
+          ...(core10 ? [
+            { phoneNumber: new RegExp(core10 + '$') },
+            { phone: new RegExp(core10 + '$') }
+          ] : [])
+        ]
+      });
+
+      if (existingPhoneUser) {
+        return res.status(400).json({
+          success: false,
+          message: "This phone number is already registered to another account. Please use a different number or log in."
+        });
+      }
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Clean otherDetails so phoneNumber / phone is never empty string "" (prevents sparse index collisions)
+    delete otherDetails.phoneNumber;
+    delete otherDetails.phone;
 
     const newUser = await User.create({
       firstName,
@@ -256,6 +405,7 @@ export const signup = async (req: Request, res: Response) => {
       userType,
       isVerified: true,
       profileImage: otherDetails.avatar || otherDetails.profileImage || `https://i.pravatar.cc/300?u=${email}`,
+      ...(normalizedPhoneNumber ? { phoneNumber: normalizedPhoneNumber } : {}),
       ...otherDetails
     });
 

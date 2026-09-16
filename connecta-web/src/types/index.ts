@@ -39,6 +39,9 @@ export interface ApiResponse<T = any> {
   data?: T;
   token?: string;
   user?: User;
+  exists?: boolean;
+  available?: boolean;
+  normalizedPhone?: string;
 }
 
 export interface AuthState {

@@ -91,6 +91,7 @@ app.use('/uploads', express.static('uploads'));
 // Database connection moved to end of file to ensure server starts only after DB is ready
 // Routes
 app.use("/api/users", userRoutes);
+app.use("/api/auth", userRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/messages", messageRoutes);

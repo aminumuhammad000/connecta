@@ -100,6 +100,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.use("/api/users", userRoutes);
+app.use("/api/auth", userRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/messages", messageRoutes);

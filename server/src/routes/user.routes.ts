@@ -20,7 +20,9 @@ router.get("/vetted-talent", getVettedTalent);
 
 // Auth routes
 router.post("/check-email", checkEmailExists);
+router.get("/check-email", checkEmailExists);
 router.post("/check-phone", checkPhoneExists);
+router.get("/check-phone", checkPhoneExists);
 router.post("/initiate-signup", initiateSignup);
 router.post("/signup", signup);
 router.post("/signin", signin);
