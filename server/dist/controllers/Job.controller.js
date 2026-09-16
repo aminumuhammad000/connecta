@@ -203,10 +203,10 @@ export const createJob = async (req, res) => {
         const newJob = await Job.create({
             title,
             description,
-            budget,
-            duration,
-            category,
-            skills,
+            budget: Number(budget || 0),
+            duration: Number(duration || 30),
+            category: category || 'General',
+            skills: skills || [],
             clientId,
             jobType: jobType || 'milestone_gig',
             locationType: locationType || 'remote',
@@ -220,9 +220,11 @@ export const createJob = async (req, res) => {
             openings: Number(req.body.openings || 1),
             monthlySalaryAmount: monthlySalaryAmount || (jobType === 'full_time_contract' ? budget : undefined),
             currency: currency || 'USD',
-            probationPeriodDays: probationPeriodDays || 30,
-            noticePeriodDays: noticePeriodDays || 30,
-            benefitsSummary: benefitsSummary || ''
+            probationPeriodDays: probationPeriodDays ? Number(probationPeriodDays) : 30,
+            noticePeriodDays: noticePeriodDays ? Number(noticePeriodDays) : 30,
+            benefitsSummary: benefitsSummary || '',
+            paymentStatus: 'pending',
+            paymentVerified: false
         });
         // Notify Matched Freelancers
         try {
@@ -232,7 +234,6 @@ export const createJob = async (req, res) => {
         catch (err) {
             console.error('Failed to notify matched freelancers:', err);
         }
-        // Publish to Feed
         createFeedPost({
             type: 'job_posted',
             emoji: '📢',

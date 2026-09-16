@@ -35,7 +35,7 @@ const JobSchema: Schema<IJob> = new Schema(
     title: { type: String, required: true },
     description: { type: String, required: true },
     budget: { type: Number, required: true },
-    duration: { type: Number, required: true },
+    duration: { type: Number, default: 30 },
     status: {
       type: String,
       enum: ["active", "closed", "draft", "pending"],
