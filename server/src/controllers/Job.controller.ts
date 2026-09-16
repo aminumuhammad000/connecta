@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { Job } from "../models/Job.model.js";
 import Profile from "../models/Profile.model.js";
 import Proposal from "../models/Proposal.model.js";
@@ -7,19 +8,39 @@ import { createFeedPost } from '../services/feed.service.js';
 // Get Jobs for Current Client
 export const getClientJobs = async (req: Request, res: Response) => {
   try {
-    const clientId = (req as any).user?._id;
-    const jobs = await Job.find({ clientId }).sort({ createdAt: -1 }).lean();
+    const rawId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    if (!rawId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    const clientObjectId = mongoose.Types.ObjectId.isValid(rawId) ? new mongoose.Types.ObjectId(rawId) : rawId;
+
+    const jobs = await Job.find({
+      $or: [
+        { clientId: clientObjectId },
+        { clientId: String(rawId) }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .populate("clientId", "firstName lastName email profileImage companyName")
+      .lean();
 
     const jobsWithCounts = await Promise.all(
       jobs.map(async (j: any) => {
         const count = await Proposal.countDocuments({ jobId: j._id });
-        return { ...j, proposalsCount: count, proposalCount: count };
+        return {
+          ...j,
+          proposalsCount: count,
+          proposalCount: count,
+          id: j._id,
+        };
       })
     );
 
-    res.status(200).json({ success: true, data: jobsWithCounts });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server error", error: err });
+    return res.status(200).json({ success: true, data: jobsWithCounts, count: jobsWithCounts.length });
+  } catch (err: any) {
+    console.error("Get client jobs error:", err);
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -187,7 +208,20 @@ export const getJobById = async (req: Request, res: Response) => {
 // Create Job
 export const createJob = async (req: Request, res: Response) => {
   try {
-    const clientId = (req as any).user?._id;
+    const rawId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    if (!rawId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+    const clientId = mongoose.Types.ObjectId.isValid(rawId) ? new mongoose.Types.ObjectId(rawId) : rawId;
+
+    let companyName = req.body.company;
+    if (!companyName) {
+      try {
+        const userDoc = await (await import("../models/user.model.js")).default.findById(clientId).select("companyName firstName lastName").lean();
+        companyName = userDoc?.companyName || (userDoc?.firstName ? `${userDoc.firstName} ${userDoc.lastName || ''}`.trim() : '');
+      } catch {}
+    }
+
     const { 
       title, 
       description, 
@@ -202,7 +236,6 @@ export const createJob = async (req: Request, res: Response) => {
       requireAiInterview,
       status,
       isExternal,
-      company,
       location,
       monthlySalaryAmount,
       currency,
@@ -226,7 +259,7 @@ export const createJob = async (req: Request, res: Response) => {
       requireAiInterview: requireAiInterview === true || requireAiInterview === 'true',
       status: status || "active",
       isExternal: isExternal || false,
-      company: company || '',
+      company: companyName || '',
       location: location || 'Remote',
       openings: Number(req.body.openings || 1),
       monthlySalaryAmount: monthlySalaryAmount || (jobType === 'full_time_contract' ? budget : undefined),
@@ -294,10 +327,29 @@ export const bulkCreateJobs = async (req: Request, res: Response) => {
 export const updateJob = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const updatedJob = await Job.findByIdAndUpdate(id, req.body, { new: true });
-    res.status(200).json({ success: true, data: updatedJob });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server error", error: err });
+    const rawId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    const userRole = (req as any).user?.role || (req as any).user?.userType;
+
+    const job = await Job.findById(id);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // Ownership check: only owner or admin can update
+    const isOwner = rawId && job.clientId && job.clientId.toString() === rawId.toString();
+    const isAdmin = userRole === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: "Unauthorized: You do not own this job listing" });
+    }
+
+    // Disallow altering ownership (clientId)
+    const updateData = { ...req.body };
+    delete updateData.clientId;
+
+    const updatedJob = await Job.findByIdAndUpdate(id, updateData, { new: true });
+    return res.status(200).json({ success: true, data: updatedJob });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -305,10 +357,25 @@ export const updateJob = async (req: Request, res: Response) => {
 export const deleteJob = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const rawId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    const userRole = (req as any).user?.role || (req as any).user?.userType;
+
+    const job = await Job.findById(id);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    // Ownership check: only owner or admin can delete
+    const isOwner = rawId && job.clientId && job.clientId.toString() === rawId.toString();
+    const isAdmin = userRole === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: "Unauthorized: You do not own this job listing" });
+    }
+
     await Job.findByIdAndDelete(id);
-    res.status(200).json({ success: true, message: "Job deleted" });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Server error", error: err });
+    return res.status(200).json({ success: true, message: "Job deleted successfully" });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
 

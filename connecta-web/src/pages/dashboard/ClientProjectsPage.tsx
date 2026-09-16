@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Briefcase, Search, ArrowUpRight, PlusCircle, CheckCircle2, ShieldCheck, Clock, FileCheck, Star, Share2, X, Loader2
+  Briefcase, Search, ArrowUpRight, PlusCircle, CheckCircle2, ShieldCheck, Clock, FileCheck, Star, Share2, X, Loader2, Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { projectAPI, contractAPI } from '../../services/api';
+import { projectAPI, contractAPI, jobAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { JobCompletionFlyerModal } from '../../components/modals/JobCompletionFlyerModal';
@@ -14,6 +14,7 @@ export const ClientProjectsPage: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'All' | 'Active' | 'Delivered' | 'Completed'>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,16 +34,19 @@ export const ClientProjectsPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [projRes, contractRes] = await Promise.all([
+      const [projRes, contractRes, jobRes] = await Promise.all([
         projectAPI.getClientProjects().catch(() => ({ data: [] })),
-        contractAPI.getUserContracts().catch(() => ({ data: [] }))
+        contractAPI.getUserContracts().catch(() => ({ data: [] })),
+        jobAPI.getClientJobs().catch(() => ({ data: [] }))
       ]);
 
       const projData = Array.isArray(projRes) ? projRes : projRes?.data || [];
       const contrData = Array.isArray(contractRes) ? contractRes : contractRes?.data || [];
+      const jobData = Array.isArray(jobRes) ? jobRes : (jobRes?.data || []);
 
       setProjects(projData);
       setContracts(contrData);
+      setJobs(jobData);
     } catch (err) {
       console.error('Failed to fetch client projects/contracts:', err);
     } finally {
@@ -50,11 +54,12 @@ export const ClientProjectsPage: React.FC = () => {
     }
   };
 
-  // Combine projects & contracts into unified items for the client view
+  // Combine contracts, projects & client posted jobs into unified items for the client view
   const combinedItems = [
     ...contracts.map((c) => ({
       id: c._id,
       isContract: true,
+      isPostedJob: false,
       title: c.title,
       description: c.description || 'Active contract for milestone deliverables.',
       amount: c.totalPrice || c.totalAmount || 0,
@@ -66,6 +71,7 @@ export const ClientProjectsPage: React.FC = () => {
         : 'Freelancer',
       freelancerId: c.freelancerId?._id || c.freelancerId,
       submission: c.submission,
+      proposalsCount: 0,
       raw: c
     })),
     ...projects
@@ -73,6 +79,7 @@ export const ClientProjectsPage: React.FC = () => {
       .map((p) => ({
         id: p._id,
         isContract: false,
+        isPostedJob: false,
         title: p.title,
         description: p.description,
         amount: Number(p.budget || 0),
@@ -84,7 +91,26 @@ export const ClientProjectsPage: React.FC = () => {
           : null,
         freelancerId: p.freelancerId?._id || p.freelancerId,
         submission: null,
+        proposalsCount: 0,
         raw: p
+      })),
+    ...jobs
+      .filter((j) => !contracts.some((c) => String(c.jobId) === String(j._id || j.id)))
+      .map((j) => ({
+        id: j._id || j.id,
+        isContract: false,
+        isPostedJob: true,
+        title: j.title,
+        description: j.description,
+        amount: Number(j.budget || 0),
+        currency: j.currency || 'USD',
+        status: j.status === 'closed' ? 'completed' : (j.status || 'active'),
+        paymentStatus: 'pending',
+        freelancerName: null,
+        freelancerId: null,
+        submission: null,
+        proposalsCount: j.proposalsCount ?? j.proposalCount ?? (Array.isArray(j.proposals) ? j.proposals.length : 0),
+        raw: j
       }))
   ];
 
@@ -92,9 +118,9 @@ export const ClientProjectsPage: React.FC = () => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
-    if (activeFilter === 'Active') return item.status === 'active' || item.status === 'in_progress';
+    if (activeFilter === 'Active') return item.status === 'active' || item.status === 'in_progress' || item.status === 'open';
     if (activeFilter === 'Delivered') return item.status === 'delivered' || item.status === 'submitted';
-    if (activeFilter === 'Completed') return item.status === 'completed';
+    if (activeFilter === 'Completed') return item.status === 'completed' || item.status === 'closed';
     return true;
   });
 
@@ -231,7 +257,7 @@ export const ClientProjectsPage: React.FC = () => {
                 <div style={{ flex: 1, minWidth: '280px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: '8px', background: 'rgba(253,103,48,0.1)', color: 'var(--primary)' }}>
-                      {item.isContract ? 'Active Contract' : 'Job Listing'}
+                      {item.isContract ? 'Active Contract' : item.isPostedJob ? 'Posted Job' : 'Project'}
                     </span>
                     <span
                       style={{
@@ -240,10 +266,11 @@ export const ClientProjectsPage: React.FC = () => {
                         padding: '3px 10px',
                         borderRadius: '8px',
                         background: isCompleted ? 'rgba(16,185,129,0.1)' : isDelivered ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)',
-                        color: isCompleted ? 'var(--success)' : isDelivered ? '#F59E0B' : 'var(--info, #3B82F6)'
+                        color: isCompleted ? 'var(--success)' : isDelivered ? '#F59E0B' : 'var(--info, #3B82F6)',
+                        textTransform: 'capitalize'
                       }}
                     >
-                      {isCompleted ? 'Completed' : isDelivered ? 'Deliverable Submitted' : 'In Progress'}
+                      {isCompleted ? 'Completed' : isDelivered ? 'Deliverable Submitted' : (item.isPostedJob ? (item.raw?.status || 'Active') : 'In Progress')}
                     </span>
                   </div>
 
@@ -258,6 +285,14 @@ export const ClientProjectsPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       <span>Freelancer:</span>
                       <strong style={{ color: 'var(--text-primary)' }}>{item.freelancerName}</strong>
+                    </div>
+                  )}
+
+                  {item.isPostedJob && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      <Users size={14} color="var(--primary)" />
+                      <span>Proposals:</span>
+                      <strong style={{ color: 'var(--primary)' }}>{item.proposalsCount} candidate{item.proposalsCount === 1 ? '' : 's'} applied</strong>
                     </div>
                   )}
                 </div>
@@ -306,12 +341,22 @@ export const ClientProjectsPage: React.FC = () => {
                       </>
                     )}
 
-                    <button
-                      onClick={() => navigate(`/jobs/${item.id}`)}
-                      style={{ padding: '8px 14px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 600, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      Details <ArrowUpRight size={14} />
-                    </button>
+                    {item.isPostedJob ? (
+                      <button
+                        onClick={() => navigate(`/jobs/${item.id}`)}
+                        className="btn-primary"
+                        style={{ padding: '8px 14px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        Review Proposals ({item.proposalsCount}) <ArrowUpRight size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigate(`/jobs/${item.id}`)}
+                        style={{ padding: '8px 14px', borderRadius: '10px', fontSize: '0.82rem', fontWeight: 600, background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        Details <ArrowUpRight size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
