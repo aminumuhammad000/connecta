@@ -179,6 +179,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       path: '/jobs',
     },
     {
+      label: 'Saved Gigs',
+      icon: <Bookmark size={18} />,
+      path: '/saved-gigs',
+    },
+    {
       label: 'Proposals',
       icon: <FileText size={18} />,
       path: '/proposals',
@@ -588,6 +593,29 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                       >
                         <User size={15} color="var(--primary)" /> Profile
                       </button>
+
+                      {isFreelancer && (
+                        <button
+                          onClick={() => { setShowProfileMenu(false); navigate('/saved-gigs'); }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            width: '100%',
+                            padding: '8px 10px',
+                            borderRadius: '10px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.81rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left'
+                          }}
+                        >
+                          <Bookmark size={15} color="var(--primary)" /> Saved Gigs
+                        </button>
+                      )}
 
                       {/* Switch Role Mode in Dropdown */}
                       <button

@@ -7,7 +7,7 @@ import {
   ArrowLeft, MapPin, DollarSign, Briefcase, Calendar,
   ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare, Sparkles, Bot
 } from 'lucide-react';
-import { jobAPI, proposalAPI, contractAPI, aiAPI } from '../../services/api';
+import { jobAPI, proposalAPI, contractAPI, aiAPI, savedJobAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { formatJobBudget } from '../../utils/currency';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
@@ -99,13 +99,15 @@ export const JobDetailsPage: React.FC = () => {
 
   const checkUserStatusForJob = async (jobId: string, currentJob: any) => {
     try {
-      const [contractsRes, proposalsRes] = await Promise.all([
+      const [contractsRes, proposalsRes, savedRes] = await Promise.all([
         contractAPI.getUserContracts().catch(() => null),
-        proposalAPI.getMyProposals().catch(() => null)
+        proposalAPI.getMyProposals().catch(() => null),
+        savedJobAPI.getSavedJobs().catch(() => null)
       ]);
 
       const contracts = Array.isArray(contractsRes) ? contractsRes : contractsRes?.data || [];
       const proposals = Array.isArray(proposalsRes) ? proposalsRes : proposalsRes?.data || [];
+      const savedList = Array.isArray(savedRes) ? savedRes : savedRes?.data || [];
 
       const foundContract = contracts.find((c: any) =>
         c._id === jobId ||
@@ -119,10 +121,35 @@ export const JobDetailsPage: React.FC = () => {
         p.jobId?._id === jobId
       );
 
+      const isThisJobSaved = savedList.some((item: any) => (item._id || item.id || item.jobId?._id) === jobId);
+      setIsSaved(isThisJobSaved);
+
       if (foundContract) setUserContract(foundContract);
       if (foundProposal) setUserProposal(foundProposal);
     } catch (err) {
       console.error('Error checking user contract/proposal status:', err);
+    }
+  };
+
+  const handleToggleSave = async () => {
+    const targetId = job?._id || id;
+    if (!targetId) return;
+
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+
+    try {
+      if (nextSaved) {
+        await savedJobAPI.saveJob(targetId);
+        showToast('Gig saved to your bookmarks!', 'success');
+      } else {
+        await savedJobAPI.removeSavedJob(targetId);
+        showToast('Gig removed from saved bookmarks.', 'info');
+      }
+    } catch (err) {
+      console.error('Failed to update saved job status:', err);
+      setIsSaved(!nextSaved);
+      showToast('Failed to update saved gig status', 'error');
     }
   };
 
@@ -241,7 +268,8 @@ export const JobDetailsPage: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setIsSaved(!isSaved)}
+                  onClick={handleToggleSave}
+                  title={isSaved ? "Remove from saved gigs" : "Save this gig"}
                   style={{
                     background: isSaved ? 'rgba(239,68,68,0.1)' : 'var(--bg-tertiary)',
                     border: 'none',
@@ -253,6 +281,7 @@ export const JobDetailsPage: React.FC = () => {
                     justifyContent: 'center',
                     cursor: 'pointer',
                     color: isSaved ? '#EF4444' : 'var(--text-muted)',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <Heart size={18} fill={isSaved ? '#EF4444' : 'none'} />

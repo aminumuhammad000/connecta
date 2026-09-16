@@ -143,6 +143,9 @@ app.use("/api/analytics", analyticsRoutes);
 import statsRoutes from "./routes/stats.routes.js";
 app.use("/api/stats", statsRoutes);
 
+import savedJobRoutes from "./routes/savedJob.routes.js";
+app.use("/api/saved-jobs", savedJobRoutes);
+
 import auditLogRoutes from "./routes/AuditLog.routes.js";
 app.use("/api/audit-logs", auditLogRoutes);
 

@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, ShieldCheck, Filter, Sparkles, Send, X } from 'lucide-react';
+import { Search, MapPin, CheckCircle2, Building2, Clock, ArrowUpRight, ShieldCheck, Filter, Sparkles, Send, X, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { jobAPI, aiAPI, proposalAPI } from '../../services/api';
+import { jobAPI, aiAPI, proposalAPI, savedJobAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { useToast } from '../../contexts/ToastContext';
 import { VerificationRequestModal } from '../../components/modals/VerificationRequestModal';
 
 export const FindJobsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { formatDualPrice } = useCurrency();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,7 @@ export const FindJobsPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobsCount, setTotalJobsCount] = useState(0);
+  const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
 
   // AI Quick Apply Modal States
   const [aiApplyModalJob, setAiApplyModalJob] = useState<any | null>(null);
@@ -32,7 +35,42 @@ export const FindJobsPage: React.FC = () => {
 
   useEffect(() => {
     fetchJobs();
+    fetchSavedJobsList();
   }, [page, selectedCategory]);
+
+  const fetchSavedJobsList = async () => {
+    try {
+      const res = await savedJobAPI.getSavedJobs();
+      const list = res?.data || (Array.isArray(res) ? res : []);
+      const savedIds = new Set<string>(list.map((item: any) => item._id || item.id || item.jobId?._id));
+      setSavedJobs(savedIds);
+    } catch (err) {
+      console.error('Failed to load saved jobs:', err);
+    }
+  };
+
+  const toggleSaveJob = async (id: string) => {
+    const isCurrentlySaved = savedJobs.has(id);
+    setSavedJobs((prev) => {
+      const updated = new Set(prev);
+      if (isCurrentlySaved) updated.delete(id);
+      else updated.add(id);
+      return updated;
+    });
+
+    try {
+      if (isCurrentlySaved) {
+        await savedJobAPI.removeSavedJob(id);
+        showToast('Gig removed from saved bookmarks.', 'info');
+      } else {
+        await savedJobAPI.saveJob(id);
+        showToast('Gig saved to your bookmarks!', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to update saved job persistence:', err);
+      showToast('Failed to update saved gig status', 'error');
+    }
+  };
 
   const fetchJobs = async (searchVal = searchQuery) => {
     setLoading(true);
@@ -307,6 +345,29 @@ export const FindJobsPage: React.FC = () => {
                     style={{ padding: '8px 18px', fontSize: '0.83rem', borderRadius: '10px', fontWeight: 700 }}
                   >
                     View Details <ArrowUpRight size={15} />
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSaveJob(job._id || job.id);
+                    }}
+                    title={savedJobs.has(job._id || job.id) ? "Remove from saved gigs" : "Save gig"}
+                    style={{
+                      background: savedJobs.has(job._id || job.id) ? 'rgba(239,68,68,0.1)' : 'var(--bg-tertiary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                      width: '36px',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: savedJobs.has(job._id || job.id) ? '#EF4444' : 'var(--text-muted)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Heart size={16} fill={savedJobs.has(job._id || job.id) ? '#EF4444' : 'none'} />
                   </button>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 // src/routes/Job.routes.ts
 import express from "express";
 import { getAllJobs, getAllJobsAdmin, getJobById, createJob, bulkCreateJobs, updateJob, deleteJob, getClientJobs, getMatchedJobs, updateJobStatus, searchJobs } from "../controllers/Job.controller.js";
+import { getSavedJobs, saveJob, removeSavedJob, checkIfJobSaved, } from "../controllers/SavedJob.controller.js";
 import { authenticate, optionalAuthenticate } from "../core/middleware/auth.middleware.js";
 import { isAdmin } from "../core/middleware/admin.middleware.js";
 const router = express.Router();
@@ -13,6 +14,11 @@ router.get("/client/my-jobs", authenticate, getClientJobs);
 // Get matched/recommended jobs for freelancer (protected)
 router.get("/recommended", authenticate, getMatchedJobs);
 router.get("/matched", authenticate, getMatchedJobs);
+// Saved jobs endpoints (MUST be declared before /:id)
+router.get("/saved/all", authenticate, getSavedJobs);
+router.get("/:id/saved", authenticate, checkIfJobSaved);
+router.post("/:id/save", authenticate, saveJob);
+router.delete("/:id/save", authenticate, removeSavedJob);
 // Get all jobs with filters (Optional auth for filtering applied jobs)
 router.get("/", optionalAuthenticate, getAllJobs);
 // Search jobs

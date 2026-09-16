@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Wallet, Star, ArrowUpRight, Search, CheckCircle2, TrendingUp,
   Clock, MapPin, Loader2, Heart, Building2, Sparkles, X, DollarSign, Calendar, ChevronRight, User, MessageSquare,
-  UploadCloud, FileText, AlertCircle, GraduationCap, Bell
+  UploadCloud, FileText, AlertCircle, GraduationCap, Bell, Bookmark
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
@@ -155,11 +155,14 @@ export const FreelancerDashboardPage: React.FC = () => {
     try {
       if (isCurrentlySaved) {
         await savedJobAPI.removeSavedJob(id);
+        showToast('Gig removed from saved bookmarks.', 'info');
       } else {
         await savedJobAPI.saveJob(id);
+        showToast('Gig saved to your bookmarks!', 'success');
       }
     } catch (err) {
       console.error('Failed to update saved job persistence:', err);
+      showToast('Failed to update saved gig status', 'error');
     }
   };
 
@@ -467,6 +470,7 @@ export const FreelancerDashboardPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {[
                 { label: 'My Proposals', icon: <Briefcase size={14} />, path: '/proposals' },
+                { label: 'Saved Gigs', icon: <Bookmark size={14} color="var(--primary)" />, path: '/saved-gigs' },
                 { label: 'Messages', icon: <MessageSquare size={14} />, path: '/messages' },
                 { label: 'Wallet & Payouts', icon: <Wallet size={14} />, path: '/wallet' },
                 { label: 'Profile Settings', icon: <User size={14} />, path: '/settings' },

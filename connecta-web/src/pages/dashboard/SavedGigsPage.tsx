@@ -6,9 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import { jobAPI, savedJobAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
+import { useToast } from '../../contexts/ToastContext';
 
 export const SavedGigsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,12 +27,11 @@ export const SavedGigsPage: React.FC = () => {
       } else if (Array.isArray(res)) {
         setSavedJobs(res);
       } else {
-        const fallbackRes = await jobAPI.getAllJobs({ limit: 10 });
-        const list = fallbackRes?.data || (Array.isArray(fallbackRes) ? fallbackRes : []);
-        setSavedJobs(list);
+        setSavedJobs([]);
       }
     } catch (err) {
       console.error('Failed to load saved gigs:', err);
+      setSavedJobs([]);
     } finally {
       setLoading(false);
     }
@@ -40,8 +41,10 @@ export const SavedGigsPage: React.FC = () => {
     setSavedJobs((prev) => prev.filter((j) => (j._id || j.id) !== id));
     try {
       await savedJobAPI.removeSavedJob(id);
+      showToast('Gig removed from saved collection', 'info');
     } catch (err) {
       console.error('Failed to remove saved job:', err);
+      showToast('Failed to remove saved gig', 'error');
     }
   };
 
@@ -109,7 +112,7 @@ export const SavedGigsPage: React.FC = () => {
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '6px' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      <Building2 size={13} /> {job.company || 'Direct Client'}
+                      <Building2 size={13} /> {job.company || job.clientId?.companyName || (job.clientId?.firstName ? `${job.clientId.firstName} ${job.clientId.lastName || ''}` : 'Direct Client')}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={13} /> {job.location || 'Remote'}</span>
                   </div>
@@ -125,7 +128,7 @@ export const SavedGigsPage: React.FC = () => {
                   </button>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--primary)' }}>
-                      {formatJobBudget(Number(job.budget || 0), job.currency)}
+                      {formatJobBudget(Number(job.budget || job.monthlySalaryAmount || 0), job.currency)}
                     </div>
                   </div>
                 </div>
