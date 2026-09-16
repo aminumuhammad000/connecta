@@ -39,7 +39,7 @@ export const getClientJobs = async (req, res) => {
 // Get All Jobs (with filtering for matching)
 export const getAllJobs = async (req, res) => {
     try {
-        const { category, skills, search, status = "active", limit = 20, page = 1, skip } = req.query;
+        const { category, skills, search, status = "active", limit = 20, page = 1, skip, hideApplied } = req.query;
         const filter = {};
         if (status && status !== 'all')
             filter.status = status;
@@ -56,12 +56,17 @@ export const getAllJobs = async (req, res) => {
                 { skills: { $in: [new RegExp(search, 'i')] } }
             ];
         }
-        // EXCLUDE APPLIED JOBS: If user is logged in, hide jobs they already applied to
-        const userId = req.user?._id;
-        if (userId) {
-            const appliedJobIds = await Proposal.find({ freelancerId: userId }).distinct("jobId");
-            if (appliedJobIds.length > 0) {
-                filter._id = { $nin: appliedJobIds };
+        // Determine applied state if user is logged in
+        const rawUserId = req.user?.id || req.user?._id || req.user?.userId;
+        let appliedJobSet = new Set();
+        if (rawUserId) {
+            const uObjectId = mongoose.Types.ObjectId.isValid(rawUserId) ? new mongoose.Types.ObjectId(rawUserId) : rawUserId;
+            const appliedProposals = await Proposal.find({
+                $or: [{ freelancerId: uObjectId }, { freelancerId: String(rawUserId) }]
+            }).select("jobId").lean();
+            appliedJobSet = new Set(appliedProposals.map((p) => String(p.jobId)));
+            if (hideApplied === 'true' && appliedJobSet.size > 0) {
+                filter._id = { $nin: Array.from(appliedJobSet).map(id => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id) };
             }
         }
         const calculatedSkip = skip ? Number(skip) : (Number(page) - 1) * Number(limit);
@@ -73,12 +78,19 @@ export const getAllJobs = async (req, res) => {
             .populate("clientId", "firstName lastName email profileImage companyName");
         const jobsWithCounts = await Promise.all(jobs.map(async (j) => {
             const count = await Proposal.countDocuments({ jobId: j._id });
-            return { ...j.toObject(), proposalsCount: count, proposalCount: count };
+            const hasApplied = appliedJobSet.has(String(j._id));
+            return {
+                ...j.toObject(),
+                proposalsCount: count,
+                proposalCount: count,
+                hasApplied,
+                isApplied: hasApplied,
+            };
         }));
         res.status(200).json({ success: true, data: jobsWithCounts, total: totalJobs, page: Number(page), limit: Number(limit) });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: "Server error", error: err });
+        res.status(500).json({ success: false, message: "Server error", error: err.message || err });
     }
 };
 // Admin: Get ALL jobs (no status filter)
@@ -125,26 +137,47 @@ export const searchJobs = async (req, res) => {
             $or: [
                 { title: { $regex: q, $options: 'i' } },
                 { description: { $regex: q, $options: 'i' } },
+                { category: { $regex: q, $options: 'i' } },
             ]
         };
+        const rawUserId = req.user?.id || req.user?._id || req.user?.userId;
+        let appliedJobSet = new Set();
+        if (rawUserId) {
+            const uObjectId = mongoose.Types.ObjectId.isValid(rawUserId) ? new mongoose.Types.ObjectId(rawUserId) : rawUserId;
+            const appliedProposals = await Proposal.find({
+                $or: [{ freelancerId: uObjectId }, { freelancerId: String(rawUserId) }]
+            }).select("jobId").lean();
+            appliedJobSet = new Set(appliedProposals.map((p) => String(p.jobId)));
+        }
         const jobs = await Job.find(filter)
             .limit(Number(limit))
-            .populate('clientId', 'firstName lastName email profileImage');
-        res.status(200).json({ success: true, data: jobs });
+            .populate('clientId', 'firstName lastName email profileImage companyName');
+        const jobsWithApplied = jobs.map((j) => {
+            const hasApplied = appliedJobSet.has(String(j._id));
+            return {
+                ...j.toObject(),
+                hasApplied,
+                isApplied: hasApplied,
+            };
+        });
+        res.status(200).json({ success: true, data: jobsWithApplied });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: "Server error", error: err });
+        res.status(500).json({ success: false, message: "Server error", error: err.message || err });
     }
 };
 export const getMatchedJobs = async (req, res) => {
     try {
-        const userId = req.user?._id;
-        const profile = await Profile.findOne({ user: userId });
+        const rawUserId = req.user?.id || req.user?._id || req.user?.userId;
+        const uObjectId = mongoose.Types.ObjectId.isValid(rawUserId) ? new mongoose.Types.ObjectId(rawUserId) : rawUserId;
+        const profile = await Profile.findOne({
+            $or: [{ user: uObjectId }, { user: String(rawUserId) }]
+        });
         if (!profile) {
             return res.status(200).json({ success: true, data: [] });
         }
         const { primarySkill, subSkills } = profile;
-        const allSkills = [primarySkill, ...subSkills];
+        const allSkills = [primarySkill, ...(subSkills || [])].filter(Boolean);
         const filter = {
             status: "active",
             $or: [
@@ -152,35 +185,69 @@ export const getMatchedJobs = async (req, res) => {
                 { category: primarySkill }
             ]
         };
-        // EXCLUDE APPLIED JOBS: Hide jobs they already applied to
-        const appliedJobIds = await Proposal.find({ freelancerId: userId }).distinct("jobId");
-        if (appliedJobIds.length > 0) {
-            filter._id = { $nin: appliedJobIds };
+        let appliedJobSet = new Set();
+        if (rawUserId) {
+            const appliedProposals = await Proposal.find({
+                $or: [{ freelancerId: uObjectId }, { freelancerId: String(rawUserId) }]
+            }).select("jobId").lean();
+            appliedJobSet = new Set(appliedProposals.map((p) => String(p.jobId)));
         }
         const { limit = 20, skip = 0 } = req.query;
         const jobs = await Job.find(filter)
             .sort({ createdAt: -1 })
             .skip(Number(skip))
             .limit(Number(limit))
-            .populate("clientId", "firstName lastName email profileImage");
-        res.status(200).json({ success: true, data: jobs });
+            .populate("clientId", "firstName lastName email profileImage companyName");
+        const jobsWithApplied = jobs.map((j) => {
+            const hasApplied = appliedJobSet.has(String(j._id));
+            return {
+                ...j.toObject(),
+                hasApplied,
+                isApplied: hasApplied,
+            };
+        });
+        res.status(200).json({ success: true, data: jobsWithApplied });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: "Server error", error: err });
+        res.status(500).json({ success: false, message: "Server error", error: err.message || err });
     }
 };
 // Get Job by ID
 export const getJobById = async (req, res) => {
     try {
         const { id } = req.params;
-        const job = await Job.findById(id).populate("clientId", "firstName lastName email profileImage");
+        const job = await Job.findById(id).populate("clientId", "firstName lastName email profileImage companyName");
         if (!job) {
             return res.status(404).json({ success: false, message: "Job not found" });
         }
-        res.status(200).json({ success: true, data: job });
+        let hasApplied = false;
+        let userProposal = null;
+        const rawUserId = req.user?.id || req.user?._id || req.user?.userId;
+        if (rawUserId) {
+            const uObjectId = mongoose.Types.ObjectId.isValid(rawUserId) ? new mongoose.Types.ObjectId(rawUserId) : rawUserId;
+            userProposal = await Proposal.findOne({
+                jobId: job._id,
+                $or: [{ freelancerId: uObjectId }, { freelancerId: String(rawUserId) }]
+            }).lean();
+            if (userProposal) {
+                hasApplied = true;
+            }
+        }
+        const proposalsCount = await Proposal.countDocuments({ jobId: job._id });
+        return res.status(200).json({
+            success: true,
+            data: {
+                ...job.toObject(),
+                hasApplied,
+                isApplied: hasApplied,
+                userProposal,
+                proposalsCount,
+                proposalCount: proposalsCount
+            }
+        });
     }
     catch (err) {
-        res.status(500).json({ success: false, message: "Server error", error: err });
+        return res.status(500).json({ success: false, message: "Server error", error: err.message || err });
     }
 };
 // Create Job

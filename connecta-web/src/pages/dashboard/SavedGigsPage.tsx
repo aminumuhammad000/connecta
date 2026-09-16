@@ -3,7 +3,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import { Bookmark, Building2, MapPin, CheckCircle2, ArrowUpRight, Clock, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { jobAPI, savedJobAPI } from '../../services/api';
+import { jobAPI, savedJobAPI, proposalAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useToast } from '../../contexts/ToastContext';
@@ -12,6 +12,7 @@ export const SavedGigsPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [savedJobs, setSavedJobs] = useState<any[]>([]);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,14 +22,21 @@ export const SavedGigsPage: React.FC = () => {
   const fetchSavedGigs = async () => {
     setLoading(true);
     try {
-      const res = await savedJobAPI.getSavedJobs();
-      if (res?.success && Array.isArray(res.data)) {
-        setSavedJobs(res.data);
-      } else if (Array.isArray(res)) {
-        setSavedJobs(res);
-      } else {
-        setSavedJobs([]);
-      }
+      const [res, propRes] = await Promise.all([
+        savedJobAPI.getSavedJobs().catch(() => ({ data: [] })),
+        proposalAPI.getMyProposals().catch(() => ({ data: [] }))
+      ]);
+
+      const list = res?.data || (Array.isArray(res) ? res : []);
+      const propList = propRes?.data || (Array.isArray(propRes) ? propRes : []);
+
+      const appliedIds = new Set<string>(propList.map((p: any) => String(p.jobId?._id || p.jobId || p.job?._id || p.job)));
+      list.forEach((j: any) => {
+        if (j.hasApplied || j.isApplied) appliedIds.add(String(j._id || j.id));
+      });
+
+      setSavedJobs(list);
+      setAppliedJobIds(appliedIds);
     } catch (err) {
       console.error('Failed to load saved gigs:', err);
       setSavedJobs([]);
@@ -142,13 +150,32 @@ export const SavedGigsPage: React.FC = () => {
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Clock size={13} /> Est. Delivery: {job.duration || 14} days
                 </span>
-                <button
-                  onClick={() => navigate(`/jobs/${job._id}`)}
-                  className="btn-primary"
-                  style={{ padding: '8px 18px', fontSize: '0.83rem', borderRadius: '10px', fontWeight: 700 }}
-                >
-                  Apply Now <ArrowUpRight size={15} />
-                </button>
+                {appliedJobIds.has(String(job._id || job.id)) || job.hasApplied || job.isApplied ? (
+                  <span
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '0.83rem',
+                      borderRadius: '10px',
+                      fontWeight: 700,
+                      background: 'rgba(16,185,129,0.1)',
+                      color: '#10B981',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <CheckCircle2 size={14} /> Applied
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => navigate(`/jobs/${job._id || job.id}`)}
+                    className="btn-primary"
+                    style={{ padding: '8px 18px', fontSize: '0.83rem', borderRadius: '10px', fontWeight: 700 }}
+                  >
+                    Apply Now <ArrowUpRight size={15} />
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

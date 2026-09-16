@@ -47,10 +47,10 @@ router.delete("/:id/save", authenticate, removeSavedJob);
 router.get("/", optionalAuthenticate, getAllJobs);
 
 // Search jobs
-router.get("/search", authenticate, searchJobs);
+router.get("/search", optionalAuthenticate, searchJobs);
 
 // Get job by ID
-router.get("/:id", getJobById);
+router.get("/:id", optionalAuthenticate, getJobById);
 
 
 // Create new job (protected)

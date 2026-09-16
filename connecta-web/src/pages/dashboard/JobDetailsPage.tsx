@@ -45,6 +45,10 @@ export const JobDetailsPage: React.FC = () => {
 
   const handleAiQuickPitch = async () => {
     if (!job) return;
+    if (userProposal || job.hasApplied || job.isApplied) {
+      showToast('You have already applied for this job.', 'info');
+      return;
+    }
     setAiLoading(true);
     setShowApplyModal(true);
     try {
@@ -83,6 +87,12 @@ export const JobDetailsPage: React.FC = () => {
         setBidAmount(loadedJob.budget || 1000);
         setEstimatedDays(loadedJob.duration || 14);
 
+        if (loadedJob.userProposal) {
+          setUserProposal(loadedJob.userProposal);
+        } else if (loadedJob.hasApplied || loadedJob.isApplied) {
+          setUserProposal({ status: 'pending', bidAmount: loadedJob.budget });
+        }
+
         // Fetch proposals for this job if user is a client or owner
         if (isClient) {
           fetchJobProposals(jobId);
@@ -110,18 +120,18 @@ export const JobDetailsPage: React.FC = () => {
       const savedList = Array.isArray(savedRes) ? savedRes : savedRes?.data || [];
 
       const foundContract = contracts.find((c: any) =>
-        c._id === jobId ||
-        c.jobId === jobId ||
-        c.jobId?._id === jobId ||
+        String(c._id) === String(jobId) ||
+        String(c.jobId) === String(jobId) ||
+        String(c.jobId?._id) === String(jobId) ||
         (currentJob?.title && c.title === currentJob.title)
       );
 
       const foundProposal = proposals.find((p: any) =>
-        p.jobId === jobId ||
-        p.jobId?._id === jobId
-      );
+        String(p.jobId?._id || p.jobId) === String(jobId) ||
+        String(p.job?._id || p.job) === String(jobId)
+      ) || currentJob?.userProposal || (currentJob?.hasApplied ? { status: 'pending', bidAmount: currentJob.budget } : null);
 
-      const isThisJobSaved = savedList.some((item: any) => (item._id || item.id || item.jobId?._id) === jobId);
+      const isThisJobSaved = savedList.some((item: any) => String(item._id || item.id || item.jobId?._id) === String(jobId));
       setIsSaved(isThisJobSaved);
 
       if (foundContract) setUserContract(foundContract);
@@ -171,6 +181,11 @@ export const JobDetailsPage: React.FC = () => {
 
   const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (userProposal || job?.hasApplied || job?.isApplied) {
+      showToast('You have already applied for this job.', 'info');
+      setShowApplyModal(false);
+      return;
+    }
     if (!coverLetter.trim()) {
       showToast('Please enter your cover letter / proposal pitch.', 'error');
       return;
@@ -604,15 +619,18 @@ export const JobDetailsPage: React.FC = () => {
                 ) : userProposal ? (
                   <>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: 'rgba(245,158,11,0.1)', color: '#F59E0B' }}>
-                        Proposal Submitted
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={13} /> Applied
                       </span>
                     </div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text-primary)' }}>
                       Proposal Submitted
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
-                      You have already submitted a proposal for this job. Proposed rate: <strong>{formatJobBudget(userProposal.bidAmount || userProposal.proposedRate || 0, job.currency)}</strong>.
+                      You have already applied for this job. Duplicate applications cannot be submitted.
+                      {userProposal.bidAmount || userProposal.price ? (
+                        <> Proposed rate: <strong>{formatJobBudget(Number(userProposal.bidAmount || userProposal.price || 0), job.currency)}</strong>.</>
+                      ) : null}
                     </p>
                     <button
                       onClick={() => navigate('/proposals')}

@@ -25,6 +25,7 @@ export const FreelancerDashboardPage: React.FC = () => {
   const { notifications, unreadCount, markAsRead } = useNotifications();
 
   const [jobs, setJobs] = useState<any[]>([]);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'recommended'>('all');
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
@@ -101,21 +102,27 @@ export const FreelancerDashboardPage: React.FC = () => {
         contractAPI.getUserContracts().catch(() => null),
       ]);
 
+      const propData = Array.isArray(propRes?.data) ? propRes.data : (Array.isArray(propRes) ? propRes : []);
+      const appliedIds = new Set<string>(propData.map((p: any) => String(p.jobId?._id || p.jobId || p.job?._id || p.job)));
+
       if (jobsRes?.success && Array.isArray(jobsRes.data)) {
+        jobsRes.data.forEach((j: any) => {
+          if (j.hasApplied || j.isApplied) appliedIds.add(String(j._id || j.id));
+        });
         setJobs(jobsRes.data);
       } else if (Array.isArray(jobsRes)) {
+        (jobsRes as any[]).forEach((j: any) => {
+          if (j.hasApplied || j.isApplied) appliedIds.add(String(j._id || j.id));
+        });
         setJobs(jobsRes as any);
       }
+      setAppliedJobIds(appliedIds);
 
       if (walletRes?.success) {
         setWallet(walletRes.data);
       }
 
-      if (propRes?.success && Array.isArray(propRes.data)) {
-        setProposalsCount(propRes.data.length);
-      } else if (Array.isArray(propRes)) {
-        setProposalsCount(propRes.length);
-      }
+      setProposalsCount(appliedIds.size || propData.length);
 
       if (contractsRes?.success && Array.isArray(contractsRes.data)) {
         setCompletedContracts(contractsRes.data.filter((c: any) => c.status === 'completed'));
@@ -444,16 +451,22 @@ export const FreelancerDashboardPage: React.FC = () => {
                         >
                           <Heart size={14} fill={isSaved ? '#EF4444' : 'none'} />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/jobs/${job._id}`);
-                          }}
-                          className="btn-primary"
-                          style={{ padding: '5px 12px', fontSize: '0.76rem', borderRadius: '8px', fontWeight: 700 }}
-                        >
-                          Apply <ArrowUpRight size={12} />
-                        </button>
+                        {appliedJobIds.has(String(job._id || job.id)) || job.hasApplied || job.isApplied ? (
+                          <span style={{ padding: '4px 10px', fontSize: '0.74rem', borderRadius: '8px', fontWeight: 700, background: 'rgba(16,185,129,0.1)', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <CheckCircle2 size={12} /> Applied
+                          </span>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/jobs/${job._id || job.id}`);
+                            }}
+                            className="btn-primary"
+                            style={{ padding: '5px 12px', fontSize: '0.76rem', borderRadius: '8px', fontWeight: 700 }}
+                          >
+                            Apply <ArrowUpRight size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -793,18 +806,29 @@ export const FreelancerDashboardPage: React.FC = () => {
 
             {/* Modal Actions */}
             <div style={{ display: 'flex', gap: '12px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  setSelectedJob(null);
-                  navigate(`/jobs/${selectedJob._id}`);
-                }}
-                className="btn-primary"
-                style={{ flex: 1, padding: '14px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, justifyContent: 'center' }}
-              >
-                Apply Now <ArrowUpRight size={18} />
-              </motion.button>
+              {selectedJob && (appliedJobIds.has(String(selectedJob._id || selectedJob.id)) || selectedJob.hasApplied || selectedJob.isApplied) ? (
+                <button
+                  disabled
+                  className="btn-secondary"
+                  style={{ flex: 1, padding: '14px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, opacity: 0.9, cursor: 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)' }}
+                >
+                  <CheckCircle2 size={18} /> Applied
+                </button>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    const targetId = selectedJob?._id || selectedJob?.id;
+                    setSelectedJob(null);
+                    navigate(`/jobs/${targetId}`);
+                  }}
+                  className="btn-primary"
+                  style={{ flex: 1, padding: '14px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700, justifyContent: 'center' }}
+                >
+                  Apply Now <ArrowUpRight size={18} />
+                </motion.button>
+              )}
               <button
                 onClick={() => setSelectedJob(null)}
                 style={{ padding: '14px 22px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontWeight: 600, cursor: 'pointer' }}

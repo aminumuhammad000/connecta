@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Proposal from '../models/Proposal.model.js';
 import { Job } from '../models/Job.model.js';
 import User from '../models/user.model.js';
@@ -7,17 +8,48 @@ import WorkforceMember from '../models/WorkforceMember.model.js';
 // Submit a proposal
 export const createProposal = async (req, res) => {
     try {
-        const freelancerId = req.user?._id;
+        const rawId = req.user?.id || req.user?._id || req.user?.userId;
+        if (!rawId) {
+            return res.status(401).json({ success: false, message: 'Authentication required' });
+        }
+        const freelancerId = mongoose.Types.ObjectId.isValid(rawId) ? new mongoose.Types.ObjectId(rawId) : rawId;
         const { jobId, description, price, deliveryTime, coverLetter, bidAmount, estimatedDays } = req.body;
-        const finalPrice = Number(price ?? bidAmount ?? 0);
-        const finalDeliveryTime = Number(deliveryTime ?? estimatedDays ?? 14);
-        const finalDescription = description || coverLetter || '';
+        if (!jobId) {
+            return res.status(400).json({ success: false, message: 'jobId is required' });
+        }
         const job = await Job.findById(jobId);
         if (!job) {
             return res.status(404).json({ success: false, message: 'Job not found' });
         }
+        // Check if client is trying to apply to own job
+        if (job.clientId && job.clientId.toString() === rawId.toString()) {
+            return res.status(400).json({ success: false, message: 'You cannot apply to your own job listing' });
+        }
+        // Check if job is still active
+        if (job.status === 'closed' || job.status === 'completed') {
+            return res.status(400).json({ success: false, message: 'This job listing is closed and no longer accepting proposals' });
+        }
+        // PREVENT DUPLICATE APPLICATIONS
+        const existingProposal = await Proposal.findOne({
+            jobId: job._id,
+            $or: [
+                { freelancerId },
+                { freelancerId: String(rawId) }
+            ]
+        });
+        if (existingProposal) {
+            return res.status(409).json({
+                success: false,
+                message: 'You have already applied to this job',
+                hasApplied: true,
+                data: existingProposal
+            });
+        }
+        const finalPrice = Number(price ?? bidAmount ?? 0);
+        const finalDeliveryTime = Number(deliveryTime ?? estimatedDays ?? 14);
+        const finalDescription = description || coverLetter || '';
         const proposal = await Proposal.create({
-            jobId,
+            jobId: job._id,
             clientId: job.clientId,
             freelancerId,
             description: finalDescription,
@@ -80,11 +112,20 @@ export const getProposalsByJobId = async (req, res) => {
 // Get my proposals (for freelancer)
 export const getMyProposals = async (req, res) => {
     try {
-        const freelancerId = req.user?._id;
-        const proposals = await Proposal.find({ freelancerId })
+        const rawId = req.user?.id || req.user?._id || req.user?.userId;
+        if (!rawId) {
+            return res.status(401).json({ success: false, message: 'Authentication required' });
+        }
+        const freelancerId = mongoose.Types.ObjectId.isValid(rawId) ? new mongoose.Types.ObjectId(rawId) : rawId;
+        const proposals = await Proposal.find({
+            $or: [
+                { freelancerId },
+                { freelancerId: String(rawId) }
+            ]
+        })
             .populate({
             path: 'jobId',
-            select: 'title budget status clientId requireAiInterview',
+            select: 'title budget status clientId requireAiInterview category location company currency duration',
             populate: {
                 path: 'clientId',
                 select: 'firstName lastName email profileImage'
@@ -101,19 +142,23 @@ export const getMyProposals = async (req, res) => {
 // Get all proposals (Client sees received, Freelancer sees sent)
 export const getAllProposals = async (req, res) => {
     try {
-        const userId = req.user?._id;
+        const rawId = req.user?.id || req.user?._id || req.user?.userId;
+        if (!rawId) {
+            return res.status(401).json({ success: false, message: 'Authentication required' });
+        }
+        const userObjectId = mongoose.Types.ObjectId.isValid(rawId) ? new mongoose.Types.ObjectId(rawId) : rawId;
         const userType = req.user?.userType;
         let query = {};
         if (userType === 'client') {
-            query = { clientId: userId };
+            query = { $or: [{ clientId: userObjectId }, { clientId: String(rawId) }] };
         }
         else {
-            query = { freelancerId: userId };
+            query = { $or: [{ freelancerId: userObjectId }, { freelancerId: String(rawId) }] };
         }
         const proposals = await Proposal.find(query)
             .populate('freelancerId', 'firstName lastName email profileImage')
             .populate('clientId', 'firstName lastName email profileImage')
-            .populate('jobId', 'title budget status')
+            .populate('jobId', 'title budget status currency')
             .sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: proposals });
     }

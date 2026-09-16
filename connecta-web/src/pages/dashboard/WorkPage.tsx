@@ -19,6 +19,7 @@ export const WorkPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'explore' | 'active' | 'completed'>(initialTab);
 
   const [jobs, setJobs] = useState<any[]>([]);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
   const [contracts, setContracts] = useState<any[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loadingContracts, setLoadingContracts] = useState(true);
@@ -50,9 +51,23 @@ export const WorkPage: React.FC = () => {
   const fetchOpenJobs = async () => {
     setLoadingJobs(true);
     try {
-      const res = await jobAPI.getAllJobs({ limit: 20 });
-      const jobData = Array.isArray(res) ? res : res?.data || [];
+      const [jobsRes, proposalsRes] = await Promise.all([
+        jobAPI.getAllJobs({ limit: 20 }).catch(() => ({ data: [] })),
+        proposalAPI.getMyProposals().catch(() => ({ data: [] }))
+      ]);
+
+      const jobData = Array.isArray(jobsRes) ? jobsRes : (jobsRes as any)?.data || [];
+      const propData = Array.isArray(proposalsRes) ? proposalsRes : (proposalsRes as any)?.data || [];
+
+      const appliedIds = new Set<string>(propData.map((p: any) => String(p.jobId?._id || p.jobId || p.job?._id || p.job)));
+      jobData.forEach((j: any) => {
+        if (j.hasApplied || j.isApplied) {
+          appliedIds.add(String(j._id || j.id));
+        }
+      });
+
       setJobs(jobData);
+      setAppliedJobIds(appliedIds);
     } catch (err) {
       console.error('Failed to load jobs:', err);
     } finally {
@@ -126,6 +141,7 @@ export const WorkPage: React.FC = () => {
         bidAmount: Number(aiBidAmount),
         estimatedDays: 14
       });
+      setAppliedJobIds((prev) => new Set([...prev, String(aiApplyJob._id || aiApplyJob.id)]));
       setAiApplyJob(null);
       navigate('/proposals');
     } catch (err: any) {
@@ -350,17 +366,36 @@ export const WorkPage: React.FC = () => {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/jobs/${j._id}`);
-                          }}
-                          className="btn-primary"
-                          style={{ padding: '6px 16px', borderRadius: '9px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          Apply <ArrowUpRight size={14} />
-                        </button>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {appliedJobIds.has(String(j._id || j.id)) || j.hasApplied || j.isApplied ? (
+                          <span
+                            style={{
+                              padding: '6px 14px',
+                              borderRadius: '9px',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              background: 'rgba(16,185,129,0.1)',
+                              color: '#10B981',
+                              border: '1px solid rgba(16,185,129,0.3)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <CheckCircle2 size={13} /> Applied
+                          </span>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/jobs/${j._id || j.id}`);
+                            }}
+                            className="btn-primary"
+                            style={{ padding: '6px 16px', borderRadius: '9px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            Apply <ArrowUpRight size={14} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </motion.div>

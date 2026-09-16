@@ -23,6 +23,7 @@ export const FindJobsPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalJobsCount, setTotalJobsCount] = useState(0);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+  const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
 
   // AI Quick Apply Modal States
   const [aiApplyModalJob, setAiApplyModalJob] = useState<any | null>(null);
@@ -36,7 +37,19 @@ export const FindJobsPage: React.FC = () => {
   useEffect(() => {
     fetchJobs();
     fetchSavedJobsList();
+    fetchAppliedJobsList();
   }, [page, selectedCategory]);
+
+  const fetchAppliedJobsList = async () => {
+    try {
+      const res = await proposalAPI.getMyProposals();
+      const list = res?.data || (Array.isArray(res) ? res : []);
+      const appliedIds = new Set<string>(list.map((item: any) => String(item.jobId?._id || item.jobId || item.job?._id || item.job)));
+      setAppliedJobs(appliedIds);
+    } catch (err) {
+      console.error('Failed to load applied proposals:', err);
+    }
+  };
 
   const fetchSavedJobsList = async () => {
     try {
@@ -301,45 +314,64 @@ export const FindJobsPage: React.FC = () => {
                   <Clock size={13} /> Est. Delivery: {job.duration || 14} days
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setAiApplyModalJob(job);
-                      setAiLoading(true);
-                      setApplySuccessMessage('');
-                      try {
-                        const res = await aiAPI.quickApply(job._id);
-                        if (res?.data) {
-                          setAiProposalData(res.data);
+                  {appliedJobs.has(String(job._id || job.id)) || job.hasApplied || job.isApplied ? (
+                    <span
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '0.83rem',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        background: 'rgba(16,185,129,0.1)',
+                        color: '#10B981',
+                        border: '1px solid rgba(16,185,129,0.3)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <CheckCircle2 size={14} /> Applied
+                    </span>
+                  ) : (
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setAiApplyModalJob(job);
+                        setAiLoading(true);
+                        setApplySuccessMessage('');
+                        try {
+                          const res = await aiAPI.quickApply(job._id);
+                          if (res?.data) {
+                            setAiProposalData(res.data);
+                          }
+                        } catch (err) {
+                          console.error('AI Apply error:', err);
+                        } finally {
+                          setAiLoading(false);
                         }
-                      } catch (err) {
-                        console.error('AI Apply error:', err);
-                      } finally {
-                        setAiLoading(false);
-                      }
-                    }}
-                    style={{
-                      padding: '8px 16px',
-                      fontSize: '0.83rem',
-                      borderRadius: '10px',
-                      fontWeight: 700,
-                      background: 'linear-gradient(135deg, #FD6730 0%, #FF8F6B 100%)',
-                      color: '#fff',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(253,103,48,0.25)'
-                    }}
-                  >
-                    <Sparkles size={14} /> AI Apply
-                  </button>
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        fontSize: '0.83rem',
+                        borderRadius: '10px',
+                        fontWeight: 700,
+                        background: 'linear-gradient(135deg, #FD6730 0%, #FF8F6B 100%)',
+                        color: '#fff',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(253,103,48,0.25)'
+                      }}
+                    >
+                      <Sparkles size={14} /> AI Apply
+                    </button>
+                  )}
 
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/jobs/${job._id}`);
+                      navigate(`/jobs/${job._id || job.id}`);
                     }}
                     className="btn-primary"
                     style={{ padding: '8px 18px', fontSize: '0.83rem', borderRadius: '10px', fontWeight: 700 }}
@@ -443,9 +475,16 @@ export const FindJobsPage: React.FC = () => {
                       });
                       if (res?.success) {
                         setApplySuccessMessage('Your proposal has been submitted directly to the client!');
+                        setAppliedJobs((prev) => new Set([...prev, String(aiApplyModalJob._id || aiApplyModalJob.id)]));
                       }
                     } catch (err: any) {
                       console.error('Submit proposal error:', err);
+                      if (err.response?.status === 409 || err.response?.data?.hasApplied) {
+                        setApplySuccessMessage('You have already applied to this job.');
+                        setAppliedJobs((prev) => new Set([...prev, String(aiApplyModalJob._id || aiApplyModalJob.id)]));
+                      } else {
+                        showToast(err.response?.data?.message || 'Failed to submit proposal.', 'error');
+                      }
                     } finally {
                       setSubmittingProposal(false);
                     }
