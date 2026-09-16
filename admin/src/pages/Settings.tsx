@@ -4,7 +4,7 @@ import Icon from '../components/Icon'
 import { settingsAPI } from '../services/api'
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'email' | 'apikeys' | 'security'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'email' | 'apikeys' | 'security' | 'contact'>('general')
   const [settings, setSettings] = useState({
     platformName: 'Connecta',
     commissionRate: 15,
@@ -32,12 +32,18 @@ export default function Settings() {
     openaiApiKey: '',
     geminiApiKey: '',
     // Payment Settings
-    // Payment Settings
     jobPostingFee: 500,
     // Security Settings
     require2FA: false,
     sessionTimeout: 30,
     maxLoginAttempts: 5,
+    // Direct Contact & Support
+    contactEmail: 'support@myconnecta.ng',
+    contactPhone: '+234 812 345 6789',
+    contactWhatsapp: '+234 812 345 6789',
+    contactSupportHours: 'Mon – Sat: 8:00 AM – 8:00 PM WAT',
+    contactSupportChannel: 'Email, Phone, WhatsApp & 24/7 Live Chat',
+    contactAddress: 'Abuja & Lagos, Nigeria',
   })
 
   useEffect(() => {
@@ -51,8 +57,15 @@ export default function Settings() {
         const s = response.data.smtp;
         const a = response.data.apiKeys;
         const ai = response.data.ai || {};
+        const c = response.data.contact || {};
         setSettings(prev => ({
           ...prev,
+          contactEmail: c.email || 'support@myconnecta.ng',
+          contactPhone: c.phone || '+234 812 345 6789',
+          contactWhatsapp: c.whatsapp || '+234 812 345 6789',
+          contactSupportHours: c.supportHours || 'Mon – Sat: 8:00 AM – 8:00 PM WAT',
+          contactSupportChannel: c.supportChannel || 'Email, Phone, WhatsApp & 24/7 Live Chat',
+          contactAddress: c.address || 'Abuja & Lagos, Nigeria',
           smtpProvider: s.provider || 'other',
           smtpHost: s.host || '',
           smtpPort: s.port || 587,
@@ -90,7 +103,18 @@ export default function Settings() {
 
   const handleSave = async () => {
     try {
-      if (activeTab === 'email') {
+      if (activeTab === 'contact') {
+        const contactData = {
+          email: settings.contactEmail,
+          phone: settings.contactPhone,
+          whatsapp: settings.contactWhatsapp,
+          supportHours: settings.contactSupportHours,
+          supportChannel: settings.contactSupportChannel,
+          address: settings.contactAddress,
+        };
+        await settingsAPI.updateContact(contactData);
+        toast.success('Direct contact information updated successfully!');
+      } else if (activeTab === 'email') {
         const smtpData = {
           provider: settings.smtpProvider,
           host: settings.smtpHost,
@@ -226,6 +250,16 @@ export default function Settings() {
                 >
                   <Icon name="security" size={20} />
                   <span className="text-sm font-medium">Security</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('contact')}
+                  className={`flex-shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'contact'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-text-light-secondary dark:text-dark-secondary hover:bg-background-light dark:hover:bg-background-dark'
+                    }`}
+                >
+                  <Icon name="support_agent" size={20} />
+                  <span className="text-sm font-medium">Direct Contact & Support</span>
                 </button>
               </nav>
             </div>
@@ -735,6 +769,118 @@ export default function Settings() {
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300/20 dark:peer-focus:ring-red-300/20 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-red-600"></div>
                     </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Direct Contact & Support Settings */}
+            {activeTab === 'contact' && (
+              <div className="bg-card-light dark:bg-card-dark rounded-xl p-6 border border-border-light dark:border-border-dark">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-text-light-primary dark:text-dark-primary">
+                      Direct Contact & Support Channels
+                    </h2>
+                    <p className="text-sm text-text-light-secondary dark:text-dark-secondary mt-1">
+                      Configure visible contact info (email, phone, WhatsApp, support hours) displayed on the landing page, footers, and web app.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                        Official Support Email
+                      </label>
+                      <input
+                        type="email"
+                        value={settings.contactEmail}
+                        onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                        placeholder="support@myconnecta.ng"
+                        className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                        Primary support inbox visible to users and visitors.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                        Official Support Phone
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.contactPhone}
+                        onChange={(e) => setSettings({ ...settings, contactPhone: e.target.value })}
+                        placeholder="+234 812 345 6789"
+                        className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                        Direct customer service phone line with country code.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                        WhatsApp Contact Channel
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.contactWhatsapp}
+                        onChange={(e) => setSettings({ ...settings, contactWhatsapp: e.target.value })}
+                        placeholder="+234 812 345 6789"
+                        className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                        Direct WhatsApp support link for instant user assistance.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                        Support Operating Hours
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.contactSupportHours}
+                        onChange={(e) => setSettings({ ...settings, contactSupportHours: e.target.value })}
+                        placeholder="Mon – Sat: 8:00 AM – 8:00 PM WAT"
+                        className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <p className="text-xs text-text-light-secondary dark:text-dark-secondary mt-1">
+                        Active support hours displayed on contact cards and footers.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      Available Support Channels Summary
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.contactSupportChannel}
+                      onChange={(e) => setSettings({ ...settings, contactSupportChannel: e.target.value })}
+                      placeholder="Email, Phone, WhatsApp & 24/7 Live Chat"
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-light-primary dark:text-dark-primary mb-2">
+                      Office / Physical Address
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.contactAddress}
+                      onChange={(e) => setSettings({ ...settings, contactAddress: e.target.value })}
+                      placeholder="Abuja & Lagos, Nigeria"
+                      className="w-full h-11 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-4 text-text-light-primary dark:text-dark-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                   </div>
                 </div>
               </div>

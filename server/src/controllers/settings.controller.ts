@@ -164,3 +164,72 @@ export const updateSecuritySettings = async (req: Request, res: Response) => {
         res.status(500).json({ success: false, message: 'Failed to update security settings' });
     }
 };
+
+/**
+ * Get public contact settings (No auth required)
+ */
+export const getPublicContactSettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await SystemSettings.getSettings();
+        const contact = settings.contact || {
+            email: 'support@myconnecta.ng',
+            phone: '+234 812 345 6789',
+            whatsapp: '+234 812 345 6789',
+            supportHours: 'Mon – Sat: 8:00 AM – 8:00 PM WAT',
+            supportChannel: 'Email, Phone, WhatsApp & 24/7 Live Chat',
+            address: 'Abuja & Lagos, Nigeria'
+        };
+
+        res.json({
+            success: true,
+            data: contact
+        });
+    } catch (error) {
+        console.error('Error fetching contact settings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch contact settings',
+            data: {
+                email: 'support@myconnecta.ng',
+                phone: '+234 812 345 6789',
+                whatsapp: '+234 812 345 6789',
+                supportHours: 'Mon – Sat: 8:00 AM – 8:00 PM WAT',
+                supportChannel: 'Email, Phone, WhatsApp & 24/7 Live Chat',
+                address: 'Abuja & Lagos, Nigeria'
+            }
+        });
+    }
+};
+
+/**
+ * Update contact settings (Admin only)
+ */
+export const updateContactSettings = async (req: Request, res: Response) => {
+    try {
+        const settings = await SystemSettings.getSettings();
+        const { email, phone, whatsapp, supportHours, supportChannel, address } = req.body;
+
+        settings.contact = {
+            email: email !== undefined ? email : (settings.contact?.email || 'support@myconnecta.ng'),
+            phone: phone !== undefined ? phone : (settings.contact?.phone || '+234 812 345 6789'),
+            whatsapp: whatsapp !== undefined ? whatsapp : (settings.contact?.whatsapp || '+234 812 345 6789'),
+            supportHours: supportHours !== undefined ? supportHours : (settings.contact?.supportHours || 'Mon – Sat: 8:00 AM – 8:00 PM WAT'),
+            supportChannel: supportChannel !== undefined ? supportChannel : (settings.contact?.supportChannel || 'Email, Phone, WhatsApp & 24/7 Live Chat'),
+            address: address !== undefined ? address : (settings.contact?.address || 'Abuja & Lagos, Nigeria')
+        };
+
+        await settings.save();
+
+        res.json({
+            success: true,
+            message: 'Contact settings updated successfully',
+            data: settings.contact
+        });
+    } catch (error) {
+        console.error('Error updating contact settings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to update contact settings'
+        });
+    }
+};

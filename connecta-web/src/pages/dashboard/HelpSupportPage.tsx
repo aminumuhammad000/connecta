@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { ChevronDown, Send } from 'lucide-react';
+import { ChevronDown, Send, Mail, Phone, MessageCircle, Clock, MapPin, ExternalLink, Headphones } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { contactAPI } from '../../services/api';
 
@@ -10,6 +10,32 @@ export const HelpSupportPage: React.FC = () => {
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [contactInfo, setContactInfo] = useState({
+    email: 'support@myconnecta.ng',
+    phone: '+234 812 345 6789',
+    whatsapp: '+234 812 345 6789',
+    supportHours: 'Mon – Sat: 8:00 AM – 8:00 PM WAT',
+    supportChannel: 'Email, Phone, WhatsApp & 24/7 Live Chat',
+    address: 'Abuja & Lagos, Nigeria',
+  });
+
+  useEffect(() => {
+    contactAPI.getPublicContact()
+      .then((res) => {
+        if (res.success && res.data) {
+          setContactInfo((prev) => ({
+            ...prev,
+            ...res.data,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.debug('Using default contact info:', err);
+      });
+  }, []);
+
+  const cleanPhone = contactInfo.phone.replace(/[^0-9+]/g, '');
+  const cleanWhatsapp = contactInfo.whatsapp.replace(/[^0-9]/g, '');
 
   const faqs = [
     {
@@ -62,6 +88,134 @@ export const HelpSupportPage: React.FC = () => {
         <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
           Find answers to common questions or submit a direct ticket to the Connecta support desk.
         </p>
+      </div>
+
+      {/* Direct Contact Channels Row */}
+      <div style={{ marginBottom: '28px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {/* Email Support */}
+          <a
+            href={`mailto:${contactInfo.email}`}
+            className="glass-card"
+            style={{
+              padding: '18px 20px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(253, 103, 48, 0.1)', color: 'var(--primary)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <Mail size={22} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                Official Email
+              </span>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px', wordBreak: 'break-all' }}>
+                {contactInfo.email}
+              </div>
+              <span style={{ fontSize: '0.76rem', color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                Send Email <ExternalLink size={12} />
+              </span>
+            </div>
+          </a>
+
+          {/* Direct Phone */}
+          <a
+            href={`tel:${cleanPhone}`}
+            className="glass-card"
+            style={{
+              padding: '18px 20px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <Phone size={22} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                Phone Helpline
+              </span>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+                {contactInfo.phone}
+              </div>
+              <span style={{ fontSize: '0.76rem', color: '#10b981', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                Call Helpline <ExternalLink size={12} />
+              </span>
+            </div>
+          </a>
+
+          {/* WhatsApp Channel */}
+          <a
+            href={`https://wa.me/${cleanWhatsapp}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-card"
+            style={{
+              padding: '18px 20px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              transition: 'transform 0.2s ease, border-color 0.2s ease',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(37, 211, 102, 0.12)', color: '#25D366', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <MessageCircle size={22} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                WhatsApp Desk
+              </span>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+                {contactInfo.whatsapp}
+              </div>
+              <span style={{ fontSize: '0.76rem', color: '#25D366', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                Chat on WhatsApp <ExternalLink size={12} />
+              </span>
+            </div>
+          </a>
+
+          {/* Operating Hours */}
+          <div
+            className="glass-card"
+            style={{
+              padding: '18px 20px',
+              borderRadius: '16px',
+              border: '1px solid var(--border-color)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+            }}
+          >
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <Clock size={22} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>
+                Support Hours
+              </span>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+                {contactInfo.supportHours}
+              </div>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 500, display: 'block', marginTop: '4px' }}>
+                {contactInfo.supportChannel}
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid-responsive-2" style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '28px' }}>

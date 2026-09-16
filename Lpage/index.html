@@ -518,7 +518,7 @@ section{position:relative}
    FOOTER
    ============================================================ */
 .footer{padding-block:clamp(48px,6vw,72px) 2.5rem;background:var(--paper)}
-.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:2rem}
+.footer-grid{display:grid;grid-template-columns:1.3fr 0.85fr 0.85fr 0.85fr 1.25fr;gap:2rem}
 .footer .brand{margin-bottom:1rem}
 .footer .about{color:var(--muted);font-size:.92rem;max-width:32ch}
 .footer .socials{display:flex;gap:.6rem;margin-top:1.3rem}
@@ -528,6 +528,13 @@ section{position:relative}
 .footer ul{list-style:none;padding:0;margin:0;display:grid;gap:.7rem}
 .footer ul a{color:var(--ink-2);font-size:.92rem;font-weight:500;transition:.2s}
 .footer ul a:hover{color:var(--jade-deep)}
+.footer-contact-col ul{display:flex;flex-direction:column;gap:.65rem}
+.footer-contact-col li{font-size:.88rem;color:var(--ink-2);line-height:1.4}
+.footer-contact-col li a{display:flex;flex-direction:column;gap:.1rem;color:var(--ink-2);text-decoration:none;transition:color .2s}
+.footer-contact-col li a:hover{color:var(--jade-deep)}
+.footer-contact-col .contact-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-2)}
+.footer-contact-col .contact-val{font-size:.88rem;font-weight:600}
+.footer-contact-col .contact-hours-badge{display:inline-block;margin-top:.2rem;font-size:.75rem;padding:.2rem .5rem;background:rgba(18,183,106,.08);color:#0e7a46;border-radius:6px;font-weight:600}
 .footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:3rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.84rem;color:var(--muted);flex-wrap:wrap;gap:1rem}
 .footer-bar .made{display:flex;align-items:center;gap:.5rem;font-family:var(--font-m)}
 .footer-legal{display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap}
@@ -571,6 +578,7 @@ section{position:relative}
   /* footer: brand spans full width, link groups sit in a tidy 2-col grid */
   .footer-grid{grid-template-columns:1fr 1fr;gap:1.9rem 1.3rem}
   .footer-grid>div:first-child{grid-column:1/-1;margin-bottom:.4rem}
+  .footer-grid>.footer-contact-col{grid-column:1/-1;margin-top:.4rem}
   .footer .about{max-width:48ch}
   .footer h5{margin-bottom:.85rem}
   .footer ul{gap:.65rem}
@@ -1254,6 +1262,33 @@ section{position:relative}
       <div><h5>Platform</h5><ul><li><a href="ai.html">AI Matching</a></li><li><a href="collabo.html">Collabo Squads</a></li><li><a href="escrow.html">Escrow &amp; Payments</a></li><li><a href="platform.html">Platform Dashboard</a></li><li><a href="download.html">Get the App</a></li></ul></div>
       <div><h5>For You</h5><ul><li><a href="hire.html">Hire Talent</a></li><li><a href="find.html">Find Work</a></li><li><a href="how.html">How it Works</a></li><li><a href="trust.html">Trust &amp; Safety</a></li></ul></div>
       <div><h5>Company</h5><ul><li><a href="about.html">About Us</a></li><li><a href="careers.html">Careers</a></li><li><a href="help.html">Help Center</a></li><li><a href="contact.html">Contact Us</a></li></ul></div>
+      <div class="footer-contact-col">
+        <h5>Direct Support</h5>
+        <ul>
+          <li>
+            <a href="mailto:support@myconnecta.ng" data-contact="email-link">
+              <span class="contact-label">Email Support</span>
+              <span class="contact-val" data-contact="email">support@myconnecta.ng</span>
+            </a>
+          </li>
+          <li>
+            <a href="tel:+2348123456789" data-contact="phone-link">
+              <span class="contact-label">Phone &amp; Hotline</span>
+              <span class="contact-val" data-contact="phone">+234 812 345 6789</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://wa.me/2348123456789" target="_blank" rel="noopener" data-contact="whatsapp-link">
+              <span class="contact-label">WhatsApp Channel</span>
+              <span class="contact-val" data-contact="whatsapp">+234 812 345 6789</span>
+            </a>
+          </li>
+          <li>
+            <span class="contact-label">Support Hours</span>
+            <span class="contact-hours-badge" data-contact="hours">Mon – Sat: 8:00 AM – 8:00 PM WAT</span>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="footer-bar">
       <span>© 2026 Connecta. Weaving African talent into global work.</span>
@@ -1448,6 +1483,42 @@ section{position:relative}
           console.debug('[Connecta] Stats API status:', err.message);
         });
     } catch(e){}
+  })();
+
+  /* Fetch Live Contact Information from Database API */
+  (function initContactInfo(){
+    var CONTACT_API = 'https://api.myconnecta.ng/api/settings/contact';
+    fetch(CONTACT_API)
+      .then(function(res){ if(!res.ok) throw new Error('Status ' + res.status); return res.json(); })
+      .then(function(json){
+        if(json && json.success && json.data){
+          var c = json.data;
+          if(c.email){
+            document.querySelectorAll('[data-contact="email"]').forEach(function(el){ el.textContent = c.email; });
+            document.querySelectorAll('[data-contact="email-link"]').forEach(function(el){ el.href = 'mailto:' + c.email; });
+          }
+          if(c.phone){
+            document.querySelectorAll('[data-contact="phone"]').forEach(function(el){ el.textContent = c.phone; });
+            var cleanPhone = c.phone.replace(/[^0-9+]/g, '');
+            document.querySelectorAll('[data-contact="phone-link"]').forEach(function(el){ el.href = 'tel:' + cleanPhone; });
+          }
+          if(c.whatsapp){
+            document.querySelectorAll('[data-contact="whatsapp"]').forEach(function(el){ el.textContent = c.whatsapp; });
+            var cleanWa = c.whatsapp.replace(/[^0-9]/g, '');
+            document.querySelectorAll('[data-contact="whatsapp-link"]').forEach(function(el){ el.href = 'https://wa.me/' + cleanWa; });
+          }
+          if(c.supportHours){
+            document.querySelectorAll('[data-contact="hours"]').forEach(function(el){ el.textContent = c.supportHours; });
+          }
+          if(c.supportChannel){
+            document.querySelectorAll('[data-contact="channel"]').forEach(function(el){ el.textContent = c.supportChannel; });
+          }
+          if(c.address){
+            document.querySelectorAll('[data-contact="address"]').forEach(function(el){ el.textContent = c.address; });
+          }
+        }
+      })
+      .catch(function(err){ console.debug('[Connecta] Contact API status:', err.message); });
   })();
 
   /* hero: draw the woven threads, then reveal cards + fill bar */

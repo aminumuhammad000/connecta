@@ -41,6 +41,14 @@ const SystemSettingsSchema = new Schema({
     },
     payments: {
         jobPostingFee: { type: Number, default: 500 } // Default 500 Naira
+    },
+    contact: {
+        email: { type: String, default: 'support@myconnecta.ng' },
+        phone: { type: String, default: '+234 812 345 6789' },
+        whatsapp: { type: String, default: '+234 812 345 6789' },
+        supportHours: { type: String, default: 'Mon – Sat: 8:00 AM – 8:00 PM WAT' },
+        supportChannel: { type: String, default: 'Email, Phone, WhatsApp & 24/7 Live Chat' },
+        address: { type: String, default: 'Abuja & Lagos, Nigeria' }
     }
 }, {
     timestamps: true

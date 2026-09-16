@@ -137,6 +137,33 @@ FOOTER = """</main>
       <div><h5>Platform</h5><ul><li><a href="ai.html">AI Matching</a></li><li><a href="collabo.html">Collabo Squads</a></li><li><a href="escrow.html">Escrow &amp; Payments</a></li><li><a href="platform.html">Platform Dashboard</a></li><li><a href="download.html">Get the App</a></li></ul></div>
       <div><h5>For You</h5><ul><li><a href="hire.html">Hire Talent</a></li><li><a href="find.html">Find Work</a></li><li><a href="how.html">How it Works</a></li><li><a href="trust.html">Trust &amp; Safety</a></li></ul></div>
       <div><h5>Company</h5><ul><li><a href="about.html">About Us</a></li><li><a href="careers.html">Careers</a></li><li><a href="help.html">Help Center</a></li><li><a href="contact.html">Contact Us</a></li></ul></div>
+      <div class="footer-contact-col">
+        <h5>Direct Support</h5>
+        <ul>
+          <li>
+            <a href="mailto:support@myconnecta.ng" data-contact="email-link">
+              <span class="contact-label">Email Support</span>
+              <span class="contact-val" data-contact="email">support@myconnecta.ng</span>
+            </a>
+          </li>
+          <li>
+            <a href="tel:+2348123456789" data-contact="phone-link">
+              <span class="contact-label">Phone &amp; Hotline</span>
+              <span class="contact-val" data-contact="phone">+234 812 345 6789</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://wa.me/2348123456789" target="_blank" rel="noopener" data-contact="whatsapp-link">
+              <span class="contact-label">WhatsApp Channel</span>
+              <span class="contact-val" data-contact="whatsapp">+234 812 345 6789</span>
+            </a>
+          </li>
+          <li>
+            <span class="contact-label">Support Hours</span>
+            <span class="contact-hours-badge" data-contact="hours">Mon – Sat: 8:00 AM – 8:00 PM WAT</span>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="footer-bar">
       <span>© <span data-year>2026</span> Connecta. Weaving African talent into global work.</span>

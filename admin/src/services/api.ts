@@ -513,6 +513,10 @@ export const settingsAPI = {
     const { data } = await api.get('/api/settings')
     return data
   },
+  updateContact: async (contactData: any) => {
+    const { data } = await api.put('/api/settings/contact', contactData)
+    return data
+  },
   updateSmtp: async (smtpData: any) => {
     const { data } = await api.put('/api/settings/smtp', smtpData)
     return data

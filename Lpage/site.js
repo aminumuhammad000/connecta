@@ -109,6 +109,39 @@
     })
     .catch(function(err){ console.warn('Stats fetch warning:', err); });
 
+  /* Fetch Live Contact Information from Database API */
+  fetch('https://api.myconnecta.ng/api/settings/contact')
+    .then(function(res){ return res.json(); })
+    .then(function(res){
+      if(res && res.success && res.data){
+        var c = res.data;
+        if(c.email){
+          document.querySelectorAll('[data-contact="email"]').forEach(function(el){ el.textContent = c.email; });
+          document.querySelectorAll('[data-contact="email-link"]').forEach(function(el){ el.href = 'mailto:' + c.email; });
+        }
+        if(c.phone){
+          document.querySelectorAll('[data-contact="phone"]').forEach(function(el){ el.textContent = c.phone; });
+          var cleanPhone = c.phone.replace(/[^0-9+]/g, '');
+          document.querySelectorAll('[data-contact="phone-link"]').forEach(function(el){ el.href = 'tel:' + cleanPhone; });
+        }
+        if(c.whatsapp){
+          document.querySelectorAll('[data-contact="whatsapp"]').forEach(function(el){ el.textContent = c.whatsapp; });
+          var cleanWa = c.whatsapp.replace(/[^0-9]/g, '');
+          document.querySelectorAll('[data-contact="whatsapp-link"]').forEach(function(el){ el.href = 'https://wa.me/' + cleanWa; });
+        }
+        if(c.supportHours){
+          document.querySelectorAll('[data-contact="hours"]').forEach(function(el){ el.textContent = c.supportHours; });
+        }
+        if(c.supportChannel){
+          document.querySelectorAll('[data-contact="channel"]').forEach(function(el){ el.textContent = c.supportChannel; });
+        }
+        if(c.address){
+          document.querySelectorAll('[data-contact="address"]').forEach(function(el){ el.textContent = c.address; });
+        }
+      }
+    })
+    .catch(function(err){ console.warn('Contact info fetch warning:', err); });
+
   /* current year in footer */
   document.querySelectorAll('[data-year]').forEach(function(el){
     el.textContent = new Date().getFullYear();

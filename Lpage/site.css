@@ -325,7 +325,7 @@ svg{display:block}
    FOOTER (shared)
    ============================================================ */
 .footer{padding-block:clamp(48px,6vw,72px) 2.5rem;background:var(--paper)}
-.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:2rem}
+.footer-grid{display:grid;grid-template-columns:1.3fr 0.85fr 0.85fr 0.85fr 1.25fr;gap:2rem}
 .footer .brand{margin-bottom:1rem}
 .footer .about{color:var(--muted);font-size:.92rem;max-width:32ch}
 .footer .socials{display:flex;gap:.6rem;margin-top:1.3rem}
@@ -335,6 +335,13 @@ svg{display:block}
 .footer ul{list-style:none;padding:0;margin:0;display:grid;gap:.7rem}
 .footer ul a{color:var(--ink-2);font-size:.92rem;font-weight:500;transition:.2s}
 .footer ul a:hover{color:var(--jade-deep)}
+.footer-contact-col ul{display:flex;flex-direction:column;gap:.65rem}
+.footer-contact-col li{font-size:.88rem;color:var(--ink-2);line-height:1.4}
+.footer-contact-col li a{display:flex;flex-direction:column;gap:.1rem;color:var(--ink-2);text-decoration:none;transition:color .2s}
+.footer-contact-col li a:hover{color:var(--jade-deep)}
+.footer-contact-col .contact-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted-2)}
+.footer-contact-col .contact-val{font-size:.88rem;font-weight:600}
+.footer-contact-col .contact-hours-badge{display:inline-block;margin-top:.2rem;font-size:.75rem;padding:.2rem .5rem;background:rgba(18,183,106,.08);color:#0e7a46;border-radius:6px;font-weight:600}
 .footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:3rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.84rem;color:var(--muted);flex-wrap:wrap;gap:1rem}
 .footer-bar .made{display:flex;align-items:center;gap:.5rem;font-family:var(--font-m)}
 .footer-legal{display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap}
@@ -363,6 +370,7 @@ svg{display:block}
   /* footer: brand spans full width, link groups sit in a tidy 2-col grid */
   .footer-grid{grid-template-columns:1fr 1fr;gap:1.9rem 1.3rem}
   .footer-grid>div:first-child{grid-column:1/-1;margin-bottom:.4rem}
+  .footer-grid>.footer-contact-col{grid-column:1/-1;margin-top:.4rem}
   .footer .about{max-width:48ch}
   .footer h5{margin-bottom:.85rem}
   .footer ul{gap:.65rem}

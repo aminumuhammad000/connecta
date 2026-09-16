@@ -31,3 +31,4 @@ Thumbs.db
 mm.md
 __pycache__/
 *.pyc
+server/uploads/

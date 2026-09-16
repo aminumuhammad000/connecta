@@ -394,6 +394,17 @@ export const savedJobAPI = {
 
 // Contact & Support Ticket API service
 export const contactAPI = {
+  getPublicContact: async () => {
+    const { data } = await apiClient.get<ApiResponse<{
+      email: string;
+      phone: string;
+      whatsapp: string;
+      supportHours: string;
+      supportChannel: string;
+      address: string;
+    }>>('/api/settings/contact');
+    return data;
+  },
   submitContact: async (ticketData: { name?: string; email?: string; subject: string; message: string }) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/contact', ticketData);
     return data;
