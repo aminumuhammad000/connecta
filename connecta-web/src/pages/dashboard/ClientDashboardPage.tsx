@@ -201,7 +201,7 @@ export const ClientDashboardPage: React.FC = () => {
                   key={job._id || job.id}
                   whileHover={{ y: -3, boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}
                   transition={{ duration: 0.2 }}
-                  onClick={() => navigate(`/jobs/${job._id}`)}
+                  onClick={() => navigate(`/jobs/${job._id || job.id}`)}
                   className="glass-card"
                   style={{
                     padding: '24px',
@@ -286,7 +286,7 @@ export const ClientDashboardPage: React.FC = () => {
                       whileTap={{ scale: 0.97 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/jobs/${job._id}`);
+                        navigate(`/jobs/${job._id || job.id}`);
                       }}
                       className="btn-primary"
                       style={{ padding: '8px 18px', fontSize: '0.83rem', borderRadius: '10px', fontWeight: 700 }}
