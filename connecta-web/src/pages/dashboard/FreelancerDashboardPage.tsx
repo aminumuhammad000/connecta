@@ -38,6 +38,18 @@ export const FreelancerDashboardPage: React.FC = () => {
   const [uploadingCv, setUploadingCv] = useState(false);
   const [dismissedReminder, setDismissedReminder] = useState(false);
 
+  const formatTimeAgo = (dateStr?: string) => {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${days}d ago`;
+  };
+
   // Profile completeness calculation
   const hasPhoto = Boolean(user?.profileImage);
   const hasBio = Boolean(user?.bio && user?.title);
@@ -508,38 +520,49 @@ export const FreelancerDashboardPage: React.FC = () => {
                   No recent notifications
                 </div>
               ) : (
-                notifications.slice(0, 4).map((notif: any) => (
-                  <div
-                    key={notif._id || notif.id}
-                    onClick={() => {
-                      if (!notif.read) markAsRead(notif._id || notif.id);
-                      if (notif.actionUrl) navigate(notif.actionUrl);
-                    }}
-                    style={{
-                      padding: '8px 10px',
-                      borderRadius: '10px',
-                      background: notif.read ? 'var(--bg-secondary)' : 'rgba(16, 185, 129, 0.08)',
-                      border: `1px solid ${notif.read ? 'var(--border-color)' : 'rgba(16, 185, 129, 0.25)'}`,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '8px',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    {!notif.read && (
-                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px', flexShrink: 0 }} />
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: notif.read ? 600 : 700, fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                        {notif.title}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        {notif.message}
+                notifications.slice(0, 4).map((notif: any) => {
+                  const isUnread = notif.isRead === false || notif.read === false;
+                  return (
+                    <div
+                      key={notif._id || notif.id}
+                      onClick={() => {
+                        if (isUnread) markAsRead(notif._id || notif.id);
+                        if (notif.link) navigate(notif.link);
+                        else navigate('/notifications');
+                      }}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: '10px',
+                        background: !isUnread ? 'var(--bg-secondary)' : 'rgba(16, 185, 129, 0.08)',
+                        border: `1px solid ${!isUnread ? 'var(--border-color)' : 'rgba(16, 185, 129, 0.25)'}`,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '8px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {isUnread && (
+                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px', flexShrink: 0 }} />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '4px' }}>
+                          <div style={{ fontWeight: isUnread ? 700 : 600, fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                            {notif.title}
+                          </div>
+                          {notif.createdAt && (
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                              {formatTimeAgo(notif.createdAt)}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {notif.message}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
