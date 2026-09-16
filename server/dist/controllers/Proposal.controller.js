@@ -1,6 +1,7 @@
 import Proposal from '../models/Proposal.model.js';
 import { Job } from '../models/Job.model.js';
 import User from '../models/user.model.js';
+import { createNotification } from './notification.controller.js';
 import { createFeedPost } from '../services/feed.service.js';
 import WorkforceMember from '../models/WorkforceMember.model.js';
 // Submit a proposal
@@ -303,6 +304,42 @@ export const updateProposalStatus = async (req, res) => {
                     paymentType: 'monthly',
                     currency: job.currency || 'NGN',
                 }, { upsert: true, new: true });
+            }
+            // Notify freelancer of acceptance
+            try {
+                const client = await User.findById(job?.clientId);
+                const clientName = client ? `${client.firstName} ${client.lastName || ''}`.trim() : 'Client';
+                await createNotification({
+                    userId: proposal.freelancerId,
+                    type: 'proposal_accepted',
+                    title: '🎉 Proposal Accepted!',
+                    message: `${clientName} accepted your proposal for "${job?.title || 'Job'}". You are now hired!`,
+                    relatedId: proposal.jobId,
+                    relatedType: 'job',
+                    actorName: clientName,
+                    link: '/proposals',
+                    priority: 'high',
+                });
+            }
+            catch (notifErr) {
+                console.warn('Failed to notify proposal acceptance:', notifErr);
+            }
+        }
+        else if (proposal && (status === 'declined' || status === 'rejected')) {
+            try {
+                await createNotification({
+                    userId: proposal.freelancerId,
+                    type: 'proposal_rejected',
+                    title: 'Proposal Status Update',
+                    message: 'Your proposal for a role has been reviewed and declined.',
+                    relatedId: proposal.jobId,
+                    relatedType: 'job',
+                    link: '/proposals',
+                    priority: 'medium',
+                });
+            }
+            catch (notifErr) {
+                console.warn('Failed to notify proposal decline:', notifErr);
             }
         }
         res.status(200).json({ success: true, data: proposal });

@@ -128,6 +128,27 @@ export const createReview = async (req: Request, res: Response) => {
       }
     }
 
+    // Notify the reviewee
+    try {
+      const reviewer = await User.findById(userId).select('firstName lastName').lean();
+      const reviewerName = reviewer ? `${(reviewer as any).firstName || ''} ${(reviewer as any).lastName || ''}`.trim() : 'A client';
+      const { createNotification } = await import('./notification.controller.js');
+      await createNotification({
+        userId: revieweeId,
+        type: 'review_received',
+        title: `⭐ New ${rating}-Star Review!`,
+        message: `${reviewerName} gave you a ${rating}-star review: "${comment.substring(0, 90)}${comment.length > 90 ? '...' : ''}"`,
+        relatedId: review._id,
+        relatedType: 'review',
+        actorId: userId,
+        actorName: reviewerName,
+        link: `/profile`,
+        priority: 'high',
+      });
+    } catch (notifErr) {
+      console.warn('[Review] Notification failed:', notifErr);
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Review created successfully',

@@ -332,6 +332,28 @@ export const verifyPayment = async (req, res) => {
                 projectId: payment.projectId,
                 description: `🔒 Escrow payment for project: ${payment.description}`,
             });
+            // 3. Notify Freelancer
+            await createNotification({
+                userId: payment.payeeId,
+                type: 'payment_received',
+                title: '🔒 Payment Locked in Escrow',
+                message: `₦${payment.netAmount.toLocaleString()} has been escrowed for your project: ${payment.description || 'Project'}. Funds will be released upon milestone approval.`,
+                relatedId: payment._id,
+                relatedType: 'payment',
+                priority: 'high',
+                link: '/wallet',
+            });
+            // 4. Notify Client
+            await createNotification({
+                userId: payment.payerId,
+                type: 'info',
+                title: '🛡️ Escrow Funded Successfully',
+                message: `Your payment of ₦${payment.amount.toLocaleString()} is securely held in Connecta Escrow for: ${payment.description || 'Project'}.`,
+                relatedId: payment._id,
+                relatedType: 'payment',
+                priority: 'high',
+                link: '/client/projects',
+            });
         }
         return res.status(200).json({
             success: true,

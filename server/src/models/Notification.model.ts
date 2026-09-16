@@ -23,7 +23,8 @@ export type NotificationType =
   | 'job_invite'
   | 'proposal_new'
   | 'deadline_approaching'
-  | 'system';
+  | 'system'
+  | (string & {});
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId; // Recipient
@@ -33,7 +34,7 @@ export interface INotification extends Document {
 
   // Related entities
   relatedId?: mongoose.Types.ObjectId; // Job, Project, Proposal, etc.
-  relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment' | 'withdrawal';
+  relatedType?: string;
 
   // Actor (who triggered the notification)
   actorId?: mongoose.Types.ObjectId;
@@ -63,31 +64,6 @@ const NotificationSchema = new Schema<INotification>(
     type: {
       type: String,
       required: true,
-      enum: [
-        'info',
-        'success',
-        'warning',
-        'error',
-        'job_posted',
-        'proposal_received',
-        'proposal_accepted',
-        'proposal_rejected',
-        'proposal_new',
-        'project_started',
-        'project_completed',
-        'milestone_completed',
-        'payment_received',
-        'payment_released',
-        'message_received',
-        'review_received',
-        'deadline_approaching',
-        'contract_signed',
-        'gig_matched',
-        'collabo_invite',
-        'collabo_started',
-        'job_invite',
-        'system',
-      ],
     },
     title: {
       type: String,
@@ -102,7 +78,7 @@ const NotificationSchema = new Schema<INotification>(
     },
     relatedType: {
       type: String,
-      enum: ['job', 'project', 'proposal', 'message', 'review', 'payment', 'user', 'withdrawal'],
+      default: 'system',
     },
     actorId: {
       type: Schema.Types.ObjectId,

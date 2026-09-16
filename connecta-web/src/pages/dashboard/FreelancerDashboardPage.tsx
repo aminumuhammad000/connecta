@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Wallet, Star, ArrowUpRight, Search, CheckCircle2, TrendingUp,
   Clock, MapPin, Loader2, Heart, Building2, Sparkles, X, DollarSign, Calendar, ChevronRight, User, MessageSquare,
-  UploadCloud, FileText, AlertCircle, GraduationCap
+  UploadCloud, FileText, AlertCircle, GraduationCap, Bell
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
@@ -14,6 +14,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { JobCompletionFlyerModal } from '../../components/modals/JobCompletionFlyerModal';
 
 export const FreelancerDashboardPage: React.FC = () => {
@@ -21,6 +22,7 @@ export const FreelancerDashboardPage: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { formatDualPrice } = useCurrency();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
 
   const [jobs, setJobs] = useState<any[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
@@ -480,6 +482,65 @@ export const FreelancerDashboardPage: React.FC = () => {
                   <ChevronRight size={13} color="var(--text-muted)" />
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Recent Notifications Card */}
+          <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Bell size={15} color="var(--primary)" />
+                <h3 style={{ fontSize: '0.88rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Notifications</h3>
+                {unreadCount > 0 && (
+                  <span style={{ background: '#ef4444', color: '#fff', fontSize: '0.68rem', fontWeight: 800, padding: '1px 6px', borderRadius: '10px' }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '0.74rem', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }} onClick={() => navigate('/notifications')}>
+                View All
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {notifications.length === 0 ? (
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 8px' }}>
+                  No recent notifications
+                </div>
+              ) : (
+                notifications.slice(0, 4).map((notif: any) => (
+                  <div
+                    key={notif._id || notif.id}
+                    onClick={() => {
+                      if (!notif.read) markAsRead(notif._id || notif.id);
+                      if (notif.actionUrl) navigate(notif.actionUrl);
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: '10px',
+                      background: notif.read ? 'var(--bg-secondary)' : 'rgba(16, 185, 129, 0.08)',
+                      border: `1px solid ${notif.read ? 'var(--border-color)' : 'rgba(16, 185, 129, 0.25)'}`,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {!notif.read && (
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--primary)', marginTop: '4px', flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: notif.read ? 600 : 700, fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                        {notif.title}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                        {notif.message}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

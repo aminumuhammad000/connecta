@@ -105,6 +105,38 @@ export const updateVerificationStatus = async (req, res) => {
                 await user.save();
             }
         }
+        try {
+            const { createNotification } = await import('./notification.controller.js');
+            if (status === 'approved') {
+                await createNotification({
+                    userId: verification.user,
+                    type: 'success',
+                    title: '🛡️ Identity Verified!',
+                    message: 'Congratulations! Your Connecta identity verification has been reviewed and approved. Your profile now features the verified talent badge.',
+                    relatedId: verification._id,
+                    relatedType: 'user',
+                    link: '/settings',
+                    priority: 'high',
+                });
+            }
+            else {
+                await createNotification({
+                    userId: verification.user,
+                    type: 'warning',
+                    title: '⚠️ Identity Verification Update',
+                    message: adminNotes
+                        ? `Your verification was declined: "${adminNotes}". You can re-submit your ID documents in profile settings.`
+                        : 'Your verification was declined. Please re-submit valid government-issued ID documents in profile settings.',
+                    relatedId: verification._id,
+                    relatedType: 'user',
+                    link: '/settings',
+                    priority: 'high',
+                });
+            }
+        }
+        catch (notifErr) {
+            console.warn('[Verification] Notification failed:', notifErr);
+        }
         res.status(200).json({
             message: `Verification ${status} successfully`,
             verification,

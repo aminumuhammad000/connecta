@@ -10,6 +10,7 @@ import agentRoute from "./routes/agentRoute.js"
 import { initCronJobs } from "./services/cron.service.js";
 import User from "./models/user.model.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 // routes 
 import userRoutes from "./routes/user.routes.js";
@@ -254,17 +255,50 @@ app.get("/debug/seed-full", async (req, res) => {
 // Socket.io connection handling
 const activeUsers = new Map<string, string>(); // userId -> socketId
 
+io.use((socket, next) => {
+  try {
+    const token =
+      socket.handshake.auth?.token ||
+      (socket.handshake.headers?.authorization
+        ? socket.handshake.headers.authorization.replace('Bearer ', '')
+        : null) ||
+      (socket.handshake.query?.token as string | undefined);
+
+    if (token) {
+      const secret = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
+      const decoded = jwt.verify(token, secret) as any;
+      const uid = decoded?.id || decoded?._id || decoded?.userId;
+      if (uid) {
+        (socket as any).userId = uid.toString();
+      }
+    }
+  } catch (err) {
+    // Non-fatal: allow unauthenticated sockets for public/visitor interactions
+  }
+  next();
+});
+
 io.on("connection", (socket) => {
-  console.log("✅ User connected:", socket.id);
+  const autoUserId = (socket as any).userId;
+  if (autoUserId) {
+    activeUsers.set(autoUserId, socket.id);
+    socket.join(autoUserId);
+    console.log(`✅ Socket ${socket.id} auto-authenticated and joined room ${autoUserId}`);
+  } else {
+    console.log("✅ User connected:", socket.id);
+  }
 
   // User joins with their userId
   socket.on("user:join", (userId: string) => {
-    activeUsers.set(userId, socket.id);
-    socket.join(userId);
-    console.log(`User ${userId} joined with socket ${socket.id} `);
+    if (userId) {
+      const uid = userId.toString();
+      activeUsers.set(uid, socket.id);
+      socket.join(uid);
+      console.log(`User ${uid} joined with socket ${socket.id}`);
 
-    // Emit online status
-    io.emit("user:online", { userId, socketId: socket.id });
+      // Emit online status
+      io.emit("user:online", { userId: uid, socketId: socket.id });
+    }
   });
 
   // Send message event

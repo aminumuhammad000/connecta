@@ -82,10 +82,12 @@ export const markAsRead = async (req, res) => {
             notification.readAt = new Date();
             await notification.save();
         }
+        const unreadCount = await Notification.countDocuments({ userId, isRead: false });
         return res.status(200).json({
             success: true,
             message: 'Notification marked as read',
             data: notification,
+            unreadCount,
         });
     }
     catch (error) {
@@ -106,6 +108,7 @@ export const markAllAsRead = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'All notifications marked as read',
+            unreadCount: 0,
         });
     }
     catch (error) {
@@ -188,18 +191,32 @@ export const createNotification = async (data) => {
         // Actually, let's keep the Socket.IO emit in the controller or service?
         // The service I wrote doesn't have getIO().
         // Emit real-time notification via Socket.IO
-        const io = getIO();
-        if (io) {
-            io.to(data.userId.toString()).emit('notification', {
-                _id: notification._id,
-                type: notification.type,
-                title: notification.title,
-                message: notification.message,
-                link: notification.link,
-                icon: data.icon,
-                priority: data.priority,
-                createdAt: notification.createdAt,
-            });
+        try {
+            const io = getIO();
+            if (io) {
+                const unreadCount = await Notification.countDocuments({
+                    userId: data.userId,
+                    isRead: false,
+                });
+                io.to(data.userId.toString()).emit('notification', {
+                    _id: notification._id,
+                    type: notification.type,
+                    title: notification.title,
+                    message: notification.message,
+                    link: notification.link,
+                    icon: data.icon,
+                    priority: data.priority,
+                    createdAt: notification.createdAt,
+                    isRead: false,
+                    actorName: data.actorName,
+                    relatedId: data.relatedId,
+                    relatedType: data.relatedType,
+                });
+                io.to(data.userId.toString()).emit('unread_count', { unreadCount });
+            }
+        }
+        catch (socketErr) {
+            console.warn('Socket emission notice:', socketErr);
         }
         return notification;
     }

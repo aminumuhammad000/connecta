@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useCallback, useSt
 import { io, Socket } from 'socket.io-client';
 import { storage } from '../utils/storage';
 import { notificationAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://api.myconnecta.ng';
 
@@ -63,19 +64,21 @@ function showBrowserNotification(title: string, body: string, link?: string) {
 }
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, token } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const socketRef = useRef<Socket | null>(null);
-  const fetchedRef = useRef(false);
 
   const addNotification = useCallback((notif: AppNotification) => {
     setNotifications(prev => {
       if (prev.find(n => n._id === notif._id)) return prev;
       return [notif, ...prev];
     });
-    if (!notif.isRead) setUnreadCount(prev => prev + 1);
-    // Show browser notification
+    if (!notif.isRead) {
+      setUnreadCount(prev => prev + 1);
+    }
+    // Show native browser notification
     showBrowserNotification(notif.title, notif.message, notif.link);
   }, []);
 
@@ -86,85 +89,106 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (res.success && Array.isArray(res.data)) {
         if (page === 1) setNotifications(res.data as AppNotification[]);
         else setNotifications(prev => [...prev, ...(res.data as AppNotification[])]);
-        setUnreadCount((res as any).unreadCount ?? (res.data as any[]).filter((n: any) => !n.isRead).length);
+
+        const count = typeof (res as any).unreadCount === 'number'
+          ? (res as any).unreadCount
+          : (res.data as any[]).filter((n: any) => !n.isRead).length;
+        setUnreadCount(count);
       }
-    } catch {}
-    finally { setLoading(false); }
+    } catch (err) {
+      console.debug('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const markAsRead = useCallback(async (id: string) => {
     const notif = notifications.find(n => n._id === id);
     if (notif?.isRead) return;
     try {
-      await notificationAPI.markAsRead(id);
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
+      const res = await notificationAPI.markAsRead(id);
+      if (res?.success && typeof (res as any)?.unreadCount === 'number') {
+        setUnreadCount((res as any).unreadCount);
+      }
     } catch {}
   }, [notifications]);
 
   const markAllAsRead = useCallback(async () => {
     try {
-      await notificationAPI.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
+      await notificationAPI.markAllAsRead();
     } catch {}
   }, []);
 
   const deleteNotification = useCallback(async (id: string) => {
     const wasUnread = notifications.find(n => n._id === id && !n.isRead);
     try {
-      await notificationAPI.deleteNotification(id);
       setNotifications(prev => prev.filter(n => n._id !== id));
       if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+      await notificationAPI.deleteNotification(id);
     } catch {}
   }, [notifications]);
 
   const clearRead = useCallback(async () => {
     try {
-      await notificationAPI.clearRead();
       setNotifications(prev => prev.filter(n => !n.isRead));
+      await notificationAPI.clearRead();
     } catch {}
   }, []);
 
-  // Initial fetch + browser permission
+  // Fetch when user or token becomes active, or clear on logout
   useEffect(() => {
-    const token = storage.getToken();
-    if (!token || fetchedRef.current) return;
-    fetchedRef.current = true;
+    const activeToken = token || storage.getToken();
+    if (!activeToken || !user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
     fetchNotifications(1);
     setupBrowserNotifications();
-  }, [fetchNotifications]);
 
-  // Poll unread count every 60s
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const res = await notificationAPI.getUnreadCount();
-        if (res.success) setUnreadCount((res.data as any)?.unreadCount ?? 0);
-      } catch {}
-    }, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Socket.IO real-time notifications
-  useEffect(() => {
-    const token = storage.getToken();
-    if (!token) return;
-
+    // Connect socket with active auth token
     const socket = io(SOCKET_URL, {
-      auth: { token },
+      auth: { token: activeToken },
       transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 8,
       reconnectionDelay: 2000,
     });
     socketRef.current = socket;
+
+    const currentUserId = user?._id || (user as any)?.id;
+
+    const joinUserRoom = () => {
+      if (currentUserId) {
+        socket.emit('user:join', currentUserId.toString());
+      }
+    };
+
+    socket.on('connect', () => {
+      joinUserRoom();
+    });
+
+    // In case socket is already connected
+    if (socket.connected) {
+      joinUserRoom();
+    }
 
     socket.on('notification', (data: AppNotification) => {
       addNotification(data);
     });
 
-    socket.on('connect_error', () => {
-      // silent fail - polling handles the gap
+    socket.on('unread_count', (data: { unreadCount: number }) => {
+      if (typeof data?.unreadCount === 'number') {
+        setUnreadCount(data.unreadCount);
+      }
     });
 
     return () => {
@@ -173,7 +197,41 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
       socketRef.current = null;
     };
-  }, [addNotification]);
+  }, [user?._id, token, fetchNotifications, addNotification]);
+
+  // Periodic polling & window focus re-fetch to keep counts accurate
+  useEffect(() => {
+    const activeToken = token || storage.getToken();
+    if (!activeToken || !user) return;
+
+    const syncUnreadCount = async () => {
+      try {
+        const res = await notificationAPI.getUnreadCount();
+        if (res.success && typeof (res.data as any)?.unreadCount === 'number') {
+          setUnreadCount((res.data as any).unreadCount);
+        }
+      } catch {}
+    };
+
+    const handleFocus = () => {
+      syncUnreadCount();
+      fetchNotifications(1);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleFocus();
+      }
+    });
+
+    const interval = setInterval(syncUnreadCount, 20000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(interval);
+    };
+  }, [token, user, fetchNotifications]);
 
   return (
     <NotificationContext.Provider value={{

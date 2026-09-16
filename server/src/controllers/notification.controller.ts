@@ -94,10 +94,13 @@ export const markAsRead = async (req: Request, res: Response) => {
       await notification.save();
     }
 
+    const unreadCount = await Notification.countDocuments({ userId, isRead: false });
+
     return res.status(200).json({
       success: true,
       message: 'Notification marked as read',
       data: notification,
+      unreadCount,
     });
   } catch (error: any) {
     console.error('Mark as read error:', error);
@@ -123,6 +126,7 @@ export const markAllAsRead = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       message: 'All notifications marked as read',
+      unreadCount: 0,
     });
   } catch (error: any) {
     console.error('Mark all as read error:', error);
@@ -197,7 +201,7 @@ export interface CreateNotificationData {
   title: string;
   message: string;
   relatedId?: any;
-  relatedType?: 'job' | 'project' | 'proposal' | 'message' | 'review' | 'payment' | 'withdrawal';
+  relatedType?: string;
   actorId?: any;
   actorName?: string;
   link?: string;
@@ -230,18 +234,33 @@ export const createNotification = async (data: CreateNotificationData) => {
     // The service I wrote doesn't have getIO().
     
     // Emit real-time notification via Socket.IO
-    const io = getIO();
-    if (io) {
-      io.to(data.userId.toString()).emit('notification', {
-        _id: notification._id,
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        link: notification.link,
-        icon: data.icon,
-        priority: data.priority,
-        createdAt: notification.createdAt,
-      });
+    try {
+      const io = getIO();
+      if (io) {
+        const unreadCount = await Notification.countDocuments({
+          userId: data.userId,
+          isRead: false,
+        });
+
+        io.to(data.userId.toString()).emit('notification', {
+          _id: notification._id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          link: notification.link,
+          icon: data.icon,
+          priority: data.priority,
+          createdAt: notification.createdAt,
+          isRead: false,
+          actorName: data.actorName,
+          relatedId: data.relatedId,
+          relatedType: data.relatedType,
+        });
+
+        io.to(data.userId.toString()).emit('unread_count', { unreadCount });
+      }
+    } catch (socketErr) {
+      console.warn('Socket emission notice:', socketErr);
     }
 
     return notification;
