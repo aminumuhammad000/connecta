@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, Check, X, ShieldCheck, Loader2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, Check, X, ShieldCheck, Loader2, ArrowLeft } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRole } from '../../contexts/RoleContext';
@@ -148,41 +148,70 @@ export const SignupPasswordPage: React.FC = () => {
           className="glass-card"
           style={{ padding: '36px 28px', width: '100%', borderRadius: 'var(--radius-lg)' }}
         >
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            {/* Role indicator pill */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
-              color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              marginBottom: '10px'
-            }}>
-              <span>{roleQuery === 'client' ? '💼 Client Account · Hiring Talent' : '⚡ Freelancer Account · Working & Earning'}</span>
-            </div>
+          {/* Top Bar: Back Icon Button & Minimalist Tags */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '18px'
+          }}>
+            <button
+              type="button"
+              onClick={() => navigate(`/register?role=${roleQuery}`)}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                padding: 0
+              }}
+              title="Back to Personal Information"
+              aria-label="Back to Personal Information"
+            >
+              <ArrowLeft size={18} />
+            </button>
 
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* Minimalist Role Tag */}
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                padding: '3px 10px',
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
+                color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
+                fontSize: '0.75rem',
+                fontWeight: 700
+              }}>
+                <span>{roleQuery === 'client' ? '💼 Client' : '⚡ Freelancer'}</span>
+              </div>
+
+              {/* Minimalist Security Tag */}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '4px 10px',
                 borderRadius: '20px',
                 background: 'rgba(253, 103, 48, 0.08)',
                 color: 'var(--primary)',
                 fontSize: '0.75rem',
-                fontWeight: 700,
-                letterSpacing: '0.5px',
-                marginBottom: '8px'
+                fontWeight: 700
               }}>
-                Security Setup
+                Security
               </div>
             </div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
               Set Password
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>

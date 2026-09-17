@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, MessageSquare, ArrowRight, CheckCircle2, AlertCircle, Loader2, Copy } from 'lucide-react';
+import { User, Mail, Phone, MessageSquare, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Loader2, Copy } from 'lucide-react';
 import { PageArtwork } from '../../components/common/PageArtwork';
 import { GoogleAuthButton } from '../../components/common/GoogleAuthButton';
 import { authAPI } from '../../services/api';
@@ -120,9 +120,9 @@ export const SignupPage: React.FC = () => {
   const validatePhone = async (phoneNumberToValidate: string): Promise<boolean> => {
     const trimmed = (phoneNumberToValidate || '').trim();
     if (!trimmed) {
-      setPhoneStatus('idle');
-      setPhoneErrorMsg('');
-      return true;
+      setPhoneStatus('invalid');
+      setPhoneErrorMsg('Phone number is required');
+      return false;
     }
 
     const digitsOnly = trimmed.replace(/\D/g, '');
@@ -161,14 +161,14 @@ export const SignupPage: React.FC = () => {
   // Debounced instant phone validation as user types in Step 2
   React.useEffect(() => {
     if (signupStep !== 2) return;
-    if (!formData.phoneNumber) {
+    if (!formData.phoneNumber || !formData.phoneNumber.trim()) {
       setPhoneStatus('idle');
       setPhoneErrorMsg('');
       return;
     }
     const timer = setTimeout(() => {
       validatePhone(formData.phoneNumber);
-    }, 450);
+    }, 350);
     return () => clearTimeout(timer);
   }, [formData.phoneNumber, signupStep]);
 
@@ -261,6 +261,14 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
+    const trimmedPhone = (formData.phoneNumber || '').trim();
+    if (!trimmedPhone) {
+      setPhoneStatus('invalid');
+      setPhoneErrorMsg('Phone number is required');
+      toastError('Phone Required', 'Please enter your phone number to continue');
+      return;
+    }
+
     if (phoneChecking) {
       toastError('Verifying Phone', 'Please wait while we check phone number availability...');
       return;
@@ -271,9 +279,9 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
-    // Double check phone availability before moving to password step
-    if (formData.phoneNumber && phoneStatus === 'idle') {
-      const isAvailable = await validatePhone(formData.phoneNumber);
+    // Always verify phone availability before moving to password step
+    if (phoneStatus !== 'valid') {
+      const isAvailable = await validatePhone(trimmedPhone);
       if (!isAvailable) {
         toastError('Phone Number Taken', phoneErrorMsg || 'This phone number is already registered. Please use another number.');
         return;
@@ -313,44 +321,110 @@ export const SignupPage: React.FC = () => {
           className="glass-card"
           style={{ padding: '36px 28px', width: '100%', borderRadius: 'var(--radius-lg)' }}
         >
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            {/* Role indicator pill */}
+          {/* Top Bar Navigation */}
+          {signupStep === 2 ? (
             <div style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
-              color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              marginBottom: '10px'
+              justifyContent: 'space-between',
+              marginBottom: '18px'
             }}>
-              <span>{roleQuery === 'client' ? '💼 Client Account · Hiring Talent' : '⚡ Freelancer Account · Working & Earning'}</span>
-              <Link to="/register/role" style={{ marginLeft: '6px', fontSize: '0.72rem', color: 'inherit', opacity: 0.7, textDecoration: 'underline' }}>
-                Change
-              </Link>
-            </div>
+              <button
+                type="button"
+                onClick={() => setSignupStep(1)}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  padding: 0
+                }}
+                title="Back to Email Verification"
+                aria-label="Back to Email Verification"
+              >
+                <ArrowLeft size={18} />
+              </button>
 
-            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
+                  color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700
+                }}>
+                  <span>{roleQuery === 'client' ? '💼 Client' : '⚡ Freelancer'}</span>
+                  <Link to="/register/role" style={{ marginLeft: '4px', fontSize: '0.7rem', color: 'inherit', opacity: 0.7, textDecoration: 'underline' }}>
+                    Change
+                  </Link>
+                </div>
+
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(253, 103, 48, 0.08)',
+                  color: 'var(--primary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700
+                }}>
+                  Step 2 of 2
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginBottom: '18px' }}>
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                padding: '3px 10px',
+                gap: '5px',
+                padding: '4px 12px',
                 borderRadius: '20px',
-                background: 'rgba(253, 103, 48, 0.08)',
-                color: 'var(--primary)',
+                background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
+                color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                letterSpacing: '0.5px',
                 marginBottom: '8px'
               }}>
-                Step {signupStep} of 2
+                <span>{roleQuery === 'client' ? '💼 Client' : '⚡ Freelancer'}</span>
+                <Link to="/register/role" style={{ marginLeft: '4px', fontSize: '0.7rem', color: 'inherit', opacity: 0.7, textDecoration: 'underline' }}>
+                  Change
+                </Link>
+              </div>
+
+              <div>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '3px 10px',
+                  borderRadius: '20px',
+                  background: 'rgba(253, 103, 48, 0.08)',
+                  color: 'var(--primary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                  marginBottom: '8px'
+                }}>
+                  Step 1 of 2
+                </div>
               </div>
             </div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
+          )}
+
+          <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+            <h1 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '4px', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
               {signupStep === 1 ? 'Verify Email' : 'Account Details'}
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem' }}>
@@ -533,11 +607,11 @@ export const SignupPage: React.FC = () => {
               <div className="form-group" style={{ marginBottom: '18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                   <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: 0 }}>
-                    <span>Phone Number</span>
+                    <span>Phone Number *</span>
                   </label>
                   {phoneChecking && (
                     <span style={{ fontSize: '0.75rem', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Loader2 size={12} className="animate-spin" /> Verifying...
+                      <Loader2 size={12} className="animate-spin" /> Checking availability...
                     </span>
                   )}
                 </div>
@@ -545,6 +619,7 @@ export const SignupPage: React.FC = () => {
                   <Phone className="input-icon-left" size={17} />
                   <input
                     type="tel"
+                    required
                     placeholder="+234 801 234 5678"
                     value={formData.phoneNumber}
                     onChange={(e) => {
@@ -554,12 +629,17 @@ export const SignupPage: React.FC = () => {
                     onBlur={handlePhoneBlur}
                     className={`input-field ${phoneStatus === 'valid' ? 'input-success' : phoneStatus === 'invalid' ? 'input-error' : ''}`}
                   />
-                  {phoneStatus === 'valid' && (
+                  {phoneChecking && (
+                    <div className="input-icon-right" title="Checking Phone Number">
+                      <Loader2 size={16} className="animate-spin" color="var(--primary)" />
+                    </div>
+                  )}
+                  {!phoneChecking && phoneStatus === 'valid' && (
                     <div className="input-icon-right" title="Phone Number Available">
                       <CheckCircle2 size={17} color="var(--success)" />
                     </div>
                   )}
-                  {phoneStatus === 'invalid' && (
+                  {!phoneChecking && phoneStatus === 'invalid' && (
                     <div className="input-icon-right" title="Phone Number Unavailable">
                       <AlertCircle size={17} color="var(--error)" />
                     </div>
@@ -633,7 +713,9 @@ export const SignupPage: React.FC = () => {
                 }}
               >
                 {phoneChecking ? (
-                  <><Loader2 size={18} className="animate-spin" /> Verifying Phone...</>
+                  <><Loader2 size={18} className="animate-spin" /> Checking Phone Availability...</>
+                ) : phoneStatus === 'invalid' ? (
+                  <><AlertCircle size={18} /> Phone Already Registered</>
                 ) : (
                   <>Set Account Password <ArrowRight size={18} /></>
                 )}
