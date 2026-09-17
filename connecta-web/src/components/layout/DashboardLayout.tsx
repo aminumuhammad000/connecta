@@ -295,30 +295,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
           {/* Right Header Actions - Minimalist */}
           <div className="header-actions-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Prominent Quick Role Switcher Button */}
-            <button
-              onClick={handleRoleSwitch}
-              disabled={switchingRole}
-              title={isClient ? "Switch to Freelancer Mode" : "Switch to Client Mode"}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                background: isClient ? 'rgba(253,103,48,0.12)' : 'var(--bg-secondary)',
-                border: isClient ? '1px solid rgba(253,103,48,0.3)' : '1px solid var(--border-color)',
-                color: isClient ? 'var(--primary)' : 'var(--text-secondary)',
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <RefreshCw size={13} className={switchingRole ? 'animate-spin' : ''} />
-              <span>{isClient ? 'Switch to Freelancer' : 'Switch to Client'}</span>
-            </button>
-
             {/* Top Nav AI Copilot Button */}
             <button
               onClick={() => navigate('/ai-assistant')}
