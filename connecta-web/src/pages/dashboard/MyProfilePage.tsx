@@ -708,12 +708,44 @@ export const MyProfilePage: React.FC = () => {
                       <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Default Currency</label>
-                      <select value={currency} onChange={(e) => handleDirectCurrencyChange(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }}>
-                        {(currencies && currencies.length > 0 ? currencies : Object.values(SUPPORTED_CURRENCIES)).map((c) => (
-                          <option key={c.code} value={c.code}>{c.code} ({c.symbol}) - {c.name}</option>
-                        ))}
-                      </select>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Default Currency</label>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('security')}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--primary)',
+                            fontSize: '0.73rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            padding: 0,
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Change in Settings
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        readOnly
+                        value={(() => {
+                          const list = currencies && currencies.length > 0 ? currencies : Object.values(SUPPORTED_CURRENCIES);
+                          const curObj = list.find((c) => c.code === currency);
+                          return curObj ? `${curObj.flag || '🌐'} ${curObj.code} (${curObj.symbol}) — ${curObj.name}` : currency;
+                        })()}
+                        className="input-field no-icon"
+                        style={{
+                          padding: '10px 14px',
+                          fontSize: '0.88rem',
+                          background: 'var(--bg-secondary)',
+                          color: 'var(--text-primary)',
+                          cursor: 'not-allowed',
+                          border: '1px solid var(--border-color)',
+                        }}
+                        title="Currency can be updated in the Settings tab"
+                      />
                     </div>
                     <div>
                       <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Language</label>
