@@ -142,7 +142,7 @@ export const sendOTPEmail = async (
     const fromEmail = (settings?.smtp?.fromEmail && !settings.smtp.fromEmail.includes('connecta.ng'))
       ? settings.smtp.fromEmail
       : (process.env.FROM_EMAIL || process.env.SMTP_USER || 'connectagigs@gmail.com');
-    const replyTo = 'no-reply@myconnecta.ng';
+    const replyTo = fromEmail;
 
     const isVerification = type === 'EMAIL_VERIFICATION';
 
@@ -522,7 +522,7 @@ export const sendGigNotificationEmail = async (
     const settings = await SystemSettings.findOne();
     const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
     const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
-    const replyTo = 'no-reply@myconnecta.ng';
+    const replyTo = fromEmail;
 
     let subject, title, intro, outro, unsubscribe, viewAction;
 
