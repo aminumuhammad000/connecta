@@ -310,8 +310,13 @@ export const initiateSignup = async (req: Request, res: Response) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp, expiresAt });
 
-    await sendOTPEmail(email, otp, firstName || 'User', 'EMAIL_VERIFICATION', preferredLanguage || 'en');
+    const otpResult = await sendOTPEmail(email, otp, firstName || 'User', 'EMAIL_VERIFICATION', preferredLanguage || 'en');
+    if (!otpResult.success) {
+      console.error(`❌ Failed to send OTP to ${email}:`, otpResult.error);
+      return res.status(500).json({ success: false, message: "Could not send verification email. Please try again." });
+    }
 
+    console.log(`✅ Verification OTP sent to: ${email}`);
     res.status(200).json({ success: true, message: "Verification code sent" });
   } catch (err) {
     console.error('Initiate signup error:', err);

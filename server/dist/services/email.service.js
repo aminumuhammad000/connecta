@@ -3,40 +3,102 @@ import dotenv from 'dotenv';
 import SystemSettings from '../models/SystemSettings.model.js';
 import { getBaseTemplate } from '../utils/emailTemplates.js';
 dotenv.config();
-// Helper to get transporter with latest settings
-const getTransporter = async () => {
-    try {
-        // Try to get settings from DB
-        const settings = await SystemSettings.findOne();
-        // Use DB settings if available and complete, otherwise fallback to env
-        const provider = settings?.smtp?.provider || 'other';
-        const user = settings?.smtp?.user || process.env.SMTP_USER;
-        const pass = settings?.smtp?.pass || process.env.SMTP_PASS;
-        if (!user || !pass) {
-            console.warn('SMTP credentials missing');
-            return null;
-        }
-        if (provider === 'gmail') {
-            return nodemailer.createTransport({
-                service: 'gmail',
-                auth: { user, pass },
-            });
-        }
-        // Fallback to 'other' provider logic
-        const host = settings?.smtp?.host || process.env.SMTP_HOST || 'smtp.gmail.com';
-        const port = settings?.smtp?.port || parseInt(process.env.SMTP_PORT || '587');
-        const secure = settings?.smtp?.secure ?? false;
+// Helper to build a transporter with given config
+const createTransportFromConfig = (config) => {
+    const { provider, host, port, user, pass } = config;
+    const isGmail = provider === 'gmail' || (user && user.endsWith('@gmail.com')) || (host && host.includes('gmail.com'));
+    if (isGmail) {
         return nodemailer.createTransport({
-            host,
-            port,
-            secure,
+            service: 'gmail',
             auth: { user, pass },
         });
+    }
+    const effectivePort = port || 587;
+    // Port 465 requires implicit SSL (secure: true). Ports 587, 25, 2525 require STARTTLS (secure: false).
+    // Setting secure: true on port 587 causes SSL routines:tls_validate_record_header:wrong version number crash.
+    const effectiveSecure = effectivePort === 465;
+    return nodemailer.createTransport({
+        host: host || 'smtp.gmail.com',
+        port: effectivePort,
+        secure: effectiveSecure,
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+    });
+};
+// Helper to get transporter with latest settings and automatic environment fallback
+export const getTransporter = async () => {
+    try {
+        const settings = await SystemSettings.findOne();
+        const dbUser = settings?.smtp?.user?.trim();
+        const dbPass = settings?.smtp?.pass?.trim();
+        const dbHost = settings?.smtp?.host?.trim();
+        const dbProvider = settings?.smtp?.provider;
+        // Check if DB settings contain placeholder or dummy credentials
+        const isPlaceholder = !dbUser || dbUser === 'admin@connecta.ng' || !dbPass || dbPass === 'Password123!' || dbPass === ' Password123!';
+        if (!isPlaceholder && dbUser && dbPass) {
+            return createTransportFromConfig({
+                provider: dbProvider,
+                host: dbHost,
+                port: settings?.smtp?.port,
+                secure: settings?.smtp?.secure,
+                user: dbUser,
+                pass: dbPass,
+            });
+        }
+        // Fall back to environment credentials
+        const envUser = process.env.SMTP_USER?.trim();
+        const envPass = process.env.SMTP_PASS?.trim();
+        if (envUser && envPass) {
+            return createTransportFromConfig({
+                provider: 'gmail',
+                user: envUser,
+                pass: envPass,
+            });
+        }
+        console.warn('⚠️ SMTP credentials missing in both DB and ENV');
+        return null;
     }
     catch (error) {
         console.error('Error creating transporter:', error);
         return null;
     }
+};
+// Dispatch helper that tries primary transporter and falls back to ENV Gmail if primary fails
+export const sendMailWithFallback = async (mailOptions) => {
+    const primaryTransporter = await getTransporter();
+    if (primaryTransporter) {
+        try {
+            const info = await primaryTransporter.sendMail(mailOptions);
+            console.log('✅ Email sent successfully via primary transporter:', info.messageId);
+            return { success: true, messageId: info.messageId };
+        }
+        catch (primaryErr) {
+            console.warn('⚠️ Primary SMTP transporter failed, trying fallback:', primaryErr.message);
+        }
+    }
+    // Attempt direct fallback using process.env credentials
+    const envUser = process.env.SMTP_USER?.trim();
+    const envPass = process.env.SMTP_PASS?.trim();
+    if (envUser && envPass) {
+        try {
+            console.log('🔄 Attempting fallback via verified environment Gmail transporter...');
+            const fallbackTransporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: { user: envUser, pass: envPass },
+            });
+            const info = await fallbackTransporter.sendMail({
+                ...mailOptions,
+                from: mailOptions.from || `"Connecta" <${envUser}>`,
+            });
+            console.log('✅ Email sent successfully via fallback transporter:', info.messageId);
+            return { success: true, messageId: info.messageId };
+        }
+        catch (fallbackErr) {
+            console.error('❌ Fallback SMTP transporter also failed:', fallbackErr.message);
+            return { success: false, error: fallbackErr.message || fallbackErr };
+        }
+    }
+    return { success: false, error: 'No working SMTP transporter available' };
 };
 /**
  * Send OTP email to user
@@ -50,8 +112,10 @@ export const sendOTPEmail = async (email, otp, userName, type = 'PASSWORD_RESET'
         if (!transporter)
             return { success: false, error: 'Transporter not available' };
         const settings = await SystemSettings.findOne();
-        const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
-        const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+        const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+        const fromEmail = (settings?.smtp?.fromEmail && !settings.smtp.fromEmail.includes('connecta.ng'))
+            ? settings.smtp.fromEmail
+            : (process.env.FROM_EMAIL || process.env.SMTP_USER || 'connectagigs@gmail.com');
         const replyTo = 'no-reply@myconnecta.ng';
         const isVerification = type === 'EMAIL_VERIFICATION';
         // Translations
@@ -130,9 +194,8 @@ ${ignoreMsg}
 ${team}
       `,
         };
-        const info = await transporter.sendMail(mailOptions);
-        console.log('OTP email sent:', info.messageId);
-        return { success: true };
+        const res = await sendMailWithFallback(mailOptions);
+        return res;
     }
     catch (error) {
         console.error('Error sending OTP email:', error);
@@ -144,12 +207,11 @@ ${team}
  */
 export const sendEmail = async (to, subject, html, text) => {
     try {
-        const transporter = await getTransporter();
-        if (!transporter)
-            return { success: false, error: 'Transporter not available' };
         const settings = await SystemSettings.findOne();
-        const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta Inc.';
-        const fromEmail = settings?.smtp?.fromEmail || process.env.FROM_EMAIL || process.env.SMTP_USER;
+        const fromName = settings?.smtp?.fromName || process.env.FROM_NAME || 'Connecta';
+        const fromEmail = (settings?.smtp?.fromEmail && !settings.smtp.fromEmail.includes('connecta.ng'))
+            ? settings.smtp.fromEmail
+            : (process.env.FROM_EMAIL || process.env.SMTP_USER || 'connectagigs@gmail.com');
         // Wrap HTML in base template if it's not already a full document
         const finalHtml = html.includes('<!DOCTYPE html>')
             ? html
@@ -165,9 +227,8 @@ export const sendEmail = async (to, subject, html, text) => {
             html: finalHtml,
             text,
         };
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.messageId);
-        return { success: true };
+        const res = await sendMailWithFallback(mailOptions);
+        return res;
     }
     catch (error) {
         console.error('Error sending email:', error);
