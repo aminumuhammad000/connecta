@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,14 +11,40 @@ import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { SUPPORTED_CURRENCIES } from '../../utils/currency';
 
 export const MyProfilePage: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
-  const { currencies, setSelectedCurrency } = useCurrency();
+  const routerLocation = useLocation();
+  const { currencies = [], setSelectedCurrency } = useCurrency();
   const isClient = user?.userType === 'client';
 
-  const [activeTab, setActiveTab] = useState<'personal' | 'professional' | 'languages' | 'experience' | 'education' | 'security'>('personal');
+  const getInitialTab = () => {
+    if (window.location.pathname.includes('/settings')) return 'security';
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'settings' || tab === 'security') return 'security';
+    if (tab && ['personal', 'professional', 'languages', 'experience', 'education'].includes(tab)) {
+      return tab as any;
+    }
+    return 'personal';
+  };
+
+  const [activeTab, setActiveTab] = useState<'personal' | 'professional' | 'languages' | 'experience' | 'education' | 'security'>(getInitialTab);
+
+  useEffect(() => {
+    if (routerLocation.pathname.includes('/settings')) {
+      setActiveTab('security');
+    } else {
+      const params = new URLSearchParams(routerLocation.search);
+      const tab = params.get('tab');
+      if (tab === 'settings' || tab === 'security') {
+        setActiveTab('security');
+      }
+    }
+  }, [routerLocation.pathname, routerLocation.search]);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -510,7 +537,9 @@ export const MyProfilePage: React.FC = () => {
                   <h1 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {firstName} {lastName}
                   </h1>
-                  <ShieldCheck size={15} color="#10B981" title="Verified Account" style={{ flexShrink: 0 }} />
+                  <span title="Verified Account" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                    <ShieldCheck size={15} color="#10B981" />
+                  </span>
                   <span style={{ fontSize: '0.66rem', fontWeight: 700, background: 'rgba(253,103,48,0.08)', color: 'var(--primary)', padding: '1px 6px', borderRadius: '6px', flexShrink: 0, textTransform: 'capitalize' }}>
                     {user?.userType || 'User'}
                   </span>
@@ -681,7 +710,7 @@ export const MyProfilePage: React.FC = () => {
                     <div>
                       <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Default Currency</label>
                       <select value={currency} onChange={(e) => handleDirectCurrencyChange(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }}>
-                        {currencies.map((c) => (
+                        {(currencies && currencies.length > 0 ? currencies : Object.values(SUPPORTED_CURRENCIES)).map((c) => (
                           <option key={c.code} value={c.code}>{c.code} ({c.symbol}) - {c.name}</option>
                         ))}
                       </select>
@@ -1189,7 +1218,7 @@ export const MyProfilePage: React.FC = () => {
                           className="input-field no-icon"
                           style={{ padding: '10px 14px', fontSize: '0.88rem', width: '100%' }}
                         >
-                          {currencies.map((c) => (
+                          {(currencies && currencies.length > 0 ? currencies : Object.values(SUPPORTED_CURRENCIES)).map((c) => (
                             <option key={c.code} value={c.code}>
                               {c.flag || '🌐'} {c.code} ({c.symbol}) — {c.name}
                             </option>

@@ -11,7 +11,7 @@ import {
   Wallet, UserCheck, HelpCircle, Bookmark, FileText, ChevronRight, ChevronDown, User, Rss, Sparkles, Menu, X, Search, Building2,
   FileText as FileTextIcon, CheckCircle2, XCircle, DollarSign, ArrowDownToLine,
   Star, Rocket, CheckCircle, Flag, FileCheck, Target, Users, AlarmClock,
-  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, PlusCircle, RefreshCw
+  Info, AlertTriangle, AlertCircle, Handshake, MailOpen, PlusCircle, RefreshCw, Settings
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
@@ -588,7 +588,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                         <span style={{ fontWeight: 800, fontSize: '0.86rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${user?.firstName || ''} ${user?.lastName || ''}`}>
                           {user?.firstName} {user?.lastName}
                         </span>
-                        <CheckCircle2 size={14} color="#10B981" strokeWidth={2.5} title="Verified Account" style={{ flexShrink: 0 }} />
+                        <span title="Verified Account" style={{ display: 'inline-flex', flexShrink: 0 }}>
+                          <CheckCircle2 size={14} color="#10B981" strokeWidth={2.5} />
+                        </span>
                       </div>
                       <div style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
                         {isFreelancer ? 'Freelancer' : 'Client'}
@@ -616,6 +618,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                         }}
                       >
                         <User size={15} color="var(--primary)" /> Profile
+                      </button>
+
+                      <button
+                        onClick={() => { setShowProfileMenu(false); navigate('/settings'); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          width: '100%',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.81rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <Settings size={15} color="var(--primary)" /> Settings
                       </button>
 
                       {isFreelancer && (
