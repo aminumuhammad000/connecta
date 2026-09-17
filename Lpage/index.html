@@ -260,10 +260,13 @@ section{position:relative}
 .sector-card .roles span{font-size:.72rem;font-weight:600;color:var(--ink-2);background:var(--paper-2);border:1px solid var(--line);padding:.28em .7em;border-radius:var(--r-pill)}
 .sector-card::after{content:"";position:absolute;left:0;top:0;height:3px;width:0;background:var(--grad-jade);transition:width .35s cubic-bezier(.2,.8,.3,1)}
 .sector-card:hover::after{width:100%}
-.sectors-note{display:flex;align-items:center;justify-content:center;gap:.7rem;flex-wrap:wrap;margin-top:2.4rem;text-align:center;color:var(--muted);font-size:.98rem}
+.sectors-note{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;margin-top:2.4rem;text-align:center;color:var(--muted);font-size:.98rem}
 .sectors-note b{color:var(--ink);font-weight:700}
-.sectors-note .chip{display:inline-flex;align-items:center;gap:.45rem;background:var(--card);border:1px solid var(--line);border-radius:var(--r-pill);padding:.4em .95em;font-size:.85rem;font-weight:600;color:var(--ink-2)}
-.sectors-note .chip svg{width:15px;height:15px;color:var(--jade)}
+.sectors-modes{display:inline-flex;align-items:center;justify-content:center;gap:.6rem 1.1rem;flex-wrap:wrap;margin-top:.2rem}
+.sectors-mode-item,.sectors-note .chip{display:inline-flex;align-items:center;gap:.4rem;background:none;border:none;border-radius:0;padding:0;font-size:.88rem;font-weight:600;color:var(--ink-2);cursor:default;user-select:none;box-shadow:none}
+.sectors-mode-item svg,.sectors-note .chip svg{width:15px;height:15px;color:var(--jade);flex-shrink:0}
+.sectors-modes .mode-dot{color:var(--muted);opacity:.45;font-size:.75rem;user-select:none}
+@media (max-width:480px){.sectors-modes .mode-dot{display:none}.sectors-modes{gap:.4rem .9rem}}
 
 /* ============================================================
    HOW IT WORKS — genuine sequence, numbered
@@ -879,9 +882,13 @@ section{position:relative}
     </div>
     <div class="sectors-note reveal">
       <span>Don't see your field? <b>Post it anyway</b> — Connecta covers every sector, plus anything else.</span>
-      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg> Remote</span>
-      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 1114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg> Onsite</span>
-      <span class="chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 7l3-3M4 7l3 3M20 17H4M20 17l-3-3M20 17l-3 3"/></svg> Local &amp; international</span>
+      <div class="sectors-modes" aria-label="Work arrangements">
+        <span class="sectors-mode-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg> Remote</span>
+        <span class="mode-dot" aria-hidden="true">•</span>
+        <span class="sectors-mode-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 1114 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.4"/></svg> Onsite</span>
+        <span class="mode-dot" aria-hidden="true">•</span>
+        <span class="sectors-mode-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 7l3-3M4 7l3 3M20 17H4M20 17l-3-3M20 17l-3 3"/></svg> Local &amp; international</span>
+      </div>
     </div>
   </div>
 </section>
