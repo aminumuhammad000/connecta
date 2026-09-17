@@ -16,6 +16,7 @@ import {
 import { Logo } from '../common/Logo';
 import { PageArtwork } from '../common/PageArtwork';
 import { RoleSwitchLoader } from '../common/RoleSwitchLoader';
+import { LogoutConfirmModal } from '../modals/LogoutConfirmModal';
 
 // Lucide icon map for notification types (no emojis)
 const DROPDOWN_ICON_MAP: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
@@ -119,6 +120,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const [showNotifMenu, setShowNotifMenu] = React.useState(false);
   const [showProfileMenu, setShowProfileMenu] = React.useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false);
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const notifRef = React.useRef<HTMLDivElement>(null);
   const profileRef = React.useRef<HTMLDivElement>(null);
 
@@ -155,6 +157,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   };
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
     logout();
     navigate('/login');
   };
@@ -203,6 +210,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       icon: <User size={18} />,
       path: '/profile',
     },
+    {
+      label: 'Support',
+      icon: <HelpCircle size={18} />,
+      path: '/support',
+    },
   ] : [
     {
       label: 'Dashboard',
@@ -238,6 +250,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       label: 'Profile',
       icon: <User size={18} />,
       path: '/profile',
+    },
+    {
+      label: 'Support',
+      icon: <HelpCircle size={18} />,
+      path: '/support',
     },
   ];
 
@@ -615,6 +632,27 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                         }}
                       >
                         <Settings size={15} color="var(--primary)" /> Settings
+                      </button>
+
+                      <button
+                        onClick={() => { setShowProfileMenu(false); navigate('/support'); }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          width: '100%',
+                          padding: '8px 10px',
+                          borderRadius: '10px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.81rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <HelpCircle size={15} color="var(--primary)" /> Help & Support
                       </button>
 
                       {isFreelancer && (
@@ -1040,6 +1078,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         isVisible={showSwitchLoader}
         fromRole={isFreelancer ? 'freelancer' : 'client'}
         toRole={targetRoleState}
+      />
+
+      {/* Logout Confirmation Prompt */}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
       />
     </div>
   );

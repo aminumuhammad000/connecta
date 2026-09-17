@@ -6,10 +6,11 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 import { useRole } from '../../contexts/RoleContext';
 import { useToast } from '../../contexts/ToastContext';
 import { type CurrencyCode } from '../../utils/currency';
-import { Sun, Moon, LogOut, LayoutDashboard, Globe, RefreshCw } from 'lucide-react';
+import { Sun, Moon, LogOut, LayoutDashboard, Globe, RefreshCw, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../common/Logo';
 import { RoleSwitchLoader } from '../common/RoleSwitchLoader';
+import { LogoutConfirmModal } from '../modals/LogoutConfirmModal';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, switchRole } = useAuth();
@@ -17,7 +18,23 @@ export const Navbar: React.FC = () => {
   const { setRole } = useRole();
   const { success: toastSuccess, error: toastError } = useToast();
   const { selectedCurrency, setSelectedCurrency, currencies } = useCurrency();
-  const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+
+  const handleLogoutClick = () => {
+    setProfileDropdownOpen(false);
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+    navigate('/login');
+  };
+
+  const handleSupportRedirect = () => {
+    setProfileDropdownOpen(false);
+    navigate('/support');
+  };
   const [switchingRole, setSwitchingRole] = React.useState(false);
   const [showSwitchLoader, setShowSwitchLoader] = React.useState(false);
   const [targetRoleState, setTargetRoleState] = React.useState<'client' | 'freelancer'>('client');
@@ -192,7 +209,26 @@ export const Navbar: React.FC = () => {
                       <LayoutDashboard size={18} /> Dashboard
                     </button>
                     <button
-                      onClick={logout}
+                      onClick={handleSupportRedirect}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '10px 12px',
+                        background: 'none',
+                        color: 'var(--text-primary)',
+                        borderRadius: 'var(--radius-sm)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontSize: '0.9rem',
+                        fontWeight: 500,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <HelpCircle size={18} /> Support
+                    </button>
+                    <button
+                      onClick={handleLogoutClick}
                       style={{
                         width: '100%',
                         textAlign: 'left',
@@ -248,6 +284,13 @@ export const Navbar: React.FC = () => {
         isVisible={showSwitchLoader}
         fromRole={user?.userType === 'client' ? 'client' : 'freelancer'}
         toRole={targetRoleState}
+      />
+
+      {/* Logout Confirmation Prompt */}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
       />
     </nav>
   );

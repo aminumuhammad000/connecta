@@ -944,7 +944,7 @@ export const resetPassword = async (req, res) => {
             });
         }
         // Find user
-        const user = await User.findById(decoded.userId);
+        const user = await User.findById(decoded.userId).select('+password');
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -958,6 +958,16 @@ export const resetPassword = async (req, res) => {
                 success: false,
                 message: "Invalid reset token"
             });
+        }
+        // Ensure new password is not identical to current password
+        if (user.password) {
+            const isSamePassword = await bcrypt.compare(newPassword, user.password);
+            if (isSamePassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: "New password cannot be the same as your current password"
+                });
+            }
         }
         // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -1185,15 +1195,14 @@ export const changePassword = async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ success: false, message: "Incorrect current password" });
         }
-        // Update password (hashing handled by pre-save hook usually, or we hash it here)
-        // Checking if pre-save hook exists in User model is safer. 
-        // IF NOT, we must hash it here. 
-        // Given signin just compares, let's assume pre-save hooks handles hashing on save.
-        // BUT wait, `user.password = newPassword` might not trigger hash if logic is weak.
-        // Let's check User model after this. Safe bet: hash it if plaintext.
-        // For now, let's rely on User model knowing how to hash, OR manually hash.
-        // Most likely: user.password = await bcrypt.hash(newPassword, 12);
-        // I will check User model NEXT. For now, valid bcrypt check is key.
+        // Ensure new password is not identical to current password
+        const isSamePassword = await bcrypt.compare(newPassword, user.password);
+        if (isSamePassword) {
+            return res.status(400).json({
+                success: false,
+                message: "New password cannot be the same as your current password"
+            });
+        }
         user.password = await bcrypt.hash(newPassword, 12);
         await user.save();
         res.status(200).json({

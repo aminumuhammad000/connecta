@@ -376,6 +376,10 @@ export const MyProfilePage: React.FC = () => {
       setPassError('Please enter your current password.');
       return;
     }
+    if (newPassword === currentPassword) {
+      setPassError('New password cannot be the same as your current password.');
+      return;
+    }
     if (newPassword.length < 6) {
       setPassError('New password must be at least 6 characters.');
       return;
