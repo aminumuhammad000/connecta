@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMyProposals, getAllProposals, getProposalById, createProposal, updateProposalStatus, deleteProposal, getProposalsByJobId, approveProposal, rejectProposal, getAllProposalsAdmin } from '../controllers/Proposal.controller.js';
+import { getMyProposals, getAllProposals, getProposalById, createProposal, updateProposalStatus, deleteProposal, getProposalsByJobId, approveProposal, rejectProposal, getAllProposalsAdmin, updateProposal, withdrawProposal } from '../controllers/Proposal.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 import { isAdmin } from '../core/middleware/admin.middleware.js';
 const router = Router();
@@ -15,6 +15,11 @@ router.get('/my-proposals', authenticate, getMyProposals);
 router.get('/:id', authenticate, getProposalById);
 // Create a new proposal (Freelancer)
 router.post('/', authenticate, createProposal);
+// Edit/update proposal (Freelancer)
+router.put('/:id', authenticate, updateProposal);
+// Withdraw proposal (Freelancer)
+router.put('/:id/withdraw', authenticate, withdrawProposal);
+router.post('/:id/withdraw', authenticate, withdrawProposal);
 // Update proposal status (Reject only)
 router.patch('/:id/status', authenticate, updateProposalStatus);
 // Approve / Reject specialized routes (Mobile & Web support)

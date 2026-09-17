@@ -264,8 +264,8 @@ export const updateMyProfile = async (req, res) => {
         const userId = req.user?._id || req.user?.id;
         if (!userId)
             return res.status(401).json({ message: 'Unauthorized' });
-        const { phoneNumber, whatsapp, location, country, city, timezone, preferredLanguage, companyName, website, bio, avatar, skills, education, languages, employment, resume, portfolio, remoteWorkType, minimumSalary, workLocationPreferences, jobTitle, jobCategories, yearsOfExperience, engagementTypes, jobNotificationFrequency } = req.body;
-        console.log('📝 Update profile request:', { phoneNumber, whatsapp, location, country, city, timezone, preferredLanguage, companyName, website, bio, avatar });
+        const { phoneNumber, whatsapp, location, country, city, timezone, preferredLanguage, companyName, website, portfolioWebsite, currency, bio, avatar, skills, education, languages, employment, resume, portfolio, remoteWorkType, minimumSalary, workLocationPreferences, jobTitle, jobCategories, yearsOfExperience, engagementTypes, jobNotificationFrequency } = req.body;
+        console.log('📝 Update profile request:', { phoneNumber, whatsapp, location, country, city, timezone, preferredLanguage, companyName, website, portfolioWebsite, currency, bio, avatar });
         // Prepare update data
         const updateData = {};
         if (phoneNumber !== undefined)
@@ -284,6 +284,10 @@ export const updateMyProfile = async (req, res) => {
             updateData.preferredLanguage = preferredLanguage;
         if (website !== undefined)
             updateData.website = website;
+        if (portfolioWebsite !== undefined)
+            updateData.portfolioWebsite = portfolioWebsite;
+        if (currency !== undefined)
+            updateData.currency = currency;
         if (companyName !== undefined)
             updateData.companyName = companyName;
         if (bio !== undefined)
@@ -333,10 +337,16 @@ export const updateMyProfile = async (req, res) => {
             profile = await Profile.findOneAndUpdate({ user: userId }, updateData, { new: true, runValidators: true }).populate('user', 'firstName lastName email profileImage userType');
             console.log('✅ Profile updated:', profile);
         }
-        // Sync with User model if avatar or names were updated
+        // Sync with User model if avatar or names or currency or website were updated
         const userUpdate = {};
         if (avatar)
             userUpdate.profileImage = avatar;
+        if (currency)
+            userUpdate.currency = currency;
+        if (portfolioWebsite !== undefined)
+            userUpdate.portfolioWebsite = portfolioWebsite;
+        if (website !== undefined)
+            userUpdate.website = website;
         // Extract names from request body (they are not in profile schema but passed from frontend)
         const { firstName, lastName } = req.body;
         if (firstName)

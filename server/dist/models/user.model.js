@@ -20,6 +20,7 @@ const UserSchema = new Schema({
     currency: { type: String, required: false },
     companyName: { type: String, required: false },
     website: { type: String, required: false },
+    portfolioWebsite: { type: String, required: false },
     companyOverview: { type: String, required: false },
     employment: [Schema.Types.Mixed],
     workExperience: [

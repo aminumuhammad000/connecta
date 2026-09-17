@@ -1233,7 +1233,7 @@ export const updateMe = async (req, res) => {
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
         }
-        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, country, currency, preferredLanguage, companyName, website, companyOverview, employment, workExperience, education, languages, portfolio, hourlyRate, yearsOfExperience, workType, skills, resume, cv } = req.body;
+        const { firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp, title, bio, location, country, currency, preferredLanguage, companyName, website, portfolioWebsite, companyOverview, employment, workExperience, education, languages, portfolio, hourlyRate, yearsOfExperience, workType, skills, resume, cv } = req.body;
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: "User not found" });
@@ -1268,6 +1268,8 @@ export const updateMe = async (req, res) => {
             user.companyName = companyName;
         if (website !== undefined)
             user.website = website;
+        if (portfolioWebsite !== undefined)
+            user.portfolioWebsite = portfolioWebsite;
         if (companyOverview !== undefined)
             user.companyOverview = companyOverview;
         if (employment !== undefined && Array.isArray(employment))
@@ -1299,6 +1301,8 @@ export const updateMe = async (req, res) => {
             await Profile.findOneAndUpdate({ user: userId }, {
                 companyName,
                 website,
+                portfolioWebsite: portfolioWebsite || website,
+                currency,
                 employment,
                 bio,
                 jobTitle: title,

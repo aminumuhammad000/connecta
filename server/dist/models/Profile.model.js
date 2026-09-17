@@ -15,6 +15,8 @@ const ProfileSchema = new Schema({
     timezone: { type: String },
     preferredLanguage: { type: String },
     website: { type: String },
+    portfolioWebsite: { type: String },
+    currency: { type: String },
     companyName: { type: String },
     jobTitle: { type: String },
     avatar: { type: String },

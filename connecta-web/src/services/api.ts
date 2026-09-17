@@ -414,8 +414,19 @@ export const contactAPI = {
     }>>('/api/settings/contact');
     return data;
   },
-  submitContact: async (ticketData: { name?: string; email?: string; subject: string; message: string }) => {
+  submitContact: async (ticketData: {
+    name?: string;
+    email?: string;
+    subject: string;
+    message: string;
+    category?: string;
+    priority?: string;
+  }) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/contact', ticketData);
+    return data;
+  },
+  getMyTickets: async () => {
+    const { data } = await apiClient.get<ApiResponse<any[]>>('/api/contact/my-tickets');
     return data;
   }
 };
@@ -673,4 +684,5 @@ export const aiInterviewAPI = {
     return data;
   }
 };
+
 

@@ -576,6 +576,10 @@ export const contactAPI = {
     const { data } = await api.get('/api/contact')
     return data
   },
+  updateStatus: async (id: string, status: string, adminResponse?: string) => {
+    const { data } = await api.put(`/api/contact/${id}/status`, { status, adminResponse })
+    return data
+  },
 }
 
 // ============================================
