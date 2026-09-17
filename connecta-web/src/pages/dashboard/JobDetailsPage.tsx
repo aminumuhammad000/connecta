@@ -5,7 +5,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, DollarSign, Briefcase, Calendar,
-  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare, Sparkles, Bot
+  ArrowUpRight, Heart, Loader2, Send, X, ShieldCheck, UserCheck, Star, MessageSquare, Sparkles, Bot,
+  CheckCircle2
 } from 'lucide-react';
 import { jobAPI, proposalAPI, contractAPI, aiAPI, savedJobAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -44,6 +45,10 @@ export const JobDetailsPage: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
 
   const handleAiQuickPitch = async () => {
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     if (!job) return;
     if (userProposal || job.hasApplied || job.isApplied) {
       showToast('You have already applied for this job.', 'info');
@@ -108,6 +113,7 @@ export const JobDetailsPage: React.FC = () => {
   };
 
   const checkUserStatusForJob = async (jobId: string, currentJob: any) => {
+    if (!user) return;
     try {
       const [contractsRes, proposalsRes, savedRes] = await Promise.all([
         contractAPI.getUserContracts().catch(() => null),
@@ -142,6 +148,10 @@ export const JobDetailsPage: React.FC = () => {
   };
 
   const handleToggleSave = async () => {
+    if (!user) {
+      navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     const targetId = job?._id || id;
     if (!targetId) return;
 
@@ -332,11 +342,11 @@ export const JobDetailsPage: React.FC = () => {
                   fontSize: '1.1rem',
                   flexShrink: 0,
                 }}>
-                  {(job.company || job.clientId?.firstName || 'C')[0]?.toUpperCase()}
+                  {((job.company && job.company.trim()) || job.clientId?.firstName || 'C')[0]?.toUpperCase() || 'C'}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                    {job.company || `${job.clientId?.firstName || 'Connecta'} ${job.clientId?.lastName || 'Client'}`}
+                    {(job.company && job.company.trim()) || (job.clientId ? `${job.clientId.firstName || ''} ${job.clientId.lastName || ''}`.trim() : '') || 'Connecta Client'}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={12} /> {job.location || 'Remote'}</span>
@@ -667,7 +677,13 @@ export const JobDetailsPage: React.FC = () => {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => setShowApplyModal(true)}
+                        onClick={() => {
+                          if (!user) {
+                            navigate(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+                            return;
+                          }
+                          setShowApplyModal(true);
+                        }}
                         className="btn-primary"
                         style={{ width: '100%', padding: '14px', borderRadius: '12px', fontSize: '0.92rem', fontWeight: 700, justifyContent: 'center' }}
                       >

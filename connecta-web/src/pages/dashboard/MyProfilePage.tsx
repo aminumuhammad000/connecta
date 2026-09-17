@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, Save, Loader2, Camera, Plus, Trash2, KeyRound, User as UserIcon,
   Lock, Eye, EyeOff, AlertCircle, Sparkles, X, Shield, FileText, UploadCloud, GraduationCap, Globe, Briefcase,
-  ExternalLink, Check
+  ExternalLink, Check, CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';

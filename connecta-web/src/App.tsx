@@ -48,6 +48,7 @@ import { ClientWriteReviewPage } from './pages/dashboard/ClientWriteReviewPage';
 import { FreelancerProfileDetailsPage } from './pages/dashboard/FreelancerProfileDetailsPage';
 import { NotificationsPage } from './pages/dashboard/NotificationsPage';
 import { AiInterviewPage } from './pages/dashboard/AiInterviewPage';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export const App: React.FC = () => {
   return (
@@ -58,6 +59,7 @@ export const App: React.FC = () => {
             <CurrencyProvider>
               <BrowserRouter>
                   <NotificationProvider>
+                <ErrorBoundary>
                 <Routes>
                   {/* Default Onboarding & Landing */}
                   <Route path="/" element={<OnboardingScreen />} />
@@ -113,6 +115,7 @@ export const App: React.FC = () => {
                   {/* Catch-all fallback */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+                </ErrorBoundary>
                   </NotificationProvider>
               </BrowserRouter>
             </CurrencyProvider>

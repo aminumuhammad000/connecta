@@ -89,7 +89,8 @@ apiClient.interceptors.response.use(
           const isPublicPage = window.location.pathname.includes('/login') ||
             window.location.pathname.includes('/register') ||
             window.location.pathname === '/' ||
-            window.location.pathname === '/landing';
+            window.location.pathname === '/landing' ||
+            window.location.pathname.startsWith('/jobs');
 
           if (!isPublicPage) {
             storage.clearAll();
@@ -605,6 +606,11 @@ export const aiAPI = {
   },
 
   quickApply: async (jobId: string) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/quick-apply', { jobId });
+    return data;
+  },
+
+  generateProposal: async (jobId: string) => {
     const { data } = await apiClient.post<ApiResponse<any>>('/api/ai/quick-apply', { jobId });
     return data;
   },
