@@ -565,9 +565,12 @@ section{position:relative}
   .store-row,.download-meta{justify-content:center}
   .download-visual{order:-1}
 }
-@media(max-width:640px){
-  .nav-links,.nav-cta .signin{display:none}
+@media(max-width:768px){
+  /* Mobile responsive nav: remove desktop links, signin, and 'Join Connecta' button from header; show hamburger */
+  .nav-links,.nav-cta .signin,.nav-cta .btn-primary{display:none!important}
   .hamburger{display:flex}
+}
+@media(max-width:640px){
   .steps{grid-template-columns:1fr}
   .sector-grid{grid-template-columns:1fr 1fr;gap:.7rem}
   .sector-card{padding:1.15rem 1.05rem}
@@ -587,10 +590,9 @@ section{position:relative}
   .download-visual .phone{transform:none;min-width:0;width:100%;max-width:360px}
 }
 @media(max-width:560px){
-  /* nav: compact the primary CTA so logo + CTA + hamburger never clip */
+  /* nav: compact spacing and brand logo so logo + hamburger sit neatly */
   .nav-inner{gap:.6rem}
   .nav-cta{gap:.5rem}
-  .nav-cta .btn-primary{padding:.74em 1.05em;font-size:.9rem}
   .brand .logo-img{height:30px}
 
   /* footer bottom bar: stack cleanly with roomy tap targets */
@@ -633,9 +635,8 @@ section{position:relative}
   .squad-center{position:static;transform:none;width:100%;max-width:260px;margin:0 auto}
 }
 @media(max-width:380px){
-  /* tightest phones (≤360–380px): trim gutter + CTA so nothing overflows */
+  /* tightest phones (≤360–380px): trim gutter so nothing overflows */
   .nav .wrap{padding-inline:14px}
-  .nav-cta .btn-primary{padding:.7em .9em;font-size:.85rem}
   .hero h1{font-size:clamp(2.2rem,8vw,2.8rem)}
 }
 
