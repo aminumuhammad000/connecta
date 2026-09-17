@@ -708,25 +708,7 @@ export const MyProfilePage: React.FC = () => {
                       <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }} />
                     </div>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Default Currency</label>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab('security')}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--primary)',
-                            fontSize: '0.73rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            padding: 0,
-                            textDecoration: 'underline'
-                          }}
-                        >
-                          Change in Settings
-                        </button>
-                      </div>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Default Currency</label>
                       <input
                         type="text"
                         readOnly
@@ -807,13 +789,13 @@ export const MyProfilePage: React.FC = () => {
                           </div>
                           <input
                             type="url"
-                            placeholder="https://yourportfolio.com or github.com/user"
+                            placeholder="https://yourportfolio.com"
                             value={portfolioWebsite}
                             onChange={(e) => {
                               const val = e.target.value;
                               setPortfolioWebsite(val);
                               if (val.trim() && !validateUrl(val)) {
-                                setPortfolioWebsiteError('Please enter a valid website URL (e.g. https://yourportfolio.com)');
+                                setPortfolioWebsiteError('Please enter a valid URL');
                               } else {
                                 setPortfolioWebsiteError('');
                               }

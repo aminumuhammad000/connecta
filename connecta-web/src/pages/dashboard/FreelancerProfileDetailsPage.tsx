@@ -4,7 +4,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, MapPin, Star, ShieldCheck, Calendar, Briefcase,
-  DollarSign, MessageSquare, Loader2, Award
+  DollarSign, MessageSquare, Loader2, Award, Globe, ExternalLink
 } from 'lucide-react';
 import { authAPI } from '../../services/api';
 import { VerifiedBadge } from '../../components/common/VerifiedBadge';
@@ -149,6 +149,16 @@ export const FreelancerProfileDetailsPage: React.FC = () => {
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Calendar size={14} /> Member Since {candidate.createdAt ? new Date(candidate.createdAt).getFullYear() : '2026'}
                     </span>
+                    {(candidate.portfolioWebsite || candidate.website) && (
+                      <a
+                        href={(candidate.portfolioWebsite || candidate.website).startsWith('http') ? (candidate.portfolioWebsite || candidate.website) : `https://${candidate.portfolioWebsite || candidate.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                      >
+                        <Globe size={14} /> Portfolio <ExternalLink size={11} />
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -286,6 +296,20 @@ export const FreelancerProfileDetailsPage: React.FC = () => {
                   <span style={{ color: 'var(--text-muted)' }}>Language</span>
                   <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>English (Fluent)</span>
                 </div>
+
+                {(candidate.portfolioWebsite || candidate.website) && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Portfolio Website</span>
+                    <a
+                      href={(candidate.portfolioWebsite || candidate.website).startsWith('http') ? (candidate.portfolioWebsite || candidate.website) : `https://${candidate.portfolioWebsite || candidate.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontWeight: 700, color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                    >
+                      Visit Site <ExternalLink size={12} />
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
