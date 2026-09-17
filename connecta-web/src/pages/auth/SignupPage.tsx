@@ -333,16 +333,17 @@ export const SignupPage: React.FC = () => {
                 type="button"
                 onClick={() => setSignupStep(1)}
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '38px',
+                  height: '38px',
                   borderRadius: '10px',
                   border: '1px solid var(--border-color)',
-                  background: 'var(--bg-secondary)',
+                  background: 'var(--card-bg, #ffffff)',
                   color: 'var(--text-primary)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                   transition: 'all 0.2s ease',
                   padding: 0
                 }}
@@ -364,7 +365,7 @@ export const SignupPage: React.FC = () => {
                   fontSize: '0.75rem',
                   fontWeight: 700
                 }}>
-                  <span>{roleQuery === 'client' ? '💼 Client' : '⚡ Freelancer'}</span>
+                  <span>{roleQuery === 'client' ? 'Client' : 'Freelancer'}</span>
                   <Link to="/register/role" style={{ marginLeft: '4px', fontSize: '0.7rem', color: 'inherit', opacity: 0.7, textDecoration: 'underline' }}>
                     Change
                   </Link>
@@ -398,7 +399,7 @@ export const SignupPage: React.FC = () => {
                 fontWeight: 700,
                 marginBottom: '8px'
               }}>
-                <span>{roleQuery === 'client' ? '💼 Client' : '⚡ Freelancer'}</span>
+                <span>{roleQuery === 'client' ? 'Client' : 'Freelancer'}</span>
                 <Link to="/register/role" style={{ marginLeft: '4px', fontSize: '0.7rem', color: 'inherit', opacity: 0.7, textDecoration: 'underline' }}>
                   Change
                 </Link>

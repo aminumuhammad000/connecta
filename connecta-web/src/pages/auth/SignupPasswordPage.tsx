@@ -148,27 +148,28 @@ export const SignupPasswordPage: React.FC = () => {
           className="glass-card"
           style={{ padding: '36px 28px', width: '100%', borderRadius: 'var(--radius-lg)' }}
         >
-          {/* Top Bar: Back Icon Button & Minimalist Tags */}
+          {/* Top Bar: Back Icon Button & Single Clean Tag */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '18px'
+            marginBottom: '20px'
           }}>
             <button
               type="button"
               onClick={() => navigate(`/register?role=${roleQuery}`)}
               style={{
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '10px',
                 border: '1px solid var(--border-color)',
-                background: 'var(--bg-secondary)',
+                background: 'var(--card-bg, #ffffff)',
                 color: 'var(--text-primary)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                 transition: 'all 0.2s ease',
                 padding: 0
               }}
@@ -178,35 +179,18 @@ export const SignupPasswordPage: React.FC = () => {
               <ArrowLeft size={18} />
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* Minimalist Role Tag */}
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: roleQuery === 'client' ? 'rgba(43, 42, 107, 0.08)' : 'rgba(253, 103, 48, 0.08)',
-                color: roleQuery === 'client' ? '#2B2A6B' : 'var(--primary)',
-                fontSize: '0.75rem',
-                fontWeight: 700
-              }}>
-                <span>{roleQuery === 'client' ? '💼 Client' : '⚡ Freelancer'}</span>
-              </div>
-
-              {/* Minimalist Security Tag */}
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '4px 10px',
-                borderRadius: '20px',
-                background: 'rgba(253, 103, 48, 0.08)',
-                color: 'var(--primary)',
-                fontSize: '0.75rem',
-                fontWeight: 700
-              }}>
-                Security
-              </div>
+            {/* Single clean minimalist tag without emojis */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              background: 'rgba(253, 103, 48, 0.08)',
+              color: 'var(--primary)',
+              fontSize: '0.75rem',
+              fontWeight: 700
+            }}>
+              Security Setup
             </div>
           </div>
 
