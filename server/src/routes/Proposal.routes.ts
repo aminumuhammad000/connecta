@@ -9,7 +9,9 @@ import {
   getProposalsByJobId,
   approveProposal,
   rejectProposal,
-  getAllProposalsAdmin
+  getAllProposalsAdmin,
+  updateProposal,
+  withdrawProposal
 } from '../controllers/Proposal.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 import { isAdmin } from '../core/middleware/admin.middleware.js';
@@ -33,6 +35,13 @@ router.get('/:id', authenticate, getProposalById);
 
 // Create a new proposal (Freelancer)
 router.post('/', authenticate, createProposal);
+
+// Edit/update proposal (Freelancer)
+router.put('/:id', authenticate, updateProposal);
+
+// Withdraw proposal (Freelancer)
+router.put('/:id/withdraw', authenticate, withdrawProposal);
+router.post('/:id/withdraw', authenticate, withdrawProposal);
 
 // Update proposal status (Reject only)
 router.patch('/:id/status', authenticate, updateProposalStatus);

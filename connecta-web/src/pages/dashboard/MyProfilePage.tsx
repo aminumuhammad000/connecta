@@ -3,7 +3,8 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, Save, Loader2, Camera, Plus, Trash2, KeyRound, User as UserIcon,
-  Lock, Eye, EyeOff, AlertCircle, Sparkles, X, Shield, FileText, UploadCloud, GraduationCap, Globe, Briefcase
+  Lock, Eye, EyeOff, AlertCircle, Sparkles, X, Shield, FileText, UploadCloud, GraduationCap, Globe, Briefcase,
+  ExternalLink, Check
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../services/api';
@@ -13,7 +14,7 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 export const MyProfilePage: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
-  const { currencies } = useCurrency();
+  const { currencies, setSelectedCurrency } = useCurrency();
   const isClient = user?.userType === 'client';
 
   const [activeTab, setActiveTab] = useState<'personal' | 'professional' | 'languages' | 'experience' | 'education' | 'security'>('personal');
@@ -36,6 +37,30 @@ export const MyProfilePage: React.FC = () => {
   const [bio, setBio] = useState(user?.bio || '');
   const [companyName, setCompanyName] = useState((user as any)?.companyName || '');
   const [website, setWebsite] = useState((user as any)?.website || '');
+  const [portfolioWebsite, setPortfolioWebsite] = useState((user as any)?.portfolioWebsite || (user as any)?.website || '');
+  const [portfolioWebsiteError, setPortfolioWebsiteError] = useState('');
+
+  const validateUrl = (urlStr: string): boolean => {
+    if (!urlStr || !urlStr.trim()) return true;
+    const trimmed = urlStr.trim();
+    const urlRegex = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/i;
+    return urlRegex.test(trimmed);
+  };
+
+  const handleDirectCurrencyChange = async (newCode: string) => {
+    setCurrency(newCode);
+    setSelectedCurrency(newCode);
+    try {
+      const res = await authAPI.updateMe({ currency: newCode });
+      if (res?.success && res?.data) {
+        updateUser(res.data);
+      }
+      showToast(`Default currency updated to ${newCode} successfully!`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to update currency', 'error');
+    }
+  };
+
   const [workType, setWorkType] = useState<'freelancing' | 'permanent'>(user?.workType || 'freelancing');
   const [hourlyRate, setHourlyRate] = useState<number | string>(user?.hourlyRate || 25);
   const [yearsOfExperience, setYearsOfExperience] = useState<number | string>(user?.yearsOfExperience || 3);
@@ -200,6 +225,11 @@ export const MyProfilePage: React.FC = () => {
         }
         if ((u as any).companyName) setCompanyName((u as any).companyName);
         if ((u as any).website) setWebsite((u as any).website);
+        const pWeb = (u as any).portfolioWebsite || (u as any).website || '';
+        if (pWeb) {
+          setPortfolioWebsite(pWeb);
+          if (!isClient) setWebsite(pWeb);
+        }
         if ((u as any).companyOverview) setCompanyOverview((u as any).companyOverview);
         if ((u as any).employment && Array.isArray((u as any).employment)) {
           setEmployment((u as any).employment);
@@ -252,6 +282,20 @@ export const MyProfilePage: React.FC = () => {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+
+    if (portfolioWebsite && !validateUrl(portfolioWebsite)) {
+      setPortfolioWebsiteError('Please enter a valid website URL (e.g. https://yourportfolio.com)');
+      showToast('Please enter a valid portfolio website URL', 'error');
+      setSaving(false);
+      return;
+    }
+
+    const finalPortfolioWebsite = portfolioWebsite ? (
+      portfolioWebsite.startsWith('http://') || portfolioWebsite.startsWith('https://')
+        ? portfolioWebsite.trim()
+        : `https://${portfolioWebsite.trim()}`
+    ) : '';
+
     try {
       const payload: any = {
         firstName,
@@ -274,7 +318,8 @@ export const MyProfilePage: React.FC = () => {
         resume,
         cv: resume,
         companyName,
-        website,
+        website: isClient ? website : (finalPortfolioWebsite || website),
+        portfolioWebsite: finalPortfolioWebsite,
         companyOverview,
         employment,
         workExperience,
@@ -284,8 +329,11 @@ export const MyProfilePage: React.FC = () => {
       const res = await authAPI.updateMe(payload);
       if (res.success && res.data) {
         updateUser(res.data);
+        if (currency) {
+          setSelectedCurrency(currency);
+        }
+        showToast('Profile and settings saved successfully!', 'success');
       }
-      showToast('Profile and settings saved successfully!', 'success');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'Profile updated locally.', 'info');
     } finally {
@@ -632,9 +680,9 @@ export const MyProfilePage: React.FC = () => {
                     </div>
                     <div>
                       <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Default Currency</label>
-                      <select value={currency} onChange={(e) => initiateCurrencyChange(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }}>
+                      <select value={currency} onChange={(e) => handleDirectCurrencyChange(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }}>
                         {currencies.map((c) => (
-                          <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                          <option key={c.code} value={c.code}>{c.code} ({c.symbol}) - {c.name}</option>
                         ))}
                       </select>
                     </div>
@@ -675,9 +723,53 @@ export const MyProfilePage: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      <div style={{ marginBottom: '16px' }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Professional Title</label>
-                        <input type="text" placeholder="e.g. Senior Full-Stack Engineer" value={title} onChange={(e) => setTitle(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }} />
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                        <div>
+                          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>Professional Title</label>
+                          <input type="text" placeholder="e.g. Senior Full-Stack Engineer" value={title} onChange={(e) => setTitle(e.target.value)} className="input-field no-icon" style={{ padding: '10px 14px', fontSize: '0.88rem' }} />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}>
+                              Portfolio Website <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 400 }}>(Optional)</span>
+                            </label>
+                            {portfolioWebsite && !portfolioWebsiteError && (
+                              <a
+                                href={portfolioWebsite.startsWith('http') ? portfolioWebsite : `https://${portfolioWebsite}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: '0.74rem', color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px', textDecoration: 'none' }}
+                              >
+                                Visit <ExternalLink size={11} />
+                              </a>
+                            )}
+                          </div>
+                          <input
+                            type="url"
+                            placeholder="https://yourportfolio.com or github.com/user"
+                            value={portfolioWebsite}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPortfolioWebsite(val);
+                              if (val.trim() && !validateUrl(val)) {
+                                setPortfolioWebsiteError('Please enter a valid website URL (e.g. https://yourportfolio.com)');
+                              } else {
+                                setPortfolioWebsiteError('');
+                              }
+                            }}
+                            className="input-field no-icon"
+                            style={{
+                              padding: '10px 14px',
+                              fontSize: '0.88rem',
+                              borderColor: portfolioWebsiteError ? '#EF4444' : undefined,
+                            }}
+                          />
+                          {portfolioWebsiteError && (
+                            <div style={{ color: '#EF4444', fontSize: '0.74rem', marginTop: '4px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <AlertCircle size={12} /> {portfolioWebsiteError}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '16px' }}>
@@ -1070,6 +1162,50 @@ export const MyProfilePage: React.FC = () => {
                   transition={{ duration: 0.18 }}
                   style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
                 >
+                  {/* Dedicated Currency & Regional Preferences Card */}
+                  <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(253,103,48,0.1)', border: '1px solid rgba(253,103,48,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                        <Globe size={18} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                          Currency & Regional Settings
+                        </h3>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                          Select your primary currency for bids, payments, and balances.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', alignItems: 'end' }}>
+                      <div>
+                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                          Primary Display & Billing Currency
+                        </label>
+                        <select
+                          value={currency}
+                          onChange={(e) => handleDirectCurrencyChange(e.target.value)}
+                          className="input-field no-icon"
+                          style={{ padding: '10px 14px', fontSize: '0.88rem', width: '100%' }}
+                        >
+                          {currencies.map((c) => (
+                            <option key={c.code} value={c.code}>
+                              {c.flag || '🌐'} {c.code} ({c.symbol}) — {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+                        <CheckCircle2 size={16} color="var(--primary)" />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                          Active: <strong style={{ color: 'var(--text-primary)' }}>{currency}</strong> (auto-converted throughout platform)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Account Settings & Preferences Card */}
                   <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px' }}>
                     <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', margin: '0 0 16px', letterSpacing: '-0.01em', textTransform: 'uppercase' }}>

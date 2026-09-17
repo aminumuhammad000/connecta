@@ -295,6 +295,30 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
           {/* Right Header Actions - Minimalist */}
           <div className="header-actions-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Prominent Quick Role Switcher Button */}
+            <button
+              onClick={handleRoleSwitch}
+              disabled={switchingRole}
+              title={isClient ? "Switch to Freelancer Mode" : "Switch to Client Mode"}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                background: isClient ? 'rgba(253,103,48,0.12)' : 'var(--bg-secondary)',
+                border: isClient ? '1px solid rgba(253,103,48,0.3)' : '1px solid var(--border-color)',
+                color: isClient ? 'var(--primary)' : 'var(--text-secondary)',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <RefreshCw size={13} className={switchingRole ? 'animate-spin' : ''} />
+              <span>{isClient ? 'Switch to Freelancer' : 'Switch to Client'}</span>
+            </button>
+
             {/* Top Nav AI Copilot Button */}
             <button
               onClick={() => navigate('/ai-assistant')}
@@ -641,7 +665,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                         }}
                       >
                         <RefreshCw size={15} color="var(--primary)" className={switchingRole ? 'animate-spin' : ''} />
-                        <span>{isFreelancer ? 'Client Mode' : 'Freelancer Mode'}</span>
+                        <span>{isFreelancer ? 'Switch to Client Account' : 'Switch to Freelancer Account'}</span>
                       </button>
 
                       {/* Theme Toggle in Dropdown */}
@@ -789,6 +813,33 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             }}>
               {user?.bio || 'No profile bio set yet.'}
             </p>
+
+            {/* Clear Role Switch Action in Sidebar */}
+            <button
+              onClick={handleRoleSwitch}
+              disabled={switchingRole}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                width: '100%',
+                marginTop: '10px',
+                padding: '7px 10px',
+                borderRadius: '10px',
+                background: isClient ? 'rgba(253,103,48,0.1)' : 'var(--bg-secondary)',
+                border: isClient ? '1px solid rgba(253,103,48,0.25)' : '1px solid var(--border-color)',
+                color: isClient ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '0.76rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              title={isClient ? 'Switch to Freelancer Account' : 'Switch to Client Account'}
+            >
+              <RefreshCw size={12} className={switchingRole ? 'animate-spin' : ''} />
+              <span>{isClient ? 'Switch to Freelancer' : 'Switch to Client'}</span>
+            </button>
           </div>
 
           {/* Navigation Items Group */}
@@ -917,6 +968,32 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               <div className="glass-card" style={{ padding: '12px 14px', borderRadius: '14px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
                 <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{user?.firstName} {user?.lastName}</div>
                 <div style={{ fontSize: '0.74rem', color: 'var(--primary)', fontWeight: 600 }}>{isFreelancer ? (user?.title || 'Freelancer') : 'Client'}</div>
+                <button
+                  onClick={() => {
+                    setMobileSidebarOpen(false);
+                    handleRoleSwitch();
+                  }}
+                  disabled={switchingRole}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    width: '100%',
+                    marginTop: '10px',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: isClient ? 'var(--grad-primary)' : 'var(--bg-tertiary)',
+                    border: 'none',
+                    color: isClient ? '#fff' : 'var(--text-primary)',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <RefreshCw size={13} className={switchingRole ? 'animate-spin' : ''} />
+                  <span>{isClient ? 'Switch to Freelancer' : 'Switch to Client'}</span>
+                </button>
               </div>
 
               {/* Nav Items */}

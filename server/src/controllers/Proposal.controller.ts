@@ -457,3 +457,110 @@ export const deleteProposal = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Update proposal (Freelancer edit proposal when pending)
+export const updateProposal = async (req: Request, res: Response) => {
+  try {
+    const rawId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    if (!rawId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const proposal = await Proposal.findById(req.params.id);
+    if (!proposal) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    if (proposal.freelancerId.toString() !== rawId.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: you can only edit your own proposal' });
+    }
+
+    if (proposal.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot edit proposal with status '${proposal.status}'. Only pending proposals can be edited.`
+      });
+    }
+
+    const { description, coverLetter, price, bidAmount, deliveryTime, estimatedDays } = req.body;
+
+    if (description !== undefined || coverLetter !== undefined) {
+      proposal.description = (description !== undefined ? description : coverLetter) || '';
+    }
+
+    if (price !== undefined || bidAmount !== undefined) {
+      const parsedPrice = Number(price !== undefined ? price : bidAmount);
+      if (!isNaN(parsedPrice) && parsedPrice >= 0) {
+        proposal.price = parsedPrice;
+      }
+    }
+
+    if (deliveryTime !== undefined || estimatedDays !== undefined) {
+      const parsedDelivery = Number(deliveryTime !== undefined ? deliveryTime : estimatedDays);
+      if (!isNaN(parsedDelivery) && parsedDelivery >= 1) {
+        proposal.deliveryTime = parsedDelivery;
+      }
+    }
+
+    await proposal.save();
+
+    const updated = await Proposal.findById(proposal._id)
+      .populate('freelancerId', 'firstName lastName email profileImage jobTitle rating jobSuccessScore isVerified')
+      .populate('clientId', 'firstName lastName email profileImage location paymentVerified isPremium')
+      .populate({
+        path: 'jobId',
+        select: 'title budget status currency duration requireAiInterview category'
+      });
+
+    res.status(200).json({
+      success: true,
+      message: 'Proposal updated successfully',
+      data: updated
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Withdraw proposal (Freelancer withdraws proposal when pending)
+export const withdrawProposal = async (req: Request, res: Response) => {
+  try {
+    const rawId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
+    if (!rawId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const proposal = await Proposal.findById(req.params.id);
+    if (!proposal) {
+      return res.status(404).json({ success: false, message: 'Proposal not found' });
+    }
+
+    if (proposal.freelancerId.toString() !== rawId.toString()) {
+      return res.status(403).json({ success: false, message: 'Unauthorized: you can only withdraw your own proposal' });
+    }
+
+    if (proposal.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot withdraw proposal with status '${proposal.status}'. Only pending proposals can be withdrawn.`
+      });
+    }
+
+    proposal.status = 'withdrawn';
+    await proposal.save();
+
+    const updated = await Proposal.findById(proposal._id)
+      .populate('freelancerId', 'firstName lastName email profileImage jobTitle')
+      .populate('clientId', 'firstName lastName email profileImage')
+      .populate('jobId', 'title budget status currency');
+
+    res.status(200).json({
+      success: true,
+      message: 'Proposal withdrawn successfully',
+      data: updated
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

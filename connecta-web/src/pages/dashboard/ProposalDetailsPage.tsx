@@ -5,7 +5,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, CheckCircle2, DollarSign, Calendar, MapPin,
-  ShieldCheck, Loader2, UserCheck, Star, MessageSquare, Briefcase, FileText, Bot
+  ShieldCheck, Loader2, UserCheck, Star, MessageSquare, Briefcase, FileText, Bot,
+  Edit3, RotateCcw, AlertCircle, X
 } from 'lucide-react';
 import { proposalAPI, aiInterviewAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -22,6 +23,17 @@ export const ProposalDetailsPage: React.FC = () => {
   const [interviewData, setInterviewData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+
+  // Edit Proposal Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editBidAmount, setEditBidAmount] = useState<number | string>(0);
+  const [editDeliveryTime, setEditDeliveryTime] = useState<number | string>(14);
+  const [editCoverLetter, setEditCoverLetter] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Withdraw Proposal State
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -46,6 +58,10 @@ export const ProposalDetailsPage: React.FC = () => {
 
       if (propObj) {
         setProposal(propObj);
+        setEditBidAmount(propObj.price || propObj.bidAmount || 0);
+        setEditDeliveryTime(propObj.deliveryTime || propObj.estimatedDays || 14);
+        setEditCoverLetter(propObj.description || propObj.coverLetter || '');
+
         // Fetch AI Interview data if required or existing
         if (propObj.jobId?.requireAiInterview || propObj.aiInterviewStatus !== 'not_required') {
           aiInterviewAPI.getByProposalId(targetId)
@@ -92,6 +108,74 @@ export const ProposalDetailsPage: React.FC = () => {
       showToast(err.response?.data?.message || 'Failed to decline proposal.', 'error');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleSaveEditProposal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    const numericBid = Number(editBidAmount);
+    if (isNaN(numericBid) || numericBid <= 0) {
+      showToast('Please enter a valid bid amount greater than zero.', 'error');
+      return;
+    }
+    const numericDays = Number(editDeliveryTime);
+    if (isNaN(numericDays) || numericDays < 1) {
+      showToast('Please enter a valid estimated delivery duration (at least 1 day).', 'error');
+      return;
+    }
+    if (!editCoverLetter.trim()) {
+      showToast('Please provide a pitch or cover letter describing your solution.', 'error');
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      const res = await proposalAPI.updateProposal(id, {
+        bidAmount: numericBid,
+        price: numericBid,
+        estimatedDays: numericDays,
+        deliveryTime: numericDays,
+        coverLetter: editCoverLetter.trim(),
+        description: editCoverLetter.trim(),
+      });
+
+      if (res?.success) {
+        setProposal((prev: any) => ({
+          ...prev,
+          price: numericBid,
+          bidAmount: numericBid,
+          deliveryTime: numericDays,
+          estimatedDays: numericDays,
+          description: editCoverLetter.trim(),
+          coverLetter: editCoverLetter.trim(),
+        }));
+        showToast('Proposal updated successfully!', 'success');
+        setShowEditModal(false);
+      }
+    } catch (err: any) {
+      console.error('Update proposal error:', err);
+      showToast(err?.response?.data?.message || 'Failed to update proposal', 'error');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleConfirmWithdraw = async () => {
+    if (!id) return;
+    setWithdrawing(true);
+    try {
+      const res = await proposalAPI.withdrawProposal(id);
+      if (res?.success) {
+        setProposal((prev: any) => ({ ...prev, status: 'withdrawn' }));
+        showToast('Proposal withdrawn successfully.', 'info');
+        setShowWithdrawModal(false);
+      }
+    } catch (err: any) {
+      console.error('Withdraw proposal error:', err);
+      showToast(err?.response?.data?.message || 'Failed to withdraw proposal', 'error');
+    } finally {
+      setWithdrawing(false);
     }
   };
 
@@ -395,20 +479,67 @@ export const ProposalDetailsPage: React.FC = () => {
                 )
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '8px' }}>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '4px' }}>
                     {proposal.status === 'accepted'
-                      ? 'The client accepted your proposal! Funds are held in Escrow.'
+                      ? '🎉 The client accepted your proposal! Funds are held in Escrow.'
                       : proposal.status === 'rejected'
                       ? 'The client declined this proposal.'
-                      : 'Your proposal is currently under review by the client.'}
+                      : proposal.status === 'withdrawn'
+                      ? 'You have withdrawn your proposal for this role.'
+                      : 'Your proposal is currently pending review by the client.'}
                   </div>
+
+                  {/* Pending Freelancer Actions: Edit & Withdraw */}
+                  {proposal.status === 'pending' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '8px' }}>
+                      <button
+                        onClick={() => {
+                          setEditBidAmount(proposal.price || proposal.bidAmount || 0);
+                          setEditDeliveryTime(proposal.deliveryTime || proposal.estimatedDays || 14);
+                          setEditCoverLetter(proposal.description || proposal.coverLetter || '');
+                          setShowEditModal(true);
+                        }}
+                        className="btn-primary"
+                        style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                      >
+                        <Edit3 size={15} /> Edit Proposal
+                      </button>
+
+                      <button
+                        onClick={() => setShowWithdrawModal(true)}
+                        style={{
+                          width: '100%',
+                          padding: '11px',
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-color)',
+                          background: 'var(--bg-secondary)',
+                          color: '#EF4444',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <RotateCcw size={15} /> Withdraw Proposal
+                      </button>
+                    </div>
+                  )}
+
+                  {proposal.status === 'withdrawn' && (
+                    <div style={{ background: 'var(--bg-secondary)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.82rem', fontWeight: 600, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <RotateCcw size={14} /> Proposal Withdrawn
+                    </div>
+                  )}
 
                   <button
                     onClick={() => navigate(`/jobs/${proposal.jobId?._id || proposal.jobId}`)}
-                    className="btn-primary"
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', fontSize: '0.88rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    style={{ width: '100%', padding: '11px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontSize: '0.86rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
                   >
-                    <Briefcase size={16} /> View Job Listing
+                    <Briefcase size={15} /> View Job Listing
                   </button>
 
                   <button
@@ -416,14 +547,213 @@ export const ProposalDetailsPage: React.FC = () => {
                       const clientUserId = proposal.jobId?.clientId?._id || proposal.jobId?.clientId || proposal.clientId;
                       navigate(clientUserId ? `/messages?user=${clientUserId}` : '/messages');
                     }}
-                    style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    style={{ width: '100%', padding: '11px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
-                    <MessageSquare size={16} /> Chat Workspace
+                    <MessageSquare size={15} /> Chat Workspace
                   </button>
                 </div>
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Edit Proposal Modal */}
+      {showEditModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div
+            onClick={() => !savingEdit && setShowEditModal(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '540px',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+              zIndex: 410,
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit3 size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: '1.08rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  Edit Proposal
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => !savingEdit && setShowEditModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditProposal}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                    Proposed Bid Rate ({proposal.jobId?.currency || 'USD'})
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editBidAmount}
+                    onChange={(e) => setEditBidAmount(e.target.value)}
+                    required
+                    className="input-field no-icon"
+                    style={{ padding: '10px 14px', fontSize: '0.9rem', width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                    Est. Delivery (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editDeliveryTime}
+                    onChange={(e) => setEditDeliveryTime(e.target.value)}
+                    required
+                    className="input-field no-icon"
+                    style={{ padding: '10px 14px', fontSize: '0.9rem', width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                  Cover Letter / Solution Pitch
+                </label>
+                <textarea
+                  rows={6}
+                  value={editCoverLetter}
+                  onChange={(e) => setEditCoverLetter(e.target.value)}
+                  required
+                  placeholder="Explain why you are the best fit for this project..."
+                  className="input-field no-icon"
+                  style={{ padding: '12px 14px', fontSize: '0.88rem', width: '100%', resize: 'vertical', minHeight: '120px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  disabled={savingEdit}
+                  onClick={() => setShowEditModal(false)}
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: '10px',
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="btn-primary"
+                  style={{ padding: '9px 20px', borderRadius: '10px', fontSize: '0.84rem', fontWeight: 700 }}
+                >
+                  {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Save Updates
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Withdraw Proposal Confirmation Modal */}
+      {showWithdrawModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div
+            onClick={() => !withdrawing && setShowWithdrawModal(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '440px',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+              zIndex: 410,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+                <AlertCircle size={18} />
+              </div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                Withdraw Proposal?
+              </h3>
+            </div>
+
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+              Are you sure you want to withdraw your proposal for <strong>"{proposal.jobId?.title || 'this job'}"</strong>? The client will no longer review or consider your application.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                disabled={withdrawing}
+                onClick={() => setShowWithdrawModal(false)}
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-secondary)',
+                  fontWeight: 600,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Keep Proposal
+              </button>
+              <button
+                type="button"
+                disabled={withdrawing}
+                onClick={handleConfirmWithdraw}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: '10px',
+                  background: '#EF4444',
+                  border: 'none',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {withdrawing ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Withdraw
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </DashboardLayout>

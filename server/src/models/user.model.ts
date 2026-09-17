@@ -32,6 +32,7 @@ export interface IUser extends Document {
   sparks?: number;
   companyName?: string;
   website?: string;
+  portfolioWebsite?: string;
   termsAccepted?: boolean;
   companyOverview?: string;
   employment?: any[];
@@ -88,6 +89,7 @@ const UserSchema: Schema<IUser> = new Schema(
     currency: { type: String, required: false },
     companyName: { type: String, required: false },
     website: { type: String, required: false },
+    portfolioWebsite: { type: String, required: false },
     companyOverview: { type: String, required: false },
     employment: [Schema.Types.Mixed],
     workExperience: [

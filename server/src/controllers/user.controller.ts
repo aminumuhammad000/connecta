@@ -1384,7 +1384,7 @@ export const updateMe = async (req: Request, res: Response) => {
     const {
       firstName, lastName, email, phoneNumber, profileImage, pushToken, whatsapp,
       title, bio, location, country, currency, preferredLanguage, companyName,
-      website, companyOverview, employment, workExperience, education, languages, portfolio, hourlyRate, yearsOfExperience, workType, skills, resume, cv
+      website, portfolioWebsite, companyOverview, employment, workExperience, education, languages, portfolio, hourlyRate, yearsOfExperience, workType, skills, resume, cv
     } = req.body;
 
     const user = await User.findById(userId);
@@ -1407,6 +1407,7 @@ export const updateMe = async (req: Request, res: Response) => {
     if (preferredLanguage !== undefined) (user as any).preferredLanguage = preferredLanguage;
     if (companyName !== undefined) (user as any).companyName = companyName;
     if (website !== undefined) (user as any).website = website;
+    if (portfolioWebsite !== undefined) (user as any).portfolioWebsite = portfolioWebsite;
     if (companyOverview !== undefined) (user as any).companyOverview = companyOverview;
     if (employment !== undefined && Array.isArray(employment)) (user as any).employment = employment;
     if (workExperience !== undefined && Array.isArray(workExperience)) (user as any).workExperience = workExperience;
@@ -1430,6 +1431,8 @@ export const updateMe = async (req: Request, res: Response) => {
         {
           companyName,
           website,
+          portfolioWebsite: portfolioWebsite || website,
+          currency,
           employment,
           bio,
           jobTitle: title,

@@ -16,6 +16,8 @@ export interface IProfile extends Document {
   timezone?: string;
   preferredLanguage?: string;
   website?: string;
+  portfolioWebsite?: string;
+  currency?: string;
   companyName?: string;
   jobTitle: string;
   avatar?: string;
@@ -51,6 +53,8 @@ const ProfileSchema = new Schema<IProfile>(
     timezone: { type: String },
     preferredLanguage: { type: String },
     website: { type: String },
+    portfolioWebsite: { type: String },
+    currency: { type: String },
     companyName: { type: String },
     jobTitle: { type: String },
     avatar: { type: String },

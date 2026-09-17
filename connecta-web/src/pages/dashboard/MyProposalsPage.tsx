@@ -1,18 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
-import { FileText, Clock, CheckCircle2, XCircle, ArrowUpRight, Search, Bot } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, XCircle, ArrowUpRight, Search, Bot, Edit3, RotateCcw, AlertCircle, X, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { proposalAPI } from '../../services/api';
 import { CardSkeleton, MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
+import { useToast } from '../../contexts/ToastContext';
 
 export const MyProposalsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [proposals, setProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected' | 'withdrawn'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Quick Action Modals State
+  const [selectedProposal, setSelectedProposal] = useState<any | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [editBidAmount, setEditBidAmount] = useState<number | string>(0);
+  const [editDeliveryTime, setEditDeliveryTime] = useState<number | string>(14);
+  const [editCoverLetter, setEditCoverLetter] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   useEffect(() => {
     fetchProposals();
@@ -31,6 +43,97 @@ export const MyProposalsPage: React.FC = () => {
     }
   };
 
+  const openEditProposalModal = (e: React.MouseEvent, prop: any) => {
+    e.stopPropagation();
+    setSelectedProposal(prop);
+    setEditBidAmount(prop.price || prop.bidAmount || 0);
+    setEditDeliveryTime(prop.deliveryTime || prop.estimatedDays || 14);
+    setEditCoverLetter(prop.description || prop.coverLetter || '');
+    setShowEditModal(true);
+  };
+
+  const openWithdrawProposalModal = (e: React.MouseEvent, prop: any) => {
+    e.stopPropagation();
+    setSelectedProposal(prop);
+    setShowWithdrawModal(true);
+  };
+
+  const handleSaveEditProposal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProposal?._id) return;
+    const numericBid = Number(editBidAmount);
+    if (isNaN(numericBid) || numericBid <= 0) {
+      showToast('Please enter a valid bid amount greater than zero.', 'error');
+      return;
+    }
+    const numericDays = Number(editDeliveryTime);
+    if (isNaN(numericDays) || numericDays < 1) {
+      showToast('Please enter a valid delivery timeline (at least 1 day).', 'error');
+      return;
+    }
+    if (!editCoverLetter.trim()) {
+      showToast('Please provide a pitch or cover letter describing your solution.', 'error');
+      return;
+    }
+
+    setSavingEdit(true);
+    try {
+      const res = await proposalAPI.updateProposal(selectedProposal._id, {
+        bidAmount: numericBid,
+        price: numericBid,
+        estimatedDays: numericDays,
+        deliveryTime: numericDays,
+        coverLetter: editCoverLetter.trim(),
+        description: editCoverLetter.trim(),
+      });
+
+      if (res?.success) {
+        setProposals((prev) =>
+          prev.map((p) =>
+            p._id === selectedProposal._id
+              ? {
+                  ...p,
+                  price: numericBid,
+                  bidAmount: numericBid,
+                  deliveryTime: numericDays,
+                  estimatedDays: numericDays,
+                  description: editCoverLetter.trim(),
+                  coverLetter: editCoverLetter.trim(),
+                }
+              : p
+          )
+        );
+        showToast('Proposal updated successfully!', 'success');
+        setShowEditModal(false);
+      }
+    } catch (err: any) {
+      console.error('Update proposal error:', err);
+      showToast(err?.response?.data?.message || 'Failed to update proposal', 'error');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleConfirmWithdraw = async () => {
+    if (!selectedProposal?._id) return;
+    setWithdrawing(true);
+    try {
+      const res = await proposalAPI.withdrawProposal(selectedProposal._id);
+      if (res?.success) {
+        setProposals((prev) =>
+          prev.map((p) => (p._id === selectedProposal._id ? { ...p, status: 'withdrawn' } : p))
+        );
+        showToast('Proposal withdrawn successfully.', 'info');
+        setShowWithdrawModal(false);
+      }
+    } catch (err: any) {
+      console.error('Withdraw proposal error:', err);
+      showToast(err?.response?.data?.message || 'Failed to withdraw proposal', 'error');
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'accepted':
@@ -44,6 +147,12 @@ export const MyProposalsPage: React.FC = () => {
         return (
           <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: 'rgba(239,68,68,0.1)', color: '#EF4444', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             <XCircle size={12} /> Declined
+          </span>
+        );
+      case 'withdrawn':
+        return (
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: 'var(--bg-secondary)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <RotateCcw size={12} /> Withdrawn
           </span>
         );
       default:
@@ -63,6 +172,7 @@ export const MyProposalsPage: React.FC = () => {
     if (activeFilter === 'pending') return matchesSearch && (status === 'pending' || status === 'under_review' || status === '');
     if (activeFilter === 'accepted') return matchesSearch && status === 'accepted';
     if (activeFilter === 'rejected') return matchesSearch && (status === 'rejected' || status === 'declined');
+    if (activeFilter === 'withdrawn') return matchesSearch && status === 'withdrawn';
     return matchesSearch;
   });
 
@@ -77,17 +187,18 @@ export const MyProposalsPage: React.FC = () => {
               Submitted Proposals
             </h1>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-              Track active bids and proposal reviews.
+              Track active bids, edit pitches, or withdraw applications.
             </p>
           </div>
 
           {/* Desktop Segmented Filter Pills */}
-          <div className="desktop-proposals-tabs" style={{ display: 'inline-flex', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)', gap: '4px' }}>
+          <div className="desktop-proposals-tabs" style={{ display: 'inline-flex', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)', gap: '4px', flexWrap: 'wrap' }}>
             {[
               { id: 'all', label: `All (${proposals.length})` },
               { id: 'pending', label: 'In Review' },
               { id: 'accepted', label: 'Accepted' },
-              { id: 'rejected', label: 'Declined' }
+              { id: 'rejected', label: 'Declined' },
+              { id: 'withdrawn', label: 'Withdrawn' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -245,7 +356,48 @@ export const MyProposalsPage: React.FC = () => {
                   </div>
 
                   {/* Bottom Toolbar */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', pt: '8px', borderTop: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '8px', pt: '8px', borderTop: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
+                    {item.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={(e) => openEditProposalModal(e, item)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            background: 'rgba(253,103,48,0.1)',
+                            color: 'var(--primary)',
+                            border: '1px solid rgba(253,103,48,0.25)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Edit3 size={12} /> Edit Proposal
+                        </button>
+                        <button
+                          onClick={(e) => openWithdrawProposalModal(e, item)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            background: 'var(--bg-secondary)',
+                            color: '#EF4444',
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <RotateCcw size={12} /> Withdraw
+                        </button>
+                      </>
+                    )}
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -272,6 +424,205 @@ export const MyProposalsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Proposal Modal */}
+      {showEditModal && selectedProposal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div
+            onClick={() => !savingEdit && setShowEditModal(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '540px',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+              zIndex: 410,
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Edit3 size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: '1.08rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  Edit Proposal Pitch
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => !savingEdit && setShowEditModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditProposal}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                    Proposed Bid Rate ({selectedProposal.jobId?.currency || 'USD'})
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editBidAmount}
+                    onChange={(e) => setEditBidAmount(e.target.value)}
+                    required
+                    className="input-field no-icon"
+                    style={{ padding: '10px 14px', fontSize: '0.9rem', width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                    Est. Delivery (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editDeliveryTime}
+                    onChange={(e) => setEditDeliveryTime(e.target.value)}
+                    required
+                    className="input-field no-icon"
+                    style={{ padding: '10px 14px', fontSize: '0.9rem', width: '100%' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '6px' }}>
+                  Cover Letter / Solution Pitch
+                </label>
+                <textarea
+                  rows={6}
+                  value={editCoverLetter}
+                  onChange={(e) => setEditCoverLetter(e.target.value)}
+                  required
+                  placeholder="Explain why you are the best fit for this project..."
+                  className="input-field no-icon"
+                  style={{ padding: '12px 14px', fontSize: '0.88rem', width: '100%', resize: 'vertical', minHeight: '120px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  disabled={savingEdit}
+                  onClick={() => setShowEditModal(false)}
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: '10px',
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 600,
+                    fontSize: '0.84rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="btn-primary"
+                  style={{ padding: '9px 20px', borderRadius: '10px', fontSize: '0.84rem', fontWeight: 700 }}
+                >
+                  {savingEdit ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Save Updates
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Withdraw Proposal Confirmation Modal */}
+      {showWithdrawModal && selectedProposal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div
+            onClick={() => !withdrawing && setShowWithdrawModal(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '440px',
+              borderRadius: '20px',
+              padding: '24px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+              zIndex: 410,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+                <AlertCircle size={18} />
+              </div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                Withdraw Proposal?
+              </h3>
+            </div>
+
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
+              Are you sure you want to withdraw your proposal for <strong>"{selectedProposal.jobId?.title || selectedProposal.jobTitle || 'this role'}"</strong>? The client will no longer review or consider your application.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                disabled={withdrawing}
+                onClick={() => setShowWithdrawModal(false)}
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-secondary)',
+                  fontWeight: 600,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Keep Proposal
+              </button>
+              <button
+                type="button"
+                disabled={withdrawing}
+                onClick={handleConfirmWithdraw}
+                style={{
+                  padding: '9px 18px',
+                  borderRadius: '10px',
+                  background: '#EF4444',
+                  border: 'none',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {withdrawing ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />} Confirm Withdraw
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };
