@@ -3,7 +3,7 @@ import axios from 'axios';
 const getSecretKey = () => process.env.FLUTTERWAVE_SECRET_KEY || '';
 const getClientId = () => process.env.FLUTTERWAVE_CLIENT_ID || '';
 const getPublicKey = () => process.env.FLUTTERWAVE_PUBLIC_KEY || '';
-const getSecretHash = () => process.env.FLUTTERWAVE_SECRET_HASH || 'connecta_flw_secret_hash_2026';
+const getSecretHash = () => process.env.FLUTTERWAVE_SECRET_HASH || '550909250e84b035e62a2cdf6f3f002c39f8ee6b0c1eca3a';
 const FLW_BASE_URL = 'https://api.flutterwave.com/v3';
 const FLW_OAUTH_URL = 'https://idp.flutterwave.com/realms/flutterwave/protocol/openid-connect/token';
 
@@ -308,7 +308,9 @@ export const flutterwaveService = {
    * Verify Webhook Signature
    */
   verifyWebhookHash: (signature: string) => {
-    return signature === getSecretHash();
+    if (!signature) return false;
+    const secretHash = getSecretHash();
+    return signature.trim() === secretHash.trim();
   }
 };
 

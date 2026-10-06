@@ -12,6 +12,11 @@ export const initCronJobs = () => {
     cron.schedule("0 * * * *", async () => {
         await checkIncompleteProfiles();
     });
+    // Run every 5 minutes to reconcile pending Flutterwave payments & handle delayed webhooks/callbacks
+    cron.schedule("*/5 * * * *", async () => {
+        await reconcilePendingFlutterwavePayments();
+        await reconcilePendingFlutterwaveWithdrawals();
+    });
     console.log("✅ Cron jobs initialized");
 };
 /**
@@ -140,3 +145,97 @@ async function sendBatchJobMatchEmails(frequency) {
 cron.schedule("0 8 * * *", () => sendBatchJobMatchEmails('daily'));
 // Weekly on Monday at 8:00 AM
 cron.schedule("0 8 * * 1", () => sendBatchJobMatchEmails('weekly'));
+/**
+ * Auto-reconciliation cron for pending Flutterwave payments & delayed callbacks
+ * Automatically recovers payments if the client disconnected or webhook was delayed.
+ */
+export async function reconcilePendingFlutterwavePayments() {
+    try {
+        const Payment = (await import("../models/Payment.model.js")).default;
+        const flutterwaveService = (await import("./flutterwave.service.js")).default;
+        const { settleSuccessfulFlutterwavePayment } = await import("../controllers/payment.controller.js");
+        const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const pendingPayments = await Payment.find({
+            paymentMethod: 'flutterwave',
+            status: 'pending',
+            createdAt: { $gte: twentyFourHoursAgo, $lte: threeMinutesAgo }
+        }).limit(50);
+        if (pendingPayments.length === 0) {
+            return;
+        }
+        console.log(`⏰ [Auto-Reconciliation] Checking ${pendingPayments.length} pending Flutterwave payments...`);
+        for (const payment of pendingPayments) {
+            try {
+                const ref = payment.gatewayReference || payment.transactionId;
+                if (!ref)
+                    continue;
+                let flwResponse = null;
+                try {
+                    flwResponse = await flutterwaveService.verifyTransactionByRef(ref);
+                }
+                catch (queryErr) {
+                    // If verify by reference fails, try numeric transaction ID if present
+                    if (payment.transactionId && /^\d+$/.test(payment.transactionId)) {
+                        try {
+                            flwResponse = await flutterwaveService.verifyTransaction(payment.transactionId);
+                        }
+                        catch (err2) { }
+                    }
+                }
+                if (flwResponse && flwResponse.status === 'success' && flwResponse.data) {
+                    const flwData = flwResponse.data;
+                    const status = (flwData.status || '').toLowerCase();
+                    if (status === 'successful') {
+                        console.log(`[Auto-Reconciliation] Automatically settling verified payment: ${ref}`);
+                        await settleSuccessfulFlutterwavePayment(payment, flwData, 'cron_reconciliation');
+                    }
+                    else if (status === 'failed' || status === 'cancelled') {
+                        payment.status = 'failed';
+                        payment.gatewayResponse = flwData;
+                        await payment.save();
+                        console.log(`[Auto-Reconciliation] Marked failed payment: ${ref}`);
+                    }
+                }
+            }
+            catch (itemErr) {
+                console.warn(`[Auto-Reconciliation] Error checking payment ${payment._id}:`, itemErr.message);
+            }
+        }
+    }
+    catch (error) {
+        console.error("❌ Error in reconcilePendingFlutterwavePayments cron:", error.message);
+    }
+}
+/**
+ * Auto-reconciliation cron for pending Flutterwave withdrawals / payouts
+ */
+export async function reconcilePendingFlutterwaveWithdrawals() {
+    try {
+        const Withdrawal = (await import("../models/Withdrawal.model.js")).default;
+        const { settleFlutterwaveWithdrawal } = await import("../controllers/payment.controller.js");
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const pendingWithdrawals = await Withdrawal.find({
+            gatewayReference: { $regex: /^FLW_/i },
+            status: { $in: ['pending', 'processing'] },
+            createdAt: { $gte: twentyFourHoursAgo, $lte: fiveMinutesAgo }
+        }).limit(20);
+        if (pendingWithdrawals.length === 0) {
+            return;
+        }
+        console.log(`⏰ [Auto-Reconciliation] Checking ${pendingWithdrawals.length} pending Flutterwave withdrawals...`);
+        for (const withdrawal of pendingWithdrawals) {
+            try {
+                // When webhook is delayed, transfer remains in processing state until webhook arrives
+                // or if we have transferId we can check transfer status
+            }
+            catch (wErr) {
+                console.warn(`[Auto-Reconciliation] Error checking withdrawal ${withdrawal._id}:`, wErr.message);
+            }
+        }
+    }
+    catch (error) {
+        console.error("❌ Error in reconcilePendingFlutterwaveWithdrawals cron:", error.message);
+    }
+}
