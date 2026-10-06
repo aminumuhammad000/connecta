@@ -342,7 +342,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Fast Idempotency Check: If already completed, return existing settlement immediately
+    // 2. Terminal State Guard: If payment was already failed, cancelled, or refunded, prevent processing
+    if (payment && (payment.status === 'failed' || payment.status === 'cancelled' || payment.status === 'refunded')) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment is already marked as ${payment.status} and cannot be processed`,
+        data: payment,
+      });
+    }
+
+    // 3. Fast Idempotency Check: If already completed, return existing settlement immediately
     if (payment && payment.status === 'completed') {
       return res.status(200).json({
         success: true,
@@ -351,11 +360,22 @@ export const verifyPayment = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Verify with VTStack
+    // 4. Verify with VTStack
     const vtResponse = await vtstackService.verifyPayment(transactionId);
 
-    if (!vtResponse.status || vtResponse.data.status !== 'success') {
-      return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
+    if (!vtResponse.status || (vtResponse.data?.status !== 'success' && vtResponse.data?.status !== 'successful')) {
+      const failedStatus = vtResponse.data?.status || 'failed';
+      if (payment) {
+        payment.status = 'failed';
+        payment.metadata = { ...payment.metadata, failureReason: `Gateway verification status: ${failedStatus}` };
+        payment.gatewayResponse = vtResponse.data || vtResponse;
+        await payment.save();
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed at gateway',
+        data: { status: failedStatus }
+      });
     }
 
     if (!payment) {
@@ -375,7 +395,16 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Payment record not found' });
     }
 
-    // 4. Validate Gateway Currency & Amount against original Connecta record
+    // Terminal state check again in case payment was located from gateway response
+    if (payment.status === 'failed' || payment.status === 'cancelled' || payment.status === 'refunded') {
+      return res.status(400).json({
+        success: false,
+        message: `Payment is already marked as ${payment.status} and cannot be processed`,
+        data: payment,
+      });
+    }
+
+    // 5. Validate Gateway Currency & Amount against original Connecta record
     const expectedCurrency = (payment.currency || 'NGN').toUpperCase();
     const paidCurrency = (vtResponse.data.currency || 'NGN').toUpperCase();
     if (paidCurrency !== expectedCurrency) {
@@ -399,9 +428,9 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: `Payment amount mismatch: received ${paidAmount}, expected ${expectedAmount}` });
     }
 
-    // 5. Atomic State Transition (guarantees single settlement execution)
+    // 6. Atomic State Transition (guarantees single settlement execution and rejects non-pending/non-processing states)
     const updatedPayment = await Payment.findOneAndUpdate(
-      { _id: payment._id, status: { $ne: 'completed' } },
+      { _id: payment._id, status: { $in: ['pending', 'processing'] } },
       {
         $set: {
           status: 'completed',
@@ -413,11 +442,18 @@ export const verifyPayment = async (req: Request, res: Response) => {
     );
 
     if (!updatedPayment) {
-      // Payment was already transitioned by concurrent request
-      return res.status(200).json({
-        success: true,
-        message: 'Payment already verified and processed',
-        data: payment,
+      const currentPayment = await Payment.findById(payment._id);
+      if (currentPayment?.status === 'completed') {
+        return res.status(200).json({
+          success: true,
+          message: 'Payment already verified and processed',
+          data: currentPayment,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: `Payment cannot be processed because it is marked as ${currentPayment?.status}`,
+        data: currentPayment,
       });
     }
 
@@ -2088,15 +2124,37 @@ export const settleSuccessfulFlutterwavePayment = async (
     return { success: false, reason: 'payment_not_found' };
   }
 
+  // 1. Terminal State Guard: Failed, cancelled, or refunded payments must NEVER be settled or resurrected
+  if (payment.status === 'failed' || payment.status === 'cancelled' || payment.status === 'refunded') {
+    console.warn(`[Flutterwave Settlement - ${source}] Payment ${payment._id} is already in terminal state '${payment.status}'. Settlement rejected.`);
+    return { success: false, reason: `payment_already_${payment.status}` };
+  }
+
   // If already completed, return existing settlement immediately
   if (payment.status === 'completed') {
     const wallet = await Wallet.findOne({ userId: payment.payerId });
     return { success: true, alreadyProcessed: true, payment, wallet };
   }
 
-  // 1. Validate Currency
+  // 2. Gateway Status Validation: Must be strictly 'successful' or 'success'
+  const gatewayStatus = (flwData?.status || '').toLowerCase();
+  if (gatewayStatus !== 'successful' && gatewayStatus !== 'success') {
+    console.warn(`[Flutterwave Settlement - ${source}] Payment gateway status is '${gatewayStatus}' (not successful) for ${payment._id}`);
+    if (gatewayStatus === 'failed' || gatewayStatus === 'cancelled') {
+      payment.status = gatewayStatus;
+      payment.metadata = {
+        ...payment.metadata,
+        failureReason: flwData?.processor_response || flwData?.narrative || `Payment ${gatewayStatus} at gateway`
+      };
+      payment.gatewayResponse = flwData;
+      await payment.save();
+    }
+    return { success: false, reason: `gateway_status_${gatewayStatus || 'invalid'}` };
+  }
+
+  // 3. Validate Currency
   const expectedCurrency = (payment.currency || 'USD').toUpperCase();
-  const paidCurrency = (flwData.currency || '').toUpperCase();
+  const paidCurrency = (flwData?.currency || '').toUpperCase();
   if (paidCurrency && paidCurrency !== expectedCurrency) {
     console.warn(`[Flutterwave Settlement - ${source}] Currency mismatch for ${payment._id}: expected ${expectedCurrency}, got ${paidCurrency}`);
     payment.status = 'failed';
@@ -2106,9 +2164,9 @@ export const settleSuccessfulFlutterwavePayment = async (
     return { success: false, reason: 'currency_mismatch' };
   }
 
-  // 2. Validate Amount (ensure paid amount is not less than expected amount)
+  // 4. Validate Amount (ensure paid amount is not less than expected amount)
   const expectedAmount = Number(payment.amount || 0);
-  const paidAmount = Number(flwData.amount || flwData.charged_amount || 0);
+  const paidAmount = Number(flwData?.amount || flwData?.charged_amount || 0);
   const tolerance = 0.01;
 
   if (paidAmount < (expectedAmount - tolerance)) {
@@ -2120,12 +2178,12 @@ export const settleSuccessfulFlutterwavePayment = async (
     return { success: false, reason: 'underpaid' };
   }
 
-  // 3. Atomic State Transition (Double-spend & concurrency lock)
+  // 5. Atomic State Transition (Double-spend & concurrency lock: only pending or processing can transition)
   const finalAmount = paidAmount > expectedAmount ? paidAmount : expectedAmount;
   const finalNetAmount = paidAmount > expectedAmount ? (paidAmount - (payment.platformFee || 0)) : payment.netAmount;
 
   const updatedPayment = await Payment.findOneAndUpdate(
-    { _id: payment._id, status: { $ne: 'completed' } },
+    { _id: payment._id, status: { $in: ['pending', 'processing'] } },
     {
       $set: {
         status: 'completed',
@@ -2134,16 +2192,21 @@ export const settleSuccessfulFlutterwavePayment = async (
         paidAt: new Date(),
         gatewayResponse: flwData,
         gatewayReference: verifiedTxRef,
-        transactionId: String(flwData.id || verifiedTxRef)
+        transactionId: String(flwData?.id || verifiedTxRef)
       }
     },
     { new: true }
   );
 
   if (!updatedPayment) {
-    console.log(`[Flutterwave Settlement - ${source}] Payment ${payment._id} was already transitioned. Skipping duplicate execution.`);
-    const wallet = await Wallet.findOne({ userId: payment.payerId });
-    return { success: true, alreadyProcessed: true, payment, wallet };
+    const currentPayment = await Payment.findById(payment._id);
+    if (currentPayment?.status === 'completed') {
+      console.log(`[Flutterwave Settlement - ${source}] Payment ${payment._id} was already transitioned. Skipping duplicate execution.`);
+      const wallet = await Wallet.findOne({ userId: payment.payerId });
+      return { success: true, alreadyProcessed: true, payment: currentPayment, wallet };
+    }
+    console.warn(`[Flutterwave Settlement - ${source}] Payment ${payment._id} transition rejected. Current status: '${currentPayment?.status}'.`);
+    return { success: false, reason: `payment_in_invalid_state_${currentPayment?.status}` };
   }
 
   payment = updatedPayment;
@@ -2518,7 +2581,16 @@ export const verifyFlutterwavePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // 3. Idempotency Check: If payment is already completed, return existing settlement immediately
+    // 3. Terminal State Guard: Reject already failed, cancelled, or refunded payments
+    if (payment && (payment.status === 'failed' || payment.status === 'cancelled' || payment.status === 'refunded')) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment is already marked as ${payment.status} and cannot be processed`,
+        data: { payment, status: payment.status }
+      });
+    }
+
+    // 4. Idempotency Check: If payment is already completed, return existing settlement immediately
     if (payment && payment.status === 'completed') {
       const userWallet = await Wallet.findOne({ userId: payment.payerId });
       return res.status(200).json({
@@ -2532,7 +2604,7 @@ export const verifyFlutterwavePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // 4. Query Flutterwave API server-side
+    // 5. Query Flutterwave API server-side
     const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
     let flwResponse: any = null;
 
@@ -2561,11 +2633,15 @@ export const verifyFlutterwavePayment = async (req: Request, res: Response) => {
 
     const flwData = flwResponse.data;
 
-    // 5. Validate Gateway Transaction Status
+    // 6. Validate Gateway Transaction Status (strictly block failed, cancelled, or pending)
     const gatewayStatus = (flwData.status || '').toLowerCase();
-    if (gatewayStatus !== 'successful') {
+    if (gatewayStatus !== 'successful' && gatewayStatus !== 'success') {
       if (payment) {
-        payment.status = gatewayStatus === 'failed' ? 'failed' : 'pending';
+        payment.status = (gatewayStatus === 'failed' || gatewayStatus === 'cancelled') ? gatewayStatus : 'failed';
+        payment.metadata = {
+          ...payment.metadata,
+          failureReason: flwData.processor_response || flwData.narrative || `Gateway returned status: ${gatewayStatus}`
+        };
         payment.gatewayResponse = flwData;
         await payment.save();
       }
@@ -2576,7 +2652,7 @@ export const verifyFlutterwavePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // 6. Find Payment by verified Flutterwave tx_ref if not found initially
+    // 7. Find Payment by verified Flutterwave tx_ref if not found initially
     const verifiedTxRef = flwData.tx_ref;
     if (!payment && verifiedTxRef) {
       payment = await Payment.findOne({
@@ -2592,6 +2668,15 @@ export const verifyFlutterwavePayment = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: `Payment record not found for transaction reference: ${verifiedTxRef || txRef}`
+      });
+    }
+
+    // Check terminal state again if loaded by tx_ref
+    if (payment.status === 'failed' || payment.status === 'cancelled' || payment.status === 'refunded') {
+      return res.status(400).json({
+        success: false,
+        message: `Payment is already marked as ${payment.status} and cannot be processed`,
+        data: { payment, status: payment.status }
       });
     }
 
