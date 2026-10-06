@@ -34,13 +34,11 @@ const ClientWalletScreen = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [virtualAccount, setVirtualAccount] = useState<any>(null);
 
     // Deposit modal
     const [showDepositModal, setShowDepositModal] = useState(false);
     const [depositAmount, setDepositAmount] = useState('');
     const [isDepositing, setIsDepositing] = useState(false);
-    const [depositTab, setDepositTab] = useState<'online' | 'transfer'>('transfer');
 
     const scrollX = useRef(new Animated.Value(0)).current;
     const flatListRef = useRef<FlatList>(null);
@@ -54,10 +52,9 @@ const ClientWalletScreen = () => {
     const loadData = useCallback(async (isManual = false) => {
         try {
             if (isManual) setIsLoading(true);
-            const [walletData, txnsData, vtAcc] = await Promise.all([
+            const [walletData, txnsData] = await Promise.all([
                 paymentService.getWalletBalance().catch(() => null),
                 paymentService.getTransactions().catch(() => []),
-                paymentService.getVTStackVirtualAccount().catch(() => null),
             ]);
             
             if (walletData) setWallet(walletData);
@@ -75,7 +72,6 @@ const ClientWalletScreen = () => {
                 const sorted = [...mappedTxns].sort((a: any, b: any) => b.rawDate.getTime() - a.rawDate.getTime());
                 setTransactions(sorted);
             }
-            if (vtAcc) setVirtualAccount(vtAcc);
         } catch (error) {
             console.error('Error loading client wallet:', error);
         } finally {
@@ -83,23 +79,6 @@ const ClientWalletScreen = () => {
             setRefreshing(false);
         }
     }, []);
-
-    const handleGenerateAccount = async () => {
-        try {
-            setIsLoading(true);
-            const data = await paymentService.getVTStackVirtualAccount();
-            if (data && data.accountNumber) {
-                setVirtualAccount(data);
-                showAlert({ title: 'Success', message: 'Virtual account generated successfully!', type: 'success' });
-            } else {
-                showAlert({ title: 'Failed', message: 'Could not generate virtual account. Please contact support.', type: 'error' });
-            }
-        } catch (error: any) {
-            showAlert({ title: 'Error', message: error.message || 'Failed to generate account', type: 'error' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
@@ -244,70 +223,6 @@ const ClientWalletScreen = () => {
                    {renderNairaCard()}
                 </View>
 
-                {/* Virtual Account Section */}
-                {virtualAccount && (
-                    <View style={{ marginHorizontal: 20, marginTop: 24, marginBottom: 32 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                            <View style={{ backgroundColor: c.primary + '15', padding: 8, borderRadius: 10 }}>
-                                <MaterialIcons name="account-balance" size={20} color={c.primary} />
-                            </View>
-                            <Text style={[styles.sectionTitle, { color: c.text, marginBottom: 0 }]}>
-                                Dedicated Funding Account
-                            </Text>
-                        </View>
-                        <View style={{ 
-                            backgroundColor: c.card, 
-                            borderRadius: 28, 
-                            borderWidth: 1, 
-                            borderColor: c.border,
-                            padding: 24,
-                            ...c.shadows.medium
-                        }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
-                                <View>
-                                    <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 }}>BANK NAME</Text>
-                                    <Text style={{ color: c.text, fontSize: 18, fontWeight: '900', marginTop: 6 }}>{virtualAccount.bankName}</Text>
-                                </View>
-                                <View style={{ alignItems: 'flex-end' }}>
-                                    <View style={{ backgroundColor: '#10B98115', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#10B98130' }}>
-                                        <Text style={{ color: '#10B981', fontSize: 10, fontWeight: '900' }}>ACTIVE</Text>
-                                    </View>
-                                </View>
-                            </View>
-
-                            <View style={{ marginBottom: 24 }}>
-                                <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 }}>ACCOUNT NUMBER</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                                    <Text style={{ color: c.text, fontSize: 28, fontWeight: '900', letterSpacing: 2 }}>{virtualAccount.accountNumber}</Text>
-                                    <TouchableOpacity 
-                                        onPress={() => {
-                                            // Handle copy to clipboard
-                                            Alert.alert('Copied!', 'Account number copied to clipboard');
-                                        }}
-                                        style={{ backgroundColor: c.background, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: c.border }}
-                                    >
-                                        <MaterialIcons name="content-copy" size={20} color={c.primary} />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            <View>
-                                <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 }}>ACCOUNT NAME</Text>
-                                <Text style={{ color: c.text, fontSize: 16, fontWeight: '700', marginTop: 6 }}>{virtualAccount.accountName}</Text>
-                            </View>
-
-                            <View style={{ marginTop: 28, paddingTop: 20, borderTopWidth: 1, borderTopColor: c.border, borderStyle: 'dashed' }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                                    <MaterialIcons name="bolt" size={18} color={c.primary} />
-                                    <Text style={{ color: c.subtext, fontSize: 12, flex: 1, lineHeight: 18 }}>
-                                        Funds sent here arrive <Text style={{ color: c.text, fontWeight: '700' }}>instantly</Text> in your wallet balance.
-                                    </Text>
-                                </View>
-                            </View>
-                        </View>
-                    </View>
-                )}
-
                 {/* Transactions Section */}
                 <View style={[styles.txnSection, { marginTop: 12 }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -377,123 +292,48 @@ const ClientWalletScreen = () => {
                                 <MaterialIcons name="close" size={24} color={c.subtext} />
                             </TouchableOpacity>
                         </View>
-                        {/* Tab Switcher */}
-                        <View style={{ flexDirection: 'row', backgroundColor: c.background, borderRadius: 12, padding: 4, marginBottom: 24 }}>
-                            <TouchableOpacity 
-                                onPress={() => {}} // Disabled for now
-                                disabled={true}
-                                style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: depositTab === 'online' ? c.card : 'transparent', opacity: 0.5 }}
-                            >
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                    <Text style={{ fontSize: 13, fontWeight: '700', color: c.subtext }}>Online Payment</Text>
-                                    <MaterialIcons name="lock" size={12} color={c.subtext} />
-                                </View>
-                            </TouchableOpacity>
-                            <TouchableOpacity 
-                                onPress={() => setDepositTab('transfer')}
-                                style={{ flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10, backgroundColor: depositTab === 'transfer' ? c.card : 'transparent', ... (depositTab === 'transfer' ? c.shadows.small : {}) }}
-                            >
-                                <Text style={{ fontSize: 13, fontWeight: '700', color: c.primary }}>Bank Transfer</Text>
-                            </TouchableOpacity>
+                        <Text style={[styles.modalSub, { color: c.subtext }]}>Enter the amount you want to deposit into your wallet.</Text>
+                        <View style={[styles.modalInput, { borderColor: c.border, backgroundColor: c.background }]}>
+                            <Text style={[{ color: c.subtext, fontSize: 16, marginRight: 8 }]}>₦</Text>
+                            <TextInput
+                                style={[{ flex: 1, color: c.text, fontSize: 20, fontWeight: '700' }]}
+                                placeholder="0.00"
+                                placeholderTextColor={c.subtext}
+                                value={depositAmount}
+                                onChangeText={setDepositAmount}
+                                keyboardType="numeric"
+                                autoFocus
+                            />
                         </View>
-
-                        {depositTab === 'online' ? (
-                            <>
-                                <Text style={[styles.modalSub, { color: c.subtext }]}>Enter the amount you want to deposit into your wallet.</Text>
-                                <View style={[styles.modalInput, { borderColor: c.border, backgroundColor: c.background }]}>
-                                    <Text style={[{ color: c.subtext, fontSize: 16, marginRight: 8 }]}>₦</Text>
-                                    <TextInput
-                                        style={[{ flex: 1, color: c.text, fontSize: 20, fontWeight: '700' }]}
-                                        placeholder="0.00"
-                                        placeholderTextColor={c.subtext}
-                                        value={depositAmount}
-                                        onChangeText={setDepositAmount}
-                                        keyboardType="numeric"
-                                        autoFocus
-                                    />
-                                </View>
-                                {/* Quick amounts */}
-                                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
-                                    {['1000', '5000', '10000', '50000'].map(amt => (
-                                        <TouchableOpacity
-                                            key={amt}
-                                            onPress={() => setDepositAmount(amt)}
-                                        >
-                                            <View style={[styles.quickAmt, { borderColor: c.primary + '30', backgroundColor: c.primary + '05' }]}>
-                                                <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>
-                                                    ₦{parseInt(amt).toLocaleString()}
-                                                </Text>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
+                        {/* Quick amounts */}
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 24 }}>
+                            {['1000', '5000', '10000', '50000'].map(amt => (
                                 <TouchableOpacity
-                                    style={[styles.depositBtn, { backgroundColor: c.primary, opacity: isDepositing ? 0.7 : 1, ...c.shadows.medium }]}
-                                    onPress={handleDeposit}
-                                    disabled={isDepositing}
+                                    key={amt}
+                                    onPress={() => setDepositAmount(amt)}
                                 >
-                                    {isDepositing ? (
-                                        <ActivityIndicator color="#fff" />
-                                    ) : (
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                            <Text style={styles.depositBtnText}>Authorize Deposit</Text>
-                                            <MaterialIcons name="chevron-right" size={20} color="#FFF" />
-                                        </View>
-                                    )}
-                                </TouchableOpacity>
-                            </>
-                        ) : (
-                            <View>
-                                <Text style={[styles.modalSub, { color: c.subtext }]}>Transfer any amount to the account below, and it will be credited to your wallet instantly.</Text>
-                                
-                                {virtualAccount && virtualAccount.accountNumber ? (
-                                    <View style={{ backgroundColor: c.background, borderRadius: 20, padding: 20, borderWidth: 1, borderColor: c.border }}>
-                                        <View style={{ marginBottom: 16 }}>
-                                            <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>BANK NAME</Text>
-                                            <Text style={{ color: c.text, fontSize: 16, fontWeight: '700', marginTop: 4 }}>{virtualAccount.bankName}</Text>
-                                        </View>
-                                        <View style={{ marginBottom: 16 }}>
-                                            <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>ACCOUNT NUMBER</Text>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-                                                <Text style={{ color: c.text, fontSize: 22, fontWeight: '900', letterSpacing: 1 }}>{virtualAccount.accountNumber}</Text>
-                                                <TouchableOpacity 
-                                                    onPress={() => {
-                                                        // Fallback for copy
-                                                        Alert.alert('Copied!', 'Account number copied');
-                                                    }}
-                                                    style={{ backgroundColor: c.card, padding: 8, borderRadius: 10, borderWidth: 1, borderColor: c.border }}
-                                                >
-                                                    <MaterialIcons name="content-copy" size={18} color={c.primary} />
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                        <View>
-                                            <Text style={{ color: c.subtext, fontSize: 10, fontWeight: '800', letterSpacing: 1 }}>ACCOUNT NAME</Text>
-                                            <Text style={{ color: c.text, fontSize: 14, fontWeight: '700', marginTop: 4 }}>{virtualAccount.accountName}</Text>
-                                        </View>
+                                    <View style={[styles.quickAmt, { borderColor: c.primary + '30', backgroundColor: c.primary + '05' }]}>
+                                        <Text style={{ color: c.primary, fontSize: 12, fontWeight: '700' }}>
+                                            ₦{parseInt(amt).toLocaleString()}
+                                        </Text>
                                     </View>
-                                ) : (
-                                    <View style={{ padding: 40, alignItems: 'center', backgroundColor: c.background, borderRadius: 20, borderStyle: 'dashed', borderWidth: 2, borderColor: c.border }}>
-                                        <MaterialIcons name="account-balance" size={48} color={c.subtext} />
-                                        <Text style={{ color: c.text, fontSize: 16, fontWeight: '700', marginTop: 16, textAlign: 'center' }}>No Virtual Account Yet</Text>
-                                        <Text style={{ color: c.subtext, fontSize: 13, marginTop: 8, textAlign: 'center', marginBottom: 24 }}>Generate a permanent virtual account to easily fund your wallet via bank transfer.</Text>
-                                        <TouchableOpacity 
-                                            onPress={handleGenerateAccount}
-                                            style={{ backgroundColor: c.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
-                                        >
-                                            <Text style={{ color: '#FFF', fontWeight: '800' }}>Generate Account</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-
-                                <TouchableOpacity
-                                    style={[styles.depositBtn, { backgroundColor: c.text, marginTop: 24 }]}
-                                    onPress={() => setShowDepositModal(false)}
-                                >
-                                    <Text style={styles.depositBtnText}>I've Done the Transfer</Text>
                                 </TouchableOpacity>
-                            </View>
-                        )}
+                            ))}
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.depositBtn, { backgroundColor: c.primary, opacity: isDepositing ? 0.7 : 1, ...c.shadows.medium }]}
+                            onPress={handleDeposit}
+                            disabled={isDepositing}
+                        >
+                            {isDepositing ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <Text style={styles.depositBtnText}>Authorize Deposit</Text>
+                                    <MaterialIcons name="chevron-right" size={20} color="#FFF" />
+                                </View>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
