@@ -34,8 +34,10 @@ router.post('/vtstack/webhook', handleVTStackWebhook);
 // VTStack Secure Payout (freelancer-initiated withdrawal via VTStack)
 router.post('/payout/vtstack', authenticate, requestVTStackPayout);
 // Flutterwave Multi-Currency routes (Deposits & Country-Specific Bank Payouts)
-import { initializeFlutterwaveDeposit, getFlutterwaveBanks, resolveFlutterwaveAccount, requestFlutterwaveWithdrawal, handleFlutterwaveWebhook } from '../controllers/payment.controller.js';
+import { initializeFlutterwaveDeposit, verifyFlutterwaveDeposit, getFlutterwaveBanks, resolveFlutterwaveAccount, requestFlutterwaveWithdrawal, handleFlutterwaveWebhook } from '../controllers/payment.controller.js';
 router.post('/flutterwave/initialize', authenticate, initializeFlutterwaveDeposit);
+router.post('/flutterwave/verify', authenticate, verifyFlutterwaveDeposit);
+router.get('/flutterwave/verify/:txRef', authenticate, verifyFlutterwaveDeposit);
 router.get('/flutterwave/banks/:country', authenticate, getFlutterwaveBanks);
 router.post('/flutterwave/resolve-account', authenticate, resolveFlutterwaveAccount);
 router.post('/flutterwave/withdraw', authenticate, requestFlutterwaveWithdrawal);

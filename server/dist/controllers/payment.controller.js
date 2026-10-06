@@ -6,6 +6,7 @@ import Project from '../models/Project.model.js';
 import User from '../models/user.model.js';
 import { createNotification } from './notification.controller.js';
 import { Job } from '../models/Job.model.js';
+import mongoose from 'mongoose';
 import crypto from 'crypto';
 import vtstackService from '../services/vtstack.service.js';
 // Platform fee percentage (e.g., 10%)
@@ -246,8 +247,15 @@ export const verifyPayment = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
         }
         // Find local payment record
-        // The reference passed in params was set to payment._id during initialization
-        const payment = await Payment.findById(reference);
+        // The reference passed in params could be payment._id, gatewayReference, or transactionId
+        let payment = mongoose.isValidObjectId(reference)
+            ? await Payment.findById(reference)
+            : null;
+        if (!payment) {
+            payment = await Payment.findOne({
+                $or: [{ gatewayReference: reference }, { transactionId: reference }]
+            });
+        }
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment record not found' });
         }
@@ -610,12 +618,18 @@ export const refundPayment = async (req, res) => {
         payment.refundedAt = new Date();
         payment.metadata = { ...payment.metadata, refundReason: reason };
         await payment.save();
-        // Update freelancer wallet
+        // Update freelancer wallet (deduct escrow)
         const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
         if (freelancerWallet) {
-            freelancerWallet.escrowBalance -= payment.netAmount;
-            freelancerWallet.balance -= payment.netAmount;
+            freelancerWallet.escrowBalance = Math.max(0, (freelancerWallet.escrowBalance || 0) - payment.netAmount);
+            freelancerWallet.balance = Math.max(0, (freelancerWallet.balance || 0) - payment.netAmount);
             await freelancerWallet.save();
+        }
+        // Update payer (client) wallet (credit back refund amount)
+        let payerWallet = await Wallet.findOne({ userId: payment.payerId });
+        if (payerWallet) {
+            payerWallet.balance = (payerWallet.balance || 0) + payment.amount;
+            await payerWallet.save();
         }
         // Create refund transaction
         await Transaction.create({
@@ -626,8 +640,24 @@ export const refundPayment = async (req, res) => {
             status: 'completed',
             paymentId: payment._id,
             projectId: payment.projectId,
-            description: `Refund for payment`,
+            description: `Refund for payment (${payment.currency} ${payment.amount})`,
         });
+        // Notify Payer
+        try {
+            await createNotification({
+                userId: payment.payerId,
+                type: 'payment_received',
+                title: '💸 Payment Refunded',
+                message: `Your payment of ${payment.currency} ${payment.amount.toLocaleString()} has been refunded to your wallet balance.`,
+                relatedId: payment._id,
+                relatedType: 'payment',
+                priority: 'high',
+                link: '/wallet'
+            });
+        }
+        catch (nErr) {
+            console.error('Failed to notify client of refund:', nErr);
+        }
         return res.status(200).json({
             success: true,
             message: 'Payment refunded successfully',
@@ -1567,8 +1597,8 @@ export const requestVTStackPayout = async (req, res) => {
  */
 export const initializeFlutterwaveDeposit = async (req, res) => {
     try {
-        const userId = req.user?.id || req.user?._id;
-        const { amount, currency } = req.body;
+        const userId = req.user?.id || req.user?._id || req.user?.userId;
+        const { amount, currency, redirectUrl } = req.body;
         if (!userId) {
             return res.status(401).json({ success: false, message: 'Unauthorized' });
         }
@@ -1582,6 +1612,7 @@ export const initializeFlutterwaveDeposit = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid deposit amount' });
         }
         const txRef = `FLW_DEP_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        const finalRedirectUrl = redirectUrl || 'https://app.myconnecta.ng/wallet';
         // Create pending Payment record
         const payment = await Payment.create({
             payerId: userId,
@@ -1603,9 +1634,9 @@ export const initializeFlutterwaveDeposit = async (req, res) => {
             amount: depositAmount,
             currency: depositCurrency,
             email: user.email,
-            name: `${user.firstName} ${user.lastName}`,
+            name: `${user.firstName} ${user.lastName}`.trim() || 'Valued User',
             phone: user.phoneNumber,
-            redirectUrl: 'https://app.myconnecta.ng/wallet',
+            redirectUrl: finalRedirectUrl,
             title: 'Connecta Wallet Funding',
             description: `Fund wallet in ${depositCurrency}`
         });
@@ -1622,6 +1653,150 @@ export const initializeFlutterwaveDeposit = async (req, res) => {
     catch (err) {
         console.error('initializeFlutterwaveDeposit error:', err);
         res.status(500).json({ success: false, message: err.message || 'Error initializing Flutterwave deposit' });
+    }
+};
+/**
+ * Verify Flutterwave Deposit Payment and credit user's wallet
+ */
+export const verifyFlutterwaveDeposit = async (req, res) => {
+    try {
+        const userId = req.user?.id || req.user?._id || req.user?.userId;
+        const txRef = (req.body?.txRef || req.body?.tx_ref || req.query?.txRef || req.query?.tx_ref || req.params?.txRef);
+        const transactionId = (req.body?.transactionId || req.body?.transaction_id || req.query?.transactionId || req.query?.transaction_id);
+        if (!txRef && !transactionId) {
+            return res.status(400).json({ success: false, message: 'Transaction reference or ID is required' });
+        }
+        // Find Payment record
+        const query = {};
+        if (txRef) {
+            query.$or = [{ transactionId: txRef }, { gatewayReference: txRef }];
+            if (mongoose.isValidObjectId(txRef)) {
+                query.$or.push({ _id: txRef });
+            }
+        }
+        else if (transactionId) {
+            query.$or = [{ transactionId }, { gatewayReference: transactionId }];
+        }
+        let payment = await Payment.findOne(query);
+        // If payment is already completed, return wallet immediately (idempotent)
+        if (payment && payment.status === 'completed') {
+            const wallet = await Wallet.findOne({ userId: payment.payerId });
+            return res.status(200).json({
+                success: true,
+                message: 'Payment already verified and credited',
+                data: {
+                    payment,
+                    wallet,
+                }
+            });
+        }
+        // Verify with Flutterwave if transactionId is provided
+        const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
+        let flwVerified = false;
+        let flwData = null;
+        if (transactionId) {
+            try {
+                const flwRes = await flutterwaveService.verifyTransaction(transactionId);
+                if (flwRes?.status === 'success' && flwRes?.data?.status === 'successful') {
+                    flwVerified = true;
+                    flwData = flwRes.data;
+                }
+            }
+            catch (verifyErr) {
+                console.warn('Flutterwave verification call notice:', verifyErr.message);
+            }
+        }
+        if (!flwVerified && !payment) {
+            return res.status(404).json({ success: false, message: 'Payment record not found or could not be verified' });
+        }
+        // If verified by Flutterwave or if Flutterwave confirmed the transaction
+        if (flwVerified && flwData) {
+            const verifiedAmount = Number(flwData.amount || flwData.charged_amount || 0);
+            const verifiedCurrency = (flwData.currency || 'USD').toUpperCase();
+            const verifiedTxRef = flwData.tx_ref || txRef;
+            if (!payment) {
+                payment = await Payment.findOne({
+                    $or: [{ transactionId: verifiedTxRef }, { gatewayReference: verifiedTxRef }]
+                });
+            }
+            if (payment) {
+                if (payment.status !== 'completed') {
+                    payment.status = 'completed';
+                    if (verifiedAmount > 0) {
+                        payment.amount = verifiedAmount;
+                        payment.netAmount = verifiedAmount;
+                    }
+                    if (verifiedCurrency) {
+                        payment.currency = verifiedCurrency;
+                    }
+                    payment.paidAt = new Date();
+                    payment.gatewayResponse = flwData;
+                    await payment.save();
+                    // Credit Payer Wallet
+                    let wallet = await Wallet.findOne({ userId: payment.payerId });
+                    if (!wallet) {
+                        wallet = new Wallet({ userId: payment.payerId, balance: 0, escrowBalance: 0, currency: payment.currency });
+                    }
+                    const balanceBefore = Number(wallet.balance || 0);
+                    wallet.balance = balanceBefore + payment.amount;
+                    await wallet.save();
+                    // Create Transaction record (prevent duplicate)
+                    const existingTx = await Transaction.findOne({
+                        $or: [{ gatewayReference: verifiedTxRef }, { paymentId: payment._id }]
+                    });
+                    if (!existingTx) {
+                        await Transaction.create({
+                            userId: payment.payerId,
+                            type: 'deposit',
+                            amount: payment.amount,
+                            currency: payment.currency,
+                            balanceBefore,
+                            balanceAfter: wallet.balance,
+                            gateway: 'flutterwave',
+                            gatewayReference: verifiedTxRef,
+                            status: 'completed',
+                            paymentId: payment._id,
+                            description: payment.description || `Flutterwave wallet deposit of ${payment.currency} ${payment.amount}`
+                        });
+                    }
+                    // Send notification
+                    try {
+                        await createNotification({
+                            userId: payment.payerId,
+                            type: 'payment_received',
+                            title: '💰 Wallet Funded',
+                            message: `Your wallet has been credited with ${payment.currency} ${payment.amount.toLocaleString()}.`,
+                            relatedId: payment._id,
+                            relatedType: 'payment',
+                            priority: 'high',
+                            link: '/wallet'
+                        });
+                    }
+                    catch (nErr) {
+                        console.error('Failed to create notification on deposit verification:', nErr);
+                    }
+                    return res.status(200).json({
+                        success: true,
+                        message: `Deposit of ${payment.currency} ${payment.amount} successfully credited to wallet`,
+                        data: {
+                            payment,
+                            wallet
+                        }
+                    });
+                }
+            }
+        }
+        return res.status(400).json({
+            success: false,
+            message: 'Payment has not been completed or verified yet'
+        });
+    }
+    catch (err) {
+        console.error('verifyFlutterwaveDeposit error:', err);
+        return res.status(500).json({
+            success: false,
+            message: err.message || 'Error verifying Flutterwave deposit'
+        });
     }
 };
 /**
@@ -1751,30 +1926,61 @@ export const handleFlutterwaveWebhook = async (req, res) => {
             const txRef = data.tx_ref;
             const amount = Number(data.amount || 0);
             const currency = (data.currency || 'USD').toUpperCase();
-            // Find pending Payment record by txRef
-            const payment = await Payment.findOne({ transactionId: txRef });
+            // Find pending Payment record by txRef or gatewayReference
+            const payment = await Payment.findOne({
+                $or: [{ transactionId: txRef }, { gatewayReference: txRef }]
+            });
             if (payment && payment.status !== 'completed') {
                 payment.status = 'completed';
                 payment.amount = amount;
+                payment.netAmount = amount;
                 payment.currency = currency;
+                payment.paidAt = new Date();
+                payment.gatewayResponse = data;
                 await payment.save();
                 // Credit Payer Wallet
                 let wallet = await Wallet.findOne({ userId: payment.payerId });
                 if (!wallet) {
                     wallet = new Wallet({ userId: payment.payerId, balance: 0, escrowBalance: 0, currency });
                 }
-                wallet.balance = (wallet.balance || 0) + amount;
+                const balanceBefore = Number(wallet.balance || 0);
+                wallet.balance = balanceBefore + amount;
                 await wallet.save();
-                // Create Transaction record
-                await Transaction.create({
-                    userId: payment.payerId,
-                    type: 'deposit',
-                    amount,
-                    currency,
-                    description: `Flutterwave wallet deposit of ${currency} ${amount}`,
-                    status: 'completed',
-                    paymentId: payment._id
+                // Create Transaction record (prevent duplicate)
+                const existingTx = await Transaction.findOne({
+                    $or: [{ gatewayReference: txRef }, { paymentId: payment._id }]
                 });
+                if (!existingTx) {
+                    await Transaction.create({
+                        userId: payment.payerId,
+                        type: 'deposit',
+                        amount,
+                        currency,
+                        balanceBefore,
+                        balanceAfter: wallet.balance,
+                        gateway: 'flutterwave',
+                        gatewayReference: txRef,
+                        description: `Flutterwave wallet deposit of ${currency} ${amount}`,
+                        status: 'completed',
+                        paymentId: payment._id
+                    });
+                }
+                // Send notification
+                try {
+                    await createNotification({
+                        userId: payment.payerId,
+                        type: 'payment_received',
+                        title: '💰 Wallet Funded',
+                        message: `Your wallet has been credited with ${currency} ${amount.toLocaleString()}.`,
+                        relatedId: payment._id,
+                        relatedType: 'payment',
+                        priority: 'high',
+                        link: '/wallet'
+                    });
+                }
+                catch (nErr) {
+                    console.error('Failed to create notification on webhook credit:', nErr);
+                }
                 console.log(`✅ Wallet credited via Flutterwave webhook: ${currency} ${amount} for user ${payment.payerId}`);
             }
         }

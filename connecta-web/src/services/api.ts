@@ -461,8 +461,12 @@ export const walletAPI = {
 
 // Flutterwave Multi-Currency API service
 export const flutterwaveAPI = {
-  initializeDeposit: async (amount: number, currency: string) => {
-    const { data } = await apiClient.post<ApiResponse<{ link: string; txRef: string }>>('/api/payments/flutterwave/initialize', { amount, currency });
+  initializeDeposit: async (amount: number, currency: string, redirectUrl?: string) => {
+    const { data } = await apiClient.post<ApiResponse<{ link: string; txRef: string }>>('/api/payments/flutterwave/initialize', { amount, currency, redirectUrl });
+    return data;
+  },
+  verifyDeposit: async (payload: { txRef?: string; transactionId?: string }) => {
+    const { data } = await apiClient.post<ApiResponse<any>>('/api/payments/flutterwave/verify', payload);
     return data;
   },
   getBanksByCountry: async (countryCode: string) => {

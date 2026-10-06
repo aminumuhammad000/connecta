@@ -336,7 +336,41 @@ export const MyWalletPage: React.FC = () => {
   const [settingsAccountName, setSettingsAccountName] = useState(userName);
   const [savingSettings, setSavingSettings] = useState(false);
 
-  useEffect(() => { fetchWalletData(); }, []);
+  useEffect(() => {
+    fetchWalletData();
+
+    // Check for payment redirect callback from Flutterwave
+    const queryParams = new URLSearchParams(window.location.search);
+    const status = queryParams.get('status');
+    const txRef = queryParams.get('tx_ref') || queryParams.get('txRef');
+    const transactionId = queryParams.get('transaction_id') || queryParams.get('transactionId');
+
+    if (status && (txRef || transactionId)) {
+      // Clean up URL parameters immediately to prevent re-execution on page refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      if (status === 'successful' || status === 'completed') {
+        showToast('Verifying payment and updating your wallet…', 'info');
+        flutterwaveAPI.verifyDeposit({ txRef: txRef || '', transactionId: transactionId || '' })
+          .then((res) => {
+            if (res?.success) {
+              showToast('🎉 Deposit successful! Your wallet has been credited.', 'success');
+            } else {
+              showToast(res?.message || 'Deposit processed.', 'success');
+            }
+            fetchWalletData();
+          })
+          .catch((err) => {
+            console.warn('Payment verification notice:', err?.response?.data?.message || err.message);
+            fetchWalletData();
+          });
+      } else if (status === 'cancelled') {
+        showToast('Deposit payment was cancelled.', 'info');
+      } else {
+        showToast('Deposit was not completed. Please try again if needed.', 'error');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (showPayoutSettingsModal) loadSettingsBanks(settingsCountry);
@@ -457,7 +491,8 @@ export const MyWalletPage: React.FC = () => {
     if (depositAmount <= 0) { showToast('Enter a valid deposit amount.', 'error'); return; }
     setProcessingDeposit(true);
     try {
-      const res = await flutterwaveAPI.initializeDeposit(depositAmount, userCurrency);
+      const redirectUrl = `${window.location.origin}/wallet`;
+      const res = await flutterwaveAPI.initializeDeposit(depositAmount, userCurrency, redirectUrl);
       if (res?.data?.link) {
         window.location.href = res.data.link;
       } else {

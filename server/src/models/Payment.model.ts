@@ -68,7 +68,8 @@ const PaymentSchema: Schema = new Schema(
     currency: {
       type: String,
       default: 'NGN',
-      enum: ['NGN', 'USD', 'EUR', 'GBP'],
+      uppercase: true,
+      trim: true,
     },
     platformFee: {
       type: Number,
