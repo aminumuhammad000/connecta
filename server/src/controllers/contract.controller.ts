@@ -186,21 +186,27 @@ export const approveWork = async (req: Request, res: Response) => {
 
     const netRelease = updatedPayment ? updatedPayment.netAmount : releaseAmount;
 
-    await Wallet.findOneAndUpdate(
-      { userId: contract.freelancerId },
-      {
-        $inc: {
-          escrowBalance: -netRelease,
-          totalEarnings: netRelease
-        }
-      },
-      { upsert: true }
-    );
-
     if (updatedPayment) {
-      await Transaction.updateMany(
-        { paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' },
-        { $set: { status: 'completed' } }
+      const settlementService = (await import('../services/settlement.service.js')).default;
+      await settlementService.recordEscrowRelease({
+        paymentId: updatedPayment._id,
+        payeeId: contract.freelancerId,
+        netAmount: netRelease,
+        currency: updatedPayment.currency || 'NGN',
+        reference: updatedPayment.gatewayReference || String(updatedPayment._id),
+        projectId: updatedPayment.projectId,
+        description: `Contract: ${contract.title || contract._id}`
+      });
+    } else {
+      await Wallet.findOneAndUpdate(
+        { userId: contract.freelancerId },
+        {
+          $inc: {
+            escrowBalance: -netRelease,
+            totalEarnings: netRelease
+          }
+        },
+        { upsert: true }
       );
     }
 

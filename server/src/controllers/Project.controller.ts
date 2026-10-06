@@ -556,10 +556,9 @@ export const acceptProjectSubmission = async (req: Request, res: Response) => {
 
     // ── Release escrow → freelancer available balance ─────────────
     try {
-      const Payment = (await import('../models/Payment.model.js')).default;
-      const Wallet  = (await import('../models/Wallet.model.js')).default;
-      const Transaction = (await import('../models/Transaction.model.js')).default;
+      const settlementService = (await import('../services/settlement.service.js')).default;
       const { createNotification } = await import('./notification.controller.js');
+      const Payment = (await import('../models/Payment.model.js')).default;
 
       const updatedPayment = await Payment.findOneAndUpdate(
         { projectId: id, escrowStatus: 'held' },
@@ -573,33 +572,16 @@ export const acceptProjectSubmission = async (req: Request, res: Response) => {
       );
 
       if (updatedPayment) {
-        // ── Update freelancer wallet atomically ──────────────────────────────
-        await Wallet.findOneAndUpdate(
-          { userId: updatedPayment.payeeId },
-          {
-            $inc: {
-              escrowBalance: -updatedPayment.netAmount,
-              totalEarnings: updatedPayment.netAmount
-            }
-          },
-          { upsert: true }
-        );
-
-        // ── Update the pending escrow Transaction to completed ────
-        await Transaction.updateMany(
-          {
-            userId: updatedPayment.payeeId,
-            paymentId: updatedPayment._id,
-            type: 'payment_received',
-            status: 'pending'
-          },
-          {
-            $set: {
-              status: 'completed',
-              description: `💸 Escrow released for project: ${project.title}. Funds are now available to withdraw.`
-            }
-          }
-        );
+        // Settle escrow release atomically across Wallet, Transaction, and Ledger
+        await settlementService.recordEscrowRelease({
+          paymentId: updatedPayment._id,
+          payeeId: updatedPayment.payeeId,
+          netAmount: updatedPayment.netAmount,
+          currency: updatedPayment.currency || 'NGN',
+          reference: updatedPayment.gatewayReference || String(updatedPayment._id),
+          projectId: updatedPayment.projectId,
+          description: `Project: ${project.title}`
+        });
 
         // ── Notify freelancer ─────────────────────────────────────
         await createNotification({

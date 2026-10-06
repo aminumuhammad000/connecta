@@ -23,6 +23,7 @@ import {
   payFromWallet,
   requestVTStackPayout,
   getPaymentStatsAdmin,
+  getLedgerHistory,
 } from '../controllers/payment.controller.js';
 import { authenticate } from '../core/middleware/auth.middleware.js';
 import { isAdmin } from '../core/middleware/admin.middleware.js';
@@ -50,6 +51,8 @@ router.get('/history', authenticate, getPaymentHistory);
 router.get('/wallet/balance', authenticate, getWalletBalance);
 router.post('/wallet/settings', authenticate, saveWithdrawalSettings);
 router.get('/transactions', authenticate, getTransactionHistory);
+router.get('/wallet/ledger', authenticate, getLedgerHistory);
+router.get('/ledger', authenticate, getLedgerHistory);
 
 // Withdrawal routes
 router.post('/withdrawal/request', authenticate, requestWithdrawal);

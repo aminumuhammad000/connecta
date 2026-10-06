@@ -5,6 +5,8 @@ import Withdrawal from '../models/Withdrawal.model.js';
 import Project from '../models/Project.model.js';
 import User from '../models/user.model.js';
 import ProcessedWebhook from '../models/ProcessedWebhook.model.js';
+import Ledger from '../models/Ledger.model.js';
+import settlementService from '../services/settlement.service.js';
 import { createNotification } from './notification.controller.js';
 import { Job } from '../models/Job.model.js';
 import mongoose from 'mongoose';
@@ -403,26 +405,28 @@ export const verifyPayment = async (req, res) => {
                     console.error('Failed to notify matched freelancers:', err);
                 }
             }
+            await settlementService.recordJobVerificationPayment({
+                userId: payment.payerId,
+                amount: payment.amount,
+                currency: payment.currency,
+                gateway: 'vtstack',
+                reference: payment.gatewayReference || payment.transactionId || String(payment._id),
+                paymentId: payment._id,
+                jobId: payment.jobId,
+                description: payment.description || 'Job verification payment',
+            });
         }
         // Handle Wallet Top-up
         if (payment.paymentType === 'topup' || payment.paymentType === 'wallet_deposit') {
-            await Wallet.findOneAndUpdate({ userId: payment.payerId }, { $inc: { balance: payment.amount } }, { upsert: true, new: true });
-            try {
-                await Transaction.create({
-                    userId: payment.payerId,
-                    type: 'deposit',
-                    amount: payment.amount,
-                    currency: payment.currency,
-                    status: 'completed',
-                    paymentId: payment._id,
-                    gatewayReference: payment.gatewayReference,
-                    description: payment.description || 'Wallet Top-up',
-                });
-            }
-            catch (tErr) {
-                if (tErr.code !== 11000)
-                    console.error('Transaction creation error on deposit:', tErr);
-            }
+            await settlementService.recordDeposit({
+                userId: payment.payerId,
+                amount: payment.amount,
+                currency: payment.currency,
+                gateway: 'vtstack',
+                reference: payment.gatewayReference || payment.transactionId || String(payment._id),
+                paymentId: payment._id,
+                description: payment.description || 'Wallet Top-up',
+            });
             try {
                 await createNotification({
                     userId: payment.payerId,
@@ -442,24 +446,18 @@ export const verifyPayment = async (req, res) => {
         if (payment.paymentType === 'milestone' || payment.paymentType === 'full_payment') {
             payment.escrowStatus = 'held';
             await payment.save();
-            await Wallet.findOneAndUpdate({ userId: payment.payeeId }, { $inc: { balance: payment.netAmount, escrowBalance: payment.netAmount } }, { upsert: true, new: true });
-            try {
-                await Transaction.create({
-                    userId: payment.payeeId,
-                    type: 'payment_received',
-                    amount: payment.netAmount,
-                    currency: payment.currency,
-                    status: 'pending',
-                    paymentId: payment._id,
-                    projectId: payment.projectId,
-                    gatewayReference: payment.gatewayReference,
-                    description: `🔒 Escrow payment for project: ${payment.description}`,
-                });
-            }
-            catch (tErr) {
-                if (tErr.code !== 11000)
-                    console.error('Transaction creation error on escrow:', tErr);
-            }
+            await settlementService.recordEscrowHoldDirect({
+                payerId: payment.payerId,
+                payeeId: payment.payeeId,
+                amount: payment.amount,
+                netAmount: payment.netAmount,
+                currency: payment.currency,
+                gateway: 'vtstack',
+                reference: payment.gatewayReference || payment.transactionId || String(payment._id),
+                paymentId: payment._id,
+                projectId: payment.projectId,
+                description: payment.description || 'Project Escrow',
+            });
             try {
                 await createNotification({
                     userId: payment.payeeId,
@@ -601,14 +599,15 @@ export const payFromWallet = async (req, res) => {
                 escrowStatus: 'none',
             });
             await payment.save();
-            // Transaction Record
-            await Transaction.create({
+            // Transaction & Ledger Records
+            await settlementService.recordJobVerificationPayment({
                 userId: payerId,
-                type: 'payment_sent',
                 amount: payAmount,
                 currency: 'NGN',
-                status: 'completed',
+                gateway: 'wallet',
+                reference: `WALLET_JOB_${Date.now()}_${payment._id}`,
                 paymentId: payment._id,
+                jobId: payment.jobId,
                 description: payment.description,
             });
             return res.status(200).json({ success: true, message: 'Job verified using wallet balance', data: payment });
@@ -618,8 +617,6 @@ export const payFromWallet = async (req, res) => {
             const platformFee = (payAmount * PLATFORM_FEE_PERCENTAGE) / 100;
             const netAmount = payAmount - platformFee;
             const projectCurrency = (verifiedProject.currency || 'NGN').toUpperCase();
-            // Credit Freelancer (Escrow)
-            await Wallet.findOneAndUpdate({ userId: payeeId }, { $inc: { balance: netAmount, escrowBalance: netAmount } }, { new: true, upsert: true });
             // Create Payment Record
             const payment = new Payment({
                 projectId,
@@ -638,28 +635,18 @@ export const payFromWallet = async (req, res) => {
                 escrowStatus: 'held',
             });
             await payment.save();
-            // Transaction Records
-            // 1. Client Debit
-            await Transaction.create({
-                userId: payerId,
-                type: 'payment_sent',
+            // Settle Escrow Hold across Payee Wallet, Transactions, and Ledgers
+            await settlementService.recordEscrowHoldDirect({
+                payerId,
+                payeeId,
                 amount: payAmount,
+                netAmount,
                 currency: projectCurrency,
-                status: 'completed',
+                gateway: 'wallet',
+                reference: `WALLET_ESCROW_${Date.now()}_${payment._id}`,
                 paymentId: payment._id,
                 projectId,
-                description: `Payment for project (Escrowed): ${verifiedProject.title}`,
-            });
-            // 2. Freelancer Credit (Escrow — locked until released)
-            await Transaction.create({
-                userId: payeeId,
-                type: 'payment_received',
-                amount: netAmount,
-                currency: projectCurrency,
-                status: 'pending',
-                paymentId: payment._id,
-                projectId,
-                description: `🔒 Incoming escrow payment: ${verifiedProject.title}`,
+                description: payment.description,
             });
             // Notify Freelancer
             try {
@@ -717,15 +704,16 @@ export const releasePayment = async (req, res) => {
                 message: 'Payment is not in held escrow or has already been released/refunded',
             });
         }
-        // Atomically update freelancer wallet (reduce escrow, record earnings)
-        await Wallet.findOneAndUpdate({ userId: updatedPayment.payeeId }, {
-            $inc: {
-                escrowBalance: -updatedPayment.netAmount,
-                totalEarnings: updatedPayment.netAmount
-            }
-        }, { upsert: true });
-        // Update pending freelancer escrow transactions to completed
-        await Transaction.updateMany({ paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' }, { $set: { status: 'completed' } });
+        // Atomically settle escrow release across Wallet, Transaction, and Ledger
+        await settlementService.recordEscrowRelease({
+            paymentId: updatedPayment._id,
+            payeeId: updatedPayment.payeeId,
+            netAmount: updatedPayment.netAmount,
+            currency: updatedPayment.currency,
+            reference: updatedPayment.gatewayReference || String(updatedPayment._id),
+            projectId: updatedPayment.projectId,
+            description: updatedPayment.description || 'Project Payment Release'
+        });
         // Notify Freelancer
         try {
             await createNotification({
@@ -790,38 +778,18 @@ export const refundPayment = async (req, res) => {
                 message: 'Payment cannot be refunded or is not in held escrow',
             });
         }
-        // Atomically deduct from freelancer wallet (escrow and balance)
-        await Wallet.findOneAndUpdate({ userId: updatedPayment.payeeId }, {
-            $inc: {
-                escrowBalance: -updatedPayment.netAmount,
-                balance: -updatedPayment.netAmount
-            }
-        });
-        // Atomically credit payer (client) wallet
-        await Wallet.findOneAndUpdate({ userId: updatedPayment.payerId }, {
-            $inc: {
-                balance: updatedPayment.amount
-            }
-        }, { upsert: true });
-        // Cancel pending freelancer escrow transactions
-        await Transaction.updateMany({ paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' }, { $set: { status: 'cancelled' } });
-        // Create refund transaction idempotently
-        const existingRefundTx = await Transaction.findOne({
+        // Atomically settle escrow refund across Wallets, Transactions, and Ledgers
+        await settlementService.recordEscrowRefund({
             paymentId: updatedPayment._id,
-            type: 'refund'
+            payerId: updatedPayment.payerId,
+            payeeId: updatedPayment.payeeId,
+            amount: updatedPayment.amount,
+            netAmount: updatedPayment.netAmount,
+            currency: updatedPayment.currency,
+            reference: updatedPayment.gatewayReference || String(updatedPayment._id),
+            projectId: updatedPayment.projectId,
+            description: updatedPayment.description || 'Escrow Refund'
         });
-        if (!existingRefundTx) {
-            await Transaction.create({
-                userId: updatedPayment.payerId,
-                type: 'refund',
-                amount: updatedPayment.amount,
-                currency: updatedPayment.currency,
-                status: 'completed',
-                paymentId: updatedPayment._id,
-                projectId: updatedPayment.projectId,
-                description: `Refund for payment (${updatedPayment.currency} ${updatedPayment.amount})`,
-            });
-        }
         // Notify Payer
         try {
             await createNotification({
@@ -1545,41 +1513,29 @@ export const handleVTStackWebhook = async (req, res) => {
             const wallet = await Wallet.findOne({ 'vtstackVirtualAccount.accountNumber': virtualAccount });
             if (wallet) {
                 const creditAmount = amount / 100;
-                // 2. Atomically credit the wallet
-                const updatedWallet = await Wallet.findOneAndUpdate({ _id: wallet._id }, { $inc: { balance: creditAmount } }, { new: true });
-                if (updatedWallet) {
-                    try {
-                        await Transaction.create({
-                            userId: wallet.userId,
-                            type: 'deposit',
-                            amount: creditAmount,
-                            currency: 'NGN',
-                            status: 'completed',
-                            gateway: 'vtstack',
-                            gatewayReference: reference,
-                            balanceBefore: (updatedWallet.balance || 0) - creditAmount,
-                            balanceAfter: updatedWallet.balance,
-                            description: `Virtual Account Deposit: ${reference}`
-                        });
-                    }
-                    catch (txErr) {
-                        if (txErr.code !== 11000)
-                            console.error('VTStack transaction record error:', txErr);
-                    }
-                    try {
-                        await createNotification({
-                            userId: wallet.userId,
-                            type: 'payment_received',
-                            title: '💰 Wallet Funded via Transfer',
-                            message: `Your wallet has been credited with ₦${creditAmount.toLocaleString()}.`,
-                            priority: 'high'
-                        });
-                    }
-                    catch (nErr) {
-                        console.error('Notification error on VTStack webhook:', nErr);
-                    }
-                    console.log(`Successfully credited wallet for account ${virtualAccount} with ${creditAmount}`);
+                // 2. Settle Wallet, Transaction, and Ledger consistently
+                await settlementService.recordDeposit({
+                    userId: wallet.userId,
+                    amount: creditAmount,
+                    currency: 'NGN',
+                    gateway: 'vtstack',
+                    reference: reference,
+                    description: `Virtual Account Deposit: ${reference}`,
+                    metadata: data,
+                });
+                try {
+                    await createNotification({
+                        userId: wallet.userId,
+                        type: 'payment_received',
+                        title: '💰 Wallet Funded via Transfer',
+                        message: `Your wallet has been credited with ₦${creditAmount.toLocaleString()}.`,
+                        priority: 'high'
+                    });
                 }
+                catch (nErr) {
+                    console.error('Notification error on VTStack webhook:', nErr);
+                }
+                console.log(`Successfully credited wallet for account ${virtualAccount} with ${creditAmount}`);
             }
             else {
                 console.warn(`Wallet not found for virtual account: ${virtualAccount}`);
@@ -1691,15 +1647,14 @@ export const requestVTStackPayout = async (req, res) => {
                 message: `Payout failed: ${gatewayError.message || 'Gateway error. Please try again.'}`,
             });
         }
-        // Create Transaction Record
-        await Transaction.create({
+        // Record Transaction & Ledger consistently
+        await settlementService.recordWithdrawalRequest({
             userId,
-            type: 'withdrawal',
             amount: nairaAmount,
             currency: wallet.currency || 'NGN',
-            status: withdrawal.status === 'completed' ? 'completed' : 'pending',
             gateway: 'vtstack',
-            gatewayReference: withdrawal.gatewayReference,
+            reference: withdrawal.gatewayReference || String(withdrawal._id),
+            withdrawalId: withdrawal._id,
             balanceBefore: updatedWallet.balance + nairaAmount,
             balanceAfter: updatedWallet.balance,
             description: `Payout to ${bankDetails.accountName} (${bankDetails.accountNumber})`,
@@ -1915,28 +1870,17 @@ export const settleSuccessfulFlutterwavePayment = async (paymentDocOrId, flwData
     // 4. Settle by Payment Type
     // A) Wallet Deposit / Top-up
     if (payment.paymentType === 'wallet_deposit' || payment.paymentType === 'topup') {
-        const updatedWallet = await Wallet.findOneAndUpdate({ userId: payment.payerId }, { $inc: { balance: payment.amount } }, { upsert: true, new: true });
-        userWallet = updatedWallet;
-        // Idempotent Transaction Record protected by unique compound index
-        try {
-            await Transaction.create({
-                userId: payment.payerId,
-                type: 'deposit',
-                amount: payment.amount,
-                currency: payment.currency,
-                balanceBefore: (updatedWallet.balance || 0) - payment.amount,
-                balanceAfter: updatedWallet.balance,
-                gateway: 'flutterwave',
-                gatewayReference: verifiedTxRef,
-                status: 'completed',
-                paymentId: payment._id,
-                description: payment.description || `Flutterwave wallet deposit of ${payment.currency} ${payment.amount}`
-            });
-        }
-        catch (tErr) {
-            if (tErr.code !== 11000)
-                console.error('Transaction creation error on deposit:', tErr);
-        }
+        const depositResult = await settlementService.recordDeposit({
+            userId: payment.payerId,
+            amount: payment.amount,
+            currency: payment.currency,
+            gateway: 'flutterwave',
+            reference: verifiedTxRef,
+            paymentId: payment._id,
+            description: payment.description || `Flutterwave wallet deposit of ${payment.currency} ${payment.amount}`,
+            metadata: { flwId: flwData.id, chargedAmount: flwData.charged_amount }
+        });
+        userWallet = depositResult.wallet;
         try {
             await createNotification({
                 userId: payment.payerId,
@@ -1969,23 +1913,16 @@ export const settleSuccessfulFlutterwavePayment = async (paymentDocOrId, flwData
                 console.error('Failed to notify matched freelancers:', err);
             }
         }
-        try {
-            await Transaction.create({
-                userId: payment.payerId,
-                type: 'payment_sent',
-                amount: payment.amount,
-                currency: payment.currency,
-                status: 'completed',
-                paymentId: payment._id,
-                gateway: 'flutterwave',
-                gatewayReference: verifiedTxRef,
-                description: payment.description || 'Job verification fee'
-            });
-        }
-        catch (tErr) {
-            if (tErr.code !== 11000)
-                console.error('Transaction creation error on job verification:', tErr);
-        }
+        await settlementService.recordJobVerificationPayment({
+            userId: payment.payerId,
+            amount: payment.amount,
+            currency: payment.currency,
+            gateway: 'flutterwave',
+            reference: verifiedTxRef,
+            paymentId: payment._id,
+            jobId: payment.jobId,
+            description: payment.description || 'Job verification fee'
+        });
         try {
             await createNotification({
                 userId: payment.payerId,
@@ -2006,45 +1943,18 @@ export const settleSuccessfulFlutterwavePayment = async (paymentDocOrId, flwData
     else if ((payment.paymentType === 'milestone' || payment.paymentType === 'full_payment' || payment.paymentType === 'project_payment') && payment.payeeId) {
         payment.escrowStatus = 'held';
         await payment.save();
-        await Wallet.findOneAndUpdate({ userId: payment.payeeId }, { $inc: { balance: payment.netAmount, escrowBalance: payment.netAmount } }, { upsert: true, new: true });
-        // Freelancer Escrow Transaction (pending locked)
-        try {
-            await Transaction.create({
-                userId: payment.payeeId,
-                type: 'payment_received',
-                amount: payment.netAmount,
-                currency: payment.currency,
-                status: 'pending',
-                paymentId: payment._id,
-                projectId: payment.projectId,
-                gateway: 'flutterwave',
-                gatewayReference: verifiedTxRef,
-                description: `🔒 Escrow payment for project: ${payment.description || 'Project'}`
-            });
-        }
-        catch (tErr) {
-            if (tErr.code !== 11000)
-                console.error('Transaction creation error on escrow payee:', tErr);
-        }
-        // Client Transaction (completed sent)
-        try {
-            await Transaction.create({
-                userId: payment.payerId,
-                type: 'payment_sent',
-                amount: payment.amount,
-                currency: payment.currency,
-                status: 'completed',
-                paymentId: payment._id,
-                projectId: payment.projectId,
-                gateway: 'flutterwave',
-                gatewayReference: verifiedTxRef,
-                description: `Payment for project (Escrowed): ${payment.description || 'Project'}`
-            });
-        }
-        catch (tErr) {
-            if (tErr.code !== 11000)
-                console.error('Transaction creation error on escrow payer:', tErr);
-        }
+        await settlementService.recordEscrowHoldDirect({
+            payerId: payment.payerId,
+            payeeId: payment.payeeId,
+            amount: payment.amount,
+            netAmount: payment.netAmount,
+            currency: payment.currency,
+            gateway: 'flutterwave',
+            reference: verifiedTxRef,
+            paymentId: payment._id,
+            projectId: payment.projectId,
+            description: payment.description || 'Project Escrow'
+        });
         try {
             await createNotification({
                 userId: payment.payeeId,
@@ -2159,25 +2069,16 @@ export const settleFlutterwaveWithdrawal = async (referenceOrWithdrawal, flwData
             }
         }, { new: true });
         if (updatedWithdrawal) {
-            // Refund freelancer wallet balance atomically
-            await Wallet.findOneAndUpdate({ userId: withdrawal.userId }, { $inc: { balance: withdrawal.amount } }, { upsert: true });
-            // Record refund transaction protected by unique index
-            try {
-                await Transaction.create({
-                    userId: withdrawal.userId,
-                    type: 'refund',
-                    amount: withdrawal.amount,
-                    currency: withdrawal.currency,
-                    gateway: 'flutterwave',
-                    gatewayReference: `REFUND_${withdrawal.gatewayReference}`,
-                    status: 'completed',
-                    description: `Refund for failed withdrawal: ${withdrawal.gatewayReference}`
-                });
-            }
-            catch (tErr) {
-                if (tErr.code !== 11000)
-                    console.error('Transaction creation error on withdrawal refund:', tErr);
-            }
+            // Settle failed withdrawal refund across Wallet, Transaction, and Ledger
+            await settlementService.recordWithdrawalRefund({
+                userId: withdrawal.userId,
+                amount: withdrawal.amount,
+                currency: withdrawal.currency,
+                gateway: 'flutterwave',
+                reference: withdrawal.gatewayReference,
+                withdrawalId: withdrawal._id,
+                description: `Refund for failed withdrawal: ${withdrawal.gatewayReference}`
+            });
             try {
                 await createNotification({
                     userId: withdrawal.userId,
@@ -2459,6 +2360,18 @@ export const requestFlutterwaveWithdrawal = async (req, res) => {
                 bankCode
             }
         });
+        // Record Transaction & Ledger consistently
+        await settlementService.recordWithdrawalRequest({
+            userId,
+            amount: payoutAmount,
+            currency: payoutCurrency,
+            gateway: 'flutterwave',
+            reference,
+            withdrawalId: withdrawal._id,
+            balanceBefore: updatedWallet.balance + payoutAmount,
+            balanceAfter: updatedWallet.balance,
+            description: `Flutterwave payout to ${accountName || 'Bank'} (${payoutCurrency} ${payoutAmount})`
+        });
         try {
             const flutterwaveService = (await import('../services/flutterwave.service.js')).default;
             await flutterwaveService.initiateTransfer({
@@ -2561,5 +2474,43 @@ export const handleFlutterwaveWebhook = async (req, res) => {
     catch (err) {
         console.error('handleFlutterwaveWebhook error:', err);
         return res.status(500).json({ success: false, message: err.message });
+    }
+};
+/**
+ * Get Ledger Audit History for Authenticated User or Admin
+ */
+export const getLedgerHistory = async (req, res) => {
+    try {
+        const userId = req.user?.id || req.user?._id || req.user?.userId;
+        const { page = 1, limit = 20, category, action } = req.query;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+        const query = { userId };
+        if (category)
+            query.category = category;
+        if (action)
+            query.action = action;
+        const [entries, total] = await Promise.all([
+            Ledger.find(query)
+                .sort({ createdAt: -1 })
+                .skip((Number(page) - 1) * Number(limit))
+                .limit(Number(limit)),
+            Ledger.countDocuments(query),
+        ]);
+        return res.status(200).json({
+            success: true,
+            data: entries,
+            pagination: {
+                page: Number(page),
+                limit: Number(limit),
+                total,
+                pages: Math.ceil(total / Number(limit)),
+            },
+        });
+    }
+    catch (error) {
+        console.error('getLedgerHistory error:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Failed to fetch ledger history' });
     }
 };

@@ -3,7 +3,6 @@ import Proposal from '../models/Proposal.model.js';
 import { Job } from '../models/Job.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Payment from '../models/Payment.model.js';
-import Transaction from '../models/Transaction.model.js';
 import { createNotification } from './notification.controller.js';
 // Create a new offer (Client)
 export const createOffer = async (req, res) => {
@@ -147,14 +146,25 @@ export const approveWork = async (req, res) => {
             }
         }, { new: true });
         const netRelease = updatedPayment ? updatedPayment.netAmount : releaseAmount;
-        await Wallet.findOneAndUpdate({ userId: contract.freelancerId }, {
-            $inc: {
-                escrowBalance: -netRelease,
-                totalEarnings: netRelease
-            }
-        }, { upsert: true });
         if (updatedPayment) {
-            await Transaction.updateMany({ paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' }, { $set: { status: 'completed' } });
+            const settlementService = (await import('../services/settlement.service.js')).default;
+            await settlementService.recordEscrowRelease({
+                paymentId: updatedPayment._id,
+                payeeId: contract.freelancerId,
+                netAmount: netRelease,
+                currency: updatedPayment.currency || 'NGN',
+                reference: updatedPayment.gatewayReference || String(updatedPayment._id),
+                projectId: updatedPayment.projectId,
+                description: `Contract: ${contract.title || contract._id}`
+            });
+        }
+        else {
+            await Wallet.findOneAndUpdate({ userId: contract.freelancerId }, {
+                $inc: {
+                    escrowBalance: -netRelease,
+                    totalEarnings: netRelease
+                }
+            }, { upsert: true });
         }
         // Notify freelancer
         await createNotification({
