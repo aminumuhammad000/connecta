@@ -4,6 +4,7 @@ import Proposal from '../models/Proposal.model.js';
 import { Job } from '../models/Job.model.js';
 import Wallet from '../models/Wallet.model.js';
 import Payment from '../models/Payment.model.js';
+import Transaction from '../models/Transaction.model.js';
 import { createNotification } from './notification.controller.js';
 
 // Create a new offer (Client)
@@ -165,35 +166,43 @@ export const approveWork = async (req: Request, res: Response) => {
     contract.paymentStatus = 'released';
     await contract.save();
 
-    // Release funds from escrow to available balance
-    let freelancerWallet = await Wallet.findOne({ userId: contract.freelancerId });
-    if (!freelancerWallet) {
-      freelancerWallet = await Wallet.create({
-        userId: contract.freelancerId,
-        balance: 0,
-        escrowBalance: 0,
-        totalEarnings: 0
-      });
-    }
-
+    // Release funds from escrow to available balance atomically
     const releaseAmount = Number(contract.totalPrice || (contract as any).totalAmount || (contract as any).budget || 0);
 
-    const payment = await Payment.findOne({
-      $or: [{ projectId: contract._id }, { jobId: contract.jobId }],
-      payeeId: contract.freelancerId,
-      escrowStatus: 'held'
-    });
+    const updatedPayment = await Payment.findOneAndUpdate(
+      {
+        $or: [{ projectId: contract._id }, { jobId: contract.jobId }],
+        payeeId: contract.freelancerId,
+        escrowStatus: 'held'
+      },
+      {
+        $set: {
+          escrowStatus: 'released',
+          releasedAt: new Date()
+        }
+      },
+      { new: true }
+    );
 
-    if (payment) {
-      payment.escrowStatus = 'released';
-      payment.releasedAt = new Date();
-      await payment.save();
+    const netRelease = updatedPayment ? updatedPayment.netAmount : releaseAmount;
+
+    await Wallet.findOneAndUpdate(
+      { userId: contract.freelancerId },
+      {
+        $inc: {
+          escrowBalance: -netRelease,
+          totalEarnings: netRelease
+        }
+      },
+      { upsert: true }
+    );
+
+    if (updatedPayment) {
+      await Transaction.updateMany(
+        { paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' },
+        { $set: { status: 'completed' } }
+      );
     }
-
-    freelancerWallet.escrowBalance = Math.max(0, freelancerWallet.escrowBalance - releaseAmount);
-    freelancerWallet.balance += releaseAmount;
-    freelancerWallet.totalEarnings += releaseAmount;
-    await freelancerWallet.save();
 
     // Notify freelancer
     await createNotification({

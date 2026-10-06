@@ -78,7 +78,7 @@ const TransactionSchema: Schema = new Schema(
     },
     gatewayReference: {
       type: String,
-      index: true,
+      sparse: true,
     },
     gatewayResponse: {
       type: Schema.Types.Mixed,
@@ -101,11 +101,11 @@ const TransactionSchema: Schema = new Schema(
   }
 );
 
-// Indexes for performance and idempotency
+// Indexes for performance and database-level duplicate protection
 TransactionSchema.index({ userId: 1, createdAt: -1 });
 TransactionSchema.index({ type: 1, status: 1 });
 TransactionSchema.index({ paymentId: 1 });
-TransactionSchema.index({ gatewayReference: 1, type: 1 });
-TransactionSchema.index({ paymentId: 1, type: 1, userId: 1 });
+TransactionSchema.index({ gatewayReference: 1, type: 1 }, { unique: true, sparse: true });
+TransactionSchema.index({ paymentId: 1, type: 1, userId: 1 }, { unique: true, sparse: true });
 
 export default mongoose.model<ITransaction>('Transaction', TransactionSchema);
