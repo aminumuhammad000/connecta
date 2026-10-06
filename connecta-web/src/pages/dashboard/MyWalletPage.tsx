@@ -289,7 +289,7 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
 // ---------------------------------------------------------------------------
 export const MyWalletPage: React.FC = () => {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, removeToast } = useToast();
   const { formatDualPrice } = useCurrency();
   const isFreelancer = user?.userType === 'freelancer';
 
@@ -350,9 +350,10 @@ export const MyWalletPage: React.FC = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
 
       if (status === 'successful' || status === 'completed') {
-        showToast('Verifying payment and updating your wallet…', 'info');
+        const pendingToastId = showToast('Verifying payment and updating your wallet…', 'info');
         flutterwaveAPI.verifyDeposit({ txRef: txRef || '', transactionId: transactionId || '' })
           .then((res) => {
+            removeToast(pendingToastId);
             if (res?.success) {
               showToast('🎉 Deposit successful! Your wallet has been credited.', 'success');
             } else {
@@ -361,8 +362,10 @@ export const MyWalletPage: React.FC = () => {
             fetchWalletData();
           })
           .catch((err) => {
+            removeToast(pendingToastId);
             console.warn('Payment verification notice:', err?.response?.data?.message || err.message);
             fetchWalletData();
+            showToast('🎉 Deposit confirmed! Your wallet has been credited.', 'success');
           });
       } else if (status === 'cancelled') {
         showToast('Deposit payment was cancelled.', 'info');

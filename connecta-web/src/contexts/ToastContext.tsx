@@ -13,11 +13,12 @@ export interface ToastMessage {
 }
 
 interface ToastContextType {
-  showToast: (title: string, type?: ToastType, message?: string) => void;
-  success: (title: string, message?: string) => void;
-  error: (title: string, message?: string) => void;
-  info: (title: string, message?: string) => void;
-  warning: (title: string, message?: string) => void;
+  showToast: (title: string, type?: ToastType, message?: string) => string;
+  removeToast: (id: string) => void;
+  success: (title: string, message?: string) => string;
+  error: (title: string, message?: string) => string;
+  info: (title: string, message?: string) => string;
+  warning: (title: string, message?: string) => string;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -53,9 +54,9 @@ const TOAST_CONFIG: Record<ToastType, {
   },
   info: {
     icon: <Info size={18} strokeWidth={2.5} />,
-    accent: '#FD6730',
-    bg: 'rgba(253,103,48,0.08)',
-    iconBg: 'rgba(253,103,48,0.15)',
+    accent: '#2563EB',
+    bg: 'rgba(37,99,235,0.08)',
+    iconBg: 'rgba(37,99,235,0.15)',
     label: 'Info',
   },
 };
@@ -218,9 +219,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const showToast = useCallback((title: string, type: ToastType = 'info', message?: string) => {
+  const showToast = useCallback((title: string, type: ToastType = 'info', message?: string): string => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, type, title, message }]);
+    return id;
   }, []);
 
   const success = useCallback((title: string, message?: string) => showToast(title, 'success', message), [showToast]);
@@ -229,7 +231,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const warning = useCallback((title: string, message?: string) => showToast(title, 'warning', message), [showToast]);
 
   return (
-    <ToastContext.Provider value={{ showToast, success, error, info, warning }}>
+    <ToastContext.Provider value={{ showToast, removeToast, success, error, info, warning }}>
       {children}
 
       {/* Toast Container */}
