@@ -18,6 +18,7 @@ export interface IWithdrawal extends Document {
   gatewayReference?: string;
   gatewayResponse?: any;
   transferCode?: string;
+  idempotencyKey?: string;
   
   // Fees
   processingFee: number;
@@ -72,7 +73,7 @@ const WithdrawalSchema: Schema = new Schema(
       },
       bankName: {
         type: String,
-        required: true,
+        default: '',
       },
       bankCode: {
         type: String,
@@ -81,6 +82,8 @@ const WithdrawalSchema: Schema = new Schema(
     },
     gatewayReference: {
       type: String,
+      sparse: true,
+      index: true,
     },
     gatewayResponse: {
       type: Schema.Types.Mixed,
@@ -88,13 +91,17 @@ const WithdrawalSchema: Schema = new Schema(
     transferCode: {
       type: String,
     },
+    idempotencyKey: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     processingFee: {
       type: Number,
       default: 0,
     },
     netAmount: {
       type: Number,
-      required: true,
     },
     failureReason: {
       type: String,
@@ -121,5 +128,12 @@ const WithdrawalSchema: Schema = new Schema(
 // Indexes
 WithdrawalSchema.index({ userId: 1, status: 1 });
 WithdrawalSchema.index({ createdAt: -1 });
+
+WithdrawalSchema.pre('save', function (next) {
+  if (this.netAmount === undefined || this.netAmount === null) {
+    this.netAmount = Math.max(0, (Number(this.amount) || 0) - (Number(this.processingFee) || 0));
+  }
+  next();
+});
 
 export default mongoose.model<IWithdrawal>('Withdrawal', WithdrawalSchema);

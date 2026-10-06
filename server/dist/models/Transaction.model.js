@@ -47,9 +47,15 @@ const TransactionSchema = new Schema({
     },
     gatewayReference: {
         type: String,
+        index: true,
     },
     gatewayResponse: {
         type: Schema.Types.Mixed,
+    },
+    idempotencyKey: {
+        type: String,
+        sparse: true,
+        index: true,
     },
     description: {
         type: String,
@@ -61,8 +67,10 @@ const TransactionSchema = new Schema({
 }, {
     timestamps: true,
 });
-// Indexes
+// Indexes for performance and idempotency
 TransactionSchema.index({ userId: 1, createdAt: -1 });
 TransactionSchema.index({ type: 1, status: 1 });
 TransactionSchema.index({ paymentId: 1 });
+TransactionSchema.index({ gatewayReference: 1, type: 1 });
+TransactionSchema.index({ paymentId: 1, type: 1, userId: 1 });
 export default mongoose.model('Transaction', TransactionSchema);

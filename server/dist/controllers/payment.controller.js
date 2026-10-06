@@ -241,13 +241,7 @@ export const verifyPayment = async (req, res) => {
         if (!transactionId) {
             return res.status(400).json({ success: false, message: 'Transaction ID is required' });
         }
-        // Verify with VTStack
-        const vtResponse = await vtstackService.verifyPayment(transactionId);
-        if (!vtResponse.status || vtResponse.data.status !== 'success') {
-            return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
-        }
-        // Find local payment record
-        // The reference passed in params could be payment._id, gatewayReference, or transactionId
+        // 1. Locate local payment record first
         let payment = mongoose.isValidObjectId(reference)
             ? await Payment.findById(reference)
             : null;
@@ -256,27 +250,64 @@ export const verifyPayment = async (req, res) => {
                 $or: [{ gatewayReference: reference }, { transactionId: reference }]
             });
         }
+        // 2. Fast Idempotency Check: If already completed, return existing settlement immediately
+        if (payment && payment.status === 'completed') {
+            return res.status(200).json({
+                success: true,
+                message: 'Payment already verified and processed',
+                data: payment,
+            });
+        }
+        // 3. Verify with VTStack
+        const vtResponse = await vtstackService.verifyPayment(transactionId);
+        if (!vtResponse.status || vtResponse.data.status !== 'success') {
+            return res.status(400).json({ success: false, message: 'Payment verification failed at gateway' });
+        }
+        if (!payment) {
+            const verifiedRef = vtResponse.data.reference || vtResponse.data.tx_ref;
+            if (verifiedRef) {
+                payment = await Payment.findOne({
+                    $or: [
+                        { gatewayReference: verifiedRef },
+                        { transactionId: verifiedRef },
+                        ...(mongoose.isValidObjectId(verifiedRef) ? [{ _id: verifiedRef }] : [])
+                    ]
+                });
+            }
+        }
         if (!payment) {
             return res.status(404).json({ success: false, message: 'Payment record not found' });
         }
-        // Verify amount (allow small diff for floating point?)
+        // 4. Verify amount
         if (payment.amount > vtResponse.data.amount) {
             return res.status(400).json({ success: false, message: 'Payment amount mismatch' });
         }
-        // Update Payment
-        payment.status = 'completed';
-        payment.gatewayResponse = vtResponse.data;
-        payment.paidAt = new Date();
-        await payment.save();
+        // 5. Atomic State Transition (guarantees single settlement execution)
+        const updatedPayment = await Payment.findOneAndUpdate({ _id: payment._id, status: { $ne: 'completed' } }, {
+            $set: {
+                status: 'completed',
+                gatewayResponse: vtResponse.data,
+                paidAt: new Date(),
+            }
+        }, { new: true });
+        if (!updatedPayment) {
+            // Payment was already transitioned by concurrent request
+            return res.status(200).json({
+                success: true,
+                message: 'Payment already verified and processed',
+                data: payment,
+            });
+        }
+        payment = updatedPayment;
+        // 6. Settle based on paymentType
         // Handle Job Verification
         if (payment.paymentType === 'job_verification' && payment.jobId) {
             const job = await Job.findById(payment.jobId);
             if (job) {
                 job.status = 'active';
                 job.paymentVerified = true;
-                job.paymentStatus = 'verified'; // Update to 'verified' since payment is verified
+                job.paymentStatus = 'verified';
                 await job.save();
-                // Notify Matched Freelancers
                 try {
                     const { notifyMatchedFreelancers } = await import('./notification.controller.js');
                     await notifyMatchedFreelancers(job);
@@ -287,7 +318,7 @@ export const verifyPayment = async (req, res) => {
             }
         }
         // Handle Wallet Top-up
-        if (payment.paymentType === 'topup') {
+        if (payment.paymentType === 'topup' || payment.paymentType === 'wallet_deposit') {
             let wallet = await Wallet.findOne({ userId: payment.payerId });
             if (!wallet) {
                 wallet = new Wallet({ userId: payment.payerId });
@@ -295,73 +326,88 @@ export const verifyPayment = async (req, res) => {
             wallet.balance = (wallet.balance || 0) + payment.amount;
             wallet.availableBalance = (wallet.availableBalance || 0) + payment.amount;
             await wallet.save();
-            // Create a credit transaction
-            await Transaction.create({
-                userId: payment.payerId,
-                type: 'deposit',
-                amount: payment.amount,
-                currency: payment.currency,
-                status: 'completed',
+            const existingTx = await Transaction.findOne({
                 paymentId: payment._id,
-                description: payment.description || 'Wallet Top-up',
+                type: 'deposit'
             });
-            // Notify User
-            await createNotification({
-                userId: payment.payerId,
-                type: 'payment_received',
-                title: '💰 Wallet Funded',
-                message: `Your wallet has been credited with ₦${payment.amount.toLocaleString()}`,
-                relatedId: payment._id,
-                relatedType: 'payment',
-                priority: 'high',
-            });
+            if (!existingTx) {
+                await Transaction.create({
+                    userId: payment.payerId,
+                    type: 'deposit',
+                    amount: payment.amount,
+                    currency: payment.currency,
+                    status: 'completed',
+                    paymentId: payment._id,
+                    description: payment.description || 'Wallet Top-up',
+                });
+            }
+            try {
+                await createNotification({
+                    userId: payment.payerId,
+                    type: 'payment_received',
+                    title: '💰 Wallet Funded',
+                    message: `Your wallet has been credited with ₦${payment.amount.toLocaleString()}`,
+                    relatedId: payment._id,
+                    relatedType: 'payment',
+                    priority: 'high',
+                });
+            }
+            catch (nErr) {
+                console.error('Failed to notify wallet funded:', nErr);
+            }
         }
         // Handle Project Payment (Milestone or Full)
         if (payment.paymentType === 'milestone' || payment.paymentType === 'full_payment') {
-            // 1. Credit the freelancer's wallet (escrow balance)
             let freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
             if (!freelancerWallet) {
                 freelancerWallet = new Wallet({ userId: payment.payeeId });
             }
-            // Add to balance and escrow
             freelancerWallet.balance = (freelancerWallet.balance || 0) + payment.netAmount;
             freelancerWallet.escrowBalance = (freelancerWallet.escrowBalance || 0) + payment.netAmount;
             payment.escrowStatus = 'held';
             await payment.save();
             await freelancerWallet.save();
-            // 2. Create a transaction record for the freelancer
-            await Transaction.create({
-                userId: payment.payeeId,
-                type: 'payment_received',
-                amount: payment.netAmount,
-                currency: payment.currency,
-                status: 'pending', // pending = locked in escrow until released
+            const existingTx = await Transaction.findOne({
                 paymentId: payment._id,
-                projectId: payment.projectId,
-                description: `🔒 Escrow payment for project: ${payment.description}`,
+                type: 'payment_received'
             });
-            // 3. Notify Freelancer
-            await createNotification({
-                userId: payment.payeeId,
-                type: 'payment_received',
-                title: '🔒 Payment Locked in Escrow',
-                message: `₦${payment.netAmount.toLocaleString()} has been escrowed for your project: ${payment.description || 'Project'}. Funds will be released upon milestone approval.`,
-                relatedId: payment._id,
-                relatedType: 'payment',
-                priority: 'high',
-                link: '/wallet',
-            });
-            // 4. Notify Client
-            await createNotification({
-                userId: payment.payerId,
-                type: 'info',
-                title: '🛡️ Escrow Funded Successfully',
-                message: `Your payment of ₦${payment.amount.toLocaleString()} is securely held in Connecta Escrow for: ${payment.description || 'Project'}.`,
-                relatedId: payment._id,
-                relatedType: 'payment',
-                priority: 'high',
-                link: '/client/projects',
-            });
+            if (!existingTx) {
+                await Transaction.create({
+                    userId: payment.payeeId,
+                    type: 'payment_received',
+                    amount: payment.netAmount,
+                    currency: payment.currency,
+                    status: 'pending',
+                    paymentId: payment._id,
+                    projectId: payment.projectId,
+                    description: `🔒 Escrow payment for project: ${payment.description}`,
+                });
+            }
+            try {
+                await createNotification({
+                    userId: payment.payeeId,
+                    type: 'payment_received',
+                    title: '🔒 Payment Locked in Escrow',
+                    message: `₦${payment.netAmount.toLocaleString()} has been escrowed for your project: ${payment.description || 'Project'}. Funds will be released upon milestone approval.`,
+                    relatedId: payment._id,
+                    relatedType: 'payment',
+                    priority: 'high',
+                    link: '/wallet',
+                });
+                await createNotification({
+                    userId: payment.payerId,
+                    type: 'info',
+                    title: '🛡️ Escrow Funded Successfully',
+                    message: `Your payment of ₦${payment.amount.toLocaleString()} is securely held in Connecta Escrow for: ${payment.description || 'Project'}.`,
+                    relatedId: payment._id,
+                    relatedType: 'payment',
+                    priority: 'high',
+                    link: '/client/projects',
+                });
+            }
+            catch (nErr) {
+                console.error('Failed to create escrow notifications:', nErr);
+            }
         }
         return res.status(200).json({
             success: true,
@@ -387,9 +433,13 @@ export const payFromWallet = async (req, res) => {
         if (!payerId) {
             return res.status(401).json({ success: false, message: 'Unauthorized' });
         }
-        // 1. Check Payer Wallet
-        const payerWallet = await Wallet.findOne({ userId: payerId });
-        if (!payerWallet || payerWallet.availableBalance < amount) {
+        const payAmount = Number(amount || 0);
+        if (payAmount <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid payment amount' });
+        }
+        // 1. Atomic Wallet Balance Deduction (guarantees balance check and deducts in 1 atomic step)
+        const updatedPayerWallet = await Wallet.findOneAndUpdate({ userId: payerId, balance: { $gte: payAmount } }, { $inc: { balance: -payAmount, totalSpent: payAmount } }, { new: true });
+        if (!updatedPayerWallet) {
             return res.status(400).json({
                 success: false,
                 message: 'Insufficient available balance. Please fund your wallet using your virtual account.',
@@ -398,23 +448,15 @@ export const payFromWallet = async (req, res) => {
         // 2. Handle Verification/Posting Fee Payment
         if (type === 'job_verification' && jobId) {
             const job = await Job.findById(jobId);
-            if (!job)
+            if (!job) {
+                // Rollback balance on invalid job
+                await Wallet.updateOne({ userId: payerId }, { $inc: { balance: payAmount, totalSpent: -payAmount } });
                 return res.status(404).json({ success: false, message: 'Job not found' });
-            const SystemSettings = (await import('../models/SystemSettings.model.js')).default;
-            const settings = await SystemSettings.getSettings();
-            const fee = settings.payments?.jobPostingFee || 0;
-            // Ensure amount matches fee (optional but good)
-            if (amount < fee) {
-                return res.status(400).json({ success: false, message: `Insufficient amount. Job posting fee is ₦${fee.toLocaleString()}` });
             }
-            // Deduct from client
-            payerWallet.balance -= amount;
-            payerWallet.totalSpent += amount;
-            await payerWallet.save();
             // Activate Job
             job.status = 'active';
             job.paymentVerified = true;
-            job.paymentStatus = 'escrow';
+            job.paymentStatus = 'verified';
             await job.save();
             // Notify Matched Freelancers
             try {
@@ -429,27 +471,23 @@ export const payFromWallet = async (req, res) => {
                 jobId,
                 payerId,
                 payeeId: payerId,
-                amount,
-                platformFee: amount, // Fee goes to platform
+                amount: payAmount,
+                platformFee: payAmount,
                 netAmount: 0,
                 currency: 'NGN',
                 paymentType: 'job_verification',
                 description: description || `Job posting fee for: ${job.title}`,
                 status: 'completed',
-                paymentMethod: 'bank_transfer',
+                paymentMethod: 'wallet',
                 paidAt: new Date(),
                 escrowStatus: 'none',
             });
             await payment.save();
-            // Update Job
-            job.paymentVerified = true;
-            job.paymentStatus = 'verified';
-            await job.save();
             // Transaction Record
             await Transaction.create({
                 userId: payerId,
                 type: 'payment_sent',
-                amount,
+                amount: payAmount,
                 currency: 'NGN',
                 status: 'completed',
                 paymentId: payment._id,
@@ -459,33 +497,23 @@ export const payFromWallet = async (req, res) => {
         }
         // 3. Handle Project Payment (Hiring/Milestone)
         if ((type === 'milestone' || type === 'full_payment') && projectId && payeeId) {
-            const platformFee = (amount * PLATFORM_FEE_PERCENTAGE) / 100;
-            const netAmount = amount - platformFee;
-            // Deduct from Client
-            payerWallet.balance -= amount;
-            payerWallet.totalSpent += amount;
-            await payerWallet.save();
+            const platformFee = (payAmount * PLATFORM_FEE_PERCENTAGE) / 100;
+            const netAmount = payAmount - platformFee;
             // Credit Freelancer (Escrow)
-            let freelancerWallet = await Wallet.findOne({ userId: payeeId });
-            if (!freelancerWallet) {
-                freelancerWallet = new Wallet({ userId: payeeId });
-            }
-            freelancerWallet.balance += netAmount;
-            freelancerWallet.escrowBalance += netAmount;
-            await freelancerWallet.save();
+            let freelancerWallet = await Wallet.findOneAndUpdate({ userId: payeeId }, { $inc: { balance: netAmount, escrowBalance: netAmount } }, { new: true, upsert: true });
             // Create Payment Record
             const payment = new Payment({
                 projectId,
                 payerId,
                 payeeId,
-                amount,
+                amount: payAmount,
                 platformFee,
                 netAmount,
                 currency: 'NGN',
                 paymentType: type,
                 description: description || 'Project payment from wallet',
                 status: 'completed',
-                paymentMethod: 'bank_transfer',
+                paymentMethod: 'wallet',
                 paidAt: new Date(),
                 escrowStatus: 'held',
             });
@@ -495,7 +523,7 @@ export const payFromWallet = async (req, res) => {
             await Transaction.create({
                 userId: payerId,
                 type: 'payment_sent',
-                amount,
+                amount: payAmount,
                 currency: 'NGN',
                 status: 'completed',
                 paymentId: payment._id,
@@ -514,17 +542,24 @@ export const payFromWallet = async (req, res) => {
                 description: `🔒 Incoming escrow payment`,
             });
             // Notify Freelancer
-            await createNotification({
-                userId: payeeId,
-                type: 'payment_received',
-                title: '🔒 Payment Locked in Escrow',
-                message: `₦${netAmount.toLocaleString()} has been escrowed for project: ${description || 'New Project'}. Funds will be available once work is completed.`,
-                relatedId: payment._id,
-                relatedType: 'payment',
-                priority: 'high',
-            });
+            try {
+                await createNotification({
+                    userId: payeeId,
+                    type: 'payment_received',
+                    title: '🔒 Payment Locked in Escrow',
+                    message: `₦${netAmount.toLocaleString()} has been escrowed for project: ${description || 'New Project'}. Funds will be available once work is completed.`,
+                    relatedId: payment._id,
+                    relatedType: 'payment',
+                    priority: 'high',
+                });
+            }
+            catch (nErr) {
+                console.error('Failed to notify freelancer:', nErr);
+            }
             return res.status(200).json({ success: true, message: 'Payment successful. Funds held in escrow.', data: payment });
         }
+        // If unsupported type, rollback
+        await Wallet.updateOne({ userId: payerId }, { $inc: { balance: payAmount, totalSpent: -payAmount } });
         return res.status(400).json({ success: false, message: 'Invalid payment request' });
     }
     catch (error) {
@@ -539,47 +574,59 @@ export const releasePayment = async (req, res) => {
     try {
         const { paymentId } = req.params;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const payment = await Payment.findById(paymentId);
-        if (!payment) {
-            return res.status(404).json({ success: false, message: 'Payment not found' });
+        if (!paymentId || !mongoose.isValidObjectId(paymentId)) {
+            return res.status(400).json({ success: false, message: 'Invalid payment ID' });
         }
-        // Only payer (client) can release payment
-        if (payment.payerId.toString() !== userId) {
-            return res.status(403).json({ success: false, message: 'Unauthorized to release payment' });
-        }
-        if (payment.escrowStatus !== 'held') {
+        // Atomic State Transition: ONLY release if escrowStatus is currently 'held'
+        const updatedPayment = await Payment.findOneAndUpdate({ _id: paymentId, payerId: userId, escrowStatus: 'held' }, {
+            $set: {
+                escrowStatus: 'released',
+                releasedAt: new Date()
+            }
+        }, { new: true });
+        if (!updatedPayment) {
+            const existingPayment = await Payment.findById(paymentId);
+            if (!existingPayment) {
+                return res.status(404).json({ success: false, message: 'Payment not found' });
+            }
+            if (existingPayment.payerId.toString() !== userId.toString()) {
+                return res.status(403).json({ success: false, message: 'Unauthorized to release payment' });
+            }
             return res.status(400).json({
                 success: false,
-                message: 'Payment is not in escrow',
+                message: 'Payment is not in held escrow or has already been released/refunded',
             });
         }
-        // Update payment
-        payment.escrowStatus = 'released';
-        payment.releasedAt = new Date();
-        await payment.save();
-        // Update freelancer wallet
-        const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
-        if (freelancerWallet) {
-            freelancerWallet.escrowBalance -= payment.netAmount;
-            freelancerWallet.totalEarnings += payment.netAmount;
-            await freelancerWallet.save();
-            // Notify Freelancer
+        // Atomically update freelancer wallet (reduce escrow, record earnings)
+        await Wallet.findOneAndUpdate({ userId: updatedPayment.payeeId }, {
+            $inc: {
+                escrowBalance: -updatedPayment.netAmount,
+                totalEarnings: updatedPayment.netAmount
+            }
+        }, { upsert: true });
+        // Update pending freelancer escrow transactions to completed
+        await Transaction.updateMany({ paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' }, { $set: { status: 'completed' } });
+        // Notify Freelancer
+        try {
             await createNotification({
-                userId: payment.payeeId,
+                userId: updatedPayment.payeeId,
                 type: 'payment_received',
                 title: '💸 Payment Released',
-                message: `₦${payment.netAmount.toLocaleString()} has been moved from escrow to your available balance.`,
-                relatedId: payment._id,
+                message: `${updatedPayment.currency} ${updatedPayment.netAmount.toLocaleString()} has been moved from escrow to your available balance.`,
+                relatedId: updatedPayment._id,
                 relatedType: 'payment',
                 actorId: userId,
                 actorName: 'Client',
                 priority: 'high',
             });
         }
+        catch (nErr) {
+            console.error('Failed to notify freelancer on release:', nErr);
+        }
         return res.status(200).json({
             success: true,
             message: 'Payment released successfully',
-            data: payment,
+            data: updatedPayment,
         });
     }
     catch (error) {
@@ -598,58 +645,71 @@ export const refundPayment = async (req, res) => {
         const { paymentId } = req.params;
         const { reason } = req.body;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const payment = await Payment.findById(paymentId);
-        if (!payment) {
-            return res.status(404).json({ success: false, message: 'Payment not found' });
+        if (!paymentId || !mongoose.isValidObjectId(paymentId)) {
+            return res.status(400).json({ success: false, message: 'Invalid payment ID' });
         }
-        // Only payer can request refund
-        if (payment.payerId.toString() !== userId) {
-            return res.status(403).json({ success: false, message: 'Unauthorized' });
-        }
-        if (payment.escrowStatus !== 'held') {
+        // Atomic State Transition: ONLY refund if escrowStatus is currently 'held'
+        const updatedPayment = await Payment.findOneAndUpdate({ _id: paymentId, payerId: userId, escrowStatus: 'held', status: { $ne: 'refunded' } }, {
+            $set: {
+                status: 'refunded',
+                escrowStatus: 'refunded',
+                refundedAt: new Date(),
+                'metadata.refundReason': reason
+            }
+        }, { new: true });
+        if (!updatedPayment) {
+            const existingPayment = await Payment.findById(paymentId);
+            if (!existingPayment) {
+                return res.status(404).json({ success: false, message: 'Payment not found' });
+            }
+            if (existingPayment.payerId.toString() !== userId.toString()) {
+                return res.status(403).json({ success: false, message: 'Unauthorized' });
+            }
             return res.status(400).json({
                 success: false,
-                message: 'Payment cannot be refunded',
+                message: 'Payment cannot be refunded or is not in held escrow',
             });
         }
-        // Update payment
-        payment.status = 'refunded';
-        payment.escrowStatus = 'refunded';
-        payment.refundedAt = new Date();
-        payment.metadata = { ...payment.metadata, refundReason: reason };
-        await payment.save();
-        // Update freelancer wallet (deduct escrow)
-        const freelancerWallet = await Wallet.findOne({ userId: payment.payeeId });
-        if (freelancerWallet) {
-            freelancerWallet.escrowBalance = Math.max(0, (freelancerWallet.escrowBalance || 0) - payment.netAmount);
-            freelancerWallet.balance = Math.max(0, (freelancerWallet.balance || 0) - payment.netAmount);
-            await freelancerWallet.save();
-        }
-        // Update payer (client) wallet (credit back refund amount)
-        let payerWallet = await Wallet.findOne({ userId: payment.payerId });
-        if (payerWallet) {
-            payerWallet.balance = (payerWallet.balance || 0) + payment.amount;
-            await payerWallet.save();
-        }
-        // Create refund transaction
-        await Transaction.create({
-            userId: payment.payerId,
-            type: 'refund',
-            amount: payment.amount,
-            currency: payment.currency,
-            status: 'completed',
-            paymentId: payment._id,
-            projectId: payment.projectId,
-            description: `Refund for payment (${payment.currency} ${payment.amount})`,
+        // Atomically deduct from freelancer wallet (escrow and balance)
+        await Wallet.findOneAndUpdate({ userId: updatedPayment.payeeId }, {
+            $inc: {
+                escrowBalance: -updatedPayment.netAmount,
+                balance: -updatedPayment.netAmount
+            }
         });
+        // Atomically credit payer (client) wallet
+        await Wallet.findOneAndUpdate({ userId: updatedPayment.payerId }, {
+            $inc: {
+                balance: updatedPayment.amount
+            }
+        }, { upsert: true });
+        // Cancel pending freelancer escrow transactions
+        await Transaction.updateMany({ paymentId: updatedPayment._id, type: 'payment_received', status: 'pending' }, { $set: { status: 'cancelled' } });
+        // Create refund transaction idempotently
+        const existingRefundTx = await Transaction.findOne({
+            paymentId: updatedPayment._id,
+            type: 'refund'
+        });
+        if (!existingRefundTx) {
+            await Transaction.create({
+                userId: updatedPayment.payerId,
+                type: 'refund',
+                amount: updatedPayment.amount,
+                currency: updatedPayment.currency,
+                status: 'completed',
+                paymentId: updatedPayment._id,
+                projectId: updatedPayment.projectId,
+                description: `Refund for payment (${updatedPayment.currency} ${updatedPayment.amount})`,
+            });
+        }
         // Notify Payer
         try {
             await createNotification({
-                userId: payment.payerId,
+                userId: updatedPayment.payerId,
                 type: 'payment_received',
                 title: '💸 Payment Refunded',
-                message: `Your payment of ${payment.currency} ${payment.amount.toLocaleString()} has been refunded to your wallet balance.`,
-                relatedId: payment._id,
+                message: `Your payment of ${updatedPayment.currency} ${updatedPayment.amount.toLocaleString()} has been refunded to your wallet balance.`,
+                relatedId: updatedPayment._id,
                 relatedType: 'payment',
                 priority: 'high',
                 link: '/wallet'
@@ -661,7 +721,7 @@ export const refundPayment = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Payment refunded successfully',
-            data: payment,
+            data: updatedPayment,
         });
     }
     catch (error) {
@@ -802,22 +862,18 @@ export const requestWithdrawal = async (req, res) => {
     try {
         const userId = req.user?.id || req.user?._id || req.user?.userId;
         const { amount, bankDetails } = req.body;
-        if (!amount) {
+        const withdrawAmount = Number(amount || 0);
+        if (withdrawAmount <= 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Withdrawal amount is required',
+                message: 'A valid withdrawal amount is required',
             });
         }
-        // Get wallet
-        // We need to check if wallet exists and has balance
         const wallet = await Wallet.findOne({ userId });
         if (!wallet) {
             return res.status(404).json({ success: false, message: 'Wallet not found' });
         }
-        // Determine Bank Details to use
-        // Prioritize request body, fallback to saved wallet settings
         let withdrawalBankDetails = bankDetails;
-        // Validating if bankDetails from body is empty, we check wallet
         if (!withdrawalBankDetails || !withdrawalBankDetails.accountNumber) {
             if (wallet.bankDetails && wallet.bankDetails.accountNumber) {
                 withdrawalBankDetails = wallet.bankDetails;
@@ -829,32 +885,29 @@ export const requestWithdrawal = async (req, res) => {
                 });
             }
         }
-        // Check available balance
-        if (wallet.availableBalance < amount) {
+        // 1. Atomic Wallet Balance Deduction (guarantees balance check & deducts in 1 atomic step)
+        const updatedWallet = await Wallet.findOneAndUpdate({ userId, balance: { $gte: withdrawAmount } }, { $inc: { balance: -withdrawAmount } }, { new: true });
+        if (!updatedWallet) {
             return res.status(400).json({
                 success: false,
                 message: 'Insufficient available balance',
             });
         }
-        // Calculate processing fee (e.g., 100 NGN or 1.5%) - Lets stick to simple flat fee for now or percentage
-        // Standard Flutterwave transfer fee is usually around 10-50 NGN depending on amount, but platform can charge more.
-        const processingFee = amount < 5000 ? 10 : 50;
-        const netAmount = amount - processingFee;
+        const processingFee = withdrawAmount < 5000 ? 10 : 50;
+        const netAmount = withdrawAmount - processingFee;
+        const reference = `WD_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         // Create withdrawal request
         const withdrawal = new Withdrawal({
             userId,
-            amount,
-            currency: wallet.currency,
+            amount: withdrawAmount,
+            currency: updatedWallet.currency || 'NGN',
             bankDetails: withdrawalBankDetails,
             processingFee,
             netAmount,
             status: 'pending',
+            gatewayReference: reference,
         });
         await withdrawal.save();
-        // Deduct from wallet balance IMMEDIATELY to prevent double spend
-        wallet.balance -= amount;
-        // Pre-save hook will update availableBalance
-        await wallet.save();
         return res.status(200).json({
             success: true,
             message: 'Withdrawal request submitted successfully',
@@ -876,7 +929,7 @@ export const getPendingWithdrawals = async (req, res) => {
     try {
         const withdrawals = await Withdrawal.find({ status: { $in: ['pending', 'processing'] } })
             .sort({ createdAt: -1 })
-            .populate('userId', 'firstName lastName email'); // Ensure User model is populated
+            .populate('userId', 'firstName lastName email');
         return res.status(200).json({
             success: true,
             count: withdrawals.length,
@@ -933,63 +986,67 @@ export const processWithdrawal = async (req, res) => {
     try {
         const { withdrawalId } = req.params;
         const userId = req.user?.id || req.user?._id || req.user?.userId;
-        const withdrawal = await Withdrawal.findById(withdrawalId);
-        if (!withdrawal) {
-            return res.status(404).json({ success: false, message: 'Withdrawal not found' });
+        if (!withdrawalId || !mongoose.isValidObjectId(withdrawalId)) {
+            return res.status(400).json({ success: false, message: 'Invalid withdrawal ID' });
         }
-        if (withdrawal.status !== 'pending') {
+        // Atomic State Transition: ONLY process if status is currently 'pending'
+        const updatedWithdrawal = await Withdrawal.findOneAndUpdate({ _id: withdrawalId, status: 'pending' }, {
+            $set: {
+                status: 'processing',
+                approvedBy: userId,
+                approvedAt: new Date(),
+                processedAt: new Date(),
+            }
+        }, { new: true });
+        if (!updatedWithdrawal) {
             return res.status(400).json({
                 success: false,
-                message: 'Withdrawal already processed',
+                message: 'Withdrawal already processed or not in pending state',
             });
         }
-        // Update status
-        withdrawal.status = 'processing';
-        withdrawal.approvedBy = userId;
-        withdrawal.approvedAt = new Date();
-        withdrawal.processedAt = new Date();
-        await withdrawal.save();
+        const withdrawal = updatedWithdrawal;
         // Initiate VTStack payout
         try {
-            // 1. Resolve/Verify account if needed (already done in previous steps usually)
-            // 2. Initiate payout
             const payoutResponse = await vtstackService.securePayout({
                 accountNumber: withdrawal.bankDetails.accountNumber,
                 bankCode: withdrawal.bankDetails.bankCode,
                 accountName: withdrawal.bankDetails.accountName,
-                amount: withdrawal.netAmount * 100, // Convert to kobo if service expects it
+                amount: withdrawal.netAmount * 100, // Convert to kobo
                 narration: 'Withdrawal from Connecta'
             });
             withdrawal.gatewayReference = payoutResponse.reference || payoutResponse.idempotencyKey;
             withdrawal.transferCode = payoutResponse.reference || payoutResponse.idempotencyKey;
             withdrawal.gatewayResponse = payoutResponse;
-            // VTStack payout response status
             if (payoutResponse.status === 'success' || payoutResponse.status === 'processing' || payoutResponse.status === true) {
                 withdrawal.status = 'completed';
                 withdrawal.completedAt = new Date();
             }
             else {
-                // Keep as processing if pending
                 withdrawal.status = 'processing';
             }
             await withdrawal.save();
-            // Create transaction
-            await Transaction.create({
-                userId: withdrawal.userId,
-                type: 'withdrawal',
-                amount: -withdrawal.amount,
-                currency: withdrawal.currency,
-                status: withdrawal.status === 'completed' ? 'completed' : 'pending',
+            // Create transaction idempotently
+            const existingTx = await Transaction.findOne({
                 gatewayReference: payoutResponse.reference || payoutResponse.idempotencyKey,
-                description: 'Withdrawal to bank account',
             });
+            if (!existingTx) {
+                await Transaction.create({
+                    userId: withdrawal.userId,
+                    type: 'withdrawal',
+                    amount: -withdrawal.amount,
+                    currency: withdrawal.currency,
+                    status: withdrawal.status === 'completed' ? 'completed' : 'pending',
+                    gatewayReference: payoutResponse.reference || payoutResponse.idempotencyKey,
+                    description: 'Withdrawal to bank account',
+                });
+            }
             // Send email notification
             try {
-                const User = require('../models/user.model').default;
+                const User = (await import('../models/user.model.js')).default;
                 const user = await User.findById(withdrawal.userId);
                 if (user && user.email) {
-                    const emailService = require('../services/email.service');
-                    await emailService.sendEmail(user.email, 'Withdrawal Processed', `<p>Hi ${user.firstName},</p><p>Your withdrawal of <strong>${withdrawal.currency} ${withdrawal.amount}</strong> has been successfully processed and sent to your bank account.</p>`, `Your withdrawal of ${withdrawal.currency} ${withdrawal.amount} has been processed.`);
+                    const { sendEmail } = await import('../services/email.service.js');
+                    await sendEmail(user.email, 'Withdrawal Processed', `<p>Hi ${user.firstName},</p><p>Your withdrawal of <strong>${withdrawal.currency} ${withdrawal.amount}</strong> has been successfully processed and sent to your bank account.</p>`, `Your withdrawal of ${withdrawal.currency} ${withdrawal.amount} has been processed.`);
                 }
             }
             catch (e) {
@@ -1002,17 +1059,12 @@ export const processWithdrawal = async (req, res) => {
             });
         }
         catch (error) {
-            console.error('Flutterwave transfer error:', error);
+            console.error('Payout transfer error:', error);
             withdrawal.status = 'failed';
             withdrawal.failureReason = error.message;
             await withdrawal.save();
-            // Refund to wallet
-            const wallet = await Wallet.findOne({ userId: withdrawal.userId });
-            if (wallet) {
-                wallet.balance += withdrawal.amount;
-                wallet.availableBalance = (wallet.balance || 0) - (wallet.escrowBalance || 0); // Re-calc available
-                await wallet.save();
-            }
+            // Refund to wallet atomically
+            await Wallet.findOneAndUpdate({ userId: withdrawal.userId }, { $inc: { balance: withdrawal.amount } });
             throw error;
         }
     }
@@ -1059,9 +1111,6 @@ export const getTransactionHistory = async (req, res) => {
         });
     }
 };
-/**
- * Get list of banks
- */
 /**
  * Get list of banks
  */
@@ -1169,24 +1218,21 @@ export const saveWithdrawalSettings = async (req, res) => {
                 message: 'Missing required fields: accountName, accountNumber, bankName, bankCode',
             });
         }
-        // Find user's wallet
         let wallet = await Wallet.findOne({ userId });
         if (!wallet) {
-            // Create wallet if it doesn't exist
             wallet = new Wallet({
                 userId,
                 balance: 0,
-                currency: 'NGN', // Default to NGN
+                currency: 'NGN',
             });
         }
-        // Update bank details
         wallet.bankDetails = {
             accountName,
             accountNumber,
             bankName,
             bankCode,
         };
-        wallet.isVerified = true; // Assume verified if they provided details (for now)
+        wallet.isVerified = true;
         await wallet.save();
         return res.status(200).json({
             success: true,
@@ -1281,26 +1327,20 @@ export const getOrCreateVirtualAccount = async (req, res) => {
             wallet = new Wallet({ userId });
             await wallet.save();
         }
-        // If already exists, return it
         if (wallet.vtstackVirtualAccount && wallet.vtstackVirtualAccount.accountNumber) {
             return res.status(200).json({
                 success: true,
                 data: wallet.vtstackVirtualAccount
             });
         }
-        // Get user details for account creation
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
-        // Use phone number or random 11-digit for BVN fallback
-        // Must start with '22' as per documentation requirement
         let bvnToUse = user.phoneNumber ? user.phoneNumber.replace(/[^0-9]/g, '').slice(-11) : '';
         if (bvnToUse.length !== 11 || !bvnToUse.startsWith('22')) {
             bvnToUse = '22' + Math.floor(100000000 + Math.random() * 900000000).toString();
         }
-        // Create virtual account
-        // Normalize phone to 11 digits (e.g. 080...)
         let phoneToUse = user.phoneNumber || '08000000000';
         phoneToUse = phoneToUse.replace(/[^0-9]/g, '');
         if (phoneToUse.startsWith('234') && phoneToUse.length > 11) {
@@ -1349,12 +1389,9 @@ export const handleVTStackWebhook = async (req, res) => {
     try {
         const signature = req.headers['x-vtstack-signature'];
         const secret = req.headers['x-vtstack-secret'];
-        // 1. Verify Secret (Basic check)
         if (secret !== process.env.VTSTACK_WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
             console.warn('Invalid VTStack Secret Header');
-            // In production, we should reject. For dev, we might allow.
         }
-        // 2. Verify HMAC Signature
         const hash = crypto
             .createHmac('sha256', process.env.VTSTACK_WEBHOOK_KEY || 'webhook_secret')
             .update(JSON.stringify(req.body))
@@ -1368,62 +1405,53 @@ export const handleVTStackWebhook = async (req, res) => {
             // Find wallet by virtual account number
             const wallet = await Wallet.findOne({ 'vtstackVirtualAccount.accountNumber': virtualAccount });
             if (wallet) {
-                // Check for duplicate transaction
+                // Idempotency check: prevent duplicate credit if transaction was already processed
                 const existingTx = await Transaction.findOne({ gatewayReference: reference });
                 if (existingTx) {
                     return res.status(200).json({ success: true, message: 'Duplicate transaction ignored' });
                 }
-                // Credit the wallet
-                // VTStack amounts are usually in Kobo (e.g. 10000 for 100 Naira)
-                // Ensure we convert to Naira for our system
                 const creditAmount = amount / 100;
-                wallet.balance += creditAmount;
-                await wallet.save();
-                // Create transaction record
-                await Transaction.create({
-                    userId: wallet.userId,
-                    type: 'deposit',
-                    amount: creditAmount,
-                    currency: 'NGN',
-                    status: 'completed',
-                    gateway: 'vtstack',
-                    gatewayReference: reference,
-                    description: `Virtual Account Deposit: ${reference}`
-                });
-                // Notify user
-                await createNotification({
-                    userId: wallet.userId,
-                    type: 'payment_received',
-                    title: '💰 Wallet Funded via Transfer',
-                    message: `Your wallet has been credited with ₦${creditAmount.toLocaleString()}.`,
-                    priority: 'high'
-                });
-                console.log(`Successfully credited wallet for account ${virtualAccount} with ${creditAmount}`);
+                // Atomically credit the wallet
+                const updatedWallet = await Wallet.findOneAndUpdate({ _id: wallet._id }, { $inc: { balance: creditAmount } }, { new: true });
+                if (updatedWallet) {
+                    await Transaction.create({
+                        userId: wallet.userId,
+                        type: 'deposit',
+                        amount: creditAmount,
+                        currency: 'NGN',
+                        status: 'completed',
+                        gateway: 'vtstack',
+                        gatewayReference: reference,
+                        description: `Virtual Account Deposit: ${reference}`
+                    });
+                    try {
+                        await createNotification({
+                            userId: wallet.userId,
+                            type: 'payment_received',
+                            title: '💰 Wallet Funded via Transfer',
+                            message: `Your wallet has been credited with ₦${creditAmount.toLocaleString()}.`,
+                            priority: 'high'
+                        });
+                    }
+                    catch (nErr) {
+                        console.error('Notification error on VTStack webhook:', nErr);
+                    }
+                    console.log(`Successfully credited wallet for account ${virtualAccount} with ${creditAmount}`);
+                }
             }
             else {
                 console.warn(`Wallet not found for virtual account: ${virtualAccount}`);
             }
         }
-        // Always respond with 200 OK as per VTStack docs
         return res.status(200).json({ success: true });
     }
     catch (error) {
         console.error('VTStack Webhook Error:', error);
-        // Still return 200 to acknowledge receipt if it's a processing error
         return res.status(200).json({ success: false, error: error.message });
     }
 };
 /**
  * Request a payout via VTStack Secure Payout API
- *
- * Flow:
- *  1. Validate user has sufficient available balance
- *  2. Deduct balance immediately (prevent double-spend)
- *  3. Create a Withdrawal record (status: processing)
- *  4. Call VTStack Secure Payout API with HMAC-SHA256 signature
- *  5. Create Transaction record
- *  6. Notify user
- *  7. On gateway failure: restore wallet balance & mark withdrawal failed
  */
 export const requestVTStackPayout = async (req, res) => {
     const userId = req.user?.id || req.user?._id || req.user?.userId;
@@ -1431,14 +1459,13 @@ export const requestVTStackPayout = async (req, res) => {
         return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
     try {
-        const { amount } = req.body; // amount in NAIRA (our system stores in Naira)
-        // ── Validation ────────────────────────────────────────────────
+        const { amount } = req.body;
         if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
             return res.status(400).json({ success: false, message: 'A valid payout amount is required.' });
         }
         const nairaAmount = Number(amount);
-        const MIN_PAYOUT = 100; // ₦100 minimum
-        const MAX_PAYOUT = 5000000; // ₦5,000,000 maximum per request
+        const MIN_PAYOUT = 100;
+        const MAX_PAYOUT = 5000000;
         if (nairaAmount < MIN_PAYOUT) {
             return res.status(400).json({
                 success: false,
@@ -1451,18 +1478,10 @@ export const requestVTStackPayout = async (req, res) => {
                 message: `Maximum payout amount is ₦${MAX_PAYOUT.toLocaleString()} per request.`,
             });
         }
-        // ── Wallet Check ──────────────────────────────────────────────
         const wallet = await Wallet.findOne({ userId });
         if (!wallet) {
             return res.status(404).json({ success: false, message: 'Wallet not found.' });
         }
-        if ((wallet.availableBalance || 0) < nairaAmount) {
-            return res.status(400).json({
-                success: false,
-                message: `Insufficient available balance. You have ₦${(wallet.availableBalance || 0).toLocaleString()} available.`,
-            });
-        }
-        // ── Bank Details ──────────────────────────────────────────────
         const bankDetails = wallet.bankDetails;
         if (!bankDetails || !bankDetails.accountNumber || !bankDetails.bankCode || !bankDetails.accountName) {
             return res.status(400).json({
@@ -1470,12 +1489,15 @@ export const requestVTStackPayout = async (req, res) => {
                 message: 'No bank account saved. Please set up your withdrawal bank account first.',
             });
         }
-        // ── Deduct Balance Immediately (prevent double-spend) ─────────
-        const balanceBefore = wallet.balance;
-        wallet.balance -= nairaAmount;
-        await wallet.save(); // pre-save hook updates availableBalance
-        // ── Create Withdrawal Record ──────────────────────────────────
-        const processingFee = nairaAmount < 5000 ? 10 : 50; // flat fee in Naira
+        // ── Deduct Balance Immediately (prevent double-spend via atomic findOneAndUpdate) ─────────
+        const updatedWallet = await Wallet.findOneAndUpdate({ userId, balance: { $gte: nairaAmount } }, { $inc: { balance: -nairaAmount } }, { new: true });
+        if (!updatedWallet) {
+            return res.status(400).json({
+                success: false,
+                message: 'Insufficient available balance.',
+            });
+        }
+        const processingFee = nairaAmount < 5000 ? 10 : 50;
         const netAmount = nairaAmount - processingFee;
         const withdrawal = new Withdrawal({
             userId,
@@ -1493,42 +1515,32 @@ export const requestVTStackPayout = async (req, res) => {
             processedAt: new Date(),
         });
         await withdrawal.save();
-        // ── Call VTStack Secure Payout API ────────────────────────────
-        // VTStack expects amount in KOBO (Naira × 100)
         let gatewayResponse;
-        let payoutSucceeded = false;
         try {
             gatewayResponse = await vtstackService.securePayout({
-                amount: Math.round(netAmount * 100), // convert Naira → Kobo
+                amount: Math.round(netAmount * 100),
                 bankCode: bankDetails.bankCode,
                 accountNumber: bankDetails.accountNumber,
                 accountName: bankDetails.accountName,
                 narration: `Connecta payout – ${withdrawal._id.toString()}`,
             });
-            // VTStack responses typically include a reference/status field
             withdrawal.gatewayReference = gatewayResponse?.reference || gatewayResponse?.idempotencyKey || '';
             withdrawal.gatewayResponse = gatewayResponse;
             withdrawal.transferCode = gatewayResponse?.reference || gatewayResponse?.idempotencyKey || '';
-            // Mark completed if gateway confirms success immediately
             const gwStatus = (gatewayResponse?.status || '').toLowerCase();
             if (gwStatus === 'success' || gwStatus === 'successful' || gwStatus === 'pending') {
                 withdrawal.status = 'completed';
                 withdrawal.completedAt = new Date();
-                payoutSucceeded = true;
             }
             else {
-                // Gateway accepted but async – stay as processing
                 withdrawal.status = 'processing';
-                payoutSucceeded = true; // request was accepted
             }
             await withdrawal.save();
         }
         catch (gatewayError) {
             console.error('❌ [VTStack Payout] Gateway error, rolling back balance:', gatewayError.message);
-            // Restore wallet balance
-            wallet.balance = balanceBefore;
-            await wallet.save();
-            // Mark withdrawal as failed
+            // Restore wallet balance atomically
+            await Wallet.updateOne({ userId }, { $inc: { balance: nairaAmount } });
             withdrawal.status = 'failed';
             withdrawal.failureReason = gatewayError.message || 'Gateway error';
             await withdrawal.save();
@@ -1537,7 +1549,7 @@ export const requestVTStackPayout = async (req, res) => {
                 message: `Payout failed: ${gatewayError.message || 'Gateway error. Please try again.'}`,
             });
         }
-        // ── Create Transaction Record ─────────────────────────────────
+        // Create Transaction Record
         await Transaction.create({
             userId,
             type: 'withdrawal',
@@ -1546,8 +1558,8 @@ export const requestVTStackPayout = async (req, res) => {
             status: withdrawal.status === 'completed' ? 'completed' : 'pending',
             gateway: 'vtstack',
             gatewayReference: withdrawal.gatewayReference,
-            balanceBefore,
-            balanceAfter: wallet.balance,
+            balanceBefore: updatedWallet.balance + nairaAmount,
+            balanceAfter: updatedWallet.balance,
             description: `Payout to ${bankDetails.accountName} (${bankDetails.accountNumber})`,
             metadata: {
                 withdrawalId: withdrawal._id.toString(),
@@ -1556,16 +1568,20 @@ export const requestVTStackPayout = async (req, res) => {
                 netAmount,
             },
         });
-        // ── Notify User ───────────────────────────────────────────────
-        await createNotification({
-            userId,
-            type: 'payment_received',
-            title: '💸 Payout Initiated',
-            message: `Your payout of ₦${netAmount.toLocaleString()} to ${bankDetails.accountName} (${bankDetails.bankName || bankDetails.bankCode} – ${bankDetails.accountNumber}) is being processed.`,
-            relatedId: withdrawal._id,
-            relatedType: 'withdrawal',
-            priority: 'high',
-        });
+        try {
+            await createNotification({
+                userId,
+                type: 'payment_received',
+                title: '💸 Payout Initiated',
+                message: `Your payout of ₦${netAmount.toLocaleString()} to ${bankDetails.accountName} (${bankDetails.bankName || bankDetails.bankCode} – ${bankDetails.accountNumber}) is being processed.`,
+                relatedId: withdrawal._id,
+                relatedType: 'withdrawal',
+                priority: 'high',
+            });
+        }
+        catch (nErr) {
+            console.error('Notification error on payout:', nErr);
+        }
         return res.status(200).json({
             success: true,
             message: `Payout of ₦${netAmount.toLocaleString()} initiated successfully. Funds will arrive shortly.`,
@@ -2252,15 +2268,16 @@ export const requestFlutterwaveWithdrawal = async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
-        const wallet = await Wallet.findOne({ userId });
         const payoutCurrency = (currency || user.currency || 'USD').toUpperCase();
         const payoutAmount = Number(amount || 0);
-        if (!wallet || (wallet.balance || 0) < payoutAmount) {
+        if (payoutAmount <= 0) {
+            return res.status(400).json({ success: false, message: 'A valid withdrawal amount is required' });
+        }
+        // Atomic balance deduction (guarantees balance check and deducts in 1 atomic operation)
+        const updatedWallet = await Wallet.findOneAndUpdate({ userId, balance: { $gte: payoutAmount } }, { $inc: { balance: -payoutAmount } }, { new: true });
+        if (!updatedWallet) {
             return res.status(400).json({ success: false, message: 'Insufficient wallet balance for withdrawal' });
         }
-        // Deduct balance
-        wallet.balance -= payoutAmount;
-        await wallet.save();
         const reference = `FLW_WD_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         const withdrawal = await Withdrawal.create({
             userId,
