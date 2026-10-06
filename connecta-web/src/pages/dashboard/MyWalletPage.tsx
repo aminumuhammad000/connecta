@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuth } from '../../contexts/AuthContext';
-import { useCurrency } from '../../contexts/CurrencyContext';
 import { motion } from 'framer-motion';
 import {
   ShieldCheck, ArrowDownLeft, ArrowUpRight, ArrowRight, RefreshCw, Loader2,
-  X, PlusCircle, Copy, Building2, CreditCard, Edit3, CheckCircle2,
+  X, PlusCircle, CreditCard, Edit3, CheckCircle2,
 } from 'lucide-react';
 import { walletAPI, flutterwaveAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -302,8 +301,6 @@ export const MyWalletPage: React.FC = () => {
   const [wallet, setWallet] = useState<any | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generatingVirtualAcc, setGeneratingVirtualAcc] = useState(false);
-  const [virtualAccount, setVirtualAccount] = useState<any | null>(null);
 
   // Deposit modal
   const [showDepositModal, setShowDepositModal] = useState(false);
@@ -413,13 +410,6 @@ export const MyWalletPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-
-    // Non-blocking background fetch for virtual account details
-    walletAPI.getVirtualAccount()
-      .then((vtRes) => {
-        if (vtRes?.success && vtRes.data) setVirtualAccount(vtRes.data);
-      })
-      .catch(() => null);
   };
 
   const loadSettingsBanks = async (cCode: string) => {
@@ -443,23 +433,6 @@ export const MyWalletPage: React.FC = () => {
   };
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleGenerateVirtualAccount = async () => {
-    setGeneratingVirtualAcc(true);
-    try {
-      const res = await walletAPI.getVirtualAccount();
-      if (res?.success && res.data) {
-        setVirtualAccount(res.data);
-        showToast('Virtual account generated successfully!', 'success');
-      } else {
-        showToast(res?.message || 'Could not generate virtual account.', 'error');
-      }
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'Virtual account generation pending.', 'info');
-    } finally {
-      setGeneratingVirtualAcc(false);
-    }
-  };
-
   const handleSavePayoutSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settingsAccountNumber || !settingsBankName) {
@@ -665,40 +638,6 @@ export const MyWalletPage: React.FC = () => {
               >
                 Edit Payout Details →
               </button>
-            </div>
-          )}
-
-          {/* Virtual Account Card (clients only) */}
-          {!isFreelancer && (
-            <div style={{ padding: '16px 20px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}>
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '4px' }}>
-                Virtual Bank Transfer
-              </div>
-              {virtualAccount ? (
-                <>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--primary)' }}>
-                    {virtualAccount.bankName || 'Wema Bank'} • {virtualAccount.accountNumber}
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${virtualAccount.bankName} - ${virtualAccount.accountNumber}`);
-                      showToast('Account details copied!', 'info');
-                    }}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: '4px' }}
-                  >
-                    Copy Details
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={handleGenerateVirtualAccount}
-                  disabled={generatingVirtualAcc}
-                  className="btn-primary"
-                  style={{ padding: '6px 12px', fontSize: '0.76rem', borderRadius: '8px', fontWeight: 700, marginTop: '6px' }}
-                >
-                  Generate Account
-                </button>
-              )}
             </div>
           )}
         </div>
