@@ -111,6 +111,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/agent", agentRoute);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/feed", feedRoutes);

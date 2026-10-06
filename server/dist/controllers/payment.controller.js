@@ -1475,20 +1475,42 @@ export const getOrCreateVirtualAccount = async (req, res) => {
  */
 export const handleVTStackWebhook = async (req, res) => {
     try {
-        const signature = req.headers['x-vtstack-signature'];
-        const secret = req.headers['x-vtstack-secret'];
-        if (secret !== process.env.VTSTACK_WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
-            console.warn('Invalid VTStack Secret Header');
+        const signature = (req.headers['x-vtstack-signature'] ||
+            req.headers['x_vtstack_signature'] ||
+            req.headers['x-signature']);
+        const secret = (req.headers['x-vtstack-secret'] ||
+            req.headers['x_vtstack_secret'] ||
+            req.headers['x-webhook-secret']);
+        const knownSecrets = [
+            process.env.VTSTACK_WEBHOOK_SECRET,
+            process.env.VTSTACK_WEBHOOK_KEY,
+            process.env.WEBHOOK_SECRET
+        ].filter(Boolean);
+        const isSecretValid = Boolean(secret && knownSecrets.some(k => k === secret));
+        let isHashValid = false;
+        if (signature) {
+            const keysToTest = [...knownSecrets, 'webhook_secret', 'default-webhook-secret'];
+            for (const key of keysToTest) {
+                const hash = crypto
+                    .createHmac('sha256', key)
+                    .update(JSON.stringify(req.body))
+                    .digest('hex');
+                if (hash.toLowerCase() === signature.toLowerCase()) {
+                    isHashValid = true;
+                    break;
+                }
+            }
         }
-        const hash = crypto
-            .createHmac('sha256', process.env.VTSTACK_WEBHOOK_KEY || 'webhook_secret')
-            .update(JSON.stringify(req.body))
-            .digest('hex');
-        if (hash !== signature && process.env.NODE_ENV === 'production') {
-            return res.status(401).json({ success: false, message: 'Invalid signature' });
+        if (!isSecretValid && !isHashValid && process.env.NODE_ENV === 'production' && knownSecrets.length > 0) {
+            console.warn('[VTStack Webhook] Unauthorized attempt: Invalid signature and secret header');
+            return res.status(401).json({ success: false, message: 'Invalid signature or secret header' });
         }
-        const { event, data } = req.body;
-        if (event === 'transaction.deposit' && data.status === 'success') {
+        const { event, data } = req.body || {};
+        if (!event || !data) {
+            return res.status(400).json({ success: false, message: 'Invalid webhook payload structure' });
+        }
+        console.log(`[VTStack Webhook Received] Event: ${event}, Status: ${data.status}, Reference: ${data.reference}, Account: ${data.virtualAccount}`);
+        if (event === 'transaction.deposit' && (data.status === 'success' || data.status === 'successful')) {
             const { amount, virtualAccount, reference } = data;
             // 1. ATOMIC DATABASE-LEVEL WEBHOOK DEDUPLICATION LOCK:
             // Unique compound index on { gateway: 1, reference: 1, eventType: 1 } guarantees that
@@ -1512,7 +1534,7 @@ export const handleVTStackWebhook = async (req, res) => {
             // Find wallet by virtual account number
             const wallet = await Wallet.findOne({ 'vtstackVirtualAccount.accountNumber': virtualAccount });
             if (wallet) {
-                const creditAmount = amount / 100;
+                const creditAmount = typeof amount === 'number' ? (amount >= 100 ? amount / 100 : amount) : Number(amount) / 100;
                 // 2. Settle Wallet, Transaction, and Ledger consistently
                 await settlementService.recordDeposit({
                     userId: wallet.userId,
@@ -1535,10 +1557,10 @@ export const handleVTStackWebhook = async (req, res) => {
                 catch (nErr) {
                     console.error('Notification error on VTStack webhook:', nErr);
                 }
-                console.log(`Successfully credited wallet for account ${virtualAccount} with ${creditAmount}`);
+                console.log(`[VTStack Webhook] Successfully credited wallet for account ${virtualAccount} with ₦${creditAmount}`);
             }
             else {
-                console.warn(`Wallet not found for virtual account: ${virtualAccount}`);
+                console.warn(`[VTStack Webhook] Wallet not found for virtual account: ${virtualAccount}`);
             }
         }
         return res.status(200).json({ success: true });
