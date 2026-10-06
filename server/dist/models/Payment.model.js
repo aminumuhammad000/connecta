@@ -57,6 +57,11 @@ const PaymentSchema = new Schema({
     milestoneId: {
         type: Schema.Types.ObjectId,
     },
+    transactionId: {
+        type: String,
+        sparse: true,
+        index: true,
+    },
     gatewayReference: {
         type: String,
         unique: true,

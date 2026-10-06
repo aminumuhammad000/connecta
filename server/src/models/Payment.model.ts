@@ -16,6 +16,7 @@ export interface IPayment extends Document {
   milestoneId?: mongoose.Types.ObjectId;
 
   // Payment Gateway Details
+  transactionId?: string;
   gatewayReference: string; // Reference from payment gateway
   gatewayResponse?: any;
 
@@ -98,6 +99,11 @@ const PaymentSchema: Schema = new Schema(
     },
     milestoneId: {
       type: Schema.Types.ObjectId,
+    },
+    transactionId: {
+      type: String,
+      sparse: true,
+      index: true,
     },
     gatewayReference: {
       type: String,

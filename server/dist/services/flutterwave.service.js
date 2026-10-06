@@ -73,7 +73,7 @@ export const flutterwaveService = {
         }
     },
     /**
-     * Verify a Flutterwave Transaction by ID
+     * Verify a Flutterwave Transaction by numeric Transaction ID
      */
     verifyTransaction: async (transactionId) => {
         try {
@@ -81,13 +81,33 @@ export const flutterwaveService = {
             const response = await axios.get(`${FLW_BASE_URL}/transactions/${transactionId}/verify`, {
                 headers: {
                     Authorization: `Bearer ${token}`
-                }
+                },
+                timeout: 10000
             });
             return response.data;
         }
         catch (err) {
             console.error('Flutterwave Verify Transaction Error:', err.response?.data || err.message);
-            throw new Error(err.response?.data?.message || 'Failed to verify transaction');
+            throw new Error(err.response?.data?.message || 'Failed to verify transaction with Flutterwave');
+        }
+    },
+    /**
+     * Verify a Flutterwave Transaction by Transaction Reference (tx_ref)
+     */
+    verifyTransactionByRef: async (txRef) => {
+        try {
+            const token = await getAuthToken();
+            const response = await axios.get(`${FLW_BASE_URL}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                timeout: 10000
+            });
+            return response.data;
+        }
+        catch (err) {
+            console.error('Flutterwave Verify by Reference Error:', err.response?.data || err.message);
+            throw new Error(err.response?.data?.message || 'Failed to verify transaction by reference with Flutterwave');
         }
     },
     /**
