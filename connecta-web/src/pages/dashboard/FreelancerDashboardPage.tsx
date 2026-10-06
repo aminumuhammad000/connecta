@@ -12,8 +12,7 @@ import { DashboardHeaderArt } from '../../components/common/DashboardHeaderArt';
 import { jobAPI, proposalAPI, walletAPI, savedJobAPI, contractAPI, authAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { MinimalistLoader } from '../../components/common/SkeletonLoader';
-import { formatJobBudget } from '../../utils/currency';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { formatJobBudget, formatCurrency } from '../../utils/currency';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { JobCompletionFlyerModal } from '../../components/modals/JobCompletionFlyerModal';
 
@@ -21,7 +20,6 @@ export const FreelancerDashboardPage: React.FC = () => {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const { formatDualPrice } = useCurrency();
   const { notifications, unreadCount, markAsRead } = useNotifications();
 
   const [jobs, setJobs] = useState<any[]>([]);
@@ -317,7 +315,7 @@ export const FreelancerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            {formatDualPrice(Number(wallet?.balance ?? 0))}
+            {formatCurrency(Number(wallet?.balance ?? 0), user?.currency || 'USD')}
           </div>
           <span style={{ fontSize: '0.72rem', color: 'var(--success)', marginTop: '2px', display: 'block', fontWeight: 600 }}>Ready to withdraw</span>
         </div>

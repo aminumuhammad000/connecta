@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { walletAPI, flutterwaveAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
-import { SUPPORTED_CURRENCIES, type CurrencyCode } from '../../utils/currency';
+import { SUPPORTED_CURRENCIES, formatCurrency, type CurrencyCode } from '../../utils/currency';
 
 // ---------------------------------------------------------------------------
 // Country / bank options
@@ -290,7 +290,6 @@ const PayoutSetupPage: React.FC<PayoutSetupPageProps> = ({
 export const MyWalletPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast, removeToast } = useToast();
-  const { formatDualPrice } = useCurrency();
   const isFreelancer = user?.userType === 'freelancer';
 
   // Currency helpers
@@ -628,7 +627,7 @@ export const MyWalletPage: React.FC = () => {
               {isFreelancer ? 'Available Balance' : 'Client Wallet'}
             </div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              {formatDualPrice(currentBalance)}
+              {formatCurrency(currentBalance, userCurrency)}
             </div>
             <span style={{ fontSize: '0.72rem', color: 'var(--success)', marginTop: '4px', display: 'block', fontWeight: 600 }}>
               Ready for instant withdrawal
@@ -641,7 +640,7 @@ export const MyWalletPage: React.FC = () => {
               {isFreelancer ? 'Pending Escrow' : 'Active Escrow Milestones'}
             </div>
             <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-              {formatDualPrice(currentEscrow)}
+              {formatCurrency(currentEscrow, userCurrency)}
             </div>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ShieldCheck size={12} color="var(--primary)" /> Connecta Protected
@@ -739,7 +738,7 @@ export const MyWalletPage: React.FC = () => {
                     </div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: '1rem', color: tx.type === 'deposit' ? 'var(--success)' : 'var(--text-primary)' }}>
-                  {tx.type === 'deposit' ? '+' : '-'}{formatDualPrice(Number(tx.amount || 0))}
+                  {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(Number(tx.amount || 0), tx.currency || userCurrency)}
                 </div>
               </div>
             ))}

@@ -12,6 +12,7 @@ import { jobAPI, walletAPI } from '../../services/api';
 import { MinimalistLoader } from '../../components/common/SkeletonLoader';
 import { formatJobBudget } from '../../utils/currency';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { formatCurrency } from '../../utils/currency';
 import { useNotifications } from '../../contexts/NotificationContext';
 
 import { useToast } from '../../contexts/ToastContext';
@@ -20,7 +21,6 @@ export const ClientDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { formatDualPrice } = useCurrency();
   const { notifications, unreadCount, markAsRead } = useNotifications();
 
   const [myJobs, setMyJobs] = useState<any[]>([]);
@@ -153,7 +153,7 @@ export const ClientDashboardPage: React.FC = () => {
             </div>
           </div>
           <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-            {formatDualPrice(Number(wallet?.escrowBalance ?? wallet?.balance ?? 0))}
+            {formatCurrency(Number(wallet?.escrowBalance ?? wallet?.balance ?? 0), user?.currency || 'USD')}
           </div>
         </div>
       </div>

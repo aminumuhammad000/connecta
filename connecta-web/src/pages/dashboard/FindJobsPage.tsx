@@ -8,11 +8,11 @@ import { CardSkeleton, MinimalistLoader } from '../../components/common/Skeleton
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { useToast } from '../../contexts/ToastContext';
 import { VerificationRequestModal } from '../../components/modals/VerificationRequestModal';
+import { formatJobBudget } from '../../utils/currency';
 
 export const FindJobsPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { formatDualPrice } = useCurrency();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -287,7 +287,7 @@ export const FindJobsPage: React.FC = () => {
 
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)' }}>
-                    {formatDualPrice(Number(job.budget || 0))}
+                    {formatJobBudget(Number(job.budget || 0), job.currency)}
                   </div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                     {job.jobType === 'full_time_contract' ? 'Monthly Salary Retainer' : (job.budgetType || 'fixed price')}
@@ -442,7 +442,7 @@ export const FindJobsPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Suggested Bid Price</span>
-                    <strong style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>{formatDualPrice(aiProposalData?.bidAmount || aiApplyModalJob.budget)}</strong>
+                    <strong style={{ fontSize: '1.1rem', color: 'var(--primary)' }}>{formatJobBudget(aiProposalData?.bidAmount || aiApplyModalJob.budget, aiApplyModalJob.currency)}</strong>
                   </div>
                   <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Estimated Turnaround</span>

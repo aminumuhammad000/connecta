@@ -16,12 +16,13 @@ import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { formatJobBudget } from '../../utils/currency';
 import { JOB_CATEGORIES, CATEGORY_SKILLS } from '../../utils/categories';
 
 export const PostJobPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { formatDualPrice, currencies } = useCurrency();
+  const { currencies } = useCurrency();
 
   // Wizard Step State (1 to 4)
   const [step, setStep] = useState<number>(1);
@@ -752,7 +753,7 @@ export const PostJobPage: React.FC = () => {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
-                        {formatDualPrice(Number(budget))}
+                        {formatJobBudget(Number(budget), selectedCurrency)}
                       </div>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {jobType === 'full_time_contract' ? 'Monthly Salary' : budgetType}
