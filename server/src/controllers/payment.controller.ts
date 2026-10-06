@@ -27,10 +27,10 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    if (!jobId || !amount) {
+    if (!jobId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: jobId, amount',
+        message: 'Missing required field: jobId',
       });
     }
 
@@ -40,8 +40,18 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
       return res.status(404).json({ success: false, message: 'Job not found' });
     }
 
-    if (job.clientId.toString() !== userId) {
+    if (job.clientId.toString() !== userId.toString()) {
       return res.status(403).json({ success: false, message: 'Not authorized for this job' });
+    }
+
+    if (job.paymentVerified === true) {
+      return res.status(400).json({ success: false, message: 'Job is already verified and active' });
+    }
+
+    // Server-side amount validation (never trust unvalidated client input)
+    const validAmount = Number(amount || (job as any).verificationFee || 1000);
+    if (validAmount <= 0 || !Number.isFinite(validAmount)) {
+      return res.status(400).json({ success: false, message: 'Invalid verification payment amount' });
     }
 
     // Create payment record for job verification
@@ -49,9 +59,9 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
       jobId,
       payerId: userId,
       payeeId: userId, // Self-payment for verification
-      amount,
+      amount: validAmount,
       platformFee: 0, // No platform fee for verification
-      netAmount: amount,
+      netAmount: validAmount,
       currency: 'NGN',
       paymentType: 'job_verification',
       description: description || `Job verification payment for ${job.title}`,
@@ -68,11 +78,11 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    console.log('Initializing Flutterwave payment for:', user.email, 'Amount:', amount, 'Ref:', payment._id.toString());
+    console.log('Initializing Flutterwave payment for:', user.email, 'Amount:', validAmount, 'Ref:', payment._id.toString());
 
     const vtstackResponse = await vtstackService.initializePayment(
       user.email,
-      amount,
+      validAmount,
       payment._id.toString(), // Use payment ID as tx_ref
       { jobId, userId, type: 'job_verification' }
     );
@@ -105,28 +115,35 @@ export const initializeJobVerification = async (req: Request, res: Response) => 
 export const initializeTopup = async (req: Request, res: Response) => {
   try {
     console.log('🔵 [debug] Received Topup Initialization request');
-    const { amount, description } = req.body;
+    const { amount, currency, description } = req.body;
     const userId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
 
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    if (!amount) {
+    const depositAmount = Number(amount || 0);
+    if (depositAmount <= 0 || !Number.isFinite(depositAmount)) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required field: amount',
+        message: 'Invalid deposit amount: must be a positive number',
       });
+    }
+
+    const ALLOWED_CURRENCIES = ['NGN', 'USD', 'GBP', 'EUR', 'KES', 'GHS', 'UGX', 'ZAR', 'TZS', 'RWF', 'XOF', 'XAF'];
+    const depositCurrency = (currency || (req as any).user?.currency || 'NGN').toUpperCase();
+    if (!ALLOWED_CURRENCIES.includes(depositCurrency)) {
+      return res.status(400).json({ success: false, message: `Unsupported currency: ${depositCurrency}` });
     }
 
     // Create payment record for top-up
     const payment = new Payment({
       payerId: userId,
       payeeId: userId, // Top-up is to self
-      amount,
-      platformFee: 0, // No platform fee for top-ups usually
-      netAmount: amount,
-      currency: 'NGN',
+      amount: depositAmount,
+      platformFee: 0, // No platform fee for top-ups
+      netAmount: depositAmount,
+      currency: depositCurrency,
       paymentType: 'topup',
       description: description || 'Wallet Top-up',
       status: 'pending',
@@ -143,7 +160,7 @@ export const initializeTopup = async (req: Request, res: Response) => {
 
     const vtstackResponse = await vtstackService.initializePayment(
       user.email,
-      amount,
+      depositAmount,
       payment._id.toString(),
       { type: 'topup', userId }
     );
@@ -181,22 +198,49 @@ export const initializePayment = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    if (!projectId || !amount || !payeeId) {
+    if (!projectId || !payeeId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: projectId, amount, payeeId',
+        message: 'Missing required fields: projectId, payeeId',
       });
     }
 
-    let project = await Project.findById(projectId);
+    const project = await Project.findById(projectId);
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
-    let projectTitle = project.title;
+
+    if (project.clientId && project.clientId.toString() !== payerId.toString()) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to fund this project' });
+    }
+
+    if (project.freelancerId && project.freelancerId.toString() !== payeeId.toString()) {
+      return res.status(400).json({ success: false, message: 'Payee ID does not match project freelancer' });
+    }
+
+    // Validate amount against database records (Milestone or Project Budget)
+    let validatedAmount = Number(amount || 0);
+    if (milestoneId && (project as any).milestones) {
+      const milestone = typeof (project as any).milestones.id === 'function'
+        ? (project as any).milestones.id(milestoneId)
+        : (project as any).milestones.find((m: any) => m._id?.toString() === milestoneId.toString());
+      if (milestone && milestone.amount) {
+        validatedAmount = Number(milestone.amount);
+      }
+    } else if (validatedAmount <= 0 && (project as any).budget) {
+      validatedAmount = Number((project as any).budget);
+    }
+
+    if (validatedAmount <= 0 || !Number.isFinite(validatedAmount)) {
+      return res.status(400).json({ success: false, message: 'Invalid payment amount' });
+    }
+
+    const projectTitle = project.title;
+    const projectCurrency = ((project as any).currency || 'NGN').toUpperCase();
 
     // Calculate platform fee
-    const platformFee = (amount * PLATFORM_FEE_PERCENTAGE) / 100;
-    const netAmount = amount - platformFee;
+    const platformFee = (validatedAmount * PLATFORM_FEE_PERCENTAGE) / 100;
+    const netAmount = validatedAmount - platformFee;
 
     // Check if there's already a pending payment for this project
     let payment = await Payment.findOne({
@@ -208,7 +252,8 @@ export const initializePayment = async (req: Request, res: Response) => {
 
     if (payment) {
       // Update existing pending payment
-      payment.amount = amount;
+      payment.amount = validatedAmount;
+      payment.currency = projectCurrency;
       payment.platformFee = platformFee;
       payment.netAmount = netAmount;
       payment.description = description || `Payment for ${projectTitle}`;
@@ -221,10 +266,10 @@ export const initializePayment = async (req: Request, res: Response) => {
         milestoneId,
         payerId,
         payeeId,
-        amount,
+        amount: validatedAmount,
         platformFee,
         netAmount,
-        currency: 'NGN',
+        currency: projectCurrency,
         paymentType: milestoneId ? 'milestone' : 'full_payment',
         description: description || `Payment for ${projectTitle}`,
         status: 'pending',
@@ -238,7 +283,7 @@ export const initializePayment = async (req: Request, res: Response) => {
     const user = (req as any).user;
     const vtstackResponse = await vtstackService.initializePayment(
       user.email,
-      amount,
+      validatedAmount,
       payment._id.toString(),
       {
         projectId,
@@ -269,11 +314,6 @@ export const initializePayment = async (req: Request, res: Response) => {
     });
   }
 };
-
-/**
- * Verify payment after Flutterwave callback
- */
-// Removed missing service import
 
 /**
  * Verify payment after Flutterwave callback
@@ -335,9 +375,28 @@ export const verifyPayment = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Payment record not found' });
     }
 
-    // 4. Verify amount
-    if (payment.amount > vtResponse.data.amount) {
-      return res.status(400).json({ success: false, message: 'Payment amount mismatch' });
+    // 4. Validate Gateway Currency & Amount against original Connecta record
+    const expectedCurrency = (payment.currency || 'NGN').toUpperCase();
+    const paidCurrency = (vtResponse.data.currency || 'NGN').toUpperCase();
+    if (paidCurrency !== expectedCurrency) {
+      console.warn(`[VTStack Settlement] Currency mismatch for ${payment._id}: expected ${expectedCurrency}, got ${paidCurrency}`);
+      payment.status = 'failed';
+      payment.metadata = { ...payment.metadata, failureReason: `Currency mismatch: expected ${expectedCurrency}, got ${paidCurrency}` };
+      payment.gatewayResponse = vtResponse.data;
+      await payment.save();
+      return res.status(400).json({ success: false, message: `Payment currency mismatch: expected ${expectedCurrency}, received ${paidCurrency}` });
+    }
+
+    const expectedAmount = Number(payment.amount || 0);
+    const paidAmount = Number(vtResponse.data.amount || 0);
+    const tolerance = 0.01;
+    if (paidAmount < (expectedAmount - tolerance)) {
+      console.warn(`[VTStack Settlement] Underpaid for ${payment._id}: expected ${expectedAmount}, got ${paidAmount}`);
+      payment.status = 'failed';
+      payment.metadata = { ...payment.metadata, failureReason: `Underpaid: expected ${expectedAmount}, received ${paidAmount}` };
+      payment.gatewayResponse = vtResponse.data;
+      await payment.save();
+      return res.status(400).json({ success: false, message: `Payment amount mismatch: received ${paidAmount}, expected ${expectedAmount}` });
     }
 
     // 5. Atomic State Transition (guarantees single settlement execution)
@@ -494,19 +553,70 @@ export const verifyPayment = async (req: Request, res: Response) => {
  */
 export const payFromWallet = async (req: Request, res: Response) => {
   try {
-    const { type, jobId, projectId, amount, payeeId, description } = req.body;
+    const { type, jobId, projectId, milestoneId, amount, payeeId, description } = req.body;
     const payerId = (req as any).user?.id || (req as any).user?._id || (req as any).user?.userId;
 
     if (!payerId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
-    const payAmount = Number(amount || 0);
-    if (payAmount <= 0) {
+    let payAmount = Number(amount || 0);
+
+    // 1. Validate Job Verification before debiting
+    let verifiedJob: any = null;
+    if (type === 'job_verification') {
+      if (!jobId) {
+        return res.status(400).json({ success: false, message: 'Job ID is required for verification payment' });
+      }
+      verifiedJob = await Job.findById(jobId);
+      if (!verifiedJob) {
+        return res.status(404).json({ success: false, message: 'Job not found' });
+      }
+      if (verifiedJob.clientId.toString() !== payerId.toString()) {
+        return res.status(403).json({ success: false, message: 'You are not authorized to pay for this job' });
+      }
+      if (verifiedJob.paymentVerified === true) {
+        return res.status(400).json({ success: false, message: 'Job is already verified and active' });
+      }
+      if (payAmount <= 0) {
+        payAmount = Number((verifiedJob as any).verificationFee || 1000);
+      }
+    }
+
+    // 2. Validate Project / Milestone before debiting
+    let verifiedProject: any = null;
+    if (type === 'milestone' || type === 'full_payment') {
+      if (!projectId || !payeeId) {
+        return res.status(400).json({ success: false, message: 'projectId and payeeId are required' });
+      }
+      verifiedProject = await Project.findById(projectId);
+      if (!verifiedProject) {
+        return res.status(404).json({ success: false, message: 'Project not found' });
+      }
+      if (verifiedProject.clientId && verifiedProject.clientId.toString() !== payerId.toString()) {
+        return res.status(403).json({ success: false, message: 'You are not authorized to fund this project' });
+      }
+      if (verifiedProject.freelancerId && verifiedProject.freelancerId.toString() !== payeeId.toString()) {
+        return res.status(400).json({ success: false, message: 'Payee ID does not match project freelancer' });
+      }
+
+      if (milestoneId && (verifiedProject as any).milestones) {
+        const milestone = typeof (verifiedProject as any).milestones.id === 'function'
+          ? (verifiedProject as any).milestones.id(milestoneId)
+          : (verifiedProject as any).milestones.find((m: any) => m._id?.toString() === milestoneId.toString());
+        if (milestone && milestone.amount) {
+          payAmount = Number(milestone.amount);
+        }
+      } else if (payAmount <= 0 && (verifiedProject as any).budget) {
+        payAmount = Number((verifiedProject as any).budget);
+      }
+    }
+
+    if (payAmount <= 0 || !Number.isFinite(payAmount)) {
       return res.status(400).json({ success: false, message: 'Invalid payment amount' });
     }
 
-    // 1. Atomic Wallet Balance Deduction (guarantees balance check and deducts in 1 atomic step)
+    // 3. Atomic Wallet Balance Deduction (guarantees balance check and deducts in 1 atomic step)
     const updatedPayerWallet = await Wallet.findOneAndUpdate(
       { userId: payerId, balance: { $gte: payAmount } },
       { $inc: { balance: -payAmount, totalSpent: payAmount } },
@@ -520,25 +630,17 @@ export const payFromWallet = async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Handle Verification/Posting Fee Payment
-    if (type === 'job_verification' && jobId) {
-      const job = await Job.findById(jobId);
-      if (!job) {
-        // Rollback balance on invalid job
-        await Wallet.updateOne({ userId: payerId }, { $inc: { balance: payAmount, totalSpent: -payAmount } });
-        return res.status(404).json({ success: false, message: 'Job not found' });
-      }
-
-      // Activate Job
-      job.status = 'active';
-      job.paymentVerified = true;
-      job.paymentStatus = 'verified';
-      await job.save();
+    // 4. Handle Verification/Posting Fee Payment
+    if (type === 'job_verification' && verifiedJob) {
+      verifiedJob.status = 'active';
+      verifiedJob.paymentVerified = true;
+      verifiedJob.paymentStatus = 'verified';
+      await verifiedJob.save();
 
       // Notify Matched Freelancers
       try {
         const { notifyMatchedFreelancers } = await import('./notification.controller.js');
-        await notifyMatchedFreelancers(job);
+        await notifyMatchedFreelancers(verifiedJob);
       } catch (err) {
         console.error('Failed to notify matched freelancers:', err);
       }
@@ -553,7 +655,7 @@ export const payFromWallet = async (req: Request, res: Response) => {
         netAmount: 0,
         currency: 'NGN',
         paymentType: 'job_verification',
-        description: description || `Job posting fee for: ${job.title}`,
+        description: description || `Job posting fee for: ${verifiedJob.title}`,
         status: 'completed',
         paymentMethod: 'wallet',
         paidAt: new Date(),
@@ -575,13 +677,14 @@ export const payFromWallet = async (req: Request, res: Response) => {
       return res.status(200).json({ success: true, message: 'Job verified using wallet balance', data: payment });
     }
 
-    // 3. Handle Project Payment (Hiring/Milestone)
-    if ((type === 'milestone' || type === 'full_payment') && projectId && payeeId) {
+    // 5. Handle Project Payment (Hiring/Milestone)
+    if ((type === 'milestone' || type === 'full_payment') && verifiedProject && payeeId) {
       const platformFee = (payAmount * PLATFORM_FEE_PERCENTAGE) / 100;
       const netAmount = payAmount - platformFee;
+      const projectCurrency = (verifiedProject.currency || 'NGN').toUpperCase();
 
       // Credit Freelancer (Escrow)
-      let freelancerWallet = await Wallet.findOneAndUpdate(
+      await Wallet.findOneAndUpdate(
         { userId: payeeId },
         { $inc: { balance: netAmount, escrowBalance: netAmount } },
         { new: true, upsert: true }
@@ -590,14 +693,15 @@ export const payFromWallet = async (req: Request, res: Response) => {
       // Create Payment Record
       const payment = new Payment({
         projectId,
+        milestoneId,
         payerId,
         payeeId,
         amount: payAmount,
         platformFee,
         netAmount,
-        currency: 'NGN',
+        currency: projectCurrency,
         paymentType: type,
-        description: description || 'Project payment from wallet',
+        description: description || `Project payment for: ${verifiedProject.title}`,
         status: 'completed',
         paymentMethod: 'wallet',
         paidAt: new Date(),
@@ -611,22 +715,22 @@ export const payFromWallet = async (req: Request, res: Response) => {
         userId: payerId,
         type: 'payment_sent',
         amount: payAmount,
-        currency: 'NGN',
+        currency: projectCurrency,
         status: 'completed',
         paymentId: payment._id,
         projectId,
-        description: `Payment for project (Escrowed)`,
+        description: `Payment for project (Escrowed): ${verifiedProject.title}`,
       });
       // 2. Freelancer Credit (Escrow — locked until released)
       await Transaction.create({
         userId: payeeId,
         type: 'payment_received',
         amount: netAmount,
-        currency: 'NGN',
+        currency: projectCurrency,
         status: 'pending',
         paymentId: payment._id,
         projectId,
-        description: `🔒 Incoming escrow payment`,
+        description: `🔒 Incoming escrow payment: ${verifiedProject.title}`,
       });
 
       // Notify Freelancer
@@ -635,7 +739,7 @@ export const payFromWallet = async (req: Request, res: Response) => {
           userId: payeeId,
           type: 'payment_received',
           title: '🔒 Payment Locked in Escrow',
-          message: `₦${netAmount.toLocaleString()} has been escrowed for project: ${description || 'New Project'}. Funds will be available once work is completed.`,
+          message: `${projectCurrency} ${netAmount.toLocaleString()} has been escrowed for project: ${verifiedProject.title}. Funds will be available once work is completed.`,
           relatedId: payment._id,
           relatedType: 'payment',
           priority: 'high',
@@ -649,7 +753,7 @@ export const payFromWallet = async (req: Request, res: Response) => {
 
     // If unsupported type, rollback
     await Wallet.updateOne({ userId: payerId }, { $inc: { balance: payAmount, totalSpent: -payAmount } });
-    return res.status(400).json({ success: false, message: 'Invalid payment request' });
+    return res.status(400).json({ success: false, message: 'Invalid or unsupported payment type' });
   } catch (error: any) {
     console.error('Pay from wallet error:', error);
     return res.status(500).json({ success: false, message: error.message || 'Failed to process wallet payment' });
